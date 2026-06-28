@@ -1,12 +1,13 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import type { ColorValue } from "react-native";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppHeader } from "@/components/app-header";
 import { colors } from "@/components/colors";
 import { useLanguage } from "@/lib/i18n";
+import { useContentWidth } from "@/lib/layout";
 
 type TabKey = "index" | "explore" | "create-action" | "partner" | "menu";
 
@@ -72,6 +73,11 @@ function tabIcon(name: TabKey) {
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
+  const contentWidth = useContentWidth();
+  // On desktop web the shell is wide, so center the tab bar as a capped pill
+  // instead of letting it span the full width like a phone.
+  const isWideWeb = Platform.OS === "web" && contentWidth >= 760;
+  const tabBarSide = isWideWeb ? Math.max(12, Math.round((contentWidth - 460) / 2)) : 12;
 
   return (
     <Tabs
@@ -106,11 +112,11 @@ export default function TabsLayout() {
           borderWidth: 1,
           bottom: Math.max(insets.bottom, 10),
           height: 74,
-          left: 12,
+          left: tabBarSide,
           paddingBottom: 8,
           paddingTop: 8,
           position: "absolute",
-          right: 12,
+          right: tabBarSide,
           shadowColor: "#101828",
           shadowOffset: { width: 0, height: 14 },
           shadowOpacity: 0.15,
