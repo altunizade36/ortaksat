@@ -1,0 +1,10 @@
+env: load .env
+env: export EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY EXPO_PUBLIC_SUPABASE_URL
+Starting project at C:\Users\altun\Documents\Codex\2026-06-01\ortaksat
+Starting Metro Bundler
+
+warning: Bundler cache is empty, rebuilding (this may take a minute)
+› Opening exp://172.20.10.4:8085 on Pixel_8
+Waiting on http://localhost:8085
+Logs for your project will appear below.
+Android Bundled 71821ms node_modules\expo-router\entry.js (1853 modules)

@@ -1,0 +1,64 @@
+{
+  "name": "ortaksat-mobile",
+  "version": "1.0.0",
+  "main": "expo-router/entry",
+  "scripts": {
+    "start": "expo start",
+    "start:clear": "expo start --clear",
+    "android": "expo start --android",
+    "android:clear": "expo start --android --clear",
+    "ios": "expo start --ios",
+    "typecheck": "tsc --noEmit",
+    "check:encoding": "node scripts/check-encoding.mjs",
+    "quality": "npm run check:encoding && npm run typecheck && npm run doctor",
+    "export:android": "expo export --platform android --output-dir dist-check-android",
+    "doctor": "npx expo-doctor",
+    "build:android:preview": "eas build -p android --profile preview",
+    "build:ios:preview": "eas build -p ios --profile preview",
+    "build:internal": "eas build --profile preview",
+    "build:android": "eas build -p android --profile production",
+    "build:ios": "eas build -p ios --profile production",
+    "submit:android": "eas submit -p android --profile production",
+    "submit:ios": "eas submit -p ios --profile production",
+    "db:migrate": "node scripts/apply-supabase-migration.mjs"
+  },
+  "dependencies": {
+    "@expo/vector-icons": "^15.0.3",
+    "@react-native-async-storage/async-storage": "2.2.0",
+    "@supabase/supabase-js": "^2.107.0",
+    "expo": "56.0.1",
+    "expo-clipboard": "~56.0.4",
+    "expo-constants": "~56.0.18",
+    "expo-font": "~56.0.7",
+    "expo-image": "~56.0.11",
+    "expo-image-picker": "~56.0.18",
+    "expo-linking": "~56.0.14",
+    "expo-localization": "~56.0.6",
+    "expo-router": "~56.2.11",
+    "expo-splash-screen": "^56.0.10",
+    "expo-status-bar": "~56.0.4",
+    "expo-video": "~56.1.4",
+    "react": "19.2.3",
+    "react-dom": "19.2.3",
+    "react-native": "0.85.3",
+    "react-native-gesture-handler": "~2.31.1",
+    "react-native-reanimated": "4.3.1",
+    "react-native-safe-area-context": "~5.7.0",
+    "react-native-screens": "4.25.2",
+    "react-native-web": "^0.21.2",
+    "react-native-worklets": "0.8.3"
+  },
+  "devDependencies": {
+    "@types/react": "~19.2.2",
+    "pg": "^8.21.0",
+    "typescript": "~6.0.3"
+  },
+  "expo": {
+    "install": {
+      "exclude": [
+        "expo"
+      ]
+    }
+  },
+  "private": true
+}

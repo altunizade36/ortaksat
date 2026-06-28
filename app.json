@@ -1,0 +1,87 @@
+{
+  "expo": {
+    "name": "ortaksat",
+    "slug": "ortaksat-mobile",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "scheme": "ortaksat",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "com.ortaksat.app",
+      "buildNumber": "1",
+      "supportsTablet": false,
+      "associatedDomains": [
+        "applinks:ortaksat.com"
+      ],
+      "infoPlist": {
+        "ITSAppUsesNonExemptEncryption": false,
+        "NSPhotoLibraryUsageDescription": "Ortaksat ilan fotoğrafı seçmek için galeri erişimi ister."
+      }
+    },
+    "android": {
+      "package": "com.ortaksat.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "backgroundColor": "#F6F7F9",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "ortaksat.com",
+              "pathPrefix": "/i"
+            }
+          ],
+          "category": [
+            "BROWSABLE",
+            "DEFAULT"
+          ]
+        }
+      ],
+      "permissions": []
+    },
+    "plugins": [
+      "expo-router",
+      "expo-image",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Ortaksat ilan fotoğrafı seçmek için galeri erişimi ister."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "resizeMode": "contain",
+          "backgroundColor": "#F6F7F9"
+        }
+      ],
+      "expo-localization",
+      "expo-video",
+      "expo-font"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "bundler": "metro"
+    },
+    "extra": {
+      "privacyUrl": "https://ortaksat.com/privacy",
+      "supportUrl": "https://ortaksat.com/support",
+      "termsUrl": "https://ortaksat.com/terms",
+      "eas": {
+        "projectId": "replace-after-eas-init"
+      }
+    }
+  }
+}
