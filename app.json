@@ -73,7 +73,8 @@
     },
     "web": {
       "favicon": "./assets/favicon.png",
-      "bundler": "metro"
+      "bundler": "metro",
+      "output": "static"
     },
     "extra": {
       "privacyUrl": "https://ortaksat.com/privacy",

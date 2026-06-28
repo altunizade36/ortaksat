@@ -9,6 +9,7 @@ import { ListingCard } from "@/components/listing-card";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { responsiveGrid, SHELL_MAX_WIDTH } from "@/lib/layout";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import { useStore } from "@/lib/use-store";
 
@@ -40,7 +41,7 @@ export default function StoreScreen() {
     return sum + (listing.commissionType === "rate" ? Math.round((listing.price * listing.commissionValue) / 100) : listing.commissionValue);
   }, 0);
   const gridGap = 10;
-  const cardWidth = Math.max(148, Math.floor((width - 24 - gridGap) / 2));
+  const cardWidth = responsiveGrid({ available: Math.min(width, SHELL_MAX_WIDTH) - 24, gap: gridGap, minCardWidth: 168 }).cardWidth;
 
   function refresh() {
     setRefreshing(true);

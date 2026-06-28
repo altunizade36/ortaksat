@@ -1,0 +1,17 @@
+{
+  "name": "ortaksat — Ortak satışla kazan",
+  "short_name": "ortaksat",
+  "description": "İlanını aç, ortakların referans linkiyle paylaşsın, satışta komisyon kazan.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "lang": "tr",
+  "dir": "ltr",
+  "background_color": "#EEF1F4",
+  "theme_color": "#00866F",
+  "categories": ["shopping", "business", "marketplace"],
+  "icons": [
+    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+  ]
+}

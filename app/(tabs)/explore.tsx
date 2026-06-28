@@ -8,6 +8,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { inferListingSubcategory } from "@/lib/categories";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { responsiveGrid, SHELL_MAX_WIDTH } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
@@ -45,7 +46,7 @@ export default function ExploreScreen() {
   const tokens = searchKey(params.q ?? "").split(" ").filter(Boolean);
   const gap = 8;
   const padding = 12;
-  const tileSize = Math.max(150, Math.floor((width - padding * 2 - gap) / 2));
+  const tileSize = responsiveGrid({ available: Math.min(width, SHELL_MAX_WIDTH) - padding * 2, gap, minCardWidth: 160 }).cardWidth;
   const tileHeight = Math.min(258, Math.round(tileSize * 1.22));
 
   const marketplaceListings = useMemo(() => {

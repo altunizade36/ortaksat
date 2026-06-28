@@ -32,3 +32,7 @@ expo-web*.log
 # OS
 .DS_Store
 Thumbs.db
+
+# expo dev logs
+expo-*.log
+dist-web/

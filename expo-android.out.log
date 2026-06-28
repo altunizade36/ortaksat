@@ -1,9 +1,0 @@
-
-> ortaksat-mobile@1.0.0 android
-> expo start --android
-
-env: load .env
-env: export EXPO_PUBLIC_SUPABASE_ANON_KEY EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY EXPO_PUBLIC_SUPABASE_URL
-Starting project at C:\Users\altun\Documents\Codex\2026-06-01\ortaksat
-› Port 8081 is being used by another process
-› Skipping dev server

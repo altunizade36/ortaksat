@@ -6,6 +6,7 @@ import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
 import { EmptyState, PrimaryButton } from "@/components/ui";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { responsiveGrid, SHELL_MAX_WIDTH } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
 import { useStore } from "@/lib/use-store";
 
@@ -16,7 +17,7 @@ export default function FavoritesScreen() {
   const [query, setQuery] = useState("");
   const horizontalPadding = 12;
   const gap = 8;
-  const cardWidth = Math.floor((width - horizontalPadding * 2 - gap * 2) / 3);
+  const cardWidth = responsiveGrid({ available: Math.min(width, SHELL_MAX_WIDTH) - horizontalPadding * 2, gap, minCardWidth: 150, minColumns: 3 }).cardWidth;
   const tokens = searchKey(query).split(" ").filter(Boolean);
   const favoriteListings = favorites
     .filter((favorite) => favorite.userId === currentUser.id)

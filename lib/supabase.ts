@@ -13,12 +13,18 @@ export const supabaseConfig = {
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabasePublishableKey);
 
+// During static web rendering (expo export, output: "static") this module runs
+// in Node where `window` is undefined. AsyncStorage on web wraps localStorage, so
+// persisting the session there would crash SSR. Only attach browser storage when a
+// real browser environment is present; the client hydrates with the full session.
+const hasBrowserStorage = typeof window !== "undefined";
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabasePublishableKey!, {
       auth: {
-        autoRefreshToken: true,
-        storage: AsyncStorage,
-        persistSession: true,
+        autoRefreshToken: hasBrowserStorage,
+        storage: hasBrowserStorage ? AsyncStorage : undefined,
+        persistSession: hasBrowserStorage,
         detectSessionInUrl: false
       }
     })
