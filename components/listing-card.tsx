@@ -23,6 +23,7 @@ export function ListingCard({ listing, owner, width }: { listing: Listing; owner
   const statusLabel = listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? t("newListing") : `${compactNumber(listing.partnerCount)} ${t("partners")}`;
   const statusTone: StatusTone = listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
   const subcategory = inferListingSubcategory(listing);
+  const isVerified = Boolean(owner?.verifiedPhone || owner?.verifiedIdentity);
 
   return (
     <View style={{ width }}>
@@ -78,11 +79,13 @@ export function ListingCard({ listing, owner, width }: { listing: Listing; owner
                 <Text numberOfLines={1} selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
                   {owner?.rating ?? 0}
                 </Text>
+                {isVerified ? <MaterialCommunityIcons name="check-decagram" size={13} color={colors.primary} /> : null}
                 <Text numberOfLines={1} selectable style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "700" }}>
                   {" · "}{displayText(listing.location)}
                 </Text>
+                <MaterialCommunityIcons name="account-group-outline" size={13} color={colors.subtle} />
                 <Text numberOfLines={1} selectable style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>
-                  {compactNumber(listing.stockCount)} {t("stock")}
+                  {compactNumber(listing.partnerCount)} ortak
                 </Text>
               </View>
 

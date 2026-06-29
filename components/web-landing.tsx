@@ -159,6 +159,80 @@ export function WebHowItWorks() {
   );
 }
 
+/** "Why ortaksat" — value props for both sides (seller + partner). */
+export function WebWhy() {
+  const sides: Array<{ icon: IconName; title: string; points: string[]; href: Href; cta: string }> = [
+    {
+      icon: "store-plus-outline",
+      title: "Satıcıysan",
+      points: [
+        "Ürününü yüzlerce ortağın ağına taşı, erişimini büyüt.",
+        "Reklam yerine sonuç bazlı komisyon: sadece satışta öde.",
+        "Talep, satış ve komisyonu tek panelden yönet."
+      ],
+      href: "/create",
+      cta: "İlan ver"
+    },
+    {
+      icon: "handshake-outline",
+      title: "Ortaksan",
+      points: [
+        "Sermaye gerektirmeden, hazır ürünleri satıp komisyon kazan.",
+        "Kendi referans linkinle her kanalda paylaş.",
+        "Kazancın şeffaf: bekleyen, onaylanan, ödenen olarak görünür."
+      ],
+      href: "/partner",
+      cta: "Ortak satışa başla"
+    }
+  ];
+  return (
+    <View dataSet={{ reveal: "1" }} style={{ gap: 16, marginTop: 8 }}>
+      <View style={{ gap: 2 }}>
+        <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>Neden ortaksat?</Text>
+        <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>İki taraf da kazanır: satıcı büyür, ortak komisyon alır.</Text>
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+        {sides.map((side) => (
+          <View
+            key={side.title}
+            style={{
+              backgroundColor: colors.surface,
+              borderColor: colors.line,
+              borderRadius: 18,
+              borderWidth: 1,
+              flexBasis: 360,
+              flexGrow: 1,
+              gap: 14,
+              padding: 24
+            }}
+          >
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 48, justifyContent: "center", width: 48 }}>
+                <MaterialCommunityIcons name={side.icon} size={26} color={colors.primaryDark} />
+              </View>
+              <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{side.title}</Text>
+            </View>
+            <View style={{ gap: 10 }}>
+              {side.points.map((point) => (
+                <View key={point} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
+                  <MaterialCommunityIcons name="check-circle" size={18} color={colors.primary} />
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 14, fontWeight: "600", lineHeight: 21 }}>{point}</Text>
+                </View>
+              ))}
+            </View>
+            <Link href={side.href} asChild>
+              <Pressable style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingVertical: 12 }}>
+                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{side.cta}</Text>
+                <MaterialCommunityIcons name="arrow-right" size={18} color="#FFFFFF" />
+              </Pressable>
+            </Link>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
 /** Web footer with brand, navigation columns and legal line. */
 export function WebFooter() {
   const { t } = useLanguage();

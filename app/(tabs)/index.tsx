@@ -9,7 +9,7 @@ import { ListingCard } from "@/components/listing-card";
 import { EmptyState } from "@/components/ui";
 import { Marketplace3DHero } from "@/components/three-d-showcase";
 import { WebHero } from "@/components/web-hero";
-import { WebCategories, WebFooter, WebHowItWorks, WebTrustStrip } from "@/components/web-landing";
+import { WebCategories, WebFooter, WebHowItWorks, WebTrustStrip, WebWhy } from "@/components/web-landing";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -176,6 +176,7 @@ export default function HomeScreen() {
       ) : null}
 
       {isWideWeb ? <WebHowItWorks /> : null}
+      {isWideWeb ? <WebWhy /> : null}
       {isWeb ? <WebFooter /> : null}
     </ScrollView>
   );

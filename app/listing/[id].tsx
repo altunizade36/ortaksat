@@ -199,17 +199,20 @@ export default function ListingDetailScreen() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: 96 }}>
-      <WebContainer max={1080} padding={0} style={{ gap: 12 }}>
-      <View style={{ backgroundColor: colors.surface, borderRadius: isWideWeb ? 18 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
-        <SafeRemoteImage uri={currentListing.image} style={{ backgroundColor: colors.line, height: isWideWeb ? 460 : 330, width: "100%" }} contentFit="cover" />
+      <WebContainer max={1200} padding={0} style={{ gap: 16 }}>
+      <View style={isWideWeb ? { flexDirection: "row", gap: 20, alignItems: "flex-start" } : { gap: 12 }}>
+      <View style={isWideWeb ? { flex: 1.12, minWidth: 0 } : undefined}>
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 18 : 0, borderWidth: isWideWeb ? 1 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
+        <SafeRemoteImage uri={currentListing.image} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
         <View style={{ flexDirection: "row", gap: 8, padding: 12 }}>
           <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label="Beğen" onPress={() => toggleFavorite(currentListing.id)} />
           <IconButton icon="share-variant-outline" label="Paylaş" onPress={() => void handleShare()} />
           {!isOwner ? <IconButton icon="flag-outline" label="Bildir" onPress={() => void handleReport()} /> : null}
         </View>
       </View>
+      </View>
 
-      <View style={{ gap: 12, paddingHorizontal: 12 }}>
+      <View style={isWideWeb ? { flex: 1, gap: 12, minWidth: 0, marginTop: 16 } : { gap: 12, paddingHorizontal: 12 }}>
         <Card>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             <StatusPill label={currentListing.category} />
@@ -253,7 +256,10 @@ export default function ListingDetailScreen() {
           onShare={() => void handleShare()}
           partnershipStatus={partnership?.status}
         />
+      </View>
+      </View>
 
+      <View style={{ gap: 12, paddingHorizontal: isWideWeb ? 0 : 12 }}>
         <Card>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
             <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 46, justifyContent: "center", width: 46 }}>
