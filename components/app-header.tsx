@@ -217,9 +217,11 @@ function AccountMenu() {
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, paddingVertical: 6, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 48, width: 230, zIndex: 1000 }}>
             {items.map((item) => (
               <Link key={item.label} href={item.href} asChild>
-                <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 10 })}>
-                  <MaterialCommunityIcons name={item.icon} size={17} color={colors.primaryDark} />
-                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
+                <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 10 })}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                    <MaterialCommunityIcons name={item.icon} size={17} color={colors.primaryDark} />
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
+                  </View>
                 </Pressable>
               </Link>
             ))}
