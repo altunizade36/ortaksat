@@ -1,20 +1,29 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
+import { ListingCard } from "@/components/listing-card";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { inferListingSubcategory } from "@/lib/categories";
+import { inferListingSubcategory, listingCategories } from "@/lib/categories";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
-import type { Listing } from "@/lib/types";
+import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 type FeedFilter = "all" | "open" | "hot" | "new" | "commission";
+type SortMode = "recommended" | "priceAsc" | "priceDesc" | "commission" | "new";
+const SORT_LABELS: Record<SortMode, string> = {
+  recommended: "Önerilen",
+  priceAsc: "En düşük fiyat",
+  priceDesc: "En yüksek fiyat",
+  commission: "En yüksek komisyon",
+  new: "En yeni"
+};
 const INITIAL_EXPLORE_ITEMS = 20;
 const EXPLORE_PAGE_SIZE = 16;
 
@@ -39,6 +48,9 @@ export default function ExploreScreen() {
   const [city, setCity] = useState("");
   const [minCommission, setMinCommission] = useState(0);
   const [statusOpen, setStatusOpen] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>("recommended");
+  const [onlyVerified, setOnlyVerified] = useState(false);
+  const [productVisible, setProductVisible] = useState(20);
   const [visibleCount, setVisibleCount] = useState(INITIAL_EXPLORE_ITEMS);
   const feedFilters: Array<{ key: FeedFilter; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
     { key: "all", label: t("all"), icon: "grid" },
@@ -86,6 +98,25 @@ export default function ExploreScreen() {
     return marketplaceListings.sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));
   }, [city, filter, findUser, hasPanelFilter, marketplaceListings, minCommission, seed, statusOpen, tokens]);
 
+  const productListings = useMemo(() => {
+    const arr = activeListings.filter((listing) => {
+      if (!onlyVerified) return true;
+      const owner = findUser(listing.ownerId);
+      return Boolean(owner?.verifiedPhone || owner?.verifiedIdentity);
+    });
+    const sorted = arr.slice();
+    if (sortMode === "priceAsc") sorted.sort((a, b) => a.price - b.price);
+    else if (sortMode === "priceDesc") sorted.sort((a, b) => b.price - a.price);
+    else if (sortMode === "commission") sorted.sort((a, b) => commissionAmount(b) - commissionAmount(a));
+    else if (sortMode === "new") sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return sorted;
+  }, [activeListings, findUser, onlyVerified, sortMode]);
+  const dealListings = useMemo(() => activeListings.slice().sort((a, b) => a.stockCount - b.stockCount).slice(0, 3), [activeListings]);
+  const topCommissionListings = useMemo(() => activeListings.slice().sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 3), [activeListings]);
+  const sidebarWidth = 320;
+  const productArea = width - padding * 2 - sidebarWidth - 24;
+  const productGrid = responsiveGrid({ available: productArea, gap: 16, minCardWidth: 200, maxColumns: 5 });
+
   const mediaItems = useMemo(() => {
     return activeListings.flatMap((listing) => {
       const media = [listing.image, ...(listing.adAssets ?? [])]
@@ -111,7 +142,8 @@ export default function ExploreScreen() {
 
   useEffect(() => {
     setVisibleCount(INITIAL_EXPLORE_ITEMS);
-  }, [filter, params.q, city, minCommission, statusOpen]);
+    setProductVisible(20);
+  }, [filter, params.q, city, minCommission, statusOpen, sortMode, onlyVerified]);
 
   function refresh() {
     setRefreshing(true);
@@ -126,6 +158,188 @@ export default function ExploreScreen() {
     if (distanceToBottom < 520) {
       setVisibleCount((current) => Math.min(mediaItems.length, current + EXPLORE_PAGE_SIZE));
     }
+  }
+
+  if (isWideWeb) {
+    const pills: Array<{ key: FeedFilter | "near"; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
+      { key: "all", label: "Tümü", icon: "grid" },
+      { key: "hot", label: "Trend", icon: "fire" },
+      { key: "new", label: "Yeni", icon: "clock-outline" },
+      { key: "commission", label: "En Yüksek Komisyon", icon: "cash-plus" },
+      { key: "open", label: "Anında ortak", icon: "flash" }
+    ];
+    const trust = [
+      { icon: "shield-check" as const, label: "Komisyonlar güvence altında" },
+      { icon: "swap-horizontal" as const, label: "Şeffaf & güvenilir süreç" },
+      { icon: "message-text-outline" as const, label: "Satıcıyla güvenli iletişim" },
+      { icon: "flash" as const, label: "Hızlı ödemeler" }
+    ];
+    const sortOrder: SortMode[] = ["recommended", "priceAsc", "priceDesc", "commission", "new"];
+    const visibleProducts = productListings.slice(0, productVisible);
+
+    return (
+      <ScrollView
+        contentInsetAdjustmentBehavior="automatic"
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 60, paddingHorizontal: padding, paddingTop: 16 }}
+        style={{ backgroundColor: colors.background }}
+      >
+        {/* Banner */}
+        <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 26 }}>
+          <View style={{ flex: 1.3, gap: 10, justifyContent: "center", minWidth: 0 }}>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Keşfet, kazanmaya başla</Text>
+            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>Binlerce ürün arasından size en uygun fırsatlar burada</Text>
+            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 460 }}>Kategorilere göz at, filtreleyin ve komisyonlu ilanlarla kolayca ortak olun.</Text>
+          </View>
+          <View style={{ flex: 1, gap: 10, justifyContent: "center", minWidth: 0 }}>
+            {trust.map((item) => (
+              <View key={item.label} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <MaterialCommunityIcons name={item.icon} size={18} color={colors.primary} />
+                <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "700" }}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+          <View style={{ alignItems: "center", justifyContent: "center", width: 140 }}>
+            <View style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 999, height: 120, justifyContent: "center", width: 120 }}>
+              <MaterialCommunityIcons name="magnify" size={64} color={colors.primary} />
+            </View>
+          </View>
+        </View>
+
+        {/* Filter pills + category buttons */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {pills.map((pill) => {
+            const active = pill.key !== "near" && filter === pill.key;
+            return (
+              <Pressable
+                key={pill.key}
+                onPress={() => pill.key !== "near" && setFilter(pill.key)}
+                style={{ alignItems: "center", backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}
+              >
+                <MaterialCommunityIcons name={pill.icon} size={15} color={active ? "#FFFFFF" : colors.primary} />
+                <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>{pill.label}</Text>
+              </Pressable>
+            );
+          })}
+          {listingCategories.slice(0, 6).map((category) => (
+            <Pressable
+              key={category.key}
+              onPress={() => router.setParams({ q: category.label })}
+              style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 14, paddingVertical: 9 }}
+            >
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{category.shortLabel}</Text>
+              <MaterialCommunityIcons name="chevron-down" size={15} color={colors.muted} />
+            </Pressable>
+          ))}
+        </View>
+
+        {/* Toolbar */}
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
+          <ToolbarButton icon="filter-variant" label="Tüm Filtreler" />
+          <ToolbarButton label="Fiyat Aralığı" caret />
+          <ToolbarButton label="Komisyon Oranı" caret />
+          <ToolbarButton label="Şehir" caret />
+          <ToolbarButton label="Stok Durumu" caret />
+          <Pressable onPress={() => setOnlyVerified((v) => !v)} style={{ alignItems: "center", flexDirection: "row", gap: 7, paddingHorizontal: 8 }}>
+            <View style={{ alignItems: onlyVerified ? "flex-end" : "flex-start", backgroundColor: onlyVerified ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 38 }}>
+              <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
+            </View>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Sadece onaylı satıcılar</Text>
+          </Pressable>
+          <View style={{ flex: 1 }} />
+          <Pressable
+            onPress={() => setSortMode(sortOrder[(sortOrder.indexOf(sortMode) + 1) % sortOrder.length])}
+            style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}
+          >
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Sırala:</Text>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{SORT_LABELS[sortMode]}</Text>
+            <MaterialCommunityIcons name="chevron-down" size={16} color={colors.muted} />
+          </Pressable>
+        </View>
+
+        {/* Main + sidebar */}
+        <View style={{ flexDirection: "row", gap: 24, alignItems: "flex-start" }}>
+          <View style={{ flex: 1, gap: 14, minWidth: 0 }}>
+            <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between" }}>
+              <View style={{ gap: 2 }}>
+                <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>Öne çıkan ilanlar</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Sizin için seçilmiş en iyi ortaklık fırsatları</Text>
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{productListings.length} ilan bulundu</Text>
+            </View>
+
+            {visibleProducts.length === 0 ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 40 }}>
+                <MaterialCommunityIcons name="magnify-close" size={32} color={colors.primary} />
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{t("noResults")}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{t("retrySearchFilter")}</Text>
+              </View>
+            ) : (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+                {visibleProducts.map((listing) => (
+                  <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={productGrid.cardWidth} />
+                ))}
+              </View>
+            )}
+
+            {visibleProducts.length < productListings.length ? (
+              <Pressable onPress={() => setProductVisible((c) => c + 20)} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 28, paddingVertical: 12 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>Daha fazla göster</Text>
+              </Pressable>
+            ) : null}
+          </View>
+
+          {/* Sidebar */}
+          <View style={{ gap: 16, width: sidebarWidth }}>
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Bugünün fırsatları</Text>
+                <CountdownBadge />
+              </View>
+              {dealListings.map((listing) => (
+                <SidebarListing key={listing.id} listing={listing} owner={findUser(listing.ownerId)} showStock />
+              ))}
+              <Link href="/explore" asChild>
+                <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Tüm fırsatları gör</Text>
+                  <MaterialCommunityIcons name="arrow-right" size={16} color={colors.primaryDark} />
+                </Pressable>
+              </Link>
+            </View>
+
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Yüksek komisyonlu ilanlar</Text>
+              {topCommissionListings.map((listing) => (
+                <SidebarListing key={listing.id} listing={listing} owner={findUser(listing.ownerId)} />
+              ))}
+              <Pressable onPress={() => setFilter("commission")} style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Tümünü gör</Text>
+                <MaterialCommunityIcons name="arrow-right" size={16} color={colors.primaryDark} />
+              </Pressable>
+            </View>
+
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 16 }}>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Neden Ortaksat?</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+                {[
+                  { icon: "shield-check" as const, value: "%100", label: "Güvenli Ödeme" },
+                  { icon: "headset" as const, value: "7/24", label: "Canlı Destek" },
+                  { icon: "account-group" as const, value: "10.000+", label: "Aktif Satıcı" },
+                  { icon: "handshake" as const, value: "200.000+", label: "Başarılı Ortaklık" }
+                ].map((item) => (
+                  <View key={item.label} style={{ alignItems: "center", flexBasis: 120, flexGrow: 1, gap: 4 }}>
+                    <MaterialCommunityIcons name={item.icon} size={22} color={colors.primary} />
+                    <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{item.value}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{item.label}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   return (
@@ -334,6 +548,67 @@ function FilterPanel({
         </View>
       </View>
     </View>
+  );
+}
+
+function ToolbarButton({ icon, label, caret }: { icon?: keyof typeof MaterialCommunityIcons.glyphMap; label: string; caret?: boolean }) {
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}>
+      {icon ? <MaterialCommunityIcons name={icon} size={15} color={colors.primaryDark} /> : null}
+      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{label}</Text>
+      {caret ? <MaterialCommunityIcons name="chevron-down" size={15} color={colors.muted} /> : null}
+    </View>
+  );
+}
+
+function CountdownBadge() {
+  const [remaining, setRemaining] = useState("");
+  useEffect(() => {
+    function tick() {
+      const now = new Date();
+      const end = new Date(now);
+      end.setHours(23, 59, 59, 999);
+      const diff = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
+      const h = String(Math.floor(diff / 3600)).padStart(2, "0");
+      const m = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
+      const s = String(diff % 60).padStart(2, "0");
+      setRemaining(`${h}:${m}:${s}`);
+    }
+    tick();
+    const id = setInterval(tick, 1000);
+    return () => clearInterval(id);
+  }, []);
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+      <MaterialCommunityIcons name="clock-outline" size={12} color={colors.accent} />
+      <Text style={{ color: colors.accent, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{remaining}</Text>
+    </View>
+  );
+}
+
+function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner?: User; showStock?: boolean }) {
+  void owner;
+  const commission = commissionAmount(listing);
+  return (
+    <Link href={`/listing/${listing.id}`} asChild>
+      <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 10, opacity: pressed ? 0.8 : 1 })}>
+        <View style={{ backgroundColor: colors.line, borderRadius: 10, height: 56, overflow: "hidden", width: 56 }}>
+          <SafeRemoteImage uri={listing.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
+        </View>
+        <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(listing.title)}</Text>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(listing.price)}</Text>
+            <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>Kazanç {money(commission)}</Text>
+          </View>
+          {showStock ? (
+            <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "900" }}>Son {listing.stockCount} stok!</Text>
+          ) : (
+            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{displayText(listing.location)}</Text>
+          )}
+        </View>
+      </Pressable>
+    </Link>
   );
 }
 
