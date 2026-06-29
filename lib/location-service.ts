@@ -17,7 +17,7 @@ export async function fetchDistricts(provinceId: number): Promise<District[]> {
   if (!supabase) return districtsOfProvince(provinceId);
   const { data, error } = await supabase.from("districts").select("id,province_id,name,slug").eq("province_id", provinceId).eq("is_active", true).order("name");
   if (error || !data) return districtsOfProvince(provinceId);
-  return data as District[];
+  return data.map((d: { id: number; province_id: number; name: string; slug: string }) => ({ id: d.id, provinceId: d.province_id, name: d.name, slug: d.slug }));
 }
 
 export type Neighborhood = { id: number; provinceId: number; districtId: number; name: string; slug: string };
