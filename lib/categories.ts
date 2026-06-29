@@ -100,6 +100,87 @@ export const listingCategories: ListingCategory[] = [
     subcategories: ["Eğitim", "Şablon", "Yazılım", "Dijital dosya", "Online hizmet"],
     requiredDetails: ["Teslim yöntemi", "Lisans/kullanım hakkı", "İade kuralı", "Destek süresi"],
     partnerHint: "Teslim ve kullanım hakkı şartları yazılı olmalı."
+  },
+  {
+    key: "Telefon & Aksesuar",
+    label: "Telefon & Aksesuar",
+    shortLabel: "Telefon",
+    icon: "cellphone",
+    subcategories: ["Telefon", "Kılıf", "Şarj & kablo", "Powerbank", "Ekran koruyucu"],
+    requiredDetails: ["Model/uyumluluk", "Garanti", "Kutu içeriği", "Renk"],
+    partnerHint: "Model ve uyumluluk bilgisi paylaşımda net olmalı."
+  },
+  {
+    key: "Bilgisayar & Oyun",
+    label: "Bilgisayar & Oyun",
+    shortLabel: "Bilgisayar",
+    icon: "laptop",
+    subcategories: ["Dizüstü", "Bileşen", "Oyun konsolu", "Klavye & mouse", "Aksesuar"],
+    requiredDetails: ["Teknik özellik", "Garanti", "Kondisyon", "Kutu içeriği"],
+    partnerHint: "Teknik özellik ve performans bilgisi alıcıyı ikna eder."
+  },
+  {
+    key: "Ayakkabı & Çanta",
+    label: "Ayakkabı & Çanta",
+    shortLabel: "Ayakkabı",
+    icon: "bag-personal-outline",
+    subcategories: ["Spor ayakkabı", "Bot", "Sırt çantası", "El çantası", "Cüzdan"],
+    requiredDetails: ["Numara/ölçü", "Malzeme", "Renk", "İade şartı"],
+    partnerHint: "Numara, ölçü ve gerçek fotoğraf satışı hızlandırır."
+  },
+  {
+    key: "Takı & Aksesuar",
+    label: "Takı & Aksesuar",
+    shortLabel: "Takı",
+    icon: "diamond-stone",
+    subcategories: ["Kolye", "Yüzük", "Bileklik", "Küpe", "Saat"],
+    requiredDetails: ["Malzeme/ayar", "Ölçü", "Sertifika", "İade şartı"],
+    partnerHint: "Malzeme ve ölçü bilgisi güven verir."
+  },
+  {
+    key: "Mutfak",
+    label: "Mutfak",
+    shortLabel: "Mutfak",
+    icon: "silverware-fork-knife",
+    subcategories: ["Pişirme", "Saklama", "Küçük ev aleti", "Sofra", "Düzenleme"],
+    requiredDetails: ["Ölçü/kapasite", "Malzeme", "Garanti", "Teslimat"],
+    partnerHint: "Kapasite ve kullanım senaryosu açık yazılmalı."
+  },
+  {
+    key: "Dekorasyon",
+    label: "Dekorasyon",
+    shortLabel: "Dekor",
+    icon: "sofa-outline",
+    subcategories: ["Aydınlatma", "Tablo", "Vazo", "Tekstil", "Aksesuar"],
+    requiredDetails: ["Ölçü", "Malzeme", "Renk", "Teslimat notu"],
+    partnerHint: "Ölçü ve mekân görseli yanlış talebi azaltır."
+  },
+  {
+    key: "Koleksiyon",
+    label: "Koleksiyon",
+    shortLabel: "Koleksiyon",
+    icon: "trophy-outline",
+    subcategories: ["Figür", "Pul & para", "Kart", "Plak", "Antika"],
+    requiredDetails: ["Orijinallik", "Kondisyon", "Yıl", "Sertifika"],
+    partnerHint: "Orijinallik ve kondisyon kanıtı değeri artırır."
+  },
+  {
+    key: "Ofis & Kırtasiye",
+    label: "Ofis & Kırtasiye",
+    shortLabel: "Ofis",
+    icon: "pencil-box-outline",
+    subcategories: ["Kırtasiye", "Ofis mobilya", "Yazıcı & sarf", "Defter", "Düzenleyici"],
+    requiredDetails: ["Ölçü", "Adet/paket", "Uyumluluk", "Teslimat"],
+    partnerHint: "Paket adedi ve uyumluluk bilgisi net olmalı."
+  },
+  {
+    key: "Evcil Hayvan",
+    label: "Evcil Hayvan",
+    shortLabel: "Evcil",
+    icon: "paw",
+    subcategories: ["Mama", "Oyuncak", "Tasma", "Bakım", "Yatak & kafes"],
+    requiredDetails: ["Tür/ırk uyumu", "Yaş", "İçerik", "Son kullanma"],
+    partnerHint: "Tür uyumu ve içerik bilgisi güven verir."
   }
 ];
 

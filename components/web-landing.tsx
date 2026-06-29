@@ -6,6 +6,7 @@ import { Pressable, Text, TextInput, View } from "react-native";
 import { colors } from "@/components/colors";
 import { listingCategories } from "@/lib/categories";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useStore } from "@/lib/use-store";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -19,48 +20,69 @@ const CATEGORY_PALETTE: Array<[string, string]> = [
   [colors.warningSoft, colors.warning]
 ];
 
-/** Desktop category showcase — quick browse entry points into the feed. */
+/** Desktop category showcase — deep marketplace feel: icon, sub-hints, count. */
 export function WebCategories() {
   const { language } = useLanguage();
+  const { listings } = useStore();
+  const counts = listings.reduce<Record<string, number>>((acc, listing) => {
+    if (listing.status === "active") acc[listing.category] = (acc[listing.category] ?? 0) + 1;
+    return acc;
+  }, {});
+
   return (
     <View dataSet={{ reveal: "1" }} style={{ gap: 16, marginTop: 8 }}>
-      <View style={{ gap: 2 }}>
-        <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>Kategoriler</Text>
-        <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>İlgilendiğin alana göre ürünleri keşfet.</Text>
+      <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between" }}>
+        <View style={{ gap: 2 }}>
+          <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>Kategoriler</Text>
+          <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>İlgilendiğin alana göre ürünleri keşfet — {listingCategories.length} kategori.</Text>
+        </View>
+        <Link href="/explore" asChild>
+          <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+            <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>Tümünü gör</Text>
+            <MaterialCommunityIcons name="arrow-right" size={18} color={colors.primaryDark} />
+          </Pressable>
+        </Link>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
         {listingCategories.map((category, index) => {
           const [tileBg, tileColor] = CATEGORY_PALETTE[index % CATEGORY_PALETTE.length];
+          const count = counts[category.key] ?? 0;
+          const hints = category.subcategories.slice(0, 3).join(" · ");
           return (
             <Link key={category.key} href={{ pathname: "/explore", params: { q: category.label } }} asChild>
               <Pressable
                 dataSet={{ card: "listing" }}
                 style={{
-                  alignItems: "center",
                   backgroundColor: colors.surface,
                   borderColor: colors.line,
                   borderRadius: 18,
                   borderWidth: 1,
-                  flexBasis: 230,
-                  flexDirection: "row",
+                  flexBasis: 248,
                   flexGrow: 1,
-                  gap: 14,
-                  paddingHorizontal: 18,
-                  paddingVertical: 18
+                  gap: 12,
+                  minHeight: 132,
+                  padding: 18
                 }}
               >
-                <View style={{ alignItems: "center", backgroundColor: tileBg, borderRadius: 14, height: 48, justifyContent: "center", width: 48 }}>
-                  <MaterialCommunityIcons name={category.icon} size={26} color={tileColor} />
-                </View>
-                <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 15, fontWeight: "800" }}>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+                  <View style={{ alignItems: "center", backgroundColor: tileBg, borderRadius: 14, height: 46, justifyContent: "center", width: 46 }}>
+                    <MaterialCommunityIcons name={category.icon} size={24} color={tileColor} />
+                  </View>
+                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "800" }}>
                     {translateCopy(category.label, language)}
                   </Text>
-                  <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>
-                    {category.subcategories.length}+ alt kategori
-                  </Text>
+                  <MaterialCommunityIcons name="chevron-right" size={20} color={colors.subtle} />
                 </View>
-                <MaterialCommunityIcons name="chevron-right" size={20} color={colors.subtle} />
+                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>
+                  {hints}
+                </Text>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 6, marginTop: "auto" }}>
+                  <View style={{ backgroundColor: tileBg, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+                    <Text style={{ color: tileColor, fontSize: 12, fontWeight: "900" }}>
+                      {count > 0 ? `${count} ilan` : `${category.subcategories.length} alt kategori`}
+                    </Text>
+                  </View>
+                </View>
               </Pressable>
             </Link>
           );

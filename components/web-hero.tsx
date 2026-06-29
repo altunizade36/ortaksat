@@ -30,15 +30,15 @@ export function WebHero({
       dataSet={{ heroBg: "1", reveal: "1" }}
       style={{
         backgroundColor: colors.primary,
-        borderRadius: 24,
+        borderRadius: 22,
         flexDirection: "row",
         gap: 28,
         overflow: "hidden",
-        paddingHorizontal: 40,
-        paddingVertical: 40
+        paddingHorizontal: 36,
+        paddingVertical: 30
       }}
     >
-      <View style={{ flex: 1.3, gap: 18, justifyContent: "center", minWidth: 0 }}>
+      <View style={{ flex: 1.3, gap: 14, justifyContent: "center", minWidth: 0 }}>
         <View
           style={{
             alignSelf: "flex-start",
@@ -55,10 +55,10 @@ export function WebHero({
           </Text>
         </View>
 
-        <Text style={{ color: "#FFFFFF", fontSize: 44, fontWeight: "900", lineHeight: 50 }}>
+        <Text style={{ color: "#FFFFFF", fontSize: 38, fontWeight: "900", lineHeight: 44 }}>
           {t("heroTitle")}
         </Text>
-        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 18, fontWeight: "600", lineHeight: 26, maxWidth: 560 }}>
+        <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 16, fontWeight: "600", lineHeight: 23, maxWidth: 540 }}>
           {t("heroBody")}
         </Text>
 
@@ -98,23 +98,23 @@ export function WebHero({
         </View>
       </View>
 
-      <View style={{ flex: 1, gap: 12, justifyContent: "center", minWidth: 220 }}>
+      <View style={{ flex: 1, gap: 10, justifyContent: "center", minWidth: 220 }}>
         {stats.map((stat) => (
           <View
             key={stat.label}
             style={{
               backgroundColor: "rgba(255,255,255,0.12)",
               borderColor: "rgba(255,255,255,0.22)",
-              borderRadius: 16,
+              borderRadius: 14,
               borderWidth: 1,
               flexDirection: "row",
               alignItems: "center",
               gap: 14,
-              paddingHorizontal: 20,
-              paddingVertical: 16
+              paddingHorizontal: 18,
+              paddingVertical: 12
             }}
           >
-            <Text style={{ color: "#FFFFFF", fontSize: 30, fontWeight: "900", fontVariant: ["tabular-nums"] }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 26, fontWeight: "900", fontVariant: ["tabular-nums"] }}>
               {stat.value}
             </Text>
             <Text style={{ color: "rgba(255,255,255,0.88)", fontSize: 14, fontWeight: "700", flex: 1 }}>
