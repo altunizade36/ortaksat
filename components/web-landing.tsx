@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { listingCategories } from "@/lib/categories";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
@@ -20,25 +21,28 @@ const CATEGORY_PALETTE: Array<[string, string]> = [
   [colors.warningSoft, colors.warning]
 ];
 
-/** Desktop category showcase — deep marketplace feel: icon, sub-hints, count. */
+/** Desktop category showcase — image-thumbnail tiles with listing counts. */
 export function WebCategories() {
   const { language } = useLanguage();
   const { listings } = useStore();
-  const counts = listings.reduce<Record<string, number>>((acc, listing) => {
-    if (listing.status === "active") acc[listing.category] = (acc[listing.category] ?? 0) + 1;
-    return acc;
-  }, {});
+  const counts: Record<string, number> = {};
+  const images: Record<string, string> = {};
+  for (const listing of listings) {
+    if (listing.status !== "active") continue;
+    counts[listing.category] = (counts[listing.category] ?? 0) + 1;
+    if (!images[listing.category] && listing.image) images[listing.category] = listing.image;
+  }
 
   return (
     <View dataSet={{ reveal: "1" }} style={{ gap: 16, marginTop: 8 }}>
       <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between" }}>
         <View style={{ gap: 2 }}>
           <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>Kategoriler</Text>
-          <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>İlgilendiğin alana göre ürünleri keşfet — {listingCategories.length} kategori.</Text>
+          <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>İlgilendiğin alanı seç, en iyi fırsatları kaçırma.</Text>
         </View>
         <Link href="/explore" asChild>
           <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>Tümünü gör</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>Tüm kategorileri gör</Text>
             <MaterialCommunityIcons name="arrow-right" size={18} color={colors.primaryDark} />
           </Pressable>
         </Link>
@@ -47,7 +51,7 @@ export function WebCategories() {
         {listingCategories.map((category, index) => {
           const [tileBg, tileColor] = CATEGORY_PALETTE[index % CATEGORY_PALETTE.length];
           const count = counts[category.key] ?? 0;
-          const hints = category.subcategories.slice(0, 3).join(" · ");
+          const image = images[category.key];
           return (
             <Link key={category.key} href={{ pathname: "/explore", params: { q: category.label } }} asChild>
               <Pressable
@@ -55,34 +59,28 @@ export function WebCategories() {
                 style={{
                   backgroundColor: colors.surface,
                   borderColor: colors.line,
-                  borderRadius: 18,
+                  borderRadius: 16,
                   borderWidth: 1,
-                  flexBasis: 248,
+                  flexBasis: 168,
                   flexGrow: 1,
-                  gap: 12,
-                  minHeight: 132,
-                  padding: 18
+                  gap: 10,
+                  overflow: "hidden",
+                  padding: 12
                 }}
               >
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-                  <View style={{ alignItems: "center", backgroundColor: tileBg, borderRadius: 14, height: 46, justifyContent: "center", width: 46 }}>
-                    <MaterialCommunityIcons name={category.icon} size={24} color={tileColor} />
-                  </View>
-                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "800" }}>
-                    {translateCopy(category.label, language)}
-                  </Text>
-                  <MaterialCommunityIcons name="chevron-right" size={20} color={colors.subtle} />
+                <View style={{ alignItems: "center", backgroundColor: tileBg, borderRadius: 12, height: 92, justifyContent: "center", overflow: "hidden", width: "100%" }}>
+                  {image ? (
+                    <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
+                  ) : (
+                    <MaterialCommunityIcons name={category.icon} size={34} color={tileColor} />
+                  )}
                 </View>
-                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>
-                  {hints}
+                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>
+                  {translateCopy(category.label, language)}
                 </Text>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 6, marginTop: "auto" }}>
-                  <View style={{ backgroundColor: tileBg, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
-                    <Text style={{ color: tileColor, fontSize: 12, fontWeight: "900" }}>
-                      {count > 0 ? `${count} ilan` : `${category.subcategories.length} alt kategori`}
-                    </Text>
-                  </View>
-                </View>
+                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
+                  {count > 0 ? `${count} ilan` : `${category.subcategories.length} alt kategori`}
+                </Text>
               </Pressable>
             </Link>
           );
@@ -261,100 +259,112 @@ export function WebFooter() {
   const [email, setEmail] = useState("");
   const columns: Array<{ heading: string; links: Array<{ label: string; href: Href }> }> = [
     {
-      heading: "Pazar",
+      heading: "Pazaryeri",
       links: [
-        { label: t("home"), href: "/" },
-        { label: t("explore"), href: "/explore" },
-        { label: t("createListing"), href: "/create" },
-        { label: t("partnerSales"), href: "/partner" }
+        { label: "Keşfet", href: "/explore" },
+        { label: "İlan Ver", href: "/create" },
+        { label: "Ortak Satış", href: "/partner" },
+        { label: "Kategoriler", href: "/explore" }
       ]
     },
     {
-      heading: "Kategoriler",
-      links: listingCategories.slice(0, 5).map((c) => ({ label: c.label, href: { pathname: "/explore", params: { q: c.label } } as Href }))
-    },
-    {
-      heading: "Yardım",
+      heading: "Destek",
       links: [
-        { label: "Nasıl çalışır?", href: "/nasil-calisir" },
-        { label: "SSS", href: "/sss" },
-        { label: t("legalSupport"), href: "/legal" }
+        { label: "Nasıl Çalışır?", href: "/nasil-calisir" },
+        { label: "Yardım Merkezi", href: "/sss" },
+        { label: "Güvenlik", href: "/trust" },
+        { label: "İletişim", href: "/legal" }
       ]
     },
     {
-      heading: "Kurumsal",
+      heading: "Hesabım",
       links: [
-        { label: "Hakkımızda", href: "/hakkimizda" },
-        { label: t("trustCenter"), href: "/trust" },
-        { label: t("menu"), href: "/menu" }
+        { label: "Hesabım", href: "/profile" },
+        { label: "Ortak Sözleşmem", href: "/legal" },
+        { label: "Komisyonlarım", href: "/partner" },
+        { label: "Favorilerim", href: "/favorites" }
+      ]
+    },
+    {
+      heading: "Yasal",
+      links: [
+        { label: "Kullanım Şartları", href: "/legal" },
+        { label: "Gizlilik Politikası", href: "/legal" },
+        { label: "KVKK", href: "/legal" },
+        { label: "Çerez Politikası", href: "/legal" }
       ]
     }
   ];
 
   const socials: IconName[] = ["instagram", "whatsapp", "twitter", "youtube"];
+  const payments = ["VISA", "Mastercard", "troy", "SSL Secured"];
+  const light = "rgba(255,255,255,0.78)";
 
   return (
     <View
       style={{
-        borderTopColor: colors.line,
-        borderTopWidth: 1,
-        flexDirection: "row",
-        flexWrap: "wrap",
-        gap: 40,
-        marginTop: 24,
-        paddingBottom: 16,
-        paddingTop: 36
+        backgroundColor: colors.primaryDark,
+        marginBottom: -100,
+        marginHorizontal: -20,
+        marginTop: 28,
+        paddingBottom: 100,
+        paddingHorizontal: 32,
+        paddingTop: 40
       }}
     >
-      <View style={{ flex: 1.6, gap: 14, minWidth: 280 }}>
-        <Text style={{ color: colors.primaryDark, fontSize: 24, fontWeight: "900" }}>ortaksat</Text>
-        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600", lineHeight: 21, maxWidth: 380 }}>
-          {t("appSlogan")}. İlanını aç, ortakların paylaşsın, satışta komisyon kazan.
-        </Text>
-        <View style={{ gap: 8, maxWidth: 380 }}>
-          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Bültene abone ol</Text>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-            <TextInput
-              value={email}
-              onChangeText={setEmail}
-              placeholder="E-posta adresin"
-              placeholderTextColor={colors.muted}
-              style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600", height: 44, paddingHorizontal: 14 }}
-            />
-            <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Abone ol</Text>
-            </Pressable>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 40 }}>
+        <View style={{ flex: 1.6, gap: 14, minWidth: 280 }}>
+          <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>ortaksat</Text>
+          <Text style={{ color: light, fontSize: 14, fontWeight: "600", lineHeight: 21, maxWidth: 380 }}>
+            {t("appSlogan")}. İlanını aç, ortakların paylaşsın, satışta komisyon kazan.
+          </Text>
+          <View style={{ gap: 8, maxWidth: 380 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Bültene abone ol</Text>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <TextInput
+                value={email}
+                onChangeText={setEmail}
+                placeholder="E-posta adresin"
+                placeholderTextColor="rgba(255,255,255,0.55)"
+                style={{ backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.25)", borderRadius: 10, borderWidth: 1, color: "#FFFFFF", flex: 1, fontSize: 14, fontWeight: "600", height: 44, paddingHorizontal: 14 }}
+              />
+              <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Abone Ol</Text>
+              </Pressable>
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 2 }}>
+            {socials.map((icon) => (
+              <View key={icon} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.22)", borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", width: 38 }}>
+                <MaterialCommunityIcons name={icon} size={19} color="#FFFFFF" />
+              </View>
+            ))}
           </View>
         </View>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 2 }}>
-          {socials.map((icon) => (
-            <View key={icon} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", width: 38 }}>
-              <MaterialCommunityIcons name={icon} size={19} color={colors.primaryDark} />
+        {columns.map((column) => (
+          <View key={column.heading} style={{ gap: 10, minWidth: 150 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{column.heading}</Text>
+            {column.links.map((link) => (
+              <Link key={link.label} href={link.href} asChild>
+                <Pressable>
+                  <Text style={{ color: light, fontSize: 14, fontWeight: "600" }}>{link.label}</Text>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
+        ))}
+      </View>
+      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginTop: 28, paddingTop: 18 }}>
+        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" }}>
+          © 2024 Ortak Sat. Tüm hakları saklıdır.
+        </Text>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          {payments.map((p) => (
+            <View key={p} style={{ backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{p}</Text>
             </View>
           ))}
         </View>
-      </View>
-      {columns.map((column) => (
-        <View key={column.heading} style={{ gap: 10, minWidth: 150 }}>
-          <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900", textTransform: "uppercase", letterSpacing: 0.5 }}>
-            {column.heading}
-          </Text>
-          {column.links.map((link) => (
-            <Link key={link.label} href={link.href} asChild>
-              <Pressable>
-                <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700" }}>{link.label}</Text>
-              </Pressable>
-            </Link>
-          ))}
-        </View>
-      ))}
-      <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between", paddingTop: 16, width: "100%" }}>
-        <Text style={{ color: colors.subtle, fontSize: 13, fontWeight: "600" }}>
-          © 2026 ortaksat · Tüm hakları saklıdır
-        </Text>
-        <Text style={{ color: colors.subtle, fontSize: 13, fontWeight: "700" }}>
-          KVKK · Gizlilik · Mesafeli Satış — Yasal ve Destek sayfasında
-        </Text>
       </View>
     </View>
   );
