@@ -14,7 +14,7 @@ import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
-type FeedFilter = "all" | "open" | "hot" | "new";
+type FeedFilter = "all" | "open" | "hot" | "new" | "commission";
 const INITIAL_EXPLORE_ITEMS = 20;
 const EXPLORE_PAGE_SIZE = 16;
 
@@ -39,6 +39,7 @@ export default function ExploreScreen() {
   const [visibleCount, setVisibleCount] = useState(INITIAL_EXPLORE_ITEMS);
   const feedFilters: Array<{ key: FeedFilter; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
     { key: "all", label: t("all"), icon: "grid" },
+    { key: "commission", label: "Yüksek komisyon", icon: "cash-plus" },
     { key: "open", label: t("instantPartner"), icon: "flash" },
     { key: "hot", label: t("trend"), icon: "fire" },
     { key: "new", label: t("newest"), icon: "clock-outline" }
@@ -68,7 +69,7 @@ export default function ExploreScreen() {
         const haystack = searchKey([listing.title, listing.category, listing.location, listing.description, listing.tags.join(" "), owner?.name].filter(Boolean).join(" "));
         return tokens.every((token) => haystack.includes(token));
       })
-      .sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));
+      .sort((a, b) => (filter === "commission" ? commissionAmount(b) - commissionAmount(a) : exploreScore(b, seed) - exploreScore(a, seed)));
 
     if (filtered.length || tokens.length > 0 || filter !== "all") return filtered;
     return marketplaceListings.sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));
