@@ -245,7 +245,7 @@ export default function ExploreScreen() {
         </View>
 
         {/* Toolbar */}
-        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingVertical: 10, zIndex: 20 }}>
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingVertical: 10, position: "relative", zIndex: 50 }}>
           <Pressable
             onPress={() => { setPriceRange(""); setMinCommission(0); setCity(""); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setFilter("all"); }}
             style={{ alignItems: "center", backgroundColor: hasPanelFilter ? colors.primarySoft : colors.surfaceAlt, borderColor: hasPanelFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
@@ -291,7 +291,7 @@ export default function ExploreScreen() {
         </View>
 
         {/* Main + sidebar */}
-        <View style={{ flexDirection: "row", gap: 24, alignItems: "flex-start" }}>
+        <View style={{ flexDirection: "row", gap: 24, alignItems: "flex-start", position: "relative", zIndex: 1 }}>
           <View style={{ flex: 1, gap: 14, minWidth: 0 }}>
             <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between" }}>
               <View style={{ gap: 2 }}>
@@ -596,7 +596,7 @@ function FilterDropdown({ label, value, options, onSelect, searchable }: { label
     setQuery("");
   }
   return (
-    <View style={{ position: "relative", zIndex: open ? 100 : 1 }}>
+    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
       <Pressable
         onPress={() => setOpen((o) => !o)}
         style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}

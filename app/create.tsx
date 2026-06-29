@@ -311,7 +311,7 @@ export default function CreateListingScreen() {
 
           <CounterField label="İlan Başlığı" required value={title} onChangeText={(v) => setTitle(v.slice(0, 80))} placeholder="Örn. iPhone 15 Pro 256GB Titanyum Mavi" max={80} />
 
-          <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+          <View style={isWideWeb ? { flexDirection: "row", gap: 12, position: "relative", zIndex: 60 } : { gap: 14 }}>
             <View style={{ flex: 1 }}>
               <SelectField label="Kategori" required value={category} placeholder="Seçiniz" options={listingCategories.map((c) => ({ label: c.label, value: c.key }))} onSelect={(v) => { setCategory(String(v)); setSubcategory(""); }} />
             </View>
@@ -320,7 +320,7 @@ export default function CreateListingScreen() {
             </View>
           </View>
 
-          <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+          <View style={isWideWeb ? { flexDirection: "row", gap: 12, position: "relative", zIndex: 50 } : { gap: 14 }}>
             <View style={{ flex: 1.4 }}>
               <FieldLabel label="Açıklama" required />
               <RichToolbar />
@@ -335,7 +335,7 @@ export default function CreateListingScreen() {
               <Text style={{ alignSelf: "flex-end", color: colors.subtle, fontSize: 11, fontWeight: "700", marginTop: 4 }}>{description.length}/2000</Text>
             </View>
             <View style={{ flex: 1, gap: 14 }}>
-              <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+              <View style={isWideWeb ? { flexDirection: "row", gap: 12, position: "relative", zIndex: 3 } : { gap: 14 }}>
                 <View style={{ flex: 1 }}>
                   <SelectField label="Şehir" required value={location} placeholder="Seçiniz" clearable options={CITY_OPTIONS.map((c) => ({ label: c, value: c }))} onSelect={(v) => setLocation(String(v))} />
                 </View>
@@ -343,7 +343,7 @@ export default function CreateListingScreen() {
                   <CounterField label="İlçe" value={district} onChangeText={setDistrict} placeholder="Örn. Kadıköy" />
                 </View>
               </View>
-              <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+              <View style={isWideWeb ? { flexDirection: "row", gap: 12, position: "relative", zIndex: 2 } : { gap: 14 }}>
                 <View style={{ flex: 1 }}>
                   <SelectField label="Ürün Durumu" required value={condition} placeholder="Seçiniz" options={[{ label: "Sıfır", value: "Sıfır" }, { label: "Yenilenmiş", value: "Yenilenmiş" }, { label: "İkinci el", value: "İkinci el" }]} onSelect={(v) => setCondition(String(v))} />
                 </View>
@@ -377,7 +377,7 @@ export default function CreateListingScreen() {
             </View>
           </View>
 
-          <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+          <View style={isWideWeb ? { flexDirection: "row", gap: 12, position: "relative", zIndex: 20 } : { gap: 14 }}>
             <View style={{ flex: 1 }}>
               <SelectField label="Garanti Durumu" value={warrantyStatus} placeholder="Seçiniz" options={[{ label: "Garantili", value: "Garantili" }, { label: "Garantisiz", value: "Garantisiz" }]} onSelect={(v) => setWarrantyStatus(String(v))} />
             </View>
@@ -959,7 +959,7 @@ function SelectField({ label, required, value, placeholder, options, onSelect, c
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
   return (
-    <View style={{ position: "relative", zIndex: open ? 50 : 1 }}>
+    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
       <FieldLabel label={label} required={required} />
       <Pressable
         onPress={() => setOpen((o) => !o)}
