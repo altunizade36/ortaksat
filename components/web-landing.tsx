@@ -305,12 +305,11 @@ export function WebFooter() {
     <View
       style={{
         backgroundColor: colors.primaryDark,
-        marginBottom: -100,
         marginHorizontal: -20,
         marginTop: 24,
-        paddingBottom: 100,
+        paddingBottom: 20,
         paddingHorizontal: 32,
-        paddingTop: 26
+        paddingTop: 24
       }}
     >
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 32 }}>
@@ -355,9 +354,9 @@ export function WebFooter() {
           </View>
         ))}
       </View>
-      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginTop: 18, paddingTop: 14 }}>
+      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginTop: 16, paddingTop: 14 }}>
         <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" }}>
-          © 2024 Ortak Sat. Tüm hakları saklıdır.
+          © 2026 OrtakSat. Tüm hakları saklıdır.
         </Text>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
           {payments.map((p) => (
