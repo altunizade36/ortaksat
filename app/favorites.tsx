@@ -24,6 +24,9 @@ export default function FavoritesScreen() {
   const [query, setQuery] = useState("");
   const [favTab, setFavTab] = useState<"all" | "open" | "highcomm" | "near" | "recent">("all");
   const [alarms, setAlarms] = useState<Record<string, boolean>>({ a: true, b: true, c: false });
+  const [newListOpen, setNewListOpen] = useState(false);
+  const [newListName, setNewListName] = useState("");
+  const [extraLists, setExtraLists] = useState<string[]>([]);
   const horizontalPadding = 12;
   const gap = 8;
   const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 3 }).cardWidth;
@@ -129,10 +132,25 @@ export default function FavoritesScreen() {
                   {l.active ? <MaterialCommunityIcons name="check-circle" size={16} color={colors.primary} /> : <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{l.count} ilan</Text>}
                 </View>
               ))}
-              <View style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 6, paddingVertical: 10 }}>
-                <MaterialCommunityIcons name="plus" size={16} color={colors.primary} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Yeni liste oluştur</Text>
-              </View>
+              {extraLists.map((name) => (
+                <View key={name} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 7 }}>
+                  <MaterialCommunityIcons name="playlist-star" size={18} color={colors.muted} />
+                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{name}</Text>
+                  <Pressable onPress={() => setExtraLists((s) => s.filter((x) => x !== name))} hitSlop={8}><MaterialCommunityIcons name="close" size={15} color={colors.subtle} /></Pressable>
+                </View>
+              ))}
+              <Pressable onPress={() => setNewListOpen((v) => !v)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 6, opacity: pressed ? 0.7 : 1, paddingVertical: 10 })}>
+                <MaterialCommunityIcons name={newListOpen ? "close" : "plus"} size={16} color={colors.primary} />
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{newListOpen ? "Vazgeç" : "Yeni liste oluştur"}</Text>
+              </Pressable>
+              {newListOpen ? (
+                <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
+                  <TextInput value={newListName} onChangeText={setNewListName} placeholder="Liste adı" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, paddingHorizontal: 12, paddingVertical: 9 }} />
+                  <Pressable onPress={() => { if (newListName.trim()) { setExtraLists((s) => [...s, newListName.trim()]); setNewListName(""); setNewListOpen(false); } }} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, justifyContent: "center", paddingHorizontal: 14 }}>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Ekle</Text>
+                  </Pressable>
+                </View>
+              ) : null}
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>

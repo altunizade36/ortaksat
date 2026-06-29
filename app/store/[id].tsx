@@ -28,6 +28,7 @@ export default function StoreScreen() {
   const { currentUser, findUser, listings, partnerships, leads, reports, reviews, sales, startConversation } = useStore();
   const [filter, setFilter] = useState<StoreFilter>("active");
   const [tab, setTab] = useState<ProfileTab>("about");
+  const [following, setFollowing] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const seller = id ? findUser(id) : undefined;
   const isOwnStore = seller?.id === currentUser.id;
@@ -135,7 +136,9 @@ export default function StoreScreen() {
                 ) : (
                   <Pressable onPress={messageSeller} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="message-text-outline" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Mesaj gönder</Text></Pressable>
                 )}
-                <Pressable style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 11 }}><MaterialCommunityIcons name="account-plus-outline" size={17} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Takip et</Text></Pressable>
+                {!isOwnStore ? (
+                  <Pressable onPress={() => setFollowing((v) => !v)} style={{ alignItems: "center", backgroundColor: following ? colors.primarySoft : colors.surface, borderColor: following ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 11 }}><MaterialCommunityIcons name={following ? "account-check" : "account-plus-outline"} size={17} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{following ? "Takip ediliyor" : "Takip et"}</Text></Pressable>
+                ) : null}
               </View>
             </View>
 
@@ -311,7 +314,9 @@ export default function StoreScreen() {
                 ) : (
                   <Pressable onPress={messageSeller} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="message-text-outline" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Mesaj gönder</Text></Pressable>
                 )}
-                <Pressable style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="flag-outline" size={17} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Şikayet et</Text></Pressable>
+                <Link href="/trust" asChild>
+                  <Pressable style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="flag-outline" size={17} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Şikayet et</Text></Pressable>
+                </Link>
               </View>
             </View>
           </View>

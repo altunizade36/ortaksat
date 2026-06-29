@@ -273,14 +273,18 @@ export default function MessagesScreen() {
               </View>
 
               <View style={{ gap: 8 }}>
-                <Pressable style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}>
-                  <MaterialCommunityIcons name="handshake-outline" size={17} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Ortaklık öner</Text>
-                </Pressable>
-                <Pressable style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}>
-                  <MaterialCommunityIcons name="flag-outline" size={17} color={colors.muted} />
-                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Şikayet et</Text>
-                </Pressable>
+                <Link href="/partner" asChild>
+                  <Pressable style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}>
+                    <MaterialCommunityIcons name="handshake-outline" size={17} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Ortaklık öner</Text>
+                  </Pressable>
+                </Link>
+                <Link href="/trust" asChild>
+                  <Pressable style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}>
+                    <MaterialCommunityIcons name="flag-outline" size={17} color={colors.muted} />
+                    <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Şikayet et</Text>
+                  </Pressable>
+                </Link>
               </View>
             </View>
           ) : null}
