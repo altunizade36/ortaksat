@@ -355,7 +355,7 @@ export default function ExploreScreen() {
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Neden Ortaksat?</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
                 {[
-                  { icon: "shield-check" as const, value: "%100", label: "Güvenli Ödeme" },
+                  { icon: "shield-check" as const, value: "%100", label: "Güvenli İletişim" },
                   { icon: "headset" as const, value: "7/24", label: "Canlı Destek" },
                   { icon: "account-group" as const, value: "10.000+", label: "Aktif Satıcı" },
                   { icon: "handshake" as const, value: "200.000+", label: "Başarılı Ortaklık" }
