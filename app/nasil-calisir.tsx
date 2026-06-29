@@ -45,7 +45,7 @@ const ROLES: Role[] = [
       { icon: "link-variant", title: "Onay Alın ve Linkinizi Oluşturun", body: "Onaylandıktan sonra size özel paylaşım linkiniz oluşur." },
       { icon: "share-variant-outline", title: "Linkinizi Paylaşın", body: "Linkinizi sosyal medya, WhatsApp veya dilediğiniz kanallarda paylaşın." },
       { icon: "account-arrow-right-outline", title: "Alıcıyı Getirin", body: "Alıcı linkiniz üzerinden ürüne ulaşır ve satın alır." },
-      { icon: "cash-plus", title: "Komisyon Kazanın", body: "Satış tamamlandığında komisyonunuz bakiyenize eklenir." }
+      { icon: "cash-plus", title: "Komisyon Kazanın", body: "Satış tamamlandığında komisyonun panelde kayda geçer; satıcı, anlaştığınız kanaldan doğrudan sana öder." }
     ],
     footer: "Ne kadar çok satış, o kadar çok kazanç!"
   },
@@ -57,17 +57,17 @@ const ROLES: Role[] = [
     accent: colors.gold,
     steps: [
       { icon: "magnify", title: "Ürünü Keşfedin", body: "Size önerilen veya link ile gelen ürünü inceleyin." },
-      { icon: "shield-check-outline", title: "Güvenle Satın Alın", body: "Ödeme, OrtakSat güvencesiyle korunur." },
-      { icon: "truck-fast-outline", title: "Sipariş Takibini Yapın", body: "Siparişinizin durumunu anlık olarak takip edin." },
-      { icon: "package-variant-closed", title: "Ürünü Teslim Alın", body: "Ürün size ulaştığında teslimat onayını verin." },
-      { icon: "headset", title: "Destek Alın (Gerekirse)", body: "Her aşamada destek ekibimiz yanınızda." }
+      { icon: "message-text-outline", title: "Satıcıyla İletişime Geçin", body: "Talep oluşturun; satıcıyla mesajlaşarak ürünü netleştirin." },
+      { icon: "handshake-outline", title: "Ödeme & Teslimatı Planlayın", body: "Ödeme ve teslimatı satıcıyla kendi aranızda kararlaştırırsınız." },
+      { icon: "package-variant-closed", title: "Ürünü Teslim Alın", body: "Anlaştığınız şekilde ürünü teslim alın." },
+      { icon: "star-outline", title: "Satıcıyı Değerlendirin", body: "Deneyiminizi puanlayarak topluluğa katkı sağlayın." }
     ],
-    footer: "Güvenli alışveriş, memnuniyet garantisi."
+    footer: "Doğrulanmış satıcılarla güvenli iletişim."
   }
 ];
 
 const FAQ: Array<{ q: string; a: string }> = [
-  { q: "Komisyon ne zaman ödenir?", a: "Komisyon, satış satıcı tarafından onaylandığında ortak panelinde görünür ve bakiyene eklenir. İlk sürümde takip panelden yapılır." },
+  { q: "Komisyon ne zaman ve nasıl ödenir?", a: "Komisyon, satışı satıcı onayladığında ortak panelinde “onaylandı” olarak görünür. Ödemeyi satıcı, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sana yapar. Ortaksat para almaz veya tutmaz; yalnızca kaydı tutar." },
   { q: "Komisyon oranı nasıl belirlenir?", a: "İlanı açan satıcı, ürün başına yüzde (%) veya sabit (₺) komisyonu kendisi belirler. Ortak, paylaşmadan önce kazancını ilanda görür." },
   { q: "Ortak satıcı taleplerini nasıl yönetirim?", a: "Satıcı panelinden gelen ortaklık başvurularını inceleyip onaylayabilir veya reddedebilirsin. Onaylı ortağa özel referans linki oluşur." },
   { q: "Ödeme yöntemleri nelerdir?", a: "İlk sürümde ödeme ve teslimat alıcı ile satıcı arasında yapılır; komisyon şartı ve süreç sistemde kayıt altına alınır." },

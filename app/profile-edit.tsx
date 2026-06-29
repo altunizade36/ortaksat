@@ -189,9 +189,13 @@ export default function ProfileEditScreen() {
             {section === "store" ? (
               <View style={{ gap: 16 }}>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Mağaza & Ödeme</Text>
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Mağaza Bilgileri</Text>
                   <DeskField label="Mağaza adı" value={storeName} onChangeText={setStoreName} icon="storefront-outline" />
-                  <DeskField label="IBAN (komisyon ödemeleri için)" value={iban} onChangeText={setIban} icon="bank-outline" placeholder="TR__ ____ ____ ____ ____ __" />
+                  <DeskField label="IBAN / ödeme bilgisi (opsiyonel)" value={iban} onChangeText={setIban} icon="bank-outline" placeholder="TR__ ____ ____ ____ ____ __" />
+                  <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 12 }}>
+                    <MaterialCommunityIcons name="information-outline" size={17} color={colors.info} style={{ marginTop: 1 }} />
+                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>Ortaksat ödeme almaz veya tutmaz. Bu bilgiyi yalnızca, ortakların komisyonlarını sana doğrudan öderken kullanabilmesi için isteğe bağlı paylaşırsın.</Text>
+                  </View>
                   <Pressable style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 12 }}>
                     <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>Mağaza ayarlarını kaydet</Text>
                   </Pressable>

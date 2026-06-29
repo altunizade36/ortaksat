@@ -179,10 +179,10 @@ export default function ExploreScreen() {
       { key: "open", label: "Anında ortak", icon: "flash" }
     ];
     const trust = [
-      { icon: "shield-check" as const, label: "Komisyonlar güvence altında" },
+      { icon: "shield-check" as const, label: "Komisyon şartı kayıt altında" },
       { icon: "swap-horizontal" as const, label: "Şeffaf & güvenilir süreç" },
       { icon: "message-text-outline" as const, label: "Satıcıyla güvenli iletişim" },
-      { icon: "flash" as const, label: "Hızlı ödemeler" }
+      { icon: "account-check" as const, label: "Doğrulanmış satıcılar" }
     ];
     const sortOrder: SortMode[] = ["recommended", "priceAsc", "priceDesc", "commission", "new"];
     const visibleProducts = productListings.slice(0, productVisible);

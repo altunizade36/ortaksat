@@ -163,7 +163,7 @@ export default function PartnerScreen() {
               {[
                 { icon: "shield-check" as const, label: "Komisyon kayıt altında" },
                 { icon: "lock-check-outline" as const, label: "Şeffaf ve güvenli" },
-                { icon: "lightning-bolt-outline" as const, label: "Anında ödeme" },
+                { icon: "account-check-outline" as const, label: "Doğrulanmış satıcılar" },
                 { icon: "clock-outline" as const, label: "7/24 destek" }
               ].map((item) => (
                 <View key={item.label} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>

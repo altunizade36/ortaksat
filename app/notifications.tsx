@@ -31,14 +31,14 @@ type DeskNotif = { id: string; type: NotificationType; title: string; body: stri
 
 const SAMPLE: DeskNotif[] = [
   { id: "s1", type: "application", title: "Yeni ortaklık başvurusu", body: "Mehmet K., “Akıllı çocuk saati” ilanın için ortak satıcı olmak istiyor. Başvuruyu inceleyip onaylayabilirsin.", createdAt: "12 dk önce", group: "Bugün", real: false },
-  { id: "s2", type: "sale", title: "Tebrikler, yeni bir satış!", body: "“Taşınabilir blender” ilanın ortak Ayşe D. üzerinden satıldı. ₺181 komisyon hesabına işlendi.", createdAt: "48 dk önce", group: "Bugün", real: false },
+  { id: "s2", type: "sale", title: "Tebrikler, yeni bir satış!", body: "“Taşınabilir blender” ilanın ortak Ayşe D. üzerinden satıldı. ₺181 komisyon kaydın oluşturuldu.", createdAt: "48 dk önce", group: "Bugün", real: false },
   { id: "s3", type: "lead", title: "Yeni müşteri talebi", body: "“Minimal gümüş kolye” için bir alıcı iletişim talebi oluşturdu. 24 saat içinde dönüş yapman önerilir.", createdAt: "2 saat önce", group: "Bugün", real: false },
-  { id: "s4", type: "payout", title: "Komisyon ödemesi onaylandı", body: "Mayıs dönemi ₺2.450 tutarındaki komisyon ödemen onaylandı, 1-3 iş günü içinde IBAN'ına aktarılacak.", createdAt: "5 saat önce", group: "Bugün", real: false },
+  { id: "s4", type: "payout", title: "Komisyon onaylandı", body: "“Akıllı çocuk saati” satışını satıcı onayladı. ₺294 komisyonunu satıcıyla anlaştığınız kanaldan tahsil edebilirsin.", createdAt: "5 saat önce", group: "Bugün", real: false },
   { id: "s5", type: "message", title: "Yeni mesaj: Kaan Y.", body: "“Bebek bakım çantası stok durumu hakkında bilgi alabilir miyim?” mesajını yanıtlamayı unutma.", createdAt: "Dün, 21:14", group: "Bu hafta", real: false },
   { id: "s6", type: "application", title: "Başvuru onaylandı", body: "“Yüksek komisyonlu elektronik” kampanyasına ortak satıcı başvurun onaylandı. Paylaşım bağlantın hazır.", createdAt: "Dün, 16:02", group: "Bu hafta", real: false },
   { id: "s7", type: "sale", title: "Ortak satış gerçekleşti", body: "Paylaştığın bağlantı üzerinden 2 ürün satıldı. Toplam ₺372 komisyon kazandın.", createdAt: "Çar, 11:30", group: "Bu hafta", real: false },
   { id: "s8", type: "lead", title: "Talep hatırlatması", body: "“Köşe koltuk” talebine henüz dönüş yapmadın. Yanıt süresi performans puanını etkiler.", createdAt: "Sal, 09:45", group: "Bu hafta", real: false },
-  { id: "s9", type: "payout", title: "Nisan komisyonları ödendi", body: "₺1.980 tutarındaki nisan dönemi komisyon ödemen IBAN'ına başarıyla aktarıldı.", createdAt: "3 hafta önce", group: "Daha önce", real: false },
+  { id: "s9", type: "payout", title: "Komisyon tamamlandı", body: "“Köşe koltuk” satışının ₺945 komisyonunu satıcıdan aldığını onayladın. Kayıt kapatıldı.", createdAt: "3 hafta önce", group: "Daha önce", real: false },
   { id: "s10", type: "message", title: "Hoş geldin 👋", body: "Ortaksat'a hoş geldin! İlk ilanını oluştur ya da ortak satıcı olarak kazanmaya başla.", createdAt: "1 ay önce", group: "Daha önce", real: false }
 ];
 

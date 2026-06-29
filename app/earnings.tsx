@@ -72,8 +72,8 @@ export default function EarningsScreen() {
     ];
     const stats: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; sub: string }> = [
       { icon: "cash-multiple", tint: colors.successSoft, color: colors.success, value: money(totalCommission), title: "Toplam kazanç", sub: "Tüm dönemler" },
-      { icon: "wallet-outline", tint: colors.primarySoft, color: colors.primaryDark, value: money(paidCommission), title: "Ödenen komisyon", sub: "Hesabına aktarıldı" },
-      { icon: "clock-outline", tint: colors.goldSoft, color: colors.gold, value: money(pendingCommission), title: "Bekleyen komisyon", sub: "Onay sürecinde" },
+      { icon: "check-decagram-outline", tint: colors.primarySoft, color: colors.primaryDark, value: money(paidCommission), title: "Tahsil edilen", sub: "Satıcıdan aldıkların" },
+      { icon: "clock-outline", tint: colors.goldSoft, color: colors.gold, value: money(pendingCommission), title: "Tahsil edilecek", sub: "Onaylı, henüz alınmadı" },
       { icon: "trending-up", tint: colors.violetSoft, color: colors.violet, value: money(monthEarn), title: "Bu ay", sub: "Haziran 2026" }
     ];
 
@@ -82,7 +82,7 @@ export default function EarningsScreen() {
         <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 12 }}>
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Kazançlarım</Text>
-            <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Ortak satışlarından elde ettiğin komisyonları ve ödeme durumunu buradan takip et.</Text>
+            <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Ortak satışlarından kazandığın komisyonları takip et. Ödemeler satıcılarla aranızda yapılır; Ortaksat para tutmaz.</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 6 }}>
             {periods.map((p) => {
@@ -176,29 +176,23 @@ export default function EarningsScreen() {
           {/* Sidebar */}
           <View style={{ gap: 16, width: 300 }}>
             <View style={{ backgroundColor: colors.primaryDark, borderRadius: 16, gap: 10, padding: 18 }}>
-              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "700" }}>Ödenebilir bakiye</Text>
+              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13, fontWeight: "700" }}>Tahsil edilecek komisyon</Text>
               <Text style={{ color: "#FFFFFF", fontSize: 30, fontWeight: "900" }}>{money(pendingCommission)}</Text>
-              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "600" }}>İade süresi dolan komisyonlar ödemeye hazır.</Text>
-              <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", marginTop: 4, paddingVertical: 11 }}>
-                <MaterialCommunityIcons name="bank-transfer-out" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Ödeme talep et</Text>
-              </Pressable>
+              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 12, fontWeight: "600" }}>Onaylanan satışların komisyonu. Tutarı satıcıdan doğrudan tahsil edersin.</Text>
+              <Link href="/messages" asChild>
+                <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", marginTop: 4, paddingVertical: 11 }}>
+                  <MaterialCommunityIcons name="message-text-outline" size={18} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Satıcıya mesaj at</Text>
+                </Pressable>
+              </Link>
             </View>
 
-            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Ödeme yöntemi</Text>
-                <Link href="/profile-edit" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Düzenle</Text></Pressable></Link>
+            <View style={{ backgroundColor: colors.infoSoft, borderColor: colors.info, borderRadius: 16, borderWidth: 1, gap: 8, padding: 18 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <MaterialCommunityIcons name="information-outline" size={20} color={colors.info} />
+                <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Komisyon nasıl alınır?</Text>
               </View>
-              <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 12, flexDirection: "row", gap: 12, padding: 12 }}>
-                <MaterialCommunityIcons name="bank-outline" size={26} color={colors.primaryDark} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>TR** **** 4521</Text>
-                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{currentUser.name}</Text>
-                </View>
-                <MaterialCommunityIcons name="check-decagram" size={18} color={colors.success} />
-              </View>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>Komisyon ödemeleri her ayın 1'i ve 15'inde IBAN'ına aktarılır.</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 19 }}>Ortaksat para tutmaz veya transfer etmez. Komisyonunu satıcı, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sana öder. Ödemeyi aldığında satışı “Ödendi” olarak işaretle.</Text>
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
@@ -224,12 +218,12 @@ export default function EarningsScreen() {
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }}>
       <View style={{ gap: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>Kazançlarım</Text>
-        <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>Ortak satış komisyonların ve ödeme durumun.</Text>
+        <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>Ortak satış komisyonların. Ödeme satıcıyla aranızda yapılır; Ortaksat para tutmaz.</Text>
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         <MiniStat label="Toplam" value={money(totalCommission)} />
-        <MiniStat label="Bekleyen" value={money(pendingCommission)} />
-        <MiniStat label="Ödenen" value={money(paidCommission)} />
+        <MiniStat label="Tahsil edilecek" value={money(pendingCommission)} />
+        <MiniStat label="Tahsil edilen" value={money(paidCommission)} />
       </View>
       {txns.length === 0 ? <EmptyState title="Henüz kazanç yok" body="Ortak satış yaptıkça komisyonların burada görünecek." /> : null}
       {txns.map((t) => {

@@ -298,7 +298,11 @@ export function WebFooter() {
   ];
 
   const socials: IconName[] = ["instagram", "whatsapp", "twitter", "youtube"];
-  const payments = ["VISA", "Mastercard", "troy", "SSL Secured"];
+  const trustBadges: Array<{ icon: IconName; label: string }> = [
+    { icon: "shield-check", label: "Güvenli platform" },
+    { icon: "account-check", label: "Doğrulanmış satıcılar" },
+    { icon: "lock-outline", label: "KVKK uyumlu" }
+  ];
   const light = "rgba(255,255,255,0.78)";
 
   return (
@@ -355,13 +359,19 @@ export function WebFooter() {
         ))}
       </View>
       <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginTop: 16, paddingTop: 14 }}>
-        <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" }}>
-          © 2026 OrtakSat. Tüm hakları saklıdır.
-        </Text>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-          {payments.map((p) => (
-            <View key={p} style={{ backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 6, paddingHorizontal: 10, paddingVertical: 5 }}>
-              <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{p}</Text>
+        <View style={{ gap: 3 }}>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" }}>
+            © 2026 OrtakSat. Tüm hakları saklıdır.
+          </Text>
+          <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 11.5, fontWeight: "600" }}>
+            Ortaksat ödeme almaz; alışveriş ve komisyon kullanıcılar arasında yapılır.
+          </Text>
+        </View>
+        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {trustBadges.map((b) => (
+            <View key={b.label} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
+              <MaterialCommunityIcons name={b.icon} size={14} color="rgba(255,255,255,0.92)" />
+              <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, fontWeight: "800" }}>{b.label}</Text>
             </View>
           ))}
         </View>
