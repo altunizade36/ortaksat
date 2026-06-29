@@ -18,6 +18,13 @@ export const deviceLocale = pickDeviceLocale();
 export const deviceLanguage = deviceLocale.split("-")[0] as "tr" | "en";
 export const defaultCurrency = "TRY";
 
+/**
+ * Fixed "now" reference for deterministic relative-time rendering (e.g. the
+ * "Yeni" badge). Using a literal date — not Date.now() — guarantees the static
+ * export HTML and the client render agree, avoiding a hydration mismatch (#418).
+ */
+export const REFERENCE_NOW = Date.parse("2026-06-30T00:00:00Z");
+
 export function localize(tr: string, en: string) {
   return deviceLanguage === "en" ? en : tr;
 }

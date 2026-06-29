@@ -10,7 +10,7 @@ import { inferListingSubcategory, listingCategories } from "@/lib/categories";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
-import { searchKey } from "@/lib/locale";
+import { REFERENCE_NOW, searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -812,7 +812,7 @@ function exploreScore(listing: Listing, seed: number) {
 
 function isNewListing(value: string) {
   const date = new Date(value);
-  const age = Date.now() - date.getTime();
+  const age = REFERENCE_NOW - date.getTime();
   return Number.isFinite(age) && age >= 0 && age < 7 * 24 * 60 * 60 * 1000;
 }
 

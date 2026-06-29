@@ -443,14 +443,20 @@ function detectDeviceLanguage(): AppLanguage {
 }
 
 export function LanguageProvider({ children }: PropsWithChildren) {
-  const [language, setLanguageState] = useState<AppLanguage>(detectDeviceLanguage);
+  // Deterministic default ("tr") so the static-export HTML and the first client
+  // render agree (avoids a hydration mismatch / React #418). The real device or
+  // stored language is applied after mount, client-side only.
+  const [language, setLanguageState] = useState<AppLanguage>("tr");
 
   useEffect(() => {
     let mounted = true;
     AsyncStorage.getItem(STORAGE_KEY).then((value) => {
       if (!mounted) return;
       if (value === "tr" || value === "en") setLanguageState(value);
-    }).catch(() => undefined);
+      else setLanguageState(detectDeviceLanguage());
+    }).catch(() => {
+      if (mounted) setLanguageState(detectDeviceLanguage());
+    });
     return () => {
       mounted = false;
     };

@@ -253,6 +253,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [messages, setMessages] = useState(initialMessages);
   const [notifications, setNotifications] = useState(initialNotifications);
   const [reports, setReports] = useState<Report[]>([]);
+  // Preview (no-Supabase) auth registry so register/login/logout work end-to-end in demo mode.
+  const [mockAccounts, setMockAccounts] = useState<Record<string, { password: string; user: User }>>({});
 
   useEffect(() => {
     let mounted = true;
@@ -494,8 +496,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
       reports,
       async signInWithEmail(email, password) {
         if (!supabase) {
-          setAuthError("Supabase bağlantısı yok.");
-          return false;
+          const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
+          const acct = mockAccounts[cleanEmail];
+          if (!acct || acct.password !== password) {
+            setAuthError("E-posta veya şifre hatalı. (Önizleme modunda önce kayıt olun.)");
+            return false;
+          }
+          setAuthError(undefined);
+          setAuthUser(acct.user);
+          setUsers((items) => [acct.user, ...items.filter((item) => item.id !== acct.user.id)]);
+          return true;
         }
         const { data, error } = await supabase.auth.signInWithPassword({
           email: email.trim(),
@@ -512,8 +522,28 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       async signUpWithEmail(input) {
         if (!supabase) {
-          setAuthError("Supabase bağlantısı yok.");
-          return false;
+          const cleanEmail = input.email.trim().toLocaleLowerCase("tr-TR");
+          const displayName = input.name.trim() || cleanEmail;
+          if (mockAccounts[cleanEmail]) {
+            setAuthError("Bu e-posta ile zaten kayıt var. Giriş yapabilirsin.");
+            return false;
+          }
+          const mockUser: User = {
+            id: `mock-${cleanEmail}`,
+            name: displayName,
+            phone: "",
+            avatar: displayName.slice(0, 2).toLocaleUpperCase("tr-TR"),
+            bio: "",
+            verifiedPhone: false,
+            verifiedIdentity: false,
+            rating: 5,
+            listingCount: 0,
+            successfulSales: 0,
+            responseRate: 100
+          };
+          setMockAccounts((m) => ({ ...m, [cleanEmail]: { password: input.password, user: mockUser } }));
+          setAuthError(undefined);
+          return true;
         }
         const cleanEmail = input.email.trim().toLocaleLowerCase("tr-TR");
         const displayName = input.name.trim() || cleanEmail;
@@ -543,8 +573,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       async resetPasswordWithEmail(email) {
         if (!supabase) {
-          setAuthError("Supabase bağlantısı yok.");
-          return false;
+          // Preview mode: simulate sending a reset link (no real email backend).
+          setAuthError(undefined);
+          return true;
         }
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLocaleLowerCase("tr-TR"), {
           redirectTo: "ortaksat://auth"
@@ -554,8 +585,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       async updatePasswordWithEmail(password) {
         if (!supabase) {
-          setAuthError("Supabase bağlantısı yok.");
-          return false;
+          // Preview mode: update the password of the currently signed-in mock account.
+          const entry = Object.entries(mockAccounts).find(([, v]) => v.user.id === authUser?.id);
+          if (entry) setMockAccounts((m) => ({ ...m, [entry[0]]: { ...m[entry[0]], password } }));
+          setAuthError(undefined);
+          return true;
         }
         const { error } = await supabase.auth.updateUser({ password });
         setAuthError(error?.message);
