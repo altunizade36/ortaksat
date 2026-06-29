@@ -1,16 +1,18 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
 import { getCategoryPartnerHint, getCategoryRequiredDetails, getCategorySubcategories, listingCategories } from "@/lib/categories";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useIsWideWeb } from "@/lib/layout";
 import { uploadListingImage } from "@/lib/live-service";
 import type { CommissionType, Listing, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -23,6 +25,7 @@ const mascot = require("../assets/mascot.png");
 export default function CreateListingScreen() {
   const { language, t } = useLanguage();
   const router = useRouter();
+  const isWideWeb = useIsWideWeb();
   const { backendMode, createListing, currentUser } = useStore();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const [title, setTitle] = useState("Kablosuz şarj standı");
@@ -181,6 +184,15 @@ export default function CreateListingScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16, paddingBottom: 128 }}>
+        {isWideWeb ? (
+          <View style={{ alignSelf: "center", gap: 4, maxWidth: 1200, width: "100%" }}>
+            <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Yeni ilan oluştur</Text>
+            <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Ürününü binlerce alıcı ve ortak satıcıya ulaştır.</Text>
+            <CreateStepper />
+          </View>
+        ) : null}
+        <View style={isWideWeb ? { alignItems: "flex-start", alignSelf: "center", flexDirection: "row", gap: 24, maxWidth: 1200, width: "100%" } : undefined}>
+        <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
         <WebContainer max={860} padding={0} style={{ gap: 14 }}>
         <Card>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
@@ -378,6 +390,22 @@ export default function CreateListingScreen() {
           </Text>
         </Card>
         </WebContainer>
+        </View>
+        {isWideWeb ? (
+          <LivePreviewSidebar
+            title={title}
+            price={priceNumber}
+            category={category}
+            location={location}
+            image={(images[0] ?? "").trim() || fallbackImage}
+            commission={estimatedCommission}
+            stock={stockNumber}
+            partnershipMode={partnershipMode}
+            verifiedPhone={Boolean(currentUser?.verifiedPhone)}
+            verifiedIdentity={Boolean(currentUser?.verifiedIdentity)}
+          />
+        ) : null}
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -657,3 +685,114 @@ function Field({
   );
 }
 
+
+function CreateStepper() {
+  const steps = ["Temel Bilgiler", "Görseller", "Komisyon", "Teslimat", "Önizleme"];
+  return (
+    <View style={{ alignItems: "center", flexDirection: "row", marginTop: 8 }}>
+      {steps.map((step, index) => {
+        const active = index === 0;
+        return (
+          <View key={step} style={{ alignItems: "center", flex: index === steps.length - 1 ? 0 : 1, flexDirection: "row" }}>
+            <View style={{ alignItems: "center", gap: 6 }}>
+              <View style={{ alignItems: "center", backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 32, justifyContent: "center", width: 32 }}>
+                <Text style={{ color: active ? "#FFFFFF" : colors.muted, fontSize: 14, fontWeight: "900" }}>{index + 1}</Text>
+              </View>
+              <Text numberOfLines={1} style={{ color: active ? colors.ink : colors.muted, fontSize: 12, fontWeight: active ? "900" : "700" }}>{step}</Text>
+            </View>
+            {index < steps.length - 1 ? <View style={{ backgroundColor: colors.line, flex: 1, height: 2, marginBottom: 20, marginHorizontal: 8 }} /> : null}
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
+function LivePreviewSidebar({ title, price, category, location, image, commission, stock, partnershipMode, verifiedPhone, verifiedIdentity }: { title: string; price: number; category: string; location: string; image: string; commission: number; stock: number; partnershipMode: PartnershipMode; verifiedPhone: boolean; verifiedIdentity: boolean }) {
+  const trust = [
+    { ok: verifiedIdentity, label: "Kimlik Doğrulandı" },
+    { ok: verifiedPhone, label: "Telefon Doğrulandı" },
+    { ok: true, label: "E-posta Doğrulandı" },
+    { ok: true, label: "Şeffaf Komisyon" }
+  ];
+  const tips = [
+    "Açıklamanı detaylı ve doğru yaz.",
+    "Yüksek kaliteli görseller yükle.",
+    "Rekabetçi bir fiyat belirle.",
+    "Doğru kategori seçimi görünürlük sağlar."
+  ];
+  return (
+    <View style={{ gap: 16, width: 340 }}>
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
+        <View style={{ gap: 2 }}>
+          <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Canlı Önizleme</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>İlanının alıcılara nasıl görüneceğini gör.</Text>
+        </View>
+        <View style={{ borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden" }}>
+          <View style={{ backgroundColor: colors.line, height: 170, width: "100%" }}>
+            <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
+          </View>
+          <View style={{ gap: 6, padding: 12 }}>
+            <View style={{ flexDirection: "row", gap: 6 }}>
+              <View style={{ backgroundColor: colors.infoSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ color: colors.info, fontSize: 10, fontWeight: "900" }}>Yeni</Text>
+              </View>
+              <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 10, fontWeight: "900" }}>{partnershipMode === "open" ? "Ortak Satışa Açık" : "Satıcı Onaylı"}</Text>
+              </View>
+            </View>
+            <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 15, fontWeight: "900", lineHeight: 19 }}>{title || "İlan başlığı"}</Text>
+            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{location} · {category}</Text>
+            <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8, justifyContent: "space-between" }}>
+              <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{Number.isFinite(price) && price > 0 ? money(price) : "₺—"}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>Stok: {Number.isFinite(stock) ? stock : "—"}</Text>
+            </View>
+          </View>
+        </View>
+        <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, gap: 4, padding: 12 }}>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Tahmini Kazanç (Ortak)</Text>
+          <Text style={{ color: colors.primaryDark, fontSize: 20, fontWeight: "900" }}>{commission > 0 ? money(commission) : "₺—"}</Text>
+          <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Seçtiğin komisyon ayarlarına göre değişir.</Text>
+        </View>
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Güvenilir Satıcı</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {trust.map((item) => (
+              <View key={item.label} style={{ alignItems: "center", flexBasis: 140, flexDirection: "row", flexGrow: 1, gap: 6 }}>
+                <MaterialCommunityIcons name={item.ok ? "check-circle" : "circle-outline"} size={15} color={item.ok ? colors.success : colors.subtle} />
+                <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{item.label}</Text>
+              </View>
+            ))}
+          </View>
+        </View>
+      </View>
+
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 16 }}>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={colors.gold} />
+          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>İpuçları</Text>
+        </View>
+        {tips.map((tip) => (
+          <View key={tip} style={{ flexDirection: "row", gap: 8 }}>
+            <MaterialCommunityIcons name="circle-small" size={18} color={colors.muted} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>{tip}</Text>
+          </View>
+        ))}
+      </View>
+
+      <View style={{ backgroundColor: colors.primarySoft, borderRadius: 16, gap: 8, padding: 16 }}>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          <MaterialCommunityIcons name="lifebuoy" size={18} color={colors.primaryDark} />
+          <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Yardıma mı ihtiyacın var?</Text>
+        </View>
+        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 18 }}>7/24 destek ekibimiz ilan oluştururken sana yardımcı olur.</Text>
+        <Link href="/legal" asChild>
+          <Pressable style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 10 }}>
+            <MaterialCommunityIcons name="message-text-outline" size={15} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Bize Ulaş</Text>
+          </Pressable>
+        </Link>
+      </View>
+    </View>
+  );
+}
