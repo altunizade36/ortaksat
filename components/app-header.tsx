@@ -194,6 +194,7 @@ function AccountMenu() {
     { icon: "account-circle-outline", label: "Profilim", href: "/profile" },
     { icon: "view-list-outline", label: "İlanlarım", href: "/seller" },
     { icon: "handshake-outline", label: "Ortak Satışlarım", href: "/partner" },
+    { icon: "cash-multiple", label: "Kazançlarım", href: "/earnings" },
     { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
     { icon: "message-text-outline", label: "Mesajlarım", href: "/messages" },
     { icon: "shield-check-outline", label: "Güven Merkezi", href: "/trust" },
