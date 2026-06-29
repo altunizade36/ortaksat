@@ -184,6 +184,35 @@ export const listingCategories: ListingCategory[] = [
   }
 ];
 
+const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?w=600&q=80&auto=format&fit=crop`;
+
+/** Curated, on-topic hero image per category (used for category tiles everywhere). */
+export const categoryImages: Record<string, string> = {
+  "Elektronik": IMG("1498049794561-7780e7231661"),
+  "Moda": IMG("1483985988355-763728e1935b"),
+  "Ev & Yaşam": IMG("1586023492125-27b2c045efd7"),
+  "Anne & Bebek": IMG("1515488042361-ee00e0ddd4e4"),
+  "Spor": IMG("1517836357463-d25dfeac3438"),
+  "Hediye": IMG("1549465220-1a8b9238cd48"),
+  "Otomotiv": IMG("1503376780353-7e6692767b70"),
+  "Kozmetik": IMG("1522335789203-aabd1fc54bc9"),
+  "Kitap & Hobi": IMG("1512820790803-83ca734da794"),
+  "Dijital Ürün": IMG("1498050108023-c5249f4df085"),
+  "Telefon & Aksesuar": IMG("1511707171634-5f897ff02aa9"),
+  "Bilgisayar & Oyun": IMG("1542751371-adc38448a05e"),
+  "Ayakkabı & Çanta": IMG("1460353581641-37baddab0fa2"),
+  "Takı & Aksesuar": IMG("1515562141207-7a88fb7ce338"),
+  "Mutfak": IMG("1556909114-f6e7ad7d3136"),
+  "Dekorasyon": IMG("1513161455079-7dc1de15ef3e"),
+  "Koleksiyon": IMG("1606760227091-3dd870d97f1d"),
+  "Ofis & Kırtasiye": IMG("1497032628192-86f99bcd76bc"),
+  "Evcil Hayvan": IMG("1450778869180-41d0601e046e")
+};
+
+export function getCategoryImage(category: string) {
+  return categoryImages[category] ?? IMG("1441986300917-64674bd600d8");
+}
+
 export function getCategory(category: string) {
   return listingCategories.find((item) => item.key === category);
 }

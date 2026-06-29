@@ -6,7 +6,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter, WebTrustStrip } from "@/components/web-landing";
-import { listingCategories } from "@/lib/categories";
+import { getCategoryImage, listingCategories } from "@/lib/categories";
 import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
@@ -47,20 +47,18 @@ export default function CategoriesPage() {
   const [query, setQuery] = useState("");
 
   const counts: Record<string, number> = {};
-  const images: Record<string, string> = {};
   const commissionSum: Record<string, number> = {};
   for (const listing of listings) {
     if (listing.status !== "active") continue;
     counts[listing.category] = (counts[listing.category] ?? 0) + 1;
     commissionSum[listing.category] = (commissionSum[listing.category] ?? 0) + commissionAmount(listing);
-    if (!images[listing.category] && listing.image) images[listing.category] = listing.image;
   }
   const catData = listingCategories.map((c) => {
     const real = counts[c.key] ?? 0;
     return {
       cat: c,
       count: real > 0 ? real : pseudoCount(c.key),
-      image: images[c.key],
+      image: getCategoryImage(c.key),
       avgCommission: real > 0 ? Math.round(commissionSum[c.key] / real) : 120 + (pseudoCount(c.key) % 160)
     };
   });
@@ -175,12 +173,12 @@ export default function CategoriesPage() {
       <View style={{ gap: 14 }}>
         <SectionHead title="Tüm kategoriler" subtitle="Tüm ana kategoriler ve alt kategorileri keşfet." />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-          {catData.map(({ cat, count }, i) => (
+          {catData.map(({ cat, count, image }, i) => (
             <Link key={cat.key} href={{ pathname: "/explore", params: { q: cat.label } }} asChild>
               <Pressable dataSet={{ card: "listing" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 250, flexGrow: 1, gap: 10, maxWidth: 360, padding: 16 }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-                  <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 46, justifyContent: "center", width: 46 }}>
-                    <MaterialCommunityIcons name={cat.icon} size={24} color={PALETTE[i % PALETTE.length][1]} />
+                  <View style={{ backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 46, overflow: "hidden", width: 46 }}>
+                    <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                   </View>
                   <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{translateCopy(cat.label, language)}</Text>
                 </View>

@@ -5,7 +5,7 @@ import { Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { listingCategories } from "@/lib/categories";
+import { getCategoryImage, listingCategories } from "@/lib/categories";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
 
@@ -26,11 +26,9 @@ export function WebCategories() {
   const { language } = useLanguage();
   const { listings } = useStore();
   const counts: Record<string, number> = {};
-  const images: Record<string, string> = {};
   for (const listing of listings) {
     if (listing.status !== "active") continue;
     counts[listing.category] = (counts[listing.category] ?? 0) + 1;
-    if (!images[listing.category] && listing.image) images[listing.category] = listing.image;
   }
 
   return (
@@ -49,9 +47,9 @@ export function WebCategories() {
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
         {listingCategories.map((category, index) => {
-          const [tileBg, tileColor] = CATEGORY_PALETTE[index % CATEGORY_PALETTE.length];
+          const [tileBg] = CATEGORY_PALETTE[index % CATEGORY_PALETTE.length];
           const count = counts[category.key] ?? 0;
-          const image = images[category.key];
+          const image = getCategoryImage(category.key);
           return (
             <Link key={category.key} href={{ pathname: "/explore", params: { q: category.label } }} asChild>
               <Pressable
@@ -70,11 +68,7 @@ export function WebCategories() {
                 }}
               >
                 <View style={{ alignItems: "center", backgroundColor: tileBg, borderRadius: 12, height: 92, justifyContent: "center", overflow: "hidden", width: "100%" }}>
-                  {image ? (
-                    <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
-                  ) : (
-                    <MaterialCommunityIcons name={category.icon} size={34} color={tileColor} />
-                  )}
+                  <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                 </View>
                 <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>
                   {translateCopy(category.label, language)}
