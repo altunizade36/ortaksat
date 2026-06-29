@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { AuthRequired } from "@/components/auth-gate";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -19,7 +20,7 @@ function isImageAvatar(value: string) {
   return value.startsWith("http") || value.startsWith("file");
 }
 
-export default function ProfileEditScreen() {
+function ProfileEditScreenInner() {
   const { language } = useLanguage();
   const router = useRouter();
   const { authError, backendMode, currentUser, updateProfile } = useStore();
@@ -401,4 +402,10 @@ function Field({
       </View>
     </View>
   );
+}
+
+export default function ProfileEditScreen() {
+  const auth = useStore();
+  if (!auth.isAuthenticated) return <AuthRequired title="Ayarlar için giriş yapın" />;
+  return <ProfileEditScreenInner />;
 }

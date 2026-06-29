@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { AuthRequired } from "@/components/auth-gate";
 import { Card, EmptyState } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
@@ -43,7 +44,7 @@ const SAMPLE_TXNS: Txn[] = [
   { id: "t6", title: "Kablosuz kulaklık", date: "09 Haz 2026", amount: 2790, commission: 223, status: "paid" }
 ];
 
-export default function EarningsScreen() {
+function EarningsScreenInner() {
   const { currentUser, findListing, partnerships, sales } = useStore();
   const isWideWeb = useIsWideWeb();
   const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
@@ -255,4 +256,10 @@ function MiniStat({ label, value }: { label: string; value: string }) {
       <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{label}</Text>
     </View>
   );
+}
+
+export default function EarningsScreen() {
+  const auth = useStore();
+  if (!auth.isAuthenticated) return <AuthRequired title="Kazançlarını görmek için giriş yapın" />;
+  return <EarningsScreenInner />;
 }

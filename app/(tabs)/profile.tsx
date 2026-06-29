@@ -4,6 +4,7 @@ import { Link, type Href } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { AuthRequired } from "@/components/auth-gate";
 import { Card, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
@@ -18,7 +19,7 @@ function isImageAvatar(value: string) {
   return value.startsWith("http") || value.startsWith("file");
 }
 
-export default function ProfileScreen() {
+function ProfileScreenInner() {
   const { backendMode, conversations, currentUser, favorites, leads, listings, messages, notifications, partnerships, reports, reviews, sales, signOut } = useStore();
   const { language, setLanguage, t, useDeviceLanguage } = useLanguage();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
@@ -453,3 +454,9 @@ function Shortcut({ href, icon, label }: { href: Href; icon: keyof typeof Materi
 }
 
 
+
+export default function ProfileScreen() {
+  const auth = useStore();
+  if (!auth.isAuthenticated) return <AuthRequired title="Hesabım için giriş yapın" />;
+  return <ProfileScreenInner />;
+}

@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
+import { AuthRequired } from "@/components/auth-gate";
 import { ListingCard } from "@/components/listing-card";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState, PrimaryButton } from "@/components/ui";
@@ -16,7 +17,7 @@ import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
-export default function FavoritesScreen() {
+function FavoritesScreenInner() {
   const { language } = useLanguage();
   const { width } = useWindowDimensions();
   const isWideWeb = useIsWideWeb();
@@ -258,3 +259,9 @@ function FavStat({ icon, tint, color, value, title, sub }: { icon: keyof typeof 
   );
 }
 
+
+export default function FavoritesScreen() {
+  const auth = useStore();
+  if (!auth.isAuthenticated) return <AuthRequired title="Favorilerin için giriş yapın" />;
+  return <FavoritesScreenInner />;
+}

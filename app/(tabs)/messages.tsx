@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { AuthRequired } from "@/components/auth-gate";
 import { EmptyState, StatusPill } from "@/components/ui";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -30,7 +31,7 @@ const sourceLabels: Record<Lead["source"], string> = {
   phone: "Telefon"
 };
 
-export default function MessagesScreen() {
+function MessagesScreenInner() {
   const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, notifications, partnerships, sales, sendConversationMessage } = useStore();
   const { t } = useLanguage();
   const isWideWeb = useIsWideWeb();
@@ -565,4 +566,10 @@ function InboxStat({ icon, label, value }: { icon: keyof typeof MaterialCommunit
       </Text>
     </View>
   );
+}
+
+export default function MessagesScreen() {
+  const auth = useStore();
+  if (!auth.isAuthenticated) return <AuthRequired title="Mesajların için giriş yapın" />;
+  return <MessagesScreenInner />;
 }

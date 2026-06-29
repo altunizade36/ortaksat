@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { AuthRequired } from "@/components/auth-gate";
 import { EmptyState } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { categoryTree } from "@/lib/category-tree";
@@ -19,7 +20,7 @@ const STATUS_TONE: Record<SuggestionStatus, { tint: string; color: string; label
   rejected: { tint: colors.accentSoft, color: colors.accent, label: "Reddedildi" }
 };
 
-export default function AdminScreen() {
+function AdminScreenInner() {
   const isWideWeb = useIsWideWeb();
   const { categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus, currentUser, listings } = useStore();
   const [tab, setTab] = useState<Tab>("category");
@@ -188,4 +189,10 @@ function AdminStat({ icon, tint, color, value, title }: { icon: keyof typeof Mat
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{title}</Text>
     </View>
   );
+}
+
+export default function AdminScreen() {
+  const auth = useStore();
+  if (!auth.isAuthenticated) return <AuthRequired title="Yönetim paneli için giriş yapın" />;
+  return <AdminScreenInner />;
 }

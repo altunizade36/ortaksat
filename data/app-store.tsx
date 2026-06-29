@@ -115,6 +115,7 @@ type AppStore = {
   authReady: boolean;
   authError?: string;
   currentUser: User;
+  isAuthenticated: boolean;
   users: User[];
   listings: Listing[];
   partnerships: Partnership[];
@@ -244,6 +245,21 @@ function mergeMarketplaceListings(remoteListings: Listing[]) {
   const previewListings = initialListings.filter((listing) => !seenIds.has(listing.id) && !seenSlugs.has(listing.slug));
   return [...remoteListings, ...previewListings];
 }
+
+// Canlı modda oturum açılmadan gezerken kullanılan misafir kullanıcı.
+const ANON_USER: User = {
+  id: "anon",
+  name: "Misafir",
+  phone: "",
+  avatar: "MS",
+  bio: "",
+  verifiedPhone: false,
+  verifiedIdentity: false,
+  rating: 0,
+  listingCount: 0,
+  successfulSales: 0,
+  responseRate: 0
+};
 
 export function StoreProvider({ children }: PropsWithChildren) {
   const [backendMode, setBackendMode] = useState<"mock" | "supabase">("mock");
@@ -436,8 +452,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
     };
   }, [authUser]);
   const value = useMemo<AppStore>(() => {
-    const currentUser = authUser ?? users.find((user) => user.id === currentUserId) ?? users[0];
+    // Canlı (Supabase) modda oturum yoksa misafir kullanıcı: kullanıcı giriş
+    // yapmadan gezebilir; aksiyonlar (ilan ver, favori, mesaj) /auth'a yönlenir.
+    const currentUser = authUser ?? (isSupabaseConfigured ? ANON_USER : (users.find((user) => user.id === currentUserId) ?? users[0] ?? ANON_USER));
     const liveUser = isLiveUser(currentUser);
+    const isAuthenticated = isSupabaseConfigured ? authUser != null : true;
 
     function createOrReuseConversation(listingId: string, receiverId: string, body?: string) {
       const listing = listings.find((item) => item.id === listingId);
@@ -498,6 +517,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       authReady,
       authError,
       currentUser,
+      isAuthenticated,
       users,
       listings,
       partnerships,

@@ -1,8 +1,10 @@
 import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 
+import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { DesktopCreateFlow } from "@/components/desktop-create-flow";
 import { useIsWideWeb } from "@/lib/layout";
+import { useStore } from "@/lib/use-store";
 
 /**
  * İlan oluşturma — Sahibinden tarzı çok seviyeli kategori seçimi + kategoriye
@@ -11,6 +13,8 @@ import { useIsWideWeb } from "@/lib/layout";
  */
 export default function CreateListingScreen() {
   const isWideWeb = useIsWideWeb();
+  const { isAuthenticated } = useStore();
+  if (!isAuthenticated) return <AuthRequired title="İlan vermek için giriş yapın" body="Ücretsiz hesap aç, ürününü yüzlerce ortağa ulaştır. Gezmeye giriş gerekmez; ilan vermek için gerekir." icon="store-plus-outline" />;
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
       <ScrollView
