@@ -127,7 +127,7 @@ export default function HomeScreen() {
         <Marketplace3DHero listings={topListings} />
       )}
 
-      <HomeQuickActions currentUserId={currentUser.id} />
+      {!isWideWeb ? <HomeQuickActions currentUserId={currentUser.id} /> : null}
 
       <MarketplacePulse
         averageCommission={averageCommission}

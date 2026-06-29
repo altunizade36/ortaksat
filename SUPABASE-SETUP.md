@@ -13,7 +13,12 @@ EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY=sb_publishable_...
 ```
 > Bunlar istemci-güvenlidir (zaten tarayıcı paketinde görünür). RLS verileri korur.
 
-## 2) Şema + politikalar
+## 2) Şema + politikalar + il/ilçe (EN KOLAY YOL — CLI gerekmez)
+Dashboard → **SQL Editor** → **New query** → `supabase/setup-all.sql` dosyasının
+tamamını yapıştır → **Run**. Bu tek dosya şunları kurar (idempotent):
+tüm konum/adres/öneri tabloları + RLS + **81 il + 973 ilçe** + güvenlik düzeltmeleri.
+
+Alternatif (CLI ile):
 ```
 npx supabase login
 npx supabase link --project-ref akyzzdwbzgsnhdircuce

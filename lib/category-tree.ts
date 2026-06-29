@@ -45,6 +45,12 @@ function node(label: string, children: CategoryNode[], formKey?: string, image?:
 }
 const leaves = (labels: string[], formKey?: string) => labels.map((l) => leaf(l, formKey));
 
+// ---- marka/değer listeleri ----------------------------------------------
+export const CAR_BRANDS = ["Audi", "BMW", "Chevrolet", "Citroën", "Dacia", "Fiat", "Ford", "Honda", "Hyundai", "Kia", "Mercedes-Benz", "Nissan", "Opel", "Peugeot", "Renault", "Seat", "Škoda", "Toyota", "Volkswagen", "Volvo", "Tesla", "BYD", "Togg", "Diğer"];
+export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Bajaj", "TVS", "CFMoto", "Mondial", "Kuba", "RKS", "Diğer"];
+export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vestel", "Samsung", "LG", "Profilo", "Altus", "Grundig", "Diğer"];
+const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "Lacivert", "Yeşil", "Kahverengi", "Bej", "Turuncu", "Diğer"];
+
 // ---- shared field fragments ---------------------------------------------
 const F = {
   title: { key: "title", label: "İlan başlığı", type: "text", required: true, placeholder: "Kısa ve net bir başlık" } as FieldDef,
@@ -125,17 +131,17 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Araç bilgileri",
     fields: [
       F.title,
-      F.marka,
+      { key: "brand", label: "Marka", type: "select", required: true, options: CAR_BRANDS },
       { key: "series", label: "Seri", type: "text" },
       F.model,
       { key: "year", label: "Yıl", type: "number", required: true },
       { key: "fuel", label: "Yakıt", type: "select", required: true, options: ["Benzin", "Dizel", "LPG", "Hibrit", "Elektrik"] },
       { key: "gear", label: "Vites", type: "select", required: true, options: ["Manuel", "Otomatik", "Yarı Otomatik"] },
       { key: "km", label: "Kilometre", type: "number", required: true, suffix: "km" },
-      { key: "body", label: "Kasa tipi", type: "select", options: ["Sedan", "Hatchback", "Station Wagon", "SUV", "Coupe", "Cabrio", "MPV"] },
+      { key: "body", label: "Kasa tipi", type: "select", options: ["Sedan", "Hatchback", "Station Wagon", "SUV", "Coupe", "Cabrio", "MPV", "Pickup"] },
       { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp" },
       { key: "engineCc", label: "Motor hacmi", type: "text", suffix: "cc" },
-      F.renk,
+      { key: "color", label: "Renk", type: "select", options: CAR_COLORS },
       { key: "traction", label: "Çekiş", type: "select", options: ["Önden Çekiş", "Arkadan İtiş", "4x4"] },
       F.garanti,
       { key: "damage", label: "Hasar kaydı", type: "select", options: ["Yok", "Var", "Ağır Hasar Kayıtlı"] },
@@ -151,7 +157,7 @@ export const formSchemas: Record<string, FormSchema> = {
     key: "motosiklet",
     title: "Motosiklet bilgileri",
     fields: [
-      F.title, F.marka, F.model,
+      F.title, { key: "brand", label: "Marka", type: "select", required: true, options: MOTO_BRANDS }, F.model,
       { key: "year", label: "Yıl", type: "number", required: true },
       { key: "km", label: "Kilometre", type: "number", required: true, suffix: "km" },
       { key: "engineCc", label: "Motor hacmi", type: "text", suffix: "cc" },

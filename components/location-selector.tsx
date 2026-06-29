@@ -1,9 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
-import { districtsOfProvince, provinces, searchDistricts, searchProvinces } from "@/lib/locations";
+import { districtsOfProvince, locKey, provinces, searchDistricts, searchProvinces } from "@/lib/locations";
+import { fetchNeighborhoods, type Neighborhood } from "@/lib/location-service";
 
 export type LocationValue = {
   provinceId?: number;
@@ -66,20 +67,7 @@ export function LocationSelector({
         {showNeighborhood ? (
           <View style={{ flex: 1, minWidth: 180, zIndex: 10 }}>
             <FieldLabel text={`Mahalle / Köy${required ? " *" : ""}`} />
-            <View style={{ alignItems: "center", backgroundColor: value.districtId ? colors.surfaceAlt : colors.background, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, opacity: value.districtId ? 1 : 0.55, paddingHorizontal: 12 }}>
-              <MaterialCommunityIcons name="map-marker-outline" size={18} color={colors.muted} />
-              <TextInput
-                editable={!!value.districtId}
-                value={value.neighborhood ?? ""}
-                onChangeText={(t) => onChange({ ...value, neighborhood: t })}
-                placeholder={value.districtId ? "Mahalle yazın" : "Önce ilçe seçin"}
-                placeholderTextColor={colors.subtle}
-                style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 44, paddingVertical: 8 }}
-              />
-            </View>
-            {value.districtId && (value.neighborhood?.trim().length ?? 0) > 1 ? (
-              <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", marginTop: 4 }}>Mahallenizi bulamadıysanız yazdığınız ad öneri olarak kaydedilir, ekibimiz inceler.</Text>
-            ) : null}
+            <NeighborhoodField districtId={value.districtId} value={value.neighborhood} onChange={(n) => onChange({ ...value, neighborhood: n })} />
           </View>
         ) : null}
       </View>
@@ -109,6 +97,78 @@ export function LocationSelector({
 
 function FieldLabel({ text }: { text: string }) {
   return <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>{text}</Text>;
+}
+
+/**
+ * Mahalle alanı: Supabase'de mahalle verisi varsa aranabilir gerçek liste;
+ * yoksa (veya "listede yok") serbest metin + öneri akışı. İlçe değişince sıfırlanır.
+ */
+function NeighborhoodField({ districtId, value, onChange }: { districtId?: number; value?: string; onChange: (n: string) => void }) {
+  const [list, setList] = useState<Neighborhood[]>([]);
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+  const [manual, setManual] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setList([]);
+    setManual(false);
+    if (districtId == null) return;
+    fetchNeighborhoods(districtId).then((rows) => { if (active) setList(rows); }).catch(() => undefined);
+    return () => { active = false; };
+  }, [districtId]);
+
+  const hasData = list.length > 0;
+  const results = open ? list.filter((n) => locKey(n.name).includes(locKey(query))).slice(0, 40) : [];
+
+  // Veri yoksa veya kullanıcı "listede yok" dediyse: serbest metin
+  if (!hasData || manual) {
+    return (
+      <View>
+        <View style={{ alignItems: "center", backgroundColor: districtId ? colors.surfaceAlt : colors.background, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, opacity: districtId ? 1 : 0.55, paddingHorizontal: 12 }}>
+          <MaterialCommunityIcons name="map-marker-outline" size={18} color={colors.muted} />
+          <TextInput editable={!!districtId} value={value ?? ""} onChangeText={onChange} placeholder={districtId ? "Mahalle yazın" : "Önce ilçe seçin"} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 44, paddingVertical: 8 }} />
+          {hasData ? <Pressable onPress={() => { setManual(false); }} hitSlop={8}><MaterialCommunityIcons name="format-list-bulleted" size={17} color={colors.muted} /></Pressable> : null}
+        </View>
+        {districtId && (value?.trim().length ?? 0) > 1 ? (
+          <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", marginTop: 4 }}>Mahalleniz listede yoksa yazdığınız ad öneri olarak kaydedilir, ekibimiz inceler.</Text>
+        ) : null}
+      </View>
+    );
+  }
+
+  // Gerçek mahalle listesi (Supabase)
+  return (
+    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
+      <Pressable onPress={() => { setOpen((o) => !o); setQuery(""); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
+        <MaterialCommunityIcons name="map-marker-outline" size={18} color={value ? colors.primary : colors.muted} />
+        <Text numberOfLines={1} style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || "Mahalle seçin"}</Text>
+        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <>
+          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 900 }} />
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, left: 0, maxHeight: 320, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 50, zIndex: 1000 }}>
+            <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
+              <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
+              <TextInput value={query} onChangeText={setQuery} autoFocus placeholder="Mahalle ara…" placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }} />
+            </View>
+            <View style={{ maxHeight: 230 }}>
+              {results.map((n) => (
+                <Pressable key={n.id} onPress={() => { onChange(n.name); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 10 })}>
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600" }}>{n.name}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <Pressable onPress={() => { setManual(true); setOpen(false); }} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 11 }}>
+              <MaterialCommunityIcons name="plus-circle-outline" size={16} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Mahallem listede yok</Text>
+            </Pressable>
+          </View>
+        </>
+      ) : null}
+    </View>
+  );
 }
 
 function ComboBox({
