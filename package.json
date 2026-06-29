@@ -12,6 +12,8 @@
     "check:encoding": "node scripts/check-encoding.mjs",
     "quality": "npm run check:encoding && npm run typecheck && npm run doctor",
     "export:android": "expo export --platform android --output-dir dist-check-android",
+    "build:web": "expo export --platform web --output-dir dist-web",
+    "serve:web": "npx http-server dist-web -p 8099 -s",
     "doctor": "npx expo-doctor",
     "build:android:preview": "eas build -p android --profile preview",
     "build:ios:preview": "eas build -p ios --profile preview",
