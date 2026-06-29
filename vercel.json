@@ -7,6 +7,7 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/i/:slug", "destination": "/i/[slug]" },
+    { "source": "/blog/:slug", "destination": "/blog/[slug]" },
     { "source": "/listing/:id", "destination": "/listing/[id]" },
     { "source": "/listing-edit/:id", "destination": "/listing-edit/[id]" },
     { "source": "/chat/:id", "destination": "/chat/[id]" },
