@@ -198,6 +198,7 @@ function AccountMenu() {
     { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
     { icon: "message-text-outline", label: "Mesajlarım", href: "/messages" },
     { icon: "shield-check-outline", label: "Güven Merkezi", href: "/trust" },
+    { icon: "cog-outline", label: "Ayarlar", href: "/profile-edit" },
     { icon: "file-document-outline", label: "Yasal & Destek", href: "/legal" },
     { icon: "login", label: "Giriş / Kayıt", href: "/auth" }
   ];
