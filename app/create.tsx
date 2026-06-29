@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { DesktopCreateFlow } from "@/components/desktop-create-flow";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
@@ -188,6 +189,16 @@ export default function CreateListingScreen() {
     } finally {
       setPublishing(false);
     }
+  }
+
+  if (isWideWeb) {
+    return (
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 60, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+        <View style={{ alignSelf: "center", maxWidth: 1240, width: "100%" }}>
+          <DesktopCreateFlow />
+        </View>
+      </ScrollView>
+    );
   }
 
   return (
