@@ -46,10 +46,10 @@ export function AppHeader() {
         borderBottomColor: "rgba(0,134,111,0.12)",
         borderBottomWidth: 1,
         gap: 7,
-        paddingBottom: 8,
-        paddingLeft: 12,
-        paddingRight: 12,
-        paddingTop: insets.top + 6
+        paddingBottom: isWideWeb ? 12 : 8,
+        paddingLeft: isWideWeb ? 32 : 12,
+        paddingRight: isWideWeb ? 32 : 12,
+        paddingTop: insets.top + (isWideWeb ? 14 : 6)
       }}
     >
       <View style={{ alignItems: "center", flexDirection: "row", minHeight: 48, overflow: "hidden" }}>

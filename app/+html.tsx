@@ -71,28 +71,21 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  background:
-    radial-gradient(1200px 600px at 18% -10%, rgba(0,134,111,0.10), transparent 60%),
-    radial-gradient(900px 500px at 110% 10%, rgba(255,122,89,0.08), transparent 55%),
-    #EEF1F4;
+  background: #FFFFFF;
   min-height: 100vh;
 }
 
-/* Center the whole app into a responsive shell on tablet/desktop */
+/* Full-bleed website: app fills the viewport, content centered per-section.
+   On very wide screens we cap at 1440 and center, with invisible (white) gutters
+   so it reads as a full page rather than a floating card. */
 #root {
   width: 100%;
   min-height: 100vh;
   margin: 0 auto;
   background: #FFFFFF;
-  box-shadow: 0 24px 70px rgba(16,24,40,0.10);
 }
-@media (min-width: 760px) {
-  #root {
-    max-width: 1180px;
-    min-height: 100vh;
-    border-left: 1px solid rgba(16,24,40,0.06);
-    border-right: 1px solid rgba(16,24,40,0.06);
-  }
+@media (min-width: 1480px) {
+  #root { max-width: 1440px; }
 }
 
 /* Polished custom scrollbar on desktop */

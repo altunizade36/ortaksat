@@ -5,7 +5,7 @@ import { Platform, useWindowDimensions } from "react-native";
  * Max width of the centered web "app shell" (must match #root max-width in app/+html.tsx).
  * On native this is effectively ignored because device width is always smaller.
  */
-export const SHELL_MAX_WIDTH = 1180;
+export const SHELL_MAX_WIDTH = 1440;
 
 /** Breakpoint at/above which the web UI switches to its desktop layout. */
 export const WIDE_WEB_BREAKPOINT = 760;
