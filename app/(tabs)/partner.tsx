@@ -1,7 +1,7 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 
@@ -55,6 +55,7 @@ export default function PartnerScreen() {
   const [oppCity, setOppCity] = useState("");
   const [oppStock, setOppStock] = useState("");
   const [oppGuven, setOppGuven] = useState("");
+  const [oppVisible, setOppVisible] = useState(8);
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
   const activePartnerships = myPartnerships.filter((item) => item.status === "active");
   const pendingPartnerships = myPartnerships.filter((item) => item.status === "pending");
@@ -235,7 +236,7 @@ export default function PartnerScreen() {
                   <Text style={{ color: colors.muted, flex: 0.8, fontSize: 12, fontWeight: "800" }}>Güven</Text>
                   <View style={{ width: 150 }} />
                 </View>
-                {opportunities.slice(0, 8).map((listing) => (
+                {opportunities.slice(0, oppVisible).map((listing) => (
                   <OppRow key={listing.id} listing={listing} owner={findUser(listing.ownerId)} joined={joinedIds.has(listing.id)} onJoin={() => onJoin(listing.id)} onDetail={() => router.push(`/listing/${listing.id}`)} />
                 ))}
               </View>
@@ -263,12 +264,14 @@ export default function PartnerScreen() {
                 )}
               </View>
             )}
-            <Pressable onPress={() => {}} style={{ alignItems: "center", alignSelf: "center", marginTop: 14 }}>
-              <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 24, paddingVertical: 11 }}>
-                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Daha fazla göster</Text>
-                <MaterialCommunityIcons name="chevron-down" size={16} color={colors.muted} />
-              </View>
-            </Pressable>
+            {tab === "all" && opportunities.length > oppVisible ? (
+              <Pressable onPress={() => setOppVisible((v) => v + 8)} style={{ alignItems: "center", alignSelf: "center", marginTop: 14 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 24, paddingVertical: 11 }}>
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Daha fazla göster</Text>
+                  <MaterialCommunityIcons name="chevron-down" size={16} color={colors.muted} />
+                </View>
+              </Pressable>
+            ) : null}
           </View>
 
           {/* Sidebar */}
@@ -276,7 +279,7 @@ export default function PartnerScreen() {
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Paylaşım bağlantılarım</Text>
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text>
+                <Pressable onPress={() => setTab("links")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text></Pressable>
               </View>
               {activePartnerships.length === 0 ? (
                 <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Ortak olduğunda paylaşım bağlantıların burada görünür.</Text>
@@ -286,16 +289,18 @@ export default function PartnerScreen() {
                   return l ? <ShareRow key={p.id} title={l.title} url={shareUrl(l, p.refCode)} onCopy={() => void copyText("Bağlantı", shareUrl(l, p.refCode))} compact /> : null;
                 })
               )}
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.primary} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Yeni özel bağlantı oluştur</Text>
-              </View>
+              <Link href="/explore" asChild>
+                <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                  <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.primary} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Yeni özel bağlantı oluştur</Text>
+                </Pressable>
+              </Link>
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Son aktivitelerim</Text>
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text>
+                <Pressable onPress={() => setTab("earning")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text></Pressable>
               </View>
               {activities.length === 0 ? (
                 <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Satış ve komisyon hareketlerin burada listelenir.</Text>
@@ -339,9 +344,9 @@ export default function PartnerScreen() {
               <View style={{ backgroundColor: colors.primary, height: "100%", width: `${earnProgress}%` }} />
             </View>
           </View>
-          <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 10 }}>
+          <Pressable onPress={() => setTab("earning")} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 16, paddingVertical: 10 })}>
             <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Detaylı Rapor</Text>
-          </View>
+          </Pressable>
         </View>
       </ScrollView>
     );
