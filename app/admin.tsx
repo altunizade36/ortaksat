@@ -1,192 +1,466 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { Link, useRouter } from "expo-router";
+import { useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
-import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
+import { colors } from "@/components/colors";
 import { EmptyState } from "@/components/ui";
-import { WebFooter } from "@/components/web-landing";
 import { categoryTree } from "@/lib/category-tree";
+import { commissionAmount, money } from "@/lib/format";
 import { useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince } from "@/lib/locations";
-import type { SuggestionStatus } from "@/lib/types";
+import type { SaleStatus, SuggestionStatus } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
-type Tab = "category" | "location" | "manage";
+type Section =
+  | "dashboard" | "users" | "listings" | "categories" | "locations"
+  | "messages" | "commissions" | "stats" | "notifications" | "content" | "settings" | "reports";
+
+const NAV: Array<{ key: Section; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
+  { key: "dashboard", icon: "view-dashboard-outline", label: "Dashboard" },
+  { key: "users", icon: "account-group-outline", label: "Kullanıcılar" },
+  { key: "listings", icon: "file-document-outline", label: "İlanlar" },
+  { key: "categories", icon: "shape-outline", label: "Kategoriler" },
+  { key: "locations", icon: "map-marker-outline", label: "Konum Önerileri" },
+  { key: "messages", icon: "message-text-outline", label: "Mesajlar" },
+  { key: "commissions", icon: "cash-multiple", label: "Komisyon Kayıtları" },
+  { key: "stats", icon: "chart-line", label: "İstatistikler" },
+  { key: "notifications", icon: "bell-outline", label: "Bildirimler" },
+  { key: "content", icon: "file-edit-outline", label: "Site İçerikleri" },
+  { key: "settings", icon: "cog-outline", label: "Ayarlar" },
+  { key: "reports", icon: "chart-box-outline", label: "Raporlar" }
+];
 
 const STATUS_TONE: Record<SuggestionStatus, { tint: string; color: string; label: string }> = {
   pending: { tint: colors.warningSoft, color: colors.warning, label: "İncelemede" },
   approved: { tint: colors.successSoft, color: colors.success, label: "Onaylandı" },
   rejected: { tint: colors.accentSoft, color: colors.accent, label: "Reddedildi" }
 };
+const SALE_TONE: Record<SaleStatus, { tint: string; color: string; label: string }> = {
+  pending: { tint: colors.warningSoft, color: colors.warning, label: "Bekliyor" },
+  return_pending: { tint: colors.warningSoft, color: colors.warning, label: "İade süresi" },
+  approved: { tint: colors.infoSoft, color: colors.info, label: "Onaylandı" },
+  seller_paid: { tint: colors.goldSoft, color: colors.gold, label: "Onay bekliyor" },
+  paid: { tint: colors.successSoft, color: colors.success, label: "Tamamlandı" },
+  cancelled: { tint: colors.surfaceAlt, color: colors.muted, label: "İptal" },
+  disputed: { tint: colors.accentSoft, color: colors.accent, label: "İtiraz" }
+};
+
+const CHART = [40, 65, 52, 78, 96, 88, 120, 104, 132, 118, 150, 138];
 
 function AdminScreenInner() {
   const isWideWeb = useIsWideWeb();
-  const { categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus, currentUser, listings } = useStore();
-  const [tab, setTab] = useState<Tab>("category");
-  const [expanded, setExpanded] = useState<string | null>(null);
+  const router = useRouter();
+  const {
+    listings, users, sales, partnerships, leads, conversations, messages, notifications,
+    categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
+    updateListingStatus, findUser, signOut, currentUser
+  } = useStore();
+  const [section, setSection] = useState<Section>("dashboard");
+  const [expandedCat, setExpandedCat] = useState<string | null>(null);
 
   const isAdmin = currentUser.role === "admin" || currentUser.role === "moderator";
+  const activeListings = listings.filter((l) => l.status === "active");
+  const totalCommission = sales.reduce((s, x) => s + x.commissionAmount, 0);
   const pendingCat = categorySuggestions.filter((s) => s.status === "pending").length;
   const pendingLoc = locationSuggestions.filter((s) => s.status === "pending").length;
 
-  const counts: Record<string, number> = {};
-  for (const l of listings) counts[l.category] = (counts[l.category] ?? 0) + 1;
+  const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : 0);
 
-  const tabs: Array<{ key: Tab; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; badge?: number }> = [
-    { key: "category", icon: "shape-plus", label: "Kategori Önerileri", badge: pendingCat },
-    { key: "location", icon: "map-marker-plus-outline", label: "Konum Önerileri", badge: pendingLoc },
-    { key: "manage", icon: "folder-cog-outline", label: "Kategori Yönetimi" }
-  ];
-
-  const Body = (
-    <View style={{ gap: 16 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
-        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 52, justifyContent: "center", width: 52 }}>
-          <MaterialCommunityIcons name="shield-crown-outline" size={28} color={colors.primaryDark} />
-        </View>
-        <View style={{ flex: 1, gap: 3 }}>
-          <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Yönetim Paneli</Text>
-          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Kategori ve konum önerilerini incele, kategori yapısını yönet.</Text>
-        </View>
-      </View>
-
-      {!isAdmin ? (
-        <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 10, padding: 12 }}>
-          <MaterialCommunityIcons name="information-outline" size={18} color={colors.warning} />
-          <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600" }}>Önizleme: bu panel yalnızca admin/moderatör rolündeki hesaplarda canlıda görünür. Demo amaçlı tüm içerik gösteriliyor.</Text>
-        </View>
-      ) : null}
-
-      {/* Stat cards */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-        <AdminStat icon="shape-plus" tint={colors.violetSoft} color={colors.violet} value={`${pendingCat}`} title="Bekleyen kategori önerisi" />
-        <AdminStat icon="map-marker-plus-outline" tint={colors.infoSoft} color={colors.info} value={`${pendingLoc}`} title="Bekleyen konum önerisi" />
-        <AdminStat icon="shape-outline" tint={colors.primarySoft} color={colors.primaryDark} value={`${categoryTree.length}`} title="Ana kategori" />
-        <AdminStat icon="tag-multiple-outline" tint={colors.goldSoft} color={colors.gold} value={`${listings.length}`} title="Toplam ilan" />
-      </View>
-
-      {/* Tabs */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        {tabs.map((t) => {
-          const on = tab === t.key;
-          return (
-            <Pressable key={t.key} onPress={() => setTab(t.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 9 }}>
-              <MaterialCommunityIcons name={t.icon} size={16} color={on ? "#FFFFFF" : colors.primaryDark} />
-              <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>{t.label}</Text>
-              {t.badge ? <View style={{ alignItems: "center", backgroundColor: on ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: on ? colors.primary : "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{t.badge}</Text></View> : null}
-            </Pressable>
-          );
-        })}
-      </View>
-
-      {/* Category suggestions */}
-      {tab === "category" ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden" }}>
-          {categorySuggestions.length === 0 ? <View style={{ padding: 18 }}><EmptyState title="Öneri yok" body="Henüz kategori önerisi gelmedi." /></View> : null}
-          {categorySuggestions.map((s, idx) => (
-            <View key={s.id} style={{ borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, gap: 8, padding: 16 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-                <MaterialCommunityIcons name="shape-plus" size={18} color={colors.violet} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{s.suggestedPath}</Text>
-                <View style={{ backgroundColor: STATUS_TONE[s.status].tint, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}><Text style={{ color: STATUS_TONE[s.status].color, fontSize: 10.5, fontWeight: "900" }}>{STATUS_TONE[s.status].label}</Text></View>
-              </View>
-              {s.note ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{s.note}</Text> : null}
-              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{s.userName ?? "Kullanıcı"} · {s.createdAt}</Text>
-              {s.status === "pending" ? (
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <Pressable onPress={() => setCategorySuggestionStatus(s.id, "approved")} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}><MaterialCommunityIcons name="check" size={15} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>Onayla & ekle</Text></Pressable>
-                  <Pressable onPress={() => setCategorySuggestionStatus(s.id, "rejected")} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}><MaterialCommunityIcons name="close" size={15} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Reddet</Text></Pressable>
-                </View>
-              ) : null}
-            </View>
-          ))}
-        </View>
-      ) : null}
-
-      {/* Location suggestions */}
-      {tab === "location" ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden" }}>
-          {locationSuggestions.length === 0 ? <View style={{ padding: 18 }}><EmptyState title="Öneri yok" body="Henüz konum/mahalle önerisi gelmedi." /></View> : null}
-          {locationSuggestions.map((s, idx) => {
-            const prov = getProvince(s.provinceId)?.name;
-            const dist = getDistrict(s.districtId)?.name;
-            return (
-              <View key={s.id} style={{ borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, gap: 8, padding: 16 }}>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-                  <MaterialCommunityIcons name="map-marker-plus-outline" size={18} color={colors.info} />
-                  <Text style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{s.suggestedName} <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>({s.type})</Text></Text>
-                  <View style={{ backgroundColor: STATUS_TONE[s.status].tint, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}><Text style={{ color: STATUS_TONE[s.status].color, fontSize: 10.5, fontWeight: "900" }}>{STATUS_TONE[s.status].label}</Text></View>
-                </View>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{[prov, dist].filter(Boolean).join(" / ") || "Konum belirtilmedi"}</Text>
-                {s.note ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{s.note}</Text> : null}
-                <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{s.userName ?? "Kullanıcı"} · {s.createdAt}</Text>
-                {s.status === "pending" ? (
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <Pressable onPress={() => setLocationSuggestionStatus(s.id, "approved")} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}><MaterialCommunityIcons name="check" size={15} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>Onayla & mahalleye ekle</Text></Pressable>
-                    <Pressable onPress={() => setLocationSuggestionStatus(s.id, "rejected")} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}><MaterialCommunityIcons name="close" size={15} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Reddet</Text></Pressable>
-                  </View>
-                ) : null}
-              </View>
-            );
-          })}
-        </View>
-      ) : null}
-
-      {/* Category management */}
-      {tab === "manage" ? (
-        <View style={{ gap: 10 }}>
-          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Ana kategoriler ve alt kategori sayıları. (Düzenleme canlıda admin yetkisiyle açılır.)</Text>
-          {categoryTree.map((n) => {
-            const open = expanded === n.key;
-            const subCount = n.children?.length ?? 0;
-            return (
-              <View key={n.key} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden" }}>
-                <Pressable onPress={() => setExpanded(open ? null : n.key)} style={{ alignItems: "center", flexDirection: "row", gap: 12, padding: 14 }}>
-                  <MaterialCommunityIcons name="folder-outline" size={20} color={colors.primaryDark} />
-                  <Text style={{ color: colors.ink, flex: 1, fontSize: 14.5, fontWeight: "900" }}>{n.label}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{subCount} alt kategori</Text>
-                  <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
-                </Pressable>
-                {open ? (
-                  <View style={{ borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 14 }}>
-                    {(n.children ?? []).map((c) => (
-                      <View key={c.key} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
-                        <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{c.label}</Text>
-                        {c.children?.length ? <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>· {c.children.length}</Text> : null}
-                      </View>
-                    ))}
-                  </View>
-                ) : null}
-              </View>
-            );
-          })}
-        </View>
-      ) : null}
-    </View>
-  );
-
-  if (isWideWeb) {
-    return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background }} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }}>
-        <View style={{ alignSelf: "center", maxWidth: 1100, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>{Body}</View>
-        <View style={{ marginTop: 20 }}><WebFooter /></View>
-      </ScrollView>
-    );
-  }
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 14, paddingBottom: 60 }}>{Body}</ScrollView>
+    <View style={{ backgroundColor: colors.background, flex: 1, flexDirection: isWideWeb ? "row" : "column", minHeight: "100%" }}>
+      {/* Sidebar */}
+      {isWideWeb ? (
+        <View style={{ backgroundColor: "#0A5C44", gap: 4, paddingHorizontal: 12, paddingVertical: 18, width: 240 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 9, paddingHorizontal: 8, paddingVertical: 6 }}>
+            <MaterialCommunityIcons name="shield-crown" size={24} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "900" }}>OrtakSat <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 12 }}>Admin</Text></Text>
+          </View>
+          <View style={{ height: 8 }} />
+          {NAV.map((n) => {
+            const on = section === n.key;
+            const badge = navBadge(n.key);
+            return (
+              <Pressable key={n.key} onPress={() => setSection(n.key)} style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.16)" : "transparent", borderRadius: 10, flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 10 }}>
+                <MaterialCommunityIcons name={n.icon} size={18} color={on ? "#FFFFFF" : "rgba(255,255,255,0.7)"} />
+                <Text style={{ color: on ? "#FFFFFF" : "rgba(255,255,255,0.8)", flex: 1, fontSize: 13.5, fontWeight: on ? "900" : "700" }}>{n.label}</Text>
+                {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{badge}</Text></View> : null}
+              </Pressable>
+            );
+          })}
+          <View style={{ flex: 1 }} />
+          <Pressable onPress={() => { void signOut(); router.replace("/"); }} style={{ alignItems: "center", flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 10 }}>
+            <MaterialCommunityIcons name="logout" size={18} color="rgba(255,255,255,0.7)" />
+            <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13.5, fontWeight: "700" }}>Çıkış Yap</Text>
+          </Pressable>
+        </View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: "#0A5C44", maxHeight: 56 }} contentContainerStyle={{ alignItems: "center", gap: 6, paddingHorizontal: 10 }}>
+          {NAV.map((n) => {
+            const on = section === n.key;
+            return (
+              <Pressable key={n.key} onPress={() => setSection(n.key)} style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.18)" : "transparent", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}>
+                <MaterialCommunityIcons name={n.icon} size={15} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: on ? "900" : "700" }}>{n.label}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      )}
+
+      {/* Content */}
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 16, padding: isWideWeb ? 24 : 14, paddingBottom: 60 }}>
+        {!isAdmin ? (
+          <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 10, padding: 12 }}>
+            <MaterialCommunityIcons name="information-outline" size={18} color={colors.warning} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600" }}>Önizleme: bu panel canlıda yalnızca admin/moderatör rolündeki hesaplarda görünür. Demo amaçlı tüm içerik gösteriliyor.</Text>
+          </View>
+        ) : null}
+
+        {section === "dashboard" ? (
+          <Dashboard
+            usersN={users.length} listingsN={listings.length} salesN={sales.length} commission={totalCommission}
+            listings={listings} findUser={findUser} notifications={notifications} leads={leads} setSection={setSection}
+          />
+        ) : null}
+
+        {section === "users" ? (
+          <Panel title="Kullanıcılar" sub={`${users.length} kullanıcı`}>
+            <Table head={["KULLANICI", "ROL", "PUAN", "SATIŞ", "DOĞRULAMA"]} cols={[2, 1, 1, 1, 1.4]}>
+              {users.map((u) => (
+                <Row key={u.id} cols={[2, 1, 1, 1, 1.4]} cells={[
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{u.name}</Text>,
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{u.role ?? "Üye"}</Text>,
+                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{u.rating}</Text>,
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{u.successfulSales}</Text>,
+                  <View style={{ flexDirection: "row", gap: 4 }}>
+                    {u.verifiedPhone ? <MaterialCommunityIcons name="phone-check" size={15} color={colors.success} /> : null}
+                    {u.verifiedIdentity ? <MaterialCommunityIcons name="card-account-details-outline" size={15} color={colors.success} /> : null}
+                    {u.verifiedInstagram ? <MaterialCommunityIcons name="instagram" size={15} color={colors.violet} /> : null}
+                  </View>
+                ]} />
+              ))}
+            </Table>
+          </Panel>
+        ) : null}
+
+        {section === "listings" ? (
+          <Panel title="İlanlar" sub={`${activeListings.length} aktif · ${listings.length} toplam`}>
+            <Table head={["İLAN", "KATEGORİ", "FİYAT", "SAHİP", "DURUM", "İŞLEM"]} cols={[2.2, 1.2, 1, 1.4, 1, 1.2]}>
+              {listings.map((l) => (
+                <Row key={l.id} cols={[2.2, 1.2, 1, 1.4, 1, 1.2]} cells={[
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
+                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
+                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{money(l.price)}</Text>,
+                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{findUser(l.ownerId)?.name ?? "—"}</Text>,
+                  <View style={{ alignSelf: "flex-start", backgroundColor: l.status === "active" ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: l.status === "active" ? colors.success : colors.muted, fontSize: 10.5, fontWeight: "900" }}>{l.status === "active" ? "Yayında" : l.status}</Text></View>,
+                  <Pressable onPress={() => updateListingStatus(l.id, l.status === "active" ? "paused" : "active")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{l.status === "active" ? "Kaldır" : "Yayınla"}</Text></Pressable>
+                ]} />
+              ))}
+            </Table>
+          </Panel>
+        ) : null}
+
+        {section === "categories" ? (
+          <View style={{ gap: 16 }}>
+            <Panel title="Kategori Önerileri" sub={`${pendingCat} bekliyor`}>
+              {categorySuggestions.length === 0 ? <EmptyState title="Öneri yok" body="Henüz kategori önerisi gelmedi." /> : null}
+              {categorySuggestions.map((s) => (
+                <SuggestionRow key={s.id} title={s.suggestedPath} note={s.note} meta={`${s.userName ?? "Kullanıcı"} · ${s.createdAt}`} status={s.status} onApprove={() => setCategorySuggestionStatus(s.id, "approved")} onReject={() => setCategorySuggestionStatus(s.id, "rejected")} />
+              ))}
+            </Panel>
+            <Panel title="Kategori Yapısı" sub={`${categoryTree.length} ana kategori`}>
+              {categoryTree.map((n) => {
+                const open = expandedCat === n.key;
+                return (
+                  <View key={n.key} style={{ borderBottomColor: colors.line, borderBottomWidth: 1 }}>
+                    <Pressable onPress={() => setExpandedCat(open ? null : n.key)} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 12 }}>
+                      <MaterialCommunityIcons name="folder-outline" size={18} color={colors.primaryDark} />
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "800" }}>{n.label}</Text>
+                      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{n.children?.length ?? 0} alt</Text>
+                      <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+                    </Pressable>
+                    {open ? (
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingBottom: 12 }}>
+                        {(n.children ?? []).map((c) => (
+                          <View key={c.key} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 11, paddingVertical: 6 }}><Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{c.label}{c.children?.length ? ` · ${c.children.length}` : ""}</Text></View>
+                        ))}
+                      </View>
+                    ) : null}
+                  </View>
+                );
+              })}
+            </Panel>
+          </View>
+        ) : null}
+
+        {section === "locations" ? (
+          <Panel title="Konum Önerileri" sub={`${pendingLoc} bekliyor`}>
+            {locationSuggestions.length === 0 ? <EmptyState title="Öneri yok" body="Henüz konum/mahalle önerisi gelmedi." /> : null}
+            {locationSuggestions.map((s) => (
+              <SuggestionRow key={s.id} title={`${s.suggestedName} (${s.type})`} note={[getProvince(s.provinceId)?.name, getDistrict(s.districtId)?.name].filter(Boolean).join(" / ") + (s.note ? ` — ${s.note}` : "")} meta={`${s.userName ?? "Kullanıcı"} · ${s.createdAt}`} status={s.status} onApprove={() => setLocationSuggestionStatus(s.id, "approved")} onReject={() => setLocationSuggestionStatus(s.id, "rejected")} />
+            ))}
+          </Panel>
+        ) : null}
+
+        {section === "messages" ? (
+          <Panel title="Mesajlar / Görüşmeler" sub={`${conversations.length} görüşme · ${messages.length} mesaj`}>
+            <Table head={["GÖRÜŞME", "İLAN", "SON MESAJ"]} cols={[1.4, 1.6, 2]}>
+              {conversations.slice(0, 40).map((c) => {
+                const last = messages.filter((m) => m.conversationId === c.id).slice(-1)[0];
+                const listing = listings.find((l) => l.id === c.listingId);
+                return (
+                  <Row key={c.id} cols={[1.4, 1.6, 2]} cells={[
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{c.participantIds.map((id) => findUser(id)?.name).filter(Boolean).join(" ↔ ")}</Text>,
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{listing?.title ?? "—"}</Text>,
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{last?.body ?? "—"}</Text>
+                  ]} />
+                );
+              })}
+            </Table>
+          </Panel>
+        ) : null}
+
+        {section === "commissions" ? (
+          <Panel title="Komisyon Kayıtları" sub="Ortaksat para tutmaz; bu kayıtlar taraflar arası komisyonun takibidir.">
+            <Table head={["İLAN", "KOMİSYON", "ORTAKLIK", "DURUM"]} cols={[2.2, 1, 1.4, 1.2]}>
+              {sales.map((s) => {
+                const listing = listings.find((l) => l.id === s.listingId);
+                const p = partnerships.find((x) => x.id === s.partnershipId);
+                return (
+                  <Row key={s.id} cols={[2.2, 1, 1.4, 1.2]} cells={[
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{listing?.title ?? s.listingId}</Text>,
+                    <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{money(s.commissionAmount)}</Text>,
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{p ? findUser(p.partnerId)?.name : "—"}</Text>,
+                    <View style={{ alignSelf: "flex-start", backgroundColor: SALE_TONE[s.status].tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: SALE_TONE[s.status].color, fontSize: 10.5, fontWeight: "900" }}>{SALE_TONE[s.status].label}</Text></View>
+                  ]} />
+                );
+              })}
+            </Table>
+          </Panel>
+        ) : null}
+
+        {section === "stats" ? (
+          <View style={{ gap: 16 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+              <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={`${users.length}`} title="Kullanıcı" />
+              <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={`${activeListings.length}`} title="Aktif ilan" />
+              <Stat icon="handshake" tint={colors.violetSoft} color={colors.violet} value={`${partnerships.length}`} title="Ortaklık" />
+              <Stat icon="cart-check" tint={colors.successSoft} color={colors.success} value={`${sales.length}`} title="Satış" />
+              <Stat icon="account-clock" tint={colors.goldSoft} color={colors.gold} value={`${leads.length}`} title="Talep" />
+              <Stat icon="cash-multiple" tint={colors.successSoft} color={colors.success} value={money(totalCommission)} title="Komisyon (kayıt)" />
+            </View>
+            <Panel title="İlan & Satış Grafiği" sub="Son 12 ay (örnek)">
+              <BarChart data={CHART} />
+            </Panel>
+          </View>
+        ) : null}
+
+        {section === "notifications" ? (
+          <Panel title="Bildirimler" sub={`${notifications.length} kayıt`}>
+            {notifications.slice(0, 30).map((n) => (
+              <View key={n.id} style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 2, paddingVertical: 11 }}>
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{n.title}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{n.body}</Text>
+                <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{n.createdAt}</Text>
+              </View>
+            ))}
+            {notifications.length === 0 ? <EmptyState title="Bildirim yok" body="Sistem bildirimi bulunmuyor." /> : null}
+          </Panel>
+        ) : null}
+
+        {section === "content" ? (
+          <Panel title="Site İçerikleri" sub="Yasal ve bilgi sayfalarını düzenle">
+            {[
+              { label: "Nasıl Çalışır?", href: "/nasil-calisir" as const, icon: "help-circle-outline" as const },
+              { label: "Hakkımızda", href: "/hakkimizda" as const, icon: "information-outline" as const },
+              { label: "SSS", href: "/sss" as const, icon: "comment-question-outline" as const },
+              { label: "Yasal & Destek", href: "/legal" as const, icon: "file-document-outline" as const },
+              { label: "KVKK", href: "/kvkk" as const, icon: "shield-lock-outline" as const },
+              { label: "Blog", href: "/blog" as const, icon: "post-outline" as const }
+            ].map((c) => (
+              <Link key={c.label} href={c.href} asChild>
+                <Pressable style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 11, paddingVertical: 13 }}>
+                  <MaterialCommunityIcons name={c.icon} size={18} color={colors.primaryDark} />
+                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{c.label}</Text>
+                  <MaterialCommunityIcons name="open-in-new" size={16} color={colors.muted} />
+                </Pressable>
+              </Link>
+            ))}
+          </Panel>
+        ) : null}
+
+        {section === "settings" ? (
+          <Panel title="Ayarlar" sub="Platform genel ayarları (demo)">
+            {["Yeni kayıtlara izin ver", "İlanları yayından önce incele", "E-posta doğrulama zorunlu", "Bakım modu"].map((s, i) => (
+              <View key={s} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 13 }}>
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{s}</Text>
+                <View style={{ alignItems: i < 3 ? "flex-end" : "flex-start", backgroundColor: i < 3 ? colors.primary : colors.line, borderRadius: 999, height: 24, justifyContent: "center", paddingHorizontal: 2, width: 44 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} /></View>
+              </View>
+            ))}
+            <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", marginTop: 8 }}>Canlı ayar yönetimi Supabase'e bağlandığında etkinleşir.</Text>
+          </Panel>
+        ) : null}
+
+        {section === "reports" ? (
+          <Panel title="Raporlar" sub="Dışa aktarım (demo)">
+            {["Kullanıcı raporu", "İlan raporu", "Komisyon kayıt raporu", "Talep & satış raporu"].map((r) => (
+              <View key={r} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 11, paddingVertical: 13 }}>
+                <MaterialCommunityIcons name="file-chart-outline" size={18} color={colors.primaryDark} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{r}</Text>
+                <View style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
+                  <MaterialCommunityIcons name="download" size={14} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>CSV</Text>
+                </View>
+              </View>
+            ))}
+          </Panel>
+        ) : null}
+      </ScrollView>
+    </View>
   );
 }
 
-function AdminStat({ icon, tint, color, value, title }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string }) {
+// ---- pieces --------------------------------------------------------------
+type DashProps = {
+  usersN: number; listingsN: number; salesN: number; commission: number;
+  listings: ReturnType<typeof useStore>["listings"]; findUser: ReturnType<typeof useStore>["findUser"];
+  notifications: ReturnType<typeof useStore>["notifications"]; leads: ReturnType<typeof useStore>["leads"];
+  setSection: (s: Section) => void;
+};
+function Dashboard({ usersN, listingsN, salesN, commission, listings, findUser, notifications, leads, setSection }: DashProps) {
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 200, flexGrow: 1, gap: 8, minWidth: 0, padding: 16 }}>
+    <View style={{ gap: 16 }}>
+      <View style={{ gap: 3 }}>
+        <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>Dashboard</Text>
+        <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>Hoş geldin, site genelindeki özet bilgilere buradan ulaşabilirsin.</Text>
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+        <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={`${usersN}`} title="Toplam Kullanıcı" />
+        <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={`${listingsN}`} title="Toplam İlan" />
+        <Stat icon="cart-check" tint={colors.goldSoft} color={colors.gold} value={`${salesN}`} title="Toplam Satış" />
+        <Stat icon="cash-multiple" tint={colors.violetSoft} color={colors.violet} value={money(commission)} title="Toplam Komisyon (kayıt)" />
+      </View>
+      <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+        <View style={{ flex: 2, gap: 16, minWidth: 280 }}>
+          <Panel title="İlan & Satış Grafiği" sub="Son 12 ay (örnek)"><BarChart data={CHART} /></Panel>
+          <Panel title="Son Eklenen İlanlar">
+            <Table head={["İLAN", "KATEGORİ", "FİYAT", "DURUM"]} cols={[2.2, 1.2, 1, 1]}>
+              {listings.slice(0, 6).map((l) => (
+                <Row key={l.id} cols={[2.2, 1.2, 1, 1]} cells={[
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
+                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
+                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{money(l.price)}</Text>,
+                  <View style={{ alignSelf: "flex-start", backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: colors.success, fontSize: 10.5, fontWeight: "900" }}>Yayında</Text></View>
+                ]} />
+              ))}
+            </Table>
+          </Panel>
+        </View>
+        <View style={{ flex: 1, gap: 16, minWidth: 240 }}>
+          <Panel title="Son Aktiviteler">
+            {[...notifications.slice(0, 3).map((n) => ({ t: n.title, s: n.createdAt })), ...leads.slice(0, 2).map((l) => ({ t: `Yeni talep: ${findUser(l.partnershipId)?.name ?? l.buyerName ?? "Alıcı"}`, s: l.createdAt }))].slice(0, 5).map((a, i) => (
+              <View key={i} style={{ alignItems: "flex-start", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 11 }}>
+                <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: 8, marginTop: 5, width: 8 }} />
+                <View style={{ flex: 1 }}>
+                  <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{a.t}</Text>
+                  <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{a.s}</Text>
+                </View>
+              </View>
+            ))}
+          </Panel>
+          <Panel title="Kısayollar">
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {[
+                { label: "Yeni İlan Ekle", icon: "file-plus-outline" as const, go: "listings" as Section },
+                { label: "Kullanıcılar", icon: "account-multiple-outline" as const, go: "users" as Section },
+                { label: "Önerileri İncele", icon: "shape-plus" as const, go: "categories" as Section },
+                { label: "Raporlar", icon: "chart-box-outline" as const, go: "reports" as Section }
+              ].map((k) => (
+                <Pressable key={k.label} onPress={() => setSection(k.go)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 12, gap: 6, justifyContent: "center", minWidth: 100, padding: 14 }}>
+                  <MaterialCommunityIcons name={k.icon} size={22} color={colors.primaryDark} />
+                  <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800", textAlign: "center" }}>{k.label}</Text>
+                </Pressable>
+              ))}
+            </View>
+          </Panel>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+function Stat({ icon, tint, color, value, title }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string }) {
+  return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 190, flexGrow: 1, gap: 10, minWidth: 0, padding: 16 }}>
       <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
         <MaterialCommunityIcons name={icon} size={20} color={color} />
       </View>
       <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{value}</Text>
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{title}</Text>
+    </View>
+  );
+}
+
+function Panel({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
+  return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
+      <View style={{ gap: 2 }}>
+        <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{title}</Text>
+        {sub ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{sub}</Text> : null}
+      </View>
+      {children}
+    </View>
+  );
+}
+
+function Table({ head, cols, children }: { head: string[]; cols: number[]; children: ReactNode }) {
+  return (
+    <View>
+      <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingBottom: 8 }}>
+        {head.map((h, i) => <Text key={h} style={{ color: colors.muted, flex: cols[i], fontSize: 10.5, fontWeight: "800", textAlign: i === head.length - 1 ? "right" : "left" }}>{h}</Text>)}
+      </View>
+      {children}
+    </View>
+  );
+}
+function Row({ cols, cells }: { cols: number[]; cells: ReactNode[] }) {
+  return (
+    <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingVertical: 10 }}>
+      {cells.map((c, i) => <View key={i} style={{ alignItems: i === cells.length - 1 ? "flex-end" : "flex-start", flex: cols[i] }}>{c}</View>)}
+    </View>
+  );
+}
+
+function SuggestionRow({ title, note, meta, status, onApprove, onReject }: { title: string; note?: string; meta: string; status: SuggestionStatus; onApprove: () => void; onReject: () => void }) {
+  return (
+    <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 7, paddingVertical: 13 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{title}</Text>
+        <View style={{ backgroundColor: STATUS_TONE[status].tint, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}><Text style={{ color: STATUS_TONE[status].color, fontSize: 10.5, fontWeight: "900" }}>{STATUS_TONE[status].label}</Text></View>
+      </View>
+      {note ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{note}</Text> : null}
+      <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{meta}</Text>
+      {status === "pending" ? (
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Pressable onPress={onApprove} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}><MaterialCommunityIcons name="check" size={15} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>Onayla</Text></Pressable>
+          <Pressable onPress={onReject} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}><MaterialCommunityIcons name="close" size={15} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Reddet</Text></Pressable>
+        </View>
+      ) : null}
+    </View>
+  );
+}
+
+function BarChart({ data }: { data: number[] }) {
+  const max = Math.max(...data);
+  return (
+    <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 6, height: 160, paddingTop: 10 }}>
+      {data.map((v, i) => (
+        <View key={i} style={{ flex: 1, gap: 6, justifyContent: "flex-end" }}>
+          <View style={{ backgroundColor: i === data.length - 1 ? colors.primary : colors.primarySoft, borderRadius: 6, height: Math.round((v / max) * 130) + 6, width: "100%" }} />
+          <Text style={{ color: colors.subtle, fontSize: 9, fontWeight: "700", textAlign: "center" }}>{i + 1}</Text>
+        </View>
+      ))}
     </View>
   );
 }
