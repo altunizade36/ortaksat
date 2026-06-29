@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
@@ -46,6 +47,15 @@ export function DesktopCreateFlow() {
 
   const setV = (k: string, v: string | boolean) => setValues((s) => ({ ...s, [k]: v }));
   const missingFields = useMemo(() => (schema ? schema.fields.filter((f) => f.required && !String(values[f.key] ?? "").trim()) : []), [schema, values]);
+
+  async function pickFromGallery() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.85, selectionLimit: 5 });
+    if (result.canceled) return;
+    const uris = result.assets.map((a) => a.uri).filter(Boolean);
+    setImages((s) => [...s, ...uris].slice(0, 5));
+  }
 
   const canNext = () => {
     if (step === 0) return path.length > 0;
@@ -158,7 +168,12 @@ export function DesktopCreateFlow() {
         {step === 3 ? (
           <View style={{ gap: 14 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Fotoğraflar</Text>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>En az 1, en fazla 5 görsel. İlk görsel kapak olur. (Görsel adresi yapıştır)</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>En az 1, en fazla 5 görsel. İlk görsel kapak olur.</Text>
+            <Pressable onPress={() => void pickFromGallery()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 11 }}>
+              <MaterialCommunityIcons name="image-multiple-outline" size={17} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Galeriden / cihazdan seç</Text>
+            </Pressable>
+            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>veya görsel adresi yapıştır:</Text>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <TextInput value={imageDraft} onChangeText={setImageDraft} placeholder="https://…/foto.jpg" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 46, paddingHorizontal: 12 }} />
               <Pressable onPress={() => { const u = imageDraft.trim(); if (u && images.length < 5) { setImages((s) => [...s, u]); setImageDraft(""); } }} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 12 }}>
