@@ -50,6 +50,11 @@ export default function PartnerScreen() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PartnerFilter>("all");
   const [tab, setTab] = useState<"all" | "pending" | "active" | "earning" | "links">("all");
+  const [oppCategory, setOppCategory] = useState("");
+  const [oppCommission, setOppCommission] = useState(0);
+  const [oppCity, setOppCity] = useState("");
+  const [oppStock, setOppStock] = useState("");
+  const [oppGuven, setOppGuven] = useState("");
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
   const activePartnerships = myPartnerships.filter((item) => item.status === "active");
   const pendingPartnerships = myPartnerships.filter((item) => item.status === "pending");
@@ -97,7 +102,22 @@ export default function PartnerScreen() {
 
   if (isWideWeb) {
     const joinedIds = new Set(myPartnerships.map((p) => p.listingId));
-    const opportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id);
+    const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id);
+    const oppCategoryOptions = Array.from(new Set(allOpportunities.map((l) => l.category))).sort((a, b) => a.localeCompare(b, "tr"));
+    const oppCityOptions = Array.from(new Set(allOpportunities.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr"));
+    const opportunities = allOpportunities.filter((l) => {
+      if (oppCategory && l.category !== oppCategory) return false;
+      if (oppCommission > 0 && !(l.commissionType === "rate" && l.commissionValue >= oppCommission)) return false;
+      if (oppCity && l.location !== oppCity) return false;
+      if (oppStock === "in" && l.stockCount <= 0) return false;
+      if (oppStock === "low" && (l.stockCount > 5 || l.stockCount <= 0)) return false;
+      if (oppGuven) {
+        const r = findUser(l.ownerId)?.rating ?? 0;
+        if (oppGuven === "high" && r < 4.7) return false;
+        if (oppGuven === "mid" && (r < 4.3 || r >= 4.7)) return false;
+      }
+      return true;
+    });
     const totalEarn = waiting + approved + paid;
     const rateListings = opportunities.filter((l) => l.commissionType === "rate");
     const avgCommissionPct = rateListings.length ? Math.round((rateListings.reduce((s, l) => s + l.commissionValue, 0) / rateListings.length) * 10) / 10 : 0;
@@ -193,13 +213,18 @@ export default function PartnerScreen() {
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Ortak satış fırsatları</Text>
                   <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>{opportunities.length} ilan bulundu</Text>
                 </View>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
-                  {["Kategoriler", "Komisyon Oranı", "Konum", "Stok Durumu", "Güven Seviyesi"].map((f) => (
-                    <View key={f} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
-                      <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{f}</Text>
-                      <MaterialCommunityIcons name="chevron-down" size={14} color={colors.muted} />
-                    </View>
-                  ))}
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14, position: "relative", zIndex: 50 }}>
+                  <PanelDropdown label="Kategoriler" value={oppCategory} onSelect={(v) => setOppCategory(String(v))} options={[{ label: "Tümü", value: "" }, ...oppCategoryOptions.map((c) => ({ label: c, value: c }))]} />
+                  <PanelDropdown label="Komisyon Oranı" value={oppCommission} onSelect={(v) => setOppCommission(Number(v))} options={[{ label: "Tümü", value: 0 }, { label: "%10+", value: 10 }, { label: "%12+", value: 12 }, { label: "%15+", value: 15 }]} />
+                  <PanelDropdown label="Konum" value={oppCity} onSelect={(v) => setOppCity(String(v))} options={[{ label: "Tümü", value: "" }, ...oppCityOptions.map((c) => ({ label: c, value: c }))]} />
+                  <PanelDropdown label="Stok Durumu" value={oppStock} onSelect={(v) => setOppStock(String(v))} options={[{ label: "Tümü", value: "" }, { label: "Stokta var", value: "in" }, { label: "Az stok", value: "low" }]} />
+                  <PanelDropdown label="Güven Seviyesi" value={oppGuven} onSelect={(v) => setOppGuven(String(v))} options={[{ label: "Tümü", value: "" }, { label: "Yüksek", value: "high" }, { label: "Orta", value: "mid" }]} />
+                  {(oppCategory || oppCommission || oppCity || oppStock || oppGuven) ? (
+                    <Pressable onPress={() => { setOppCategory(""); setOppCommission(0); setOppCity(""); setOppStock(""); setOppGuven(""); }} style={{ alignItems: "center", flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 7 }}>
+                      <MaterialCommunityIcons name="close" size={14} color={colors.accent} />
+                      <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>Temizle</Text>
+                    </Pressable>
+                  ) : null}
                 </View>
                 <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingBottom: 8 }}>
                   <Text style={{ color: colors.muted, flex: 2.4, fontSize: 12, fontWeight: "800" }}>Ürün</Text>
@@ -720,6 +745,38 @@ function PerfMetric({ icon, label, value }: { icon: keyof typeof MaterialCommuni
         <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{value}</Text>
         <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{label}</Text>
       </View>
+    </View>
+  );
+}
+
+function PanelDropdown({ label, value, options, onSelect }: { label: string; value: string | number; options: Array<{ label: string; value: string | number }>; onSelect: (v: string | number) => void }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+  const active = value !== "" && value !== 0;
+  return (
+    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
+      <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+        <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: active ? "900" : "700" }}>{active && selected ? selected.label : label}</Text>
+        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={14} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <>
+          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 900 }} />
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, left: 0, maxHeight: 300, minWidth: 190, paddingVertical: 6, position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 40, zIndex: 1000 }}>
+            <ScrollView style={{ maxHeight: 288 }} keyboardShouldPersistTaps="handled">
+              {options.map((opt) => {
+                const isSel = opt.value === value;
+                return (
+                  <Pressable key={`${opt.value}`} onPress={() => { onSelect(opt.value); setOpen(false); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 9 })}>
+                    <MaterialCommunityIcons name={isSel ? "check-circle" : "circle-outline"} size={15} color={isSel ? colors.primary : colors.subtle} />
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{opt.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
+        </>
+      ) : null}
     </View>
   );
 }
