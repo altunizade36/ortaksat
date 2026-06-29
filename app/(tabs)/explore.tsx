@@ -11,6 +11,8 @@ import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { REFERENCE_NOW, searchKey } from "@/lib/locale";
+import { LocationSelector } from "@/components/location-selector";
+import { districtsOfProvince, getDistrict, getProvince, locKey, provinces } from "@/lib/locations";
 import { displayText } from "@/lib/text";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -40,12 +42,14 @@ export default function ExploreScreen() {
   const { language, t } = useLanguage();
   const { width } = useWindowDimensions();
   const router = useRouter();
-  const params = useLocalSearchParams<{ q?: string }>();
+  const params = useLocalSearchParams<{ q?: string; province?: string; district?: string }>();
   const { findUser, listings } = useStore();
   const [refreshing, setRefreshing] = useState(false);
   const [seed, setSeed] = useState(1);
   const [filter, setFilter] = useState<FeedFilter>("all");
-  const [city, setCity] = useState("");
+  const provinceId = useMemo(() => provinces.find((p) => p.slug === params.province)?.id, [params.province]);
+  const districtId = useMemo(() => districtsOfProvince(provinceId).find((d) => d.slug === params.district)?.id, [provinceId, params.district]);
+  const [city, setCity] = useState(""); // mobile-only exact city filter
   const [minCommission, setMinCommission] = useState(0);
   const [priceRange, setPriceRange] = useState("");
   const [stockFilter, setStockFilter] = useState("");
@@ -78,12 +82,18 @@ export default function ExploreScreen() {
   }, [listings]);
 
   const cities = useMemo(() => Array.from(new Set(marketplaceListings.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")), [marketplaceListings]);
-  const hasPanelFilter = Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter);
+  const provinceName = useMemo(() => (provinceId != null ? getProvince(provinceId)?.name : undefined), [provinceId]);
+  const districtName = useMemo(() => (districtId != null ? getDistrict(districtId)?.name : undefined), [districtId]);
+  const hasPanelFilter = provinceId != null || Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter);
 
   const activeListings = useMemo(() => {
+    const provKey = provinceName ? locKey(provinceName) : "";
+    const distKey = districtName ? locKey(districtName) : "";
     const filtered = marketplaceListings
       .filter((listing) => {
         if (city && listing.location !== city) return false;
+        if (provKey && !locKey(listing.location).includes(provKey)) return false;
+        if (distKey && !locKey(listing.location).includes(distKey)) return false;
         if (minCommission > 0 && commissionAmount(listing) < minCommission) return false;
         if (priceRange) {
           const [mn, mx] = priceRange.split("-");
@@ -106,7 +116,7 @@ export default function ExploreScreen() {
 
     if (filtered.length || tokens.length > 0 || filter !== "all" || hasPanelFilter) return filtered;
     return marketplaceListings.sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));
-  }, [city, filter, findUser, hasPanelFilter, marketplaceListings, minCommission, priceRange, seed, statusOpen, stockFilter, tokens]);
+  }, [city, districtName, filter, findUser, hasPanelFilter, marketplaceListings, minCommission, priceRange, provinceName, seed, statusOpen, stockFilter, tokens]);
 
   const productListings = useMemo(() => {
     const arr = activeListings.filter((listing) => {
@@ -244,10 +254,27 @@ export default function ExploreScreen() {
           ))}
         </View>
 
+        {/* Location filter */}
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 8, padding: 12, position: "relative", zIndex: 60 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+            <MaterialCommunityIcons name="map-marker-radius" size={17} color={colors.primary} />
+            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Konum</Text>
+            {(provinceName || districtName) ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>· {[provinceName, districtName].filter(Boolean).join(" / ")}</Text> : null}
+          </View>
+          <View style={{ maxWidth: 520 }}>
+            <LocationSelector
+              mode="filter"
+              showNeighborhood={false}
+              value={{ provinceId, districtId }}
+              onChange={(v) => router.setParams({ province: v.provinceId != null ? getProvince(v.provinceId)?.slug : undefined, district: v.districtId != null ? getDistrict(v.districtId)?.slug : undefined })}
+            />
+          </View>
+        </View>
+
         {/* Toolbar */}
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingVertical: 10, position: "relative", zIndex: 50 }}>
           <Pressable
-            onPress={() => { setPriceRange(""); setMinCommission(0); setCity(""); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setFilter("all"); }}
+            onPress={() => { setPriceRange(""); setMinCommission(0); router.setParams({ province: undefined, district: undefined }); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setFilter("all"); }}
             style={{ alignItems: "center", backgroundColor: hasPanelFilter ? colors.primarySoft : colors.surfaceAlt, borderColor: hasPanelFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
           >
             <MaterialCommunityIcons name="filter-variant" size={15} color={colors.primaryDark} />
@@ -267,7 +294,6 @@ export default function ExploreScreen() {
             { label: "₺500+", value: 500 },
             { label: "₺1.000+", value: 1000 }
           ]} />
-          <FilterDropdown label="Şehir" value={city} onSelect={(v) => setCity(String(v))} searchable options={[{ label: "Tüm şehirler", value: "" }, ...cities.map((c) => ({ label: c, value: c }))]} />
           <FilterDropdown label="Stok Durumu" value={stockFilter} onSelect={(v) => setStockFilter(String(v))} options={[
             { label: "Tümü", value: "" },
             { label: "Stokta var", value: "in" },
