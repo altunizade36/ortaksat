@@ -7,6 +7,7 @@ import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View, us
 
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
+import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
@@ -371,6 +372,7 @@ export default function ListingDetailScreen() {
             <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>
               Teslimat ve ödeme, satıcı ile alıcı arasında {contactLabel(currentListing.contactMethod).toLocaleLowerCase("tr-TR")} üzerinden kararlaştırılır. İade ve değişim koşullarını satışı kapatmadan önce satıcıyla netleştir.
             </Text>
+            <LegalNote style={{ marginTop: 8 }} />
           </Accordion>
           <Accordion title="Sıkça sorulan sorular" icon="comment-question-outline">
             <SpecRow label="Komisyonu kim öder?" value="İlan sahibi, satış gerçekleştiğinde ortağa öder." />

@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { CategoryPicker } from "@/components/category-picker";
 import { colors } from "@/components/colors";
+import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
@@ -291,6 +292,8 @@ export function DesktopCreateFlow() {
           </View>
         ) : null}
       </View>
+
+      <LegalDisclaimer />
 
       {/* Nav */}
       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>

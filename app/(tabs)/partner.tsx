@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { LegalNote } from "@/components/legal-disclaimer";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingShareTemplates, money, shareUrl } from "@/lib/format";
@@ -187,6 +188,8 @@ export default function PartnerScreen() {
             ))}
           </View>
         </View>
+
+        <LegalNote />
 
         {/* Tabs */}
         <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 6 }}>

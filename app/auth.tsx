@@ -170,7 +170,7 @@ export default function AuthScreen() {
                 {mode === "register" ? (
                   <Pressable onPress={() => setAcceptedLegal((v) => !v)} style={{ alignItems: "flex-start", flexDirection: "row", gap: 9 }}>
                     <MaterialCommunityIcons name={acceptedLegal ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"} size={20} color={acceptedLegal ? colors.primary : colors.muted} style={{ marginTop: 1 }} />
-                    <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 17 }}>KVKK aydınlatması, gizlilik politikası ve kullanım şartlarını okudum; Ortaksat'ın satışın tarafı değil aracı platform olduğunu kabul ediyorum.</Text>
+                    <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 17 }}>KVKK aydınlatması, gizlilik politikası ve kullanım şartlarını okudum. Ortaksat'ın aracı bir ilan/iletişim platformu olduğunu; ödeme almadığını, para tutmadığını, komisyon kesmediğini, kargo/teslimat yapmadığını; tüm alışveriş, ödeme ve teslimatın taraflar arasında, kendi sorumluluklarında yapıldığını ve Ortaksat'ın bu işlemlerin tarafı olmadığını kabul ediyorum.</Text>
                   </Pressable>
                 ) : null}
 

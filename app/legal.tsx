@@ -5,6 +5,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, Tex
 
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
+import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -126,6 +127,8 @@ export default function LegalScreen() {
               <MaterialCommunityIcons name="shield-lock" size={36} color={colors.primaryDark} />
             </View>
           </View>
+
+          <LegalDisclaimer title="Ortaksat aracı bir platformdur — ödeme/komisyon/kargo işlemez" />
 
           {/* Tabs */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
@@ -340,8 +343,8 @@ export default function LegalScreen() {
         <Card>
           <SectionTitle title="Yasal metin özeti" />
           <LegalRow icon="shield-account" title="KVKK aydınlatma" body="E-posta, profil, ilan, ortaklık, talep, mesaj, bildirim, yorum ve komisyon kayıtları hizmeti çalıştırmak, güvenliği sağlamak ve destek vermek için işlenir." />
-          <LegalRow icon="file-document-check" title="Aracı platform şartı" body="Ortaksat ürün sahibi, satıcı, ödeme kuruluşu veya teslimat tarafı değildir. Ürün doğruluğu, fiyat, stok, teslimat, iade ve komisyon ödemesi ilgili kullanıcıların sorumluluğundadır." />
-          <LegalRow icon="account-cash" title="Komisyon takip modeli" body="İlk sürümde uygulama para tutmaz. Satıcı komisyonu ödediğini, ortak satıcı da aldığını işaretler; anlaşmazlıklar kayıt altına alınıp destek/moderasyon sürecine taşınır." />
+          <LegalRow icon="file-document-check" title="Aracı platform şartı" body="Ortaksat aracı bir ilan/iletişim platformudur; ürün sahibi, satıcısı, ödeme kuruluşu veya teslimat tarafı değildir. Ödeme almaz, para tutmaz, komisyon kesmez, kargo/teslimat yapmaz; cüzdan, bakiye veya emanet (güvenli ödeme) sistemi yoktur. Ürün doğruluğu, fiyat, stok, teslimat, iade ve komisyon ödemesi tamamen ilgili kullanıcıların sorumluluğundadır." />
+          <LegalRow icon="account-cash" title="Komisyon takip modeli" body="Uygulama para tutmaz ve dağıtmaz; satıştan kesinti yapmaz. Gösterilen komisyon yalnızca tarafların kendi belirlediği bilgidir. Ödeme satıcı ile ortak arasında, uygulama dışında yapılır; uygulama yalnızca kaydı tutar." />
           <LegalRow icon="lock-check" title="Gizlilik ve güvenlik" body="Gizli sunucu anahtarları mobil uygulamada tutulmaz. Kullanıcı verileri oturum, yetki ve dosya erişim kurallarıyla korunur." />
           <LegalRow icon="store-check" title="İlan ve paylaşım kuralları" body="Yanıltıcı fiyat, sahte stok, sahte ürün, spam paylaşım, marka ihlali, yasaklı ürün ve dolandırıcılık şüphesi moderasyona taşınır; hesap ve ilan kısıtlanabilir." />
           <PrimaryButton onPress={() => void acceptAll()}>Metinleri Okudum ve Kabul Ediyorum</PrimaryButton>
