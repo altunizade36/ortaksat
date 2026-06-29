@@ -5,6 +5,7 @@ import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
 
+import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -350,6 +351,33 @@ export default function ListingDetailScreen() {
           <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Kurallar ve güven", language)}</Text>
           {currentListing.partnerRules.slice(0, 4).map((rule) => <Bullet key={rule} icon="shield-check-outline" text={rule} tone="info" />)}
         </Card>
+
+        <View style={{ gap: 10 }}>
+          <Accordion title="Ürün açıklaması" icon="text-box-outline" defaultOpen>
+            <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{currentListing.description}</Text>
+            {currentListing.salesPitch.slice(0, 4).map((line) => (
+              <Bullet key={line} icon="check-circle-outline" text={line} tone="info" />
+            ))}
+          </Accordion>
+          <Accordion title="Ürün özellikleri" icon="format-list-bulleted">
+            <SpecRow label="Kategori" value={currentListing.category} />
+            <SpecRow label="Konum" value={currentListing.location} />
+            <SpecRow label="Stok" value={`${currentListing.stockCount} adet`} />
+            <SpecRow label="Komisyon" value={currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : money(commission)} />
+            <SpecRow label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında ortaklık" : "Satıcı onaylı"} />
+            <SpecRow label="İletişim" value={contactLabel(currentListing.contactMethod)} />
+          </Accordion>
+          <Accordion title="Teslimat ve iade" icon="truck-outline">
+            <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>
+              Teslimat ve ödeme, satıcı ile alıcı arasında {contactLabel(currentListing.contactMethod).toLocaleLowerCase("tr-TR")} üzerinden kararlaştırılır. İade ve değişim koşullarını satışı kapatmadan önce satıcıyla netleştir.
+            </Text>
+          </Accordion>
+          <Accordion title="Sıkça sorulan sorular" icon="comment-question-outline">
+            <SpecRow label="Komisyonu kim öder?" value="İlan sahibi, satış gerçekleştiğinde ortağa öder." />
+            <SpecRow label="Ortak olmak ücretli mi?" value="Hayır, ortaklık ücretsizdir." />
+            <SpecRow label="Süreç güvenli mi?" value="Komisyon şartı ve talepler sistemde kayıt altındadır." />
+          </Accordion>
+        </View>
 
         <RelatedListingsSection
           cardWidth={relatedCardWidth}
@@ -801,6 +829,16 @@ function Bullet({ icon, text, tone }: { icon: keyof typeof MaterialCommunityIcon
     <View style={{ flexDirection: "row", gap: 8 }}>
       <MaterialCommunityIcons name={icon} size={18} color={tone === "success" ? colors.success : colors.info} />
       <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 14, lineHeight: 20 }}>{translateCopy(text, language)}</Text>
+    </View>
+  );
+}
+
+function SpecRow({ label, value }: { label: string; value: string }) {
+  const { language } = useLanguage();
+  return (
+    <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 12, paddingVertical: 4 }}>
+      <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700", width: 130 }}>{translateCopy(label, language)}</Text>
+      <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600", lineHeight: 20 }}>{translateCopy(value, language)}</Text>
     </View>
   );
 }

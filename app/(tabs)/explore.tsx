@@ -36,6 +36,9 @@ export default function ExploreScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [seed, setSeed] = useState(1);
   const [filter, setFilter] = useState<FeedFilter>("all");
+  const [city, setCity] = useState("");
+  const [minCommission, setMinCommission] = useState(0);
+  const [statusOpen, setStatusOpen] = useState(false);
   const [visibleCount, setVisibleCount] = useState(INITIAL_EXPLORE_ITEMS);
   const feedFilters: Array<{ key: FeedFilter; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
     { key: "all", label: t("all"), icon: "grid" },
@@ -48,7 +51,9 @@ export default function ExploreScreen() {
   const tokens = searchKey(params.q ?? "").split(" ").filter(Boolean);
   const gap = isWideWeb ? 14 : 8;
   const padding = isWideWeb ? 20 : 12;
-  const grid = responsiveGrid({ available: width - padding * 2, gap, minCardWidth: isWideWeb ? 200 : 160 });
+  const panelWidth = 260;
+  const gridArea = isWideWeb ? width - padding * 2 - panelWidth - 20 : width - padding * 2;
+  const grid = responsiveGrid({ available: gridArea, gap, minCardWidth: isWideWeb ? 190 : 160 });
   const columns = grid.columns;
   const tileSize = grid.cardWidth;
   const tileHeight = Math.min(isWideWeb ? 320 : 258, Math.round(tileSize * 1.22));
@@ -58,9 +63,15 @@ export default function ExploreScreen() {
     return visible.length ? visible : listings;
   }, [listings]);
 
+  const cities = useMemo(() => Array.from(new Set(marketplaceListings.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")), [marketplaceListings]);
+  const hasPanelFilter = Boolean(city) || minCommission > 0 || statusOpen;
+
   const activeListings = useMemo(() => {
     const filtered = marketplaceListings
       .filter((listing) => {
+        if (city && listing.location !== city) return false;
+        if (minCommission > 0 && commissionAmount(listing) < minCommission) return false;
+        if (statusOpen && listing.partnershipMode !== "open") return false;
         if (filter === "open" && listing.partnershipMode !== "open") return false;
         if (filter === "hot" && listing.leadCount + listing.favoriteCount < 50) return false;
         if (filter === "new" && !isNewListing(listing.createdAt)) return false;
@@ -71,9 +82,9 @@ export default function ExploreScreen() {
       })
       .sort((a, b) => (filter === "commission" ? commissionAmount(b) - commissionAmount(a) : exploreScore(b, seed) - exploreScore(a, seed)));
 
-    if (filtered.length || tokens.length > 0 || filter !== "all") return filtered;
+    if (filtered.length || tokens.length > 0 || filter !== "all" || hasPanelFilter) return filtered;
     return marketplaceListings.sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));
-  }, [filter, findUser, marketplaceListings, seed, tokens]);
+  }, [city, filter, findUser, hasPanelFilter, marketplaceListings, minCommission, seed, statusOpen, tokens]);
 
   const mediaItems = useMemo(() => {
     return activeListings.flatMap((listing) => {
@@ -100,7 +111,7 @@ export default function ExploreScreen() {
 
   useEffect(() => {
     setVisibleCount(INITIAL_EXPLORE_ITEMS);
-  }, [filter, params.q]);
+  }, [filter, params.q, city, minCommission, statusOpen]);
 
   function refresh() {
     setRefreshing(true);
@@ -127,7 +138,22 @@ export default function ExploreScreen() {
       contentContainerStyle={{ backgroundColor: colors.surface, paddingBottom: 102 }}
       style={{ backgroundColor: colors.surface }}
     >
-      <View style={{ gap: 7, paddingBottom: 8, paddingHorizontal: padding, paddingTop: 6 }}>
+      <View style={isWideWeb ? { flexDirection: "row", gap: 20, paddingHorizontal: padding, paddingTop: 6, alignItems: "flex-start" } : undefined}>
+      {isWideWeb ? (
+        <FilterPanel
+          cities={cities}
+          city={city}
+          onCity={setCity}
+          minCommission={minCommission}
+          onMinCommission={setMinCommission}
+          statusOpen={statusOpen}
+          onStatusOpen={setStatusOpen}
+          onClear={() => { setCity(""); setMinCommission(0); setStatusOpen(false); }}
+          width={panelWidth}
+        />
+      ) : null}
+      <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
+      <View style={{ gap: 7, paddingBottom: 8, paddingHorizontal: isWideWeb ? 0 : padding, paddingTop: isWideWeb ? 0 : 6 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1 }}>
             <Text selectable style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>
@@ -189,7 +215,7 @@ export default function ExploreScreen() {
         </View>
       ) : (
         <>
-          <View style={{ gap, paddingHorizontal: padding, paddingTop: 2 }}>
+          <View style={{ gap, paddingHorizontal: isWideWeb ? 0 : padding, paddingTop: 2 }}>
             {rows.map((row, rowIndex) => (
               <View key={`row-${rowIndex}`} style={{ flexDirection: "row", gap }}>
                 {row.map((item, index) => (
@@ -217,7 +243,97 @@ export default function ExploreScreen() {
           ) : null}
         </>
       )}
+      </View>
+      </View>
     </ScrollView>
+  );
+}
+
+function FilterPanel({
+  cities,
+  city,
+  onCity,
+  minCommission,
+  onMinCommission,
+  statusOpen,
+  onStatusOpen,
+  onClear,
+  width
+}: {
+  cities: string[];
+  city: string;
+  onCity: (v: string) => void;
+  minCommission: number;
+  onMinCommission: (v: number) => void;
+  statusOpen: boolean;
+  onStatusOpen: (v: boolean) => void;
+  onClear: () => void;
+  width: number;
+}) {
+  const commissionPresets = [0, 100, 250, 500];
+  const hasFilter = Boolean(city) || minCommission > 0 || statusOpen;
+  return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 18, padding: 16, width }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <MaterialCommunityIcons name="filter-variant" size={18} color={colors.primaryDark} />
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Filtrele</Text>
+        {hasFilter ? (
+          <Pressable onPress={onClear}>
+            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }}>Temizle</Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Durum</Text>
+        <Pressable
+          onPress={() => onStatusOpen(!statusOpen)}
+          style={{ alignItems: "center", backgroundColor: statusOpen ? colors.primarySoft : colors.surfaceAlt, borderColor: statusOpen ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}
+        >
+          <MaterialCommunityIcons name={statusOpen ? "checkbox-marked" : "checkbox-blank-outline"} size={18} color={statusOpen ? colors.primary : colors.muted} />
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Ortak satışa açık</Text>
+        </Pressable>
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Komisyon (en az)</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {commissionPresets.map((amount) => {
+            const active = minCommission === amount;
+            return (
+              <Pressable
+                key={amount}
+                onPress={() => onMinCommission(amount)}
+                style={{ backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}
+              >
+                <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>
+                  {amount === 0 ? "Tümü" : `₺${amount}+`}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Şehir</Text>
+        <View style={{ gap: 4 }}>
+          <Pressable onPress={() => onCity("")} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 6 }}>
+            <MaterialCommunityIcons name={city === "" ? "radiobox-marked" : "radiobox-blank"} size={18} color={city === "" ? colors.primary : colors.muted} />
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Tüm şehirler</Text>
+          </Pressable>
+          {cities.map((c) => {
+            const active = city === c;
+            return (
+              <Pressable key={c} onPress={() => onCity(active ? "" : c)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 6 }}>
+                <MaterialCommunityIcons name={active ? "radiobox-marked" : "radiobox-blank"} size={18} color={active ? colors.primary : colors.muted} />
+                <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{c}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      </View>
+    </View>
   );
 }
 
