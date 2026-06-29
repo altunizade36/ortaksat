@@ -10,6 +10,7 @@ import { HeaderActions } from "@/components/header-actions";
 import { Brand3DMark } from "@/components/three-d-showcase";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
+import { useStore } from "@/lib/use-store";
 
 const mascot = require("../assets/mascot.png");
 
@@ -60,7 +61,7 @@ export function AppHeader() {
           <View style={{ flex: 1, maxWidth: 640, minWidth: 0 }}>
             <GlobalSearchBar />
           </View>
-          <HeaderActions />
+          <DesktopActions />
         </View>
 
         {/* NAV BAR: tabs + primary CTAs */}
@@ -149,6 +150,47 @@ export function AppHeader() {
         <HeaderActions />
       </View>
       <GlobalSearchBar />
+    </View>
+  );
+}
+
+function DesktopActions() {
+  const { currentUser, messages, notifications } = useStore();
+  const unreadMessages = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
+  const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
+
+  const items: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href; badge?: number }> = [
+    { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
+    { icon: "message-text-outline", label: "Mesajlar", href: "/messages", badge: unreadMessages },
+    { icon: "bell-outline", label: "Bildirim", href: "/notifications-tab", badge: unreadNotifications }
+  ];
+
+  return (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 18 }}>
+      {items.map((item) => (
+        <Link key={item.label} href={item.href} asChild>
+          <Pressable style={{ alignItems: "center", gap: 2 }}>
+            <View>
+              <MaterialCommunityIcons name={item.icon} size={22} color={colors.primaryDark} />
+              {item.badge ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1, minWidth: 16, paddingHorizontal: 3, position: "absolute", right: -8, top: -6 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{item.badge > 9 ? "9+" : item.badge}</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{item.label}</Text>
+          </Pressable>
+        </Link>
+      ))}
+      <Link href="/profile" asChild>
+        <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 7 }}>
+          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 26, justifyContent: "center", width: 26 }}>
+            <MaterialCommunityIcons name="account" size={17} color={colors.primaryDark} />
+          </View>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Hesabım</Text>
+          <MaterialCommunityIcons name="chevron-down" size={16} color={colors.muted} />
+        </Pressable>
+      </Link>
     </View>
   );
 }

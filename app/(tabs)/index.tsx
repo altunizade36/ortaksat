@@ -152,10 +152,19 @@ export default function HomeScreen() {
       </View>
 
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 19, fontWeight: "900" }}>{t("marketListings")}</Text>
-        <Text selectable style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>
-          {filteredListings.length} {t("results")}
-        </Text>
+        <Text selectable style={{ color: colors.ink, flex: 1, fontSize: isWideWeb ? 24 : 19, fontWeight: "900" }}>{isWideWeb ? "Öne çıkan ilanlar" : t("marketListings")}</Text>
+        {isWideWeb ? (
+          <Link href="/explore" asChild>
+            <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+              <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>Tüm ilanları gör</Text>
+              <MaterialCommunityIcons name="arrow-right" size={18} color={colors.primaryDark} />
+            </Pressable>
+          </Link>
+        ) : (
+          <Text selectable style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>
+            {filteredListings.length} {t("results")}
+          </Text>
+        )}
       </View>
 
       {filteredListings.length === 0 ? <EmptyState title={t("noResults")} body={t("noResultsBody")} /> : null}
