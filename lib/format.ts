@@ -8,11 +8,24 @@ const formatter = new Intl.NumberFormat(deviceLocale, {
   maximumFractionDigits: 0
 });
 
-export function money(value: number) {
-  const formatted = formatter.format(value);
-  if (defaultCurrency === "TRY") {
-    return formatted.replace("TRY", "₺").replace("TL", "₺").replace(/\s+/g, "");
+// Deterministic thousands grouping with "." — identical on Node (static export)
+// and the browser, so prices don't trigger a hydration mismatch (React #418).
+function groupThousands(value: number) {
+  const rounded = Math.round(Math.abs(Number.isFinite(value) ? value : 0));
+  const digits = String(rounded);
+  let out = "";
+  for (let i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 === 0) out += ".";
+    out += digits[i];
   }
+  return (value < 0 ? "-" : "") + out;
+}
+
+export function money(value: number) {
+  if (defaultCurrency === "TRY") {
+    return `₺${groupThousands(value)}`;
+  }
+  const formatted = formatter.format(Number.isFinite(value) ? value : 0);
   return formatted;
 }
 

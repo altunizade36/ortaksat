@@ -29,6 +29,17 @@ function pseudoCount(key: string) {
   return 4000 + (h % 28000);
 }
 
+// Deterministic thousands grouping (no Intl) so SSG and client match (no #418).
+function groupTr(value: number) {
+  const digits = String(Math.round(value));
+  let out = "";
+  for (let i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 === 0) out += ".";
+    out += digits[i];
+  }
+  return out;
+}
+
 export default function CategoriesPage() {
   const { language } = useLanguage();
   const { listings } = useStore();
@@ -127,7 +138,7 @@ export default function CategoriesPage() {
                     {image ? <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} /> : <MaterialCommunityIcons name={cat.icon} size={30} color={PALETTE[i % PALETTE.length][1]} />}
                   </View>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy(cat.label, language)}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{count.toLocaleString("tr-TR")} ilan</Text>
+                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{groupTr(count)} ilan</Text>
                 </Pressable>
               </Link>
             ))}
@@ -181,7 +192,7 @@ export default function CategoriesPage() {
                     </View>
                   ))}
                 </View>
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{count.toLocaleString("tr-TR")} ilan</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{groupTr(count)} ilan</Text>
               </Pressable>
             </Link>
           ))}

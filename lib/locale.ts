@@ -40,19 +40,21 @@ export function upper(value: string) {
   return value.toLocaleUpperCase(deviceLocale);
 }
 
+// Deterministic (no Intl) so server-rendered cards match the client (no #418).
 export function compactNumber(value: number) {
-  return new Intl.NumberFormat(deviceLocale, {
-    maximumFractionDigits: 1,
-    notation: value >= 1000 ? "compact" : "standard"
-  }).format(value);
+  const n = Math.round(value);
+  if (Math.abs(n) >= 1000) {
+    const k = n / 1000;
+    const text = Number.isInteger(k) ? String(k) : k.toFixed(1).replace(".", ",");
+    return `${text} B`;
+  }
+  return String(n);
 }
+
+const SHORT_MONTHS_TR = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
 
 export function shortDate(value: string | Date) {
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return typeof value === "string" ? value : "";
-
-  return new Intl.DateTimeFormat(deviceLocale, {
-    day: "2-digit",
-    month: "short"
-  }).format(date);
+  return `${String(date.getDate()).padStart(2, "0")} ${SHORT_MONTHS_TR[date.getMonth()]}`;
 }

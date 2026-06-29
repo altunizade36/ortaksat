@@ -35,10 +35,20 @@ export function useContentWidth() {
   return Math.min(effective, SHELL_MAX_WIDTH);
 }
 
-/** True on web desktop-width viewports. False on native and narrow web. */
+/**
+ * True on web desktop-width viewports. False on native and narrow web.
+ *
+ * Gated behind a mount flag so the very first render (static export on the
+ * server AND the first client render during hydration) agree — both return
+ * false — avoiding a hydration mismatch (React #418) from the desktop/mobile
+ * branches. After mount it reflects the real viewport.
+ */
 export function useIsWideWeb() {
   const contentWidth = useContentWidth();
-  return Platform.OS === "web" && contentWidth >= WIDE_WEB_BREAKPOINT;
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (Platform.OS !== "web") return false;
+  return mounted && contentWidth >= WIDE_WEB_BREAKPOINT;
 }
 
 /**
