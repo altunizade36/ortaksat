@@ -3,6 +3,10 @@ import { Link } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { SafeRemoteImage } from "@/components/safe-remote-image";
+import { commissionAmount, money } from "@/lib/format";
+import { displayText } from "@/lib/text";
+import { useStore } from "@/lib/use-store";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -29,6 +33,11 @@ export function WebHero({
   void totalListings;
   void averageCommission;
   void cityCount;
+
+  const { listings } = useStore();
+  const featured = listings
+    .filter((l) => l.status === "active" && l.image)
+    .sort((a, b) => b.favoriteCount - a.favoriteCount)[0] ?? listings[0];
 
   const avatarColors = [colors.primary, colors.info, colors.gold, colors.violet, colors.accent];
 
@@ -87,21 +96,26 @@ export function WebHero({
         </View>
       </View>
 
-      {/* CENTER — product / network visual */}
+      {/* CENTER — featured real listing */}
       <View style={{ alignItems: "center", flex: 0.9, justifyContent: "center", minWidth: 0 }}>
-        <View style={{ backgroundColor: "#FFFFFF", borderRadius: 24, padding: 18, shadowColor: "#101828", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.12, shadowRadius: 28, width: 240 }}>
-          <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 5, marginBottom: 12, paddingHorizontal: 10, paddingVertical: 5 }}>
-            <MaterialCommunityIcons name="star-four-points" size={12} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "900" }}>Yeni İlan</Text>
-          </View>
-          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 16, height: 150, justifyContent: "center", width: "100%" }}>
-            <MaterialCommunityIcons name="sofa-single-outline" size={64} color={colors.primary} />
-          </View>
-          <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900", marginTop: 12 }}>₺450</Text>
-          <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, marginTop: 6, paddingHorizontal: 10, paddingVertical: 4 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Kazancın %10</Text>
-          </View>
-        </View>
+        <Link href={featured ? { pathname: "/listing/[id]", params: { id: featured.id } } : "/explore"} asChild>
+          <Pressable style={{ backgroundColor: "#FFFFFF", borderRadius: 24, padding: 18, shadowColor: "#101828", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.12, shadowRadius: 28, width: 250 }}>
+            <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 5, marginBottom: 12, paddingHorizontal: 10, paddingVertical: 5, position: "absolute", zIndex: 2, left: 28, top: 28 }}>
+              <MaterialCommunityIcons name="star-four-points" size={12} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "900" }}>Öne çıkan</Text>
+            </View>
+            <View style={{ backgroundColor: colors.primarySoft, borderRadius: 16, height: 160, overflow: "hidden", width: "100%" }}>
+              <SafeRemoteImage uri={featured?.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={160} />
+            </View>
+            <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900", marginTop: 12 }}>{featured ? displayText(featured.title) : "Öne çıkan ürün"}</Text>
+            <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginTop: 6 }}>
+              <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{featured ? money(featured.price) : "₺450"}</Text>
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Kazanç {featured ? money(commissionAmount(featured)) : "₺45"}</Text>
+              </View>
+            </View>
+          </Pressable>
+        </Link>
       </View>
 
       {/* RIGHT — headline stats */}
