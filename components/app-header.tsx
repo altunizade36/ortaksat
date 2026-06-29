@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, usePathname, useRouter, type Href } from "expo-router";
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,6 +9,7 @@ import { colors } from "@/components/colors";
 import { GlobalSearchBar } from "@/components/global-search-bar";
 import { HeaderActions } from "@/components/header-actions";
 import { Brand3DMark } from "@/components/three-d-showcase";
+import { listingCategories } from "@/lib/categories";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
@@ -68,6 +70,9 @@ export function AppHeader() {
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 32, paddingVertical: 8 }}>
           {navItems.map((item) => {
             const active = item.match(pathname);
+            if (item.label === "Kategoriler") {
+              return <CategoriesMenu key={item.label} />;
+            }
             return (
               <Link key={item.label} href={item.href} asChild>
                 <Pressable style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : "transparent", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 14, paddingVertical: 9 }}>
@@ -182,15 +187,77 @@ function DesktopActions() {
           </Pressable>
         </Link>
       ))}
-      <Link href="/profile" asChild>
-        <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 7 }}>
-          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 26, justifyContent: "center", width: 26 }}>
-            <MaterialCommunityIcons name="account" size={17} color={colors.primaryDark} />
+      <AccountMenu />
+    </View>
+  );
+}
+
+function CategoriesMenu() {
+  const { language } = useLanguage();
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
+      <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: open ? colors.primarySoft : "transparent", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 14, paddingVertical: 9 }}>
+        <Text numberOfLines={1} style={{ color: open ? colors.primaryDark : colors.ink, fontSize: 14, fontWeight: "700" }}>Kategoriler</Text>
+        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={16} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <>
+          <Pressable onPress={() => setOpen(false)} style={{ bottom: -3000, left: -3000, position: "absolute", right: -3000, top: -3000, zIndex: 900 }} />
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 4, left: 0, padding: 8, position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 46, width: 460, zIndex: 1000 }}>
+            {listingCategories.map((category) => (
+              <Link key={category.key} href={{ pathname: "/explore", params: { q: category.label } }} asChild>
+                <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderRadius: 10, flexDirection: "row", gap: 10, padding: 10, width: 218 })}>
+                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 34, justifyContent: "center", width: 34 }}>
+                    <MaterialCommunityIcons name={category.icon} size={18} color={colors.primaryDark} />
+                  </View>
+                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{translateCopy(category.label, language)}</Text>
+                </Pressable>
+              </Link>
+            ))}
           </View>
-          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Hesabım</Text>
-          <MaterialCommunityIcons name="chevron-down" size={16} color={colors.muted} />
-        </Pressable>
-      </Link>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+function AccountMenu() {
+  const [open, setOpen] = useState(false);
+  const items: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href }> = [
+    { icon: "account-circle-outline", label: "Profilim", href: "/profile" },
+    { icon: "view-list-outline", label: "İlanlarım", href: "/seller" },
+    { icon: "handshake-outline", label: "Ortak Satışlarım", href: "/partner" },
+    { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
+    { icon: "message-text-outline", label: "Mesajlarım", href: "/messages" },
+    { icon: "shield-check-outline", label: "Güven Merkezi", href: "/trust" },
+    { icon: "file-document-outline", label: "Yasal & Destek", href: "/legal" },
+    { icon: "login", label: "Giriş / Kayıt", href: "/auth" }
+  ];
+  return (
+    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
+      <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: open ? colors.primarySoft : colors.surface, borderColor: open ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 7 }}>
+        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 26, justifyContent: "center", width: 26 }}>
+          <MaterialCommunityIcons name="account" size={17} color={colors.primaryDark} />
+        </View>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Hesabım</Text>
+        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={16} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <>
+          <Pressable onPress={() => setOpen(false)} style={{ bottom: -3000, left: -3000, position: "absolute", right: -3000, top: -3000, zIndex: 900 }} />
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, paddingVertical: 6, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 48, width: 230, zIndex: 1000 }}>
+            {items.map((item) => (
+              <Link key={item.label} href={item.href} asChild>
+                <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 10 })}>
+                  <MaterialCommunityIcons name={item.icon} size={17} color={colors.primaryDark} />
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
+        </>
+      ) : null}
     </View>
   );
 }
