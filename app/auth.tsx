@@ -126,6 +126,36 @@ export default function AuthScreen() {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
         <View style={{ gap: 16, marginHorizontal: "auto", maxWidth: 1100, paddingHorizontal: 20, paddingTop: 24, width: "100%" }}>
+          {/* Branded hero */}
+          <View style={{ backgroundColor: colors.primaryDark, borderRadius: 20, flexDirection: "row", gap: 18, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 24 }}>
+            <View style={{ flex: 1, gap: 8, justifyContent: "center", minWidth: 0 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
+                  <MaterialCommunityIcons name="handshake" size={24} color="#FFFFFF" />
+                </View>
+                <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>OrtakSat'a hoş geldin</Text>
+              </View>
+              <Text style={{ color: "rgba(255,255,255,0.88)", fontSize: 14.5, fontWeight: "600", lineHeight: 21, maxWidth: 560 }}>Ücretsiz hesap aç; ilan ver, ortak satışla kazan, alıcılarla güvenle iletişim kur. Gezmek için giriş gerekmez — hesabını sadece işlem yaparken kullanırsın.</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
+                {[
+                  { i: "check-decagram" as const, t: "Ücretsiz üyelik" },
+                  { i: "shield-lock" as const, t: "Güvenli giriş" },
+                  { i: "account-check" as const, t: "Doğrulanmış satıcılar" }
+                ].map((b) => (
+                  <View key={b.t} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
+                    <MaterialCommunityIcons name={b.i} size={14} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{b.t}</Text>
+                  </View>
+                ))}
+              </View>
+            </View>
+            <View style={{ alignItems: "center", justifyContent: "center", width: 96 }}>
+              <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 999, height: 84, justifyContent: "center", width: 84 }}>
+                <MaterialCommunityIcons name="account-circle-outline" size={48} color="#FFFFFF" />
+              </View>
+            </View>
+          </View>
+
           <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 20 }}>
             {/* Left: auth card */}
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexBasis: 420, flexGrow: 1, minWidth: 0, padding: 26 }}>
