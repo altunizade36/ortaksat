@@ -52,6 +52,13 @@ export default function CreateListingScreen() {
   const [contactMethod, setContactMethod] = useState<ContactMethod>("message");
   const [publishing, setPublishing] = useState(false);
   const [step, setStep] = useState(1);
+  const [subcategory, setSubcategory] = useState("");
+  const [district, setDistrict] = useState("");
+  const [condition, setCondition] = useState("");
+  const [brand, setBrand] = useState("");
+  const [color, setColor] = useState("");
+  const [warrantyStatus, setWarrantyStatus] = useState("");
+  const [warrantyDuration, setWarrantyDuration] = useState("");
   const cleanImageCount = images.map((item) => item.trim()).filter(Boolean).length;
   const priceNumber = Number(price);
   const commissionNumber = Number(commissionValue);
@@ -123,7 +130,8 @@ export default function CreateListingScreen() {
     const parsedReturnWindowDays = Number(returnWindowDays);
     const salesPitch = pitch.split("\n").map((item) => item.trim()).filter(Boolean);
     const parsedRules = partnerRules.split("\n").map((item) => item.trim()).filter(Boolean);
-    const parsedTags = tags.split(",").map((item) => item.trim()).filter(Boolean);
+    const extraTags = [subcategory, condition, brand, color].map((item) => item.trim()).filter(Boolean);
+    const parsedTags = [...tags.split(",").map((item) => item.trim()).filter(Boolean), ...extraTags].slice(0, 12);
     const parsedAdAssets = adAssets.split("\n").map((item) => item.trim()).filter(Boolean);
     const shareTemplates = buildShareTemplates({
       title,
@@ -164,7 +172,7 @@ export default function CreateListingScreen() {
         commissionValue: parsedCommission,
         partnershipMode,
         category: category.trim() || "Genel",
-        location: location.trim() || "Türkiye",
+        location: [location.trim(), district.trim()].filter(Boolean).join(", ") || "Türkiye",
         image: coverImage,
         stockCount: parsedStock,
         minPartnerRating: parsedMinRating,
@@ -281,29 +289,94 @@ export default function CreateListingScreen() {
         </Card>) : null}
 
         {(!isWideWeb || step === 1) ? (<Card>
-          <SectionTitle title="Ürün bilgileri" />
-          <Field label="Başlık" value={title} onChangeText={setTitle} />
-          <Field label="Açıklama" value={description} onChangeText={setDescription} multiline />
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <View style={{ flex: 1 }}>
-              <Field label="Fiyat" value={price} onChangeText={setPrice} keyboardType="numeric" />
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+            <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 30, justifyContent: "center", width: 30 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>1</Text>
             </View>
-            <View style={{ flex: 1 }}>
-              <Field label="Stok" value={stockCount} onChangeText={setStockCount} keyboardType="numeric" />
+            <View style={{ flex: 1, gap: 1 }}>
+              <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Temel Bilgiler</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>Ürününüz hakkında temel bilgileri girin.</Text>
             </View>
           </View>
-          <CategoryPicker value={category} onChange={setCategory} />
+
+          <CounterField label="İlan Başlığı" required value={title} onChangeText={(v) => setTitle(v.slice(0, 80))} placeholder="Örn. iPhone 15 Pro 256GB Titanyum Mavi" max={80} />
+
+          <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+            <View style={{ flex: 1 }}>
+              <SelectField label="Kategori" required value={category} placeholder="Seçiniz" options={listingCategories.map((c) => ({ label: c.label, value: c.key }))} onSelect={(v) => { setCategory(String(v)); setSubcategory(""); }} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <SelectField label="Alt Kategori" required value={subcategory} placeholder="Seçiniz" options={getCategorySubcategories(category).map((s) => ({ label: s, value: s }))} onSelect={(v) => setSubcategory(String(v))} />
+            </View>
+          </View>
+
+          <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+            <View style={{ flex: 1.4 }}>
+              <FieldLabel label="Açıklama" required />
+              <RichToolbar />
+              <TextInput
+                value={description}
+                onChangeText={(v) => setDescription(v.slice(0, 2000))}
+                placeholder="Ürününüzü detaylı olarak açıklayın. Özelliklerini, kullanım durumunu, avantajlarını belirtin."
+                placeholderTextColor={colors.muted}
+                multiline
+                style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderBottomLeftRadius: 10, borderBottomRightRadius: 10, borderWidth: 1, borderTopWidth: 0, color: colors.ink, fontSize: 14, fontWeight: "500", minHeight: 120, padding: 12, textAlignVertical: "top" }}
+              />
+              <Text style={{ alignSelf: "flex-end", color: colors.subtle, fontSize: 11, fontWeight: "700", marginTop: 4 }}>{description.length}/2000</Text>
+            </View>
+            <View style={{ flex: 1, gap: 14 }}>
+              <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+                <View style={{ flex: 1 }}>
+                  <SelectField label="Şehir" required value={location} placeholder="Seçiniz" clearable options={CITY_OPTIONS.map((c) => ({ label: c, value: c }))} onSelect={(v) => setLocation(String(v))} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <CounterField label="İlçe" value={district} onChangeText={setDistrict} placeholder="Örn. Kadıköy" />
+                </View>
+              </View>
+              <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+                <View style={{ flex: 1 }}>
+                  <SelectField label="Ürün Durumu" required value={condition} placeholder="Seçiniz" options={[{ label: "Sıfır", value: "Sıfır" }, { label: "Yenilenmiş", value: "Yenilenmiş" }, { label: "İkinci el", value: "İkinci el" }]} onSelect={(v) => setCondition(String(v))} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <FieldLabel label="Stok Adedi" required />
+                  <QtyStepper value={stockCount} onChange={setStockCount} />
+                </View>
+              </View>
+            </View>
+          </View>
+
+          <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+            <View style={{ flex: 1 }}>
+              <FieldLabel label="Fiyat (₺)" required />
+              <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", paddingRight: 12 }}>
+                <TextInput value={price} onChangeText={setPrice} keyboardType="numeric" placeholder="Örn. 2.450" placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "700", height: 46, paddingHorizontal: 12 }} />
+                <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "800" }}>₺</Text>
+              </View>
+            </View>
+            <View style={{ flex: 1 }}>
+              <CounterField label="Etiketler" value={tags} onChangeText={setTags} placeholder="Örn. orijinal, sıfır, garantili" max={0} hint="Virgülle ayırın, max 5 etiket" countText={`${tags.split(",").map((x) => x.trim()).filter(Boolean).length}/5`} />
+            </View>
+          </View>
+
+          <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+            <View style={{ flex: 1 }}>
+              <CounterField label="Marka/Model" value={brand} onChangeText={setBrand} placeholder="Örn. Apple / iPhone 15 Pro" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <CounterField label="Renk" value={color} onChangeText={setColor} placeholder="Örn. Mavi Titanyum" />
+            </View>
+          </View>
+
+          <View style={isWideWeb ? { flexDirection: "row", gap: 12 } : { gap: 14 }}>
+            <View style={{ flex: 1 }}>
+              <SelectField label="Garanti Durumu" value={warrantyStatus} placeholder="Seçiniz" options={[{ label: "Garantili", value: "Garantili" }, { label: "Garantisiz", value: "Garantisiz" }]} onSelect={(v) => setWarrantyStatus(String(v))} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <CounterField label="Garanti Süresi" value={warrantyDuration} onChangeText={setWarrantyDuration} placeholder="Örn. 24 Ay" />
+            </View>
+          </View>
+
           <CategoryRequirementGuide category={category} />
-          <Field label="Konum" value={location} onChangeText={setLocation} />
-          <ListingDraftPreview
-            category={category}
-            commission={estimatedCommission}
-            image={images[0] || fallbackImage}
-            location={location}
-            price={priceNumber}
-            stock={stockNumber}
-            title={title}
-          />
         </Card>) : null}
 
         {(!isWideWeb || step === 3) ? (<Card>
@@ -813,6 +886,107 @@ function LivePreviewSidebar({ title, price, category, location, image, commissio
           </Pressable>
         </Link>
       </View>
+    </View>
+  );
+}
+
+const CITY_OPTIONS = ["Adana", "Ankara", "Antalya", "Bursa", "Denizli", "Diyarbakır", "Eskişehir", "Gaziantep", "İstanbul", "İzmir", "Kayseri", "Kocaeli", "Konya", "Mersin", "Muğla", "Samsun", "Trabzon"];
+
+function FieldLabel({ label, required }: { label: string; required?: boolean }) {
+  return (
+    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800", marginBottom: 6 }}>
+      {label}{required ? <Text style={{ color: colors.accent }}> *</Text> : null}
+    </Text>
+  );
+}
+
+function CounterField({ label, required, value, onChangeText, placeholder, max, hint, countText }: { label: string; required?: boolean; value: string; onChangeText: (v: string) => void; placeholder?: string; max?: number; hint?: string; countText?: string }) {
+  return (
+    <View>
+      <FieldLabel label={label} required={required} />
+      <TextInput
+        value={value}
+        onChangeText={onChangeText}
+        placeholder={placeholder}
+        placeholderTextColor={colors.muted}
+        style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, fontWeight: "600", height: 46, paddingHorizontal: 12 }}
+      />
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8, marginTop: 4 }}>
+        {hint ? <Text style={{ color: colors.subtle, flex: 1, fontSize: 11, fontWeight: "600" }}>{hint}</Text> : <View style={{ flex: 1 }} />}
+        {countText ? <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>{countText}</Text> : max ? <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>{value.length}/{max}</Text> : null}
+      </View>
+    </View>
+  );
+}
+
+function QtyStepper({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const n = Math.max(0, Number(value) || 0);
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", height: 46, overflow: "hidden" }}>
+      <Pressable onPress={() => onChange(String(Math.max(0, n - 1)))} style={({ pressed }) => ({ alignItems: "center", height: "100%", justifyContent: "center", opacity: pressed ? 0.6 : 1, width: 44 })}>
+        <MaterialCommunityIcons name="minus" size={18} color={colors.primaryDark} />
+      </Pressable>
+      <TextInput value={String(n)} onChangeText={(v) => onChange(v.replace(/[^0-9]/g, ""))} keyboardType="numeric" style={{ borderColor: colors.line, borderLeftWidth: 1, borderRightWidth: 1, color: colors.ink, flex: 1, fontSize: 14, fontWeight: "800", height: "100%", paddingHorizontal: 8, textAlign: "center" }} />
+      <Pressable onPress={() => onChange(String(n + 1))} style={({ pressed }) => ({ alignItems: "center", height: "100%", justifyContent: "center", opacity: pressed ? 0.6 : 1, width: 44 })}>
+        <MaterialCommunityIcons name="plus" size={18} color={colors.primaryDark} />
+      </Pressable>
+    </View>
+  );
+}
+
+function RichToolbar() {
+  const icons: Array<keyof typeof MaterialCommunityIcons.glyphMap> = ["format-bold", "format-italic", "format-list-bulleted", "format-list-numbered", "link-variant", "image-outline"];
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderTopLeftRadius: 10, borderTopRightRadius: 10, borderWidth: 1, flexDirection: "row", gap: 14, paddingHorizontal: 12, paddingVertical: 8 }}>
+      {icons.map((icon) => (
+        <MaterialCommunityIcons key={icon} name={icon} size={16} color={colors.muted} />
+      ))}
+    </View>
+  );
+}
+
+function SelectField({ label, required, value, placeholder, options, onSelect, clearable }: { label: string; required?: boolean; value: string; placeholder?: string; options: Array<{ label: string; value: string | number }>; onSelect: (v: string | number) => void; clearable?: boolean }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+  return (
+    <View style={{ position: "relative", zIndex: open ? 50 : 1 }}>
+      <FieldLabel label={label} required={required} />
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, height: 46, paddingHorizontal: 12 }}
+      >
+        <Text numberOfLines={1} style={{ color: selected ? colors.ink : colors.muted, flex: 1, fontSize: 14, fontWeight: selected ? "700" : "500" }}>
+          {selected ? selected.label : placeholder ?? "Seçiniz"}
+        </Text>
+        {clearable && value ? (
+          <Pressable onPress={() => onSelect("")} hitSlop={8}>
+            <MaterialCommunityIcons name="close" size={16} color={colors.muted} />
+          </Pressable>
+        ) : null}
+        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <>
+          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 40 }} />
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, left: 0, maxHeight: 240, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.16, shadowRadius: 20, top: 74, zIndex: 50 }}>
+            <ScrollView keyboardShouldPersistTaps="handled" style={{ maxHeight: 240 }}>
+              {options.length === 0 ? (
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", paddingHorizontal: 12, paddingVertical: 10 }}>Önce kategori seç</Text>
+              ) : (
+                options.map((opt) => {
+                  const isSel = opt.value === value;
+                  return (
+                    <Pressable key={`${opt.value}`} onPress={() => { onSelect(opt.value); setOpen(false); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed || isSel ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 10 })}>
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{opt.label}</Text>
+                      {isSel ? <MaterialCommunityIcons name="check" size={16} color={colors.primary} /> : null}
+                    </Pressable>
+                  );
+                })
+              )}
+            </ScrollView>
+          </View>
+        </>
+      ) : null}
     </View>
   );
 }
