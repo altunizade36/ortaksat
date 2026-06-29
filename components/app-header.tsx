@@ -40,6 +40,8 @@ export function AppHeader() {
   }
 
   return (
+    <>
+    {isWideWeb ? <TrustTopBar /> : null}
     <View
       style={{
         backgroundColor: colors.primarySoft,
@@ -116,6 +118,26 @@ export function AppHeader() {
         <HeaderActions />
       </View>
       <GlobalSearchBar />
+    </View>
+    </>
+  );
+}
+
+function TrustTopBar() {
+  const items: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
+    { icon: "shield-check", label: "Komisyon kayıt altında" },
+    { icon: "swap-horizontal", label: "Şeffaf süreç" },
+    { icon: "account-check", label: "Doğrulanmış satıcılar" },
+    { icon: "whatsapp", label: "WhatsApp destek" }
+  ];
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, flexDirection: "row", flexWrap: "wrap", gap: 24, justifyContent: "center", paddingHorizontal: 32, paddingVertical: 8 }}>
+      {items.map((item) => (
+        <View key={item.label} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+          <MaterialCommunityIcons name={item.icon} size={14} color="rgba(255,255,255,0.9)" />
+          <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 12, fontWeight: "700" }}>{item.label}</Text>
+        </View>
+      ))}
     </View>
   );
 }

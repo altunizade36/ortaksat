@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, type Href } from "expo-router";
-import { Pressable, Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { listingCategories } from "@/lib/categories";
@@ -69,6 +70,44 @@ export function WebCategories() {
   );
 }
 
+/** Trust signals strip — reassures all three sides (ilan sahibi / ortak / alıcı). */
+export function WebTrustStrip() {
+  const items: Array<{ icon: IconName; title: string; body: string }> = [
+    { icon: "shield-check", title: "Komisyon kayıt altında", body: "Anlaşma ve komisyon şartı sistemde saklanır." },
+    { icon: "eye-check-outline", title: "Şeffaf süreç", body: "Talep, satış ve komisyon canlı panelde görünür." },
+    { icon: "account-check-outline", title: "Doğrulanmış satıcılar", body: "Telefon/e-posta doğrulama ve güven puanı." },
+    { icon: "star-check-outline", title: "Puan & yorumlar", body: "Her satış sonrası karşılıklı değerlendirme." }
+  ];
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 4 }}>
+      {items.map((item) => (
+        <View
+          key={item.title}
+          style={{
+            alignItems: "center",
+            backgroundColor: colors.surfaceAlt,
+            borderColor: colors.line,
+            borderRadius: 16,
+            borderWidth: 1,
+            flexBasis: 240,
+            flexDirection: "row",
+            flexGrow: 1,
+            gap: 12,
+            paddingHorizontal: 16,
+            paddingVertical: 14
+          }}
+        >
+          <MaterialCommunityIcons name={item.icon} size={26} color={colors.primary} />
+          <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+            <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{item.title}</Text>
+            <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{item.body}</Text>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 /** Desktop "how it works" band — 3 steps explaining the ortak-satış model. */
 export function WebHowItWorks() {
   const steps: Array<{ icon: IconName; title: string; body: string }> = [
@@ -123,6 +162,7 @@ export function WebHowItWorks() {
 /** Web footer with brand, navigation columns and legal line. */
 export function WebFooter() {
   const { t } = useLanguage();
+  const [email, setEmail] = useState("");
   const columns: Array<{ heading: string; links: Array<{ label: string; href: Href }> }> = [
     {
       heading: "Pazar",
@@ -134,22 +174,28 @@ export function WebFooter() {
       ]
     },
     {
-      heading: "Şirket",
+      heading: "Kategoriler",
+      links: listingCategories.slice(0, 5).map((c) => ({ label: c.label, href: { pathname: "/explore", params: { q: c.label } } as Href }))
+    },
+    {
+      heading: "Yardım",
       links: [
-        { label: "Hakkımızda", href: "/hakkimizda" },
         { label: "Nasıl çalışır?", href: "/nasil-calisir" },
-        { label: "SSS", href: "/sss" }
+        { label: "SSS", href: "/sss" },
+        { label: t("legalSupport"), href: "/legal" }
       ]
     },
     {
       heading: "Kurumsal",
       links: [
+        { label: "Hakkımızda", href: "/hakkimizda" },
         { label: t("trustCenter"), href: "/trust" },
-        { label: t("legalSupport"), href: "/legal" },
         { label: t("menu"), href: "/menu" }
       ]
     }
   ];
+
+  const socials: IconName[] = ["instagram", "whatsapp", "twitter", "youtube"];
 
   return (
     <View
@@ -161,14 +207,36 @@ export function WebFooter() {
         gap: 40,
         marginTop: 24,
         paddingBottom: 16,
-        paddingTop: 32
+        paddingTop: 36
       }}
     >
-      <View style={{ flex: 1.4, gap: 10, minWidth: 240 }}>
-        <Text style={{ color: colors.primaryDark, fontSize: 22, fontWeight: "900" }}>ortaksat</Text>
-        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600", lineHeight: 21, maxWidth: 360 }}>
+      <View style={{ flex: 1.6, gap: 14, minWidth: 280 }}>
+        <Text style={{ color: colors.primaryDark, fontSize: 24, fontWeight: "900" }}>ortaksat</Text>
+        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600", lineHeight: 21, maxWidth: 380 }}>
           {t("appSlogan")}. İlanını aç, ortakların paylaşsın, satışta komisyon kazan.
         </Text>
+        <View style={{ gap: 8, maxWidth: 380 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Bültene abone ol</Text>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <TextInput
+              value={email}
+              onChangeText={setEmail}
+              placeholder="E-posta adresin"
+              placeholderTextColor={colors.muted}
+              style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600", height: 44, paddingHorizontal: 14 }}
+            />
+            <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Abone ol</Text>
+            </Pressable>
+          </View>
+        </View>
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 2 }}>
+          {socials.map((icon) => (
+            <View key={icon} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", width: 38 }}>
+              <MaterialCommunityIcons name={icon} size={19} color={colors.primaryDark} />
+            </View>
+          ))}
+        </View>
       </View>
       {columns.map((column) => (
         <View key={column.heading} style={{ gap: 10, minWidth: 150 }}>
@@ -184,9 +252,12 @@ export function WebFooter() {
           ))}
         </View>
       ))}
-      <View style={{ borderTopColor: colors.line, borderTopWidth: 1, paddingTop: 16, width: "100%" }}>
+      <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between", paddingTop: 16, width: "100%" }}>
         <Text style={{ color: colors.subtle, fontSize: 13, fontWeight: "600" }}>
-          © 2026 ortaksat · Tüm hakları saklıdır · KVKK & Gizlilik için Yasal ve Destek sayfasına bakın.
+          © 2026 ortaksat · Tüm hakları saklıdır
+        </Text>
+        <Text style={{ color: colors.subtle, fontSize: 13, fontWeight: "700" }}>
+          KVKK · Gizlilik · Mesafeli Satış — Yasal ve Destek sayfasında
         </Text>
       </View>
     </View>
