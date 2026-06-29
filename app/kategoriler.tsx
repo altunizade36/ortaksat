@@ -6,7 +6,14 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter, WebTrustStrip } from "@/components/web-landing";
-import { getCategoryImage, listingCategories } from "@/lib/categories";
+import { getCategoryImage } from "@/lib/categories";
+import { categoryTree, type CategoryNode } from "@/lib/category-tree";
+
+function descendantLabels(node: CategoryNode): string[] {
+  const out = [node.label];
+  for (const c of node.children ?? []) out.push(...descendantLabels(c));
+  return out;
+}
 import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
@@ -53,19 +60,22 @@ export default function CategoriesPage() {
     counts[listing.category] = (counts[listing.category] ?? 0) + 1;
     commissionSum[listing.category] = (commissionSum[listing.category] ?? 0) + commissionAmount(listing);
   }
-  const catData = listingCategories.map((c) => {
-    const real = counts[c.key] ?? 0;
+  const tops = categoryTree.filter((c) => c.label !== "Diğer");
+  const catData = tops.map((c) => {
+    const labels = descendantLabels(c);
+    const real = labels.reduce((sum, lbl) => sum + (counts[lbl] ?? 0), 0);
+    const commSum = labels.reduce((sum, lbl) => sum + (commissionSum[lbl] ?? 0), 0);
     return {
-      cat: c,
+      cat: { key: c.key, label: c.label, shortLabel: c.label, subcategories: (c.children ?? []).map((ch) => ch.label) },
       count: real > 0 ? real : pseudoCount(c.key),
-      image: getCategoryImage(c.key),
-      avgCommission: real > 0 ? Math.round(commissionSum[c.key] / real) : 120 + (pseudoCount(c.key) % 160)
+      image: c.image ?? getCategoryImage(c.key),
+      avgCommission: real > 0 ? Math.round(commSum / real) : 120 + (pseudoCount(c.key) % 160)
     };
   });
   const totalActive = listings.filter((l) => l.status === "active").length;
   const popular = catData.slice().sort((a, b) => b.count - a.count).slice(0, 8);
   const topEarning = catData.slice().sort((a, b) => b.avgCommission - a.avgCommission).slice(0, 5);
-  const quickChips = listingCategories.slice(0, 8);
+  const quickChips = tops.slice(0, 8).map((c) => ({ key: c.key, label: c.label, shortLabel: c.label }));
 
   function search() {
     router.push({ pathname: "/explore", params: query.trim() ? { q: query.trim() } : undefined });
@@ -107,7 +117,7 @@ export default function CategoriesPage() {
         </View>
         <View style={{ gap: 12, justifyContent: "center", width: 260 }}>
           {[
-            { icon: "shape-outline" as const, value: `${listingCategories.length}`, label: "Toplam kategori" },
+            { icon: "shape-outline" as const, value: `${tops.length}`, label: "Toplam kategori" },
             { icon: "tag-multiple-outline" as const, value: `${totalActive}`, label: "Aktif ilan" },
             { icon: "cash-multiple" as const, value: "₺181", label: "Ort. kazanç" }
           ].map((s) => (
@@ -133,7 +143,7 @@ export default function CategoriesPage() {
               <Link key={cat.key} href={{ pathname: "/explore", params: { q: cat.label } }} asChild>
                 <Pressable dataSet={{ card: "listing" }} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 120, flexGrow: 1, gap: 8, maxWidth: 180, padding: 12 }}>
                   <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 72, justifyContent: "center", overflow: "hidden", width: "100%" }}>
-                    {image ? <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} /> : <MaterialCommunityIcons name={cat.icon} size={30} color={PALETTE[i % PALETTE.length][1]} />}
+                    <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                   </View>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy(cat.label, language)}</Text>
                   <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{groupTr(count)} ilan</Text>
@@ -158,7 +168,7 @@ export default function CategoriesPage() {
               <Link key={cat.key} href={{ pathname: "/explore", params: { q: cat.label } }} asChild>
                 <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 96, flexGrow: 1, gap: 6, maxWidth: 150, padding: 10 }}>
                   <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 10, height: 56, justifyContent: "center", overflow: "hidden", width: "100%" }}>
-                    {image ? <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} /> : <MaterialCommunityIcons name={cat.icon} size={26} color={PALETTE[i % PALETTE.length][1]} />}
+                    <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                   </View>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800", textAlign: "center" }}>{translateCopy(cat.shortLabel, language)}</Text>
                   <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>Ort. ₺{avgCommission}</Text>
