@@ -52,8 +52,10 @@ import type {
   Conversation,
   Favorite,
   Lead,
+  CategorySuggestion,
   LeadStatus,
   Listing,
+  LocationSuggestion,
   Message,
   Notification,
   Order,
@@ -63,6 +65,7 @@ import type {
   ReviewType,
   Sale,
   SaleStatus,
+  SuggestionStatus,
   User
 } from "@/lib/types";
 
@@ -151,6 +154,12 @@ type AppStore = {
   sendConversationMessage: (conversationId: string, body: string) => void;
   markConversationRead: (conversationId: string) => void;
   markNotificationRead: (notificationId: string) => void;
+  categorySuggestions: CategorySuggestion[];
+  locationSuggestions: LocationSuggestion[];
+  addCategorySuggestion: (input: { suggestedPath: string; note?: string; listingId?: string }) => void;
+  addLocationSuggestion: (input: { provinceId?: number; districtId?: number; suggestedName: string; note?: string }) => void;
+  setCategorySuggestionStatus: (id: string, status: SuggestionStatus) => void;
+  setLocationSuggestionStatus: (id: string, status: SuggestionStatus) => void;
   updateLeadStatus: (leadId: string, status: LeadStatus) => void;
   updateListingStatus: (listingId: string, status: Listing["status"]) => void;
   updateSaleStatus: (saleId: string, status: SaleStatus) => void;
@@ -255,6 +264,13 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [reports, setReports] = useState<Report[]>([]);
   // Preview (no-Supabase) auth registry so register/login/logout work end-to-end in demo mode.
   const [mockAccounts, setMockAccounts] = useState<Record<string, { password: string; user: User }>>({});
+  const [categorySuggestions, setCategorySuggestions] = useState<CategorySuggestion[]>([
+    { id: "cs-1", userId: "u-owner-2", userName: "Nisa Aydın", suggestedPath: "El Sanatları > Seramik Atölye Ürünleri", note: "El yapımı seramik için uygun kategori yok.", status: "pending", createdAt: "2026-06-20" },
+    { id: "cs-2", userId: "u-partner", userName: "Ayşe Demir", suggestedPath: "Dijital > NFT & Dijital Sanat", note: "Dijital sanat eserleri için.", status: "pending", createdAt: "2026-06-22" }
+  ]);
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([
+    { id: "ls-1", userId: "u-owner-1", userName: "Mert Kaya", provinceId: 34, districtId: 34001, suggestedName: "Yeni Mahalle", type: "neighborhood", note: "Yeni kurulan site mahallesi.", status: "pending", createdAt: "2026-06-21" }
+  ]);
 
   useEffect(() => {
     let mounted = true;
@@ -1013,6 +1029,26 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const notification = notifications.find((item) => item.id === notificationId);
         setNotifications((items) => items.map((item) => (item.id === notificationId ? { ...item, read: true } : item)));
         if (liveUser && notification) void markNotificationReadLive({ ...notification, read: true });
+      },
+      categorySuggestions,
+      locationSuggestions,
+      addCategorySuggestion(input) {
+        setCategorySuggestions((items) => [
+          { id: newId("cs", liveUser), userId: currentUser.id, userName: currentUser.name, suggestedPath: input.suggestedPath, note: input.note, listingId: input.listingId, status: "pending", createdAt: today() },
+          ...items
+        ]);
+      },
+      addLocationSuggestion(input) {
+        setLocationSuggestions((items) => [
+          { id: newId("ls", liveUser), userId: currentUser.id, userName: currentUser.name, provinceId: input.provinceId, districtId: input.districtId, suggestedName: input.suggestedName, type: "neighborhood", note: input.note, status: "pending", createdAt: today() },
+          ...items
+        ]);
+      },
+      setCategorySuggestionStatus(id, status) {
+        setCategorySuggestions((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
+      },
+      setLocationSuggestionStatus(id, status) {
+        setLocationSuggestions((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
       },
       updateLeadStatus(leadId, status) {
         const lead = leads.find((item) => item.id === leadId);

@@ -21,7 +21,7 @@ type Values = Record<string, string | boolean>;
 
 export function DesktopCreateFlow() {
   const router = useRouter();
-  const { createListing } = useStore();
+  const { createListing, addCategorySuggestion, addLocationSuggestion } = useStore();
   const [step, setStep] = useState(0);
   const [path, setPath] = useState<CategoryNode[]>([]);
   const [values, setValues] = useState<Values>({});
@@ -70,6 +70,11 @@ export function DesktopCreateFlow() {
     if (!schema) return;
     setPublishing(true);
     try {
+      // "Diğer" seçildiyse kategori önerisi olarak admin incelemesine düşür.
+      if (path[0]?.label === "Diğer") {
+        addCategorySuggestion({ suggestedPath: `${String(values.title ?? "").trim() || "Yeni ürün"} — ${String(values.description ?? "").slice(0, 60)}`, note: "İlan formundan 'Diğer' kategorisi ile gönderildi." });
+      }
+      void addLocationSuggestion; // konum önerisi 'Mahallemi bulamadım' akışına bağlı (canlıda mahalle listesi gelince)
       const price = Number(values.price) || 0;
       const tags = [path[0]?.label, leafLabel, String(values.brand ?? ""), String(values.condition ?? "")].map((t) => String(t).trim()).filter(Boolean).slice(0, 8);
       const detailLines = schema.fields

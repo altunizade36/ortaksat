@@ -190,3 +190,29 @@ export type Report = {
 };
 
 
+
+export type SuggestionStatus = "pending" | "approved" | "rejected";
+
+export type CategorySuggestion = {
+  id: string;
+  userId: string;
+  userName?: string;
+  listingId?: string;
+  suggestedPath: string;
+  note?: string;
+  status: SuggestionStatus;
+  createdAt: string;
+};
+
+export type LocationSuggestion = {
+  id: string;
+  userId: string;
+  userName?: string;
+  provinceId?: number;
+  districtId?: number;
+  suggestedName: string;
+  type: string;
+  note?: string;
+  status: SuggestionStatus;
+  createdAt: string;
+};
