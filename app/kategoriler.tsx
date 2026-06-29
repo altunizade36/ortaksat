@@ -122,7 +122,7 @@ export default function CategoriesPage() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             {popular.map(({ cat, count, image }, i) => (
               <Link key={cat.key} href={{ pathname: "/explore", params: { q: cat.label } }} asChild>
-                <Pressable dataSet={{ card: "listing" }} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 132, flexGrow: 1, gap: 8, padding: 12 }}>
+                <Pressable dataSet={{ card: "listing" }} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 120, flexGrow: 1, gap: 8, maxWidth: 180, padding: 12 }}>
                   <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 72, justifyContent: "center", overflow: "hidden", width: "100%" }}>
                     {image ? <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} /> : <MaterialCommunityIcons name={cat.icon} size={30} color={PALETTE[i % PALETTE.length][1]} />}
                   </View>
@@ -147,7 +147,7 @@ export default function CategoriesPage() {
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             {topEarning.map(({ cat, avgCommission, image }, i) => (
               <Link key={cat.key} href={{ pathname: "/explore", params: { q: cat.label } }} asChild>
-                <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 110, flexGrow: 1, gap: 6, padding: 10 }}>
+                <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 96, flexGrow: 1, gap: 6, maxWidth: 150, padding: 10 }}>
                   <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 10, height: 56, justifyContent: "center", overflow: "hidden", width: "100%" }}>
                     {image ? <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} /> : <MaterialCommunityIcons name={cat.icon} size={26} color={PALETTE[i % PALETTE.length][1]} />}
                   </View>
@@ -166,7 +166,7 @@ export default function CategoriesPage() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
           {catData.map(({ cat, count }, i) => (
             <Link key={cat.key} href={{ pathname: "/explore", params: { q: cat.label } }} asChild>
-              <Pressable dataSet={{ card: "listing" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 250, flexGrow: 1, gap: 10, padding: 16 }}>
+              <Pressable dataSet={{ card: "listing" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 250, flexGrow: 1, gap: 10, maxWidth: 360, padding: 16 }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
                   <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 46, justifyContent: "center", width: 46 }}>
                     <MaterialCommunityIcons name={cat.icon} size={24} color={PALETTE[i % PALETTE.length][1]} />

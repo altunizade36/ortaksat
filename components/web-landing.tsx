@@ -64,6 +64,7 @@ export function WebCategories() {
                   flexBasis: 168,
                   flexGrow: 1,
                   gap: 10,
+                  maxWidth: 240,
                   overflow: "hidden",
                   padding: 12
                 }}
