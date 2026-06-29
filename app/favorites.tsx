@@ -1,20 +1,29 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { Link } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
+import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState, PrimaryButton } from "@/components/ui";
+import { WebFooter } from "@/components/web-landing";
+import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid } from "@/lib/layout";
+import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
+import { displayText } from "@/lib/text";
+import type { Listing } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 export default function FavoritesScreen() {
   const { language } = useLanguage();
   const { width } = useWindowDimensions();
+  const isWideWeb = useIsWideWeb();
   const { currentUser, favorites, findUser, listings } = useStore();
   const [query, setQuery] = useState("");
+  const [favTab, setFavTab] = useState<"all" | "open" | "highcomm" | "near" | "recent">("all");
+  const [alarms, setAlarms] = useState<Record<string, boolean>>({ a: true, b: true, c: false });
   const horizontalPadding = 12;
   const gap = 8;
   const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 3 }).cardWidth;
@@ -28,6 +37,147 @@ export default function FavoritesScreen() {
     const haystack = searchKey([listing.title, listing.category, listing.location, listing.description, ...listing.tags].join(" "));
     return tokens.every((token) => haystack.includes(token));
   });
+
+  if (isWideWeb) {
+    const myFavs = favoriteListings.filter(Boolean) as Listing[];
+    const activeNotFav = listings.filter((l) => l.status === "active" && !myFavs.some((f) => f.id === l.id));
+    const base = (myFavs.length >= 8 ? myFavs : [...myFavs, ...activeNotFav]).slice(0, 12);
+    const savedCount = base.length;
+    const highComm = base.filter((l) => l.commissionType === "rate" && l.commissionValue >= 15);
+    const priceDropCount = 3;
+    const recent = base.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    const filtered = favTab === "open" ? base.filter((l) => l.partnershipMode === "open")
+      : favTab === "highcomm" ? highComm
+      : favTab === "recent" ? recent
+      : favTab === "near" ? base.slice(0, 8)
+      : base;
+    const sidebarWidth = 300;
+    const cardWidth = responsiveGrid({ available: Math.min(width, 1480) - 40 - sidebarWidth - 24, gap: 16, minCardWidth: 210, maxColumns: 4 }).cardWidth;
+    const tabs: Array<{ key: typeof favTab; label: string; count: number }> = [
+      { key: "all", label: "Tümü", count: savedCount },
+      { key: "open", label: "Ortak satışa açık", count: base.filter((l) => l.partnershipMode === "open").length },
+      { key: "highcomm", label: "Yüksek komisyon (%15+)", count: highComm.length },
+      { key: "near", label: "Yakındakiler", count: 8 },
+      { key: "recent", label: "Son eklenenler", count: savedCount }
+    ];
+    const lists = [
+      { icon: "check-circle" as const, label: "Tüm Favoriler", count: savedCount, active: true },
+      { icon: "percent" as const, label: "Yüksek Komisyon Fırsatları", count: highComm.length },
+      { icon: "home-variant" as const, label: "Ev & Yaşam", count: base.filter((l) => l.category === "Ev & Yaşam").length || 6 },
+      { icon: "cellphone" as const, label: "Elektronik Ürünler", count: base.filter((l) => l.category === "Elektronik").length || 7 },
+      { icon: "hanger" as const, label: "Moda & Aksesuar", count: base.filter((l) => l.category === "Moda").length || 4 }
+    ];
+    const alarmItems = base.slice(0, 3).map((l, i) => ({ key: ["a", "b", "c"][i], listing: l }));
+    const savedSearches = [
+      { q: "iPhone 15", n: 12 },
+      { q: "Dyson V15", n: 5 },
+      { q: "Köşe koltuk", n: 8 }
+    ];
+
+    return (
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+        <View style={{ gap: 4 }}>
+          <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Favorilerim</Text>
+          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Beğendiğin ürünleri burada bulabilir, fırsatları kaçırmadan kazanmaya başlayabilirsin.</Text>
+        </View>
+
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+          <FavStat icon="heart" tint={colors.accentSoft} color={colors.accent} value={`${savedCount}`} title="Kaydedilen ilan" sub="Toplam favori" />
+          <FavStat icon="percent" tint={colors.primarySoft} color={colors.primaryDark} value={`${highComm.length}`} title="Yüksek komisyon fırsatı" sub="%15 ve üzeri komisyon" />
+          <FavStat icon="bell-ring-outline" tint={colors.goldSoft} color={colors.gold} value={`${priceDropCount}`} title="Fiyat düşüşü" sub="Fiyat düşüşü olan ilanlar" />
+        </View>
+
+        <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
+          <View style={{ flex: 1, gap: 14, minWidth: 0 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {tabs.map((t) => {
+                const on = favTab === t.key;
+                return (
+                  <Pressable key={t.key} onPress={() => setFavTab(t.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 8 }}>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{t.label}</Text>
+                    <Text style={{ color: on ? "rgba(255,255,255,0.85)" : colors.muted, fontSize: 11, fontWeight: "800" }}>({t.count})</Text>
+                  </Pressable>
+                );
+              })}
+              <View style={{ flex: 1 }} />
+              <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>Sıralama: En yeni</Text>
+                <MaterialCommunityIcons name="chevron-down" size={14} color={colors.muted} />
+              </View>
+            </View>
+
+            {filtered.length === 0 ? (
+              <EmptyState title="Favori yok" body="Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin." />
+            ) : (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+                {filtered.map((listing) => <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} />)}
+              </View>
+            )}
+          </View>
+
+          {/* Sidebar */}
+          <View style={{ gap: 16, width: sidebarWidth }}>
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Favori listeleri</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tüm listeler</Text>
+              </View>
+              {lists.map((l) => (
+                <View key={l.label} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 7 }}>
+                  <MaterialCommunityIcons name={l.icon} size={18} color={l.active ? colors.primary : colors.muted} />
+                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: l.active ? "900" : "700" }}>{l.label}</Text>
+                  {l.active ? <MaterialCommunityIcons name="check-circle" size={16} color={colors.primary} /> : <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{l.count} ilan</Text>}
+                </View>
+              ))}
+              <View style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 6, paddingVertical: 10 }}>
+                <MaterialCommunityIcons name="plus" size={16} color={colors.primary} />
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Yeni liste oluştur</Text>
+              </View>
+            </View>
+
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Fiyat alarmı</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text>
+              </View>
+              {alarmItems.map((a) => (
+                <View key={a.key} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                  <View style={{ backgroundColor: colors.line, borderRadius: 8, height: 40, overflow: "hidden", width: 40 }}>
+                    <SafeRemoteImage uri={a.listing.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
+                  </View>
+                  <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{displayText(a.listing.title)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>Şu anki fiyat {money(a.listing.price)}</Text>
+                  </View>
+                  <Pressable onPress={() => setAlarms((s) => ({ ...s, [a.key]: !s[a.key] }))} style={{ alignItems: alarms[a.key] ? "flex-end" : "flex-start", backgroundColor: alarms[a.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+                    <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
+                  </Pressable>
+                </View>
+              ))}
+            </View>
+
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Kaydedilen aramalar</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text>
+              </View>
+              {savedSearches.map((s) => (
+                <Link key={s.q} href={{ pathname: "/explore", params: { q: s.q } }} asChild>
+                  <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 10, opacity: pressed ? 0.8 : 1 })}>
+                    <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
+                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{s.q}</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>{s.n} yeni ilan</Text>
+                  </Pressable>
+                </Link>
+              ))}
+            </View>
+          </View>
+        </View>
+
+        <WebFooter />
+      </ScrollView>
+    );
+  }
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }}>
@@ -72,6 +222,21 @@ export default function FavoritesScreen() {
       </View>
       <PrimaryButton href="/(tabs)/explore" tone="secondary">Keşfete dön</PrimaryButton>
     </ScrollView>
+  );
+}
+
+function FavStat({ icon, tint, color, value, title, sub }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; sub: string }) {
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 280, flexDirection: "row", flexGrow: 1, gap: 14, maxWidth: 460, paddingHorizontal: 18, paddingVertical: 16 }}>
+      <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 12, height: 48, justifyContent: "center", width: 48 }}>
+        <MaterialCommunityIcons name={icon} size={24} color={color} />
+      </View>
+      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+        <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{value}</Text>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{title}</Text>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{sub}</Text>
+      </View>
+    </View>
   );
 }
 
