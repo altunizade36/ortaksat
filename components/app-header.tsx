@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { usePathname, useRouter } from "expo-router";
+import { Link, usePathname, useRouter, type Href } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -9,15 +9,27 @@ import { GlobalSearchBar } from "@/components/global-search-bar";
 import { HeaderActions } from "@/components/header-actions";
 import { Brand3DMark } from "@/components/three-d-showcase";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useIsWideWeb } from "@/lib/layout";
 
 const mascot = require("../assets/mascot.png");
+
+type NavItem = { href: Href; label: string; match: (path: string) => boolean };
 
 export function AppHeader() {
   const insets = useSafeAreaInsets();
   const pathname = usePathname();
   const router = useRouter();
   const { language, t } = useLanguage();
-  const showBack = pathname !== "/" && pathname !== "/index";
+  const isWideWeb = useIsWideWeb();
+  const showBack = !isWideWeb && pathname !== "/" && pathname !== "/index";
+
+  const navItems: NavItem[] = [
+    { href: "/", label: t("home"), match: (p) => p === "/" || p === "/index" },
+    { href: "/explore", label: t("explore"), match: (p) => p.startsWith("/explore") },
+    { href: "/create", label: t("createListing"), match: (p) => p.startsWith("/create") },
+    { href: "/partner", label: t("partnerSales"), match: (p) => p.startsWith("/partner") },
+    { href: "/menu", label: t("menu"), match: (p) => p.startsWith("/menu") }
+  ];
 
   function goBack() {
     if (router.canGoBack()) {
@@ -65,17 +77,42 @@ export function AppHeader() {
             <MaterialCommunityIcons name="chevron-left" size={26} color={colors.primaryDark} />
           </Pressable>
         ) : null}
-        <View style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minWidth: 0 }}>
-          <Brand3DMark size={40} />
-          <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-            <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 21, fontWeight: "900", letterSpacing: 0 }}>
-              ortaksat
-            </Text>
-            <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
-              {t("appSlogan")}
-            </Text>
+        <Link href="/" asChild>
+          <Pressable style={{ alignItems: "center", flex: isWideWeb ? 0 : 1, flexDirection: "row", gap: 10, minWidth: 0 }}>
+            <Brand3DMark size={40} />
+            <View style={{ gap: 1, minWidth: 0 }}>
+              <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 21, fontWeight: "900", letterSpacing: 0 }}>
+                ortaksat
+              </Text>
+              <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
+                {t("appSlogan")}
+              </Text>
+            </View>
+          </Pressable>
+        </Link>
+        {isWideWeb ? (
+          <View style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 6, justifyContent: "center", minWidth: 0 }}>
+            {navItems.map((item) => {
+              const active = item.match(pathname);
+              return (
+                <Link key={item.label} href={item.href} asChild>
+                  <Pressable
+                    style={{
+                      backgroundColor: active ? colors.primary : "transparent",
+                      borderRadius: 999,
+                      paddingHorizontal: 16,
+                      paddingVertical: 9
+                    }}
+                  >
+                    <Text numberOfLines={1} style={{ color: active ? "#FFFFFF" : colors.primaryDark, fontSize: 14, fontWeight: "800" }}>
+                      {item.label}
+                    </Text>
+                  </Pressable>
+                </Link>
+              );
+            })}
           </View>
-        </View>
+        ) : null}
         <HeaderActions />
       </View>
       <GlobalSearchBar />

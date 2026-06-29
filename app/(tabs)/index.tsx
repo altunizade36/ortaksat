@@ -8,10 +8,11 @@ import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
 import { EmptyState } from "@/components/ui";
 import { Marketplace3DHero } from "@/components/three-d-showcase";
+import { WebHero } from "@/components/web-hero";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid, SHELL_MAX_WIDTH } from "@/lib/layout";
+import { responsiveGrid, SHELL_MAX_WIDTH, useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -50,6 +51,7 @@ export default function HomeScreen() {
   const columnGap = 10;
   const measuredGridWidth = gridWidth || Math.min(width, SHELL_MAX_WIDTH) - horizontalPadding * 2;
   const { cardWidth } = responsiveGrid({ available: measuredGridWidth, gap: columnGap, minCardWidth: 168 });
+  const isWideWeb = useIsWideWeb();
   const activeListings = listings.filter((listing) => listing.status === "active");
   const categories = useMemo(() => Array.from(new Set(activeListings.map((listing) => listing.category))), [activeListings]);
   const filters = useMemo(() => [...quickFilters, ...categories.map((item) => ({ key: `cat:${item}`, label: translateCopy(getCategoryShortLabel(item), language), icon: getCategoryIcon(item) }))], [categories, language, quickFilters]);
@@ -114,7 +116,11 @@ export default function HomeScreen() {
       scrollEventThrottle={16}
       contentContainerStyle={{ gap: 10, padding: horizontalPadding, paddingBottom: 100 }}
     >
-      <Marketplace3DHero listings={topListings} />
+      {isWideWeb ? (
+        <WebHero totalListings={activeListings.length} averageCommission={averageCommission} cityCount={cityCount} />
+      ) : (
+        <Marketplace3DHero listings={topListings} />
+      )}
 
       <HomeQuickActions currentUserId={currentUser.id} />
 

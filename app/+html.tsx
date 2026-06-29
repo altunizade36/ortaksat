@@ -106,4 +106,49 @@ body {
 
 /* Make pressables feel interactive on web */
 [role="button"], a { cursor: pointer; }
+[role="button"] { transition: transform .12s ease, filter .12s ease, box-shadow .15s ease; }
+@media (hover: hover) {
+  [role="button"]:hover { filter: brightness(1.03); }
+}
+
+/* Listing cards lift on hover (data-card set via RNW dataSet) */
+[data-card="listing"] {
+  transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s ease, border-color .18s ease;
+  will-change: transform;
+}
+@media (hover: hover) {
+  [data-card="listing"]:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 18px 36px rgba(16,24,40,0.16) !important;
+    border-color: rgba(0,134,111,0.45) !important;
+  }
+}
+
+/* Entrance animation for hero / sections (data-reveal) */
+@keyframes os-rise {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+[data-reveal] { animation: os-rise .55s cubic-bezier(.2,.7,.3,1) both; }
+[data-reveal="2"] { animation-delay: .08s; }
+[data-reveal="3"] { animation-delay: .16s; }
+
+/* Soft pulse for live/primary accents */
+@keyframes os-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: .55; }
+}
+[data-pulse] { animation: os-pulse 1.8s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  [data-reveal], [data-pulse], [data-card="listing"] { animation: none !important; transition: none !important; }
+}
+
+/* Desktop landing hero background */
+[data-hero-bg] {
+  background:
+    radial-gradient(700px 380px at 92% -30%, rgba(229,75,75,0.30), transparent 60%),
+    radial-gradient(600px 360px at 0% 120%, rgba(255,255,255,0.14), transparent 55%),
+    linear-gradient(135deg, #00866F 0%, #075E54 100%) !important;
+}
 `;

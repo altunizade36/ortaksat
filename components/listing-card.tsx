@@ -33,6 +33,7 @@ export function ListingCard({ listing, owner, width }: { listing: Listing; owner
           })}
         >
           <View
+            dataSet={{ card: "listing" }}
             style={{
               backgroundColor: colors.surface,
               borderColor: colors.line,
