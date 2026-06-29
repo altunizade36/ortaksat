@@ -51,6 +51,7 @@ export default function CreateListingScreen() {
   const [partnerRules, setPartnerRules] = useState("Satıcı onayı olmadan fiyat değiştirilemez.\nAlıcı bilgisi uygulamaya eksiksiz kaydedilir.\nİade olursa komisyon beklemeye alınır.");
   const [contactMethod, setContactMethod] = useState<ContactMethod>("message");
   const [publishing, setPublishing] = useState(false);
+  const [step, setStep] = useState(1);
   const cleanImageCount = images.map((item) => item.trim()).filter(Boolean).length;
   const priceNumber = Number(price);
   const commissionNumber = Number(commissionValue);
@@ -188,7 +189,7 @@ export default function CreateListingScreen() {
           <View style={{ alignSelf: "center", gap: 4, maxWidth: 1200, width: "100%" }}>
             <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Yeni ilan oluştur</Text>
             <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Ürününü binlerce alıcı ve ortak satıcıya ulaştır.</Text>
-            <CreateStepper />
+            <CreateStepper current={step} onStep={setStep} />
           </View>
         ) : null}
         <View style={isWideWeb ? { alignItems: "flex-start", alignSelf: "center", flexDirection: "row", gap: 24, maxWidth: 1200, width: "100%" } : undefined}>
@@ -218,7 +219,7 @@ export default function CreateListingScreen() {
           ) : null}
         </Card>
 
-        <Card>
+        {(!isWideWeb || step === 5) ? (<Card>
           <SectionTitle title="Yayın kontrolü" action={canPublish ? "Hazır" : "Kontrol"} />
           <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 19 }}>
             {translateCopy("İlan yayına çıkmadan önce eksik alanları burada görürsün.", language)}
@@ -233,9 +234,9 @@ export default function CreateListingScreen() {
               <CheckRow key={item.text} ok={item.ok} text={item.text} />
             ))}
           </View>
-        </Card>
+        </Card>) : null}
 
-        <Card>
+        {(!isWideWeb || step === 2) ? (<Card>
           <SectionTitle title="Medya" action="1-5 medya" />
           <MediaPreview uri={images[0] || fallbackImage} large />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -277,9 +278,9 @@ export default function CreateListingScreen() {
             </View>
           </View>
           <Field label="Vitrin medya adresi" value={images[0] ?? ""} onChangeText={(value) => setImages((items) => [value, ...items.slice(1)].slice(0, 5))} />
-        </Card>
+        </Card>) : null}
 
-        <Card>
+        {(!isWideWeb || step === 1) ? (<Card>
           <SectionTitle title="Ürün bilgileri" />
           <Field label="Başlık" value={title} onChangeText={setTitle} />
           <Field label="Açıklama" value={description} onChangeText={setDescription} multiline />
@@ -303,9 +304,9 @@ export default function CreateListingScreen() {
             stock={stockNumber}
             title={title}
           />
-        </Card>
+        </Card>) : null}
 
-        <Card>
+        {(!isWideWeb || step === 3) ? (<Card>
           <SectionTitle title="Ortaklık ve komisyon" />
           <View style={{ flexDirection: "row", gap: 8 }}>
             <View style={{ flex: 1 }}>
@@ -362,9 +363,9 @@ export default function CreateListingScreen() {
           </Text>
           <Field label="Ortak satış kuralları" value={partnerRules} onChangeText={setPartnerRules} multiline />
           <Field label="Teslimat notu" value={deliveryNote} onChangeText={setDeliveryNote} multiline />
-        </Card>
+        </Card>) : null}
 
-        <Card>
+        {(!isWideWeb || step === 4) ? (<Card>
           <SectionTitle title="İletişim" />
           <View style={{ flexDirection: "row", gap: 8 }}>
             <View style={{ flex: 1 }}>
@@ -388,7 +389,24 @@ export default function CreateListingScreen() {
           <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "700", lineHeight: 18, textAlign: "center" }}>
             {language === "en" ? "After publishing, you can edit, pause, or remove the listing from the Seller Panel." : "Yayından sonra ilanını Satıcı Paneli'nde düzenleyebilir, pasife alabilir veya kaldırabilirsin."}
           </Text>
-        </Card>
+        </Card>) : null}
+
+        {isWideWeb ? (
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            {step > 1 ? (
+              <View style={{ flex: 1 }}>
+                <PrimaryButton tone="secondary" icon="chevron-left" onPress={() => setStep((s) => Math.max(1, s - 1))}>Geri</PrimaryButton>
+              </View>
+            ) : null}
+            <View style={{ flex: 2 }}>
+              {step < 5 ? (
+                <PrimaryButton icon="arrow-right" onPress={() => setStep((s) => Math.min(5, s + 1))}>Kaydet ve Devam Et</PrimaryButton>
+              ) : (
+                <PrimaryButton icon="store-plus-outline" onPress={() => void submit()}>{publishing ? "Yayınlanıyor" : canPublish ? "Yayına Al" : "Eksikleri Kontrol Et"}</PrimaryButton>
+              )}
+            </View>
+          </View>
+        ) : null}
         </WebContainer>
         </View>
         {isWideWeb ? (
@@ -686,21 +704,23 @@ function Field({
 }
 
 
-function CreateStepper() {
+function CreateStepper({ current, onStep }: { current: number; onStep: (n: number) => void }) {
   const steps = ["Temel Bilgiler", "Görseller", "Komisyon", "Teslimat", "Önizleme"];
   return (
-    <View style={{ alignItems: "center", flexDirection: "row", marginTop: 8 }}>
-      {steps.map((step, index) => {
-        const active = index === 0;
+    <View style={{ alignItems: "flex-start", flexDirection: "row", marginTop: 8 }}>
+      {steps.map((stepLabel, index) => {
+        const n = index + 1;
+        const active = n === current;
+        const done = n < current;
         return (
-          <View key={step} style={{ alignItems: "center", flex: index === steps.length - 1 ? 0 : 1, flexDirection: "row" }}>
-            <View style={{ alignItems: "center", gap: 6 }}>
-              <View style={{ alignItems: "center", backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 32, justifyContent: "center", width: 32 }}>
-                <Text style={{ color: active ? "#FFFFFF" : colors.muted, fontSize: 14, fontWeight: "900" }}>{index + 1}</Text>
+          <View key={stepLabel} style={{ alignItems: "center", flex: index === steps.length - 1 ? 0 : 1, flexDirection: "row" }}>
+            <Pressable onPress={() => onStep(n)} style={{ alignItems: "center", gap: 6, width: 120 }}>
+              <View style={{ alignItems: "center", backgroundColor: active || done ? colors.primary : colors.surfaceAlt, borderColor: active || done ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 32, justifyContent: "center", width: 32 }}>
+                {done ? <MaterialCommunityIcons name="check" size={18} color="#FFFFFF" /> : <Text style={{ color: active ? "#FFFFFF" : colors.muted, fontSize: 14, fontWeight: "900" }}>{n}</Text>}
               </View>
-              <Text numberOfLines={1} style={{ color: active ? colors.ink : colors.muted, fontSize: 12, fontWeight: active ? "900" : "700" }}>{step}</Text>
-            </View>
-            {index < steps.length - 1 ? <View style={{ backgroundColor: colors.line, flex: 1, height: 2, marginBottom: 20, marginHorizontal: 8 }} /> : null}
+              <Text numberOfLines={1} style={{ color: active ? colors.ink : colors.muted, fontSize: 12, fontWeight: active ? "900" : "700" }}>{stepLabel}</Text>
+            </Pressable>
+            {index < steps.length - 1 ? <View style={{ backgroundColor: done ? colors.primary : colors.line, flex: 1, height: 2, marginBottom: 20, marginHorizontal: 4 }} /> : null}
           </View>
         );
       })}

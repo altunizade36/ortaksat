@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
@@ -267,7 +267,7 @@ export default function ExploreScreen() {
             { label: "₺500+", value: 500 },
             { label: "₺1.000+", value: 1000 }
           ]} />
-          <FilterDropdown label="Şehir" value={city} onSelect={(v) => setCity(String(v))} options={[{ label: "Tüm şehirler", value: "" }, ...cities.map((c) => ({ label: c, value: c }))]} />
+          <FilterDropdown label="Şehir" value={city} onSelect={(v) => setCity(String(v))} searchable options={[{ label: "Tüm şehirler", value: "" }, ...cities.map((c) => ({ label: c, value: c }))]} />
           <FilterDropdown label="Stok Durumu" value={stockFilter} onSelect={(v) => setStockFilter(String(v))} options={[
             { label: "Tümü", value: "" },
             { label: "Stokta var", value: "in" },
@@ -583,10 +583,18 @@ function FilterPanel({
   );
 }
 
-function FilterDropdown({ label, value, options, onSelect }: { label: string; value: string | number; options: Array<{ label: string; value: string | number }>; onSelect: (value: string | number) => void }) {
+function FilterDropdown({ label, value, options, onSelect, searchable }: { label: string; value: string | number; options: Array<{ label: string; value: string | number }>; onSelect: (value: string | number) => void; searchable?: boolean }) {
   const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
   const selected = options.find((o) => o.value === value);
   const active = value !== "" && value !== 0;
+  const filtered = searchable && query.trim()
+    ? options.filter((o) => searchKey(o.label).includes(searchKey(query)))
+    : options;
+  function close() {
+    setOpen(false);
+    setQuery("");
+  }
   return (
     <View style={{ position: "relative", zIndex: open ? 100 : 1 }}>
       <Pressable
@@ -600,21 +608,42 @@ function FilterDropdown({ label, value, options, onSelect }: { label: string; va
       </Pressable>
       {open ? (
         <>
-          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 90 }} />
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, left: 0, minWidth: 200, paddingVertical: 6, position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 44, zIndex: 100 }}>
-            {options.map((opt) => {
-              const isSel = opt.value === value;
-              return (
-                <Pressable
-                  key={`${opt.value}`}
-                  onPress={() => { onSelect(opt.value); setOpen(false); }}
-                  style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 10 })}
-                >
-                  <MaterialCommunityIcons name={isSel ? "check-circle" : "circle-outline"} size={16} color={isSel ? colors.primary : colors.subtle} />
-                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{opt.label}</Text>
-                </Pressable>
-              );
-            })}
+          <Pressable onPress={close} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 90 }} />
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, left: 0, maxHeight: 320, minWidth: 220, paddingVertical: 6, position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 44, zIndex: 100 }}>
+            {searchable ? (
+              <View style={{ paddingBottom: 6, paddingHorizontal: 10 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 10 }}>
+                  <MaterialCommunityIcons name="magnify" size={15} color={colors.muted} />
+                  <TextInput
+                    value={query}
+                    onChangeText={setQuery}
+                    placeholder="Şehir ara"
+                    placeholderTextColor={colors.muted}
+                    autoFocus
+                    style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "600", height: 36, paddingVertical: 0 }}
+                  />
+                </View>
+              </View>
+            ) : null}
+            <ScrollView style={{ maxHeight: searchable ? 260 : undefined }} keyboardShouldPersistTaps="handled">
+              {filtered.length === 0 ? (
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", paddingHorizontal: 14, paddingVertical: 10 }}>Sonuç yok</Text>
+              ) : (
+                filtered.map((opt) => {
+                  const isSel = opt.value === value;
+                  return (
+                    <Pressable
+                      key={`${opt.value}`}
+                      onPress={() => { onSelect(opt.value); close(); }}
+                      style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 10 })}
+                    >
+                      <MaterialCommunityIcons name={isSel ? "check-circle" : "circle-outline"} size={16} color={isSel ? colors.primary : colors.subtle} />
+                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{opt.label}</Text>
+                    </Pressable>
+                  );
+                })
+              )}
+            </ScrollView>
           </View>
         </>
       ) : null}
