@@ -228,7 +228,7 @@ export default function CreateListingScreen() {
         </Card>
 
         {(!isWideWeb || step === 5) ? (<Card>
-          <SectionTitle title="Yayın kontrolü" action={canPublish ? "Hazır" : "Kontrol"} />
+          <StepHeader n={5} title="Önizleme & Yayın" subtitle="İlanını gözden geçir ve yayınla." right={canPublish ? "Hazır" : "Kontrol"} />
           <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 19 }}>
             {translateCopy("İlan yayına çıkmadan önce eksik alanları burada görürsün.", language)}
           </Text>
@@ -245,7 +245,17 @@ export default function CreateListingScreen() {
         </Card>) : null}
 
         {(!isWideWeb || step === 2) ? (<Card>
-          <SectionTitle title="Medya" action="1-5 medya" />
+          <StepHeader n={2} title="Görseller" subtitle="Ürününüzün görsellerini ekleyin." />
+          <Pressable
+            onPress={pickImage}
+            style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.primary, borderRadius: 14, borderStyle: "dashed", borderWidth: 2, gap: 6, paddingHorizontal: 16, paddingVertical: 28 })}
+          >
+            <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 52, justifyContent: "center", width: 52 }}>
+              <MaterialCommunityIcons name="cloud-upload-outline" size={28} color={colors.primary} />
+            </View>
+            <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Görsel yüklemek için tıkla</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>PNG, JPG veya video · ilk görsel vitrin olur · en fazla 5 medya</Text>
+          </Pressable>
           <MediaPreview uri={images[0] || fallbackImage} large />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             {images.map((item, index) => (
@@ -380,7 +390,7 @@ export default function CreateListingScreen() {
         </Card>) : null}
 
         {(!isWideWeb || step === 3) ? (<Card>
-          <SectionTitle title="Ortaklık ve komisyon" />
+          <StepHeader n={3} title="Komisyon" subtitle="Ortaklık türünü ve komisyon ayarlarını belirleyin." />
           <View style={{ flexDirection: "row", gap: 8 }}>
             <View style={{ flex: 1 }}>
               <PrimaryButton tone={partnershipMode === "open" ? "soft" : "secondary"} onPress={() => setPartnershipMode("open")}>Açık</PrimaryButton>
@@ -439,7 +449,7 @@ export default function CreateListingScreen() {
         </Card>) : null}
 
         {(!isWideWeb || step === 4) ? (<Card>
-          <SectionTitle title="İletişim" />
+          <StepHeader n={4} title="Teslimat & İletişim" subtitle="Teslimat ve iletişim tercihlerini belirle." />
           <View style={{ flexDirection: "row", gap: 8 }}>
             <View style={{ flex: 1 }}>
               <PrimaryButton tone={contactMethod === "whatsapp" ? "soft" : "secondary"} onPress={() => setContactMethod("whatsapp")}>WhatsApp</PrimaryButton>
@@ -986,6 +996,25 @@ function SelectField({ label, required, value, placeholder, options, onSelect, c
             </ScrollView>
           </View>
         </>
+      ) : null}
+    </View>
+  );
+}
+
+function StepHeader({ n, title, subtitle, right }: { n: number; title: string; subtitle: string; right?: string }) {
+  return (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+      <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 30, justifyContent: "center", width: 30 }}>
+        <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{n}</Text>
+      </View>
+      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+        <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{title}</Text>
+        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{subtitle}</Text>
+      </View>
+      {right ? (
+        <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 5 }}>
+          <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{right}</Text>
+        </View>
       ) : null}
     </View>
   );
