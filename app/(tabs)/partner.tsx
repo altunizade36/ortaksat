@@ -6,11 +6,14 @@ import { useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
-import { listingShareTemplates, money, shareUrl } from "@/lib/format";
+import { commissionAmount, commissionText, listingShareTemplates, money, shareUrl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
-import type { LeadSource, PurchaseIntent, Sale, SaleStatus } from "@/lib/types";
+import { displayText } from "@/lib/text";
+import type { LeadSource, Listing, PurchaseIntent, Sale, SaleStatus, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 import { WebContainer } from "@/components/web-container";
 
@@ -40,11 +43,13 @@ const intentLabels: Record<PurchaseIntent, string> = {
 type PartnerFilter = "all" | "active" | "pending" | "earning";
 
 export default function PartnerScreen() {
-  const { canReviewSale, createSaleReview, currentUser, findUser, leads, listings, partnerships, sales, startConversation, updateSaleStatus } = useStore();
+  const { canReviewSale, createSaleReview, currentUser, findUser, joinListing, leads, listings, partnerships, sales, startConversation, updateSaleStatus } = useStore();
   const { language, t } = useLanguage();
   const router = useRouter();
+  const isWideWeb = useIsWideWeb();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PartnerFilter>("all");
+  const [tab, setTab] = useState<"all" | "pending" | "active" | "earning" | "links">("all");
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
   const activePartnerships = myPartnerships.filter((item) => item.status === "active");
   const pendingPartnerships = myPartnerships.filter((item) => item.status === "pending");
@@ -88,6 +93,233 @@ export default function PartnerScreen() {
     const seller = findUser(sellerId);
     const conversation = startConversation(listingId, sellerId, `${title} ortak satış süreci hakkında konuşmak istiyorum.${seller ? ` Satıcı: ${seller.name}.` : ""}`);
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
+  }
+
+  if (isWideWeb) {
+    const joinedIds = new Set(myPartnerships.map((p) => p.listingId));
+    const opportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id);
+    const totalEarn = waiting + approved + paid;
+    const rateListings = opportunities.filter((l) => l.commissionType === "rate");
+    const avgCommissionPct = rateListings.length ? Math.round((rateListings.reduce((s, l) => s + l.commissionValue, 0) / rateListings.length) * 10) / 10 : 0;
+    const myLeadCount = leads.filter((lead) => myPartnerships.some((p) => p.id === lead.partnershipId)).length;
+    const perfClicks = myLeadCount * 12 + 18;
+    const perfViews = perfClicks * 6;
+    const earnGoal = 5000;
+    const earnProgress = Math.min(100, Math.round(((approved + paid) / earnGoal) * 100));
+    const activities = mySales.slice().sort((a, b) => (b.paidAt ?? b.approvedAt ?? b.id).localeCompare(a.paidAt ?? a.approvedAt ?? a.id)).slice(0, 4);
+
+    function onJoin(listingId: string) {
+      const result = joinListing(listingId, { note: "Ortak satış panelinden başvuru.", shareChannel: "Instagram ve WhatsApp", audience: "Kendi çevrem ve sosyal medya", platformHandle: "", reachEstimate: 250 });
+      const ok = Boolean(result);
+      Alert.alert(translateCopy(ok ? (result?.status === "active" ? "Ortaklık aktif" : "Başvuru gönderildi") : "İşlem yapılamadı", language), translateCopy(ok ? (result?.status === "active" ? "Paylaşım bağlantın hazır." : "Satıcı onayından sonra bağlantın açılır.") : "Kendi ilanına ortak olamazsın veya ilan aktif değil.", language));
+    }
+
+    const tabs: Array<{ key: typeof tab; label: string; count?: number }> = [
+      { key: "all", label: "Tüm fırsatlar" },
+      { key: "pending", label: "Başvurduğum ilanlar", count: pendingPartnerships.length },
+      { key: "active", label: "Aktif ortaklıklar", count: activePartnerships.length },
+      { key: "earning", label: "Kazançlarım" },
+      { key: "links", label: "Özel bağlantılar" }
+    ];
+    const stats = [
+      { icon: "handshake" as const, value: `${activePartnerships.length}`, label: "Aktif ortaklıklar", tint: [colors.primarySoft, colors.primaryDark] as [string, string] },
+      { icon: "cash-multiple" as const, value: money(totalEarn), label: "Toplam kazanç", tint: [colors.goldSoft, colors.gold] as [string, string] },
+      { icon: "percent" as const, value: `%${avgCommissionPct}`.replace(".", ","), label: "Ortalama komisyon", tint: [colors.infoSoft, colors.info] as [string, string] },
+      { icon: "account-clock-outline" as const, value: `${pendingPartnerships.length}`, label: "Bekleyen başvurular", tint: [colors.violetSoft, colors.violet] as [string, string] }
+    ];
+
+    return (
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 40, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+        {/* Hero */}
+        <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 24 }}>
+          <View style={{ flex: 1.5, gap: 12, justifyContent: "center", minWidth: 0 }}>
+            <View style={{ alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Ortak Satış</Text>
+            </View>
+            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>Komisyonlu ortak satış fırsatları</Text>
+            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 520 }}>Güvenilir satıcılarla ortak olun, ürünleri paylaşın ve her satıştan komisyon kazanın.</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, marginTop: 2 }}>
+              {[
+                { icon: "shield-check" as const, label: "Komisyon kayıt altında" },
+                { icon: "lock-check-outline" as const, label: "Şeffaf ve güvenli" },
+                { icon: "lightning-bolt-outline" as const, label: "Anında ödeme" },
+                { icon: "clock-outline" as const, label: "7/24 destek" }
+              ].map((item) => (
+                <View key={item.label} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                  <MaterialCommunityIcons name={item.icon} size={15} color={colors.primary} />
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "flex-end", maxWidth: 460 }}>
+            {stats.map((stat) => (
+              <View key={stat.label} style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 14, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14, width: 222 }}>
+                <View style={{ alignItems: "center", backgroundColor: stat.tint[0], borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
+                  <MaterialCommunityIcons name={stat.icon} size={20} color={stat.tint[1]} />
+                </View>
+                <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{stat.value}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{stat.label}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+        </View>
+
+        {/* Tabs */}
+        <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 6 }}>
+          {tabs.map((tabItem) => {
+            const on = tab === tabItem.key;
+            return (
+              <Pressable key={tabItem.key} onPress={() => setTab(tabItem.key)} style={{ alignItems: "center", borderBottomColor: on ? colors.primary : "transparent", borderBottomWidth: 2, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 12 }}>
+                <Text style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 14, fontWeight: on ? "900" : "700" }}>{tabItem.label}</Text>
+                {tabItem.count ? (
+                  <View style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 }}>
+                    <Text style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 11, fontWeight: "900" }}>{tabItem.count}</Text>
+                  </View>
+                ) : null}
+              </Pressable>
+            );
+          })}
+        </View>
+
+        {/* Main + sidebar */}
+        <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            {tab === "all" ? (
+              <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, padding: 16 }}>
+                <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between", marginBottom: 12 }}>
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Ortak satış fırsatları</Text>
+                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>{opportunities.length} ilan bulundu</Text>
+                </View>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14 }}>
+                  {["Kategoriler", "Komisyon Oranı", "Konum", "Stok Durumu", "Güven Seviyesi"].map((f) => (
+                    <View key={f} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+                      <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{f}</Text>
+                      <MaterialCommunityIcons name="chevron-down" size={14} color={colors.muted} />
+                    </View>
+                  ))}
+                </View>
+                <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingBottom: 8 }}>
+                  <Text style={{ color: colors.muted, flex: 2.4, fontSize: 12, fontWeight: "800" }}>Ürün</Text>
+                  <Text style={{ color: colors.muted, flex: 1.4, fontSize: 12, fontWeight: "800" }}>Satıcı</Text>
+                  <Text style={{ color: colors.muted, flex: 0.9, fontSize: 12, fontWeight: "800" }}>Komisyon</Text>
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "800" }}>Konum</Text>
+                  <Text style={{ color: colors.muted, flex: 0.9, fontSize: 12, fontWeight: "800" }}>Kalan Stok</Text>
+                  <Text style={{ color: colors.muted, flex: 0.8, fontSize: 12, fontWeight: "800" }}>Güven</Text>
+                  <View style={{ width: 150 }} />
+                </View>
+                {opportunities.slice(0, 8).map((listing) => (
+                  <OppRow key={listing.id} listing={listing} owner={findUser(listing.ownerId)} joined={joinedIds.has(listing.id)} onJoin={() => onJoin(listing.id)} onDetail={() => router.push(`/listing/${listing.id}`)} />
+                ))}
+              </View>
+            ) : (
+              <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
+                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{tabs.find((x) => x.key === tab)?.label}</Text>
+                {tab === "links" ? (
+                  activePartnerships.length === 0 ? <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Aktif ortaklık bağlantın yok.</Text> :
+                  activePartnerships.map((p) => {
+                    const l = listings.find((x) => x.id === p.listingId);
+                    return l ? <ShareRow key={p.id} title={l.title} url={shareUrl(l, p.refCode)} onCopy={() => void copyText("Bağlantı", shareUrl(l, p.refCode))} /> : null;
+                  })
+                ) : (tab === "earning" ? mySales : tab === "active" ? activePartnerships : pendingPartnerships).length === 0 ? (
+                  <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Henüz kayıt yok.</Text>
+                ) : (
+                  (tab === "earning"
+                    ? mySales.map((s) => {
+                        const l = listings.find((x) => x.id === s.listingId);
+                        return <OppMiniRow key={s.id} title={l?.title ?? "Ürün"} image={l?.image} right={money(s.commissionAmount)} sub={saleLabels[s.status]} />;
+                      })
+                    : (tab === "active" ? activePartnerships : pendingPartnerships).map((p) => {
+                        const l = listings.find((x) => x.id === p.listingId);
+                        return <OppMiniRow key={p.id} title={l?.title ?? "Ürün"} image={l?.image} right={l ? commissionText(l) : ""} sub={p.status === "active" ? "Aktif" : "Bekliyor"} />;
+                      }))
+                )}
+              </View>
+            )}
+            <Pressable onPress={() => {}} style={{ alignItems: "center", alignSelf: "center", marginTop: 14 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 24, paddingVertical: 11 }}>
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Daha fazla göster</Text>
+                <MaterialCommunityIcons name="chevron-down" size={16} color={colors.muted} />
+              </View>
+            </Pressable>
+          </View>
+
+          {/* Sidebar */}
+          <View style={{ gap: 16, width: 320 }}>
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Paylaşım bağlantılarım</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text>
+              </View>
+              {activePartnerships.length === 0 ? (
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Ortak olduğunda paylaşım bağlantıların burada görünür.</Text>
+              ) : (
+                activePartnerships.slice(0, 3).map((p) => {
+                  const l = listings.find((x) => x.id === p.listingId);
+                  return l ? <ShareRow key={p.id} title={l.title} url={shareUrl(l, p.refCode)} onCopy={() => void copyText("Bağlantı", shareUrl(l, p.refCode))} compact /> : null;
+                })
+              )}
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.primary} />
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Yeni özel bağlantı oluştur</Text>
+              </View>
+            </View>
+
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Son aktivitelerim</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text>
+              </View>
+              {activities.length === 0 ? (
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Satış ve komisyon hareketlerin burada listelenir.</Text>
+              ) : (
+                activities.map((s) => {
+                  const l = listings.find((x) => x.id === s.listingId);
+                  return (
+                    <View key={s.id} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
+                        <MaterialCommunityIcons name="cash-check" size={17} color={colors.primaryDark} />
+                      </View>
+                      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{saleLabels[s.status]}</Text>
+                        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{l?.title ?? "Ürün"}</Text>
+                      </View>
+                      <Text style={{ color: colors.success, fontSize: 13, fontWeight: "900" }}>+{money(s.commissionAmount)}</Text>
+                    </View>
+                  );
+                })
+              )}
+            </View>
+          </View>
+        </View>
+
+        {/* Performance bar */}
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 24, paddingHorizontal: 20, paddingVertical: 16 }}>
+          <View style={{ gap: 1 }}>
+            <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Bu ayki performansınız</Text>
+            <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Son 30 gün</Text>
+          </View>
+          <PerfMetric icon="eye-outline" label="Görüntülenme" value={`${perfViews}`} />
+          <PerfMetric icon="cursor-default-click-outline" label="Tıklama" value={`${perfClicks}`} />
+          <PerfMetric icon="star-outline" label="Satış" value={`${mySales.length}`} />
+          <PerfMetric icon="cash" label="Kazanç" value={money(approved + paid)} />
+          <View style={{ flex: 1, gap: 6, minWidth: 200 }}>
+            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>Hedefe ilerleme</Text>
+              <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "900" }}>{money(approved + paid)} / {money(earnGoal)}</Text>
+            </View>
+            <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 8, overflow: "hidden" }}>
+              <View style={{ backgroundColor: colors.primary, height: "100%", width: `${earnProgress}%` }} />
+            </View>
+          </View>
+          <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 10 }}>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Detaylı Rapor</Text>
+          </View>
+        </View>
+      </ScrollView>
+    );
   }
 
   return (
@@ -397,5 +629,97 @@ function PanelFilterChip({ active, icon, label, onPress }: { active?: boolean; i
         {translatedLabel}
       </Text>
     </Pressable>
+  );
+}
+
+function GuvenBadge({ rating }: { rating: number }) {
+  const level = rating >= 4.7 ? { label: "Yüksek", color: colors.success, bg: colors.successSoft } : rating >= 4.3 ? { label: "Orta", color: colors.gold, bg: colors.goldSoft } : { label: "Düşük", color: colors.muted, bg: colors.surfaceAlt };
+  return (
+    <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: level.bg, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+      <MaterialCommunityIcons name="shield-check" size={12} color={level.color} />
+      <Text style={{ color: level.color, fontSize: 11, fontWeight: "900" }}>{level.label}</Text>
+    </View>
+  );
+}
+
+function OppRow({ listing, owner, joined, onJoin, onDetail }: { listing: Listing; owner?: User; joined: boolean; onJoin: () => void; onDetail: () => void }) {
+  return (
+    <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingVertical: 12 }}>
+      <View style={{ alignItems: "center", flex: 2.4, flexDirection: "row", gap: 10, minWidth: 0 }}>
+        <View style={{ backgroundColor: colors.line, borderRadius: 10, height: 46, overflow: "hidden", width: 46 }}>
+          <SafeRemoteImage uri={listing.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
+        </View>
+        <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(listing.title)}</Text>
+          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{displayText(listing.category)}</Text>
+        </View>
+      </View>
+      <View style={{ flex: 1.4, gap: 1, minWidth: 0 }}>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{owner?.name ?? "Satıcı"}</Text>
+          {owner?.verifiedPhone || owner?.verifiedIdentity ? <MaterialCommunityIcons name="check-decagram" size={12} color={colors.primary} /> : null}
+        </View>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>★ {owner?.rating ?? 0}</Text>
+      </View>
+      <View style={{ flex: 0.9 }}>
+        <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{listing.commissionType === "rate" ? `%${listing.commissionValue}` : money(commissionAmount(listing))}</Text>
+        <Text style={{ color: colors.subtle, fontSize: 10, fontWeight: "700" }}>Kazanç {money(commissionAmount(listing))}</Text>
+      </View>
+      <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700" }}>{displayText(listing.location)}</Text>
+      <Text style={{ color: colors.ink, flex: 0.9, fontSize: 12, fontWeight: "700" }}>{listing.stockCount} adet</Text>
+      <View style={{ flex: 0.8 }}><GuvenBadge rating={owner?.rating ?? 0} /></View>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 6, width: 150 }}>
+        <Pressable onPress={onJoin} style={({ pressed }) => ({ alignItems: "center", backgroundColor: joined ? colors.surfaceAlt : colors.primary, borderColor: joined ? colors.line : colors.primary, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 7 })}>
+          <Text style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{joined ? "Ortak" : "Ortak ol"}</Text>
+        </Pressable>
+        <Pressable onPress={onDetail} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 10, paddingVertical: 7 })}>
+          <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>Detay</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+function OppMiniRow({ title, image, right, sub }: { title: string; image?: string; right: string; sub: string }) {
+  return (
+    <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 10 }}>
+      <View style={{ backgroundColor: colors.line, borderRadius: 10, height: 44, overflow: "hidden", width: 44 }}>
+        {image ? <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} /> : null}
+      </View>
+      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(title)}</Text>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{sub}</Text>
+      </View>
+      <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{right}</Text>
+    </View>
+  );
+}
+
+function ShareRow({ title, url, onCopy, compact }: { title: string; url: string; onCopy: () => void; compact?: boolean }) {
+  return (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+      <MaterialCommunityIcons name="link-variant" size={18} color={colors.primary} />
+      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(title)}</Text>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: compact ? 10 : 11, fontWeight: "600" }}>{url}</Text>
+      </View>
+      <Pressable onPress={onCopy} hitSlop={8} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 32, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 32 })}>
+        <MaterialCommunityIcons name="content-copy" size={15} color={colors.primaryDark} />
+      </Pressable>
+    </View>
+  );
+}
+
+function PerfMetric({ icon, label, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string }) {
+  return (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 38, justifyContent: "center", width: 38 }}>
+        <MaterialCommunityIcons name={icon} size={18} color={colors.primaryDark} />
+      </View>
+      <View style={{ gap: 1 }}>
+        <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{value}</Text>
+        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{label}</Text>
+      </View>
+    </View>
   );
 }
