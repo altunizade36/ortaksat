@@ -9,7 +9,6 @@ import { colors } from "@/components/colors";
 import { GlobalSearchBar } from "@/components/global-search-bar";
 import { HeaderActions } from "@/components/header-actions";
 import { Brand3DMark } from "@/components/three-d-showcase";
-import { listingCategories } from "@/lib/categories";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
@@ -31,7 +30,7 @@ export function AppHeader() {
     { href: "/explore", label: "Keşfet", match: (p) => p.startsWith("/explore") },
     { href: "/create", label: "İlan Ver", match: (p) => p.startsWith("/create") },
     { href: "/partner", label: "Ortak Satış", match: (p) => p.startsWith("/partner") },
-    { href: "/explore", label: "Kategoriler", match: () => false, caret: true },
+    { href: "/kategoriler", label: "Kategoriler", match: (p) => p.startsWith("/kategoriler"), caret: true },
     { href: "/nasil-calisir", label: "Nasıl Çalışır?", match: (p) => p.startsWith("/nasil-calisir") },
     { href: "/blog", label: "Blog", match: (p) => p.startsWith("/blog") }
   ];
@@ -70,9 +69,6 @@ export function AppHeader() {
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 32, paddingVertical: 8 }}>
           {navItems.map((item) => {
             const active = item.match(pathname);
-            if (item.label === "Kategoriler") {
-              return <CategoriesMenu key={item.label} />;
-            }
             return (
               <Link key={item.label} href={item.href} asChild>
                 <Pressable style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : "transparent", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 14, paddingVertical: 9 }}>
@@ -188,36 +184,6 @@ function DesktopActions() {
         </Link>
       ))}
       <AccountMenu />
-    </View>
-  );
-}
-
-function CategoriesMenu() {
-  const { language } = useLanguage();
-  const [open, setOpen] = useState(false);
-  return (
-    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
-      <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: open ? colors.primarySoft : "transparent", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 14, paddingVertical: 9 }}>
-        <Text numberOfLines={1} style={{ color: open ? colors.primaryDark : colors.ink, fontSize: 14, fontWeight: "700" }}>Kategoriler</Text>
-        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={16} color={colors.muted} />
-      </Pressable>
-      {open ? (
-        <>
-          <Pressable onPress={() => setOpen(false)} style={{ bottom: -3000, left: -3000, position: "absolute", right: -3000, top: -3000, zIndex: 900 }} />
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 4, left: 0, padding: 8, position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 46, width: 460, zIndex: 1000 }}>
-            {listingCategories.map((category) => (
-              <Link key={category.key} href={{ pathname: "/explore", params: { q: category.label } }} asChild>
-                <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderRadius: 10, flexDirection: "row", gap: 10, padding: 10, width: 218 })}>
-                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 34, justifyContent: "center", width: 34 }}>
-                    <MaterialCommunityIcons name={category.icon} size={18} color={colors.primaryDark} />
-                  </View>
-                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{translateCopy(category.label, language)}</Text>
-                </Pressable>
-              </Link>
-            ))}
-          </View>
-        </>
-      ) : null}
     </View>
   );
 }
