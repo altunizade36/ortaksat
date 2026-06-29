@@ -8,39 +8,62 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
+const CATEGORY_PALETTE: Array<[string, string]> = [
+  [colors.primarySoft, colors.primaryDark],
+  [colors.infoSoft, colors.info],
+  [colors.violetSoft, colors.violet],
+  [colors.goldSoft, colors.gold],
+  [colors.accentSoft, colors.accent],
+  [colors.successSoft, colors.success],
+  [colors.warningSoft, colors.warning]
+];
+
 /** Desktop category showcase — quick browse entry points into the feed. */
 export function WebCategories() {
   const { language } = useLanguage();
   return (
-    <View dataSet={{ reveal: "1" }} style={{ gap: 14, marginTop: 4 }}>
-      <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>Kategoriler</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-        {listingCategories.map((category) => (
-          <Link key={category.key} href={{ pathname: "/explore", params: { q: category.label } }} asChild>
-            <Pressable
-              dataSet={{ card: "listing" }}
-              style={{
-                alignItems: "center",
-                backgroundColor: colors.surface,
-                borderColor: colors.line,
-                borderRadius: 16,
-                borderWidth: 1,
-                flexDirection: "row",
-                gap: 12,
-                paddingHorizontal: 18,
-                paddingVertical: 16,
-                width: 220
-              }}
-            >
-              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
-                <MaterialCommunityIcons name={category.icon} size={24} color={colors.primaryDark} />
-              </View>
-              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "800" }}>
-                {translateCopy(category.label, language)}
-              </Text>
-            </Pressable>
-          </Link>
-        ))}
+    <View dataSet={{ reveal: "1" }} style={{ gap: 16, marginTop: 8 }}>
+      <View style={{ gap: 2 }}>
+        <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>Kategoriler</Text>
+        <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>İlgilendiğin alana göre ürünleri keşfet.</Text>
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+        {listingCategories.map((category, index) => {
+          const [tileBg, tileColor] = CATEGORY_PALETTE[index % CATEGORY_PALETTE.length];
+          return (
+            <Link key={category.key} href={{ pathname: "/explore", params: { q: category.label } }} asChild>
+              <Pressable
+                dataSet={{ card: "listing" }}
+                style={{
+                  alignItems: "center",
+                  backgroundColor: colors.surface,
+                  borderColor: colors.line,
+                  borderRadius: 18,
+                  borderWidth: 1,
+                  flexBasis: 230,
+                  flexDirection: "row",
+                  flexGrow: 1,
+                  gap: 14,
+                  paddingHorizontal: 18,
+                  paddingVertical: 18
+                }}
+              >
+                <View style={{ alignItems: "center", backgroundColor: tileBg, borderRadius: 14, height: 48, justifyContent: "center", width: 48 }}>
+                  <MaterialCommunityIcons name={category.icon} size={26} color={tileColor} />
+                </View>
+                <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 15, fontWeight: "800" }}>
+                    {translateCopy(category.label, language)}
+                  </Text>
+                  <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>
+                    {category.subcategories.length}+ alt kategori
+                  </Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-right" size={20} color={colors.subtle} />
+              </Pressable>
+            </Link>
+          );
+        })}
       </View>
     </View>
   );
