@@ -71,7 +71,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  background: #FFFFFF;
+  background: #F4F6F8;
   min-height: 100vh;
 }
 
@@ -82,7 +82,7 @@ body {
   width: 100%;
   min-height: 100vh;
   margin: 0;
-  background: #FFFFFF;
+  background: #F4F6F8;
 }
 
 /* Polished custom scrollbar on desktop */
