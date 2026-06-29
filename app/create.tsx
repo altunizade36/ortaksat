@@ -7,6 +7,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, Tex
 
 import { colors } from "@/components/colors";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
+import { WebContainer } from "@/components/web-container";
 import { getCategoryPartnerHint, getCategoryRequiredDetails, getCategorySubcategories, listingCategories } from "@/lib/categories";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -180,6 +181,7 @@ export default function CreateListingScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16, paddingBottom: 128 }}>
+        <WebContainer max={860} padding={0} style={{ gap: 14 }}>
         <Card>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
             <View style={{ flex: 1, gap: 8 }}>
@@ -375,6 +377,7 @@ export default function CreateListingScreen() {
             {language === "en" ? "After publishing, you can edit, pause, or remove the listing from the Seller Panel." : "Yayından sonra ilanını Satıcı Paneli'nde düzenleyebilir, pasife alabilir veya kaldırabilirsin."}
           </Text>
         </Card>
+        </WebContainer>
       </ScrollView>
     </KeyboardAvoidingView>
   );

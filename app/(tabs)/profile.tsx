@@ -10,6 +10,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { compactNumber } from "@/lib/locale";
 import { calculateUserTrustScores, type RoleTrustScore } from "@/lib/trust-score";
 import { useStore } from "@/lib/use-store";
+import { WebContainer } from "@/components/web-container";
 
 function isImageAvatar(value: string) {
   return value.startsWith("http") || value.startsWith("file");
@@ -42,6 +43,7 @@ export default function ProfileScreen() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }}>
+      <WebContainer max={1000} padding={0} style={{ gap: 12 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 62, justifyContent: "center", overflow: "hidden", width: 62 }}>
@@ -180,6 +182,7 @@ export default function ProfileScreen() {
           <Shortcut href="/legal" icon="file-document-outline" label={t("legal")} />
         </View>
       </Card>
+      </WebContainer>
     </ScrollView>
   );
 }

@@ -4,6 +4,7 @@ import { useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { WebContainer } from "@/components/web-container";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { searchKey } from "@/lib/locale";
 
@@ -68,6 +69,7 @@ export default function MenuScreen() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: "#FFFFFF", gap: 8, padding: 12, paddingBottom: 108 }}>
+      <WebContainer max={1000} padding={0} style={{ gap: 8 }}>
       <View style={{ gap: 8, marginBottom: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>
           {translateCopy("Kategoriler ve Ortak Satış", language)}
@@ -120,6 +122,7 @@ export default function MenuScreen() {
       {visibleGroups.map((group) => (
         <AccordionCard key={group.title} expanded={open === group.title} group={group} language={language} onPress={() => setOpen(open === group.title ? "" : group.title)} />
       ))}
+      </WebContainer>
     </ScrollView>
   );
 }

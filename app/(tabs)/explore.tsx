@@ -8,7 +8,8 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { inferListingSubcategory } from "@/lib/categories";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid, SHELL_MAX_WIDTH } from "@/lib/layout";
+import { responsiveGrid, SHELL_MAX_WIDTH, useIsWideWeb } from "@/lib/layout";
+import { WebContainer } from "@/components/web-container";
 import { searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
@@ -43,11 +44,14 @@ export default function ExploreScreen() {
     { key: "hot", label: t("trend"), icon: "fire" },
     { key: "new", label: t("newest"), icon: "clock-outline" }
   ];
+  const isWideWeb = useIsWideWeb();
   const tokens = searchKey(params.q ?? "").split(" ").filter(Boolean);
-  const gap = 8;
-  const padding = 12;
-  const tileSize = responsiveGrid({ available: Math.min(width, SHELL_MAX_WIDTH) - padding * 2, gap, minCardWidth: 160 }).cardWidth;
-  const tileHeight = Math.min(258, Math.round(tileSize * 1.22));
+  const gap = isWideWeb ? 16 : 8;
+  const padding = isWideWeb ? 24 : 12;
+  const grid = responsiveGrid({ available: Math.min(width, isWideWeb ? 1200 : SHELL_MAX_WIDTH) - padding * 2, gap, minCardWidth: isWideWeb ? 210 : 160 });
+  const columns = grid.columns;
+  const tileSize = grid.cardWidth;
+  const tileHeight = Math.min(isWideWeb ? 320 : 258, Math.round(tileSize * 1.22));
 
   const marketplaceListings = useMemo(() => {
     const visible = listings.filter((listing) => listing.status !== "draft" && listing.status !== "rejected" && listing.status !== "sold");
@@ -90,7 +94,7 @@ export default function ExploreScreen() {
   }, [activeListings]);
 
   const visibleMediaItems = mediaItems.slice(0, visibleCount);
-  const rows = useMemo(() => chunk(visibleMediaItems, 2), [visibleMediaItems]);
+  const rows = useMemo(() => chunk(visibleMediaItems, columns), [visibleMediaItems, columns]);
   const videoCount = mediaItems.filter((item) => item.type === "video").length;
   const openCount = activeListings.filter((listing) => listing.partnershipMode === "open").length;
 
@@ -123,6 +127,7 @@ export default function ExploreScreen() {
       contentContainerStyle={{ backgroundColor: colors.surface, paddingBottom: 102 }}
       style={{ backgroundColor: colors.surface }}
     >
+      <WebContainer max={1240} padding={0}>
       <View style={{ gap: 7, paddingBottom: 8, paddingHorizontal: 12, paddingTop: 6 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1 }}>
@@ -195,12 +200,12 @@ export default function ExploreScreen() {
                     item={item}
                     language={language}
                     onPress={() => router.push({ pathname: "/(tabs)/explore-feed/[id]", params: { id: item.listing.id, media: item.id } })}
-                    order={rowIndex * 2 + index}
+                    order={rowIndex * columns + index}
                     size={tileSize}
                     t={t}
                   />
                 ))}
-                {Array.from({ length: 2 - row.length }).map((_, index) => (
+                {Array.from({ length: columns - row.length }).map((_, index) => (
                   <View key={`empty-${rowIndex}-${index}`} style={{ height: tileHeight, width: tileSize }} />
                 ))}
               </View>
@@ -213,6 +218,7 @@ export default function ExploreScreen() {
           ) : null}
         </>
       )}
+      </WebContainer>
     </ScrollView>
   );
 }

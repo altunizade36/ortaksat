@@ -12,6 +12,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { searchKey } from "@/lib/locale";
 import type { LeadSource, PurchaseIntent, Sale, SaleStatus } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { WebContainer } from "@/components/web-container";
 
 const saleLabels: Record<SaleStatus, string> = {
   pending: "Bekliyor",
@@ -91,6 +92,7 @@ export default function PartnerScreen() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: 96 }}>
+      <WebContainer max={1200} padding={0} style={{ gap: 14 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 8, height: 48, justifyContent: "center", width: 48 }}>
@@ -264,6 +266,7 @@ export default function PartnerScreen() {
           </Card>
         );
       })}
+      </WebContainer>
     </ScrollView>
   );
 }
