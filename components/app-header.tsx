@@ -49,7 +49,7 @@ export function AppHeader() {
         <DesktopTopBar />
 
         {/* HEADER: logo · search · actions */}
-        <View style={{ alignItems: "center", backgroundColor: colors.surface, flexDirection: "row", gap: 28, paddingHorizontal: 32, paddingVertical: 14 }}>
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, flexDirection: "row", gap: 28, paddingHorizontal: 32, paddingVertical: 14, position: "relative", zIndex: 30 }}>
           <Link href="/" asChild>
             <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <Brand3DMark size={38} />
@@ -66,7 +66,7 @@ export function AppHeader() {
         </View>
 
         {/* NAV BAR: tabs + primary CTAs */}
-        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 32, paddingVertical: 8 }}>
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 32, paddingVertical: 8, position: "relative", zIndex: 1 }}>
           {navItems.map((item) => {
             const active = item.match(pathname);
             return (
