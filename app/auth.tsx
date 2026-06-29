@@ -3,9 +3,13 @@ import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
+import { Link } from "expo-router";
+
 import { colors } from "@/components/colors";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
+import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
 type AuthMode = "login" | "register" | "reset";
@@ -21,8 +25,15 @@ export default function AuthScreen() {
   const [newPassword, setNewPassword] = useState("");
   const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [loading, setLoading] = useState(false);
+  const isWideWeb = useIsWideWeb();
+  const [remember, setRemember] = useState(true);
+  const [showPassword, setShowPassword] = useState(false);
 
   const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
+
+  function socialSoon() {
+    Alert.alert("Yakında", "Google / Apple ile giriş yakında aktif olacak. Şimdilik e-posta ile giriş yapabilirsin.");
+  }
 
   async function login() {
     if (!cleanEmail || password.length < 6) {
@@ -90,6 +101,172 @@ export default function AuthScreen() {
       ok ? (language === "en" ? "Your new password was saved. You can now sign in with email and the new password." : "Yeni şifren kaydedildi. Bundan sonra e-posta ve yeni şifrenle giriş yapabilirsin.") : authError ?? (language === "en" ? "Make sure you opened the reset link from the app." : "Sıfırlama bağlantısını uygulamadan açtığından emin ol.")
     );
     if (ok) setMode("login");
+  }
+
+  if (isWideWeb) {
+    const tabs: Array<{ key: AuthMode; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
+      { key: "login", icon: "login", label: "Giriş Yap" },
+      { key: "register", icon: "account-plus-outline", label: "Kayıt Ol" },
+      { key: "reset", icon: "lock-reset", label: "Şifremi Unuttum" }
+    ];
+    const security: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string; tint: string; color: string }> = [
+      { icon: "email-check-outline", title: "E-posta doğrulama", sub: "Hesabınızı doğrulayan güvenli e-posta doğrulama sistemi.", tint: colors.infoSoft, color: colors.info },
+      { icon: "shield-alert-outline", title: "Dolandırıcılık koruması", sub: "Şüpheli işlem tespiti ve yapay zekâ destekli koruma mekanizmaları.", tint: colors.successSoft, color: colors.success },
+      { icon: "lock-outline", title: "Güvenli oturum", sub: "Tüm oturumlarınız şifrelenir ve düzenli olarak izlenir.", tint: colors.violetSoft, color: colors.violet },
+      { icon: "history", title: "Oturum ve etkinlik takibi", sub: "Hesabınızdaki tüm hareketleri görüntüleyin ve kontrol edin.", tint: colors.goldSoft, color: colors.gold },
+      { icon: "headset", title: "Destek her zaman yanınızda", sub: "Sorularınız için 7/24 destek ekibimiz hizmetinizde.", tint: colors.accentSoft, color: colors.accent }
+    ];
+    const strip: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
+      { icon: "lock-check", label: "256-Bit SSL ile korunur" },
+      { icon: "database-check", label: "Güvenli veri altyapısı" },
+      { icon: "shield-account", label: "KVKK uyumlu" },
+      { icon: "map-marker-check", label: "Türkiye'de barındırılır" }
+    ];
+
+    return (
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+        <View style={{ gap: 16, marginHorizontal: "auto", maxWidth: 1100, paddingHorizontal: 20, paddingTop: 24, width: "100%" }}>
+          <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 20 }}>
+            {/* Left: auth card */}
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexBasis: 420, flexGrow: 1, minWidth: 0, padding: 26 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 12, marginBottom: 16 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 48, justifyContent: "center", width: 48 }}>
+                  <MaterialCommunityIcons name="shield-account" size={26} color={colors.primaryDark} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Güvenli hesap erişimi</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>Hesabınıza güvenli bir şekilde giriş yapın. E-posta doğrulama, şifreleme ve gelişmiş koruma sistemlerimizle güvendesiniz.</Text>
+                </View>
+              </View>
+
+              <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, flexDirection: "row", gap: 4, marginBottom: 18, padding: 4 }}>
+                {tabs.map((tb) => {
+                  const on = mode === tb.key;
+                  return (
+                    <Pressable key={tb.key} onPress={() => setMode(tb.key)} style={{ alignItems: "center", backgroundColor: on ? colors.surface : "transparent", borderRadius: 9, flex: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 10, ...(on ? { shadowColor: "#101828", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.08, shadowRadius: 6 } : {}) }}>
+                      <MaterialCommunityIcons name={tb.icon} size={15} color={on ? colors.primaryDark : colors.muted} />
+                      <Text style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 12.5, fontWeight: "800" }}>{tb.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+
+              <View style={{ gap: 14 }}>
+                {mode === "register" ? <DeskAuthField icon="account-outline" label="Ad Soyad" value={name} onChangeText={setName} placeholder="Örn. Ayşe Demir" /> : null}
+                <DeskAuthField icon="email-outline" label="E-posta" value={email} onChangeText={setEmail} placeholder="ornek@eposta.com" />
+                {mode !== "reset" ? <DeskAuthField icon="lock-outline" label="Şifre" value={password} onChangeText={setPassword} placeholder="En az 6 karakter" secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} /> : null}
+                {mode === "reset" ? <DeskAuthField icon="lock-reset" label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} placeholder="Bağlantıdan geldikten sonra yeni şifre" secure /> : null}
+
+                {mode === "login" ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+                    <Pressable onPress={() => setRemember((v) => !v)} style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                      <MaterialCommunityIcons name={remember ? "checkbox-marked" : "checkbox-blank-outline"} size={19} color={remember ? colors.primary : colors.muted} />
+                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Beni hatırla</Text>
+                    </Pressable>
+                    <Pressable onPress={() => setMode("reset")}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Şifremi unuttunuz?</Text></Pressable>
+                  </View>
+                ) : null}
+
+                {mode === "register" ? (
+                  <Pressable onPress={() => setAcceptedLegal((v) => !v)} style={{ alignItems: "flex-start", flexDirection: "row", gap: 9 }}>
+                    <MaterialCommunityIcons name={acceptedLegal ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"} size={20} color={acceptedLegal ? colors.primary : colors.muted} style={{ marginTop: 1 }} />
+                    <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 17 }}>KVKK aydınlatması, gizlilik politikası ve kullanım şartlarını okudum; Ortaksat'ın satışın tarafı değil aracı platform olduğunu kabul ediyorum.</Text>
+                  </Pressable>
+                ) : null}
+
+                {mode === "login" ? (
+                  <Pressable onPress={login} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 14 }}>
+                    <MaterialCommunityIcons name="lock-outline" size={17} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? "Giriş yapılıyor…" : "Giriş Yap"}</Text>
+                  </Pressable>
+                ) : mode === "register" ? (
+                  <Pressable onPress={register} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, justifyContent: "center", paddingVertical: 14 }}>
+                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? "Kayıt açılıyor…" : "Kayıt Ol"}</Text>
+                  </Pressable>
+                ) : (
+                  <View style={{ gap: 10 }}>
+                    <Pressable onPress={resetPassword} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, justifyContent: "center", paddingVertical: 14 }}>
+                      <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? "Gönderiliyor…" : "Sıfırlama e-postası gönder"}</Text>
+                    </Pressable>
+                    <Pressable onPress={updatePassword} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, justifyContent: "center", paddingVertical: 13 }}>
+                      <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "800" }}>Bağlantıdan geldim, yeni şifreyi kaydet</Text>
+                    </Pressable>
+                  </View>
+                )}
+
+                {authError ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "600" }}>{authError}</Text> : null}
+
+                {mode !== "reset" ? (
+                  <>
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 12, marginVertical: 2 }}>
+                      <View style={{ backgroundColor: colors.line, flex: 1, height: 1 }} />
+                      <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>veya</Text>
+                      <View style={{ backgroundColor: colors.line, flex: 1, height: 1 }} />
+                    </View>
+                    <View style={{ flexDirection: "row", gap: 10 }}>
+                      <Pressable onPress={socialSoon} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
+                        <MaterialCommunityIcons name="google" size={17} color="#DB4437" />
+                        <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>Google ile giriş</Text>
+                      </Pressable>
+                      <Pressable onPress={socialSoon} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
+                        <MaterialCommunityIcons name="apple" size={18} color={colors.ink} />
+                        <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>Apple ile giriş</Text>
+                      </Pressable>
+                    </View>
+                  </>
+                ) : null}
+
+                <Pressable onPress={() => setMode(mode === "login" ? "register" : "login")} style={{ alignItems: "center", paddingTop: 4 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{mode === "login" ? "Hesabınız yok mu? " : "Zaten hesabınız var mı? "}<Text style={{ color: colors.primaryDark, fontWeight: "900" }}>{mode === "login" ? "Kayıt olun" : "Giriş yapın"}</Text></Text>
+                </Pressable>
+              </View>
+            </View>
+
+            {/* Right: security panel */}
+            <View style={{ flexBasis: 360, flexGrow: 1, gap: 14, minWidth: 0 }}>
+              <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Hesabınız güvende</Text>
+              {security.map((s) => (
+                <View key={s.title} style={{ alignItems: "flex-start", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 16 }}>
+                  <View style={{ alignItems: "center", backgroundColor: s.tint, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
+                    <MaterialCommunityIcons name={s.icon} size={20} color={s.color} />
+                  </View>
+                  <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+                    <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{s.title}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{s.sub}</Text>
+                  </View>
+                </View>
+              ))}
+              <View style={{ alignItems: "flex-start", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, padding: 16 }}>
+                <MaterialCommunityIcons name="check-decagram" size={22} color={colors.primaryDark} />
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>OrtakSat ile güvenli alışverişin keyfini çıkarın.</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>Bilgileriniz bizim için değerlidir ve gizli tutulur.</Text>
+                </View>
+              </View>
+            </View>
+          </View>
+
+          {/* Trust strip */}
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 16, padding: 16 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 24, justifyContent: "center" }}>
+              {strip.map((s) => (
+                <View key={s.label} style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                  <MaterialCommunityIcons name={s.icon} size={17} color={colors.primary} />
+                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{s.label}</Text>
+                </View>
+              ))}
+            </View>
+            <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingTop: 14 }}>
+              <MaterialCommunityIcons name="bank-outline" size={20} color={colors.muted} />
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>OrtakSat bir aracılık platformudur. Satıcı ile alıcıları bir araya getirir; ödemeleri tutmaz ve taraflar arasında gerçekleşen ürün/hizmet tesliminden veya komisyon ödemesinden sorumlu değildir.</Text>
+              <Link href="/legal" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Detaylar →</Text></Pressable></Link>
+            </View>
+          </View>
+        </View>
+
+        <View style={{ marginTop: 20 }}><WebFooter /></View>
+      </ScrollView>
+    );
   }
 
   return (
@@ -180,6 +357,30 @@ export default function AuthScreen() {
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+function DeskAuthField({ icon, label, value, onChangeText, placeholder, secure, showToggle, showPassword, onToggle }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; onChangeText: (v: string) => void; placeholder?: string; secure?: boolean; showToggle?: boolean; showPassword?: boolean; onToggle?: () => void }) {
+  return (
+    <View style={{ gap: 6 }}>
+      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
+      <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 9, paddingHorizontal: 12 }}>
+        <MaterialCommunityIcons name={icon} size={18} color={colors.muted} />
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          autoCapitalize={icon === "email-outline" ? "none" : "sentences"}
+          autoCorrect={false}
+          secureTextEntry={secure && !showPassword}
+          placeholder={placeholder}
+          placeholderTextColor={colors.subtle}
+          style={{ color: colors.ink, flex: 1, fontSize: 14, minHeight: 48, paddingVertical: 10 }}
+        />
+        {showToggle ? (
+          <Pressable onPress={onToggle} hitSlop={8}><MaterialCommunityIcons name={showPassword ? "eye-off-outline" : "eye-outline"} size={18} color={colors.muted} /></Pressable>
+        ) : null}
+      </View>
+    </View>
   );
 }
 
