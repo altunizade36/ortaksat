@@ -3,9 +3,48 @@ import { Link, type Href } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
-import { useLanguage } from "@/lib/i18n";
+import { listingCategories } from "@/lib/categories";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+
+/** Desktop category showcase — quick browse entry points into the feed. */
+export function WebCategories() {
+  const { language } = useLanguage();
+  return (
+    <View dataSet={{ reveal: "1" }} style={{ gap: 14, marginTop: 4 }}>
+      <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>Kategoriler</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+        {listingCategories.map((category) => (
+          <Link key={category.key} href={{ pathname: "/explore", params: { q: category.label } }} asChild>
+            <Pressable
+              dataSet={{ card: "listing" }}
+              style={{
+                alignItems: "center",
+                backgroundColor: colors.surface,
+                borderColor: colors.line,
+                borderRadius: 16,
+                borderWidth: 1,
+                flexDirection: "row",
+                gap: 12,
+                paddingHorizontal: 18,
+                paddingVertical: 16,
+                width: 220
+              }}
+            >
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
+                <MaterialCommunityIcons name={category.icon} size={24} color={colors.primaryDark} />
+              </View>
+              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "800" }}>
+                {translateCopy(category.label, language)}
+              </Text>
+            </Pressable>
+          </Link>
+        ))}
+      </View>
+    </View>
+  );
+}
 
 /** Desktop "how it works" band — 3 steps explaining the ortak-satış model. */
 export function WebHowItWorks() {
@@ -69,6 +108,14 @@ export function WebFooter() {
         { label: t("explore"), href: "/explore" },
         { label: t("createListing"), href: "/create" },
         { label: t("partnerSales"), href: "/partner" }
+      ]
+    },
+    {
+      heading: "Şirket",
+      links: [
+        { label: "Hakkımızda", href: "/hakkimizda" },
+        { label: "Nasıl çalışır?", href: "/nasil-calisir" },
+        { label: "SSS", href: "/sss" }
       ]
     },
     {

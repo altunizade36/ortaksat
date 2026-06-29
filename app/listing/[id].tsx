@@ -11,6 +11,8 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingShareTemplates, money, shareUrl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useIsWideWeb } from "@/lib/layout";
+import { WebContainer } from "@/components/web-container";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { LeadSource, Listing, PurchaseIntent, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -32,6 +34,7 @@ export default function ListingDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { language } = useLanguage();
   const { width } = useWindowDimensions();
+  const isWideWeb = useIsWideWeb();
   const {
     createLead,
     createSaleReview,
@@ -196,8 +199,9 @@ export default function ListingDetailScreen() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: 96 }}>
-      <View style={{ backgroundColor: colors.surface }}>
-        <SafeRemoteImage uri={currentListing.image} style={{ backgroundColor: colors.line, height: 330, width: "100%" }} contentFit="cover" />
+      <WebContainer max={1080} padding={0} style={{ gap: 12 }}>
+      <View style={{ backgroundColor: colors.surface, borderRadius: isWideWeb ? 18 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
+        <SafeRemoteImage uri={currentListing.image} style={{ backgroundColor: colors.line, height: isWideWeb ? 460 : 330, width: "100%" }} contentFit="cover" />
         <View style={{ flexDirection: "row", gap: 8, padding: 12 }}>
           <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label="Beğen" onPress={() => toggleFavorite(currentListing.id)} />
           <IconButton icon="share-variant-outline" label="Paylaş" onPress={() => void handleShare()} />
@@ -388,6 +392,7 @@ export default function ListingDetailScreen() {
           })}
         </Card>
       </View>
+      </WebContainer>
     </ScrollView>
   );
 }
