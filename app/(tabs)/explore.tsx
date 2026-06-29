@@ -47,6 +47,8 @@ export default function ExploreScreen() {
   const [filter, setFilter] = useState<FeedFilter>("all");
   const [city, setCity] = useState("");
   const [minCommission, setMinCommission] = useState(0);
+  const [priceRange, setPriceRange] = useState("");
+  const [stockFilter, setStockFilter] = useState("");
   const [statusOpen, setStatusOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>("recommended");
   const [onlyVerified, setOnlyVerified] = useState(false);
@@ -76,13 +78,21 @@ export default function ExploreScreen() {
   }, [listings]);
 
   const cities = useMemo(() => Array.from(new Set(marketplaceListings.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")), [marketplaceListings]);
-  const hasPanelFilter = Boolean(city) || minCommission > 0 || statusOpen;
+  const hasPanelFilter = Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter);
 
   const activeListings = useMemo(() => {
     const filtered = marketplaceListings
       .filter((listing) => {
         if (city && listing.location !== city) return false;
         if (minCommission > 0 && commissionAmount(listing) < minCommission) return false;
+        if (priceRange) {
+          const [mn, mx] = priceRange.split("-");
+          const min = Number(mn) || 0;
+          const max = mx ? Number(mx) : Infinity;
+          if (listing.price < min || listing.price > max) return false;
+        }
+        if (stockFilter === "in" && listing.stockCount <= 0) return false;
+        if (stockFilter === "low" && (listing.stockCount > 5 || listing.stockCount <= 0)) return false;
         if (statusOpen && listing.partnershipMode !== "open") return false;
         if (filter === "open" && listing.partnershipMode !== "open") return false;
         if (filter === "hot" && listing.leadCount + listing.favoriteCount < 50) return false;
@@ -96,7 +106,7 @@ export default function ExploreScreen() {
 
     if (filtered.length || tokens.length > 0 || filter !== "all" || hasPanelFilter) return filtered;
     return marketplaceListings.sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));
-  }, [city, filter, findUser, hasPanelFilter, marketplaceListings, minCommission, seed, statusOpen, tokens]);
+  }, [city, filter, findUser, hasPanelFilter, marketplaceListings, minCommission, priceRange, seed, statusOpen, stockFilter, tokens]);
 
   const productListings = useMemo(() => {
     const arr = activeListings.filter((listing) => {
@@ -143,7 +153,7 @@ export default function ExploreScreen() {
   useEffect(() => {
     setVisibleCount(INITIAL_EXPLORE_ITEMS);
     setProductVisible(20);
-  }, [filter, params.q, city, minCommission, statusOpen, sortMode, onlyVerified]);
+  }, [filter, params.q, city, minCommission, statusOpen, sortMode, onlyVerified, priceRange, stockFilter]);
 
   function refresh() {
     setRefreshing(true);
@@ -235,12 +245,34 @@ export default function ExploreScreen() {
         </View>
 
         {/* Toolbar */}
-        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
-          <ToolbarButton icon="filter-variant" label="Tüm Filtreler" />
-          <ToolbarButton label="Fiyat Aralığı" caret />
-          <ToolbarButton label="Komisyon Oranı" caret />
-          <ToolbarButton label="Şehir" caret />
-          <ToolbarButton label="Stok Durumu" caret />
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingVertical: 10, zIndex: 20 }}>
+          <Pressable
+            onPress={() => { setPriceRange(""); setMinCommission(0); setCity(""); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setFilter("all"); }}
+            style={{ alignItems: "center", backgroundColor: hasPanelFilter ? colors.primarySoft : colors.surfaceAlt, borderColor: hasPanelFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
+          >
+            <MaterialCommunityIcons name="filter-variant" size={15} color={colors.primaryDark} />
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{hasPanelFilter ? "Filtreleri temizle" : "Tüm Filtreler"}</Text>
+          </Pressable>
+          <FilterDropdown label="Fiyat Aralığı" value={priceRange} onSelect={(v) => setPriceRange(String(v))} options={[
+            { label: "Tümü", value: "" },
+            { label: "0 - ₺1.000", value: "0-1000" },
+            { label: "₺1.000 - ₺5.000", value: "1000-5000" },
+            { label: "₺5.000 - ₺20.000", value: "5000-20000" },
+            { label: "₺20.000+", value: "20000-" }
+          ]} />
+          <FilterDropdown label="Komisyon Oranı" value={minCommission} onSelect={(v) => setMinCommission(Number(v))} options={[
+            { label: "Tümü", value: 0 },
+            { label: "₺100+", value: 100 },
+            { label: "₺250+", value: 250 },
+            { label: "₺500+", value: 500 },
+            { label: "₺1.000+", value: 1000 }
+          ]} />
+          <FilterDropdown label="Şehir" value={city} onSelect={(v) => setCity(String(v))} options={[{ label: "Tüm şehirler", value: "" }, ...cities.map((c) => ({ label: c, value: c }))]} />
+          <FilterDropdown label="Stok Durumu" value={stockFilter} onSelect={(v) => setStockFilter(String(v))} options={[
+            { label: "Tümü", value: "" },
+            { label: "Stokta var", value: "in" },
+            { label: "Az stok", value: "low" }
+          ]} />
           <Pressable onPress={() => setOnlyVerified((v) => !v)} style={{ alignItems: "center", flexDirection: "row", gap: 7, paddingHorizontal: 8 }}>
             <View style={{ alignItems: onlyVerified ? "flex-end" : "flex-start", backgroundColor: onlyVerified ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 38 }}>
               <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
@@ -551,12 +583,41 @@ function FilterPanel({
   );
 }
 
-function ToolbarButton({ icon, label, caret }: { icon?: keyof typeof MaterialCommunityIcons.glyphMap; label: string; caret?: boolean }) {
+function FilterDropdown({ label, value, options, onSelect }: { label: string; value: string | number; options: Array<{ label: string; value: string | number }>; onSelect: (value: string | number) => void }) {
+  const [open, setOpen] = useState(false);
+  const selected = options.find((o) => o.value === value);
+  const active = value !== "" && value !== 0;
   return (
-    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}>
-      {icon ? <MaterialCommunityIcons name={icon} size={15} color={colors.primaryDark} /> : null}
-      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{label}</Text>
-      {caret ? <MaterialCommunityIcons name="chevron-down" size={15} color={colors.muted} /> : null}
+    <View style={{ position: "relative", zIndex: open ? 100 : 1 }}>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
+      >
+        <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: active ? "900" : "700" }}>
+          {active && selected ? selected.label : label}
+        </Text>
+        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={15} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <>
+          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 90 }} />
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, left: 0, minWidth: 200, paddingVertical: 6, position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 44, zIndex: 100 }}>
+            {options.map((opt) => {
+              const isSel = opt.value === value;
+              return (
+                <Pressable
+                  key={`${opt.value}`}
+                  onPress={() => { onSelect(opt.value); setOpen(false); }}
+                  style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 10 })}
+                >
+                  <MaterialCommunityIcons name={isSel ? "check-circle" : "circle-outline"} size={16} color={isSel ? colors.primary : colors.subtle} />
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{opt.label}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </>
+      ) : null}
     </View>
   );
 }
