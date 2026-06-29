@@ -17,7 +17,7 @@ export default function FavoritesScreen() {
   const [query, setQuery] = useState("");
   const horizontalPadding = 12;
   const gap = 8;
-  const cardWidth = responsiveGrid({ available: Math.min(width, 1120) - horizontalPadding * 2, gap, minCardWidth: 160, minColumns: 3 }).cardWidth;
+  const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 3 }).cardWidth;
   const tokens = searchKey(query).split(" ").filter(Boolean);
   const favoriteListings = favorites
     .filter((favorite) => favorite.userId === currentUser.id)
@@ -30,7 +30,7 @@ export default function FavoritesScreen() {
   });
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, maxWidth: 1120, marginHorizontal: "auto", padding: 12, paddingBottom: 96, width: "100%" }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 8, height: 46, justifyContent: "center", width: 46 }}>
           <MaterialCommunityIcons name="heart" size={22} color={colors.accent} />

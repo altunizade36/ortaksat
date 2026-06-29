@@ -13,7 +13,7 @@ import { WebCategories, WebFooter, WebHowItWorks } from "@/components/web-landin
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid, SHELL_MAX_WIDTH, useIsWideWeb } from "@/lib/layout";
+import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -50,10 +50,10 @@ export default function HomeScreen() {
   };
   const isWideWeb = useIsWideWeb();
   const isWeb = Platform.OS === "web";
-  const horizontalPadding = isWideWeb ? 32 : 12;
-  const columnGap = isWideWeb ? 16 : 10;
-  const measuredGridWidth = gridWidth || Math.min(width, SHELL_MAX_WIDTH) - horizontalPadding * 2;
-  const { cardWidth } = responsiveGrid({ available: measuredGridWidth, gap: columnGap, minCardWidth: 168 });
+  const horizontalPadding = isWideWeb ? 20 : 12;
+  const columnGap = isWideWeb ? 14 : 10;
+  const measuredGridWidth = gridWidth || width - horizontalPadding * 2;
+  const { cardWidth } = responsiveGrid({ available: measuredGridWidth, gap: columnGap, minCardWidth: isWideWeb ? 176 : 168 });
   const activeListings = listings.filter((listing) => listing.status === "active");
   const categories = useMemo(() => Array.from(new Set(activeListings.map((listing) => listing.category))), [activeListings]);
   const filters = useMemo(() => [...quickFilters, ...categories.map((item) => ({ key: `cat:${item}`, label: translateCopy(getCategoryShortLabel(item), language), icon: getCategoryIcon(item) }))], [categories, language, quickFilters]);

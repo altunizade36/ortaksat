@@ -75,17 +75,14 @@ body {
   min-height: 100vh;
 }
 
-/* Full-bleed website: app fills the viewport, content centered per-section.
-   On very wide screens we cap at 1440 and center, with invisible (white) gutters
-   so it reads as a full page rather than a floating card. */
+/* Full-bleed website: the app fills the entire viewport width, edge to edge,
+   with no side gutters. Individual reading/form pages still cap their own
+   content width internally; browsing/grid pages span the full screen. */
 #root {
   width: 100%;
   min-height: 100vh;
-  margin: 0 auto;
+  margin: 0;
   background: #FFFFFF;
-}
-@media (min-width: 1480px) {
-  #root { max-width: 1440px; }
 }
 
 /* Polished custom scrollbar on desktop */

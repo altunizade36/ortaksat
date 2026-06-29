@@ -8,8 +8,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { inferListingSubcategory } from "@/lib/categories";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid, SHELL_MAX_WIDTH, useIsWideWeb } from "@/lib/layout";
-import { WebContainer } from "@/components/web-container";
+import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
@@ -46,9 +45,9 @@ export default function ExploreScreen() {
   ];
   const isWideWeb = useIsWideWeb();
   const tokens = searchKey(params.q ?? "").split(" ").filter(Boolean);
-  const gap = isWideWeb ? 16 : 8;
-  const padding = isWideWeb ? 24 : 12;
-  const grid = responsiveGrid({ available: Math.min(width, isWideWeb ? 1200 : SHELL_MAX_WIDTH) - padding * 2, gap, minCardWidth: isWideWeb ? 210 : 160 });
+  const gap = isWideWeb ? 14 : 8;
+  const padding = isWideWeb ? 20 : 12;
+  const grid = responsiveGrid({ available: width - padding * 2, gap, minCardWidth: isWideWeb ? 200 : 160 });
   const columns = grid.columns;
   const tileSize = grid.cardWidth;
   const tileHeight = Math.min(isWideWeb ? 320 : 258, Math.round(tileSize * 1.22));
@@ -127,8 +126,7 @@ export default function ExploreScreen() {
       contentContainerStyle={{ backgroundColor: colors.surface, paddingBottom: 102 }}
       style={{ backgroundColor: colors.surface }}
     >
-      <WebContainer max={1240} padding={0}>
-      <View style={{ gap: 7, paddingBottom: 8, paddingHorizontal: 12, paddingTop: 6 }}>
+      <View style={{ gap: 7, paddingBottom: 8, paddingHorizontal: padding, paddingTop: 6 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1 }}>
             <Text selectable style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>
@@ -218,7 +216,6 @@ export default function ExploreScreen() {
           ) : null}
         </>
       )}
-      </WebContainer>
     </ScrollView>
   );
 }

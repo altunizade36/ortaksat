@@ -53,7 +53,7 @@ export function responsiveGrid(options: {
   minColumns?: number;
   maxColumns?: number;
 }) {
-  const { available, minCardWidth = 168, gap = 10, minColumns = 2, maxColumns = 8 } = options;
+  const { available, minCardWidth = 168, gap = 10, minColumns = 2, maxColumns = 14 } = options;
   const raw = Math.floor((available + gap) / (minCardWidth + gap));
   const columns = Math.max(minColumns, Math.min(maxColumns, raw || minColumns));
   const cardWidth = Math.floor((available - gap * (columns - 1)) / columns);
