@@ -38,7 +38,7 @@ export default function TrustScreen() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: 96 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, maxWidth: 920, marginHorizontal: "auto", padding: 12, paddingBottom: 96, width: "100%" }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 54, justifyContent: "center", width: 54 }}>

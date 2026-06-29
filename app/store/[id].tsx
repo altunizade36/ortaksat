@@ -9,7 +9,7 @@ import { ListingCard } from "@/components/listing-card";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid, SHELL_MAX_WIDTH } from "@/lib/layout";
+import { responsiveGrid } from "@/lib/layout";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import { useStore } from "@/lib/use-store";
 
@@ -41,7 +41,7 @@ export default function StoreScreen() {
     return sum + (listing.commissionType === "rate" ? Math.round((listing.price * listing.commissionValue) / 100) : listing.commissionValue);
   }, 0);
   const gridGap = 10;
-  const cardWidth = responsiveGrid({ available: Math.min(width, SHELL_MAX_WIDTH) - 24, gap: gridGap, minCardWidth: 168 }).cardWidth;
+  const cardWidth = responsiveGrid({ available: Math.min(width, 1120) - 24, gap: gridGap, minCardWidth: 168 }).cardWidth;
 
   function refresh() {
     setRefreshing(true);
@@ -68,7 +68,7 @@ export default function StoreScreen() {
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
-      contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 104 }}
+      contentContainerStyle={{ gap: 12, maxWidth: 1120, marginHorizontal: "auto", padding: 12, paddingBottom: 104, width: "100%" }}
     >
       <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 12, padding: 14 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>

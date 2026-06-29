@@ -62,7 +62,7 @@ export default function MessagesScreen() {
   const actionCount = myConversations.filter((conversation) => buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t }).needsAction).length;
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, maxWidth: 960, marginHorizontal: "auto", padding: 12, paddingBottom: 96, width: "100%" }}>
       <View style={{ gap: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>
           {t("salesMessages")}

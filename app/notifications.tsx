@@ -22,7 +22,7 @@ export default function NotificationsScreen() {
   const unreadCount = myNotifications.filter((notification) => !notification.read).length;
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: 96 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, maxWidth: 920, marginHorizontal: "auto", padding: 12, paddingBottom: 96, width: "100%" }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 8, height: 50, justifyContent: "center", width: 50 }}>
