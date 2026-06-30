@@ -84,22 +84,11 @@ create policy "active listings are readable" on public.listings
     or public.is_admin()
   );
 
--- The public cards view already filters status = 'active'; also hide soft-deleted.
-create or replace view public.listing_public_cards
-with (security_invoker = true) as
-select
-  l.id, l.owner_id, l.title, l.slug, l.description, l.sales_pitch, l.tags, l.price,
-  l.commission_type, l.commission_value, l.category, l.location, l.status,
-  l.partnership_mode, l.stock_count, l.min_partner_rating, l.commission_due_days,
-  l.return_window_days, l.partner_rules, l.delivery_note, l.contact_method, l.created_at,
-  (select li.url from public.listing_images li where li.listing_id = l.id order by li.sort_order asc limit 1) as image_url,
-  coalesce(s.partner_count, 0)  as partner_count,
-  coalesce(s.lead_count, 0)     as lead_count,
-  coalesce(s.favorite_count, 0) as favorite_count,
-  coalesce(s.review_count, 0)   as review_count
-from public.listings l
-left join public.listing_public_stats s on s.listing_id = l.id
-where l.status = 'active' and l.deleted_at is null;
+-- NOT: listing_public_cards view'ı `security_invoker = true` ile çalışır; yani
+-- sorgulayan kullanıcının RLS'ine tabidir. Yukarıda "active listings are readable"
+-- politikasını `deleted_at is null` ile güncellediğimiz için, view soft-deleted
+-- ilanları otomatik gizler. View'ı yeniden oluşturmaya gerek yoktur
+-- (CREATE OR REPLACE kolon kümesini değiştiremez ve gereksizdir).
 
 -- =====================================================================
 -- 5) ACTIVITY / AUDIT LOG
