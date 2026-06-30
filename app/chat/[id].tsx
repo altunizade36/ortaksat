@@ -1,6 +1,6 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
@@ -8,6 +8,7 @@ import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useIsWideWeb } from "@/lib/layout";
 import { searchKey, shortDate } from "@/lib/locale";
 import type { Conversation, Lead, Message, Partnership, Sale, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -22,6 +23,8 @@ export default function ChatScreen() {
 
 function ChatScreenInner() {
   const { language } = useLanguage();
+  const isWideWeb = useIsWideWeb();
+  const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { currentUser, findConversation, findListing, findUser, leads, markConversationRead, messages, partnerships, sales, sendConversationMessage } = useStore();
   const [body, setBody] = useState("");
@@ -31,6 +34,14 @@ function ChatScreenInner() {
     if (conversation) markConversationRead(conversation.id);
   }, [conversation?.id, markConversationRead]);
 
+  // Masaüstünde tek başına sohbet ekranı yerine 3-panelli mesaj kutusunu kullan
+  // (Sahibinden benzeri). Konuşmayı seçili açacak şekilde yönlendir.
+  useEffect(() => {
+    if (isWideWeb && id) {
+      router.replace({ pathname: "/(tabs)/messages", params: { c: id } });
+    }
+  }, [isWideWeb, id, router]);
+
   const listing = conversation ? findListing(conversation.listingId) : undefined;
   const otherId = conversation?.participantIds.find((item) => item !== currentUser.id);
   const otherUser = otherId ? findUser(otherId) : undefined;
@@ -38,6 +49,14 @@ function ChatScreenInner() {
     () => messages.filter((item) => item.conversationId === id).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
     [id, messages]
   );
+
+  if (isWideWeb) {
+    return (
+      <View style={{ alignItems: "center", backgroundColor: colors.background, flex: 1, justifyContent: "center", padding: 24 }}>
+        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "700" }}>{translateCopy("Mesajlara yönlendiriliyor…", language)}</Text>
+      </View>
+    );
+  }
 
   if (!conversation) {
     return (

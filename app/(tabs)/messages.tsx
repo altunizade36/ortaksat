@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { Link } from "expo-router";
-import { useState } from "react";
+import { Link, useLocalSearchParams } from "expo-router";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -35,10 +35,19 @@ function MessagesScreenInner() {
   const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, notifications, partnerships, sales, sendConversationMessage } = useStore();
   const { t } = useLanguage();
   const isWideWeb = useIsWideWeb();
+  const params = useLocalSearchParams<{ c?: string }>();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<InboxFilter>("all");
-  const [activeId, setActiveId] = useState<string | null>(null);
+  const [activeId, setActiveId] = useState<string | null>(params.c ?? null);
   const [draft, setDraft] = useState("");
+
+  // Bir ilandan/sohbet bağlantısından gelen konuşmayı seçili aç.
+  useEffect(() => {
+    if (params.c) {
+      setActiveId(params.c);
+      markConversationRead(params.c);
+    }
+  }, [params.c, markConversationRead]);
   const myConversations = conversations
     .filter((conversation) => conversation.participantIds.includes(currentUser.id))
     .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
