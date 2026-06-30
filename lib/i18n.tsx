@@ -450,13 +450,13 @@ export function LanguageProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let mounted = true;
+    // Yalnızca kullanıcı DAHA ÖNCE açıkça bir dil seçtiyse onu uygula. Kayıtlı
+    // tercih yoksa Türkçe kalır — böylece hem Türk kullanıcılar hem de arama
+    // motorları (İngilizce locale'li crawler dahil) siteyi Türkçe görür (SEO).
     AsyncStorage.getItem(STORAGE_KEY).then((value) => {
       if (!mounted) return;
       if (value === "tr" || value === "en") setLanguageState(value);
-      else setLanguageState(detectDeviceLanguage());
-    }).catch(() => {
-      if (mounted) setLanguageState(detectDeviceLanguage());
-    });
+    }).catch(() => undefined);
     return () => {
       mounted = false;
     };
