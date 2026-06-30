@@ -38,7 +38,7 @@ function RootStack() {
         }}
       >
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="auth" options={{ presentation: "modal", title: t("emailSignIn") }} />
+        <Stack.Screen name="auth" options={{ headerShown: false, presentation: "modal", title: t("emailSignIn") }} />
         <Stack.Screen name="legal" options={{ presentation: "modal", title: t("legalSupport") }} />
         <Stack.Screen name="trust" options={{ presentation: "modal", title: t("trustCenter") }} />
         <Stack.Screen name="create" options={{ presentation: "modal", title: t("createListingTitle") }} />

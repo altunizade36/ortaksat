@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Link } from "expo-router";
@@ -17,7 +17,7 @@ type AuthMode = "login" | "register" | "reset";
 export default function AuthScreen() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, currentUser, resetPasswordWithEmail, signInWithEmail, signInWithGoogle, signUpWithEmail, updatePasswordWithEmail } = useStore();
+  const { authError, currentUser, isAuthenticated, resetPasswordWithEmail, signInWithEmail, signInWithGoogle, signUpWithEmail, updatePasswordWithEmail } = useStore();
   const [mode, setMode] = useState<AuthMode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,7 +31,21 @@ export default function AuthScreen() {
 
   const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
 
+  // Giriş başarılı olunca (e-posta/şifre VEYA Google dönüşü) ana sayfaya geç.
+  useEffect(() => {
+    if (isAuthenticated) router.replace("/");
+  }, [isAuthenticated, router]);
+
   async function loginWithGoogle() {
+    // Google ilk kullanımda hesap oluşturabildiği için yasal onay zorunlu.
+    if (!acceptedLegal) {
+      setMode("register");
+      Alert.alert(
+        language === "en" ? "Legal approval required" : "Yasal onay gerekli",
+        language === "en" ? "Please tick the box to accept KVKK, privacy and terms before continuing with Google." : "Google ile devam etmeden önce KVKK, gizlilik ve kullanım şartlarını kabul kutucuğunu işaretle."
+      );
+      return;
+    }
     setLoading(true);
     const ok = await signInWithGoogle();
     setLoading(false);
@@ -50,9 +64,9 @@ export default function AuthScreen() {
     setLoading(true);
     const ok = await signInWithEmail(cleanEmail, password);
     setLoading(false);
-    if (ok) {
-      Alert.alert(language === "en" ? "Signed in" : "Giriş tamam", language === "en" ? "Your live Ortaksat account is active." : "Canlı Ortaksat hesabın aktif.");
-      router.replace("/profile");
+    // Başarılıysa yukarıdaki effect ana sayfaya yönlendirir. Hata varsa göster.
+    if (!ok && authError) {
+      Alert.alert(language === "en" ? "Could not sign in" : "Giriş yapılamadı", translateCopy(authError, language));
     }
   }
 
@@ -132,6 +146,23 @@ export default function AuthScreen() {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
         <View style={{ gap: 16, marginHorizontal: "auto", maxWidth: 1100, paddingHorizontal: 20, paddingTop: 24, width: "100%" }}>
+          {/* Dedicated auth top bar (site nav gizli) */}
+          <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+            <Link href="/" asChild>
+              <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 36, justifyContent: "center", width: 36 }}>
+                  <MaterialCommunityIcons name="handshake" size={20} color={colors.primaryDark} />
+                </View>
+                <Text style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900" }}>ortaksat</Text>
+              </Pressable>
+            </Link>
+            <Link href="/" asChild>
+              <Pressable style={{ alignItems: "center", borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
+                <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} />
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Ana sayfa</Text>
+              </Pressable>
+            </Link>
+          </View>
           {/* Branded hero */}
           <View style={{ backgroundColor: colors.primaryDark, borderRadius: 20, flexDirection: "row", gap: 18, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 24 }}>
             <View style={{ flex: 1, gap: 8, justifyContent: "center", minWidth: 0 }}>

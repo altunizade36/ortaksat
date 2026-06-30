@@ -25,7 +25,9 @@ export const supabase = isSupabaseConfigured
         autoRefreshToken: hasBrowserStorage,
         storage: hasBrowserStorage ? AsyncStorage : undefined,
         persistSession: hasBrowserStorage,
-        detectSessionInUrl: false
+        // Web'de Google/OAuth dönüşünde URL'deki #access_token'ı işleyip oturumu
+        // kurar. SSR (window yok) sırasında kapalı kalır.
+        detectSessionInUrl: hasBrowserStorage
       }
     })
   : null;
