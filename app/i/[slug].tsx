@@ -116,7 +116,7 @@ export default function ReferralLeadScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16, paddingBottom: 90 }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, marginHorizontal: "auto", maxWidth: 640, padding: 16, paddingBottom: 90, width: "100%" }}>
         {image ? <Image source={{ uri: image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 18, height: 240 }} /> : null}
 
         <Card>

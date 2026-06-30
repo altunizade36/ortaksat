@@ -82,7 +82,7 @@ export default function CategoriesPage() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 20, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 20, marginHorizontal: "auto", maxWidth: 1240, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16, width: "100%" }} style={{ backgroundColor: colors.background }}>
       {/* Hero */}
       <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, paddingHorizontal: 28, paddingVertical: 24 }}>
         <View style={{ flex: 1.5, gap: 12, justifyContent: "center", minWidth: 0 }}>
