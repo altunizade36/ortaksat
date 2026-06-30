@@ -140,6 +140,7 @@ type AppStore = {
   signUpWithEmail: (input: { email: string; password: string; name: string }) => Promise<boolean>;
   resetPasswordWithEmail: (email: string) => Promise<boolean>;
   updatePasswordWithEmail: (password: string) => Promise<boolean>;
+  signInWithGoogle: () => Promise<boolean>;
   signOut: () => Promise<void>;
   updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio">) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, details?: string) => Promise<boolean>;
@@ -669,6 +670,29 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const { error } = await supabase.auth.updateUser({ password });
         setAuthError(error?.message);
         return !error;
+      },
+      async signInWithGoogle() {
+        if (!supabase) {
+          setAuthError("Google ile giriş yalnızca canlı (Supabase) modda çalışır.");
+          return false;
+        }
+        // Web'de tarayıcı Google'a yönlenir, dönüşte onAuthStateChange oturumu yakalar.
+        const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth";
+        const { error } = await supabase.auth.signInWithOAuth({
+          provider: "google",
+          options: { redirectTo }
+        });
+        if (error) {
+          // Sağlayıcı Supabase'de etkin değilse anlaşılır mesaj göster.
+          setAuthError(
+            /provider.*not enabled|not enabled|unsupported/i.test(error.message)
+              ? "Google ile giriş henüz etkin değil. Yönetici panelinden Google sağlayıcısını açın."
+              : error.message
+          );
+          return false;
+        }
+        setAuthError(undefined);
+        return true;
       },
       async signOut() {
         if (supabase) await supabase.auth.signOut();

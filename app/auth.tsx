@@ -17,7 +17,7 @@ type AuthMode = "login" | "register" | "reset";
 export default function AuthScreen() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, currentUser, resetPasswordWithEmail, signInWithEmail, signUpWithEmail, updatePasswordWithEmail } = useStore();
+  const { authError, currentUser, resetPasswordWithEmail, signInWithEmail, signInWithGoogle, signUpWithEmail, updatePasswordWithEmail } = useStore();
   const [mode, setMode] = useState<AuthMode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -31,8 +31,14 @@ export default function AuthScreen() {
 
   const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
 
-  function socialSoon() {
-    Alert.alert("Yakında", "Google / Apple ile giriş yakında aktif olacak. Şimdilik e-posta ile giriş yapabilirsin.");
+  async function loginWithGoogle() {
+    setLoading(true);
+    const ok = await signInWithGoogle();
+    setLoading(false);
+    // Başarılıysa tarayıcı Google'a yönlenir (geri dönüş otomatik). Başarısızsa hata authError'da.
+    if (!ok && authError) {
+      Alert.alert(language === "en" ? "Could not continue with Google" : "Google ile giriş yapılamadı", translateCopy(authError, language));
+    }
   }
 
   async function login() {
@@ -233,16 +239,10 @@ export default function AuthScreen() {
                       <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>veya</Text>
                       <View style={{ backgroundColor: colors.line, flex: 1, height: 1 }} />
                     </View>
-                    <View style={{ flexDirection: "row", gap: 10 }}>
-                      <Pressable onPress={socialSoon} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
-                        <MaterialCommunityIcons name="google" size={17} color="#DB4437" />
-                        <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>Google ile giriş</Text>
-                      </Pressable>
-                      <Pressable onPress={socialSoon} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
-                        <MaterialCommunityIcons name="apple" size={18} color={colors.ink} />
-                        <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>Apple ile giriş</Text>
-                      </Pressable>
-                    </View>
+                    <Pressable onPress={loginWithGoogle} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
+                      <MaterialCommunityIcons name="google" size={17} color="#DB4437" />
+                      <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>Google ile devam et</Text>
+                    </Pressable>
                   </>
                 ) : null}
 
