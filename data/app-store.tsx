@@ -14,6 +14,7 @@ import {
   sales as initialSales,
   users as initialUsers
 } from "@/data/mock-data";
+import { logActivity } from "@/lib/audit";
 import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@/lib/auth-links";
 import { commissionAmount } from "@/lib/format";
 import {
@@ -84,6 +85,11 @@ type NewListingInput = Pick<
   | "commissionValue"
   | "category"
   | "location"
+  | "provinceId"
+  | "districtId"
+  | "neighborhoodId"
+  | "addressVisibility"
+  | "locationNote"
   | "image"
   | "stockCount"
   | "minPartnerRating"
@@ -565,6 +571,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           await ensureProfile(profile);
           setAuthUser(profile);
           setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
+          void logActivity("sign_in", { userId: profile.id });
         }
         return !error;
       },
@@ -626,6 +633,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           await Promise.all(LEGAL_DOCUMENT_TYPES.map((documentType) => recordLegalConsentLive(profile.id, documentType)));
           setAuthUser(profile);
           setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
+          void logActivity("sign_up", { userId: profile.id });
         }
         return !error;
       },
@@ -780,7 +788,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
           createdAt: today()
         };
         setListings((items) => [listing, ...items]);
-        if (liveUser) void insertListing(listing);
+        if (liveUser) {
+          void insertListing(listing);
+          void logActivity("listing_create", { userId: currentUser.id, entityType: "listing", entityId: listing.id, metadata: { status: listing.status, category: listing.category } });
+        }
         return listing;
       },
       async updateListing(listingId, input) {

@@ -49,6 +49,12 @@ export type Listing = {
   commissionValue: number;
   category: string;
   location: string;
+  // Yapısal konum (filtreleme/index için). location ise insan-okur tek satırdır.
+  provinceId?: number;
+  districtId?: number;
+  neighborhoodId?: number;
+  addressVisibility?: "city_only" | "district_only" | "neighborhood" | "full_address_private";
+  locationNote?: string;
   image: string;
   status: ListingStatus;
   partnershipMode: PartnershipMode;

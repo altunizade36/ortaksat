@@ -1,0 +1,14 @@
+User-agent: *
+Allow: /
+
+# Hesap/aksiyon gerektiren özel alanlar — arama motorlarına kapalı
+Disallow: /admin
+Disallow: /auth
+Disallow: /profile-edit
+Disallow: /earnings
+Disallow: /favorites
+Disallow: /notifications
+Disallow: /chat/
+Disallow: /listing-edit/
+
+Sitemap: https://ortaksat.com/sitemap.xml

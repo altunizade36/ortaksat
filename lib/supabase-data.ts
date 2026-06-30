@@ -191,20 +191,21 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
     supabase
       .from("partnerships")
       .select("*")
-      .or(`partner_id.eq.${userId}${ownedListingIds.length ? `,listing_id.in.(${ownedListingIds.join(",")})` : ""}`),
+      .or(`partner_id.eq.${userId}${ownedListingIds.length ? `,listing_id.in.(${ownedListingIds.join(",")})` : ""}`)
+      .limit(500),
     ownedListingIds.length
-      ? supabase.from("leads").select("*").in("listing_id", ownedListingIds).order("created_at", { ascending: false })
+      ? supabase.from("leads").select("*").in("listing_id", ownedListingIds).order("created_at", { ascending: false }).limit(500)
       : supabase.from("leads").select("*").eq("id", "00000000-0000-0000-0000-000000000000"),
-    supabase.from("commissions").select("*").order("created_at", { ascending: false }),
+    supabase.from("commissions").select("*").order("created_at", { ascending: false }).limit(500),
     ownedListingIds.length
-      ? supabase.from("orders").select("*").in("listing_id", ownedListingIds).order("created_at", { ascending: false })
-      : supabase.from("orders").select("*").eq("seller_id", userId).order("created_at", { ascending: false }),
-    supabase.from("reviews").select("*").eq("reviewer_id", userId).order("created_at", { ascending: false }),
-    supabase.from("favorites").select("*").eq("user_id", userId),
-    supabase.from("conversations").select("*").contains("participant_ids", [userId]).order("last_message_at", { ascending: false }),
-    supabase.from("messages").select("*").or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order("created_at", { ascending: false }),
-    supabase.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false }),
-    supabase.from("reports").select("*").order("created_at", { ascending: false })
+      ? supabase.from("orders").select("*").in("listing_id", ownedListingIds).order("created_at", { ascending: false }).limit(500)
+      : supabase.from("orders").select("*").eq("seller_id", userId).order("created_at", { ascending: false }).limit(500),
+    supabase.from("reviews").select("*").eq("reviewer_id", userId).order("created_at", { ascending: false }).limit(300),
+    supabase.from("favorites").select("*").eq("user_id", userId).limit(500),
+    supabase.from("conversations").select("*").contains("participant_ids", [userId]).order("last_message_at", { ascending: false }).limit(200),
+    supabase.from("messages").select("*").or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order("created_at", { ascending: false }).limit(1000),
+    supabase.from("notifications").select("*").eq("user_id", userId).order("created_at", { ascending: false }).limit(200),
+    supabase.from("reports").select("*").order("created_at", { ascending: false }).limit(300)
   ]);
 
   const firstError =

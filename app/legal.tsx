@@ -12,7 +12,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
-type LegalTab = "kvkk" | "terms" | "commission" | "prohibited" | "account";
+type LegalTab = "kvkk" | "terms" | "platform" | "cookies" | "commission" | "prohibited" | "account";
 
 export default function LegalScreen() {
   const { language } = useLanguage();
@@ -62,6 +62,8 @@ export default function LegalScreen() {
     const tabs: Array<{ key: LegalTab; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
       { key: "kvkk", icon: "shield-lock-outline", label: "KVKK / Gizlilik" },
       { key: "terms", icon: "file-document-outline", label: "Kullanım Şartları" },
+      { key: "platform", icon: "swap-horizontal", label: "Mesafeli / Platform" },
+      { key: "cookies", icon: "cookie-outline", label: "Çerez Politikası" },
       { key: "commission", icon: "chart-timeline-variant", label: "Komisyon Kuralları" },
       { key: "prohibited", icon: "cancel", label: "Yasaklı İçerikler" },
       { key: "account", icon: "account-cog-outline", label: "Hesap İşlemleri" }
@@ -85,6 +87,19 @@ export default function LegalScreen() {
       "Komisyon yalnızca satış tamamlandığında ve satıcı onayladığında hak edilir.",
       "Ortaksat para tutmaz veya transfer etmez; ödeme satıcı ile ortak arasında anlaşılan kanaldan yapılır.",
       "İade penceresi içinde iade olursa komisyon kaydı beklemeye alınır; süreç panelden şeffaf izlenir."
+    ];
+    const platformText = [
+      "OrtakSat bir aracı pazaryeri/ilan ve iletişim platformudur. Mesafeli satış sözleşmesi anlamında SATICI taraf DEĞİLDİR; ürünün sahibi, satıcısı, ithalatçısı, ödeme kuruluşu veya kargo/teslimat tarafı değildir.",
+      "Mesafeli satış sözleşmesi, doğrudan ilanı açan satıcı ile alıcı arasında kurulur. Ürün bilgisi, fiyat, fatura, teslimat, cayma/iade ve garanti yükümlülükleri tamamen satıcıya aittir.",
+      "OrtakSat ödeme almaz, para tutmaz, komisyon kesmez, cüzdan/bakiye/emanet (escrow) sağlamaz ve otomatik para dağıtmaz. İlanlarda gösterilen fiyat ve komisyon yalnızca taraflar arası BİLGİ amaçlıdır.",
+      "Ödeme ve teslimat, tarafların kendi aralarında anlaştıkları yöntemle, kendi sorumluluklarında gerçekleşir. Doğabilecek anlaşmazlıklardan OrtakSat sorumlu tutulamaz; platform yalnızca ilan ve iletişim altyapısı sunar.",
+      "Tüketici, 6502 sayılı Kanun kapsamındaki haklarını doğrudan satıcıya karşı kullanır. Şüpheli/aykırı durumları Güven Merkezi üzerinden bildirebilirsiniz."
+    ];
+    const cookieText = [
+      "OrtakSat, yalnızca hizmetin çalışması için gerekli temel çerez/depolama yöntemlerini kullanır: oturum (giriş) bilgisini saklamak ve dil/tercih ayarlarını hatırlamak.",
+      "Oturum bilgisi tarayıcınızın yerel deposunda (localStorage) güvenli biçimde tutulur; üçüncü taraflarla paylaşılmaz. Reklam/izleme amaçlı üçüncü taraf çerezleri kullanılmaz.",
+      "Tarayıcı ayarlarınızdan çerezleri/depolamayı temizleyebilirsiniz; ancak bu durumda oturumunuz kapanır ve bazı tercihler sıfırlanır.",
+      "İleride analitik veya pazarlama çerezleri eklenirse, bu metin güncellenir ve gerektiğinde açık rızanız istenir."
     ];
     const prohibited = [
       "Sahte, taklit veya çalıntı ürünler",
@@ -169,6 +184,19 @@ export default function LegalScreen() {
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Kullanım Şartları</Text>
                   {termsText.map((p, i) => <Text key={i} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{p}</Text>)}
+                </View>
+              ) : null}
+              {legalTab === "platform" ? (
+                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Mesafeli Satış / Platform Aracı Hizmet Açıklaması</Text>
+                  {platformText.map((p, i) => <Text key={i} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{p}</Text>)}
+                  <LegalDisclaimer />
+                </View>
+              ) : null}
+              {legalTab === "cookies" ? (
+                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Çerez Politikası</Text>
+                  {cookieText.map((p, i) => <Text key={i} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{p}</Text>)}
                 </View>
               ) : null}
               {legalTab === "commission" ? (
