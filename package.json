@@ -22,7 +22,8 @@
     "build:ios": "eas build -p ios --profile production",
     "submit:android": "eas submit -p android --profile production",
     "submit:ios": "eas submit -p ios --profile production",
-    "db:migrate": "node scripts/apply-supabase-migration.mjs"
+    "db:migrate": "node scripts/apply-supabase-migration.mjs",
+    "db:apply-all": "node scripts/apply-all.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
