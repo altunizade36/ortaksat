@@ -2,8 +2,8 @@
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
-import { useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
@@ -11,10 +11,12 @@ import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
-import { commissionAmount, commissionText, listingShareTemplates, money, shareUrl } from "@/lib/format";
+import { commissionAmount, commissionText, listingShareTemplates, money, productUrl, shareUrl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
+import { fetchListingById } from "@/lib/supabase-data";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { LeadSource, Listing, PartnershipStatus, PurchaseIntent, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -58,7 +60,9 @@ export default function ListingDetailScreen() {
     startConversation,
     toggleFavorite
   } = useStore();
-  const listing = findListing(id);
+  const storeListing = findListing(id);
+  const [remote, setRemote] = useState<{ listing: Listing; owner?: User } | null>(null);
+  const [fetching, setFetching] = useState(false);
   const [applicationNote, setApplicationNote] = useState("");
   const [applicationChannel, setApplicationChannel] = useState("Instagram ve WhatsApp");
   const [applicationAudience, setApplicationAudience] = useState("Aileler, yakın çevrem ve sosyal medya takipçilerim");
@@ -74,16 +78,42 @@ export default function ListingDetailScreen() {
   const [reviewRating, setReviewRating] = useState(5);
   const router = useRouter();
 
+  // Paylaşılan link herkeste açılsın: ilan bellekte yoksa Supabase'den id ile çek.
+  useEffect(() => {
+    let active = true;
+    if (storeListing || !id || !isSupabaseConfigured) return;
+    setFetching(true);
+    fetchListingById(id)
+      .then((res) => {
+        if (active) setRemote(res);
+      })
+      .finally(() => {
+        if (active) setFetching(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [id, storeListing]);
+
+  const listing = storeListing ?? remote?.listing;
+
   if (!listing) {
     return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 12 }}>
-        <EmptyState title="İlan bulunamadı" body="Bu ilan kaldırılmış ya da bağlantı artık geçerli değil." />
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ alignItems: "center", flexGrow: 1, justifyContent: "center", padding: 24 }}>
+        {fetching ? (
+          <View style={{ alignItems: "center", gap: 10 }}>
+            <ActivityIndicator color={colors.primary} />
+            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "700" }}>İlan yükleniyor…</Text>
+          </View>
+        ) : (
+          <EmptyState title="İlan bulunamadı" body="Bu ilan kaldırılmış, satılmış ya da bağlantı artık geçerli değil." />
+        )}
       </ScrollView>
     );
   }
 
   const currentListing = listing;
-  const owner = findUser(currentListing.ownerId);
+  const owner = findUser(currentListing.ownerId) ?? remote?.owner;
   const ownerTrust = owner ? calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: owner }).seller : undefined;
   const partnership = findPartnership(currentListing.id);
   const activeShareUrl = partnership?.status === "active" ? shareUrl(currentListing, partnership.refCode) : undefined;
@@ -119,8 +149,9 @@ export default function ListingDetailScreen() {
   }
 
   async function handleShare() {
-    const url = activeShareUrl ?? shareUrl(currentListing, "preview");
-    await Share.share({ title: currentListing.title, message: `${currentListing.title}\n${money(currentListing.price)}\nKomisyon: ${commissionText(currentListing)}\n${url}`, url });
+    // Ortak aktif paylaşımıysa referans linki (komisyon takibi), değilse düz ürün linki.
+    const url = activeShareUrl ?? productUrl(currentListing);
+    await Share.share({ title: currentListing.title, message: `${currentListing.title}\n${money(currentListing.price)}\n${url}`, url });
   }
 
   async function copyText(label: string, text: string) {

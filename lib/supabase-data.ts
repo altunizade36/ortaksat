@@ -135,6 +135,19 @@ function mapListing(row: PublicListingCardRow): Listing {
   };
 }
 
+// Tek bir ilanı id ile çeker (paylaşılan link herkeste açılsın diye). Aktif ilanlar
+// listing_public_cards (RLS-güvenli, public) üzerinden gelir; sahibi de getirilir.
+export async function fetchListingById(id: string): Promise<{ listing: Listing; owner?: User } | null> {
+  if (!supabase || !id) return null;
+  const { data, error } = await supabase.from("listing_public_cards").select("*").eq("id", id).maybeSingle();
+  if (error || !data) return null;
+  const listing = mapListing(data as PublicListingCardRow);
+  let owner: User | undefined;
+  const prof = await supabase.from("profiles").select("*").eq("id", listing.ownerId).maybeSingle();
+  if (prof.data) owner = mapProfile(prof.data as ProfileRow);
+  return { listing, owner };
+}
+
 export async function loadMarketplaceSnapshot(): Promise<MarketplaceSnapshot | null> {
   if (!supabase) return null;
 
