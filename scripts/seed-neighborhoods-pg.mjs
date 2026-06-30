@@ -74,10 +74,11 @@ async function main() {
       const provinceId = provByKey.get(key(r.sehir_adi));
       const districtId = provinceId != null ? distByKey.get(`${provinceId}|${key(r.ilce_adi)}`) : undefined;
       if (provinceId == null || districtId == null) { skipped++; continue; }
+      const { name, type } = cleanName(r.mahalle_adi);
+      if (!name) { skipped++; continue; } // boş isimli kaydı atla
       const n = (perDistrict.get(districtId) ?? 0) + 1;
       perDistrict.set(districtId, n);
       const id = districtId * 100000 + n;
-      const { name, type } = cleanName(r.mahalle_adi);
       batch.push({ id, province_id: provinceId, district_id: districtId, name, type, slug: slug(name) || `m-${id}` });
     }
     for (let i = 0; i < batch.length; i += 500) {
