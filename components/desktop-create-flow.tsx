@@ -12,8 +12,11 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { money } from "@/lib/format";
 import { formatLocation, getProvince } from "@/lib/locations";
+import { moderateListingText, MODERATION_MESSAGES } from "@/lib/moderation";
+import { rateLimit } from "@/lib/rate-limit";
 import type { CommissionType, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { validateListing } from "@/lib/validation";
 
 const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon & Ortak Satış", "Önizleme & Yayınla"];
 const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
@@ -40,6 +43,9 @@ export function DesktopCreateFlow() {
   const [partnerNote, setPartnerNote] = useState("");
   const [contactMethod, setContactMethod] = useState<"message" | "whatsapp" | "phone">("message");
   const [publishing, setPublishing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [honeypot, setHoneypot] = useState(""); // bot tuzağı: gerçek kullanıcı boş bırakır
 
   const formKey = path.length ? resolveFormKey(path) : "";
   const schema = formKey ? getFormSchema(formKey) : undefined;
@@ -54,8 +60,14 @@ export function DesktopCreateFlow() {
     if (!perm.granted) return;
     const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.85, selectionLimit: 5 });
     if (result.canceled) return;
-    const uris = result.assets.map((a) => a.uri).filter(Boolean);
-    setImages((s) => [...s, ...uris].slice(0, 5));
+    const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+    const tooBig = result.assets.some((a) => typeof a.fileSize === "number" && a.fileSize > MAX_BYTES);
+    if (tooBig) setError("Bazı görseller 5 MB sınırını aşıyor ve eklenmedi. Lütfen daha küçük dosyalar seçin.");
+    const uris = result.assets
+      .filter((a) => !(typeof a.fileSize === "number" && a.fileSize > MAX_BYTES))
+      .map((a) => a.uri)
+      .filter(Boolean);
+    setImages((s) => [...s, ...uris].slice(0, 10));
   }
 
   const canNext = () => {
@@ -69,14 +81,52 @@ export function DesktopCreateFlow() {
 
   async function publish() {
     if (!schema) return;
+    setError(null);
+    setNotice(null);
+
+    // Bot tuzağı: gizli alan doluysa sessizce reddet (kullanıcıya başarı gibi göster, kayıt oluşturma).
+    if (honeypot.trim()) {
+      router.replace("/(tabs)/seller");
+      return;
+    }
+
+    const title = String(values.title ?? leafLabel).trim() || leafLabel;
+    const description = String(values.description ?? "").trim();
+    const descRequired = schema.fields.some((f) => f.key === "description" && f.required);
+
+    // Merkezi doğrulama (başlık/açıklama/fiyat).
+    const v = validateListing({ title, description, price: Number(values.price) || 0 });
+    const errs = v.errors.filter((e) => !(e.field === "description" && !descRequired && !description));
+    if (errs.length) {
+      setError(errs[0].message);
+      setStep(1);
+      return;
+    }
+
     setPublishing(true);
     try {
+      // Hız sınırı (spam/bot ilan yağmurunu engeller).
+      const rl = await rateLimit("listing_create");
+      if (!rl.allowed) {
+        setError(rl.reason ?? "Çok sık denediniz, lütfen sonra tekrar deneyin.");
+        return;
+      }
+
+      // Yasaklı/şüpheli içerik taraması.
+      const verdict = await moderateListingText(title, description);
+      if (verdict === "block") {
+        setError(MODERATION_MESSAGES.block);
+        setStep(1);
+        return;
+      }
+      const statusOverride = verdict === "review" ? ("pending_review" as const) : undefined;
+
       // "Diğer" seçildiyse kategori önerisi olarak admin incelemesine düşür.
       if (path[0]?.label === "Diğer") {
-        addCategorySuggestion({ suggestedPath: `${String(values.title ?? "").trim() || "Yeni ürün"} — ${String(values.description ?? "").slice(0, 60)}`, note: "İlan formundan 'Diğer' kategorisi ile gönderildi." });
+        addCategorySuggestion({ suggestedPath: `${title || "Yeni ürün"} — ${description.slice(0, 60)}`, note: "İlan formundan 'Diğer' kategorisi ile gönderildi." });
       }
       void addLocationSuggestion; // konum önerisi 'Mahallemi bulamadım' akışına bağlı (canlıda mahalle listesi gelince)
-      const price = Number(values.price) || 0;
+      const price = v.clean.price;
       const tags = [path[0]?.label, leafLabel, String(values.brand ?? ""), String(values.condition ?? "")].map((t) => String(t).trim()).filter(Boolean).slice(0, 8);
       const detailLines = schema.fields
         .filter((f) => f.key !== "title" && f.key !== "description" && f.key !== "price" && values[f.key] !== undefined && String(values[f.key]).trim() && typeof values[f.key] !== "boolean")
@@ -84,8 +134,8 @@ export function DesktopCreateFlow() {
       const boolLines = schema.fields.filter((f) => f.type === "bool" && values[f.key] === true).map((f) => `${f.label}: Evet`);
 
       createListing({
-        title: String(values.title ?? leafLabel).trim() || leafLabel,
-        description: String(values.description ?? "").trim() || "Açıklama eklenmedi.",
+        title: v.clean.title || leafLabel,
+        description: description ? v.clean.description : "Açıklama eklenmedi.",
         salesPitch: detailLines.slice(0, 4).length ? detailLines.slice(0, 4) : ["Ürünün ana faydasını kısa ve net anlat."],
         shareTemplates: { instagram: "", whatsapp: "", tiktok: "" },
         adAssets: images.slice(1, 5),
@@ -104,7 +154,15 @@ export function DesktopCreateFlow() {
         partnerRules: [...boolLines, partnerNote.trim()].filter(Boolean).length ? [...boolLines, partnerNote.trim()].filter(Boolean) : ["Komisyon sadece onaylı satış kaydında oluşur."],
         deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; Ortaksat para tutmaz.",
         contactMethod
-      });
+      }, statusOverride);
+
+      if (verdict === "review") {
+        // İnceleme gerektiren ilan: kullanıcıya bilgi ver, ardından yönlendir.
+        setNotice(MODERATION_MESSAGES.review);
+        setPublishing(false);
+        setTimeout(() => router.replace("/(tabs)/seller"), 1800);
+        return;
+      }
       router.replace("/(tabs)/seller");
     } finally {
       setPublishing(false);
@@ -294,6 +352,32 @@ export function DesktopCreateFlow() {
       </View>
 
       <LegalDisclaimer />
+
+      {/* Honeypot (botlar için gizli tuzak; ekranda görünmez, gerçek kullanıcı dokunmaz) */}
+      <TextInput
+        value={honeypot}
+        onChangeText={setHoneypot}
+        accessibilityElementsHidden
+        importantForAccessibility="no-hide-descendants"
+        autoCorrect={false}
+        autoCapitalize="none"
+        style={{ height: 0, opacity: 0, position: "absolute", width: 0 }}
+        placeholder="Bu alanı boş bırakın"
+      />
+
+      {/* Hata / bilgi banner'ı */}
+      {error ? (
+        <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
+          <MaterialCommunityIcons name="alert-circle-outline" size={18} color={colors.accent} />
+          <Text style={{ color: colors.accent, flex: 1, fontSize: 13, fontWeight: "700" }}>{error}</Text>
+        </View>
+      ) : null}
+      {notice ? (
+        <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
+          <MaterialCommunityIcons name="clock-check-outline" size={18} color={colors.warning} />
+          <Text style={{ color: colors.warning, flex: 1, fontSize: 13, fontWeight: "700" }}>{notice}</Text>
+        </View>
+      ) : null}
 
       {/* Nav */}
       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>

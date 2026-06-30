@@ -45,9 +45,11 @@ import {
   requestAccountDeletionLive,
   updateSaleStatusLive
 } from "@/lib/live-service";
+import { rateLimit } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { loadAccountSnapshot, loadMarketplaceSnapshot } from "@/lib/supabase-data";
 import { displayText, repairTurkishText } from "@/lib/text";
+import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
 import type {
   Conversation,
   Favorite,
@@ -139,7 +141,7 @@ type AppStore = {
   recordLegalConsent: (documentType: "privacy" | "terms" | "kvkk" | "seller_rules") => Promise<boolean>;
   createSupportTicket: (subject: string, message: string) => Promise<boolean>;
   requestAccountDeletion: (reason: string) => Promise<boolean>;
-  createListing: (input: NewListingInput) => Listing;
+  createListing: (input: NewListingInput, statusOverride?: Listing["status"]) => Listing;
   updateListing: (listingId: string, input: NewListingInput) => Promise<boolean>;
   createLead: (input: Omit<Lead, "id" | "createdAt" | "status">) => Lead | undefined;
   createReview: (listingId: string, rating: number, comment: string) => Review;
@@ -531,6 +533,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
       notifications,
       reports,
       async signInWithEmail(email, password) {
+        const sv = validateSignIn({ email, password });
+        if (!sv.ok) {
+          setAuthError(firstError(sv) ?? "Bilgileri kontrol edin.");
+          return false;
+        }
+        const rl = await rateLimit("signin");
+        if (!rl.allowed) {
+          setAuthError(rl.reason);
+          return false;
+        }
         if (!supabase) {
           const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
           const acct = mockAccounts[cleanEmail];
@@ -557,6 +569,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return !error;
       },
       async signUpWithEmail(input) {
+        const sv = validateSignUp({ name: input.name, email: input.email, password: input.password });
+        if (!sv.ok) {
+          setAuthError(firstError(sv) ?? "Bilgileri kontrol edin.");
+          return false;
+        }
+        const rl = await rateLimit("signup");
+        if (!rl.allowed) {
+          setAuthError(rl.reason);
+          return false;
+        }
         if (!supabase) {
           const cleanEmail = input.email.trim().toLocaleLowerCase("tr-TR");
           const displayName = input.name.trim() || cleanEmail;
@@ -608,6 +630,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return !error;
       },
       async resetPasswordWithEmail(email) {
+        if (!isValidEmail(email)) {
+          setAuthError("Geçerli bir e-posta girin.");
+          return false;
+        }
+        const rl = await rateLimit("password_reset");
+        if (!rl.allowed) {
+          setAuthError(rl.reason);
+          return false;
+        }
         if (!supabase) {
           // Preview mode: simulate sending a reset link (no real email backend).
           setAuthError(undefined);
@@ -726,7 +757,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
         return requestAccountDeletionLive({ userId: currentUser.id, reason: reason.trim() || "Kullanıcı hesap silme talebi oluşturdu." });
       },
-      createListing(input) {
+      createListing(input, statusOverride) {
         const id = newId("l", liveUser);
         const listing: Listing = {
           ...input,
@@ -741,7 +772,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           partnerRules: input.partnerRules.map(repairTurkishText),
           deliveryNote: repairTurkishText(input.deliveryNote),
           slug: `${slugify(input.title)}-${id.slice(0, 8)}`,
-          status: "active",
+          status: statusOverride ?? "active",
           partnerCount: 0,
           leadCount: 0,
           favoriteCount: 0,

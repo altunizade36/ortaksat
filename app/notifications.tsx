@@ -3,6 +3,7 @@ import { Link } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
+import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
@@ -43,6 +44,14 @@ const SAMPLE: DeskNotif[] = [
 ];
 
 export default function NotificationsScreen() {
+  const { isAuthenticated } = useStore();
+  if (!isAuthenticated) {
+    return <AuthRequired title="Bildirimlerin için giriş yap" body="Başvuru, satış ve mesaj bildirimlerin hesabına özeldir; görmek için giriş yapman gerekir." />;
+  }
+  return <NotificationsScreenInner />;
+}
+
+function NotificationsScreenInner() {
   const { language } = useLanguage();
   const { currentUser, markNotificationRead, notifications } = useStore();
   const isWideWeb = useIsWideWeb();

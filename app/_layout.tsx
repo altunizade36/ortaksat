@@ -5,8 +5,12 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppHeader } from "@/components/app-header";
 import { colors } from "@/components/colors";
+import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
 import { LanguageProvider, useLanguage } from "@/lib/i18n";
+
+// expo-router, alt ağaçta render hatası yakalarsa bu fallback'i gösterir.
+export { RouteErrorBoundary as ErrorBoundary };
 
 export default function RootLayout() {
   return (

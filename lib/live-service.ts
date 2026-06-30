@@ -98,27 +98,30 @@ export async function insertListing(listing: Listing) {
   }
 }
 
+// Yüklemede izin verilen tipler ve boyut sınırları (DB bucket limitiyle uyumlu).
+const ALLOWED_IMAGE_TYPES: Record<string, string> = { png: "image/png", webp: "image/webp", jpg: "image/jpeg", jpeg: "image/jpeg" };
+const ALLOWED_VIDEO_TYPES: Record<string, string> = { mp4: "video/mp4", mov: "video/quicktime", m4v: "video/x-m4v", webm: "video/webm" };
+export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
+export const MAX_MEDIA_BYTES = 10 * 1024 * 1024; // 10 MB (video dahil; bucket limiti)
+
 export async function uploadListingImage(uri: string, userId: string) {
   if (!supabase || !uuidPattern.test(userId) || !uri.startsWith("file")) return uri;
 
   const extension = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-  const contentType =
-    extension === "png"
-      ? "image/png"
-      : extension === "webp"
-        ? "image/webp"
-        : extension === "mp4"
-          ? "video/mp4"
-          : extension === "mov"
-            ? "video/quicktime"
-            : extension === "m4v"
-              ? "video/x-m4v"
-              : extension === "webm"
-                ? "video/webm"
-                : "image/jpeg";
+  const contentType = ALLOWED_IMAGE_TYPES[extension] ?? ALLOWED_VIDEO_TYPES[extension];
+  if (!contentType) {
+    console.warn("Reddedilen dosya tipi:", extension);
+    return uri; // izinsiz tip: yükleme yapma, orijinal uri ile devam (RLS/bucket de reddeder)
+  }
+  const isVideo = Boolean(ALLOWED_VIDEO_TYPES[extension]);
   const path = `${userId}/${makeUuid()}.${extension}`;
   const response = await fetch(uri);
   const body = await response.blob();
+  const limit = isVideo ? MAX_MEDIA_BYTES : MAX_IMAGE_BYTES;
+  if (body.size > limit) {
+    console.warn(`Dosya çok büyük (${Math.round(body.size / 1024)}KB > ${Math.round(limit / 1024)}KB)`);
+    return uri; // boyut aşımı: yükleme yapma
+  }
   const { error } = await supabase.storage.from("listing-images").upload(path, body, {
     contentType,
     upsert: false
@@ -136,10 +139,18 @@ export async function uploadProfileAvatar(uri: string, userId: string) {
   if (!supabase || !uuidPattern.test(userId) || !uri.startsWith("file")) return uri;
 
   const extension = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-  const contentType = extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
+  const contentType = ALLOWED_IMAGE_TYPES[extension];
+  if (!contentType) {
+    console.warn("Reddedilen avatar tipi:", extension);
+    return uri;
+  }
   const path = `${userId}/avatar-${makeUuid()}.${extension}`;
   const response = await fetch(uri);
   const body = await response.blob();
+  if (body.size > MAX_IMAGE_BYTES) {
+    console.warn("Avatar çok büyük");
+    return uri;
+  }
   const { error } = await supabase.storage.from("profile-avatars").upload(path, body, {
     contentType,
     upsert: false

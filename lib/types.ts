@@ -1,14 +1,14 @@
 ﻿export type CommissionType = "rate" | "fixed";
-export type ListingStatus = "draft" | "active" | "paused" | "sold" | "rejected";
+export type ListingStatus = "draft" | "pending_review" | "active" | "paused" | "sold" | "rejected" | "expired";
 export type PartnershipMode = "open" | "approval" | "invite";
-export type PartnershipStatus = "active" | "pending" | "rejected" | "blocked";
+export type PartnershipStatus = "active" | "pending" | "rejected" | "blocked" | "cancelled" | "completed";
 export type LeadStatus = "new" | "contacted" | "interested" | "converted" | "lost";
 export type LeadSource = "whatsapp" | "instagram" | "web" | "phone";
 export type PurchaseIntent = "hot" | "warm" | "cold";
 export type OrderStatus = "pending" | "confirmed" | "delivered" | "cancelled";
 export type SaleStatus = "pending" | "return_pending" | "approved" | "seller_paid" | "paid" | "cancelled" | "disputed";
 export type NotificationType = "application" | "lead" | "sale" | "message" | "payout";
-export type UserRole = "user" | "moderator" | "admin";
+export type UserRole = "user" | "seller" | "partner" | "moderator" | "admin" | "super_admin";
 export type ModerationStatus = "open" | "reviewing" | "resolved" | "rejected";
 export type ConversationStatus = "open" | "closed" | "blocked";
 export type ConversationRole = "buyer" | "seller" | "partner" | "admin";

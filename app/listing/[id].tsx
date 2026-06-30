@@ -16,7 +16,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { calculateUserTrustScores } from "@/lib/trust-score";
-import type { LeadSource, Listing, PurchaseIntent, User } from "@/lib/types";
+import type { LeadSource, Listing, PartnershipStatus, PurchaseIntent, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 const sourceLabels: Record<LeadSource, string> = {
@@ -445,7 +445,7 @@ function partnershipModeDescription(mode: Listing["partnershipMode"]) {
   return "Bu ürün davetli ortaklığa açık; satıcı sadece seçtiği ortaklarla çalışır.";
 }
 
-function PartnerSaleTimeline({ listing, partnershipStatus }: { listing: Listing; partnershipStatus?: "pending" | "active" | "rejected" | "blocked" }) {
+function PartnerSaleTimeline({ listing, partnershipStatus }: { listing: Listing; partnershipStatus?: PartnershipStatus }) {
   const { language } = useLanguage();
   const steps = [
     {
@@ -554,7 +554,7 @@ function ListingActionCard({
   onJoin: () => void;
   onMessageSeller: () => void;
   onShare: () => void;
-  partnershipStatus?: "pending" | "active" | "rejected" | "blocked";
+  partnershipStatus?: PartnershipStatus;
 }) {
   const { language } = useLanguage();
   const canApply = !partnershipStatus && listing.status === "active" && listing.stockCount > 0 && listing.partnershipMode !== "invite";
@@ -637,7 +637,7 @@ function ListingDecisionCard({
   commission: number;
   listing: Listing;
   ownerTrustScore?: number;
-  partnershipStatus?: "pending" | "active" | "rejected" | "blocked";
+  partnershipStatus?: PartnershipStatus;
 }) {
   const { language } = useLanguage();
   const readyToPartner = listing.status === "active" && listing.stockCount > 0 && partnershipStatus !== "active";
@@ -731,7 +731,7 @@ function PartnershipBox({
   setApplicationHandle: (value: string) => void;
   setApplicationNote: (value: string) => void;
   setApplicationReach: (value: string) => void;
-  status?: "pending" | "active" | "rejected" | "blocked";
+  status?: PartnershipStatus;
 }) {
   const { language } = useLanguage();
   if (status === "active") {

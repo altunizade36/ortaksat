@@ -18,7 +18,21 @@ Dashboard → **SQL Editor** → **New query** → `supabase/setup-all.sql` dosy
 tamamını yapıştır → **Run**. Bu tek dosya şunları kurar (idempotent):
 tüm konum/adres/öneri tabloları + RLS + **81 il + 973 ilçe** + güvenlik düzeltmeleri.
 
-Alternatif (CLI ile):
+### 2b) Production sıkılaştırma (YENİ — ayrı paste)
+SQL Editor → **New query** → `supabase/migrations/20260630140000_production_hardening.sql`
+dosyasının tamamını yapıştır → **Run**. Bu migration şunları ekler (idempotent):
+- İlan/ortaklık status genişletme (`pending_review`, `expired`, `cancelled`, `completed`)
+- Genişletilmiş roller (`seller`, `partner`, `super_admin`) + `is_admin()` güncellemesi
+- Eksik performans index'leri (kategori/fiyat/tarih/komisyon vb.)
+- **Soft-delete** (`deleted_at`) — kritik tablolarda veri kaybı önleme
+- **activity_logs** (denetim/audit kaydı) + RLS (yalnız admin okur)
+- **rate_limits** + `check_rate_limit()` RPC (spam/bot koruması)
+- **prohibited_keywords** + `scan_prohibited()` RPC (yasaklı ürün taraması)
+
+> Not: `ALTER TYPE ... ADD VALUE` transaction kısıtı nedeniyle bu dosyayı
+> setup-all.sql ile **aynı** sorguda değil, **ayrı** çalıştırın.
+
+Alternatif (CLI ile, hepsi sırayla uygulanır):
 ```
 npx supabase login
 npx supabase link --project-ref akyzzdwbzgsnhdircuce
@@ -27,6 +41,7 @@ npx supabase db push
 Uygulanan migration'lar arasında:
 - `20260630120000_locations_addresses_suggestions.sql` — il/ilçe/mahalle/adres/öneri tabloları + RLS + `approve_location_suggestion()`
 - `20260630130000_security_hardening.sql` — Security Advisor düzeltmeleri (search_path, SECURITY DEFINER revoke, bucket listeleme kapatma)
+- `20260630140000_production_hardening.sql` — status/rol genişletme, index, soft-delete, activity_logs, rate_limits, prohibited_keywords (bkz. 2b)
 
 ## 3) Konum verisi
 ```

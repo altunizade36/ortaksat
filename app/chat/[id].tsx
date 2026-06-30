@@ -4,6 +4,7 @@ import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
+import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -12,6 +13,14 @@ import type { Conversation, Lead, Message, Partnership, Sale, User } from "@/lib
 import { useStore } from "@/lib/use-store";
 
 export default function ChatScreen() {
+  const { isAuthenticated } = useStore();
+  if (!isAuthenticated) {
+    return <AuthRequired title="Mesajlarını görmek için giriş yap" body="Konuşmaların yalnızca sana özeldir; görmek için ücretsiz bir hesapla giriş yapman gerekir." />;
+  }
+  return <ChatScreenInner />;
+}
+
+function ChatScreenInner() {
   const { language } = useLanguage();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { currentUser, findConversation, findListing, findUser, leads, markConversationRead, messages, partnerships, sales, sendConversationMessage } = useStore();

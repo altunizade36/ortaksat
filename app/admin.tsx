@@ -468,5 +468,16 @@ function BarChart({ data }: { data: number[] }) {
 export default function AdminScreen() {
   const auth = useStore();
   if (!auth.isAuthenticated) return <AuthRequired title="Yönetim paneli için giriş yapın" />;
+  const role = auth.currentUser.role;
+  const isStaff = role === "admin" || role === "moderator" || role === "super_admin";
+  if (!isStaff) {
+    return (
+      <AuthRequired
+        icon="shield-lock-outline"
+        title="Bu alana erişim yetkiniz yok"
+        body="Yönetim paneli yalnızca yönetici ve moderatör hesaplarına açıktır. Yetki gerektiğini düşünüyorsanız bizimle iletişime geçin."
+      />
+    );
+  }
   return <AdminScreenInner />;
 }
