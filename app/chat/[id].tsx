@@ -11,6 +11,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState, PrimaryButton } from "@/components/ui";
 import { money } from "@/lib/format";
 import { uploadMessageAttachment } from "@/lib/live-service";
+import { useTypingIndicator } from "@/lib/use-typing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { searchKey, shortDate } from "@/lib/locale";
@@ -35,6 +36,7 @@ function ChatScreenInner() {
   const [attaching, setAttaching] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const conversation = findConversation(id);
+  const { otherTyping, notifyTyping } = useTypingIndicator(conversation?.id, currentUser.id);
 
   useEffect(() => {
     if (conversation) markConversationRead(conversation.id);
@@ -118,9 +120,13 @@ function ChatScreenInner() {
             <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>
               {listing?.title ?? translateCopy("İlan konuşması", language)}
             </Text>
-            <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
-              {listing ? `${money(listing.price)} · ` : ""}{otherUser?.name ?? translateCopy("Kullanıcı", language)}
-            </Text>
+            {otherTyping ? (
+              <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }}>{translateCopy("yazıyor…", language)}</Text>
+            ) : (
+              <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
+                {listing ? `${money(listing.price)} · ` : ""}{otherUser?.name ?? translateCopy("Kullanıcı", language)}
+              </Text>
+            )}
           </View>
           <View style={{ alignItems: "center", backgroundColor: context.needsAction ? colors.warningSoft : colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 5 }}>
             <MaterialCommunityIcons name={conversation?.partnerId ? "handshake-outline" : "tag-outline"} size={13} color={colors.primaryDark} />
@@ -226,7 +232,7 @@ function ChatScreenInner() {
         </Pressable>
         <TextInput
           value={body}
-          onChangeText={setBody}
+          onChangeText={(t) => { setBody(t); notifyTyping(); }}
           multiline
           placeholder={translateCopy("Mesaj yaz", language)}
           placeholderTextColor={colors.muted}

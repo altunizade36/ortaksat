@@ -13,6 +13,7 @@ import { EmptyState, StatusPill } from "@/components/ui";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadMessageAttachment } from "@/lib/live-service";
+import { useTypingIndicator } from "@/lib/use-typing";
 import { useIsWideWeb } from "@/lib/layout";
 import { searchKey, shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
@@ -91,6 +92,13 @@ function MessagesScreenInner() {
   const myConversations = conversations
     .filter((conversation) => conversation.participantIds.includes(currentUser.id))
     .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
+
+  // Masaüstünde ilk konuşmayı varsayılan seçili yap ("yazıyor…" ve okundu için).
+  useEffect(() => {
+    if (isWideWeb && !activeId && myConversations[0]) setActiveId(myConversations[0].id);
+  }, [isWideWeb, activeId, myConversations]);
+
+  const { otherTyping, notifyTyping } = useTypingIndicator(activeId ?? undefined, currentUser.id);
   const unreadMessages = messages.filter((item) => item.receiverId === currentUser.id && !item.read);
   const unreadNotifications = notifications.filter((item) => item.userId === currentUser.id && !item.read);
   const tokens = searchKey(query).split(" ").filter(Boolean);
@@ -271,9 +279,13 @@ function MessagesScreenInner() {
                   {activeListing ? <SafeRemoteImage uri={activeListing.image} contentFit="cover" style={{ borderRadius: 9, height: 44, width: 44 }} /> : null}
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{activeListing ? displayText(activeListing.title) : t("listingConversation")}</Text>
-                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
-                      {activeListing ? `${money(activeListing.price)}` : ""}{activeListingNo ? `  ·  #${activeListingNo}` : ""}{activeOther ? `  ·  ${activeOther.name}` : ""}
-                    </Text>
+                    {otherTyping ? (
+                      <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }}>yazıyor…</Text>
+                    ) : (
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
+                        {activeListing ? `${money(activeListing.price)}` : ""}{activeListingNo ? `  ·  #${activeListingNo}` : ""}{activeOther ? `  ·  ${activeOther.name}` : ""}
+                      </Text>
+                    )}
                   </View>
                   <View style={{ alignItems: "center", backgroundColor: activeIsPartner ? colors.primarySoft : colors.surfaceAlt, borderColor: activeIsPartner ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
                     <MaterialCommunityIcons name={activeIsPartner ? "handshake-outline" : "tag-outline"} size={13} color={activeIsPartner ? colors.primaryDark : colors.muted} />
@@ -333,7 +345,7 @@ function MessagesScreenInner() {
                     ))}
                   </View>
                   <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
-                    <TextInput value={draft} onChangeText={setDraft} multiline placeholder="Mesajınızı yazınız" placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ color: colors.ink, flex: 1, fontSize: 14, maxHeight: 110, minHeight: 46, paddingVertical: 12 }} />
+                    <TextInput value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline placeholder="Mesajınızı yazınız" placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ color: colors.ink, flex: 1, fontSize: 14, maxHeight: 110, minHeight: 46, paddingVertical: 12 }} />
                     <Pressable onPress={() => void attachImage()} disabled={attaching} hitSlop={8}>
                       <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={19} color={attaching ? colors.primary : colors.muted} />
                     </Pressable>

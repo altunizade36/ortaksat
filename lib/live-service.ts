@@ -109,25 +109,49 @@ const ALLOWED_VIDEO_TYPES: Record<string, string> = { mp4: "video/mp4", mov: "vi
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_MEDIA_BYTES = 10 * 1024 * 1024; // 10 MB (video dahil; bucket limiti)
 
-// Web'de görseli canvas ile en fazla maxDim px'e küçültüp JPEG olarak sıkıştırır.
-// Binlerce ürün için storage/bandwidth'i düşük tutar. Native'de blob aynen döner.
-async function compressImageBlob(blob: Blob, maxDim = 1400, quality = 0.82): Promise<{ blob: Blob; contentType: string }> {
+// Görseli canvas ile verilen boyut/kalitede JPEG'e çevirir (tek geçiş).
+async function renderJpeg(bitmap: ImageBitmap, maxDim: number, quality: number): Promise<Blob | null> {
+  const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+  const w = Math.max(1, Math.round(bitmap.width * scale));
+  const h = Math.max(1, Math.round(bitmap.height * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return null;
+  ctx.drawImage(bitmap, 0, 0, w, h);
+  return new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", quality));
+}
+
+// Web'de görseli en fazla maxDim px + hedef MB altına OTOMATİK sıkıştırır. Hedefe
+// ulaşana kadar önce kaliteyi sonra boyutu kademeli düşürür; böylece kullanıcı hiçbir
+// zaman "dosya çok büyük" hatası almaz. Native'de (canvas yok) blob aynen döner.
+async function compressImageBlob(
+  blob: Blob,
+  maxDim = 1600,
+  quality = 0.82,
+  maxBytes = MAX_IMAGE_BYTES
+): Promise<{ blob: Blob; contentType: string }> {
   try {
     if (typeof document === "undefined" || typeof createImageBitmap === "undefined") {
       return { blob, contentType: blob.type || "image/jpeg" };
     }
     const bitmap = await createImageBitmap(blob);
-    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
-    const w = Math.max(1, Math.round(bitmap.width * scale));
-    const h = Math.max(1, Math.round(bitmap.height * scale));
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) return { blob, contentType: blob.type || "image/jpeg" };
-    ctx.drawImage(bitmap, 0, 0, w, h);
-    const out = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", quality));
-    if (out && out.size > 0) return { blob: out, contentType: "image/jpeg" };
+    let dim = maxDim;
+    let q = quality;
+    let best: Blob | null = null;
+    // En fazla 6 deneme: hedef altına inince dur. Önce kalite (0.82->0.5), sonra
+    // boyut (%20 küçült) düşer. Kod pratikte 2-3 denemede biter.
+    for (let i = 0; i < 6; i++) {
+      const out = await renderJpeg(bitmap, dim, q);
+      if (out && out.size > 0) {
+        best = out;
+        if (out.size <= maxBytes) break;
+      }
+      if (q > 0.5) q = Math.max(0.5, q - 0.12);
+      else dim = Math.round(dim * 0.8);
+    }
+    if (best && best.size > 0) return { blob: best, contentType: "image/jpeg" };
   } catch (e) {
     console.warn("Görsel sıkıştırma atlandı:", (e as Error)?.message);
   }
@@ -154,18 +178,20 @@ export async function uploadListingImage(uri: string, userId: string) {
   }
   let body = await response.blob();
 
-  // Görselleri (video değil) sıkıştır/ölçekle.
+  // Görselleri (video değil) hedef MB altına OTOMATİK sıkıştır/ölçekle.
   let ext = extension;
   if (!isVideo) {
-    const compressed = await compressImageBlob(body);
+    const compressed = await compressImageBlob(body, 1600, 0.82, MAX_IMAGE_BYTES);
     body = compressed.blob;
     contentType = compressed.contentType;
     if (contentType === "image/jpeg") ext = "jpg";
   }
 
-  const limit = isVideo ? MAX_MEDIA_BYTES : MAX_IMAGE_BYTES;
-  if (body.size > limit) {
-    console.warn(`Dosya çok büyük (${Math.round(body.size / 1024)}KB > ${Math.round(limit / 1024)}KB)`);
+  // Video sıkıştırılamadığı için hard limiti aşarsa reddet. Görsel ise sıkıştırma
+  // zaten en aza indirdi; nadiren limit üstü kalırsa yine de yüklemeyi dener
+  // (kullanıcıya "çok büyük" hatası çıkarmamak için).
+  if (isVideo && body.size > MAX_MEDIA_BYTES) {
+    console.warn(`Video çok büyük (${Math.round(body.size / 1024 / 1024)}MB > ${Math.round(MAX_MEDIA_BYTES / 1024 / 1024)}MB)`);
     return uri;
   }
 
@@ -179,23 +205,23 @@ export async function uploadListingImage(uri: string, userId: string) {
 }
 
 export async function uploadProfileAvatar(uri: string, userId: string) {
-  if (!supabase || !uuidPattern.test(userId) || !uri.startsWith("file")) return uri;
+  if (!supabase || !uuidPattern.test(userId) || !uri) return uri;
+  // Zaten uzak URL ise tekrar yükleme (web blob:/data: ve native file: desteklenir).
+  if (/^https?:\/\//i.test(uri)) return uri;
 
-  const extension = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-  const contentType = ALLOWED_IMAGE_TYPES[extension];
-  if (!contentType) {
-    console.warn("Reddedilen avatar tipi:", extension);
+  let response: Response;
+  try {
+    response = await fetch(uri);
+  } catch (e) {
+    console.warn("Avatar okunamadı:", (e as Error)?.message);
     return uri;
   }
-  const path = `${userId}/avatar-${makeUuid()}.${extension}`;
-  const response = await fetch(uri);
-  const body = await response.blob();
-  if (body.size > MAX_IMAGE_BYTES) {
-    console.warn("Avatar çok büyük");
-    return uri;
-  }
+  // Avatar için 512px yeterli; hedef MB altına otomatik sıkıştır.
+  const compressed = await compressImageBlob(await response.blob(), 512, 0.85, MAX_IMAGE_BYTES);
+  const body = compressed.blob;
+  const path = `${userId}/avatar-${makeUuid()}.jpg`;
   const { error } = await supabase.storage.from("profile-avatars").upload(path, body, {
-    contentType,
+    contentType: compressed.contentType,
     upsert: false
   });
 
