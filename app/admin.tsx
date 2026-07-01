@@ -15,13 +15,14 @@ import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 type Section =
-  | "dashboard" | "users" | "listings" | "complaints" | "categories" | "locations"
+  | "dashboard" | "users" | "listings" | "partnerships" | "complaints" | "categories" | "locations"
   | "messages" | "commissions" | "stats" | "notifications" | "content" | "settings" | "reports";
 
 const NAV: Array<{ key: Section; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
   { key: "dashboard", icon: "view-dashboard-outline", label: "Dashboard" },
   { key: "users", icon: "account-group-outline", label: "Kullanıcılar" },
   { key: "listings", icon: "file-document-outline", label: "İlanlar" },
+  { key: "partnerships", icon: "handshake-outline", label: "Ortak Satış Talepleri" },
   { key: "complaints", icon: "flag-outline", label: "Şikayetler" },
   { key: "categories", icon: "shape-outline", label: "Kategoriler" },
   { key: "locations", icon: "map-marker-outline", label: "Konum Önerileri" },
@@ -33,6 +34,15 @@ const NAV: Array<{ key: Section; icon: keyof typeof MaterialCommunityIcons.glyph
   { key: "settings", icon: "cog-outline", label: "Ayarlar" },
   { key: "reports", icon: "chart-box-outline", label: "Raporlar" }
 ];
+
+const PARTNERSHIP_TONE: Record<string, { tint: string; color: string; label: string }> = {
+  pending: { tint: "#FFF2CC", color: "#B8860B", label: "Bekliyor" },
+  active: { tint: "#DDF8E9", color: "#0A7A56", label: "Kabul edildi" },
+  approved: { tint: "#DDF8E9", color: "#0A7A56", label: "Kabul edildi" },
+  rejected: { tint: "#FCE8E8", color: "#C0392B", label: "Reddedildi" },
+  cancelled: { tint: "#EEF1F4", color: "#6B7280", label: "İptal" },
+  completed: { tint: "#DDF8E9", color: "#0A7A56", label: "Tamamlandı" }
+};
 
 const STATUS_TONE: Record<SuggestionStatus, { tint: string; color: string; label: string }> = {
   pending: { tint: colors.warningSoft, color: colors.warning, label: "İncelemede" },
@@ -84,12 +94,24 @@ function AdminScreenInner() {
   const [listingQuery, setListingQuery] = useState("");
   const [bcTitle, setBcTitle] = useState("");
   const [bcBody, setBcBody] = useState("");
+  const [listingFilter, setListingFilter] = useState<"all" | "pending" | "active" | "rejected" | "paused" | "featured">("all");
+  const [userFilter, setUserFilter] = useState<"all" | "active" | "suspended" | "seller" | "staff">("all");
   const uq = userQuery.trim().toLocaleLowerCase("tr-TR");
   const lq = listingQuery.trim().toLocaleLowerCase("tr-TR");
+
   const liveUsers = users.filter((u) => u.status !== "deleted");
   const deletedUserCount = users.length - liveUsers.length;
-  const shownUsers = uq ? liveUsers.filter((u) => u.name.toLocaleLowerCase("tr-TR").includes(uq) || (u.role ?? "").includes(uq) || (u.status ?? "").includes(uq)) : liveUsers;
-  const shownListings = lq ? listings.filter((l) => l.title.toLocaleLowerCase("tr-TR").includes(lq) || l.category.toLocaleLowerCase("tr-TR").includes(lq) || (findUser(l.ownerId)?.name ?? "").toLocaleLowerCase("tr-TR").includes(lq) || l.status.includes(lq)) : listings;
+  const userFiltered = liveUsers.filter((u) => {
+    if (userFilter === "active") return u.status !== "suspended";
+    if (userFilter === "suspended") return u.status === "suspended";
+    if (userFilter === "seller") return (u.listingCount ?? 0) > 0;
+    if (userFilter === "staff") return u.role === "admin" || u.role === "moderator" || u.role === "super_admin";
+    return true;
+  });
+  const shownUsers = uq ? userFiltered.filter((u) => u.name.toLocaleLowerCase("tr-TR").includes(uq) || (u.role ?? "").includes(uq) || (u.status ?? "").includes(uq)) : userFiltered;
+
+  const listingFiltered = listingFilter === "all" ? listings : listingFilter === "featured" ? listings.filter((l) => l.featured) : listingFilter === "pending" ? listings.filter((l) => l.status === "pending_review") : listings.filter((l) => l.status === listingFilter);
+  const shownListings = lq ? listingFiltered.filter((l) => l.title.toLocaleLowerCase("tr-TR").includes(lq) || l.category.toLocaleLowerCase("tr-TR").includes(lq) || (findUser(l.ownerId)?.name ?? "").toLocaleLowerCase("tr-TR").includes(lq) || l.status.includes(lq)) : listingFiltered;
 
   function promptNotify(userId: string, name: string) {
     if (Platform.OS === "web" && typeof window !== "undefined") {
@@ -114,11 +136,12 @@ function AdminScreenInner() {
   const pendingCat = categorySuggestions.filter((s) => s.status === "pending").length;
   const pendingLoc = locationSuggestions.filter((s) => s.status === "pending").length;
   const pendingReports = reports.filter((r) => r.status === "open" || r.status === "reviewing").length;
+  const pendingPartnerships = partnerships.filter((p) => p.status === "pending").length;
 
   // Son 12 ay — gerçek veri: aya göre yayınlanan ilan sayısı (kayıtlı veriden).
   const { data: chartData, labels: chartLabels } = useMemo(() => monthlyListingChart(listings), [listings]);
 
-  const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : k === "listings" ? pendingReview.length : k === "complaints" ? pendingReports : 0);
+  const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : k === "listings" ? pendingReview.length : k === "complaints" ? pendingReports : k === "partnerships" ? pendingPartnerships : 0);
 
   return (
     <View style={{ backgroundColor: colors.background, flex: 1, flexDirection: isWideWeb ? "row" : "column", minHeight: "100%" }}>
@@ -184,14 +207,22 @@ function AdminScreenInner() {
 
         {section === "dashboard" ? (
           <Dashboard
-            usersN={users.length} listingsN={listings.length} salesN={sales.length} commission={totalCommission}
-            listings={listings} findUser={findUser} notifications={notifications} leads={leads} setSection={setSection}
+            usersN={liveUsers.length} listingsN={listings.length} salesN={sales.length} commission={totalCommission}
+            activeN={activeListings.length} pendingN={pendingReview.length} reportsN={pendingReports} partnershipsN={pendingPartnerships} messagesN={messages.length}
+            listings={listings} users={users} findUser={findUser} notifications={notifications} leads={leads} setSection={setSection}
           />
         ) : null}
 
         {section === "users" ? (
           <Panel title="Kullanıcılar" sub={`${shownUsers.length} aktif kullanıcı${deletedUserCount ? ` · ${deletedUserCount} silinmiş (gizli)` : ""}${canManageUsers ? " · rol, durum, doğrulama, bildirim" : ""}`}>
             <AdminSearch value={userQuery} onChange={setUserQuery} placeholder="İsim, rol veya durum ara…" />
+            <FilterChips value={userFilter} onChange={setUserFilter} options={[
+              { key: "all", label: "Tümü", count: liveUsers.length },
+              { key: "active", label: "Aktif" },
+              { key: "suspended", label: "Askıda", count: liveUsers.filter((u) => u.status === "suspended").length },
+              { key: "seller", label: "Satıcı" },
+              { key: "staff", label: "Yönetici", count: liveUsers.filter((u) => u.role === "admin" || u.role === "moderator" || u.role === "super_admin").length }
+            ]} />
             <Table head={["KULLANICI", "ROL", "DURUM", "DOĞRULAMA", "İŞLEM"]} cols={[1.8, 1.5, 1, 1.1, 2]}>
               {shownUsers.map((u) => {
                 const suspended = u.status === "suspended";
@@ -286,6 +317,14 @@ function AdminScreenInner() {
           ) : null}
           <Panel title="İlanlar" sub={`${activeListings.length} aktif · ${pendingReview.length} incelemede · ${listings.length} toplam${lq ? ` · ${shownListings.length} sonuç` : ""}`}>
             <AdminSearch value={listingQuery} onChange={setListingQuery} placeholder="Başlık, kategori, sahip veya durum ara…" />
+            <FilterChips value={listingFilter} onChange={setListingFilter} options={[
+              { key: "all", label: "Tümü", count: listings.length },
+              { key: "pending", label: "Onay bekleyen", count: pendingReview.length },
+              { key: "active", label: "Yayında", count: activeListings.length },
+              { key: "paused", label: "Askıda", count: listings.filter((l) => l.status === "paused").length },
+              { key: "rejected", label: "Reddedilen", count: listings.filter((l) => l.status === "rejected").length },
+              { key: "featured", label: "Öne çıkan", count: listings.filter((l) => l.featured).length }
+            ]} />
             <Table head={["İLAN", "KATEGORİ", "FİYAT", "SAHİP", "DURUM", "İŞLEM"]} cols={[2.2, 1.2, 1, 1.4, 1, 1.4]}>
               {shownListings.map((l) => (
                 <Row key={l.id} cols={[2.2, 1.2, 1, 1.4, 1, 1.2]} cells={[
@@ -305,6 +344,35 @@ function AdminScreenInner() {
             </Table>
           </Panel>
           </View>
+        ) : null}
+
+        {section === "partnerships" ? (
+          <Panel title="Ortak Satış Talepleri" sub={`${pendingPartnerships} bekliyor · ${partnerships.length} toplam`}>
+            {partnerships.length === 0 ? <EmptyState title="Ortak satış talebi yok" body="Bir kullanıcı bir ilana ortak satıcı olmak için başvurduğunda burada görünür." /> : null}
+            <Table head={["İLAN", "İLAN SAHİBİ", "ORTAK ADAYI", "KOMİSYON", "DURUM", "TARİH"]} cols={[2, 1.4, 1.4, 1, 1.1, 1]}>
+              {partnerships.slice().sort((a, b) => (a.status === "pending" ? -1 : 1) - (b.status === "pending" ? -1 : 1) || b.createdAt.localeCompare(a.createdAt)).map((p) => {
+                const listing = listings.find((l) => l.id === p.listingId);
+                const owner = listing ? findUser(listing.ownerId) : undefined;
+                const partner = findUser(p.partnerId);
+                const tone = PARTNERSHIP_TONE[p.status] ?? { tint: colors.surfaceAlt, color: colors.muted, label: p.status };
+                const comm = listing ? (listing.commissionType === "rate" ? `%${listing.commissionValue}` : money(listing.commissionValue)) : "—";
+                return (
+                  <Row key={p.id} cols={[2, 1.4, 1.4, 1, 1.1, 1]} cells={[
+                    listing ? (
+                      <Link href={{ pathname: "/listing/[id]", params: { id: listing.id } }} asChild>
+                        <Pressable><Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{listing.title}</Text></Pressable>
+                      </Link>
+                    ) : <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{p.listingId.slice(0, 10)}</Text>,
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{owner?.name ?? "—"}</Text>,
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{partner?.name ?? "—"}</Text>,
+                    <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{comm}</Text>,
+                    <View style={{ alignSelf: "flex-start", backgroundColor: tone.tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: tone.color, fontSize: 10.5, fontWeight: "900" }}>{tone.label}</Text></View>,
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.createdAt}</Text>
+                  ]} />
+                );
+              })}
+            </Table>
+          </Panel>
         ) : null}
 
         {section === "complaints" ? (
@@ -596,11 +664,13 @@ function confirmAction(message: string, onYes: () => void) {
 // ---- pieces --------------------------------------------------------------
 type DashProps = {
   usersN: number; listingsN: number; salesN: number; commission: number;
-  listings: ReturnType<typeof useStore>["listings"]; findUser: ReturnType<typeof useStore>["findUser"];
+  activeN: number; pendingN: number; reportsN: number; partnershipsN: number; messagesN: number;
+  listings: ReturnType<typeof useStore>["listings"]; users: ReturnType<typeof useStore>["users"]; findUser: ReturnType<typeof useStore>["findUser"];
   notifications: ReturnType<typeof useStore>["notifications"]; leads: ReturnType<typeof useStore>["leads"];
   setSection: (s: Section) => void;
 };
-function Dashboard({ usersN, listingsN, salesN, commission, listings, findUser, notifications, leads, setSection }: DashProps) {
+function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, reportsN, partnershipsN, messagesN, listings, users, findUser, notifications, leads, setSection }: DashProps) {
+  const recentUsers = users.slice().filter((u) => u.status !== "deleted").slice(-5).reverse();
   return (
     <View style={{ gap: 16 }}>
       <View style={{ gap: 3 }}>
@@ -610,8 +680,12 @@ function Dashboard({ usersN, listingsN, salesN, commission, listings, findUser, 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
         <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={`${usersN}`} title="Toplam Kullanıcı" onPress={() => setSection("users")} />
         <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={`${listingsN}`} title="Toplam İlan" onPress={() => setSection("listings")} />
-        <Stat icon="cart-check" tint={colors.goldSoft} color={colors.gold} value={`${salesN}`} title="Toplam Satış" onPress={() => setSection("commissions")} />
-        <Stat icon="cash-multiple" tint={colors.violetSoft} color={colors.violet} value={money(commission)} title="Toplam Komisyon (kayıt)" onPress={() => setSection("commissions")} />
+        <Stat icon="check-decagram" tint={colors.successSoft} color={colors.success} value={`${activeN}`} title="Yayındaki İlan" onPress={() => setSection("listings")} />
+        <Stat icon="clock-alert-outline" tint={colors.warningSoft} color={colors.warning} value={`${pendingN}`} title="Onay Bekleyen İlan" onPress={() => setSection("listings")} />
+        <Stat icon="flag-outline" tint={colors.accentSoft} color={colors.accent} value={`${reportsN}`} title="Açık Şikayet" onPress={() => setSection("complaints")} />
+        <Stat icon="handshake-outline" tint={colors.violetSoft} color={colors.violet} value={`${partnershipsN}`} title="Bekleyen Ortaklık" onPress={() => setSection("partnerships")} />
+        <Stat icon="message-text" tint={colors.primarySoft} color={colors.primaryDark} value={`${messagesN}`} title="Toplam Mesaj" onPress={() => setSection("messages")} />
+        <Stat icon="cash-multiple" tint={colors.goldSoft} color={colors.gold} value={money(commission)} title="Komisyon (kayıt)" onPress={() => setSection("commissions")} />
       </View>
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
         <View style={{ flex: 2, gap: 16, minWidth: 280 }}>
@@ -623,7 +697,18 @@ function Dashboard({ usersN, listingsN, salesN, commission, listings, findUser, 
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
                   <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
                   <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{money(l.price)}</Text>,
-                  <View style={{ alignSelf: "flex-start", backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: colors.success, fontSize: 10.5, fontWeight: "900" }}>Yayında</Text></View>
+                  <View style={{ alignSelf: "flex-start", backgroundColor: l.status === "active" ? colors.successSoft : l.status === "rejected" ? colors.accentSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: l.status === "active" ? colors.success : l.status === "rejected" ? colors.accent : colors.muted, fontSize: 10.5, fontWeight: "900" }}>{l.status === "active" ? "Yayında" : l.status === "pending_review" ? "İncelemede" : l.status === "rejected" ? "Reddedildi" : l.status}</Text></View>
+                ]} />
+              ))}
+            </Table>
+          </Panel>
+          <Panel title="Son Kayıt Olan Kullanıcılar">
+            <Table head={["KULLANICI", "ROL", "DURUM"]} cols={[2, 1, 1]}>
+              {recentUsers.map((u) => (
+                <Row key={u.id} cols={[2, 1, 1]} cells={[
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{u.name}</Text>,
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{u.role === "admin" || u.role === "super_admin" ? "Admin" : u.role === "moderator" ? "Mod" : "Üye"}</Text>,
+                  <View style={{ alignSelf: "flex-start", backgroundColor: u.status === "suspended" ? colors.accentSoft : colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: u.status === "suspended" ? colors.accent : colors.success, fontSize: 10, fontWeight: "900" }}>{u.status === "suspended" ? "Askıda" : "Aktif"}</Text></View>
                 ]} />
               ))}
             </Table>
@@ -722,6 +807,22 @@ function SuggestionRow({ title, note, meta, status, onApprove, onReject }: { tit
           <Pressable onPress={onReject} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}><MaterialCommunityIcons name="close" size={15} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Reddet</Text></Pressable>
         </View>
       ) : null}
+    </View>
+  );
+}
+
+function FilterChips<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: Array<{ key: T; label: string; count?: number }> }) {
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 12 }}>
+      {options.map((o) => {
+        const on = value === o.key;
+        return (
+          <Pressable key={o.key} onPress={() => onChange(o.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 6 }}>
+            <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{o.label}</Text>
+            {typeof o.count === "number" ? <View style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.25)" : colors.line, borderRadius: 999, justifyContent: "center", minWidth: 16, paddingHorizontal: 4 }}><Text style={{ color: on ? "#FFFFFF" : colors.muted, fontSize: 10, fontWeight: "900" }}>{o.count}</Text></View> : null}
+          </Pressable>
+        );
+      })}
     </View>
   );
 }
