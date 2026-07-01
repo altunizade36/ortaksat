@@ -1,6 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams } from "expo-router";
+
+import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
@@ -164,7 +166,7 @@ function MessagesScreenInner() {
                 return (
                   <Pressable key={conversation.id} onPress={() => selectConversation(conversation.id)} style={{ backgroundColor: on ? colors.primarySoft + "66" : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 12 }}>
                     {listing ? (
-                      <Image source={{ uri: listing.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 46, width: 46 }} />
+                      <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 46, width: 46 }} />
                     ) : (
                       <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 46, justifyContent: "center", width: 46 }}>
                         <MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} />
@@ -194,7 +196,7 @@ function MessagesScreenInner() {
             {activeConversation && activeContext ? (
               <>
                 <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 18, paddingVertical: 12 }}>
-                  {activeListing ? <Image source={{ uri: activeListing.image }} contentFit="cover" style={{ borderRadius: 10, height: 42, width: 42 }} /> : null}
+                  {activeListing ? <SafeRemoteImage uri={activeListing.image} contentFit="cover" style={{ borderRadius: 10, height: 42, width: 42 }} /> : null}
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{activeOther?.name ?? t("user")}</Text>
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{activeListing ? displayText(activeListing.title) : t("listingConversation")}</Text>
@@ -265,7 +267,7 @@ function MessagesScreenInner() {
               {activeListing ? (
                 <Link href={{ pathname: "/listing/[id]", params: { id: activeListing.id } }} asChild>
                   <Pressable style={({ pressed }) => ({ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 8, opacity: pressed ? 0.85 : 1, padding: 10 })}>
-                    <Image source={{ uri: activeListing.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 120, width: "100%" }} />
+                    <SafeRemoteImage uri={activeListing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 120, width: "100%" }} />
                     <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", lineHeight: 17 }}>{displayText(activeListing.title)}</Text>
                     <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
                       <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{money(activeListing.price)}</Text>
@@ -368,7 +370,7 @@ function MessagesScreenInner() {
               })}
             >
               <View style={{ flexDirection: "row", gap: 10 }}>
-                {listing ? <Image source={{ uri: listing.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 8, height: 58, width: 58 }} /> : (
+                {listing ? <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 8, height: 58, width: 58 }} /> : (
                   <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 58, justifyContent: "center", width: 58 }}>
                     <MaterialCommunityIcons name="message-text-outline" size={24} color={colors.primary} />
                   </View>
