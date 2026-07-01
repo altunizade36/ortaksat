@@ -298,6 +298,176 @@ export const formSchemas: Record<string, FormSchema> = {
       F.desc
     ]
   },
+  bina: {
+    key: "bina",
+    title: "Bina bilgileri",
+    fields: [
+      F.title,
+      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"] },
+      F.price,
+      { key: "totalGrossM2", label: "Toplam brüt m²", type: "number", required: true, suffix: "m²" },
+      { key: "landM2", label: "Arsa m²", type: "number", suffix: "m²" },
+      { key: "totalFloors", label: "Toplam kat sayısı", type: "number" },
+      { key: "basementFloors", label: "Bodrum kat sayısı", type: "number" },
+      { key: "unitCount", label: "Bağımsız bölüm sayısı", type: "number" },
+      { key: "apartmentCount", label: "Daire sayısı", type: "number" },
+      { key: "shopCount", label: "Dükkan sayısı", type: "number" },
+      { key: "buildingAge", label: "Bina yaşı", type: "text" },
+      { key: "monthlyIncome", label: "Aylık toplam kira getirisi", type: "number", suffix: "₺" },
+      { key: "occupancyRate", label: "Doluluk oranı", type: "text", suffix: "%" },
+      { key: "elevator", label: "Asansör var mı?", type: "bool" },
+      { key: "earthquake", label: "Deprem yönetmeliğine uygun mu?", type: "bool" },
+      { key: "urbanTransform", label: "Kentsel dönüşüme uygun mu?", type: "bool" },
+      { key: "deed", label: "Tapu durumu", type: "text" },
+      F.desc
+    ]
+  },
+  proje: {
+    key: "proje",
+    title: "Proje bilgileri",
+    fields: [
+      F.title,
+      { key: "projectName", label: "Proje adı", type: "text", required: true },
+      { key: "company", label: "Firma adı", type: "text", required: true },
+      { key: "projectStatus", label: "Proje durumu", type: "select", required: true, options: ["Ön Satışta", "Lansmanda", "İnşaat Devam Ediyor", "Hemen Teslim", "Teslim Edildi"] },
+      { key: "deliveryDate", label: "Teslim tarihi", type: "text", placeholder: "ör. 2027 Q2" },
+      { key: "priceMin", label: "Fiyat (min)", type: "number", suffix: "₺" },
+      { key: "priceMax", label: "Fiyat (max)", type: "number", suffix: "₺" },
+      { key: "totalUnits", label: "Toplam konut sayısı", type: "number" },
+      { key: "blockCount", label: "Blok sayısı", type: "number" },
+      { key: "unitTypes", label: "Daire tipleri", type: "text", placeholder: "ör. 1+1, 2+1, 3+1" },
+      { key: "m2Range", label: "m² aralığı", type: "text", placeholder: "ör. 65-180 m²" },
+      { key: "downPayment", label: "Peşinat oranı", type: "text", suffix: "%" },
+      { key: "installment", label: "Taksit imkanı var mı?", type: "bool" },
+      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
+      { key: "amenities", label: "Sosyal donatılar", type: "text", placeholder: "havuz, spor, güvenlik, otopark…" },
+      { key: "salesPhone", label: "Satış ofisi telefonu", type: "text" },
+      { key: "website", label: "Web sitesi", type: "text" },
+      F.desc
+    ]
+  },
+  turistik: {
+    key: "turistik",
+    title: "Turistik tesis bilgileri",
+    fields: [
+      F.title,
+      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"] },
+      F.price,
+      { key: "facilityType", label: "Tesis tipi", type: "text", placeholder: "ör. otel, butik otel, pansiyon" },
+      { key: "roomCount", label: "Oda sayısı", type: "number" },
+      { key: "bedCapacity", label: "Yatak kapasitesi", type: "number" },
+      { key: "starCount", label: "Yıldız sayısı", type: "select", options: ["1", "2", "3", "4", "5", "Butik", "Sertifikasız"] },
+      { key: "tourismCert", label: "Turizm belgesi var mı?", type: "bool" },
+      { key: "businessLicense", label: "İşletme ruhsatı var mı?", type: "bool" },
+      { key: "alcoholLicense", label: "Alkollü ruhsat var mı?", type: "bool" },
+      { key: "amenities", label: "Özellikler", type: "text", placeholder: "havuz, spa, restoran, hamam…" },
+      { key: "seaDistance", label: "Denize mesafe", type: "text" },
+      { key: "occupancyRate", label: "Doluluk oranı", type: "text", suffix: "%" },
+      { key: "yearlyRevenue", label: "Yıllık ciro", type: "number", suffix: "₺" },
+      { key: "brandTransfer", label: "Marka / işletme devri var mı?", type: "bool" },
+      { key: "equipmentIncluded", label: "Ekipman dahil mi?", type: "bool" },
+      F.desc
+    ]
+  },
+  devremulk: {
+    key: "devremulk",
+    title: "Devre mülk bilgileri",
+    fields: [
+      F.title,
+      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"] },
+      F.price,
+      { key: "facilityName", label: "Tesis adı", type: "text" },
+      { key: "usagePeriod", label: "Kullanım dönemi", type: "select", options: ["Yaz", "Kış", "Bahar", "Sonbahar", "Tüm Yıl"] },
+      { key: "weekNo", label: "Hafta numarası", type: "text" },
+      { key: "usageType", label: "Kullanım hakkı türü", type: "select", options: ["Ömür Boyu", "Süreli", "Yıllık"] },
+      { key: "capacity", label: "Kişi kapasitesi", type: "number" },
+      { key: "dues", label: "Yıllık aidat", type: "number", suffix: "₺" },
+      { key: "deed", label: "Tapu / sözleşme durumu", type: "text" },
+      { key: "amenities", label: "Tesis özellikleri", type: "text", placeholder: "havuz, termal, spa, restoran…" },
+      { key: "swapRight", label: "Takas hakkı var mı?", type: "bool" },
+      F.desc
+    ]
+  },
+  gunlukKiralik: {
+    key: "gunlukKiralik",
+    title: "Günlük / sezonluk kiralık bilgileri",
+    fields: [
+      F.title,
+      { key: "nightlyPrice", label: "Gecelik fiyat", type: "number", required: true, suffix: "₺" },
+      { key: "weeklyPrice", label: "Haftalık fiyat", type: "number", suffix: "₺" },
+      { key: "monthlyPrice", label: "Aylık fiyat", type: "number", suffix: "₺" },
+      { key: "minStay", label: "Min. konaklama (gece)", type: "number" },
+      { key: "maxGuests", label: "Maksimum kişi sayısı", type: "number", required: true },
+      { key: "rooms", label: "Oda sayısı", type: "text" },
+      { key: "beds", label: "Yatak sayısı", type: "number" },
+      { key: "furnished", label: "Eşyalı mı?", type: "bool" },
+      { key: "amenities", label: "Olanaklar", type: "text", placeholder: "Wi-Fi, klima, havuz, otopark, mutfak…" },
+      { key: "pets", label: "Evcil hayvan kabul", type: "bool" },
+      { key: "checkin", label: "Giriş saati", type: "text" },
+      { key: "checkout", label: "Çıkış saati", type: "text" },
+      { key: "deposit", label: "Depozito", type: "number", suffix: "₺" },
+      { key: "cancelPolicy", label: "İptal koşulu", type: "text" },
+      F.desc
+    ]
+  },
+  odaYurt: {
+    key: "odaYurt",
+    title: "Oda / yurt / pansiyon bilgileri",
+    fields: [
+      F.title,
+      { key: "perPersonPrice", label: "Kişi başı fiyat", type: "number", required: true, suffix: "₺" },
+      { key: "roomType", label: "Oda tipi", type: "select", options: ["Tek Kişilik", "Çift Kişilik", "Paylaşımlı", "Aile Yanı"] },
+      { key: "capacity", label: "Kişi kapasitesi", type: "number" },
+      { key: "furnished", label: "Eşyalı mı?", type: "bool" },
+      { key: "sharedBath", label: "Banyo ortak mı?", type: "bool" },
+      { key: "sharedKitchen", label: "Mutfak ortak mı?", type: "bool" },
+      { key: "billsIncluded", label: "Faturalar dahil mi?", type: "bool" },
+      { key: "internet", label: "İnternet dahil mi?", type: "bool" },
+      { key: "gender", label: "Cinsiyet tercihi", type: "select", options: ["Kadın", "Erkek", "Karma", "Farketmez"] },
+      { key: "deposit", label: "Depozito", type: "number", suffix: "₺" },
+      { key: "meals", label: "Yemek / kahvaltı dahil mi?", type: "bool" },
+      { key: "uniDistance", label: "Üniversiteye mesafe", type: "text" },
+      F.desc
+    ]
+  },
+  prefabrik: {
+    key: "prefabrik",
+    title: "Prefabrik / tiny house / konteyner bilgileri",
+    fields: [
+      F.title,
+      { key: "structureType", label: "Yapı tipi", type: "select", required: true, options: ["Prefabrik Ev", "Tiny House", "Konteyner Ev", "Modüler Ev", "Çelik Ev", "Ahşap Ev", "Bungalov", "Yaşam Konteyneri", "Ofis Konteyneri"] },
+      { key: "listingType", label: "Satılık / Kiralık", type: "select", required: true, options: ["Satılık", "Kiralık"] },
+      F.price,
+      { key: "m2", label: "m²", type: "number", suffix: "m²" },
+      { key: "rooms", label: "Oda sayısı", type: "text" },
+      { key: "material", label: "Malzeme tipi", type: "text" },
+      { key: "installIncluded", label: "Kurulum dahil mi?", type: "bool" },
+      { key: "transportIncluded", label: "Nakliye dahil mi?", type: "bool" },
+      { key: "insulation", label: "Isı yalıtımı var mı?", type: "bool" },
+      { key: "electricity", label: "Elektrik tesisatı var mı?", type: "bool" },
+      { key: "water", label: "Su tesisatı var mı?", type: "bool" },
+      { key: "warranty", label: "Garanti süresi", type: "text" },
+      { key: "condition", label: "Durum", type: "select", options: ["Sıfır", "İkinci El", "Kurulu Halde"] },
+      { key: "movable", label: "Taşınabilir mi?", type: "bool" },
+      F.desc
+    ]
+  },
+  emlakHizmet: {
+    key: "emlakHizmet",
+    title: "Emlak hizmeti bilgileri",
+    fields: [
+      F.title,
+      { key: "serviceType", label: "Hizmet tipi", type: "text", required: true, placeholder: "ör. tadilat, değerleme, sanal tur" },
+      { key: "serviceArea", label: "Hizmet verilen il / ilçe", type: "text" },
+      { key: "startPrice", label: "Başlangıç fiyatı", type: "number", suffix: "₺" },
+      { key: "pricing", label: "Fiyatlandırma", type: "select", options: ["Sabit Fiyat", "Teklif Usulü", "Görüşülür"] },
+      { key: "providerType", label: "Firma / şahıs", type: "select", options: ["Firma", "Şahıs"] },
+      { key: "experience", label: "Deneyim (yıl)", type: "number" },
+      { key: "certificate", label: "Yetki belgesi var mı?", type: "bool" },
+      { key: "portfolio", label: "Portföy / referans linki", type: "text" },
+      F.desc
+    ]
+  },
   otomobil: {
     key: "otomobil",
     title: "Araç bilgileri",
@@ -570,34 +740,83 @@ export const formSchemas: Record<string, FormSchema> = {
   }
 };
 
+// ---- emlak alt-tip listeleri ---------------------------------------------
+const DAIRE_TYPES = ["1+0 (Stüdyo)", "1+1", "1.5+1", "2+1", "2.5+1", "3+1", "3.5+1", "4+1", "4.5+1", "5+1 ve üzeri", "Bahçe Katı", "Çatı Katı (Teras)", "Çatı Dubleksi", "Dubleks", "Ters Dubleks", "Tripleks", "Loft Daire", "Ara Kat", "Giriş Kat", "Yüksek Giriş", "Sıfır (Yeni)", "İkinci El", "Eşyalı", "Site İçinde", "Güvenlikli Site", "Havuzlu Site", "Lüks Daire", "Deniz Manzaralı", "Doğa Manzaralı", "Merkezi Konumda", "Yatırımlık", "Kiracılı", "Krediye Uygun"];
+const REZIDANS_TYPES = ["1+1 Rezidans", "2+1 Rezidans", "3+1 Rezidans", "Stüdyo Rezidans", "Lüks Rezidans", "Otel Konseptli", "Eşyalı Rezidans", "Güvenlikli Rezidans", "Sosyal Tesisli", "Akıllı Ev Sistemli", "Manzaralı Rezidans"];
+const MUSTAKIL_TYPES = ["Bahçeli Ev", "Tek Katlı", "İki Katlı", "Üç Katlı", "Köy Evi", "Taş Ev", "Ahşap Ev", "Kerpiç Ev", "Betonarme Ev", "Dağ Evi", "Göl Evi", "Deniz Kenarı Ev", "Doğa İçinde Ev", "Çiftlik Evi", "Hobi Bahçeli Ev", "Bağ Evi", "Yayla Evi", "Tarihi Ev", "Restorasyonluk Ev"];
+const VILLA_TYPES = ["Müstakil Villa", "İkiz Villa", "Sıra Villa", "Tripleks Villa", "Dubleks Villa", "Lüks Villa", "Havuzlu Villa", "Bahçeli Villa", "Site İçinde Villa", "Güvenlikli Villa", "Deniz Manzaralı Villa", "Doğa Manzaralı Villa", "Akıllı Villa", "Ultra Lüks Villa", "Yazlık Villa", "Kışlık Villa"];
+const YAZLIK_TYPES = ["Denize Sıfır", "Denize Yakın", "Site İçinde", "Havuzlu", "Bahçeli", "Dubleks", "Müstakil", "Ege Bölgesi", "Akdeniz Bölgesi"];
+const KONUT_OZEL = ["Kooperatif Dairesi", "Kooperatif Hissesi", "Loft Konut", "Teraslı Konut", "Akıllı Ev", "Ekolojik Ev", "Bungalov Ev", "Tiny House", "Prefabrik Ev", "Konteyner Ev", "Modüler Ev", "Çelik Ev"];
+const konutBranch = (fk: string): CategoryNode[] => [
+  node("Daire", leaves(DAIRE_TYPES, fk), fk),
+  node("Rezidans", leaves(REZIDANS_TYPES, fk), fk),
+  node("Müstakil Ev", leaves(MUSTAKIL_TYPES, fk), fk),
+  node("Villa", leaves(VILLA_TYPES, fk), fk),
+  node("Yazlık", leaves(YAZLIK_TYPES, fk), fk),
+  node("Özel Konut Tipleri", leaves(KONUT_OZEL, fk), fk)
+];
+const isyeriBranch = (fk: string): CategoryNode[] => [
+  node("Dükkan & Mağaza", leaves(["Cadde Üzeri Dükkan", "Ana Cadde Dükkanı", "Köşe Dükkan", "Pasaj İçi Dükkan", "AVM Mağazası", "Site Altı Dükkan", "Depolu Dükkan", "Vitrinli Dükkan", "Market", "Ruhsatlı Dükkan"], fk), fk),
+  node("Ofis & Büro", leaves(["Plaza Ofisi", "Kat Ofisi", "Home Office", "Hazır Ofis", "Paylaşımlı Ofis", "Klinik Ofis", "Avukatlık Bürosu", "Muhasebe Bürosu", "Yönetim Ofisi"], fk), fk),
+  node("Depo & Antrepo", leaves(["Lojistik Depo", "Soğuk Hava Deposu", "Antrepo", "Raf Sistemli Depo", "Tır Girişli Depo", "Sanayi Deposu", "E-Ticaret Deposu", "Gıda Deposu", "Kapalı Depo", "Açık Depo Alanı"], fk), fk),
+  node("Fabrika & Üretim", leaves(["Fabrika", "Üretim Tesisi", "OSB Fabrikası", "Depolu Fabrika", "Gıda Üretim Tesisi", "Tekstil Fabrikası", "Metal İşleme", "Plastik Üretim", "Mobilya Fabrikası", "Kimya Tesisi", "Paketleme Tesisi"], fk), fk),
+  node("Atölye & İmalathane", leaves(["Sanayi Atölyesi", "Küçük Sanayi Dükkanı", "Marangoz Atölyesi", "Tekstil Atölyesi", "Oto Tamir Atölyesi", "Kaynak Atölyesi", "Mobilya Atölyesi"], fk), fk),
+  node("Restoran & Cafe & Eğlence", leaves(["Restoran", "Cafe", "Lokanta", "Pastane", "Fırın", "Fast Food", "Bar", "Pub", "Gece Kulübü", "Nargile Cafe", "Kahvaltı Salonu", "Yemekhane", "Alkollü Ruhsatlı İşletme"], fk), fk),
+  node("Sağlık & Güzellik", leaves(["Klinik", "Muayenehane", "Diş Kliniği", "Güzellik Merkezi", "Kuaför Salonu", "Berber", "Masaj Salonu", "SPA Merkezi", "Fizik Tedavi", "Veteriner Kliniği", "Eczane Yeri"], fk), fk),
+  node("Eğitim & Kurs", leaves(["Kreş", "Anaokulu", "Kurs Merkezi", "Dershane", "Etüt Merkezi", "Dil Kursu", "Sürücü Kursu", "Spor Kursu", "Okul Binası"], fk), fk),
+  node("Spor & Sosyal Tesis", leaves(["Spor Salonu", "Fitness Salonu", "Pilates Salonu", "Yoga Salonu", "Halı Saha", "Yüzme Havuzu Tesisi", "Düğün Salonu", "Organizasyon Salonu", "Oyun Salonu", "Çocuk Oyun Merkezi"], fk), fk),
+  node("Oto & Akaryakıt", leaves(["Oto Galeri", "Oto Yıkama", "Oto Servis", "Oto Ekspertiz", "Lastikçi", "Benzin İstasyonu", "LPG İstasyonu", "Elektrikli Şarj İstasyonu", "Otopark", "Kapalı Otopark"], fk), fk),
+  node("Tarım & Hayvancılık İşletmesi", leaves(["Çiftlik", "Tavuk Çiftliği", "Büyükbaş Çiftliği", "Küçükbaş Çiftliği", "Süt Üretim Tesisi", "Sera", "Mantar Üretim", "Balık Çiftliği", "Arıcılık Tesisi"], fk), fk)
+];
+
 // ---- the tree ------------------------------------------------------------
 export const categoryTree: CategoryNode[] = [
   node("Emlak", [
     node("Konut", [
-      node("Daire", leaves(["1+0 (Stüdyo)", "1+1", "2+1", "3+1", "4+1", "5+1 ve üzeri", "Dubleks Daire", "Bahçe Katı", "Çatı Katı (Teras)", "Ara Kat", "Giriş Katı", "Ters Dubleks"], "konut"), "konut"),
-      node("Rezidans", leaves(["1+1 Rezidans", "2+1 Rezidans", "3+1 Rezidans", "Stüdyo Rezidans", "Lüks Rezidans"], "konut"), "konut"),
-      node("Müstakil Ev", leaves(["Tek Katlı Müstakil", "İki Katlı Müstakil", "Bahçeli Müstakil Ev", "Köy Evi", "Taş Ev"], "konut"), "konut"),
-      node("Villa", leaves(["Müstakil Villa", "İkiz Villa", "Tripleks Villa", "Deniz Manzaralı Villa", "Havuzlu Villa", "Site İçi Villa"], "konut"), "konut"),
-      ...leaves(["Yazlık", "Dağ Evi", "Çiftlik Evi", "Köşk & Konak", "Yalı", "Yalı Dairesi", "Prefabrik Ev", "Loft", "Devremülk", "Kooperatif Hissesi", "Öğrenci / Apart", "Oda Kiralama"], "konut")
+      node("Satılık", konutBranch("konut"), "konut"),
+      node("Kiralık", konutBranch("konut"), "konut")
     ], "konut"),
     node("İş Yeri", [
-      node("Dükkan & Mağaza", leaves(["Cadde Üzeri Dükkan", "AVM İçi Mağaza", "Köşe Dükkan", "Depolu Dükkan"], "isyeri"), "isyeri"),
-      node("Ofis & Büro", leaves(["Plaza Katı", "İş Merkezi Ofisi", "Home Ofis", "Hazır Ofis", "Muayenehane"], "isyeri"), "isyeri"),
-      node("Sanayi & Üretim", leaves(["Fabrika", "Atölye & İmalathane", "Depo & Antrepo", "Soğuk Hava Deposu"], "isyeri"), "isyeri"),
-      node("Gıda & Eğlence", leaves(["Cafe & Restoran", "Bar & Gece Kulübü", "Büfe & Kiosk", "Pastane & Fırın"], "isyeri"), "isyeri"),
-      node("Turizm & Konaklama", leaves(["Otel", "Apart Otel", "Butik Otel", "Pansiyon & Hostel", "Tatil Köyü"], "isyeri"), "isyeri"),
-      ...leaves(["Sağlık Merkezi & Klinik", "Spor Tesisi", "Güzellik Merkezi", "Kuaför Salonu", "Kreş & Anaokulu", "Otopark", "Benzin İstasyonu", "Komple Ticari Bina", "Devren İş Yeri"], "isyeri")
+      node("Satılık", isyeriBranch("isyeri"), "isyeri"),
+      node("Kiralık", isyeriBranch("isyeri"), "isyeri"),
+      leaf("Devren İş Yeri", "isyeri")
     ], "isyeri"),
-    node("Arsa", [
-      node("İmarlı Arsa", leaves(["Konut İmarlı", "Ticari İmarlı", "Sanayi İmarlı", "Turizm İmarlı", "Villa İmarlı", "Toplu Konut İmarlı"], "arsa"), "arsa"),
-      node("Tarımsal", leaves(["Tarla", "Bağ & Bahçe", "Zeytinlik", "Meyve Bahçesi", "Sera", "Çiftlik"], "arsa"), "arsa"),
-      ...leaves(["Kat Karşılığı Arsa", "Hisseli Arsa", "İmarsız Arsa"], "arsa")
+    node("Arsa / Arazi", [
+      node("Satılık", [
+        node("İmarlı Arsa", leaves(["Konut İmarlı", "Villa İmarlı", "Apartman İmarlı", "Toplu Konut İmarlı", "Ticari İmarlı", "Dükkan İmarlı", "AVM İmarlı", "Akaryakıt İmarlı", "Turizm İmarlı", "Sanayi İmarlı", "Depolama İmarlı", "Sağlık Alanı İmarlı", "Eğitim Alanı İmarlı"], "arsa"), "arsa"),
+        node("Tarla", leaves(["Ekilebilir Tarla", "Sulak Tarla", "Kuru Tarla", "Yola Cepheli Tarla", "Elektriği Olan Tarla", "Suyu Olan Tarla", "GES'e Uygun Tarla", "Hobi Bahçesine Uygun"], "arsa"), "arsa"),
+        node("Bahçe & Bağ & Zeytinlik", leaves(["Hobi Bahçesi", "Meyve Bahçesi", "Zeytinlik", "Fındıklık", "Ceviz Bahçesi", "Narenciye Bahçesi", "Üzüm Bağı", "Organik Tarım Alanı"], "arsa"), "arsa"),
+        node("Çiftlik & Doğa Arazisi", leaves(["Çiftlik Arazisi", "Hayvancılık Arazisi", "Sera Arazisi", "Yayla Arazisi", "Orman Kenarı", "Dere Kenarı", "Göl Kenarı", "Deniz Manzaralı", "Kamp/Bungalov Alanına Uygun"], "arsa"), "arsa"),
+        node("Hisseli & Özel Durumlu", leaves(["Hisseli Arsa", "Hisseli Tarla", "Müstakil Parsel", "İfrazlı Arsa", "Şuyulu Arsa", "Tapu Tahsisli", "Zilliyet Arazi", "Köy Yerleşik Alanı", "Sit Alanında Arazi"], "arsa"), "arsa"),
+        node("Kat Karşılığı & Yatırım", leaves(["Kat Karşılığı Arsa", "Hasılat Paylaşımlı", "Müteahhide Uygun", "Kentsel Dönüşüme Uygun", "Yatırımlık Arsa", "Prim Potansiyelli"], "arsa"), "arsa")
+      ], "arsa"),
+      node("Kiralık", leaves(["Kiralık Arsa", "Kiralık Tarla", "Kiralık Bahçe", "Depolama Alanı", "Açık Otopark Alanı", "Şantiye Alanı", "Tarım Arazisi", "Sera Alanı", "Reklam Panosu Alanı", "Konteyner Alanı", "Kamp Alanı", "Etkinlik Alanı"], "arsa"), "arsa")
     ], "arsa"),
-    node("Bina", leaves(["Satılık Komple Bina", "Kiralık Komple Bina", "Apartman", "İş Hanı", "Plaza", "Residence Bina"], "isyeri"), "isyeri"),
-    node("Turistik Tesis", leaves(["Otel", "Apart Otel", "Butik Otel", "Tatil Köyü", "Pansiyon", "Kamp & Karavan Alanı", "Termal Tesis"], "isyeri"), "isyeri"),
-    node("Günlük Kiralık", leaves(["Günlük Kiralık Daire", "Günlük Kiralık Villa", "Günlük Kiralık Yazlık", "Günlük Kiralık Apart", "Günlük Kiralık Rezidans"], "konut"), "konut"),
-    node("Konut Projeleri", leaves(["Yeni / Ön Satış Projeler", "Devam Eden Projeler", "Tamamlanan Projeler", "Kentsel Dönüşüm Projeleri", "Devlet / TOKİ Projeleri"], "konut"), "konut"),
-    leaf("Devremülk", "konut")
+    node("Bina", [
+      node("Satılık", leaves(["Komple Bina", "Apartman", "Müstakil Bina", "İş Hanı", "Plaza", "Rezidans Binası", "Otel Binası", "Yurt Binası", "Okul Binası", "Hastane Binası", "Klinik Binası", "Fabrika Binası", "Depo Binası", "Tarihi Bina", "Restorasyonluk Bina", "Kentsel Dönüşüme Uygun", "Kiracılı Bina", "Karma Kullanımlı Bina"], "bina"), "bina"),
+      node("Kiralık", leaves(["Komple Bina", "Apartman", "İş Hanı", "Plaza", "Okul Binası", "Yurt Binası", "Hastane / Klinik Binası", "Depo Binası", "Fabrika Binası", "Otel Binası", "Kurumsal Kullanıma Uygun"], "bina"), "bina")
+    ], "bina"),
+    node("Projeler", leaves(["Yeni Konut Projesi", "Daire Projesi", "Villa Projesi", "Rezidans Projesi", "Karma Proje", "Ofis Projesi", "Ticari Alan Projesi", "AVM Projesi", "Arsa Projesi", "Kentsel Dönüşüm Projesi", "Kooperatif Projesi", "Tatil Projesi", "Tiny House Projesi", "Bungalov Projesi", "Devremülk Projesi"], "proje"), "proje"),
+    node("Turistik Tesis", [
+      node("Satılık", leaves(["Otel", "Butik Otel", "Apart Otel", "Pansiyon", "Motel", "Hostel", "Tatil Köyü", "Kamp Alanı", "Bungalov Tesisi", "Glamping Tesisi", "Termal Otel", "Dağ Oteli", "Sahil Oteli", "Plaj Tesisi", "Aquapark", "Karavan Parkı"], "turistik"), "turistik"),
+      node("Kiralık", leaves(["Otel", "Butik Otel", "Apart Otel", "Pansiyon", "Kamp Alanı", "Bungalov Tesisi", "Tatil Köyü", "Sezonluk Otel", "Plaj Tesisi", "Restoranlı Tesis"], "turistik"), "turistik")
+    ], "turistik"),
+    node("Devre Mülk", leaves(["Satılık Devre Mülk", "Kiralık Devre Mülk", "Termal Devre Mülk", "Otel Devre Mülk", "Tatil Köyü Devre Mülk", "Yazlık Devre Mülk", "Kışlık Devre Mülk", "Haftalık", "Sezonluk", "Ömür Boyu Kullanımlı", "Süreli Kullanımlı"], "devremulk"), "devremulk"),
+    node("Günlük / Sezonluk Kiralık", [
+      node("Günlük", leaves(["Günlük Daire", "Günlük Rezidans", "Günlük Villa", "Günlük Yazlık", "Günlük Bungalov", "Günlük Tiny House", "Günlük Dağ Evi", "Günlük Göl Evi", "Havuzlu Villa", "Suit", "Oda", "Apart", "Pansiyon Odası"], "gunlukKiralik"), "gunlukKiralik"),
+      node("Sezonluk", leaves(["Sezonluk Yazlık", "Sezonluk Villa", "Sezonluk Daire", "Sezonluk Bungalov", "Aylık Yazlık", "Haftalık Yazlık", "Yaz Sezonu", "Kış Sezonu"], "gunlukKiralik"), "gunlukKiralik")
+    ], "gunlukKiralik"),
+    node("Oda / Yurt / Pansiyon", [
+      node("Kiralık Oda", leaves(["Paylaşımlı Oda", "Tek Kişilik Oda", "Çift Kişilik Oda", "Öğrenciye Oda", "Çalışana Oda", "Kadına Oda", "Erkeğe Oda", "Aile Yanı Oda", "Eşyalı Oda", "Faturalar Dahil"], "odaYurt"), "odaYurt"),
+      node("Yurt", leaves(["Kız Öğrenci Yurdu", "Erkek Öğrenci Yurdu", "Karma Yurt", "Özel Yurt", "Apart Yurt", "İşçi Yurdu", "Personel Yurdu"], "odaYurt"), "odaYurt"),
+      node("Pansiyon", leaves(["Aylık Pansiyon", "Günlük Pansiyon", "Öğrenci Pansiyonu", "İşçi Pansiyonu", "Aile Pansiyonu", "Turistik Pansiyon"], "odaYurt"), "odaYurt")
+    ], "odaYurt"),
+    node("Prefabrik / Tiny House / Konteyner", [
+      node("Satılık", leaves(["Prefabrik Ev", "Tiny House", "Konteyner Ev", "Modüler Ev", "Çelik Ev", "Ahşap Ev", "Bungalov", "Mobil Ev", "Karavan Ev", "Şantiye Konteyneri", "Ofis Konteyneri", "WC / Duş Konteyneri", "Yaşam Konteyneri"], "prefabrik"), "prefabrik"),
+      node("Kiralık", leaves(["Konteyner", "Tiny House", "Prefabrik Ev", "Şantiye Konteyneri", "Ofis Konteyneri", "Yaşam Konteyneri", "Bungalov"], "prefabrik"), "prefabrik")
+    ], "prefabrik"),
+    node("Emlak Hizmetleri", leaves(["Emlak Danışmanı", "Gayrimenkul Değerleme", "Ekspertiz Hizmeti", "Tapu Takip", "Kentsel Dönüşüm Danışmanlığı", "Mimari Proje", "İç Mimarlık", "Tadilat Hizmeti", "Boya Badana", "Nakliye / Evden Eve", "Temizlik Hizmeti", "Fotoğraf / Video Çekimi", "Drone Çekimi", "3D Sanal Tur", "Kiracı Bulma", "Mülk Yönetimi", "Site Yönetimi"], "emlakHizmet"), "emlakHizmet"),
+    node("Ortak Satışa Açık Emlak", leaves(["Ortak Satışa Açık Daire", "Ortak Satışa Açık Villa", "Ortak Satışa Açık Müstakil Ev", "Ortak Satışa Açık Yazlık", "Ortak Satışa Açık Arsa", "Ortak Satışa Açık Tarla", "Ortak Satışa Açık İş Yeri", "Ortak Satışa Açık Dükkan", "Ortak Satışa Açık Ofis", "Ortak Satışa Açık Bina", "Ortak Satışa Açık Turistik Tesis", "Ortak Satışa Açık Proje", "Komisyonlu Emlak İlanı", "Emlakçı İş Birliği"], "konut"), "konut")
   ], "konut", IMG("1560518883-ce09059eeffa")),
 
   node("Vasıta", [
