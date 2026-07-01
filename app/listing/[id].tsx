@@ -2,6 +2,7 @@
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
+import Head from "expo-router/head";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
 
@@ -232,8 +233,25 @@ export default function ListingDetailScreen() {
     Alert.alert(translateCopy(ok ? "Bildirim alındı" : "Giriş gerekli", language), translateCopy(ok ? "Moderasyon ekibi bu ilanı inceleyecek." : "İlan bildirmek için e-posta ile giriş yapmalısın.", language));
   }
 
+  const metaDesc = `${currentListing.title} — ${money(currentListing.price)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
+  const metaUrl = `https://ortaksat.com/listing/${currentListing.id}`;
+
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: 96 }}>
+      <Head>
+        <title>{`${currentListing.title} — OrtakSat`}</title>
+        <meta name="description" content={metaDesc} />
+        <link rel="canonical" href={metaUrl} />
+        <meta property="og:type" content="product" />
+        <meta property="og:title" content={`${currentListing.title} — OrtakSat`} />
+        <meta property="og:description" content={metaDesc} />
+        <meta property="og:image" content={currentListing.image} />
+        <meta property="og:url" content={metaUrl} />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content={`${currentListing.title} — OrtakSat`} />
+        <meta name="twitter:description" content={metaDesc} />
+        <meta name="twitter:image" content={currentListing.image} />
+      </Head>
       <WebContainer max={1200} padding={0} style={{ gap: 16 }}>
       <View style={isWideWeb ? { flexDirection: "row", gap: 20, alignItems: "flex-start" } : { gap: 12 }}>
       <View style={isWideWeb ? { flex: 1.12, minWidth: 0 } : undefined}>
