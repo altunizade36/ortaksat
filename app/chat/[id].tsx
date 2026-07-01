@@ -6,7 +6,8 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput,
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
-import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
+import { EmptyState, PrimaryButton } from "@/components/ui";
+import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { searchKey, shortDate } from "@/lib/locale";
@@ -92,48 +93,38 @@ function ChatScreenInner() {
       <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, padding: 12 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
           {listing ? <Image source={{ uri: listing.image }} contentFit="cover" style={{ borderRadius: 8, height: 46, width: 46 }} /> : null}
-          <View style={{ flex: 1, gap: 3 }}>
-            <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>
-              {otherUser?.name ?? translateCopy("Kullanıcı", language)}
-            </Text>
-            <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
+          <View style={{ flex: 1, gap: 2 }}>
+            <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>
               {listing?.title ?? translateCopy("İlan konuşması", language)}
             </Text>
+            <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
+              {listing ? `${money(listing.price)} · ` : ""}{otherUser?.name ?? translateCopy("Kullanıcı", language)}
+            </Text>
           </View>
-          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
-            <MaterialCommunityIcons name="shield-check-outline" size={18} color={colors.primaryDark} />
+          <View style={{ alignItems: "center", backgroundColor: context.needsAction ? colors.warningSoft : colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 5 }}>
+            <MaterialCommunityIcons name={conversation?.partnerId ? "handshake-outline" : "tag-outline"} size={13} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>{conversation?.partnerId ? translateCopy("Ortak satış", language) : translateCopy("Satış konuşması", language)}</Text>
           </View>
         </View>
-        <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 8, marginTop: 10, padding: 10 }}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatusPill label={context.roleLabel} tone="success" />
-            <StatusPill label={context.otherRoleLabel} tone="info" />
-            <StatusPill label={`${translateCopy("Durum", language)}: ${context.status}`} tone={context.needsAction ? "warning" : "info"} />
-            <StatusPill label={context.channel} tone="info" />
-          </View>
-          <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 12, fontWeight: "900", lineHeight: 17 }}>
-            {translateCopy("Kaynak", language)}: {context.source}
-          </Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <Metric label={translateCopy("Talep", language)} value={`${context.leadCount}`} />
-            <Metric label={translateCopy("Satış", language)} value={`${context.saleCount}`} />
-            <Metric label={translateCopy("Açık komisyon", language)} value={`${context.openCommission}`} />
-          </View>
-          {listing ? (
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <View style={{ flex: 1 }}>
-                <PrimaryButton href={`/listing/${listing.id}`} tone="secondary" icon="tag-outline">
-                  {translateCopy("Ürün Detayı", language)}
-                </PrimaryButton>
-              </View>
-              <View style={{ flex: 1 }}>
-                <PrimaryButton tone="soft" icon="reply-outline" onPress={() => setBody(quickReplies[0] ?? "")}>
-                  {translateCopy("Hızlı Yanıt", language)}
-                </PrimaryButton>
-              </View>
+        {listing ? (
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8, marginTop: 10 }}>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton href={`/listing/${listing.id}`} tone="secondary" icon="open-in-new">
+                {translateCopy("İlanı görüntüle", language)}
+              </PrimaryButton>
             </View>
-          ) : null}
-        </View>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton href={{ pathname: "/store/[id]", params: { id: otherId ?? "" } }} tone="soft" icon="account-outline">
+                {translateCopy("Profili görüntüle", language)}
+              </PrimaryButton>
+            </View>
+          </View>
+        ) : (
+          <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 3, marginTop: 10, padding: 10 }}>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("İlan yayından kaldırıldı", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy("İlan artık yayında değil, ancak mesaj geçmişin burada kalır.", language)}</Text>
+          </View>
+        )}
       </View>
 
       <ScrollView ref={scrollRef} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, gap: 6, justifyContent: conversationMessages.length === 0 ? "center" : "flex-start", padding: 12, paddingBottom: 16 }}>
