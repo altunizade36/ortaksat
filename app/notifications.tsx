@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
+import { isSupabaseConfigured } from "@/lib/supabase";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -66,7 +67,8 @@ function NotificationsScreenInner() {
     const realDesk: DeskNotif[] = myNotifications.map((n) => ({
       id: n.id, type: n.type, title: n.title, body: n.body, createdAt: n.createdAt, group: "Bugün", real: true
     }));
-    const all: DeskNotif[] = [...realDesk, ...SAMPLE];
+    // Canlıda yalnızca gerçek bildirimler; örnek (SAMPLE) veriler sadece yerel önizlemede.
+    const all: DeskNotif[] = isSupabaseConfigured ? realDesk : [...realDesk, ...SAMPLE];
     const isRead = (n: DeskNotif) => readMap[n.id] === true || (n.real && !!notifications.find((x) => x.id === n.id)?.read);
     const totalUnread = all.filter((n) => !isRead(n)).length;
 

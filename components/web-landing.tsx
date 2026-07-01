@@ -252,6 +252,8 @@ export function WebWhy() {
 export function WebFooter() {
   const { t } = useLanguage();
   const [email, setEmail] = useState("");
+  const [subscribed, setSubscribed] = useState(false);
+  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
   const columns: Array<{ heading: string; links: Array<{ label: string; href: Href }> }> = [
     {
       heading: "Pazaryeri",
@@ -318,18 +320,25 @@ export function WebFooter() {
           </Text>
           <View style={{ gap: 8, maxWidth: 380 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Bültene abone ol</Text>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-              <TextInput
-                value={email}
-                onChangeText={setEmail}
-                placeholder="E-posta adresin"
-                placeholderTextColor="rgba(255,255,255,0.55)"
-                style={{ backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.25)", borderRadius: 10, borderWidth: 1, color: "#FFFFFF", flex: 1, fontSize: 14, fontWeight: "600", height: 44, paddingHorizontal: 14 }}
-              />
-              <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Abone Ol</Text>
-              </Pressable>
-            </View>
+            {subscribed ? (
+              <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 10, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 12 }}>
+                <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", flex: 1, fontSize: 13, fontWeight: "700" }}>Teşekkürler! Bülten yayına girince haber vereceğiz.</Text>
+              </View>
+            ) : (
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <TextInput
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder="E-posta adresin"
+                  placeholderTextColor="rgba(255,255,255,0.55)"
+                  style={{ backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.25)", borderRadius: 10, borderWidth: 1, color: "#FFFFFF", flex: 1, fontSize: 14, fontWeight: "600", height: 44, paddingHorizontal: 14 }}
+                />
+                <Pressable disabled={!emailValid} onPress={() => setSubscribed(true)} style={{ alignItems: "center", backgroundColor: emailValid ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Abone Ol</Text>
+                </Pressable>
+              </View>
+            )}
           </View>
           <View style={{ flexDirection: "row", gap: 10, marginTop: 2 }}>
             {socials.map((icon) => (
