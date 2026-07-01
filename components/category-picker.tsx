@@ -158,7 +158,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
             {requiredLabels.length ? (
               <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 4, marginTop: 2, padding: 11 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>Bu kategori için gerekenler:</Text>
-                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{requiredLabels.join(", ")}, fotoğraf, fiyat, konum, komisyon.</Text>
+                <Text numberOfLines={4} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{requiredLabels.join(", ")}, fotoğraf, fiyat, konum, komisyon.</Text>
               </View>
             ) : null}
           </View>
