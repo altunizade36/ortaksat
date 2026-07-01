@@ -44,7 +44,7 @@ export default function ExploreScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const params = useLocalSearchParams<{ q?: string; province?: string; district?: string }>();
-  const { findUser, listings } = useStore();
+  const { findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceLoadingMore } = useStore();
   const [refreshing, setRefreshing] = useState(false);
   const [seed, setSeed] = useState(1);
   const [filter, setFilter] = useState<FeedFilter>("all");
@@ -177,7 +177,12 @@ export default function ExploreScreen() {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const distanceToBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
     if (distanceToBottom < 520) {
-      setVisibleCount((current) => Math.min(mediaItems.length, current + EXPLORE_PAGE_SIZE));
+      setVisibleCount((current) => {
+        const next = Math.min(mediaItems.length, current + EXPLORE_PAGE_SIZE);
+        // Yüklü medya bitmeye yakınsa sunucudan sonraki katalog sayfasını çek.
+        if (next >= mediaItems.length && marketplaceHasMore) loadMoreMarketplace();
+        return next;
+      });
     }
   }
 
@@ -353,8 +358,12 @@ export default function ExploreScreen() {
             )}
 
             {visibleProducts.length < productListings.length ? (
-              <Pressable onPress={() => setProductVisible((c) => c + 20)} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 28, paddingVertical: 12 }}>
+              <Pressable onPress={() => { setProductVisible((c) => c + 20); if (productVisible + 20 >= productListings.length && marketplaceHasMore) loadMoreMarketplace(); }} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 28, paddingVertical: 12 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>Daha fazla göster</Text>
+              </Pressable>
+            ) : marketplaceHasMore ? (
+              <Pressable onPress={() => loadMoreMarketplace()} disabled={marketplaceLoadingMore} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, opacity: marketplaceLoadingMore ? 0.6 : 1, paddingHorizontal: 28, paddingVertical: 12 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{marketplaceLoadingMore ? "Yükleniyor…" : "Daha fazla ilan yükle"}</Text>
               </Pressable>
             ) : null}
           </View>

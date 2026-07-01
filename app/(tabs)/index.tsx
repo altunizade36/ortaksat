@@ -28,7 +28,7 @@ export default function HomeScreen() {
   const { language, t } = useLanguage();
   const { width } = useWindowDimensions();
   const params = useLocalSearchParams<{ q?: string }>();
-  const { currentUser, findUser, listings } = useStore();
+  const { currentUser, findUser, listings, loadMoreMarketplace, marketplaceHasMore } = useStore();
   const query = params.q ?? "";
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sortMode, setSortMode] = useState<SortMode>("featured");
@@ -106,7 +106,11 @@ export default function HomeScreen() {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const distanceToBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
     if (distanceToBottom < 420) {
-      setVisibleCount((current) => Math.min(filteredListings.length, current + HOME_PAGE_SIZE));
+      setVisibleCount((current) => {
+        const next = Math.min(filteredListings.length, current + HOME_PAGE_SIZE);
+        if (next >= filteredListings.length && marketplaceHasMore) loadMoreMarketplace();
+        return next;
+      });
     }
   }
 

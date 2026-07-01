@@ -200,6 +200,30 @@ export async function loadMarketplaceSnapshot(): Promise<MarketplaceSnapshot | n
   };
 }
 
+/**
+ * Katalog sayfalama: sunucudan sonraki ilan sayfasini ve o ilanlarin sahiplerini
+ * getirir. Sonsuz kaydirma icin `offset` kadar atlar, `limit` kadar okur.
+ * Donen liste `limit`'ten azsa katalog bitti demektir (hasMore=false).
+ */
+export async function loadMarketplacePage(offset: number, limit: number): Promise<{ listings: Listing[]; users: User[] } | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("listing_public_cards")
+    .select("*")
+    .eq("status", "active")
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
+  if (error) return null;
+
+  const listings = ((data ?? []) as PublicListingCardRow[]).map(mapListing);
+  if (listings.length === 0) return { listings: [], users: [] };
+
+  const ownerIds = Array.from(new Set(listings.map((l) => l.ownerId)));
+  const { data: profileData } = await supabase.from("profiles").select("*").in("id", ownerIds);
+  const users = ((profileData ?? []) as ProfileRow[]).map(mapProfile);
+  return { listings, users };
+}
+
 export async function loadAccountSnapshot(userId: string): Promise<AccountSnapshot | null> {
   if (!supabase) return null;
 

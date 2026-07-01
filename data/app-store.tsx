@@ -1,4 +1,4 @@
-﻿import { createContext, PropsWithChildren, useEffect, useMemo, useState } from "react";
+﻿import { createContext, PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 
 import {
   conversations as initialConversations,
@@ -48,7 +48,7 @@ import {
 } from "@/lib/live-service";
 import { rateLimit } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { loadAccountSnapshot, loadMarketplaceSnapshot } from "@/lib/supabase-data";
+import { loadAccountSnapshot, loadMarketplacePage, loadMarketplaceSnapshot } from "@/lib/supabase-data";
 import { displayText, repairTurkishText } from "@/lib/text";
 import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
 import type {
@@ -126,6 +126,9 @@ type AppStore = {
   isAuthenticated: boolean;
   users: User[];
   listings: Listing[];
+  marketplaceHasMore: boolean;
+  marketplaceLoadingMore: boolean;
+  loadMoreMarketplace: () => void;
   partnerships: Partnership[];
   leads: Lead[];
   sales: Sale[];
@@ -290,6 +293,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [messages, setMessages] = useState(isSupabaseConfigured ? [] : initialMessages);
   const [notifications, setNotifications] = useState(isSupabaseConfigured ? [] : initialNotifications);
   const [reports, setReports] = useState<Report[]>([]);
+  // Katalog sayfalama (sunucu tarafli). mpOffsetRef = simdiye kadar cekilen
+  // katalog ilan sayisi; hasMore = daha var mi; loadingMore = yukleme kilidi.
+  const mpOffsetRef = useRef(0);
+  const [marketplaceHasMore, setMarketplaceHasMore] = useState(isSupabaseConfigured);
+  const [marketplaceLoadingMore, setMarketplaceLoadingMore] = useState(false);
   // Preview (no-Supabase) auth registry so register/login/logout work end-to-end in demo mode.
   const [mockAccounts, setMockAccounts] = useState<Record<string, { password: string; user: User }>>({});
   // Öneriler: canlıda boş başlar (gerçek kullanıcı önerileriyle dolar), önizlemede örnek.
@@ -314,6 +322,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
       // Canlı: yalnızca gerçek Supabase verisi (demo/mock birleştirme yok).
       setUsers(snapshot.users);
       setListings(snapshot.listings);
+      mpOffsetRef.current = snapshot.listings.length;
+      setMarketplaceHasMore(snapshot.listings.length >= 90);
       setBackendMode("supabase");
     }
 
@@ -481,9 +491,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setNotifications((items) => [notification, ...items.filter((item) => item.id !== notification.id)]);
         }
       )
+      // partnerships/leads/commissions: filtre YOK — RLS aboneye yalnizca gorme
+      // yetkisi olan satirlari teslim eder (hem ortak hem satici tarafi).
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "partnerships", filter: `partner_id=eq.${authUser.id}` },
+        { event: "*", schema: "public", table: "partnerships" },
         (payload) => {
           const row = payload.new as Record<string, any> | null;
           if (!row) return;
@@ -503,6 +515,54 @@ export function StoreProvider({ children }: PropsWithChildren) {
             createdAt: row.created_at.slice(0, 10)
           };
           setPartnerships((items) => [partnership, ...items.filter((item) => item.id !== partnership.id)]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "leads" },
+        (payload) => {
+          const row = payload.new as Record<string, any> | null;
+          if (!row) return;
+          const lead: Lead = {
+            id: row.id,
+            listingId: row.listing_id,
+            partnershipId: row.partnership_id,
+            buyerName: row.buyer_name,
+            buyerPhone: row.buyer_phone,
+            note: row.note,
+            source: row.source,
+            intent: row.intent,
+            status: row.status,
+            createdAt: row.created_at.slice(0, 10)
+          };
+          setLeads((items) => [lead, ...items.filter((item) => item.id !== lead.id)]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "commissions" },
+        (payload) => {
+          const row = payload.new as Record<string, any> | null;
+          if (!row) return;
+          const sale: Sale = {
+            id: row.id,
+            listingId: row.listing_id,
+            partnershipId: row.partnership_id,
+            leadId: row.lead_id ?? "",
+            amount: Number(row.sale_amount ?? row.amount ?? 0),
+            quantity: Number(row.quantity ?? 1),
+            commissionAmount: Number(row.amount ?? 0),
+            status: row.status,
+            buyerName: row.buyer_name ?? undefined,
+            deliveryStatus: row.delivery_status ?? undefined,
+            returnUntil: row.return_until?.slice(0, 10),
+            approvedAt: row.approved_at?.slice(0, 10),
+            paidAt: row.paid_at?.slice(0, 10),
+            sellerMarkedPaidAt: row.seller_marked_paid_at?.slice(0, 10),
+            partnerConfirmedPaidAt: row.partner_confirmed_paid_at?.slice(0, 10),
+            payoutNote: row.payout_note ?? undefined
+          };
+          setSales((items) => [sale, ...items.filter((item) => item.id !== sale.id)]);
         }
       )
       .subscribe();
@@ -1266,6 +1326,32 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
         if (liveUser && updatedSale) void updateSaleStatusLive(updatedSale);
       },
+      marketplaceHasMore,
+      marketplaceLoadingMore,
+      loadMoreMarketplace() {
+        if (!isSupabaseConfigured || !marketplaceHasMore || marketplaceLoadingMore) return;
+        setMarketplaceLoadingMore(true);
+        const PAGE = 60;
+        void loadMarketplacePage(mpOffsetRef.current, PAGE)
+          .then((page) => {
+            if (!page) return;
+            mpOffsetRef.current += page.listings.length;
+            if (page.listings.length < PAGE) setMarketplaceHasMore(false);
+            if (page.listings.length) {
+              setListings((items) => {
+                const seen = new Set(items.map((l) => l.id));
+                const fresh = page.listings.filter((l) => !seen.has(l.id));
+                return fresh.length ? [...items, ...fresh] : items;
+              });
+              setUsers((items) => {
+                const seen = new Set(items.map((u) => u.id));
+                const fresh = page.users.filter((u) => !seen.has(u.id));
+                return fresh.length ? [...items, ...fresh] : items;
+              });
+            }
+          })
+          .finally(() => setMarketplaceLoadingMore(false));
+      },
       findConversation(id) {
         return conversationById.get(id);
       },
@@ -1282,7 +1368,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return favorites.some((item) => item.listingId === listingId && item.userId === currentUser.id);
       }
     };
-  }, [authError, authReady, authUser, backendMode, conversations, favorites, leads, listings, messages, notifications, orders, partnerships, reports, reviews, sales, users]);
+  }, [authError, authReady, authUser, backendMode, conversations, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, messages, notifications, orders, partnerships, reports, reviews, sales, users]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
