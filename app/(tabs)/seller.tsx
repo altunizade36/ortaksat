@@ -6,7 +6,7 @@ import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 
 import { colors } from "@/components/colors";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
-import { commissionAmount, money } from "@/lib/format";
+import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
@@ -64,6 +64,7 @@ export default function SellerScreen() {
   } = useStore();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status !== "rejected");
   const myListingIds = new Set(myListings.map((listing) => listing.id));
   const myLeads = leads.filter((lead) => myListingIds.has(lead.listingId));
@@ -343,73 +344,77 @@ export default function SellerScreen() {
         const nextAction = sellerNextAction(listing, listingLeads, listingSales, pendingPartners);
         const hasSaleForLead = (leadId: string) => listingSales.some((sale) => sale.leadId === leadId);
 
+        const isExpanded = expandedId === listing.id;
+        const unpaidTotal = unpaidListingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
         return (
           <Card key={listing.id}>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-              <Image source={{ uri: listing.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 8, height: 64, width: 64 }} />
-              <View style={{ flex: 1, gap: 5 }}>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                  <Text selectable numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900", lineHeight: 22 }}>
+            {/* Kompakt üst satır (Sahibinden tarzı): görsel · başlık · fiyat · durum */}
+            <View style={{ flexDirection: "row", gap: 12 }}>
+              <Image source={{ uri: listing.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 88, width: 88 }} />
+              <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
+                <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 8 }}>
+                  <Text selectable numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900", lineHeight: 20 }}>
                     {displayText(listing.title)}
                   </Text>
                   <StatusPill label={listing.status === "active" ? "Aktif" : listing.status === "paused" ? "Pasif" : "Satıldı"} tone={listing.status === "active" ? "success" : "warning"} />
                 </View>
-                <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
-                  {translateCopy(displayText(listing.category), language)} · {displayText(listing.location)} · {translateCopy(listing.partnershipMode === "open" ? "Anında ortaklık" : listing.partnershipMode === "approval" ? "Onaylı ortaklık" : "Davetli ortaklık", language)}
+                <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
+                  {translateCopy(displayText(listing.category), language)} · {displayText(listing.location)}
                 </Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  <StatusPill label={nextAction.label} tone={nextAction.tone} />
-                  {pendingPartners > 0 ? <StatusPill label={`${pendingPartners} başvuru`} tone="warning" /> : null}
+                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(listing.price, listing.currency)}</Text>
+                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>ortak kazancı {moneyIn(commissionAmount(listing), listing.currency)}</Text>
+                  </View>
                 </View>
               </View>
             </View>
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <Metric label="Fiyat" value={money(listing.price)} />
-              <Metric label="Komisyon" value={money(commissionAmount(listing))} />
-              <Metric label="Stok" value={`${listing.stockCount}`} />
+
+            {/* Tek satır kompakt istatistik şeridi */}
+            <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 10, flexDirection: "row", flexWrap: "wrap", gap: 6, padding: 10 }}>
+              <SellerStat label="Stok" value={`${listing.stockCount}`} warn={listing.stockCount <= 3 && listing.status === "active"} />
+              <SellerStat label="Aktif ortak" value={`${activePartners}`} />
+              <SellerStat label="Talep" value={`${listingLeads.length}`} />
+              <SellerStat label="Satış" value={`${listingSales.length}`} />
+              <SellerStat label="Bekleyen ödeme" value={moneyIn(unpaidTotal, listing.currency)} warn={unpaidListingSales.length > 0} />
             </View>
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <Metric label="Ödeme vadesi" value={`${listing.commissionDueDays} gün`} />
-              <Metric label="İade penceresi" value={`${listing.returnWindowDays} gün`} />
+
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              <StatusPill label={nextAction.label} tone={nextAction.tone} />
+              {pendingPartners > 0 ? <StatusPill label={`${pendingPartners} başvuru`} tone="warning" /> : null}
             </View>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <InsightTile label="Dönüşüm" value={`%${conversionRate}`} tone={conversionRate >= 30 ? "success" : conversionRate > 0 ? "warning" : "neutral"} />
-              <InsightTile label="Aktif ortak" value={`${activePartners}`} tone={activePartners > 0 ? "success" : "warning"} />
-              <InsightTile label="Bekleyen ödeme" value={money(unpaidListingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0))} tone={unpaidListingSales.length ? "warning" : "neutral"} />
-            </View>
-            <SellerActionBand
-              listing={listing}
-              newLeadCount={listingLeads.filter((lead) => lead.status === "new").length}
-              nextAction={nextAction}
-              pendingPartners={pendingPartners}
-              unpaidSaleCount={unpaidListingSales.length}
-              updateListingStatus={updateListingStatus}
-              setFilter={setFilter}
-            />
+
+            {/* Kompakt aksiyon satırı */}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-                <PrimaryButton tone={listing.status === "active" ? "secondary" : "soft"} onPress={() => updateListingStatus(listing.id, listing.status === "active" ? "paused" : "active")}>
+                <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: listing.id } }} tone="soft" icon="pencil-outline">Düzenle</PrimaryButton>
+              </View>
+              <View style={{ flexBasis: "47%", flexGrow: 1 }}>
+                <PrimaryButton tone={listing.status === "active" ? "secondary" : "soft"} icon={listing.status === "active" ? "pause" : "play"} onPress={() => updateListingStatus(listing.id, listing.status === "active" ? "paused" : "active")}>
                   {listing.status === "active" ? "Pasife Al" : "Aktifleştir"}
                 </PrimaryButton>
               </View>
               <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-                <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: listing.id } }} tone="soft">Düzenle</PrimaryButton>
+                <PrimaryButton href={`/listing/${listing.id}`} tone="secondary" icon="eye-outline">Detay</PrimaryButton>
               </View>
               <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-                <PrimaryButton href={`/listing/${listing.id}`} tone="secondary">Detay</PrimaryButton>
-              </View>
-              <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-                <PrimaryButton tone="danger" onPress={() => confirmRemoveListing(listing.id)}>Kaldır</PrimaryButton>
+                <PrimaryButton tone="danger" icon="trash-can-outline" onPress={() => confirmRemoveListing(listing.id)}>Kaldır</PrimaryButton>
               </View>
             </View>
 
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              <StatusPill label={`${listingPartnerships.filter((item) => item.status === "active").length} aktif ortak`} />
-              <StatusPill label={`${listingLeads.length} talep`} />
-              <StatusPill label={`${listingSales.length} satış`} />
-              {listing.stockCount <= 3 && listing.status === "active" ? <StatusPill label="Az stok" tone="warning" /> : null}
-            </View>
+            {/* Talep & ödeme yönetimi: katlanır (varsayılan kapalı) */}
+            {listingLeads.length > 0 || listingSales.length > 0 ? (
+              <Pressable onPress={() => setExpandedId(isExpanded ? null : listing.id)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 11 }}>
+                <MaterialCommunityIcons name="clipboard-list-outline" size={18} color={colors.primaryDark} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "800" }}>Talep & ödeme yönetimi — {listingLeads.length} talep · {listingSales.length} satış</Text>
+                <MaterialCommunityIcons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
+              </Pressable>
+            ) : (
+              <Text selectable style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>Bu ilana henüz talep gelmedi. Ortak satışa açıkça paylaşarak ilk talebi al.</Text>
+            )}
 
+            {isExpanded ? (
+            <>
             <SectionTitle title="Gelen talepler" action={`${listingLeads.length}`} />
             {listingLeads.length === 0 ? <Text selectable style={{ color: colors.muted, fontSize: 14 }}>Bu ilana henüz talep gelmedi.</Text> : null}
             {listingLeads
@@ -461,8 +466,8 @@ export default function SellerScreen() {
             {listingSales.map((sale) => (
               <View key={sale.id} style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 10, paddingTop: 12 }}>
                 <View style={{ flexDirection: "row", gap: 10 }}>
-                  <Metric label="Satış" value={money(sale.amount)} />
-                  <Metric label="Komisyon" value={money(sale.commissionAmount)} />
+                  <Metric label="Satış" value={moneyIn(sale.amount, listing.currency)} />
+                  <Metric label="Komisyon" value={moneyIn(sale.commissionAmount, listing.currency)} />
                 </View>
                 <StatusPill label={saleLabels[sale.status]} tone={sale.status === "paid" ? "success" : "warning"} />
                 <View style={{ flexDirection: "row", gap: 10 }}>
@@ -486,6 +491,8 @@ export default function SellerScreen() {
                 <ReviewPrompt sale={sale} canReviewSale={canReviewSale} createSaleReview={createSaleReview} />
               </View>
             ))}
+            </>
+            ) : null}
           </Card>
         );
       })}
@@ -496,6 +503,15 @@ export default function SellerScreen() {
 
 
 
+
+function SellerStat({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
+  return (
+    <View style={{ gap: 1, minWidth: 66 }}>
+      <Text numberOfLines={1} style={{ color: warn ? colors.accent : colors.ink, fontSize: 14, fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{label}</Text>
+    </View>
+  );
+}
 
 function ReviewPrompt({
   canReviewSale,
