@@ -14,7 +14,7 @@ import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadMessageAttachment } from "@/lib/live-service";
 import { useTypingIndicator } from "@/lib/use-typing";
-import { useIsWideWeb } from "@/lib/layout";
+import { useContentWidth, useIsWideWeb } from "@/lib/layout";
 import { searchKey, shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Conversation, Lead, Message, Partnership } from "@/lib/types";
@@ -69,6 +69,9 @@ function MessagesScreenInner() {
   const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, notifications, partnerships, sales, sendConversationMessage } = useStore();
   const { t } = useLanguage();
   const isWideWeb = useIsWideWeb();
+  const contentWidth = useContentWidth();
+  // Orta genişlikte (tablet/yatay telefon) 3. panel sohbeti sıkıştırır; ≥1040px'te göster.
+  const roomForContextPanel = contentWidth >= 1040;
   const params = useLocalSearchParams<{ c?: string }>();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<InboxFilter>("all");
@@ -363,8 +366,8 @@ function MessagesScreenInner() {
             )}
           </View>
 
-          {/* Column 3: listing + seller panel */}
-          {activeConversation && activeContext ? (
+          {/* Column 3: listing + seller panel — orta genişlikte gizlenir (sohbete yer aç). */}
+          {activeConversation && activeContext && roomForContextPanel ? (
             <ScrollView style={{ backgroundColor: colors.surface, borderLeftColor: colors.line, borderLeftWidth: 1, maxWidth: 320, minWidth: 280, width: 300 }} contentContainerStyle={{ gap: 14, padding: 16 }} showsVerticalScrollIndicator={false}>
               {/* Seller header */}
               <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
