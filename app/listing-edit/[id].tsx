@@ -6,6 +6,7 @@ import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { listingCategories } from "@/lib/categories";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -56,7 +57,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [instagramText, setInstagramText] = useState(listing.shareTemplates?.instagram ?? "");
   const [whatsappText, setWhatsappText] = useState(listing.shareTemplates?.whatsapp ?? "");
   const [tiktokText, setTiktokText] = useState(listing.shareTemplates?.tiktok ?? "");
-  const [adAssets, setAdAssets] = useState((listing.adAssets ?? []).join("\n"));
+  const [adAssets, setAdAssets] = useState<string[]>(listing.adAssets ?? []);
   const [partnerRules, setPartnerRules] = useState(listing.partnerRules.join("\n"));
   const [contactMethod, setContactMethod] = useState<ContactMethod>(listing.contactMethod);
   const [saving, setSaving] = useState(false);
@@ -80,6 +81,18 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     }
   }
 
+  async function pickAdAssets() {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) {
+      Alert.alert("İzin gerekli", "Ek fotoğraf seçmek için galeri izni vermelisin.");
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.82, selectionLimit: 4 });
+    if (result.canceled) return;
+    const uris = result.assets.map((a) => a.uri).filter(Boolean);
+    setAdAssets((s) => [...s, ...uris].slice(0, 4));
+  }
+
   async function submit() {
     const parsedPrice = Number(price);
     const parsedCommission = Number(commissionValue);
@@ -90,7 +103,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     const salesPitch = pitch.split("\n").map((item) => item.trim()).filter(Boolean);
     const parsedRules = partnerRules.split("\n").map((item) => item.trim()).filter(Boolean);
     const parsedTags = tags.split(",").map((item) => item.trim()).filter(Boolean);
-    const parsedAdAssets = adAssets.split("\n").map((item) => item.trim()).filter(Boolean);
+    const parsedAdAssets = adAssets.slice(0, 4);
     const shareTemplates = buildShareTemplates({
       title,
       price: parsedPrice,
@@ -118,12 +131,15 @@ function ListingEditForm({ listing }: { listing: Listing }) {
 
     setSaving(true);
     const uploadedImage = isLiveAccount ? await uploadListingImage(image.trim() || fallbackImage, currentUser.id) : image.trim();
+    const uploadedAssets = isLiveAccount
+      ? await Promise.all(parsedAdAssets.map((uri) => uploadListingImage(uri, currentUser.id)))
+      : parsedAdAssets;
     const ok = await updateListing(listing.id, {
       title: title.trim(),
       description: description.trim(),
       salesPitch: salesPitch.length > 0 ? salesPitch : ["Ürünün ana faydasını kısa ve net anlat."],
       shareTemplates,
-      adAssets: parsedAdAssets,
+      adAssets: uploadedAssets,
       tags: parsedTags.length > 0 ? parsedTags : ["ortak satış"],
       price: parsedPrice,
       commissionType,
@@ -236,7 +252,25 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           <Field label="Instagram açıklaması" value={instagramText} onChangeText={setInstagramText} multiline />
           <Field label="WhatsApp paylaşım mesajı" value={whatsappText} onChangeText={setWhatsappText} multiline />
           <Field label="Kısa TikTok açıklaması" value={tiktokText} onChangeText={setTiktokText} multiline />
-          <Field label="Hazır reklam görselleri adres listesi" value={adAssets} onChangeText={setAdAssets} multiline />
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Ek görseller (en fazla 4)</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+              {adAssets.map((img, i) => (
+                <View key={img + i} style={{ borderColor: colors.line, borderRadius: 10, borderWidth: 1, height: 84, overflow: "hidden", width: 84 }}>
+                  <SafeRemoteImage uri={img} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+                  <Pressable onPress={() => setAdAssets((s) => s.filter((_, idx) => idx !== i))} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, height: 22, justifyContent: "center", position: "absolute", right: 4, top: 4, width: 22 }}>
+                    <MaterialCommunityIcons name="close" size={13} color="#FFFFFF" />
+                  </Pressable>
+                </View>
+              ))}
+              {adAssets.length < 4 ? (
+                <Pressable onPress={() => void pickAdAssets()} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderStyle: "dashed", borderWidth: 1.5, gap: 3, height: 84, justifyContent: "center", width: 84 }}>
+                  <MaterialCommunityIcons name="image-plus" size={22} color={colors.primary} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>Ekle</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
           <Field label="Ortak satış kuralları" value={partnerRules} onChangeText={setPartnerRules} multiline />
           <Field label="Teslimat notu" value={deliveryNote} onChangeText={setDeliveryNote} multiline />
         </Card>
