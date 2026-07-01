@@ -160,7 +160,18 @@ export function AppHeader() {
 }
 
 function MaintenanceBanner() {
-  const { platformSettings, currentUser } = useStore();
+  const { platformSettings, currentUser, isSuspended } = useStore();
+  // Askıya alınan kullanıcıya her sayfada net uyarı.
+  if (isSuspended) {
+    return (
+      <View style={{ alignItems: "center", backgroundColor: colors.accent, flexDirection: "row", gap: 8, justifyContent: "center", paddingHorizontal: 16, paddingVertical: 7 }}>
+        <MaterialCommunityIcons name="account-cancel-outline" size={15} color="#FFFFFF" />
+        <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800", textAlign: "center" }}>
+          Hesabın askıya alındı. İlan verme, mesajlaşma ve ortaklık işlemleri geçici olarak kapalı. Destek için Yasal & Destek sayfasına bakabilirsin.
+        </Text>
+      </View>
+    );
+  }
   if (!platformSettings.maintenanceMode) return null;
   const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
   return (

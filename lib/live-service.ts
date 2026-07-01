@@ -29,6 +29,13 @@ export async function updateUserStatusLive(userId: string, status: string) {
   if (error) console.warn("User status update failed", error);
 }
 
+/** Ilani kalici siler (sahibi veya admin; RLS uygular). Iliskili kayitlar FK cascade ile temizlenir. */
+export async function deleteListingLive(listingId: string) {
+  if (!supabase) return;
+  const { error } = await supabase.from("listings").delete().eq("id", listingId);
+  if (error) console.warn("Listing delete failed", error);
+}
+
 /** Platform ayarini gunceller (yalniz admin; RLS uygular). */
 export async function updatePlatformSettingLive(key: string, value: boolean) {
   if (!supabase) return;

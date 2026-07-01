@@ -13,8 +13,9 @@ import { useStore } from "@/lib/use-store";
  */
 export default function CreateListingScreen() {
   const isWideWeb = useIsWideWeb();
-  const { isAuthenticated, platformSettings, emailVerified } = useStore();
+  const { isAuthenticated, platformSettings, emailVerified, isSuspended } = useStore();
   if (!isAuthenticated) return <AuthRequired title="İlan vermek için giriş yapın" body="Ücretsiz hesap aç, ürününü yüzlerce ortağa ulaştır. Gezmeye giriş gerekmez; ilan vermek için gerekir." icon="store-plus-outline" />;
+  if (isSuspended) return <AuthRequired title="Hesabın askıya alındı" body="Hesabın askıda olduğu için ilan veremezsin. İşlem yapabilmek için Yasal & Destek üzerinden bizimle iletişime geçebilirsin." icon="account-cancel-outline" />;
   // Admin "e-posta doğrulama zorunlu" açıksa, doğrulanmamış hesap ilan veremez.
   if (platformSettings.requireEmailVerification && !emailVerified) {
     return <AuthRequired title="E-posta doğrulaması gerekli" body="İlan verebilmek için e-posta adresini doğrulaman gerekiyor. Kayıt sırasında gönderilen doğrulama bağlantısına tıkla, ardından tekrar giriş yap." icon="email-alert-outline" />;

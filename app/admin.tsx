@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, Text, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
@@ -74,7 +74,7 @@ function AdminScreenInner() {
   const {
     listings, users, sales, partnerships, leads, conversations, messages, notifications,
     categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
-    updateListingStatus, findUser, signOut, currentUser, reports, updateReportStatus,
+    updateListingStatus, deleteListing, findUser, signOut, currentUser, reports, updateReportStatus,
     platformSettings, updatePlatformSetting, setUserRole, setUserStatus
   } = useStore();
   const canManageUsers = currentUser.role === "admin" || currentUser.role === "super_admin";
@@ -190,10 +190,15 @@ function AdminScreenInner() {
                       {u.verifiedInstagram ? <MaterialCommunityIcons name="instagram" size={15} color={colors.violet} /> : null}
                     </View>,
                     canManageUsers && !isSelf ? (
-                      <Pressable onPress={() => setUserStatus(u.id, suspended ? "active" : "suspended")} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: suspended ? colors.successSoft : colors.accentSoft, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
-                        <MaterialCommunityIcons name={suspended ? "account-check-outline" : "account-cancel-outline"} size={14} color={suspended ? colors.success : colors.accent} />
-                        <Text style={{ color: suspended ? colors.success : colors.accent, fontSize: 11, fontWeight: "800" }}>{suspended ? "Aktifleştir" : "Askıya al"}</Text>
-                      </Pressable>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                        <Pressable onPress={() => setUserStatus(u.id, suspended ? "active" : "suspended")} style={{ alignItems: "center", backgroundColor: suspended ? colors.successSoft : colors.accentSoft, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
+                          <MaterialCommunityIcons name={suspended ? "account-check-outline" : "account-cancel-outline"} size={14} color={suspended ? colors.success : colors.accent} />
+                          <Text style={{ color: suspended ? colors.success : colors.accent, fontSize: 11, fontWeight: "800" }}>{suspended ? "Aktifleştir" : "Askıya al"}</Text>
+                        </Pressable>
+                        <Pressable onPress={() => confirmAction(`${u.name} hesabı silinsin mi? Kullanıcı erişimi kapatılır.`, () => setUserStatus(u.id, "deleted"))} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 }}>
+                          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "800" }}>Sil</Text>
+                        </Pressable>
+                      </View>
                     ) : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>—</Text>
                   ]} />
                 );
@@ -241,7 +246,8 @@ function AdminScreenInner() {
                   <View style={{ alignSelf: "flex-start", backgroundColor: l.status === "active" ? colors.successSoft : l.status === "rejected" ? colors.accentSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: l.status === "active" ? colors.success : l.status === "rejected" ? colors.accent : colors.muted, fontSize: 10.5, fontWeight: "900" }}>{l.status === "active" ? "Yayında" : l.status === "rejected" ? "Reddedildi" : l.status === "pending_review" ? "İncelemede" : l.status}</Text></View>,
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     <Pressable onPress={() => updateListingStatus(l.id, l.status === "active" ? "paused" : "active")}><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{l.status === "active" ? "Kaldır" : "Yayınla"}</Text></Pressable>
-                    {l.status !== "rejected" ? <Pressable onPress={() => updateListingStatus(l.id, "rejected")}><Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "800" }}>Sil</Text></Pressable> : null}
+                    {l.status !== "rejected" ? <Pressable onPress={() => updateListingStatus(l.id, "rejected")}><Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "800" }}>Reddet</Text></Pressable> : null}
+                    <Pressable onPress={() => confirmAction(`"${l.title}" ilanı kalıcı olarak silinsin mi? Bu işlem geri alınamaz.`, () => deleteListing(l.id))}><Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "900" }}>Kalıcı Sil</Text></Pressable>
                   </View>
                 ]} />
               ))}
@@ -490,6 +496,18 @@ function AdminScreenInner() {
 // Şikayet henüz işlem bekliyor mu (açık/incelemede).
 function isOpenReport(r: { status: string }) {
   return r.status === "open" || r.status === "reviewing";
+}
+
+// Yıkıcı işlem onayı: web'de window.confirm, native'de Alert.
+function confirmAction(message: string, onYes: () => void) {
+  if (Platform.OS === "web" && typeof window !== "undefined") {
+    if (window.confirm(message)) onYes();
+  } else {
+    Alert.alert("Onay", message, [
+      { text: "Vazgeç", style: "cancel" },
+      { text: "Evet", style: "destructive", onPress: onYes }
+    ]);
+  }
 }
 
 // ---- pieces --------------------------------------------------------------

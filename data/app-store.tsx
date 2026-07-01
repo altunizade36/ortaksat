@@ -44,6 +44,7 @@ import {
   updateProfileLive,
   recordLegalConsentLive,
   requestAccountDeletionLive,
+  deleteListingLive,
   updatePlatformSettingLive,
   updateUserRoleLive,
   updateUserStatusLive,
@@ -147,6 +148,7 @@ type AppStore = {
   platformSettings: PlatformSettings;
   updatePlatformSetting: (key: keyof PlatformSettings, value: boolean) => void;
   emailVerified: boolean;
+  isSuspended: boolean;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
   signUpWithEmail: (input: { email: string; password: string; name: string }) => Promise<boolean>;
   resetPasswordWithEmail: (email: string) => Promise<boolean>;
@@ -184,6 +186,7 @@ type AppStore = {
   setLocationSuggestionStatus: (id: string, status: SuggestionStatus) => void;
   updateLeadStatus: (leadId: string, status: LeadStatus) => void;
   updateListingStatus: (listingId: string, status: Listing["status"]) => void;
+  deleteListing: (listingId: string) => void;
   setUserRole: (userId: string, role: UserRole) => void;
   setUserStatus: (userId: string, status: NonNullable<User["status"]>) => void;
   updateSaleStatus: (saleId: string, status: SaleStatus) => void;
@@ -392,7 +395,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
               listingCount: 0,
               successfulSales: 0,
               responseRate: data.response_rate ?? 0,
-              role: data.role ?? "user"
+              role: data.role ?? "user",
+              status: (data.status as User["status"]) ?? "active"
             }
           : fallback;
 
@@ -614,6 +618,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
     const currentUser = authUser ?? (isSupabaseConfigured ? ANON_USER : (users.find((user) => user.id === currentUserId) ?? users[0] ?? ANON_USER));
     const liveUser = isLiveUser(currentUser);
     const isAuthenticated = isSupabaseConfigured ? authUser != null : true;
+    // Askiya alinmis kullanici hicbir islem (ilan/mesaj/ortaklik/talep/favori)
+    // yapamaz; RLS'e ek istemci koruması.
+    const isSuspended = currentUser.status === "suspended" || currentUser.status === "deleted";
 
     // O(1) arama için id->kayit haritalari. find* bunlari kullanir; boylece
     // liste render'larinda (binlerce kart) O(n) lineer arama -> O(1) olur.
@@ -622,6 +629,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
     const conversationById = new Map(conversations.map((c) => [c.id, c]));
 
     function createOrReuseConversation(listingId: string, receiverId: string, body?: string) {
+      if (isSuspended) return undefined;
       const listing = listings.find((item) => item.id === listingId);
       if (!listing || receiverId === currentUser.id) return undefined;
       const existing = conversations.find(
@@ -1025,6 +1033,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return true;
       },
       createLead(input) {
+        if (isSuspended) { setAuthError("Hesabın askıya alındığı için işlem yapamazsın."); return undefined; }
         const listing = listings.find((item) => item.id === input.listingId);
         const partnership = partnerships.find((item) => item.id === input.partnershipId && item.listingId === input.listingId);
         if (!listing || listing.status !== "active" || !partnership || partnership.status !== "active") {
@@ -1163,6 +1172,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return sale;
       },
       joinListing(listingId, input) {
+        if (isSuspended) { setAuthError("Hesabın askıya alındığı için işlem yapamazsın."); return undefined; }
         const listing = listings.find((item) => item.id === listingId);
         if (!listing || listing.ownerId === currentUser.id || listing.status !== "active") {
           setAuthError("Bu ilana ortak olunamaz. İlan pasif olabilir veya kendi ilanın olabilir.");
@@ -1267,6 +1277,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         createOrReuseConversation(listingId, receiverId, body);
       },
       sendConversationMessage(conversationId, body, attachment) {
+        if (isSuspended) return;
         const trimmed = body.trim();
         if (!trimmed && !attachment) return;
         const conversation = conversations.find((item) => item.id === conversationId);
@@ -1337,6 +1348,13 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status } : item)));
         if (liveUser) void updateListingStatusLive({ ...listing, status });
       },
+      deleteListing(listingId) {
+        const listing = listings.find((item) => item.id === listingId);
+        const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+        if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return;
+        setListings((items) => items.filter((item) => item.id !== listingId));
+        if (liveUser) void deleteListingLive(listingId);
+      },
       setUserRole(userId, role) {
         const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
         if (!isAdmin || userId === currentUser.id) return; // kendi rolunu degistirme
@@ -1391,6 +1409,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       platformSettings,
       emailVerified,
+      isSuspended,
       updatePlatformSetting(key, value) {
         if (currentUser.role !== "admin" && currentUser.role !== "super_admin") return;
         setPlatformSettings((prev) => ({ ...prev, [key]: value }));
