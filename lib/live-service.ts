@@ -109,34 +109,72 @@ const ALLOWED_VIDEO_TYPES: Record<string, string> = { mp4: "video/mp4", mov: "vi
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_MEDIA_BYTES = 10 * 1024 * 1024; // 10 MB (video dahil; bucket limiti)
 
+// Web'de görseli canvas ile en fazla maxDim px'e küçültüp JPEG olarak sıkıştırır.
+// Binlerce ürün için storage/bandwidth'i düşük tutar. Native'de blob aynen döner.
+async function compressImageBlob(blob: Blob, maxDim = 1400, quality = 0.82): Promise<{ blob: Blob; contentType: string }> {
+  try {
+    if (typeof document === "undefined" || typeof createImageBitmap === "undefined") {
+      return { blob, contentType: blob.type || "image/jpeg" };
+    }
+    const bitmap = await createImageBitmap(blob);
+    const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
+    const w = Math.max(1, Math.round(bitmap.width * scale));
+    const h = Math.max(1, Math.round(bitmap.height * scale));
+    const canvas = document.createElement("canvas");
+    canvas.width = w;
+    canvas.height = h;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return { blob, contentType: blob.type || "image/jpeg" };
+    ctx.drawImage(bitmap, 0, 0, w, h);
+    const out = await new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", quality));
+    if (out && out.size > 0) return { blob: out, contentType: "image/jpeg" };
+  } catch (e) {
+    console.warn("Görsel sıkıştırma atlandı:", (e as Error)?.message);
+  }
+  return { blob, contentType: blob.type || "image/jpeg" };
+}
+
+// Görseli Supabase storage'a yükler ve public URL döndürür. Web (blob:/data:) ve
+// native (file:) URI'lerini destekler. Zaten yüklü http(s) URL'leri aynen döner.
 export async function uploadListingImage(uri: string, userId: string) {
-  if (!supabase || !uuidPattern.test(userId) || !uri.startsWith("file")) return uri;
+  if (!supabase || !uuidPattern.test(userId) || !uri) return uri;
+  // Zaten uzak bir URL ise (ör. Supabase public URL veya stok görsel) tekrar yükleme.
+  if (/^https?:\/\//i.test(uri)) return uri;
 
   const extension = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
-  const contentType = ALLOWED_IMAGE_TYPES[extension] ?? ALLOWED_VIDEO_TYPES[extension];
-  if (!contentType) {
-    console.warn("Reddedilen dosya tipi:", extension);
-    return uri; // izinsiz tip: yükleme yapma, orijinal uri ile devam (RLS/bucket de reddeder)
-  }
   const isVideo = Boolean(ALLOWED_VIDEO_TYPES[extension]);
-  const path = `${userId}/${makeUuid()}.${extension}`;
-  const response = await fetch(uri);
-  const body = await response.blob();
+  let contentType = ALLOWED_IMAGE_TYPES[extension] ?? ALLOWED_VIDEO_TYPES[extension] ?? "image/jpeg";
+
+  let response: Response;
+  try {
+    response = await fetch(uri);
+  } catch (e) {
+    console.warn("Görsel okunamadı:", (e as Error)?.message);
+    return uri;
+  }
+  let body = await response.blob();
+
+  // Görselleri (video değil) sıkıştır/ölçekle.
+  let ext = extension;
+  if (!isVideo) {
+    const compressed = await compressImageBlob(body);
+    body = compressed.blob;
+    contentType = compressed.contentType;
+    if (contentType === "image/jpeg") ext = "jpg";
+  }
+
   const limit = isVideo ? MAX_MEDIA_BYTES : MAX_IMAGE_BYTES;
   if (body.size > limit) {
     console.warn(`Dosya çok büyük (${Math.round(body.size / 1024)}KB > ${Math.round(limit / 1024)}KB)`);
-    return uri; // boyut aşımı: yükleme yapma
+    return uri;
   }
-  const { error } = await supabase.storage.from("listing-images").upload(path, body, {
-    contentType,
-    upsert: false
-  });
 
+  const path = `${userId}/${makeUuid()}.${ext}`;
+  const { error } = await supabase.storage.from("listing-images").upload(path, body, { contentType, upsert: false });
   if (error) {
     console.warn("Supabase listing image upload failed", error);
     return uri;
   }
-
   return supabase.storage.from("listing-images").getPublicUrl(path).data.publicUrl;
 }
 

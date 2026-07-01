@@ -12,7 +12,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
-type LegalTab = "kvkk" | "terms" | "platform" | "cookies" | "commission" | "prohibited" | "account";
+type LegalTab = "kvkk" | "terms" | "platform" | "guide" | "cookies" | "commission" | "prohibited" | "account";
 
 export default function LegalScreen() {
   const { language } = useLanguage();
@@ -63,6 +63,7 @@ export default function LegalScreen() {
       { key: "kvkk", icon: "shield-lock-outline", label: "KVKK / Gizlilik" },
       { key: "terms", icon: "file-document-outline", label: "Kullanım Şartları" },
       { key: "platform", icon: "swap-horizontal", label: "Mesafeli / Platform" },
+      { key: "guide", icon: "shield-check-outline", label: "Güvenli Alışveriş" },
       { key: "cookies", icon: "cookie-outline", label: "Çerez Politikası" },
       { key: "commission", icon: "chart-timeline-variant", label: "Komisyon Kuralları" },
       { key: "prohibited", icon: "cancel", label: "Yasaklı İçerikler" },
@@ -94,6 +95,16 @@ export default function LegalScreen() {
       "OrtakSat ödeme almaz, para tutmaz, komisyon kesmez, cüzdan/bakiye/emanet (escrow) sağlamaz ve otomatik para dağıtmaz. İlanlarda gösterilen fiyat ve komisyon yalnızca taraflar arası BİLGİ amaçlıdır.",
       "Ödeme ve teslimat, tarafların kendi aralarında anlaştıkları yöntemle, kendi sorumluluklarında gerçekleşir. Doğabilecek anlaşmazlıklardan OrtakSat sorumlu tutulamaz; platform yalnızca ilan ve iletişim altyapısı sunar.",
       "Tüketici, 6502 sayılı Kanun kapsamındaki haklarını doğrudan satıcıya karşı kullanır. Şüpheli/aykırı durumları Güven Merkezi üzerinden bildirebilirsiniz."
+    ];
+    const guideSafe = [
+      "Ödemeyi ürünü görmeden/teslim almadan yapmayın. Kapıda ödeme, elden teslim veya güvendiğiniz bir yöntemi tercih edin. OrtakSat ödeme almaz; para tamamen sizin aranızda el değiştirir.",
+      "Ön ödeme / kapora konusunda dikkatli olun. Satıcıyı tanımıyorsanız, ürünü görmeden büyük tutarlarda ön ödeme yapmayın. Acele ettiren, 'hemen kapora at' diyen kişilere şüpheyle yaklaşın.",
+      "Komisyonu YAZILI netleştirin. Ortak satıcıysanız; komisyon oranını, ne zaman ve nasıl ödeneceğini satıcıyla mesajlaşma üzerinden yazılı olarak anlaşın. Sözlü anlaşma ispatlanamaz.",
+      "İletişimi platform içinde tutun. Anlaşma, fiyat ve komisyon konuşmalarını OrtakSat mesajlaşmasında yapın; bir sorun olursa kayıt işinize yarar.",
+      "Doğrulanmış satıcıları ve puanları kontrol edin. Profil doğrulaması, güven puanı ve gerçek yorumlar; karşı tarafın güvenilirliği hakkında fikir verir.",
+      "Gerçek dışı fiyatlara dikkat. Piyasanın çok altında 'kaçırılmayacak fırsat' çoğu zaman dolandırıcılık işaretidir.",
+      "Kişisel/finansal bilgini paylaşma. Kart bilgisi, şifre, SMS kodu kimseyle paylaşılmaz. OrtakSat bunları asla istemez.",
+      "Şüpheli durumu bildir. Bir ilan ya da kullanıcı seni rahatsız ettiyse, ilandaki/profildeki 'Şikayet Et' ile Güven Merkezi'ne bildir."
     ];
     const cookieText = [
       "OrtakSat, yalnızca hizmetin çalışması için gerekli temel çerez/depolama yöntemlerini kullanır: oturum (giriş) bilgisini saklamak ve dil/tercih ayarlarını hatırlamak.",
@@ -190,6 +201,18 @@ export default function LegalScreen() {
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Mesafeli Satış / Platform Aracı Hizmet Açıklaması</Text>
                   {platformText.map((p, i) => <Text key={i} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{p}</Text>)}
                   <LegalDisclaimer />
+                </View>
+              ) : null}
+              {legalTab === "guide" ? (
+                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Güvenli Alışveriş Rehberi</Text>
+                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 20 }}>OrtakSat ödeme/kargo tarafı değildir. Alışverişini güvende tutmak için:</Text>
+                  {guideSafe.map((c) => (
+                    <View key={c} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
+                      <MaterialCommunityIcons name="shield-check" size={18} color={colors.success} style={{ marginTop: 1 }} />
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{c}</Text>
+                    </View>
+                  ))}
                 </View>
               ) : null}
               {legalTab === "cookies" ? (

@@ -12,6 +12,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { money } from "@/lib/format";
 import { formatLocation, getProvince } from "@/lib/locations";
+import { uploadListingImage } from "@/lib/live-service";
 import { moderateListingText, MODERATION_MESSAGES } from "@/lib/moderation";
 import { rateLimit } from "@/lib/rate-limit";
 import type { CommissionType, PartnershipMode } from "@/lib/types";
@@ -25,7 +26,7 @@ type Values = Record<string, string | boolean>;
 
 export function DesktopCreateFlow() {
   const router = useRouter();
-  const { createListing, addCategorySuggestion, addLocationSuggestion } = useStore();
+  const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser } = useStore();
   const [step, setStep] = useState(0);
   const [path, setPath] = useState<CategoryNode[]>([]);
   const [values, setValues] = useState<Values>({});
@@ -67,7 +68,11 @@ export function DesktopCreateFlow() {
       .filter((a) => !(typeof a.fileSize === "number" && a.fileSize > MAX_BYTES))
       .map((a) => a.uri)
       .filter(Boolean);
-    setImages((s) => [...s, ...uris].slice(0, 10));
+    setImages((s) => {
+      const next = [...s, ...uris].slice(0, 5); // en fazla 5 görsel
+      if (s.length + uris.length > 5) setError("En fazla 5 görsel ekleyebilirsin. Fazlası eklenmedi.");
+      return next;
+    });
   }
 
   const canNext = () => {
@@ -133,12 +138,20 @@ export function DesktopCreateFlow() {
         .map((f) => `${f.label}: ${values[f.key]}${f.suffix ? " " + f.suffix : ""}`);
       const boolLines = schema.fields.filter((f) => f.type === "bool" && values[f.key] === true).map((f) => `${f.label}: Evet`);
 
+      // Görselleri Supabase storage'a yükle (web'de otomatik ölçekleme+sıkıştırma).
+      // En fazla 5; yerel URI'ler public URL'e döner, böylece herkes görebilir.
+      const pickedImages = images.slice(0, 5);
+      const uploadedImages = currentUser?.id
+        ? await Promise.all(pickedImages.map((uri) => uploadListingImage(uri, currentUser.id)))
+        : pickedImages;
+      const cover = uploadedImages[0] || coverImage;
+
       createListing({
         title: v.clean.title || leafLabel,
         description: description ? v.clean.description : "Açıklama eklenmedi.",
         salesPitch: detailLines.slice(0, 4).length ? detailLines.slice(0, 4) : ["Ürünün ana faydasını kısa ve net anlat."],
         shareTemplates: { instagram: "", whatsapp: "", tiktok: "" },
-        adAssets: images.slice(1, 5),
+        adAssets: uploadedImages.slice(1, 5),
         tags: tags.length ? tags : ["ortak satış"],
         price,
         commissionType,
@@ -150,7 +163,7 @@ export function DesktopCreateFlow() {
         districtId: loc.districtId,
         addressVisibility: visibility,
         locationNote: loc.neighborhood?.trim() || undefined,
-        image: coverImage,
+        image: cover,
         stockCount: Number(values.stock) || 1,
         minPartnerRating: 4,
         commissionDueDays: 3,
@@ -256,7 +269,14 @@ export function DesktopCreateFlow() {
                   <Pressable onPress={() => setImages((s) => s.filter((_, idx) => idx !== i))} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, height: 24, justifyContent: "center", position: "absolute", right: 6, top: 6, width: 24 }}>
                     <MaterialCommunityIcons name="close" size={15} color="#FFFFFF" />
                   </Pressable>
-                  {i === 0 ? <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 6, paddingHorizontal: 7, paddingVertical: 2, position: "absolute", top: 6 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>Kapak</Text></View> : null}
+                  {i === 0 ? (
+                    <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 6, paddingHorizontal: 7, paddingVertical: 2, position: "absolute", top: 6 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>Kapak</Text></View>
+                  ) : (
+                    <Pressable onPress={() => setImages((s) => [s[i], ...s.filter((_, idx) => idx !== i)])} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 6, bottom: 6, flexDirection: "row", gap: 4, left: 6, paddingHorizontal: 7, paddingVertical: 3, position: "absolute" }}>
+                      <MaterialCommunityIcons name="star-outline" size={11} color="#FFFFFF" />
+                      <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>Kapak yap</Text>
+                    </Pressable>
+                  )}
                 </View>
               ))}
             </View>
