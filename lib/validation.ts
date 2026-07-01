@@ -12,9 +12,9 @@ export type ValidationResult = { ok: boolean; errors: FieldError[] };
 // Alan uzunluk sınırları (DB ile uyumlu, makul üst sınırlar).
 export const LIMITS = {
   name: { min: 2, max: 80 },
-  title: { min: 5, max: 120 },
+  title: { min: 10, max: 70 },
   description: { min: 20, max: 4000 },
-  price: { min: 1, max: 100_000_000 },
+  price: { min: 1, max: 10_000_000_000 },
   message: { min: 1, max: 2000 },
   supportSubject: { min: 3, max: 120 },
   supportMessage: { min: 10, max: 2000 },
@@ -24,6 +24,14 @@ export const LIMITS = {
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 // TR telefon: 10-13 hane (başında +90 veya 0 olabilir)
 const PHONE_RE = /^(\+?90)?0?5\d{9}$/;
+
+/** TR fiyat metnini sayıya çevirir: nokta = binlik ayırıcı, virgül = ondalık. "1.500.000" -> 1500000. */
+export function parseTrPrice(raw: string | number): number {
+  if (typeof raw === "number") return raw;
+  const cleaned = String(raw).replace(/[^\d.,]/g, "").replace(/\./g, "").replace(",", ".");
+  const n = Number(cleaned);
+  return Number.isFinite(n) ? n : 0;
+}
 
 export function isValidEmail(email: string): boolean {
   return EMAIL_RE.test(sanitizeEmail(email));
@@ -54,7 +62,7 @@ export function validateListing(input: {
   const errors: FieldError[] = [];
   const title = sanitizeLine(input.title, LIMITS.title.max);
   const description = sanitizeMultiline(input.description, LIMITS.description.max);
-  const price = typeof input.price === "string" ? Number(input.price.replace(/[^\d.,]/g, "").replace(",", ".")) : input.price;
+  const price = typeof input.price === "string" ? parseTrPrice(input.price) : input.price;
 
   const te = lenError("title", title, LIMITS.title.min, LIMITS.title.max, "Başlık");
   if (te) errors.push(te);

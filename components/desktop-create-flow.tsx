@@ -17,7 +17,7 @@ import { categoryRisk, moderateListingText, MODERATION_MESSAGES, scanTextLocal }
 import { rateLimit } from "@/lib/rate-limit";
 import type { CommissionType, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
-import { validateListing } from "@/lib/validation";
+import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 
 const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon & Ortak Satış", "Önizleme & Yayınla"];
 const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
@@ -109,8 +109,8 @@ export function DesktopCreateFlow() {
     const description = String(values.description ?? "").trim();
     const descRequired = schema.fields.some((f) => f.key === "description" && f.required);
 
-    // Merkezi doğrulama (başlık/açıklama/fiyat).
-    const v = validateListing({ title, description, price: Number(values.price) || 0 });
+    // Merkezi doğrulama (başlık/açıklama/fiyat). Fiyat TR formatıyla ("1.500.000") ayrıştırılır.
+    const v = validateListing({ title, description, price: parseTrPrice(String(values.price ?? "")) });
     const errs = v.errors.filter((e) => !(e.field === "description" && !descRequired && !description));
     if (errs.length) {
       setError(errs[0].message);
@@ -376,7 +376,7 @@ export function DesktopCreateFlow() {
                 <View style={{ gap: 6, padding: 14 }}>
                   <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{path.map((p) => p.label).join(" › ")}</Text>
                   <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{String(values.title ?? leafLabel)}</Text>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{money(Number(values.price) || 0)}</Text>
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{money(parseTrPrice(String(values.price ?? "")))}</Text>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{formatLocation(loc, visibility) || "Konum belirtilmedi"}</Text>
                   <View style={{ alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
                     <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{commissionType === "rate" ? `%${commissionValue} komisyon` : `${money(Number(commissionValue) || 0)} komisyon`}</Text>
@@ -460,9 +460,15 @@ export function DesktopCreateFlow() {
 
 function DField({ field, value, onChange }: { field: FieldDef; value: string | boolean | undefined; onChange: (v: string | boolean) => void }) {
   const wide = field.type === "textarea";
+  // Başlık/açıklama için karakter standardı (Sahibinden benzeri) + canlı sayaç.
+  const charLimit = field.key === "title" ? LIMITS.title : field.key === "description" ? LIMITS.description : null;
+  const charLen = charLimit ? String(value ?? "").length : 0;
   return (
     <View style={{ flexBasis: wide ? "100%" : 230, flexGrow: 1, gap: 6, minWidth: 0 }}>
-      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}</Text>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}</Text>
+        {charLimit ? <Text style={{ color: charLen > charLimit.max || (charLen > 0 && charLen < charLimit.min) ? colors.accent : colors.subtle, fontSize: 11, fontWeight: "700" }}>{charLen}/{charLimit.max}</Text> : null}
+      </View>
       {field.type === "bool" ? (
         <Pressable onPress={() => onChange(!(value === true))} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
           <View style={{ alignItems: value === true ? "flex-end" : "flex-start", backgroundColor: value === true ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} /></View>
@@ -476,7 +482,8 @@ function DField({ field, value, onChange }: { field: FieldDef; value: string | b
           onChangeText={onChange}
           keyboardType={field.type === "number" ? "numeric" : "default"}
           multiline={wide}
-          placeholder={field.placeholder}
+          maxLength={charLimit ? charLimit.max : undefined}
+          placeholder={field.key === "title" ? `En az ${LIMITS.title.min} karakter — kısa ve net başlık` : field.placeholder}
           placeholderTextColor={colors.subtle}
           style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: wide ? 84 : 46, paddingHorizontal: 12, paddingVertical: wide ? 10 : 8, textAlignVertical: wide ? "top" : "center" }}
         />

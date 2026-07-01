@@ -102,18 +102,11 @@ export async function moderateListingText(title: string, description: string): P
   return verdict;
 }
 
-// Manuel moderasyona düşen hassas kategoriler (spec'e göre). Etiket eşleşmesi
-// küçük harfe indirgenip alt-dize ile kontrol edilir.
-const REVIEW_CATEGORIES = [
-  "yardımcı", "bakıcı", "refakatçi", // yardımcı arayanlar (kesin manuel)
-  "hayvan", "sahiplendir", "kedi", "köpek", "kuş", "veteriner", "petshop",
-  "bebek", "anne", "çocuk bakım",
-  "kozmetik", "parfüm", "cilt bakım", "medikal", "sağlık",
-  "altın", "takı", "koleksiyon", "antika", "mücevher",
-  "iş ilanı", "eleman", "iş makinesi",
-  "danışmanlık", "hukuki", "avukat", "güvenlik hizmet",
-  "dijital", "hesap", "yazılım hizmet"
-];
+// Kategori bazlı otomatik "incelemeye al" listesi. Aktif bir moderasyon ekibi
+// olmadan buraya düşen ilanlar hiç yayınlanmadığı için liste boş tutulur; yasaklı
+// içerik yine kelime taraması (scanTextLocal/moderateListingText) ile engellenir.
+// Manuel moderasyon istenirse admin "İlanları yayından önce incele" ile açılır.
+const REVIEW_CATEGORIES: string[] = [];
 
 /** Seçilen kategori yolu hassas mı? En az "review" gerektirir. */
 export function categoryRisk(categoryLabels: (string | undefined)[]): ModerationVerdict {
