@@ -64,7 +64,7 @@ const CAR_PART_GROUPS = ["Motor Parçaları", "Fren Sistemi", "Süspansiyon & Ro
 
 // ---- marka/değer listeleri ----------------------------------------------
 export const CAR_BRANDS = ["Alfa Romeo", "Aston Martin", "Audi", "Bentley", "BMW", "BYD", "Chery", "Chevrolet", "Citroën", "Cupra", "Dacia", "Daihatsu", "DS Automobiles", "Ferrari", "Fiat", "Ford", "Honda", "Hyundai", "Infiniti", "Isuzu", "Jaguar", "Jeep", "Kia", "Lada", "Lamborghini", "Land Rover", "Lexus", "Maserati", "Mazda", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "Nissan", "Opel", "Peugeot", "Porsche", "Renault", "Seat", "Škoda", "Smart", "SsangYong", "Subaru", "Suzuki", "Tesla", "Togg", "Toyota", "Volkswagen", "Volvo", "Diğer"];
-export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Bajaj", "TVS", "CFMoto", "Mondial", "Kuba", "RKS", "Diğer"];
+export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Ducati", "Triumph", "Harley-Davidson", "Aprilia", "Vespa", "Piaggio", "Benelli", "Royal Enfield", "Moto Guzzi", "Bajaj", "TVS", "CFMoto", "SYM", "Kymco", "Mondial", "Kuba", "RKS", "Arora", "Yuki", "Motolux", "Falcon", "Diğer"];
 export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vestel", "Samsung", "LG", "Profilo", "Altus", "Grundig", "Regal", "Silverline", "Electrolux", "Whirlpool", "Simfer", "Kumtel", "Luxell", "Sharp", "Hisense", "Midea", "Candy", "Indesit", "Ariston", "Diğer"];
 // Kombi/klima markaları (beyaz eşyadan farklı).
 export const HEATING_BRANDS = ["Baymak", "DemirDöküm", "Vaillant", "Buderus", "Bosch", "ECA", "Airfel", "Viessmann", "Warmhaus", "Diğer"];
@@ -143,18 +143,33 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
 
 // Motosiklet markaları -> model/seri (araba markalarıyla çakışmasın diye ayrı).
 export const MOTO_MODELS: Record<string, string[]> = {
-  Honda: ["CBR", "CB", "PCX", "Forza", "Africa Twin", "CG", "Activa"],
-  Yamaha: ["YZF-R", "MT", "NMAX", "XMAX", "Tenere", "Crypton", "PW"],
-  Kawasaki: ["Ninja", "Z", "Versys", "Vulcan", "KLX"],
-  Suzuki: ["GSX-R", "V-Strom", "Burgman", "Address", "GSX-S"],
-  KTM: ["Duke", "RC", "Adventure", "SX", "EXC"],
-  BMW: ["G 310", "F 750 GS", "R 1250 GS", "S 1000 RR"],
-  Bajaj: ["Pulsar", "Dominar", "Boxer", "Avenger"],
-  TVS: ["Apache", "Ntorq", "Raider"],
-  CFMoto: ["150NK", "250NK", "650NK", "700CL-X"],
-  Mondial: ["Drift", "150 MG", "Roadster", "XCR"],
-  Kuba: ["Milano", "Titan", "GTS"],
-  RKS: ["Beta", "Titanic", "Falcon"]
+  Honda: ["CBR", "CB", "CBF", "PCX", "Forza", "Africa Twin", "NC", "CRF", "Rebel", "Dio", "Activa", "CG", "SH"],
+  Yamaha: ["YZF-R", "MT", "NMAX", "XMAX", "Tenere", "Tracer", "Crypton", "Cygnus", "PW", "TMAX", "YBR"],
+  Kawasaki: ["Ninja", "Z", "Versys", "Vulcan", "KLX", "W", "Z H2", "Eliminator"],
+  Suzuki: ["GSX-R", "GSX-S", "V-Strom", "Burgman", "Address", "Hayabusa", "Katana", "DR"],
+  KTM: ["Duke", "RC", "Adventure", "SX", "EXC", "Super Duke", "390"],
+  BMW: ["G 310 R", "G 310 GS", "F 750 GS", "F 850 GS", "R 1250 GS", "S 1000 RR", "R nineT", "C 400"],
+  Ducati: ["Panigale", "Monster", "Multistrada", "Diavel", "Scrambler", "Streetfighter", "Hypermotard"],
+  Triumph: ["Street Triple", "Speed Triple", "Bonneville", "Tiger", "Trident", "Rocket 3"],
+  "Harley-Davidson": ["Sportster", "Street", "Iron 883", "Fat Boy", "Road King", "Softail", "Pan America"],
+  Aprilia: ["RS", "Tuono", "SR", "Shiver", "Tuareg", "SXR"],
+  Vespa: ["Primavera", "Sprint", "GTS", "LX", "Elettrica"],
+  Piaggio: ["Medley", "Beverly", "Liberty", "MP3", "Zip"],
+  Benelli: ["TNT", "TRK", "Leoncino", "302", "502", "180S", "Imperiale"],
+  "Royal Enfield": ["Classic 350", "Meteor 350", "Hunter 350", "Himalayan", "Continental GT", "Interceptor"],
+  "Moto Guzzi": ["V7", "V9", "V85 TT", "California"],
+  Bajaj: ["Pulsar", "Dominar", "Boxer", "Avenger", "CT"],
+  TVS: ["Apache", "Ntorq", "Raider", "Jupiter"],
+  CFMoto: ["150NK", "250NK", "650NK", "700CL-X", "800MT", "450SR"],
+  SYM: ["Symphony", "Jet", "Fiddle", "Maxsym", "Cruisym"],
+  Kymco: ["Agility", "People", "Downtown", "Xciting", "Like"],
+  Mondial: ["Drift", "150 MG", "Roadster", "XCR", "SMX", "Turbo"],
+  Kuba: ["Milano", "Titan", "GTS", "Fantic"],
+  RKS: ["Beta", "Titanic", "Falcon", "Roadstar"],
+  Arora: ["Cappella", "Titan", "Vertu", "Speedmax"],
+  Yuki: ["YK", "Panter", "Sirius"],
+  Motolux: ["Efsane", "Panama", "Star"],
+  Falcon: ["Serdar", "Motoran", "Dark"]
 };
 
 // Dizüstü / masaüstü bilgisayar markaları -> seri.
@@ -168,9 +183,11 @@ export const COMPUTER_MODELS: Record<string, string[]> = {
   Acer: ["Aspire", "Nitro", "Predator", "Swift", "TravelMate"],
   MSI: ["Katana", "Stealth", "Raider", "Modern", "Cyborg", "Thin"],
   Monster: ["Tulpar", "Abra", "Semruk"],
-  Casper: ["Excalibur", "Nirvana"],
-  Huawei: ["MateBook D", "MateBook X", "MateBook 14"],
-  Samsung: ["Galaxy Book", "Galaxy Book Pro"]
+  Huawei: ["MateBook D", "MateBook X", "MateBook 14", "MateBook 16"],
+  Samsung: ["Galaxy Book", "Galaxy Book Pro", "Galaxy Book 4"],
+  Casper: ["Excalibur", "Nirvana", "Nirvana X"],
+  Toshiba: ["Satellite", "Tecra", "Portégé", "Dynabook"],
+  Gigabyte: ["Aorus", "Aero", "G5", "G6"]
 };
 
 // Televizyon markaları -> seri.
@@ -178,10 +195,15 @@ export const TV_BRANDS = ["Samsung", "LG", "Vestel", "Philips", "Sony", "TCL", "
 export const TV_MODELS: Record<string, string[]> = {
   Samsung: ["Crystal UHD", "QLED", "Neo QLED", "OLED", "The Frame", "DU/CU Serisi"],
   LG: ["OLED", "QNED", "NanoCell", "UHD", "UR/UT Serisi"],
-  Sony: ["Bravia", "OLED", "X Serisi"],
-  TCL: ["QLED", "C Serisi", "P Serisi"],
-  Xiaomi: ["TV A2", "TV P1", "TV Q2"],
-  Vestel: ["Satellite", "Regal"]
+  Sony: ["Bravia", "OLED", "X Serisi", "A Serisi"],
+  TCL: ["QLED", "Mini LED", "C Serisi", "P Serisi", "S Serisi"],
+  Xiaomi: ["TV A2", "TV A Pro", "TV P1", "TV Q2", "TV S Pro"],
+  Vestel: ["Satellite", "Regal", "Smart"],
+  Philips: ["Ambilight", "The One", "OLED", "PUS Serisi"],
+  Arçelik: ["Crystal", "OLED", "QLED", "A Serisi"],
+  Beko: ["Crystal", "QLED", "B Serisi"],
+  Grundig: ["Vision", "OLED", "QLED"],
+  Panasonic: ["OLED", "LX Serisi", "MX Serisi"]
 };
 
 // Ticari araç markaları -> model.
@@ -194,8 +216,10 @@ export const COMMERCIAL_MODELS: Record<string, string[]> = {
   Renault: ["Master", "Trafic", "Kangoo", "Express"],
   Peugeot: ["Boxer", "Partner", "Expert", "Bipper"],
   "Citroën": ["Jumper", "Berlingo", "Jumpy"],
-  Iveco: ["Daily", "Eurocargo"],
-  Opel: ["Movano", "Vivaro", "Combo"]
+  Iveco: ["Daily", "Eurocargo", "Stralis", "S-Way"],
+  Opel: ["Movano", "Vivaro", "Combo"],
+  Hyundai: ["H-100", "H-350", "Staria Cargo"],
+  Isuzu: ["D-Max", "NPR", "NLR", "NQR", "Novociti"]
 };
 
 // Deniz motoru, saat, gözlük, kozmetik/parfüm markaları.
