@@ -56,7 +56,7 @@ function ProfileScreenInner() {
     const firstName = currentUser.name.split(" ")[0];
 
     const stats: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; sub: string }> = [
-      { icon: "cash-multiple", tint: colors.successSoft, color: colors.success, value: money(totalCommission), title: "Toplam kazanç", sub: "Tüm komisyonlar" },
+      { icon: "cash-multiple", tint: colors.successSoft, color: colors.success, value: money(totalCommission), title: "Kayıtlı komisyon", sub: "Taraflar arası anlaşma" },
       { icon: "clock-outline", tint: colors.goldSoft, color: colors.gold, value: money(pendingCommission), title: "Bekleyen komisyon", sub: "Onay sürecinde" },
       { icon: "storefront-outline", tint: colors.primarySoft, color: colors.primaryDark, value: `${activeListings.length}`, title: "Aktif ilan", sub: `${myListings.length} toplam ilan` },
       { icon: "handshake-outline", tint: colors.violetSoft, color: colors.violet, value: `${activePartnerships.length}`, title: "Aktif ortaklık", sub: `${pendingPartnerships.length} bekliyor` }
