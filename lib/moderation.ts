@@ -71,6 +71,17 @@ function localScan(text: string): ModerationVerdict {
   return "none";
 }
 
+/** Senkron yerel tarama (anlık UI uyarısı için). Eşleşen ilk kelimeyi de döndürür. */
+export function scanTextLocal(text: string): { verdict: ModerationVerdict; matched?: string } {
+  const hay = (text ?? "").toLocaleLowerCase("tr-TR");
+  if (!hay.trim()) return { verdict: "none" };
+  const b = BLOCK_WORDS.find((w) => matchesWord(hay, w));
+  if (b) return { verdict: "block", matched: b };
+  const r = REVIEW_WORDS.find((w) => matchesWord(hay, w));
+  if (r) return { verdict: "review", matched: r };
+  return { verdict: "none" };
+}
+
 const RANK: Record<ModerationVerdict, number> = { none: 0, review: 1, block: 2 };
 
 /** Başlık + açıklamayı tarar. İstemci ve (varsa) sunucu sonucunun en kötüsünü döndürür. */

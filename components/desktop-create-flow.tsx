@@ -13,7 +13,7 @@ import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from 
 import { money } from "@/lib/format";
 import { formatLocation, getProvince } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
-import { categoryRisk, moderateListingText, MODERATION_MESSAGES } from "@/lib/moderation";
+import { categoryRisk, moderateListingText, MODERATION_MESSAGES, scanTextLocal } from "@/lib/moderation";
 import { rateLimit } from "@/lib/rate-limit";
 import type { CommissionType, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -52,6 +52,16 @@ export function DesktopCreateFlow() {
   const schema = formKey ? getFormSchema(formKey) : undefined;
   const leafLabel = path.length ? path[path.length - 1].label : "";
   const coverImage = images[0] || path.find((p) => p.image)?.image || CONDITION_IMG;
+
+  // Anlık moderasyon uyarısı (kullanıcı yazarken): yasaklı = kırmızı, dikkatli = sarı.
+  const liveModeration = useMemo(() => {
+    const kw = scanTextLocal(`${String(values.title ?? "")} ${String(values.description ?? "")}`);
+    if (kw.verdict === "block") return { level: "block" as const, msg: `Yasaklı ifade tespit edildi: "${kw.matched}". Bu içerikle ilan yayınlanamaz.` };
+    const cat = categoryRisk(path.map((p) => p.label));
+    if (kw.verdict === "review") return { level: "review" as const, msg: `"${kw.matched}" ifadesi dikkat gerektirebilir; ilan yönetici onayına düşebilir.` };
+    if (cat === "review") return { level: "review" as const, msg: "Bu kategori, güvenlik gereği yayından önce yönetici onayına düşer." };
+    return null;
+  }, [values.title, values.description, path]);
 
   const setV = (k: string, v: string | boolean) => setValues((s) => ({ ...s, [k]: v }));
   const missingFields = useMemo(() => (schema ? schema.fields.filter((f) => f.required && !String(values[f.key] ?? "").trim()) : []), [schema, values]);
@@ -391,6 +401,14 @@ export function DesktopCreateFlow() {
         placeholder="Bu alanı boş bırakın"
       />
 
+      {/* Anlık moderasyon uyarısı (kategori/kelime riski) */}
+      {liveModeration ? (
+        <View style={{ alignItems: "center", backgroundColor: liveModeration.level === "block" ? colors.accentSoft : colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
+          <MaterialCommunityIcons name={liveModeration.level === "block" ? "cancel" : "shield-alert-outline"} size={18} color={liveModeration.level === "block" ? colors.accent : colors.warning} />
+          <Text style={{ color: liveModeration.level === "block" ? colors.accent : colors.warning, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{liveModeration.msg}</Text>
+        </View>
+      ) : null}
+
       {/* Hata / bilgi banner'ı */}
       {error ? (
         <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
@@ -415,7 +433,7 @@ export function DesktopCreateFlow() {
             <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>Devam</Text><MaterialCommunityIcons name="arrow-right" size={16} color="#FFFFFF" />
           </Pressable>
         ) : (
-          <Pressable disabled={publishing || missingFields.length > 0} onPress={() => void publish()} style={{ alignItems: "center", backgroundColor: missingFields.length ? colors.line : colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
+          <Pressable disabled={publishing || missingFields.length > 0 || liveModeration?.level === "block"} onPress={() => void publish()} style={{ alignItems: "center", backgroundColor: missingFields.length || liveModeration?.level === "block" ? colors.line : colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
             <MaterialCommunityIcons name="check-decagram" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{publishing ? "Yayınlanıyor…" : "İlanı Yayınla"}</Text>
           </Pressable>
         )}
