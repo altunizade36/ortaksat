@@ -45,6 +45,15 @@ function node(label: string, children: CategoryNode[], formKey?: string, image?:
 }
 const leaves = (labels: string[], formKey?: string) => labels.map((l) => leaf(l, formKey));
 
+// Marka listesini marka->model ağacına çevirir. Modeli olan marka bir alt seviye
+// (node) olur; olmayan marka yaprak (leaf) kalır. Binlerce alt düğümü ucuza üretir.
+function brandModelNodes(brands: string[], models: Record<string, string[]>, formKey: string): CategoryNode[] {
+  return brands.map((b) => {
+    const ms = models[b];
+    return ms && ms.length ? node(b, [...leaves(ms, formKey), leaf("Diğer Model", formKey)], formKey) : leaf(b, formKey);
+  });
+}
+
 // ---- marka/değer listeleri ----------------------------------------------
 export const CAR_BRANDS = ["Audi", "BMW", "Chevrolet", "Citroën", "Dacia", "Fiat", "Ford", "Honda", "Hyundai", "Kia", "Mercedes-Benz", "Nissan", "Opel", "Peugeot", "Renault", "Seat", "Škoda", "Toyota", "Volkswagen", "Volvo", "Tesla", "BYD", "Togg", "Diğer"];
 export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Bajaj", "TVS", "CFMoto", "Mondial", "Kuba", "RKS", "Diğer"];
@@ -80,7 +89,44 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   Xiaomi: ["Redmi Note 13", "Redmi Note 12", "Redmi 13C", "Poco X6", "Mi 11", "13T"],
   Huawei: ["P60", "P50", "Mate 50", "Nova 12", "Nova 11"],
   Oppo: ["Reno 11", "Reno 10", "A98", "A78", "A58"],
-  Realme: ["C67", "C55", "11 Pro", "GT Neo", "Number serisi"]
+  Realme: ["C67", "C55", "11 Pro", "GT Neo", "Number serisi"],
+  // Ek otomobil markaları
+  Chevrolet: ["Cruze", "Aveo", "Spark", "Captiva", "Trax"],
+  Seat: ["Ibiza", "Leon", "Arona", "Ateca", "Toledo"],
+  "Škoda": ["Octavia", "Superb", "Fabia", "Kamiq", "Karoq", "Scala"],
+  Volvo: ["XC40", "XC60", "XC90", "S60", "V40"],
+  Suzuki: ["Swift", "Vitara", "SX4", "Baleno", "Jimny"],
+  Mitsubishi: ["Lancer", "ASX", "Outlander", "L200", "Space Star"],
+  Mini: ["Cooper", "Countryman", "Clubman"],
+  "Land Rover": ["Range Rover", "Evoque", "Discovery", "Defender"],
+  Jeep: ["Renegade", "Compass", "Cherokee", "Wrangler"],
+  Mazda: ["2", "3", "6", "CX-3", "CX-5"],
+  "Alfa Romeo": ["Giulietta", "Giulia", "Stelvio", "Mito"],
+  MG: ["ZS", "HS", "MG4", "MG5"],
+  Chery: ["Tiggo 7", "Tiggo 8", "Omoda 5"],
+  // Ek cep telefonu markaları
+  Vivo: ["Y36", "Y22", "V29", "V27", "X90"],
+  Tecno: ["Camon 20", "Spark 10", "Pova 5", "Phantom X2"],
+  "General Mobile": ["GM 24", "GM 23", "GM 22", "GM 21"],
+  OnePlus: ["12", "11", "Nord 3", "Nord CE 3"],
+  Nothing: ["Phone (2)", "Phone (2a)", "Phone (1)"],
+  Reeder: ["S19 Max Pro", "P13 Blue Max", "S23 Pro"]
+};
+
+// Motosiklet markaları -> model/seri (araba markalarıyla çakışmasın diye ayrı).
+export const MOTO_MODELS: Record<string, string[]> = {
+  Honda: ["CBR", "CB", "PCX", "Forza", "Africa Twin", "CG", "Activa"],
+  Yamaha: ["YZF-R", "MT", "NMAX", "XMAX", "Tenere", "Crypton", "PW"],
+  Kawasaki: ["Ninja", "Z", "Versys", "Vulcan", "KLX"],
+  Suzuki: ["GSX-R", "V-Strom", "Burgman", "Address", "GSX-S"],
+  KTM: ["Duke", "RC", "Adventure", "SX", "EXC"],
+  BMW: ["G 310", "F 750 GS", "R 1250 GS", "S 1000 RR"],
+  Bajaj: ["Pulsar", "Dominar", "Boxer", "Avenger"],
+  TVS: ["Apache", "Ntorq", "Raider"],
+  CFMoto: ["150NK", "250NK", "650NK", "700CL-X"],
+  Mondial: ["Drift", "150 MG", "Roadster", "XCR"],
+  Kuba: ["Milano", "Titan", "GTS"],
+  RKS: ["Beta", "Titanic", "Falcon"]
 };
 
 // ---- shared field fragments ---------------------------------------------
@@ -369,9 +415,9 @@ export const categoryTree: CategoryNode[] = [
   ], "konut", IMG("1560518883-ce09059eeffa")),
 
   node("Vasıta", [
-    node("Otomobil", leaves(["Sedan", "Hatchback", "Station Wagon", "Coupe", "Cabrio", "SUV", "Crossover", "MPV"], "otomobil"), "otomobil"),
-    node("Arazi, SUV & Pickup", leaves(["SUV", "Pickup", "4x4", "Off-road"], "otomobil"), "otomobil"),
-    node("Motosiklet", leaves(["Scooter", "Naked", "Touring", "Chopper", "Racing", "Enduro", "Cross", "Elektrikli Motosiklet", "Moped", "ATV"], "motosiklet"), "motosiklet"),
+    node("Otomobil", brandModelNodes(CAR_BRANDS, MODELS_BY_BRAND, "otomobil"), "otomobil"),
+    node("Arazi, SUV & Pickup", leaves(["Toyota", "Nissan", "Ford", "Hyundai", "Kia", "Volkswagen", "Dacia", "Suzuki", "Jeep", "Land Rover", "Mitsubishi", "Chery", "MG", "Diğer"], "otomobil"), "otomobil"),
+    node("Motosiklet", brandModelNodes(MOTO_BRANDS, MOTO_MODELS, "motosiklet"), "motosiklet"),
     leaf("Minivan & Panelvan", "vasitaGenel"),
     node("Ticari Araçlar", leaves(["Kamyonet", "Panelvan", "Minibüs", "Otobüs", "Çekici", "Kamyon"], "vasitaGenel"), "vasitaGenel"),
     node("Elektrikli Araçlar", leaves(["Elektrikli Otomobil", "Hibrit", "Plug-in Hibrit"], "otomobil"), "otomobil"),
@@ -401,7 +447,7 @@ export const categoryTree: CategoryNode[] = [
 
   node("İkinci El & Sıfır Alışveriş", [
     node("Elektronik", [
-      node("Cep Telefonu", leaves(["iPhone", "Samsung", "Xiaomi", "Huawei", "Oppo", "Realme", "Vivo", "Tecno", "General Mobile", "Diğer Marka"], "telefon"), "telefon"),
+      node("Cep Telefonu", brandModelNodes(["iPhone", "Samsung", "Xiaomi", "Huawei", "Oppo", "Realme", "Vivo", "Tecno", "General Mobile", "OnePlus", "Nothing", "Reeder", "Diğer Marka"], MODELS_BY_BRAND, "telefon"), "telefon"),
       ...leaves(["Tablet", "Akıllı Saat", "Kulaklık", "Hoparlör", "Televizyon", "Kamera", "Fotoğraf Makinesi", "Oyun Konsolu", "Drone", "Akıllı Ev Ürünleri", "Güvenlik Kamerası", "Projeksiyon", "Elektronik Aksesuar"], "alisverisGenel")
     ], "alisverisGenel"),
     node("Telefon & Aksesuar", leaves(["Cep Telefonu", "Kılıf", "Şarj & Kablo", "Powerbank", "Ekran Koruyucu", "Kulaklık"], "alisverisGenel"), "alisverisGenel"),
@@ -474,6 +520,21 @@ export const categoryTree: CategoryNode[] = [
   node("Dijital Ürünler & Hizmetler", leaves([
     "Web Sitesi", "Mobil Uygulama", "Logo Tasarım", "Sosyal Medya Paketi", "Video Kurgu", "CV Hazırlama", "Sunum Hazırlama", "Yazılım Hizmeti", "Bot/Otomasyon", "Eğitim Dosyası", "E-kitap", "Şablon", "No-code Kurulum", "Reklam Yönetimi"
   ], "dijitalHizmet"), "dijitalHizmet", IMG("1461749280684-dccba630e2f6")),
+
+  node("Yapı Market & Bahçe", [
+    node("El Aletleri", leaves(["Matkap", "Vidalama", "Dekupaj / Testere", "Taşlama / Spiral", "Kaynak Makinesi", "Kompresör", "El Aleti Seti", "Tornavida & Anahtar"], "alisverisGenel"), "alisverisGenel"),
+    node("Hırdavat", leaves(["Vida & Cıvata", "Menteşe", "Kilit & Kapı Kolu", "Yapıştırıcı & Silikon", "Zincir & Halat", "Sarf Malzeme"], "alisverisGenel"), "alisverisGenel"),
+    node("Bahçe", leaves(["Çim Biçme Makinesi", "Sulama Sistemleri", "Bahçe Mobilyası", "Sera & Örtü", "Tohum & Fide", "Bahçe Aletleri", "Çit & Tel", "Barbekü & Mangal"], "alisverisGenel"), "alisverisGenel"),
+    node("Yapı Malzemeleri", leaves(["Boya & Vernik", "Fayans & Seramik", "Parke & Laminat", "İzolasyon", "Çimento & Alçı", "Elektrik Malzemeleri", "Tesisat & Su", "Aydınlatma Malzemesi"], "alisverisGenel"), "alisverisGenel")
+  ], "alisverisGenel", IMG("1581092160562-40aa08e78837")),
+
+  node("Müzik Enstrümanları", leaves([
+    "Akustik Gitar", "Elektro Gitar", "Bas Gitar", "Klasik Gitar", "Piyano", "Dijital Piyano & Org", "Keman", "Bateri & Davul", "Perküsyon", "Nefesli Çalgılar", "DJ Ekipmanı", "Stüdyo / Kayıt Ekipmanı", "Amfi & Efekt Pedalı", "Bağlama", "Ud & Kanun", "Ney & Kaval", "Mikrofon", "Enstrüman Aksesuarı"
+  ], "alisverisGenel"), "alisverisGenel", IMG("1511671782779-c97d3d27a1d4")),
+
+  node("Sağlık & Medikal", leaves([
+    "Tekerlekli Sandalye", "Hasta Yatağı", "Tansiyon Aleti", "Şeker Ölçüm Cihazı", "Ortopedik Ürünler", "İşitme Cihazı", "Oksijen Konsantratörü", "Nebulizatör", "Medikal Sarf Malzeme", "Masaj & Terapi Cihazı", "Ateş Ölçer", "Pulse Oksimetre", "Engelli Ürünleri", "Fizik Tedavi Ekipmanı"
+  ], "alisverisGenel"), "alisverisGenel", IMG("1584982751601-97dcc096659c")),
 
   node("Diğer", [leaf("Kategori öner", "alisverisGenel")], "alisverisGenel", IMG("1441986300917-64674bd600d8"))
 ];
