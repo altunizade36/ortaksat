@@ -323,6 +323,35 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "price", label: "Ücret (varsa)", type: "number", suffix: "₺" },
       F.desc
     ]
+  },
+  // Talep/Arayan ilanı (kullanıcı bir şey arıyor)
+  arayan: {
+    key: "arayan",
+    title: "Talep bilgileri",
+    fields: [
+      F.title,
+      { key: "wanted", label: "Aradığın ürün/hizmet", type: "text", required: true, placeholder: "Ne arıyorsun?" },
+      { key: "budgetMin", label: "Bütçe (en az)", type: "number", suffix: "₺" },
+      { key: "budgetMax", label: "Bütçe (en çok)", type: "number", suffix: "₺" },
+      { key: "prefs", label: "Tercih edilen özellikler", type: "textarea", placeholder: "Marka, model, durum, konum vb." },
+      { key: "urgency", label: "Aciliyet", type: "select", options: ["Acil", "Bu hafta", "Bu ay", "Fark etmez"] },
+      F.desc
+    ]
+  },
+  // Dijital ürün / hizmet
+  dijitalHizmet: {
+    key: "dijitalHizmet",
+    title: "Dijital hizmet bilgileri",
+    fields: [
+      F.title,
+      { key: "serviceType", label: "Hizmet/ürün türü", type: "text", required: true, placeholder: "Web sitesi, logo, video kurgu…" },
+      F.price,
+      { key: "deliveryTime", label: "Teslim süresi", type: "select", options: ["24 saat", "2-3 gün", "1 hafta", "2 hafta+", "Görüşülür"] },
+      { key: "revisions", label: "Revizyon sayısı", type: "select", options: ["1", "2", "3", "Sınırsız", "Görüşülür"] },
+      { key: "portfolio", label: "Portfolyo linki", type: "text", placeholder: "Örnek çalışma bağlantısı (opsiyonel)" },
+      { key: "deliveryMethod", label: "Dosya teslim şekli", type: "select", options: ["E-posta", "Bulut (link)", "Platform mesajı", "Görüşülür"] },
+      F.desc
+    ]
   }
 };
 
@@ -340,12 +369,12 @@ export const categoryTree: CategoryNode[] = [
   ], "konut", IMG("1560518883-ce09059eeffa")),
 
   node("Vasıta", [
-    leaf("Otomobil", "otomobil"),
-    leaf("Arazi, SUV & Pickup", "otomobil"),
+    node("Otomobil", leaves(["Sedan", "Hatchback", "Station Wagon", "Coupe", "Cabrio", "SUV", "Crossover", "MPV"], "otomobil"), "otomobil"),
+    node("Arazi, SUV & Pickup", leaves(["SUV", "Pickup", "4x4", "Off-road"], "otomobil"), "otomobil"),
     node("Motosiklet", leaves(["Scooter", "Naked", "Touring", "Chopper", "Racing", "Enduro", "Cross", "Elektrikli Motosiklet", "Moped", "ATV"], "motosiklet"), "motosiklet"),
     leaf("Minivan & Panelvan", "vasitaGenel"),
-    leaf("Ticari Araçlar", "vasitaGenel"),
-    leaf("Elektrikli Araçlar", "otomobil"),
+    node("Ticari Araçlar", leaves(["Kamyonet", "Panelvan", "Minibüs", "Otobüs", "Çekici", "Kamyon"], "vasitaGenel"), "vasitaGenel"),
+    node("Elektrikli Araçlar", leaves(["Elektrikli Otomobil", "Hibrit", "Plug-in Hibrit"], "otomobil"), "otomobil"),
     leaf("Kiralık Araçlar", "vasitaGenel"),
     leaf("Hasarlı Araçlar", "otomobil"),
     leaf("Klasik Araçlar", "otomobil"),
@@ -359,9 +388,16 @@ export const categoryTree: CategoryNode[] = [
     leaf("Römork", "vasitaGenel")
   ], "vasitaGenel", IMG("1503376780353-7e6692767b70")),
 
-  node("Yedek Parça, Aksesuar & Tuning", leaves([
-    "Otomobil Yedek Parça", "Motosiklet Yedek Parça", "Araç Aksesuarları", "Jant & Lastik", "Ses & Görüntü Sistemleri", "Tuning Ürünleri", "Araç Bakım Ürünleri", "Oto Elektronik", "Navigasyon", "Araç Kamerası", "Park Sensörü", "Far & Aydınlatma", "Tampon & Kaporta", "Motor Parçaları", "Fren Sistemi", "Süspansiyon", "İç Aksesuar", "Dış Aksesuar"
-  ], "yedekParca"), "yedekParca", IMG("1486262715619-67b85e0b08d3")),
+  node("Yedek Parça, Aksesuar & Tuning", [
+    node("Otomobil Yedek Parça", leaves(["Motor Parçaları", "Fren Sistemi", "Süspansiyon", "Şanzıman", "Debriyaj", "Egzoz", "Radyatör & Soğutma", "Elektrik & Aydınlatma", "Kaporta", "Tampon", "Far", "Stop", "Ayna", "Cam", "Kapı", "Airbag"], "yedekParca"), "yedekParca"),
+    node("Motosiklet Yedek Parça", leaves(["Motor", "Zincir & Dişli", "Fren", "Lastik", "Far", "Ayna", "Egzoz"], "yedekParca"), "yedekParca"),
+    node("Araç Aksesuarları", leaves(["İç Aksesuar", "Dış Aksesuar", "Kılıf & Paspas", "Telefon Tutucu", "Araç İçi Organizer"], "yedekParca"), "yedekParca"),
+    node("Jant & Lastik", leaves(["Yaz Lastiği", "Kış Lastiği", "4 Mevsim Lastik", "Jant", "Bijon"], "yedekParca"), "yedekParca"),
+    node("Ses & Görüntü Sistemleri", leaves(["Oto Teyp", "Hoparlör", "Amfi", "Subwoofer", "Multimedya Ekran"], "yedekParca"), "yedekParca"),
+    node("Tuning Ürünleri", leaves(["Body Kit", "Spoiler", "Performans Filtre", "Yazılım Hizmeti"], "yedekParca"), "yedekParca"),
+    node("Oto Elektronik", leaves(["Akü", "Sensör", "Araç Kamerası", "Park Sensörü", "Navigasyon"], "yedekParca"), "yedekParca"),
+    leaf("Araç Bakım Ürünleri", "yedekParca")
+  ], "yedekParca", IMG("1486262715619-67b85e0b08d3")),
 
   node("İkinci El & Sıfır Alışveriş", [
     node("Elektronik", [
@@ -396,9 +432,15 @@ export const categoryTree: CategoryNode[] = [
     leaf("Diğer Alışveriş", "alisverisGenel")
   ], "alisverisGenel", IMG("1498049794561-7780e7231661")),
 
-  node("İş Makineleri & Sanayi", leaves([
-    "İş Makineleri", "Tarım Makineleri", "Sanayi Makineleri", "Elektrik & Enerji", "İnşaat Malzemeleri", "Hırdavat", "Endüstriyel Ürünler", "Forklift", "Vinç", "Kompresör", "Jeneratör", "CNC", "Matbaa Makineleri", "Gıda Üretim Makineleri", "Tekstil Makineleri", "Medikal Ekipman", "Laboratuvar Ekipmanı"
-  ], "isMakinesi"), "isMakinesi", IMG("1581094794329-c8112a89af12")),
+  node("İş Makineleri & Sanayi", [
+    node("İş Makineleri", leaves(["Ekskavatör", "Kazıcı Yükleyici", "Loder", "Greyder", "Silindir", "Dozer", "Vinç", "Forklift", "Kompresör", "Jeneratör"], "isMakinesi"), "isMakinesi"),
+    node("Tarım Makineleri", leaves(["Traktör", "Biçerdöver", "Pulluk", "Ekim Makinesi", "İlaçlama Makinesi", "Römork"], "isMakinesi"), "isMakinesi"),
+    node("Sanayi Makineleri", leaves(["CNC", "Torna", "Freze", "Pres", "Kaynak Makinesi", "Matbaa Makinesi", "Paketleme Makinesi", "Gıda Üretim Makinesi", "Tekstil Makinesi"], "isMakinesi"), "isMakinesi"),
+    node("Elektrik & Enerji", leaves(["Güneş Paneli", "İnvertör", "Akü", "Jeneratör", "Trafo"], "isMakinesi"), "isMakinesi"),
+    node("İnşaat Malzemeleri", leaves(["İskele", "Kalıp", "Beton Mikseri", "El Aletleri", "Hırdavat"], "isMakinesi"), "isMakinesi"),
+    leaf("Endüstriyel Ürünler", "isMakinesi"),
+    node("Medikal & Laboratuvar", leaves(["Medikal Ekipman", "Laboratuvar Ekipmanı"], "isMakinesi"), "isMakinesi")
+  ], "isMakinesi", IMG("1581094794329-c8112a89af12")),
 
   node("Ustalar & Hizmetler", leaves([
     "Ev Tadilat", "Boya & Badana", "Elektrikçi", "Tesisatçı", "Kombi & Klima Servisi", "Nakliyat", "Temizlik Hizmeti", "Oto Servis", "Mobilya Montaj", "Bilgisayar Teknik Servis", "Telefon Tamiri", "Web Tasarım", "Grafik Tasarım", "Sosyal Medya Yönetimi", "Fotoğraf & Video", "Düğün Organizasyon", "Catering", "Özel Güvenlik", "Danışmanlık", "Muhasebe", "Hukuki Danışmanlık", "Sağlık & Bakım Hizmetleri"
@@ -416,9 +458,22 @@ export const categoryTree: CategoryNode[] = [
     "Bebek Bakıcısı", "Çocuk Bakıcısı", "Yaşlı Bakıcısı", "Hasta Bakıcısı", "Ev Yardımcısı", "Temizlikçi", "Gündelik Yardımcı", "Bahçıvan", "Şoför", "Özel Ders Yardımcısı", "Evcil Hayvan Bakıcısı"
   ], "yardimci"), "yardimci", IMG("1576091160550-2173dba999ef")),
 
-  node("Hayvanlar Alemi", leaves([
-    "Evcil Hayvanlar", "Kedi", "Köpek", "Kuş", "Balık", "Kemirgen", "Sürüngen", "Çiftlik Hayvanları", "Akvaryum", "Mama & Yem", "Kafes & Aksesuar", "Pet Bakım Ürünleri", "Veteriner Hizmetleri", "Sahiplendirme", "Kayıp Hayvan İlanı"
-  ], "hayvan"), "hayvan", IMG("1450778869180-41d0601e046e")),
+  node("Hayvanlar Alemi", [
+    node("Sahiplendirme", leaves(["Kedi", "Köpek", "Kuş", "Balık", "Kemirgen", "Sürüngen", "Diğer"], "hayvan"), "hayvan"),
+    leaf("Kayıp Hayvan İlanı", "hayvan"),
+    leaf("Bulunan Hayvan İlanı", "hayvan"),
+    node("Evcil Hayvan Ürünleri", leaves(["Mama & Yem", "Kafes & Aksesuar", "Akvaryum", "Pet Bakım Ürünleri", "Oyuncak"], "alisverisGenel"), "alisverisGenel"),
+    node("Veteriner & Bakım", leaves(["Veteriner Hizmetleri", "Pet Kuaför", "Pet Oteli", "Evcil Hayvan Bakıcısı"], "hizmet"), "hizmet"),
+    leaf("Çiftlik Hayvanları", "hayvan")
+  ], "hayvan", IMG("1450778869180-41d0601e046e")),
+
+  node("Arayanlar / Talep İlanları", leaves([
+    "Araç Arıyorum", "Ev Arıyorum", "Telefon Arıyorum", "Bilgisayar Arıyorum", "Mobilya Arıyorum", "İş Arıyorum", "Eleman Arıyorum", "Usta Arıyorum", "Ortak Satış Ortağı Arıyorum", "Yatırımcı Arıyorum", "Ürün Tedarikçisi Arıyorum", "Kiralık Ürün Arıyorum"
+  ], "arayan"), "arayan", IMG("1454165804606-c3d57bc86b40")),
+
+  node("Dijital Ürünler & Hizmetler", leaves([
+    "Web Sitesi", "Mobil Uygulama", "Logo Tasarım", "Sosyal Medya Paketi", "Video Kurgu", "CV Hazırlama", "Sunum Hazırlama", "Yazılım Hizmeti", "Bot/Otomasyon", "Eğitim Dosyası", "E-kitap", "Şablon", "No-code Kurulum", "Reklam Yönetimi"
+  ], "dijitalHizmet"), "dijitalHizmet", IMG("1461749280684-dccba630e2f6")),
 
   node("Diğer", [leaf("Kategori öner", "alisverisGenel")], "alisverisGenel", IMG("1441986300917-64674bd600d8"))
 ];
