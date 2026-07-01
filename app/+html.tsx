@@ -94,6 +94,12 @@ body {
   *::-webkit-scrollbar-track { background: transparent; }
 }
 
+/* Doğal odak: tarayıcının çirkin kare focus çerçevesini kaldır.
+   Arama kutusuna içine tıklanınca yumuşak yeşil bir kenarlık ver. */
+input, textarea, [role="search"] { outline: none !important; }
+input:focus, textarea:focus, input:focus-visible, textarea:focus-visible { outline: none !important; box-shadow: none !important; }
+[role="search"]:focus-within { border-color: rgba(0,134,111,0.55) !important; box-shadow: 0 0 0 3px rgba(0,134,111,0.12) !important; }
+
 /* Make pressables feel interactive on web */
 [role="button"], a { cursor: pointer; }
 [role="button"] { transition: transform .12s ease, filter .12s ease, box-shadow .15s ease; }

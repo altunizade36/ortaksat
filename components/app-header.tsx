@@ -59,9 +59,11 @@ export function AppHeader() {
               </View>
             </Pressable>
           </Link>
-          <View style={{ flex: 1, maxWidth: 640, minWidth: 0 }}>
+          <View style={{ flexShrink: 1, maxWidth: 640, minWidth: 220, width: 640 }}>
             <GlobalSearchBar />
           </View>
+          {/* Boşluk: aksiyonları en sağa sabitler */}
+          <View style={{ flex: 1, minWidth: 16 }} />
           <DesktopActions />
         </View>
 
@@ -240,11 +242,13 @@ function AccountMenu() {
               <View key={gi} style={{ borderTopColor: colors.line, borderTopWidth: gi === 0 ? 0 : 1, paddingVertical: 5 }}>
                 {group.map((item) => (
                   <Link key={item.label} href={item.href} asChild>
-                    <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : "transparent", flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 9 })}>
-                      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 30, justifyContent: "center", width: 30 }}>
-                        <MaterialCommunityIcons name={item.icon} size={16} color={colors.primaryDark} />
+                    <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : "transparent", paddingHorizontal: 13, paddingVertical: 9 })}>
+                      <View style={{ alignItems: "center", flexDirection: "row", gap: 11 }}>
+                        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 30, justifyContent: "center", width: 30 }}>
+                          <MaterialCommunityIcons name={item.icon} size={16} color={colors.primaryDark} />
+                        </View>
+                        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
                       </View>
-                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
                     </Pressable>
                   </Link>
                 ))}
@@ -254,9 +258,11 @@ function AccountMenu() {
             {/* Oturum aksiyonu */}
             <View style={{ borderTopColor: colors.line, borderTopWidth: 1, padding: 10 }}>
               <Link href="/auth" asChild>
-                <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primaryDark : colors.primary, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 })}>
-                  <MaterialCommunityIcons name={isAuthenticated ? "account-cog-outline" : "login"} size={17} color="#FFFFFF" />
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{isAuthenticated ? "Hesap ayarları" : "Giriş / Kayıt ol"}</Text>
+                <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primaryDark : colors.primary, borderRadius: 10, paddingVertical: 11 })}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "center" }}>
+                    <MaterialCommunityIcons name={isAuthenticated ? "account-cog-outline" : "login"} size={17} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{isAuthenticated ? "Hesap ayarları" : "Giriş / Kayıt ol"}</Text>
+                  </View>
                 </Pressable>
               </Link>
             </View>

@@ -63,12 +63,12 @@ export function ListingCard({ listing, owner, width }: { listing: Listing; owner
                 {displayText(listing.title)}
               </Text>
 
-              <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8, justifyContent: "space-between" }}>
-                <Text adjustsFontSizeToFit minimumFontScale={0.8} numberOfLines={1} selectable style={{ color: colors.ink, flexShrink: 1, fontSize: 19, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "space-between" }}>
+                <Text adjustsFontSizeToFit minimumFontScale={0.7} numberOfLines={1} selectable style={{ color: colors.ink, flexShrink: 1, fontSize: 18, fontVariant: ["tabular-nums"], fontWeight: "900", minWidth: 0 }}>
                   {money(listing.price)}
                 </Text>
-                <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 }}>
-                  <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
+                <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, flexShrink: 1, maxWidth: "58%", minWidth: 0, paddingHorizontal: 8, paddingVertical: 4 }}>
+                  <Text adjustsFontSizeToFit minimumFontScale={0.7} numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
                     {t("earning")} {money(commission)}
                   </Text>
                 </View>
