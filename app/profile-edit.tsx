@@ -23,7 +23,7 @@ function isImageAvatar(value: string) {
 function ProfileEditScreenInner() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, backendMode, currentUser, updateProfile, savePreferences, signOut } = useStore();
+  const { authError, backendMode, currentUser, updateProfile, savePreferences, requestAccountDeletion, signOut } = useStore();
   const prefs0 = currentUser.preferences ?? {};
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const [name, setName] = useState(currentUser.name);
@@ -83,10 +83,20 @@ function ProfileEditScreenInner() {
   function closeAccount() {
     Alert.alert(
       "Hesabı kapat",
-      "Hesap kapatma kalıcıdır ve KVKK kapsamında işlenir. Talebini Yasal & Destek üzerinden başlatalım mı?",
+      "Hesap kapatma talebi KVKK kapsamında işlenir; onaylanınca ilanların ve komisyon geçmişin kalıcı olarak silinir. Talebi şimdi oluşturalım mı?",
       [
         { text: "Vazgeç", style: "cancel" },
-        { text: "Talep oluştur", style: "destructive", onPress: () => router.push("/kvkk") }
+        {
+          text: "Talep oluştur",
+          style: "destructive",
+          onPress: () => {
+            void (async () => {
+              const ok = await requestAccountDeletion("Kullanıcı ayarlar ekranından hesap kapatma talebi oluşturdu.");
+              Alert.alert(ok ? "Talebin alındı" : "Oluşturulamadı", ok ? "Hesap kapatma talebin kaydedildi. Ekibimiz işleme alacak; detay için Yasal & Destek sayfasını takip et." : (authError ?? "Talep oluşturulamadı, lütfen tekrar dene."));
+              if (ok) router.push("/kvkk");
+            })();
+          }
+        }
       ]
     );
   }

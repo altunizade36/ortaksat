@@ -68,8 +68,16 @@ function NotificationsScreenInner() {
   const togglePref = (key: string) => setPrefs((s) => { const v = !s[key]; void savePreferences({ [`notif_${key}`]: v }); return { ...s, [key]: v }; });
 
   if (isWideWeb) {
+    const dateGroup = (createdAt: string): DeskNotif["group"] => {
+      const t = Date.parse(createdAt);
+      if (Number.isNaN(t)) return "Daha önce";
+      const days = (Date.now() - t) / 86400000;
+      if (days < 1) return "Bugün";
+      if (days < 7) return "Bu hafta";
+      return "Daha önce";
+    };
     const realDesk: DeskNotif[] = myNotifications.map((n) => ({
-      id: n.id, type: n.type, title: n.title, body: n.body, createdAt: n.createdAt, group: "Bugün", real: true
+      id: n.id, type: n.type, title: n.title, body: n.body, createdAt: n.createdAt, group: dateGroup(n.createdAt), real: true
     }));
     // Canlıda yalnızca gerçek bildirimler; örnek (SAMPLE) veriler sadece yerel önizlemede.
     const all: DeskNotif[] = isSupabaseConfigured ? realDesk : [...realDesk, ...SAMPLE];
