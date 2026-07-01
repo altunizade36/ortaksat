@@ -62,11 +62,12 @@ function AdminScreenInner() {
 
   const isAdmin = currentUser.role === "admin" || currentUser.role === "moderator";
   const activeListings = listings.filter((l) => l.status === "active");
+  const pendingReview = listings.filter((l) => l.status === "pending_review");
   const totalCommission = sales.reduce((s, x) => s + x.commissionAmount, 0);
   const pendingCat = categorySuggestions.filter((s) => s.status === "pending").length;
   const pendingLoc = locationSuggestions.filter((s) => s.status === "pending").length;
 
-  const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : 0);
+  const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : k === "listings" ? pendingReview.length : 0);
 
   return (
     <View style={{ backgroundColor: colors.background, flex: 1, flexDirection: isWideWeb ? "row" : "column", minHeight: "100%" }}>
@@ -146,7 +147,25 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "listings" ? (
-          <Panel title="İlanlar" sub={`${activeListings.length} aktif · ${listings.length} toplam`}>
+          <View style={{ gap: 16 }}>
+          {pendingReview.length > 0 ? (
+            <Panel title="Moderasyon Kuyruğu" sub={`${pendingReview.length} ilan onay bekliyor`}>
+              <Table head={["İLAN", "KATEGORİ", "SAHİP", "İŞLEM"]} cols={[2.4, 1.3, 1.4, 1.6]}>
+                {pendingReview.map((l) => (
+                  <Row key={l.id} cols={[2.4, 1.3, 1.4, 1.6]} cells={[
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{findUser(l.ownerId)?.name ?? "—"}</Text>,
+                    <View style={{ flexDirection: "row", gap: 8 }}>
+                      <Pressable onPress={() => updateListingStatus(l.id, "active")} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}><MaterialCommunityIcons name="check" size={14} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>Onayla</Text></Pressable>
+                      <Pressable onPress={() => updateListingStatus(l.id, "rejected")} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 6 }}><MaterialCommunityIcons name="close" size={14} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>Reddet</Text></Pressable>
+                    </View>
+                  ]} />
+                ))}
+              </Table>
+            </Panel>
+          ) : null}
+          <Panel title="İlanlar" sub={`${activeListings.length} aktif · ${pendingReview.length} incelemede · ${listings.length} toplam`}>
             <Table head={["İLAN", "KATEGORİ", "FİYAT", "SAHİP", "DURUM", "İŞLEM"]} cols={[2.2, 1.2, 1, 1.4, 1, 1.2]}>
               {listings.map((l) => (
                 <Row key={l.id} cols={[2.2, 1.2, 1, 1.4, 1, 1.2]} cells={[
@@ -160,6 +179,7 @@ function AdminScreenInner() {
               ))}
             </Table>
           </Panel>
+          </View>
         ) : null}
 
         {section === "categories" ? (
