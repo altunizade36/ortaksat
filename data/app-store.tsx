@@ -144,6 +144,7 @@ type AppStore = {
   signOut: () => Promise<void>;
   updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio">) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, details?: string) => Promise<boolean>;
+  reportUser: (reportedUserId: string, reason: string, details?: string) => Promise<boolean>;
   updateReportStatus: (reportId: string, status: Report["status"]) => Promise<boolean>;
   recordLegalConsent: (documentType: "privacy" | "terms" | "kvkk" | "seller_rules") => Promise<boolean>;
   createSupportTicket: (subject: string, message: string) => Promise<boolean>;
@@ -746,6 +747,21 @@ export function StoreProvider({ children }: PropsWithChildren) {
               status: "open",
               createdAt: today()
             },
+            ...items
+          ]);
+        }
+        return Boolean(reportId);
+      },
+      async reportUser(reportedUserId, reason, details) {
+        if (!liveUser) {
+          setAuthError("Bildirim göndermek için e-posta ile giriş yapmalısın.");
+          return false;
+        }
+        if (reportedUserId === currentUser.id) return false;
+        const reportId = await insertReport({ reporterId: currentUser.id, reportedUserId, reason, details });
+        if (reportId) {
+          setReports((items) => [
+            { id: reportId, reporterId: currentUser.id, reportedUserId, reason, details: details ?? "", status: "open", createdAt: today() },
             ...items
           ]);
         }
