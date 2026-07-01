@@ -88,8 +88,8 @@ export function WebCategories() {
 /** Trust signals strip — reassures all three sides (ilan sahibi / ortak / alıcı). */
 export function WebTrustStrip() {
   const items: Array<{ icon: IconName; title: string; body: string }> = [
-    { icon: "shield-check", title: "Komisyon kayıt altında", body: "Anlaşma ve komisyon şartı sistemde saklanır." },
-    { icon: "eye-check-outline", title: "Şeffaf süreç", body: "Talep, satış ve komisyon canlı panelde görünür." },
+    { icon: "shield-check", title: "Anlaşma şartları kayıt altında", body: "Ortak satış anlaşması ve komisyon şartı sistemde saklanır; ödeme taraflar arasındadır." },
+    { icon: "eye-check-outline", title: "Şeffaf süreç", body: "Talep, anlaşma ve komisyon şartı canlı panelde görünür." },
     { icon: "account-check-outline", title: "Doğrulanmış satıcılar", body: "Telefon/e-posta doğrulama ve güven puanı." },
     { icon: "star-check-outline", title: "Puan & yorumlar", body: "Her satış sonrası karşılıklı değerlendirme." }
   ];
@@ -192,7 +192,7 @@ export function WebWhy() {
       icon: "handshake-outline",
       title: "Ortaksan",
       points: [
-        "Sermaye gerektirmeden, hazır ürünleri satıp komisyon kazan.",
+        "Sermaye gerektirmeden hazır ürünleri paylaş; komisyonu satıcıyla belirle.",
         "Kendi referans linkinle her kanalda paylaş.",
         "Kazancın şeffaf: bekleyen, onaylanan, ödenen olarak görünür."
       ],
@@ -314,7 +314,7 @@ export function WebFooter() {
         <View style={{ flex: 1.6, gap: 10, minWidth: 280 }}>
           <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>ortaksat</Text>
           <Text style={{ color: light, fontSize: 14, fontWeight: "600", lineHeight: 21, maxWidth: 380 }}>
-            {t("appSlogan")}. İlanını aç, ortakların paylaşsın, satışta komisyon kazan.
+            {t("appSlogan")}. İlanını aç, satış yapabilecek ortaklarla eşleş; komisyonu birlikte belirleyin.
           </Text>
           <View style={{ gap: 8, maxWidth: 380 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Bültene abone ol</Text>
@@ -357,8 +357,10 @@ export function WebFooter() {
           <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" }}>
             © 2026 OrtakSat. Tüm hakları saklıdır.
           </Text>
-          <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 11.5, fontWeight: "600" }}>
-            Ortaksat ödeme almaz; alışveriş ve komisyon kullanıcılar arasında yapılır.
+          <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 11.5, fontWeight: "600", maxWidth: 640 }}>
+            OrtakSat ödeme, kargo veya komisyon tahsilatı yapmaz; yalnızca ilan, ortak satıcı eşleştirme,
+            mesajlaşma ve anlaşma kaydı sağlar. Satış, ödeme, teslimat ve komisyon ödemesi kullanıcılar
+            arasındaki anlaşmalardan ibaret olup tüm sorumluluk taraflara aittir.
           </Text>
         </View>
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>

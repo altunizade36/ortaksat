@@ -145,8 +145,8 @@ export default function PartnerScreen() {
     ];
     const stats = [
       { icon: "handshake" as const, value: `${activePartnerships.length}`, label: "Aktif ortaklıklar", tint: [colors.primarySoft, colors.primaryDark] as [string, string] },
-      { icon: "cash-multiple" as const, value: money(totalEarn), label: "Toplam kazanç", tint: [colors.goldSoft, colors.gold] as [string, string] },
-      { icon: "percent" as const, value: `%${avgCommissionPct}`.replace(".", ","), label: "Ortalama komisyon", tint: [colors.infoSoft, colors.info] as [string, string] },
+      { icon: "cash-multiple" as const, value: money(totalEarn), label: "Kayıtlı komisyon", tint: [colors.goldSoft, colors.gold] as [string, string] },
+      { icon: "percent" as const, value: `%${avgCommissionPct}`.replace(".", ","), label: "Ortalama komisyon teklifi", tint: [colors.infoSoft, colors.info] as [string, string] },
       { icon: "account-clock-outline" as const, value: `${pendingPartnerships.length}`, label: "Bekleyen başvurular", tint: [colors.violetSoft, colors.violet] as [string, string] }
     ];
 
@@ -158,14 +158,14 @@ export default function PartnerScreen() {
             <View style={{ alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
               <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Ortak Satış</Text>
             </View>
-            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>Komisyonlu ortak satış fırsatları</Text>
-            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 520 }}>Güvenilir satıcılarla ortak olun, ürünleri paylaşın ve her satıştan komisyon kazanın.</Text>
+            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>Ortak satış fırsatları</Text>
+            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 520 }}>Güvenilir satıcılarla eşleşin, ürünleri paylaşın; komisyonu satıcıyla belirleyin. Ödeme ve teslimat taraflar arasında yapılır.</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, marginTop: 2 }}>
               {[
-                { icon: "shield-check" as const, label: "Komisyon kayıt altında" },
+                { icon: "shield-check" as const, label: "Anlaşma şartları kayıt altında" },
                 { icon: "lock-check-outline" as const, label: "Şeffaf ve güvenli" },
                 { icon: "account-check-outline" as const, label: "Doğrulanmış satıcılar" },
-                { icon: "clock-outline" as const, label: "7/24 destek" }
+                { icon: "gift-outline" as const, label: "Ücretsiz üyelik" }
               ].map((item) => (
                 <View key={item.label} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                   <MaterialCommunityIcons name={item.icon} size={15} color={colors.primary} />

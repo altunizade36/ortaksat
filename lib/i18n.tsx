@@ -10,7 +10,7 @@ const STORAGE_KEY = "ortaksat.language";
 
 const dictionaries: Record<AppLanguage, Dictionary> = {
   tr: {
-    appSlogan: "Komisyonlu ortak satış pazarı",
+    appSlogan: "Ortak satış eşleştirme platformu",
     searchPlaceholder: "ortaksat.com'da Ara",
     home: "Ana Sayfa",
     explore: "Keşfet",
@@ -212,7 +212,7 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     partners: "ortak"
   },
   en: {
-    appSlogan: "Partner sales marketplace",
+    appSlogan: "Partner-sales matching platform",
     searchPlaceholder: "Search on ortaksat.com",
     home: "Home",
     explore: "Explore",

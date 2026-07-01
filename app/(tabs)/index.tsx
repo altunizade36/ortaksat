@@ -284,7 +284,7 @@ function MarketplacePulse({
   const items = [
     { icon: "tag-multiple-outline" as const, label: "Aktif ürün", value: `${totalListings}` },
     { icon: "flash" as const, label: "Anında ortak", value: `${openPartnerListings}` },
-    { icon: "cash-plus" as const, label: "Ort. kazanç", value: money(averageCommission) },
+    { icon: "cash-plus" as const, label: "Ort. komisyon teklifi", value: money(averageCommission) },
     { icon: "map-marker-outline" as const, label: "Şehir", value: `${cityCount}` }
   ];
 

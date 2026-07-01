@@ -275,7 +275,7 @@ function AccountMenu() {
 
 function DesktopTopBar() {
   const trust: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
-    { icon: "shield-check", label: "Komisyon kayıt altında" },
+    { icon: "shield-check", label: "Anlaşma şartları kayıt altında" },
     { icon: "swap-horizontal", label: "Şeffaf süreç" },
     { icon: "account-check", label: "Doğrulanmış satıcılar" },
     { icon: "message-text-outline", label: "İlan üzerinden iletişim" }

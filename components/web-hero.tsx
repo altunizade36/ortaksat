@@ -5,6 +5,7 @@ import { Pressable, Text, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { commissionAmount, money } from "@/lib/format";
+import { compactNumber } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import { useStore } from "@/lib/use-store";
 
@@ -24,17 +25,17 @@ export function WebHero({
   averageCommission: number;
   cityCount: number;
 }) {
-  const stats: Array<{ icon: IconName; value: string; label: string; tint: [string, string] }> = [
-    { icon: "tag-multiple", value: "12.458", label: "Aktif İlan", tint: [colors.primarySoft, colors.primaryDark] },
-    { icon: "account-group", value: "8.750", label: "Aktif Ortak Satıcı", tint: [colors.infoSoft, colors.info] },
-    { icon: "cash-multiple", value: "₺2.450", label: "Ortalama Komisyon", tint: [colors.goldSoft, colors.gold] },
-    { icon: "map-marker-radius", value: "81", label: "Şehirde Hizmet", tint: [colors.violetSoft, colors.violet] }
-  ];
-  void totalListings;
   void averageCommission;
-  void cityCount;
 
   const { listings } = useStore();
+  const openCount = listings.filter((l) => l.status === "active" && l.partnershipMode === "open").length;
+  const stats: Array<{ icon: IconName; value: string; label: string; tint: [string, string] }> = [
+    { icon: "tag-multiple", value: compactNumber(totalListings), label: "Aktif ilan", tint: [colors.primarySoft, colors.primaryDark] },
+    { icon: "handshake-outline", value: compactNumber(openCount), label: "Ortak satışa açık", tint: [colors.infoSoft, colors.info] },
+    { icon: "map-marker-radius", value: compactNumber(cityCount), label: "Şehir", tint: [colors.violetSoft, colors.violet] },
+    { icon: "shield-check", value: "Ücretsiz", label: "İlan & başvuru", tint: [colors.goldSoft, colors.gold] }
+  ];
+
   const featured = listings
     .filter((l) => l.status === "active" && l.image)
     .sort((a, b) => b.favoriteCount - a.favoriteCount)[0] ?? listings[0];
@@ -58,15 +59,15 @@ export function WebHero({
       <View style={{ flex: 1.25, gap: 16, justifyContent: "center", minWidth: 0 }}>
         <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 7 }}>
           <MaterialCommunityIcons name="lightning-bolt" size={14} color={colors.primary} />
-          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Komisyonla kazanmanın en kolay yolu</Text>
+          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Ortak satış eşleştirme platformu</Text>
         </View>
 
         <Text style={{ color: colors.ink, fontSize: 38, fontWeight: "900", lineHeight: 44 }}>
-          Satamadığın ürünü ortak satışa aç.{"\n"}
-          <Text style={{ color: colors.primary }}>Birlikte kazanalım.</Text>
+          Ürününü ortak satışa aç.{"\n"}
+          <Text style={{ color: colors.primary }}>Satış yapabilecek kişilerle eşleş.</Text>
         </Text>
         <Text style={{ color: colors.muted, fontSize: 16, fontWeight: "600", lineHeight: 24, maxWidth: 520 }}>
-          Ürününü paylaş, güvenilir ortaklarla buluştur, satış gerçekleştiğinde komisyon kazan.
+          Ürününü paylaş, satış yapabilecek ortaklarla eşleş. Komisyonu taraflar kendi arasında belirler; ödeme ve teslimat kullanıcılar arasında yapılır.
         </Text>
 
         <View style={{ flexDirection: "row", gap: 12, marginTop: 4 }}>
@@ -92,7 +93,7 @@ export function WebHero({
               </View>
             ))}
           </View>
-          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>1.250+ kişi bu hafta kazanç sağladı</Text>
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Ücretsiz üyelik · Aracı platform · Komisyonu taraflar belirler</Text>
         </View>
       </View>
 
