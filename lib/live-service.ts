@@ -29,6 +29,22 @@ export async function updateUserStatusLive(userId: string, status: string) {
   if (error) console.warn("User status update failed", error);
 }
 
+/** Kullanici dogrulama rozetini (telefon/kimlik) admin manuel gunceller. */
+export async function updateUserVerificationLive(userId: string, field: "verifiedPhone" | "verifiedIdentity", value: boolean) {
+  if (!supabase) return;
+  const column = field === "verifiedPhone" ? "verified_phone" : "verified_identity";
+  const { error } = await supabase.from("profiles").update({ [column]: value }).eq("id", userId);
+  if (error) console.warn("User verification update failed", error);
+}
+
+/** Admin: birden cok kullaniciya ayni bildirimi ekler (duyuru). */
+export async function insertBulkNotifications(rows: Array<{ id: string; userId: string; type: string; title: string; body: string }>) {
+  if (!supabase || rows.length === 0) return;
+  const payload = rows.map((r) => ({ id: r.id, user_id: r.userId, type: r.type, title: r.title, body: r.body, read: false }));
+  const { error } = await supabase.from("notifications").insert(payload);
+  if (error) console.warn("Bulk notification insert failed", error);
+}
+
 /** Ilani kalici siler (sahibi veya admin; RLS uygular). Iliskili kayitlar FK cascade ile temizlenir. */
 export async function deleteListingLive(listingId: string) {
   if (!supabase) return;

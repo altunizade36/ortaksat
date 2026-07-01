@@ -45,14 +45,16 @@ import {
   recordLegalConsentLive,
   requestAccountDeletionLive,
   deleteListingLive,
+  insertBulkNotifications,
   updatePlatformSettingLive,
   updateUserRoleLive,
   updateUserStatusLive,
+  updateUserVerificationLive,
   updateSaleStatusLive
 } from "@/lib/live-service";
 import { rateLimit } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { loadAccountSnapshot, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings } from "@/lib/supabase-data";
+import { loadAccountSnapshot, loadAdminSnapshot, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings } from "@/lib/supabase-data";
 import { displayText, repairTurkishText } from "@/lib/text";
 import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
 import type {
@@ -189,6 +191,9 @@ type AppStore = {
   deleteListing: (listingId: string) => void;
   setUserRole: (userId: string, role: UserRole) => void;
   setUserStatus: (userId: string, status: NonNullable<User["status"]>) => void;
+  setUserVerification: (userId: string, field: "verifiedPhone" | "verifiedIdentity", value: boolean) => void;
+  adminNotifyUser: (userId: string, title: string, body: string) => void;
+  adminBroadcast: (title: string, body: string) => void;
   updateSaleStatus: (saleId: string, status: SaleStatus) => void;
   findConversation: (id: string) => Conversation | undefined;
   findListing: (id: string) => Listing | undefined;
@@ -261,6 +266,13 @@ function mergeUsers(localUsers: User[], remoteUsers: User[]) {
     seen.add(user.id);
     return true;
   });
+}
+
+// incoming id'leri prev'i EZER (admin tam verisi mevcut kısmi veriyi gunceller).
+function mergeById<T extends { id: string }>(prev: T[], incoming: T[]): T[] {
+  const map = new Map(prev.map((x) => [x.id, x]));
+  for (const item of incoming) map.set(item.id, item);
+  return Array.from(map.values());
 }
 
 function mergeMarketplaceListings(remoteListings: Listing[]) {
@@ -355,6 +367,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
       mounted = false;
     };
   }, []);
+
+  // Admin/moderator girişinde TUM ilanlar (her statu) + kullanicilar yuklenir
+  // (moderasyon, arama, yonetim icin). RLS admin disindakine sinirli veri verir.
+  useEffect(() => {
+    const role = authUser?.role;
+    if (!supabase || (role !== "admin" && role !== "moderator" && role !== "super_admin")) return;
+    let alive = true;
+    void loadAdminSnapshot().then((snap) => {
+      if (!alive || !snap) return;
+      if (snap.listings.length) setListings((prev) => mergeById(prev, snap.listings));
+      if (snap.users.length) setUsers((prev) => mergeById(prev, snap.users));
+    });
+    return () => { alive = false; };
+  }, [authUser?.role, authUser?.id]);
 
   useEffect(() => {
     if (!supabase) return;
@@ -1366,6 +1392,29 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (!isAdmin || userId === currentUser.id) return;
         setUsers((items) => items.map((item) => (item.id === userId ? { ...item, status } : item)));
         if (liveUser) void updateUserStatusLive(userId, status);
+      },
+      setUserVerification(userId, field, value) {
+        const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+        if (!isStaff) return;
+        setUsers((items) => items.map((item) => (item.id === userId ? { ...item, [field]: value } : item)));
+        if (liveUser) void updateUserVerificationLive(userId, field, value);
+      },
+      adminNotifyUser(userId, title, body) {
+        const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+        if (!isStaff || !title.trim() || userId === currentUser.id) return;
+        notify(userId, "system", title.trim(), body.trim());
+      },
+      adminBroadcast(title, body) {
+        const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
+        if (!isAdmin || !title.trim()) return;
+        const targets = users.filter((u) => u.id !== currentUser.id && u.status !== "deleted" && isLiveUser(u));
+        const now = new Date().toISOString().slice(0, 16).replace("T", " ");
+        const rows = targets.map((u) => ({ id: newId("n", liveUser), userId: u.id, type: "system" as const, title: title.trim(), body: body.trim() }));
+        setNotifications((items) => [
+          ...rows.map((r) => ({ id: r.id, userId: r.userId, type: "system" as Notification["type"], title: r.title, body: r.body, read: false, createdAt: now })),
+          ...items
+        ]);
+        if (liveUser) void insertBulkNotifications(rows);
       },
       updateSaleStatus(saleId, status) {
         const sale = sales.find((item) => item.id === saleId);

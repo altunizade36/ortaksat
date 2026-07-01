@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Alert, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
@@ -75,9 +75,27 @@ function AdminScreenInner() {
     listings, users, sales, partnerships, leads, conversations, messages, notifications,
     categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
     updateListingStatus, deleteListing, findUser, signOut, currentUser, reports, updateReportStatus,
-    platformSettings, updatePlatformSetting, setUserRole, setUserStatus
+    platformSettings, updatePlatformSetting, setUserRole, setUserStatus,
+    setUserVerification, adminNotifyUser, adminBroadcast
   } = useStore();
   const canManageUsers = currentUser.role === "admin" || currentUser.role === "super_admin";
+  const [userQuery, setUserQuery] = useState("");
+  const [listingQuery, setListingQuery] = useState("");
+  const [bcTitle, setBcTitle] = useState("");
+  const [bcBody, setBcBody] = useState("");
+  const uq = userQuery.trim().toLocaleLowerCase("tr-TR");
+  const lq = listingQuery.trim().toLocaleLowerCase("tr-TR");
+  const shownUsers = uq ? users.filter((u) => u.name.toLocaleLowerCase("tr-TR").includes(uq) || (u.role ?? "").includes(uq) || (u.status ?? "").includes(uq)) : users;
+  const shownListings = lq ? listings.filter((l) => l.title.toLocaleLowerCase("tr-TR").includes(lq) || l.category.toLocaleLowerCase("tr-TR").includes(lq) || (findUser(l.ownerId)?.name ?? "").toLocaleLowerCase("tr-TR").includes(lq) || l.status.includes(lq)) : listings;
+
+  function promptNotify(userId: string, name: string) {
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      const msg = window.prompt(`${name} kullanıcısına bildirim gönder:`, "");
+      if (msg && msg.trim()) adminNotifyUser(userId, "OrtakSat Yönetimi", msg.trim());
+    } else {
+      adminNotifyUser(userId, "OrtakSat Yönetimi", "Yönetimden bilgilendirme.");
+    }
+  }
   const [section, setSection] = useState<Section>("dashboard");
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [audit, setAudit] = useState<{ logs: AuditEntry[]; rateHits: number } | null>(null);
@@ -157,9 +175,10 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "users" ? (
-          <Panel title="Kullanıcılar" sub={`${users.length} kullanıcı${canManageUsers ? " · rol ve durumu buradan yönet" : ""}`}>
-            <Table head={["KULLANICI", "ROL", "DURUM", "DOĞRULAMA", "İŞLEM"]} cols={[1.8, 1.5, 1, 1, 1.8]}>
-              {users.map((u) => {
+          <Panel title="Kullanıcılar" sub={`${shownUsers.length}/${users.length} kullanıcı${canManageUsers ? " · rol, durum, doğrulama, bildirim" : ""}`}>
+            <AdminSearch value={userQuery} onChange={setUserQuery} placeholder="İsim, rol veya durum ara…" />
+            <Table head={["KULLANICI", "ROL", "DURUM", "DOĞRULAMA", "İŞLEM"]} cols={[1.8, 1.5, 1, 1.1, 2]}>
+              {shownUsers.map((u) => {
                 const suspended = u.status === "suspended";
                 const isSelf = u.id === currentUser.id;
                 const roles: UserRole[] = ["user", "moderator", "admin"];
@@ -184,16 +203,31 @@ function AdminScreenInner() {
                       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{u.role === "admin" || u.role === "super_admin" ? "Admin" : u.role === "moderator" ? "Moderatör" : "Üye"}</Text>
                     ),
                     <View style={{ alignSelf: "flex-start", backgroundColor: suspended ? colors.accentSoft : colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: suspended ? colors.accent : colors.success, fontSize: 10, fontWeight: "900" }}>{suspended ? "Askıda" : "Aktif"}</Text></View>,
-                    <View style={{ flexDirection: "row", gap: 4 }}>
-                      {u.verifiedPhone ? <MaterialCommunityIcons name="phone-check" size={15} color={colors.success} /> : null}
-                      {u.verifiedIdentity ? <MaterialCommunityIcons name="card-account-details-outline" size={15} color={colors.success} /> : null}
-                      {u.verifiedInstagram ? <MaterialCommunityIcons name="instagram" size={15} color={colors.violet} /> : null}
-                    </View>,
+                    canManageUsers && !isSelf ? (
+                      <View style={{ flexDirection: "row", gap: 6 }}>
+                        <Pressable onPress={() => setUserVerification(u.id, "verifiedPhone", !u.verifiedPhone)}>
+                          <MaterialCommunityIcons name="phone-check" size={17} color={u.verifiedPhone ? colors.success : colors.line} />
+                        </Pressable>
+                        <Pressable onPress={() => setUserVerification(u.id, "verifiedIdentity", !u.verifiedIdentity)}>
+                          <MaterialCommunityIcons name="card-account-details-outline" size={17} color={u.verifiedIdentity ? colors.success : colors.line} />
+                        </Pressable>
+                      </View>
+                    ) : (
+                      <View style={{ flexDirection: "row", gap: 4 }}>
+                        {u.verifiedPhone ? <MaterialCommunityIcons name="phone-check" size={15} color={colors.success} /> : null}
+                        {u.verifiedIdentity ? <MaterialCommunityIcons name="card-account-details-outline" size={15} color={colors.success} /> : null}
+                        {u.verifiedInstagram ? <MaterialCommunityIcons name="instagram" size={15} color={colors.violet} /> : null}
+                      </View>
+                    ),
                     canManageUsers && !isSelf ? (
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                         <Pressable onPress={() => setUserStatus(u.id, suspended ? "active" : "suspended")} style={{ alignItems: "center", backgroundColor: suspended ? colors.successSoft : colors.accentSoft, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
                           <MaterialCommunityIcons name={suspended ? "account-check-outline" : "account-cancel-outline"} size={14} color={suspended ? colors.success : colors.accent} />
                           <Text style={{ color: suspended ? colors.success : colors.accent, fontSize: 11, fontWeight: "800" }}>{suspended ? "Aktifleştir" : "Askıya al"}</Text>
+                        </Pressable>
+                        <Pressable onPress={() => promptNotify(u.id, u.name)} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 6 }}>
+                          <MaterialCommunityIcons name="bell-plus-outline" size={13} color={colors.primaryDark} />
+                          <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>Bildirim</Text>
                         </Pressable>
                         <Pressable onPress={() => confirmAction(`${u.name} hesabı silinsin mi? Kullanıcı erişimi kapatılır.`, () => setUserStatus(u.id, "deleted"))} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 }}>
                           <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "800" }}>Sil</Text>
@@ -235,9 +269,10 @@ function AdminScreenInner() {
               </Table>
             </Panel>
           ) : null}
-          <Panel title="İlanlar" sub={`${activeListings.length} aktif · ${pendingReview.length} incelemede · ${listings.length} toplam`}>
-            <Table head={["İLAN", "KATEGORİ", "FİYAT", "SAHİP", "DURUM", "İŞLEM"]} cols={[2.2, 1.2, 1, 1.4, 1, 1.2]}>
-              {listings.map((l) => (
+          <Panel title="İlanlar" sub={`${activeListings.length} aktif · ${pendingReview.length} incelemede · ${listings.length} toplam${lq ? ` · ${shownListings.length} sonuç` : ""}`}>
+            <AdminSearch value={listingQuery} onChange={setListingQuery} placeholder="Başlık, kategori, sahip veya durum ara…" />
+            <Table head={["İLAN", "KATEGORİ", "FİYAT", "SAHİP", "DURUM", "İŞLEM"]} cols={[2.2, 1.2, 1, 1.4, 1, 1.4]}>
+              {shownListings.map((l) => (
                 <Row key={l.id} cols={[2.2, 1.2, 1, 1.4, 1, 1.2]} cells={[
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
                   <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
@@ -408,6 +443,19 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "notifications" ? (
+          <View style={{ gap: 16 }}>
+          {canManageUsers ? (
+            <Panel title="Duyuru Gönder" sub="Tüm kayıtlı kullanıcılara bildirim gönder">
+              <View style={{ gap: 10 }}>
+                <TextInput value={bcTitle} onChangeText={setBcTitle} placeholder="Başlık (ör. Yeni özellik!)" placeholderTextColor={colors.muted} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 42, paddingHorizontal: 12 }} />
+                <TextInput value={bcBody} onChangeText={setBcBody} placeholder="Mesaj metni" placeholderTextColor={colors.muted} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 64, paddingHorizontal: 12, paddingVertical: 10 }} />
+                <Pressable disabled={!bcTitle.trim()} onPress={() => confirmAction(`Duyuru ${users.length - 1} kullanıcıya gönderilsin mi?`, () => { adminBroadcast(bcTitle, bcBody); setBcTitle(""); setBcBody(""); })} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: bcTitle.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}>
+                  <MaterialCommunityIcons name="bullhorn-outline" size={16} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Tümüne gönder</Text>
+                </Pressable>
+              </View>
+            </Panel>
+          ) : null}
           <Panel title="Bildirimler" sub={`${notifications.length} kayıt`}>
             {notifications.slice(0, 30).map((n) => (
               <View key={n.id} style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 2, paddingVertical: 11 }}>
@@ -418,6 +466,7 @@ function AdminScreenInner() {
             ))}
             {notifications.length === 0 ? <EmptyState title="Bildirim yok" body="Sistem bildirimi bulunmuyor." /> : null}
           </Panel>
+          </View>
         ) : null}
 
         {section === "content" ? (
@@ -636,6 +685,16 @@ function SuggestionRow({ title, note, meta, status, onApprove, onReject }: { tit
           <Pressable onPress={onReject} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}><MaterialCommunityIcons name="close" size={15} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Reddet</Text></Pressable>
         </View>
       ) : null}
+    </View>
+  );
+}
+
+function AdminSearch({ value, onChange, placeholder }: { value: string; onChange: (v: string) => void; placeholder: string }) {
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, marginBottom: 12, paddingHorizontal: 12 }}>
+      <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
+      <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 13, minHeight: 38, paddingVertical: 6 }} />
+      {value ? <Pressable onPress={() => onChange("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable> : null}
     </View>
   );
 }

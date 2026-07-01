@@ -167,6 +167,23 @@ export async function fetchAdminAudit(): Promise<{ logs: AuditEntry[]; rateHits:
   return { logs, rateHits: rateRes.count ?? 0 };
 }
 
+/**
+ * Admin tam veri: TUM ilanlar (her statu) + TUM kullanicilar. RLS "admins read
+ * all listings" ile admin/moderator icin calisir; normal kullanicida bos/az doner.
+ */
+export async function loadAdminSnapshot(limit = 1000): Promise<{ listings: Listing[]; users: User[] } | null> {
+  if (!supabase) return null;
+  const [listingsResult, profilesResult] = await Promise.all([
+    supabase.from("listing_public_cards").select("*").order("created_at", { ascending: false }).limit(limit),
+    supabase.from("profiles").select("*").order("updated_at", { ascending: false }).limit(limit)
+  ]);
+  if (listingsResult.error && profilesResult.error) return null;
+  const listings = ((listingsResult.data ?? []) as PublicListingCardRow[]).map(mapListing);
+  const users = ((profilesResult.data ?? []) as ProfileRow[]).map(mapProfile);
+  const counts = listings.reduce<Record<string, number>>((acc, l) => { acc[l.ownerId] = (acc[l.ownerId] ?? 0) + 1; return acc; }, {});
+  return { listings, users: users.map((u) => ({ ...u, listingCount: counts[u.id] ?? u.listingCount })) };
+}
+
 export async function loadPlatformSettings(): Promise<import("@/lib/types").PlatformSettings | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.from("platform_settings").select("*").eq("id", 1).maybeSingle();

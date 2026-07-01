@@ -18,7 +18,8 @@ const typeIcons: Record<NotificationType, keyof typeof MaterialCommunityIcons.gl
   lead: "account-clock",
   sale: "cart-check",
   message: "message-text",
-  payout: "cash-check"
+  payout: "cash-check",
+  system: "bullhorn-outline"
 };
 
 const typeMeta: Record<NotificationType, { label: string; tint: string; color: string }> = {
@@ -26,7 +27,8 @@ const typeMeta: Record<NotificationType, { label: string; tint: string; color: s
   lead: { label: "Talep", tint: colors.violetSoft, color: colors.violet },
   sale: { label: "Satış", tint: colors.successSoft, color: colors.success },
   message: { label: "Mesaj", tint: colors.primarySoft, color: colors.primaryDark },
-  payout: { label: "Komisyon", tint: colors.goldSoft, color: colors.gold }
+  payout: { label: "Komisyon", tint: colors.goldSoft, color: colors.gold },
+  system: { label: "Duyuru", tint: colors.accentSoft, color: colors.accent }
 };
 
 type DeskNotif = { id: string; type: NotificationType; title: string; body: string; createdAt: string; group: "Bugün" | "Bu hafta" | "Daha önce"; real: boolean };
@@ -72,7 +74,7 @@ function NotificationsScreenInner() {
     const isRead = (n: DeskNotif) => readMap[n.id] === true || (n.real && !!notifications.find((x) => x.id === n.id)?.read);
     const totalUnread = all.filter((n) => !isRead(n)).length;
 
-    const counts: Record<NotificationType, number> = { application: 0, lead: 0, sale: 0, message: 0, payout: 0 };
+    const counts: Record<NotificationType, number> = { application: 0, lead: 0, sale: 0, message: 0, payout: 0, system: 0 };
     all.forEach((n) => { counts[n.type] += 1; });
 
     const tabs: Array<{ key: typeof tab; label: string; count: number }> = [
