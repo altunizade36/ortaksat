@@ -46,6 +46,7 @@ export function AppHeader() {
   if (isWideWeb) {
     return (
       <View>
+        <MaintenanceBanner />
         <DesktopTopBar />
 
         {/* HEADER: logo · search · actions */}
@@ -112,6 +113,7 @@ export function AppHeader() {
         paddingTop: insets.top + 6
       }}
     >
+      <MaintenanceBanner />
       <View style={{ alignItems: "center", flexDirection: "row", minHeight: 48, overflow: "hidden" }}>
         <Image source={mascot} contentFit="contain" style={{ height: 72, opacity: 0.09, position: "absolute", right: -14, top: -8, width: 72 }} />
         {showBack ? (
@@ -153,6 +155,20 @@ export function AppHeader() {
         <HeaderActions />
       </View>
       <GlobalSearchBar />
+    </View>
+  );
+}
+
+function MaintenanceBanner() {
+  const { platformSettings, currentUser } = useStore();
+  if (!platformSettings.maintenanceMode) return null;
+  const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+  return (
+    <View style={{ alignItems: "center", backgroundColor: isStaff ? colors.goldSoft : colors.accent, flexDirection: "row", gap: 8, justifyContent: "center", paddingHorizontal: 16, paddingVertical: 7 }}>
+      <MaterialCommunityIcons name="wrench-outline" size={15} color={isStaff ? colors.gold : "#FFFFFF"} />
+      <Text style={{ color: isStaff ? colors.ink : "#FFFFFF", fontSize: 12.5, fontWeight: "800", textAlign: "center" }}>
+        {isStaff ? "Bakım modu AÇIK — ziyaretçilere bakım uyarısı gösteriliyor." : "Sitemiz kısa süreli bakımda. Bazı işlemler geçici olarak sınırlı olabilir."}
+      </Text>
     </View>
   );
 }

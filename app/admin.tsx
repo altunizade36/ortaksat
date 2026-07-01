@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
@@ -49,7 +49,24 @@ const SALE_TONE: Record<SaleStatus, { tint: string; color: string; label: string
   disputed: { tint: colors.accentSoft, color: colors.accent, label: "İtiraz" }
 };
 
-const CHART = [40, 65, 52, 78, 96, 88, 120, 104, 132, 118, 150, 138];
+// Son 12 ay — gerçek veri: yayınlanan ilanların aya göre dağılımı.
+function monthlyListingChart(listings: Array<{ createdAt: string }>): { data: number[]; labels: string[] } {
+  const MON = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+  const now = new Date();
+  const data = new Array(12).fill(0) as number[];
+  const labels = new Array(12).fill("") as string[];
+  for (let i = 0; i < 12; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - (11 - i), 1);
+    labels[i] = MON[d.getMonth()];
+  }
+  for (const l of listings) {
+    const d = new Date(l.createdAt);
+    if (Number.isNaN(d.getTime())) continue;
+    const monthsAgo = (now.getFullYear() - d.getFullYear()) * 12 + (now.getMonth() - d.getMonth());
+    if (monthsAgo >= 0 && monthsAgo < 12) data[11 - monthsAgo] += 1;
+  }
+  return { data, labels };
+}
 
 function AdminScreenInner() {
   const isWideWeb = useIsWideWeb();
@@ -57,7 +74,8 @@ function AdminScreenInner() {
   const {
     listings, users, sales, partnerships, leads, conversations, messages, notifications,
     categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
-    updateListingStatus, findUser, signOut, currentUser, reports, updateReportStatus
+    updateListingStatus, findUser, signOut, currentUser, reports, updateReportStatus,
+    platformSettings, updatePlatformSetting
   } = useStore();
   const [section, setSection] = useState<Section>("dashboard");
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -74,6 +92,9 @@ function AdminScreenInner() {
   const pendingCat = categorySuggestions.filter((s) => s.status === "pending").length;
   const pendingLoc = locationSuggestions.filter((s) => s.status === "pending").length;
   const pendingReports = reports.filter((r) => r.status === "open" || r.status === "reviewing").length;
+
+  // Son 12 ay — gerçek veri: aya göre yayınlanan ilan sayısı (kayıtlı veriden).
+  const { data: chartData, labels: chartLabels } = useMemo(() => monthlyListingChart(listings), [listings]);
 
   const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : k === "listings" ? pendingReview.length : k === "complaints" ? pendingReports : 0);
 
@@ -335,8 +356,8 @@ function AdminScreenInner() {
               <Stat icon="account-clock" tint={colors.goldSoft} color={colors.gold} value={`${leads.length}`} title="Talep" />
               <Stat icon="cash-multiple" tint={colors.successSoft} color={colors.success} value={money(totalCommission)} title="Komisyon (kayıt)" />
             </View>
-            <Panel title="İlan & Satış Grafiği" sub="Son 12 ay (örnek)">
-              <BarChart data={CHART} />
+            <Panel title="Aylık İlan Grafiği" sub="Son 12 ay — yayınlanan ilan (gerçek veri)">
+              <BarChart data={chartData} labels={chartLabels} />
             </Panel>
           </View>
         ) : null}
@@ -376,14 +397,27 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "settings" ? (
-          <Panel title="Ayarlar" sub="Platform genel ayarları (demo)">
-            {["Yeni kayıtlara izin ver", "İlanları yayından önce incele", "E-posta doğrulama zorunlu", "Bakım modu"].map((s, i) => (
-              <View key={s} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 13 }}>
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{s}</Text>
-                <View style={{ alignItems: i < 3 ? "flex-end" : "flex-start", backgroundColor: i < 3 ? colors.primary : colors.line, borderRadius: 999, height: 24, justifyContent: "center", paddingHorizontal: 2, width: 44 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} /></View>
-              </View>
-            ))}
-            <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", marginTop: 8 }}>Canlı ayar yönetimi Supabase'e bağlandığında etkinleşir.</Text>
+          <Panel title="Ayarlar" sub="Platform genel ayarları — anında kaydedilir ve tüm siteye uygulanır">
+            {([
+              { key: "allowSignups", label: "Yeni kayıtlara izin ver", desc: "Kapalıyken yeni hesap kaydı engellenir." },
+              { key: "reviewBeforePublish", label: "İlanları yayından önce incele", desc: "Açıkken yeni ilanlar önce onaya (incelemeye) düşer." },
+              { key: "requireEmailVerification", label: "E-posta doğrulama zorunlu", desc: "Açıkken doğrulanmamış e-posta ile ilan verme sınırlanır." },
+              { key: "maintenanceMode", label: "Bakım modu", desc: "Açıkken tüm sayfalarda üstte bakım uyarısı görünür." }
+            ] as Array<{ key: keyof typeof platformSettings; label: string; desc: string }>).map((s) => {
+              const on = platformSettings[s.key];
+              return (
+                <View key={s.key} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingVertical: 13 }}>
+                  <View style={{ flex: 1, gap: 2 }}>
+                    <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{s.label}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{s.desc}</Text>
+                  </View>
+                  <Pressable onPress={() => updatePlatformSetting(s.key, !on)} style={{ alignItems: on ? "flex-end" : "flex-start", backgroundColor: on ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}>
+                    <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} />
+                  </Pressable>
+                </View>
+              );
+            })}
+            <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", marginTop: 8 }}>Değişiklikler Supabase'e kaydedilir ve tüm ziyaretçilere anında yansır.</Text>
           </Panel>
         ) : null}
 
@@ -406,15 +440,6 @@ function AdminScreenInner() {
                   ))}
                 </Table>
               )}
-            </Panel>
-            <Panel title="Raporlar" sub="Dışa aktarım (yakında)">
-              {["Kullanıcı raporu", "İlan raporu", "Komisyon kayıt raporu", "Talep & satış raporu"].map((r) => (
-                <View key={r} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 11, paddingVertical: 13 }}>
-                  <MaterialCommunityIcons name="file-chart-outline" size={18} color={colors.primaryDark} />
-                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{r}</Text>
-                  <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>yakında</Text>
-                </View>
-              ))}
             </Panel>
           </View>
         ) : null}
@@ -450,7 +475,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, listings, findUser, 
       </View>
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
         <View style={{ flex: 2, gap: 16, minWidth: 280 }}>
-          <Panel title="İlan & Satış Grafiği" sub="Son 12 ay (örnek)"><BarChart data={CHART} /></Panel>
+          <Panel title="Aylık İlan Grafiği" sub="Son 12 ay — gerçek veri"><BarChart data={monthlyListingChart(listings).data} labels={monthlyListingChart(listings).labels} /></Panel>
           <Panel title="Son Eklenen İlanlar">
             <Table head={["İLAN", "KATEGORİ", "FİYAT", "DURUM"]} cols={[2.2, 1.2, 1, 1]}>
               {listings.slice(0, 6).map((l) => (
@@ -558,14 +583,15 @@ function SuggestionRow({ title, note, meta, status, onApprove, onReject }: { tit
   );
 }
 
-function BarChart({ data }: { data: number[] }) {
-  const max = Math.max(...data);
+function BarChart({ data, labels }: { data: number[]; labels?: string[] }) {
+  const max = Math.max(...data, 1);
   return (
-    <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 6, height: 160, paddingTop: 10 }}>
+    <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 6, height: 172, paddingTop: 10 }}>
       {data.map((v, i) => (
-        <View key={i} style={{ flex: 1, gap: 6, justifyContent: "flex-end" }}>
-          <View style={{ backgroundColor: i === data.length - 1 ? colors.primary : colors.primarySoft, borderRadius: 6, height: Math.round((v / max) * 130) + 6, width: "100%" }} />
-          <Text style={{ color: colors.subtle, fontSize: 9, fontWeight: "700", textAlign: "center" }}>{i + 1}</Text>
+        <View key={i} style={{ flex: 1, gap: 5, justifyContent: "flex-end" }}>
+          <Text style={{ color: colors.muted, fontSize: 9, fontWeight: "800", textAlign: "center" }}>{v > 0 ? v : ""}</Text>
+          <View style={{ backgroundColor: i === data.length - 1 ? colors.primary : colors.primarySoft, borderRadius: 6, height: Math.round((v / max) * 118) + 4, width: "100%" }} />
+          <Text style={{ color: colors.subtle, fontSize: 9, fontWeight: "700", textAlign: "center" }}>{labels ? labels[i] : i + 1}</Text>
         </View>
       ))}
     </View>

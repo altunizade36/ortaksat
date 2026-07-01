@@ -161,6 +161,13 @@ export type Conversation = {
   createdAt: string;
 };
 
+export type PlatformSettings = {
+  allowSignups: boolean;
+  reviewBeforePublish: boolean;
+  requireEmailVerification: boolean;
+  maintenanceMode: boolean;
+};
+
 export type Message = {
   id: string;
   conversationId: string;

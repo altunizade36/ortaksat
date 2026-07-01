@@ -165,6 +165,18 @@ export async function fetchAdminAudit(): Promise<{ logs: AuditEntry[]; rateHits:
   return { logs, rateHits: rateRes.count ?? 0 };
 }
 
+export async function loadPlatformSettings(): Promise<import("@/lib/types").PlatformSettings | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.from("platform_settings").select("*").eq("id", 1).maybeSingle();
+  if (error || !data) return null;
+  return {
+    allowSignups: data.allow_signups ?? true,
+    reviewBeforePublish: data.review_before_publish ?? false,
+    requireEmailVerification: data.require_email_verification ?? false,
+    maintenanceMode: data.maintenance_mode ?? false
+  };
+}
+
 export async function loadMarketplaceSnapshot(): Promise<MarketplaceSnapshot | null> {
   if (!supabase) return null;
 

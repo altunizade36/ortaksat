@@ -8,6 +8,25 @@ export function isLiveUser(user: User) {
   return Boolean(supabase && uuidPattern.test(user.id));
 }
 
+const SETTING_COLUMN: Record<string, string> = {
+  allowSignups: "allow_signups",
+  reviewBeforePublish: "review_before_publish",
+  requireEmailVerification: "require_email_verification",
+  maintenanceMode: "maintenance_mode"
+};
+
+/** Platform ayarini gunceller (yalniz admin; RLS uygular). */
+export async function updatePlatformSettingLive(key: string, value: boolean) {
+  if (!supabase) return;
+  const column = SETTING_COLUMN[key];
+  if (!column) return;
+  const { error } = await supabase
+    .from("platform_settings")
+    .update({ [column]: value, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) console.warn("Platform setting update failed", error);
+}
+
 export function makeUuid() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
     return crypto.randomUUID();

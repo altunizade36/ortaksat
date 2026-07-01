@@ -44,11 +44,12 @@ import {
   updateProfileLive,
   recordLegalConsentLive,
   requestAccountDeletionLive,
+  updatePlatformSettingLive,
   updateSaleStatusLive
 } from "@/lib/live-service";
 import { rateLimit } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { loadAccountSnapshot, loadMarketplacePage, loadMarketplaceSnapshot } from "@/lib/supabase-data";
+import { loadAccountSnapshot, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings } from "@/lib/supabase-data";
 import { displayText, repairTurkishText } from "@/lib/text";
 import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
 import type {
@@ -63,6 +64,7 @@ import type {
   Notification,
   Order,
   Partnership,
+  PlatformSettings,
   Report,
   Review,
   ReviewType,
@@ -139,6 +141,9 @@ type AppStore = {
   messages: Message[];
   notifications: Notification[];
   reports: Report[];
+  platformSettings: PlatformSettings;
+  updatePlatformSetting: (key: keyof PlatformSettings, value: boolean) => void;
+  emailVerified: boolean;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
   signUpWithEmail: (input: { email: string; password: string; name: string }) => Promise<boolean>;
   resetPasswordWithEmail: (email: string) => Promise<boolean>;
@@ -281,6 +286,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
   // CANLI mod (Supabase ayarlı): hiçbir demo/mock veri yüklenmez — her şey gerçek
   // veriyle Supabase'den gelir. Yalnızca yerel önizlemede (Supabase yokken) demo veri.
   const [authUser, setAuthUser] = useState<User | null>(null);
+  const [emailVerified, setEmailVerified] = useState(false);
   const [users, setUsers] = useState<User[]>(isSupabaseConfigured ? [] : initialUsers);
   const [listings, setListings] = useState<Listing[]>(isSupabaseConfigured ? [] : initialListings);
   const [partnerships, setPartnerships] = useState(isSupabaseConfigured ? [] : initialPartnerships);
@@ -293,6 +299,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [messages, setMessages] = useState(isSupabaseConfigured ? [] : initialMessages);
   const [notifications, setNotifications] = useState(isSupabaseConfigured ? [] : initialNotifications);
   const [reports, setReports] = useState<Report[]>([]);
+  const [platformSettings, setPlatformSettings] = useState<PlatformSettings>({
+    allowSignups: true,
+    reviewBeforePublish: false,
+    requireEmailVerification: false,
+    maintenanceMode: false
+  });
   // Katalog sayfalama (sunucu tarafli). mpOffsetRef = simdiye kadar cekilen
   // katalog ilan sayisi; hasMore = daha var mi; loadingMore = yukleme kilidi.
   const mpOffsetRef = useRef(0);
@@ -325,6 +337,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
       mpOffsetRef.current = snapshot.listings.length;
       setMarketplaceHasMore(snapshot.listings.length >= 90);
       setBackendMode("supabase");
+      const settings = await loadPlatformSettings();
+      if (mounted && settings) setPlatformSettings(settings);
     }
 
     hydrateFromSupabase();
@@ -401,9 +415,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
       if (error) setAuthError(error.message);
       const user = data.session?.user;
       if (user) {
+        setEmailVerified(Boolean(user.email_confirmed_at));
         void loadProfile(user.id, user.phone, user.user_metadata?.full_name);
       } else if (mounted) {
         setAuthUser(null);
+        setEmailVerified(false);
       }
       if (mounted) setAuthReady(true);
     });
@@ -411,9 +427,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
     const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
       const user = session?.user;
       if (user) {
+        setEmailVerified(Boolean(user.email_confirmed_at));
         void loadProfile(user.id, user.phone, user.user_metadata?.full_name);
       } else {
         setAuthUser(null);
+        setEmailVerified(false);
       }
       setAuthReady(true);
     });
@@ -565,6 +583,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setSales((items) => [sale, ...items.filter((item) => item.id !== sale.id)]);
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "platform_settings" },
+        (payload) => {
+          const row = payload.new as Record<string, any> | null;
+          if (!row) return;
+          setPlatformSettings({
+            allowSignups: row.allow_signups ?? true,
+            reviewBeforePublish: row.review_before_publish ?? false,
+            requireEmailVerification: row.require_email_verification ?? false,
+            maintenanceMode: row.maintenance_mode ?? false
+          });
+        }
+      )
       .subscribe();
 
     return () => {
@@ -694,6 +726,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return !error;
       },
       async signUpWithEmail(input) {
+        if (!platformSettings.allowSignups) {
+          setAuthError("Yeni kayıtlar şu anda geçici olarak kapalıdır. Lütfen daha sonra tekrar deneyin.");
+          return false;
+        }
         const sv = validateSignUp({ name: input.name, email: input.email, password: input.password });
         if (!sv.ok) {
           setAuthError(firstError(sv) ?? "Bilgileri kontrol edin.");
@@ -923,6 +959,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       createListing(input, statusOverride) {
         const id = newId("l", liveUser);
+        // Admin "yayindan once incele" acikken (moderasyon zaten pending/rejected
+        // demediyse) tum yeni ilanlar pending_review'a duser.
+        const resolvedStatus: Listing["status"] =
+          statusOverride === "pending_review" || statusOverride === "rejected"
+            ? statusOverride
+            : platformSettings.reviewBeforePublish
+              ? "pending_review"
+              : statusOverride ?? "active";
         const listing: Listing = {
           ...input,
           id,
@@ -936,7 +980,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           partnerRules: input.partnerRules.map(repairTurkishText),
           deliveryNote: repairTurkishText(input.deliveryNote),
           slug: `${slugify(input.title)}-${id.slice(0, 8)}`,
-          status: statusOverride ?? "active",
+          status: resolvedStatus,
           partnerCount: 0,
           leadCount: 0,
           favoriteCount: 0,
@@ -1326,6 +1370,13 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
         if (liveUser && updatedSale) void updateSaleStatusLive(updatedSale);
       },
+      platformSettings,
+      emailVerified,
+      updatePlatformSetting(key, value) {
+        if (currentUser.role !== "admin" && currentUser.role !== "super_admin") return;
+        setPlatformSettings((prev) => ({ ...prev, [key]: value }));
+        void updatePlatformSettingLive(key, value);
+      },
       marketplaceHasMore,
       marketplaceLoadingMore,
       loadMoreMarketplace() {
@@ -1368,7 +1419,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return favorites.some((item) => item.listingId === listingId && item.userId === currentUser.id);
       }
     };
-  }, [authError, authReady, authUser, backendMode, conversations, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, messages, notifications, orders, partnerships, reports, reviews, sales, users]);
+  }, [authError, authReady, authUser, backendMode, conversations, emailVerified, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, messages, notifications, orders, partnerships, platformSettings, reports, reviews, sales, users]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
