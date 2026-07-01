@@ -6,7 +6,9 @@ import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshCo
 
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
+import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState } from "@/components/ui";
+import type { CategoryNode } from "@/lib/category-tree";
 import { Marketplace3DHero } from "@/components/three-d-showcase";
 import { WebHero } from "@/components/web-hero";
 import { WebFooter, WebHowItWorks, WebTrustStrip, WebWhy } from "@/components/web-landing";
@@ -28,7 +30,7 @@ export default function HomeScreen() {
   const { language, t } = useLanguage();
   const { width } = useWindowDimensions();
   const params = useLocalSearchParams<{ q?: string }>();
-  const { currentUser, findUser, listings, loadMoreMarketplace, marketplaceHasMore } = useStore();
+  const { categoryTree, currentUser, findUser, listings, loadMoreMarketplace, marketplaceHasMore } = useStore();
   const query = params.q ?? "";
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sortMode, setSortMode] = useState<SortMode>("featured");
@@ -135,13 +137,17 @@ export default function HomeScreen() {
 
       {!isWideWeb ? <HomeQuickActions currentUserId={currentUser.id} /> : null}
 
-      <MarketplacePulse
-        averageCommission={averageCommission}
-        cityCount={cityCount}
-        myActiveListings={myActiveListings}
-        openPartnerListings={openPartnerListings}
-        totalListings={activeListings.length}
-      />
+      <CategoryShowcase categoryTree={categoryTree} isWideWeb={isWideWeb} />
+
+      {activeListings.length > 0 ? (
+        <MarketplacePulse
+          averageCommission={averageCommission}
+          cityCount={cityCount}
+          myActiveListings={myActiveListings}
+          openPartnerListings={openPartnerListings}
+          totalListings={activeListings.length}
+        />
+      ) : null}
 
       <View style={{ gap: 7 }}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
@@ -172,7 +178,25 @@ export default function HomeScreen() {
         )}
       </View>
 
-      {filteredListings.length === 0 ? <EmptyState title={t("noResults")} body={t("noResultsBody")} /> : null}
+      {filteredListings.length === 0 ? (
+        activeListings.length === 0 && !query ? (
+          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 18, borderWidth: 1, gap: 12, paddingHorizontal: 20, paddingVertical: 28 }}>
+            <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, height: 60, justifyContent: "center", width: 60 }}>
+              <MaterialCommunityIcons name="rocket-launch-outline" size={30} color={colors.primary} />
+            </View>
+            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900", textAlign: "center" }}>{translateCopy("İlk ilanı sen ver", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 420, textAlign: "center" }}>{translateCopy("OrtakSat yeni büyüyor. Ürününü ekle, ortak satıcılarla eşleş ve ilk kazananlardan ol. Yayınlaman ücretsiz.", language)}</Text>
+            <Link href="/create" asChild>
+              <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, opacity: pressed ? 0.85 : 1, paddingHorizontal: 22, paddingVertical: 13 })}>
+                <MaterialCommunityIcons name="store-plus-outline" size={18} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy("Hemen ilan ver", language)}</Text>
+              </Pressable>
+            </Link>
+          </View>
+        ) : (
+          <EmptyState title={t("noResults")} body={t("noResultsBody")} />
+        )
+      ) : null}
 
       <View
         onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}
@@ -268,6 +292,52 @@ function HomeQuickActions({ currentUserId }: { currentUserId: string }) {
           </Pressable>
         </Link>
       ))}
+    </View>
+  );
+}
+
+function CategoryShowcase({ categoryTree, isWideWeb }: { categoryTree: CategoryNode[]; isWideWeb: boolean }) {
+  const { language } = useLanguage();
+  const cats = categoryTree.slice(0, isWideWeb ? 12 : 10);
+  if (cats.length === 0) return null;
+
+  const Tile = ({ node }: { node: CategoryNode }) => (
+    <Link href={{ pathname: "/kategoriler", params: { c: node.slug ?? node.key } }} asChild>
+      <Pressable style={({ pressed }) => ({ alignItems: "center", gap: 7, opacity: pressed ? 0.75 : 1, width: isWideWeb ? undefined : 78 })}>
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, height: isWideWeb ? 72 : 64, justifyContent: "center", overflow: "hidden", width: isWideWeb ? 72 : 64 }}>
+          {node.image ? (
+            <SafeRemoteImage uri={node.image} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+          ) : (
+            <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={28} color={colors.primary} />
+          )}
+        </View>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 11.5, fontWeight: "800", maxWidth: isWideWeb ? 88 : 78, textAlign: "center" }}>
+          {translateCopy(getCategoryShortLabel(node.label), language)}
+        </Text>
+      </Pressable>
+    </Link>
+  );
+
+  return (
+    <View style={{ gap: 10 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <Text style={{ color: colors.ink, flex: 1, fontSize: isWideWeb ? 20 : 17, fontWeight: "900" }}>{translateCopy("Kategorilere göz at", language)}</Text>
+        <Link href="/kategoriler" asChild>
+          <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Tümü", language)}</Text>
+            <MaterialCommunityIcons name="arrow-right" size={16} color={colors.primaryDark} />
+          </Pressable>
+        </Link>
+      </View>
+      {isWideWeb ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
+          {cats.map((node) => <Tile key={node.key} node={node} />)}
+        </View>
+      ) : (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 12 }}>
+          {cats.map((node) => <Tile key={node.key} node={node} />)}
+        </ScrollView>
+      )}
     </View>
   );
 }
