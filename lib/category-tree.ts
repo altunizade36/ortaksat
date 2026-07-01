@@ -63,7 +63,7 @@ function brandGroupNodes(brands: string[], groups: string[], formKey: string): C
 const CAR_PART_GROUPS = ["Motor Parçaları", "Fren Sistemi", "Süspansiyon & Rot-Balans", "Şanzıman & Debriyaj", "Egzoz Sistemi", "Soğutma & Radyatör", "Elektrik & Aydınlatma", "Kaporta & Dış Aksam", "Far & Stop", "Cam & Ayna", "İç Aksam & Döşeme", "Filtreler", "Triger & Kayış Seti", "Amortisör", "Yakıt Sistemi", "Klima & Kalorifer", "Marş & Alternatör", "Turbo & Yağlama"];
 
 // ---- marka/değer listeleri ----------------------------------------------
-export const CAR_BRANDS = ["Alfa Romeo", "Audi", "BMW", "BYD", "Chery", "Chevrolet", "Citroën", "Dacia", "Fiat", "Ford", "Honda", "Hyundai", "Jeep", "Kia", "Land Rover", "Mazda", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "Nissan", "Opel", "Peugeot", "Renault", "Seat", "Škoda", "Suzuki", "Tesla", "Togg", "Toyota", "Volkswagen", "Volvo", "Diğer"];
+export const CAR_BRANDS = ["Alfa Romeo", "Aston Martin", "Audi", "Bentley", "BMW", "BYD", "Chery", "Chevrolet", "Citroën", "Cupra", "Dacia", "Daihatsu", "DS Automobiles", "Ferrari", "Fiat", "Ford", "Honda", "Hyundai", "Infiniti", "Isuzu", "Jaguar", "Jeep", "Kia", "Lada", "Lamborghini", "Land Rover", "Lexus", "Maserati", "Mazda", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "Nissan", "Opel", "Peugeot", "Porsche", "Renault", "Seat", "Škoda", "Smart", "SsangYong", "Subaru", "Suzuki", "Tesla", "Togg", "Toyota", "Volkswagen", "Volvo", "Diğer"];
 export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Bajaj", "TVS", "CFMoto", "Mondial", "Kuba", "RKS", "Diğer"];
 export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vestel", "Samsung", "LG", "Profilo", "Altus", "Grundig", "Regal", "Silverline", "Electrolux", "Whirlpool", "Simfer", "Kumtel", "Luxell", "Sharp", "Hisense", "Midea", "Candy", "Indesit", "Ariston", "Diğer"];
 // Kombi/klima markaları (beyaz eşyadan farklı).
@@ -91,9 +91,9 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   Nissan: ["Qashqai", "Juke", "Micra", "X-Trail", "Note", "Navara", "Leaf", "Pulsar", "Primera"],
   Kia: ["Rio", "Ceed", "Sportage", "Stonic", "Picanto", "Cerato", "Sorento", "Niro", "Soul", "EV6", "Venga"],
   Dacia: ["Sandero", "Duster", "Logan", "Jogger", "Lodgy", "Dokker", "Spring"],
-  Tesla: ["Model 3", "Model Y", "Model S", "Model X"],
+  Tesla: ["Model 3", "Model Y", "Model S", "Model X", "Cybertruck"],
   Togg: ["T10X", "T10F"],
-  BYD: ["Atto 3", "Seal", "Dolphin", "Han"],
+  BYD: ["Atto 3", "Seal", "Dolphin", "Han", "Tang", "Song Plus", "Seal U"],
   // Cep telefonu
   iPhone: ["iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro Max", "iPhone 15", "iPhone 14", "iPhone 13", "iPhone 12", "iPhone 11", "iPhone SE"],
   Samsung: ["Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy S23 Ultra", "Galaxy S23", "Galaxy S22", "Galaxy A55", "Galaxy A35", "Galaxy A25", "Galaxy A15", "Galaxy A05", "Galaxy M Serisi", "Galaxy Z Fold5", "Galaxy Z Flip5", "Galaxy Note 20", "Galaxy S21 FE"],
@@ -102,19 +102,36 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   Oppo: ["Reno 11", "Reno 10", "A98", "A78", "A58"],
   Realme: ["C67", "C55", "11 Pro", "GT Neo", "Number serisi"],
   // Ek otomobil markaları
-  Chevrolet: ["Cruze", "Aveo", "Spark", "Captiva", "Trax"],
-  Seat: ["Ibiza", "Leon", "Arona", "Ateca", "Toledo"],
-  "Škoda": ["Octavia", "Superb", "Fabia", "Kamiq", "Karoq", "Scala"],
-  Volvo: ["XC40", "XC60", "XC90", "S60", "V40"],
-  Suzuki: ["Swift", "Vitara", "SX4", "Baleno", "Jimny"],
-  Mitsubishi: ["Lancer", "ASX", "Outlander", "L200", "Space Star"],
-  Mini: ["Cooper", "Countryman", "Clubman"],
-  "Land Rover": ["Range Rover", "Evoque", "Discovery", "Defender"],
-  Jeep: ["Renegade", "Compass", "Cherokee", "Wrangler"],
-  Mazda: ["2", "3", "6", "CX-3", "CX-5"],
-  "Alfa Romeo": ["Giulietta", "Giulia", "Stelvio", "Mito"],
-  MG: ["ZS", "HS", "MG4", "MG5"],
-  Chery: ["Tiggo 7", "Tiggo 8", "Omoda 5"],
+  Chevrolet: ["Cruze", "Aveo", "Spark", "Captiva", "Trax", "Lacetti", "Kalos", "Epica", "Nubira", "Malibu", "Camaro"],
+  Seat: ["Ibiza", "Leon", "Arona", "Ateca", "Toledo", "Cordoba", "Altea", "Alhambra", "Tarraco"],
+  "Škoda": ["Octavia", "Superb", "Fabia", "Kamiq", "Karoq", "Scala", "Kodiaq", "Rapid", "Yeti", "Roomster", "Enyaq"],
+  Volvo: ["XC40", "XC60", "XC90", "S60", "S90", "V40", "V60", "V90", "C40", "EX30"],
+  Suzuki: ["Swift", "Vitara", "SX4", "SX4 S-Cross", "Baleno", "Jimny", "Grand Vitara", "Alto", "Splash", "Ignis", "Celerio"],
+  Mitsubishi: ["Lancer", "ASX", "Outlander", "Eclipse Cross", "L200", "Space Star", "Colt", "Pajero", "Attrage"],
+  Mini: ["Cooper", "Cooper S", "Countryman", "Clubman", "Cabrio", "John Cooper Works", "Paceman"],
+  "Land Rover": ["Range Rover", "Range Rover Sport", "Range Rover Velar", "Evoque", "Discovery", "Discovery Sport", "Defender", "Freelander"],
+  Jeep: ["Renegade", "Compass", "Cherokee", "Grand Cherokee", "Wrangler", "Avenger", "Commander"],
+  Mazda: ["2", "3", "6", "CX-3", "CX-30", "CX-5", "CX-60", "MX-5", "CX-9"],
+  "Alfa Romeo": ["Giulietta", "Giulia", "Stelvio", "Mito", "Tonale", "159", "147", "Brera"],
+  MG: ["ZS", "HS", "MG4", "MG5", "MG3", "Marvel R", "MG7", "EHS"],
+  Chery: ["Tiggo 7", "Tiggo 7 Pro", "Tiggo 8", "Tiggo 8 Pro", "Omoda 5", "Omoda E5", "Tiggo 4", "Tiggo 2"],
+  Porsche: ["911", "Cayenne", "Macan", "Panamera", "Taycan", "Boxster", "Cayman"],
+  Jaguar: ["XE", "XF", "XJ", "F-Pace", "E-Pace", "I-Pace", "F-Type"],
+  Lexus: ["IS", "ES", "LS", "UX", "NX", "RX", "RZ", "LC", "CT"],
+  Cupra: ["Formentor", "Leon", "Born", "Ateca", "Terramar", "Tavascan"],
+  "DS Automobiles": ["DS3", "DS4", "DS7", "DS9"],
+  SsangYong: ["Tivoli", "Korando", "Rexton", "Musso", "Actyon"],
+  Subaru: ["Impreza", "XV", "Forester", "Outback", "Legacy", "BRZ"],
+  Isuzu: ["D-Max", "NPR", "NLR", "Novociti"],
+  Infiniti: ["Q30", "Q50", "QX30", "QX50", "QX70"],
+  "Aston Martin": ["DB11", "DBX", "Vantage", "DBS"],
+  Bentley: ["Continental GT", "Bentayga", "Flying Spur"],
+  Ferrari: ["Roma", "Portofino", "296 GTB", "F8", "SF90", "Purosangue"],
+  Lamborghini: ["Huracán", "Urus", "Aventador", "Revuelto"],
+  Maserati: ["Ghibli", "Levante", "Quattroporte", "Grecale", "MC20"],
+  Lada: ["Vesta", "Granta", "Niva", "Largus"],
+  Smart: ["ForTwo", "ForFour", "#1", "#3"],
+  Daihatsu: ["Terios", "Sirion", "Materia", "Cuore"],
   // Ek cep telefonu markaları
   Vivo: ["Y36", "Y22", "V29", "V27", "X90"],
   Tecno: ["Camon 20", "Spark 10", "Pova 5", "Phantom X2"],
