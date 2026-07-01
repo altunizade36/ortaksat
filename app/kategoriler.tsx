@@ -119,7 +119,7 @@ export default function CategoriesPage() {
           {[
             { icon: "shape-outline" as const, value: `${tops.length}`, label: "Toplam kategori" },
             { icon: "tag-multiple-outline" as const, value: `${totalActive}`, label: "Aktif ilan" },
-            { icon: "cash-multiple" as const, value: "₺181", label: "Ort. kazanç" }
+            { icon: "gift-outline" as const, value: "Ücretsiz", label: "İlan & başvuru" }
           ].map((s) => (
             <View key={s.label} style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 14, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 }}>
               <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>

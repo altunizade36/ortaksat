@@ -59,7 +59,7 @@ export function WebHero({
       <View style={{ flex: 1.25, gap: 16, justifyContent: "center", minWidth: 0 }}>
         <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 7 }}>
           <MaterialCommunityIcons name="lightning-bolt" size={14} color={colors.primary} />
-          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Ortak satış eşleştirme platformu</Text>
+          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Ortak satış platformu</Text>
         </View>
 
         <Text style={{ color: colors.ink, fontSize: 38, fontWeight: "900", lineHeight: 44 }}>
