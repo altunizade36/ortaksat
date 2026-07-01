@@ -272,7 +272,7 @@ function DesktopTopBar() {
     { icon: "shield-check", label: "Komisyon kayıt altında" },
     { icon: "swap-horizontal", label: "Şeffaf süreç" },
     { icon: "account-check", label: "Doğrulanmış satıcılar" },
-    { icon: "whatsapp", label: "7/24 WhatsApp destek" }
+    { icon: "message-text-outline", label: "İlan üzerinden iletişim" }
   ];
   const right: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href }> = [
     { icon: "lifebuoy", label: "Yardım", href: "/legal" },

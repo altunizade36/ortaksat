@@ -115,13 +115,12 @@ export default function LegalScreen() {
       { q: "Son yapılan satıştan sonra iptal edebilir miyim?", a: "Satış ve iade koşulları satıcı ile alıcı arasında belirlenir. Anlaşmazlık durumunda Güven Merkezi üzerinden kayıt açabilirsiniz." },
       { q: "Hesabımı silersem verilerim ne olur?", a: "Hesap silme talebiniz KVKK kapsamında en geç 30 gün içinde sonuçlandırılır ve kişisel verileriniz kalıcı olarak silinir." },
       { q: "Hangi içerikler yasaklıdır?", a: "Sahte/taklit ürünler, yasa dışı ürünler, yanıltıcı içerik, spam ve marka ihlali yasaktır. Tam liste Yasaklı İçerikler sekmesindedir." },
-      { q: "Uygunsuzluk durumunda nasıl destek alırım?", a: "Sağdaki destek kanallarından (WhatsApp, e-posta, canlı destek, telefon) bize ulaşabilir veya destek talebi oluşturabilirsiniz." }
+      { q: "Uygunsuzluk durumunda nasıl destek alırım?", a: "Aşağıdaki formdan bir destek talebi oluşturabilir veya bir ilanı/kullanıcıyı Güven Merkezi üzerinden bildirebilirsiniz. Talebiniz kayıt altına alınır ve incelenir." }
     ];
+    // Şu an yalnızca uygulama içi destek talebi aktiftir (telefon/WhatsApp hattı yoktur).
     const channels: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string; cta: string; tint: string; color: string }> = [
-      { icon: "whatsapp", title: "WhatsApp Destek", sub: "7/24 hızlı destek alın", cta: "WhatsApp'a Git", tint: colors.successSoft, color: colors.success },
-      { icon: "email-outline", title: "E-posta Desteği", sub: "destek@ortaksat.com", cta: "E-posta Gönder", tint: colors.infoSoft, color: colors.info },
-      { icon: "chat-processing-outline", title: "Canlı Destek", sub: "Her gün 09:00 - 22:00", cta: "Sohbeti Başlat", tint: colors.violetSoft, color: colors.violet },
-      { icon: "phone-outline", title: "Telefon Desteği", sub: "Hafta içi 10:00 - 18:00", cta: "Numarayı Gör", tint: colors.goldSoft, color: colors.gold }
+      { icon: "ticket-confirmation-outline", title: "Destek Talebi", sub: "Aşağıdaki formdan oluşturun", cta: "Talep Oluştur", tint: colors.infoSoft, color: colors.info },
+      { icon: "flag-outline", title: "İlan / Kullanıcı Bildirimi", sub: "Güven Merkezi üzerinden bildirin", cta: "Güven Merkezi", tint: colors.accentSoft, color: colors.accent }
     ];
 
     return (

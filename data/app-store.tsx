@@ -274,28 +274,34 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [backendMode, setBackendMode] = useState<"mock" | "supabase">("mock");
   const [authReady, setAuthReady] = useState(!isSupabaseConfigured);
   const [authError, setAuthError] = useState<string | undefined>();
+  // CANLI mod (Supabase ayarlı): hiçbir demo/mock veri yüklenmez — her şey gerçek
+  // veriyle Supabase'den gelir. Yalnızca yerel önizlemede (Supabase yokken) demo veri.
   const [authUser, setAuthUser] = useState<User | null>(null);
-  const [users, setUsers] = useState(initialUsers);
-  const [listings, setListings] = useState(initialListings);
-  const [partnerships, setPartnerships] = useState(initialPartnerships);
-  const [leads, setLeads] = useState(initialLeads);
-  const [sales, setSales] = useState(initialSales);
-  const [orders, setOrders] = useState(initialOrders);
-  const [reviews, setReviews] = useState(initialReviews);
-  const [favorites, setFavorites] = useState(initialFavorites);
-  const [conversations, setConversations] = useState(initialConversations);
-  const [messages, setMessages] = useState(initialMessages);
-  const [notifications, setNotifications] = useState(initialNotifications);
+  const [users, setUsers] = useState<User[]>(isSupabaseConfigured ? [] : initialUsers);
+  const [listings, setListings] = useState<Listing[]>(isSupabaseConfigured ? [] : initialListings);
+  const [partnerships, setPartnerships] = useState(isSupabaseConfigured ? [] : initialPartnerships);
+  const [leads, setLeads] = useState(isSupabaseConfigured ? [] : initialLeads);
+  const [sales, setSales] = useState(isSupabaseConfigured ? [] : initialSales);
+  const [orders, setOrders] = useState(isSupabaseConfigured ? [] : initialOrders);
+  const [reviews, setReviews] = useState(isSupabaseConfigured ? [] : initialReviews);
+  const [favorites, setFavorites] = useState(isSupabaseConfigured ? [] : initialFavorites);
+  const [conversations, setConversations] = useState(isSupabaseConfigured ? [] : initialConversations);
+  const [messages, setMessages] = useState(isSupabaseConfigured ? [] : initialMessages);
+  const [notifications, setNotifications] = useState(isSupabaseConfigured ? [] : initialNotifications);
   const [reports, setReports] = useState<Report[]>([]);
   // Preview (no-Supabase) auth registry so register/login/logout work end-to-end in demo mode.
   const [mockAccounts, setMockAccounts] = useState<Record<string, { password: string; user: User }>>({});
-  const [categorySuggestions, setCategorySuggestions] = useState<CategorySuggestion[]>([
-    { id: "cs-1", userId: "u-owner-2", userName: "Nisa Aydın", suggestedPath: "El Sanatları > Seramik Atölye Ürünleri", note: "El yapımı seramik için uygun kategori yok.", status: "pending", createdAt: "2026-06-20" },
-    { id: "cs-2", userId: "u-partner", userName: "Ayşe Demir", suggestedPath: "Dijital > NFT & Dijital Sanat", note: "Dijital sanat eserleri için.", status: "pending", createdAt: "2026-06-22" }
-  ]);
-  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>([
-    { id: "ls-1", userId: "u-owner-1", userName: "Mert Kaya", provinceId: 34, districtId: 34001, suggestedName: "Yeni Mahalle", type: "neighborhood", note: "Yeni kurulan site mahallesi.", status: "pending", createdAt: "2026-06-21" }
-  ]);
+  // Öneriler: canlıda boş başlar (gerçek kullanıcı önerileriyle dolar), önizlemede örnek.
+  const [categorySuggestions, setCategorySuggestions] = useState<CategorySuggestion[]>(
+    isSupabaseConfigured ? [] : [
+      { id: "cs-1", userId: "u-owner-2", userName: "Örnek Kullanıcı", suggestedPath: "El Sanatları > Seramik Atölye Ürünleri", note: "Örnek öneri.", status: "pending", createdAt: "2026-06-20" }
+    ]
+  );
+  const [locationSuggestions, setLocationSuggestions] = useState<LocationSuggestion[]>(
+    isSupabaseConfigured ? [] : [
+      { id: "ls-1", userId: "u-owner-1", userName: "Örnek Kullanıcı", provinceId: 34, districtId: 34001, suggestedName: "Örnek Mahalle", type: "neighborhood", note: "Örnek öneri.", status: "pending", createdAt: "2026-06-21" }
+    ]
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -304,10 +310,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
       if (!isSupabaseConfigured) return;
       const snapshot = await loadMarketplaceSnapshot();
       if (!mounted || !snapshot) return;
-      setUsers((localUsers) => {
-        return mergeUsers(localUsers, snapshot.users);
-      });
-      setListings(mergeMarketplaceListings(snapshot.listings));
+      // Canlı: yalnızca gerçek Supabase verisi (demo/mock birleştirme yok).
+      setUsers(snapshot.users);
+      setListings(snapshot.listings);
       setBackendMode("supabase");
     }
 
