@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import { memo } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -13,7 +14,7 @@ import type { Listing, User } from "@/lib/types";
 
 type StatusTone = "success" | "accent" | "info" | "dark";
 
-export function ListingCard({ listing, owner, width }: { listing: Listing; owner?: User; width?: number }) {
+function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: User; width?: number }) {
   const { language, t } = useLanguage();
   const commission = commissionAmount(listing);
   const imageSize = Math.max(148, width ?? 156);
@@ -102,6 +103,10 @@ export function ListingCard({ listing, owner, width }: { listing: Listing; owner
     </View>
   );
 }
+
+// memo: ust bilesen render olsa da ayni listing/owner/width ile yeniden render
+// olmaz. Binlerce kartli listelerde CPU'yu ciddi dusurur.
+export const ListingCard = memo(ListingCardBase);
 
 function isNewListing(value: string) {
   const date = new Date(value);

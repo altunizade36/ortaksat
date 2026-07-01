@@ -463,6 +463,48 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setMessages((items) => (items.some((item) => item.id === message.id) ? items : [message, ...items]));
         }
       )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${authUser.id}` },
+        (payload) => {
+          const row = payload.new as Record<string, any> | null;
+          if (!row) return;
+          const notification: Notification = {
+            id: row.id,
+            userId: row.user_id,
+            type: row.type,
+            title: row.title,
+            body: row.body,
+            read: row.read,
+            createdAt: row.created_at.slice(0, 16).replace("T", " ")
+          };
+          setNotifications((items) => [notification, ...items.filter((item) => item.id !== notification.id)]);
+        }
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "partnerships", filter: `partner_id=eq.${authUser.id}` },
+        (payload) => {
+          const row = payload.new as Record<string, any> | null;
+          if (!row) return;
+          const partnership: Partnership = {
+            id: row.id,
+            listingId: row.listing_id,
+            partnerId: row.partner_id,
+            refCode: row.ref_code,
+            status: row.status,
+            note: row.note,
+            shareChannel: row.share_channel ?? undefined,
+            audience: row.audience ?? undefined,
+            platformHandle: row.platform_handle ?? undefined,
+            reachEstimate: row.reach_estimate ?? undefined,
+            rejectionReason: row.rejection_reason ?? undefined,
+            approvedAt: row.approved_at?.slice(0, 10),
+            createdAt: row.created_at.slice(0, 10)
+          };
+          setPartnerships((items) => [partnership, ...items.filter((item) => item.id !== partnership.id)]);
+        }
+      )
       .subscribe();
 
     return () => {
@@ -475,6 +517,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
     const currentUser = authUser ?? (isSupabaseConfigured ? ANON_USER : (users.find((user) => user.id === currentUserId) ?? users[0] ?? ANON_USER));
     const liveUser = isLiveUser(currentUser);
     const isAuthenticated = isSupabaseConfigured ? authUser != null : true;
+
+    // O(1) arama için id->kayit haritalari. find* bunlari kullanir; boylece
+    // liste render'larinda (binlerce kart) O(n) lineer arama -> O(1) olur.
+    const userById = new Map(users.map((u) => [u.id, u]));
+    const listingById = new Map(listings.map((l) => [l.id, l]));
+    const conversationById = new Map(conversations.map((c) => [c.id, c]));
 
     function createOrReuseConversation(listingId: string, receiverId: string, body?: string) {
       const listing = listings.find((item) => item.id === listingId);
@@ -1219,13 +1267,13 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (liveUser && updatedSale) void updateSaleStatusLive(updatedSale);
       },
       findConversation(id) {
-        return conversations.find((conversation) => conversation.id === id);
+        return conversationById.get(id);
       },
       findListing(id) {
-        return listings.find((listing) => listing.id === id);
+        return listingById.get(id);
       },
       findUser(id) {
-        return users.find((user) => user.id === id);
+        return userById.get(id);
       },
       findPartnership(listingId, partnerId = currentUser.id) {
         return partnerships.find((item) => item.listingId === listingId && item.partnerId === partnerId);
