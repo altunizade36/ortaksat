@@ -1,6 +1,11 @@
+import { ContentPageView } from "@/components/content-page-view";
 import { InfoPage } from "@/components/info-page";
 
 export default function AboutScreen() {
+  return <ContentPageView slug="hakkimizda" fallback={<AboutScreenStatic />} />;
+}
+
+function AboutScreenStatic() {
   return (
     <InfoPage
       title="Hakkımızda"

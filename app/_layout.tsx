@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppHeader } from "@/components/app-header";
 import { colors } from "@/components/colors";
+import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
 import { LanguageProvider, useLanguage } from "@/lib/i18n";
@@ -30,6 +31,7 @@ function RootStack() {
   return (
     <View style={{ flex: 1 }}>
       <StatusBar style="dark" />
+      <GlobalSeo />
       <Stack
         screenOptions={{
           contentStyle: { backgroundColor: colors.background },

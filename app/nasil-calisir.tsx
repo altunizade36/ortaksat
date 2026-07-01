@@ -4,6 +4,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
+import { ContentPageView } from "@/components/content-page-view";
 import { WebTrustStrip, WebFooter } from "@/components/web-landing";
 import { useIsWideWeb } from "@/lib/layout";
 
@@ -75,6 +76,10 @@ const FAQ: Array<{ q: string; a: string }> = [
 ];
 
 export default function HowItWorksPage() {
+  return <ContentPageView slug="nasil-calisir" fallback={<HowItWorksStatic />} />;
+}
+
+function HowItWorksStatic() {
   const isWideWeb = useIsWideWeb();
 
   return (

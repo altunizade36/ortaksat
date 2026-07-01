@@ -1,6 +1,11 @@
+import { ContentPageView } from "@/components/content-page-view";
 import { InfoPage } from "@/components/info-page";
 
 export default function FaqScreen() {
+  return <ContentPageView slug="sss" fallback={<FaqScreenStatic />} />;
+}
+
+function FaqScreenStatic() {
   return (
     <InfoPage
       title="Sıkça Sorulan Sorular"
