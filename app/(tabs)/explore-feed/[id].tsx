@@ -226,7 +226,7 @@ export default function ExploreFeedScreen() {
                       placeholderTextColor={colors.muted}
                       style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700", minHeight: 38, paddingHorizontal: 10 }}
                     />
-                    <Pressable onPress={() => submitComment(listing)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, height: 38, justifyContent: "center", opacity: pressed ? 0.72 : 1, width: 42 })}>
+                    <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Yorumu gönder", language)} onPress={() => submitComment(listing)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, height: 38, justifyContent: "center", opacity: pressed ? 0.72 : 1, width: 42 })}>
                       <MaterialCommunityIcons name="send" size={18} color="#FFFFFF" />
                     </Pressable>
                   </View>

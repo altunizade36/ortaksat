@@ -346,10 +346,10 @@ function MessagesScreenInner() {
                   </View>
                   <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
                     <TextInput value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline placeholder="Mesajınızı yazınız" placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ color: colors.ink, flex: 1, fontSize: 14, maxHeight: 110, minHeight: 46, paddingVertical: 12 }} />
-                    <Pressable onPress={() => void attachImage()} disabled={attaching} hitSlop={8}>
+                    <Pressable accessibilityRole="button" accessibilityLabel="Görsel ekle" onPress={() => void attachImage()} disabled={attaching} hitSlop={8}>
                       <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={19} color={attaching ? colors.primary : colors.muted} />
                     </Pressable>
-                    <Pressable disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 10, height: 36, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 40 })}>
+                    <Pressable accessibilityRole="button" accessibilityLabel="Mesajı gönder" disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 10, height: 36, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 40 })}>
                       <MaterialCommunityIcons name="send" size={17} color="#FFFFFF" />
                     </Pressable>
                   </View>
