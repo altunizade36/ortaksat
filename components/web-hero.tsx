@@ -29,12 +29,20 @@ export function WebHero({
 
   const { listings } = useStore();
   const openCount = listings.filter((l) => l.status === "active" && l.partnershipMode === "open").length;
-  const stats: Array<{ icon: IconName; value: string; label: string; tint: [string, string] }> = [
-    { icon: "tag-multiple", value: compactNumber(totalListings), label: "Aktif ilan", tint: [colors.primarySoft, colors.primaryDark] },
-    { icon: "handshake-outline", value: compactNumber(openCount), label: "Ortak satışa açık", tint: [colors.infoSoft, colors.info] },
-    { icon: "map-marker-radius", value: compactNumber(cityCount), label: "Şehir", tint: [colors.violetSoft, colors.violet] },
-    { icon: "shield-check", value: "Ücretsiz", label: "İlan & başvuru", tint: [colors.goldSoft, colors.gold] }
-  ];
+  // Pazar henüz boşken sıfır göstermek yerine her zaman doğru değer önermeleri göster.
+  const stats: Array<{ icon: IconName; value: string; label: string; tint: [string, string] }> = totalListings === 0
+    ? [
+        { icon: "store-plus-outline", value: "Ücretsiz", label: "İlan yayınla", tint: [colors.primarySoft, colors.primaryDark] },
+        { icon: "handshake-outline", value: "Ortak", label: "Satışta kazanç modeli", tint: [colors.infoSoft, colors.info] },
+        { icon: "cash-remove", value: "%0", label: "Platform komisyonu", tint: [colors.violetSoft, colors.violet] },
+        { icon: "shield-check", value: "Güvenli", label: "Aracı platform", tint: [colors.goldSoft, colors.gold] }
+      ]
+    : [
+        { icon: "tag-multiple", value: compactNumber(totalListings), label: "Aktif ilan", tint: [colors.primarySoft, colors.primaryDark] },
+        { icon: "handshake-outline", value: compactNumber(openCount), label: "Ortak satışa açık", tint: [colors.infoSoft, colors.info] },
+        { icon: "map-marker-radius", value: compactNumber(cityCount), label: "Şehir", tint: [colors.violetSoft, colors.violet] },
+        { icon: "shield-check", value: "Ücretsiz", label: "İlan & başvuru", tint: [colors.goldSoft, colors.gold] }
+      ];
 
   const featured = listings
     .filter((l) => l.status === "active" && l.image)

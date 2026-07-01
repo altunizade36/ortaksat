@@ -405,10 +405,16 @@ export default function ExploreScreen() {
             </View>
 
             {visibleProducts.length === 0 ? (
-              <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 40 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 40 }}>
                 <MaterialCommunityIcons name="magnify-close" size={32} color={colors.primary} />
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{t("noResults")}</Text>
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{t("retrySearchFilter")}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", textAlign: "center" }}>{t("retrySearchFilter")}</Text>
+                <Link href="/create" asChild>
+                  <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 11 })}>
+                    <MaterialCommunityIcons name="store-plus-outline" size={16} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>İlan ver</Text>
+                  </Pressable>
+                </Link>
               </View>
             ) : (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
