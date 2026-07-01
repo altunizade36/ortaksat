@@ -188,21 +188,30 @@ function DesktopActions() {
   );
 }
 
+type AccountItem = { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href; tint?: string; color?: string };
+
 function AccountMenu() {
   const [open, setOpen] = useState(false);
-  const items: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href }> = [
-    { icon: "account-circle-outline", label: "Profilim", href: "/profile" },
-    { icon: "view-list-outline", label: "İlanlarım", href: "/seller" },
-    { icon: "handshake-outline", label: "Ortak Satışlarım", href: "/partner" },
-    { icon: "cash-multiple", label: "Kazançlarım", href: "/earnings" },
-    { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
-    { icon: "message-text-outline", label: "Mesajlarım", href: "/messages" },
-    { icon: "shield-check-outline", label: "Güven Merkezi", href: "/trust" },
-    { icon: "cog-outline", label: "Ayarlar", href: "/profile-edit" },
-    { icon: "shield-crown-outline", label: "Yönetim Paneli", href: "/admin" },
-    { icon: "file-document-outline", label: "Yasal & Destek", href: "/legal" },
-    { icon: "login", label: "Giriş / Kayıt", href: "/auth" }
+  const { isAuthenticated, currentUser } = useStore();
+
+  // Gruplanmış menü: hesap · yönetim · oturum. Her grup arasında ince ayraç.
+  const groups: AccountItem[][] = [
+    [
+      { icon: "account-circle-outline", label: "Profilim", href: "/profile" },
+      { icon: "view-list-outline", label: "İlanlarım", href: "/seller" },
+      { icon: "handshake-outline", label: "Ortak Satışlarım", href: "/partner" },
+      { icon: "cash-multiple", label: "Kazançlarım", href: "/earnings" },
+      { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
+      { icon: "message-text-outline", label: "Mesajlarım", href: "/messages" }
+    ],
+    [
+      { icon: "shield-check-outline", label: "Güven Merkezi", href: "/trust" },
+      { icon: "cog-outline", label: "Ayarlar", href: "/profile-edit" },
+      { icon: "shield-crown-outline", label: "Yönetim Paneli", href: "/admin" },
+      { icon: "file-document-outline", label: "Yasal & Destek", href: "/legal" }
+    ]
   ];
+
   return (
     <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
       <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: open ? colors.primarySoft : colors.surface, borderColor: open ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 7 }}>
@@ -215,17 +224,42 @@ function AccountMenu() {
       {open ? (
         <>
           <Pressable onPress={() => setOpen(false)} style={{ bottom: -3000, left: -3000, position: "absolute", right: -3000, top: -3000, zIndex: 900 }} />
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, paddingVertical: 6, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 48, width: 230, zIndex: 1000 }}>
-            {items.map((item) => (
-              <Link key={item.label} href={item.href} asChild>
-                <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 10 })}>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-                    <MaterialCommunityIcons name={item.icon} size={17} color={colors.primaryDark} />
-                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
-                  </View>
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden", position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.18, shadowRadius: 30, top: 50, width: 268, zIndex: 1000 }}>
+            {/* Başlık */}
+            <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, flexDirection: "row", gap: 11, paddingHorizontal: 15, paddingVertical: 13 }}>
+              <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}>
+                <MaterialCommunityIcons name="account" size={22} color="#FFFFFF" />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{isAuthenticated ? currentUser.name : "Hesabım"}</Text>
+                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.72)", fontSize: 11.5, fontWeight: "700" }}>{isAuthenticated ? "Hesabını yönet" : "Giriş yapmadın"}</Text>
+              </View>
+            </View>
+
+            {groups.map((group, gi) => (
+              <View key={gi} style={{ borderTopColor: colors.line, borderTopWidth: gi === 0 ? 0 : 1, paddingVertical: 5 }}>
+                {group.map((item) => (
+                  <Link key={item.label} href={item.href} asChild>
+                    <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : "transparent", flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 9 })}>
+                      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 30, justifyContent: "center", width: 30 }}>
+                        <MaterialCommunityIcons name={item.icon} size={16} color={colors.primaryDark} />
+                      </View>
+                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
+                    </Pressable>
+                  </Link>
+                ))}
+              </View>
+            ))}
+
+            {/* Oturum aksiyonu */}
+            <View style={{ borderTopColor: colors.line, borderTopWidth: 1, padding: 10 }}>
+              <Link href="/auth" asChild>
+                <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primaryDark : colors.primary, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 })}>
+                  <MaterialCommunityIcons name={isAuthenticated ? "account-cog-outline" : "login"} size={17} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{isAuthenticated ? "Hesap ayarları" : "Giriş / Kayıt ol"}</Text>
                 </Pressable>
               </Link>
-            ))}
+            </View>
           </View>
         </>
       ) : null}
