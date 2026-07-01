@@ -45,7 +45,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
         </Text>
       </View>
       {/* Search + suggestions */}
-      <View style={{ position: "relative", zIndex: 50 }}>
+      <View style={{ gap: 6 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: query ? colors.primary : colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14 }}>
           <MaterialCommunityIcons name="magnify" size={20} color={colors.primary} />
           <TextInput
@@ -58,7 +58,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
           {query ? <Pressable onPress={() => setQuery("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} /></Pressable> : null}
         </View>
         {suggestions.length ? (
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, left: 0, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 58, zIndex: 60 }}>
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, overflow: "hidden" }}>
             {suggestions.map((s) => (
               <Pressable key={s.labels.join(">")} onPress={() => { onChange(s.path); setQuery(""); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 11 })}>
                 <MaterialCommunityIcons name="tag-arrow-right-outline" size={18} color={colors.primary} />
