@@ -37,6 +37,13 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
 
   return (
     <View style={{ gap: 14 }}>
+      {/* Para-modeli bilgi kutusu (her kategori ekranında görünür) */}
+      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 9, paddingHorizontal: 12, paddingVertical: 9 }}>
+        <MaterialCommunityIcons name="shield-check-outline" size={17} color={colors.primaryDark} />
+        <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16 }}>
+          OrtakSat ödeme, kargo veya komisyon işlemez. Taraflar kendi aralarında anlaşır; platform yalnızca ilan ve eşleşme altyapısı sağlar.
+        </Text>
+      </View>
       {/* Search + suggestions */}
       <View style={{ position: "relative", zIndex: 50 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: query ? colors.primary : colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14 }}>
