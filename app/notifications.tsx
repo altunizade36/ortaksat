@@ -56,14 +56,16 @@ export default function NotificationsScreen() {
 
 function NotificationsScreenInner() {
   const { language } = useLanguage();
-  const { currentUser, markNotificationRead, notifications } = useStore();
+  const { currentUser, markNotificationRead, notifications, savePreferences } = useStore();
   const isWideWeb = useIsWideWeb();
   const myNotifications = notifications.filter((notification) => notification.userId === currentUser.id);
   const unreadCount = myNotifications.filter((notification) => !notification.read).length;
 
   const [tab, setTab] = useState<"all" | "unread" | NotificationType>("all");
   const [readMap, setReadMap] = useState<Record<string, boolean>>({});
-  const [prefs, setPrefs] = useState<Record<string, boolean>>({ push: true, email: true, sms: false, whatsapp: true });
+  const p0 = currentUser.preferences ?? {};
+  const [prefs, setPrefs] = useState<Record<string, boolean>>({ push: p0.notif_push ?? true, email: p0.notif_email ?? true, sms: p0.notif_sms ?? false, whatsapp: p0.notif_whatsapp ?? true });
+  const togglePref = (key: string) => setPrefs((s) => { const v = !s[key]; void savePreferences({ [`notif_${key}`]: v }); return { ...s, [key]: v }; });
 
   if (isWideWeb) {
     const realDesk: DeskNotif[] = myNotifications.map((n) => ({
@@ -225,7 +227,7 @@ function NotificationsScreenInner() {
                     <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{p.label}</Text>
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.sub}</Text>
                   </View>
-                  <Pressable onPress={() => setPrefs((s) => ({ ...s, [p.key]: !s[p.key] }))} style={{ alignItems: prefs[p.key] ? "flex-end" : "flex-start", backgroundColor: prefs[p.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+                  <Pressable onPress={() => togglePref(p.key)} style={{ alignItems: prefs[p.key] ? "flex-end" : "flex-start", backgroundColor: prefs[p.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
                     <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
                   </Pressable>
                 </View>

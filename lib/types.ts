@@ -29,6 +29,7 @@ export type User = {
   responseRate: number;
   role?: UserRole;
   status?: "active" | "suspended" | "deleted";
+  preferences?: Record<string, boolean>;
 };
 
 export type Listing = {

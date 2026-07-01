@@ -51,22 +51,22 @@ export default function TrustScreen() {
       { icon: "bank-outline", label: "IBAN", on: false },
       { icon: "map-marker-check-outline", label: "Adres", on: false }
     ];
+    // Gerçek verilerden türetilen dağılım (sabit/sahte değer yok).
+    const complaintScore = openReports.length === 0 ? 100 : Math.max(40, 100 - openReports.length * 15);
     const distribution: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: number; weight: number }> = [
-      { icon: "phone-check", label: "Telefon Doğrulama", value: currentUser.verifiedPhone ? 100 : 0, weight: 15 },
-      { icon: "email-check-outline", label: "E-posta Doğrulama", value: 100, weight: 10 },
-      { icon: "card-account-details-outline", label: "Kimlik Doğrulama", value: currentUser.verifiedIdentity ? 100 : 0, weight: 20 },
-      { icon: "bank-outline", label: "IBAN Doğrulama", value: 80, weight: 10 },
-      { icon: "truck-check-outline", label: "Teslimat Başarısı", value: 95, weight: 15 },
-      { icon: "lightning-bolt-outline", label: "Yanıt Hızı", value: currentUser.responseRate, weight: 15 },
-      { icon: "emoticon-happy-outline", label: "Düşük Şikayet Oranı", value: 98, weight: 15 }
+      { icon: "phone-check", label: "Telefon Doğrulama", value: currentUser.verifiedPhone ? 100 : 0, weight: 20 },
+      { icon: "email-check-outline", label: "E-posta Doğrulama", value: 100, weight: 15 },
+      { icon: "card-account-details-outline", label: "Kimlik Doğrulama", value: currentUser.verifiedIdentity ? 100 : 0, weight: 25 },
+      { icon: "lightning-bolt-outline", label: "Yanıt Hızı", value: currentUser.responseRate, weight: 20 },
+      { icon: "emoticon-happy-outline", label: "Şikayet Kaydı Durumu", value: complaintScore, weight: 20 }
     ];
-    const signals: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string }> = [
-      { icon: "calendar-check", title: "Hesabınız 10+ aydır aktif.", sub: "Uzun süreli ve istikrarlı kullanım." },
-      { icon: "truck-fast-outline", title: "Yüksek teslimat başarısı", sub: "Son 90 günde %95 başarılı teslimat." },
-      { icon: "lightning-bolt", title: "Hızlı yanıt oranı", sub: "Mesajlarına ortalama 1.2 saat içinde dönüş." },
-      { icon: "emoticon-happy-outline", title: "Düşük şikayet oranı", sub: "Son 90 günde şikayet oranın %0.8." },
-      { icon: "handshake-outline", title: "Güvenli süreç kullanımı", sub: "Komisyon ve talepler kayıt altında." }
-    ];
+    // Gerçek durumdan üretilen güven sinyalleri.
+    const signals: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string }> = [];
+    if (currentUser.verifiedPhone) signals.push({ icon: "phone-check", title: "Telefonun doğrulanmış.", sub: "Alıcılar seninle daha güvenle iletişim kurar." });
+    if (currentUser.verifiedIdentity) signals.push({ icon: "card-account-details-outline", title: "Kimliğin doğrulanmış.", sub: "Doğrulanmış kimlik güven skorunu yükseltir." });
+    if (typeof currentUser.responseRate === "number" && currentUser.responseRate > 0) signals.push({ icon: "lightning-bolt", title: "Mesaj yanıt oranın", sub: `Yanıt oranın %${currentUser.responseRate}.` });
+    if (openReports.length === 0) signals.push({ icon: "emoticon-happy-outline", title: "Açık şikayet kaydın yok.", sub: "Hakkında bekleyen inceleme bulunmuyor." });
+    signals.push({ icon: "handshake-outline", title: "Güvenli süreç kullanımı", sub: "Komisyon ve talepler platformda kayıt altında." });
     const calcRules = [
       "Doğrulama seviyesi (kimlik, telefon, e-posta, IBAN)",
       "Teslimat ve işlem başarı oranı",
@@ -80,15 +80,10 @@ export default function TrustScreen() {
       "Kişisel bilgilerinizi paylaşmayın."
     ];
 
-    const sampleRows: Array<{ id: string; type: string; listing: string; party: string; status: ModerationStatus; date: string }> = [
-      { id: "#SR-2026-01562", type: "Ürün Uyuşmazlığı", listing: "iPhone 15 Pro 256GB", party: "Alıcı", status: "reviewing", date: "23 May 2026" },
-      { id: "#SR-2026-01510", type: "Gecikmeli Teslimat", listing: "Dyson V15 Detect", party: "Satıcı", status: "open", date: "20 May 2026" },
-      { id: "#SR-2026-01421", type: "Yanlış İlan", listing: "PlayStation 5", party: "Alıcı", status: "resolved", date: "12 May 2026" }
-    ];
-    const realRows = ownReports.map((r) => ({
+    // Yalnızca gerçek şikayet/inceleme kayıtları — örnek/sahte kayıt yok.
+    const allRows = ownReports.map((r) => ({
       id: `#SR-${r.id}`, type: r.reason, listing: (r.listingId ? findListing(r.listingId)?.title : undefined) ?? "İlan / kullanıcı", party: r.reporterId === currentUser.id ? "Sen" : "Karşı taraf", status: r.status, date: r.createdAt
     }));
-    const allRows = [...realRows, ...sampleRows];
     const rows = allRows.filter((r) => filter === "open" ? (r.status === "open" || r.status === "reviewing") : filter === "resolved" ? (r.status === "resolved" || r.status === "rejected") : true);
 
     return (
@@ -118,8 +113,8 @@ export default function TrustScreen() {
             <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>Puan, işlem geçmişin arttıkça otomatik güncellenir.</Text>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-            <TrustMiniStat icon="store-check-outline" label="Satıcı Güven Skoru" value={`%${trust.seller.score}`} tag="Yüksek" />
-            <TrustMiniStat icon="account-check-outline" label="Ortak Güven Skoru" value={`%${trust.partner.score}`} tag="Yüksek" />
+            <TrustMiniStat icon="store-check-outline" label="Satıcı Güven Skoru" value={`%${trust.seller.score}`} tag={scoreTag(trust.seller.score)} />
+            <TrustMiniStat icon="account-check-outline" label="Ortak Güven Skoru" value={`%${trust.partner.score}`} tag={scoreTag(trust.partner.score)} />
             <TrustMiniStat icon="file-alert-outline" label="Açık Kayıtlar" value={`${openReports.length}`} sub="İnceleme aşamasında" />
             <TrustMiniStat icon="check-decagram-outline" label="Çözülen Raporlar" value={`${resolvedCount}`} sub="Son 90 günde" />
           </View>
@@ -251,15 +246,13 @@ export default function TrustScreen() {
 
             <View style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Dolandırıcılığı Önleyin</Text>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Şüpheli bir durumla karşılaşırsanız bize bildirin. Ekibimiz 7/24 inceleme yapar.</Text>
-              <Pressable style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
-                <MaterialCommunityIcons name="flag-variant-outline" size={17} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Şikayet / Bildirim Oluştur</Text>
-              </Pressable>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 7, marginTop: 2 }}>
-                <MaterialCommunityIcons name="whatsapp" size={16} color={colors.success} />
-                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>Acil hat: +90 555 111 22 33</Text>
-              </View>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Şüpheli bir durumla karşılaşırsan bildir. Ekibimiz kayıt üzerinden inceleme yapar.</Text>
+              <Link href="/legal" asChild>
+                <Pressable style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
+                  <MaterialCommunityIcons name="flag-variant-outline" size={17} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Şikayet / Bildirim Oluştur</Text>
+                </Pressable>
+              </Link>
             </View>
           </View>
         </View>
@@ -360,6 +353,10 @@ export default function TrustScreen() {
       })}
     </ScrollView>
   );
+}
+
+function scoreTag(score: number): string {
+  return score >= 70 ? "Yüksek" : score >= 50 ? "Orta" : "Geliştirilmeli";
 }
 
 function statusTone(status: ModerationStatus): { tint: string; color: string } {

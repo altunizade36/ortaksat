@@ -23,7 +23,8 @@ function isImageAvatar(value: string) {
 function ProfileEditScreenInner() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, backendMode, currentUser, updateProfile } = useStore();
+  const { authError, backendMode, currentUser, updateProfile, savePreferences, signOut } = useStore();
+  const prefs0 = currentUser.preferences ?? {};
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const [name, setName] = useState(currentUser.name);
   const [phone, setPhone] = useState(currentUser.phone);
@@ -34,9 +35,15 @@ function ProfileEditScreenInner() {
   const [section, setSection] = useState<SettingsSection>("personal");
   const [storeName, setStoreName] = useState(currentUser.name);
   const [iban, setIban] = useState("");
-  const [notif, setNotif] = useState<Record<string, boolean>>({ email: true, sms: false, push: true, whatsapp: true, marketing: false });
-  const [storePrefs, setStorePrefs] = useState<Record<string, boolean>>({ autoApprove: false, vacation: false, showPhone: true });
-  const [twoFA, setTwoFA] = useState(false);
+  const [notif, setNotif] = useState<Record<string, boolean>>({ email: prefs0.notif_email ?? true, sms: prefs0.notif_sms ?? false, push: prefs0.notif_push ?? true, whatsapp: prefs0.notif_whatsapp ?? true, marketing: prefs0.notif_marketing ?? false });
+  const [storePrefs, setStorePrefs] = useState<Record<string, boolean>>({ autoApprove: prefs0.store_autoApprove ?? false, vacation: prefs0.store_vacation ?? false, showPhone: prefs0.store_showPhone ?? true });
+
+  function toggleNotif(key: string) {
+    setNotif((s) => { const v = !s[key]; void savePreferences({ [`notif_${key}`]: v }); return { ...s, [key]: v }; });
+  }
+  function toggleStore(key: string) {
+    setStorePrefs((s) => { const v = !s[key]; void savePreferences({ [`store_${key}`]: v }); return { ...s, [key]: v }; });
+  }
   // Şifre değiştir
   const [pwNew, setPwNew] = useState("");
   const [pwNew2, setPwNew2] = useState("");
@@ -60,6 +67,17 @@ function ProfileEditScreenInner() {
     const ok = await updateProfile({ name: storeName.trim() || name, phone, avatar, bio });
     setStoreSaving(false);
     Alert.alert(ok ? "Kaydedildi" : "Kaydedilemedi", ok ? "Mağaza bilgilerin güncellendi." : (authError ?? "Bir sorun oluştu."));
+  }
+
+  function startVerification(label: string) {
+    Alert.alert(
+      label,
+      "Doğrulama işlemleri güvenlik nedeniyle ekibimiz tarafından, ilgili belge/bilgi kontrolüyle yapılır. Talebini Yasal & Destek üzerinden başlatabilirsin.",
+      [
+        { text: "Kapat", style: "cancel" },
+        { text: "Destek talebi", onPress: () => router.push("/legal") }
+      ]
+    );
   }
 
   function closeAccount() {
@@ -201,11 +219,17 @@ function ProfileEditScreenInner() {
                   </Pressable>
                 </View>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
-                  <ToggleRow label="İki adımlı doğrulama (2FA)" sub="Girişte SMS ile ek güvenlik kodu" on={twoFA} onPress={() => setTwoFA((v) => !v)} />
-                  <View style={{ backgroundColor: colors.line, height: 1 }} />
-                  <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Aktif oturumlar</Text>
-                  <SessionRow icon="laptop" device="Windows · Chrome" meta="İstanbul · Şu an aktif" current />
-                  <SessionRow icon="cellphone" device="iPhone · Ortaksat App" meta="İstanbul · 2 saat önce" />
+                  <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
+                    <MaterialCommunityIcons name="shield-check-outline" size={20} color={colors.primary} style={{ marginTop: 1 }} />
+                    <View style={{ flex: 1, minWidth: 0 }}>
+                      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Oturum güvenliği</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Şu an bu cihazda giriş yapılı. Güvenlik için ortak cihazlarda işin bitince “Çıkış Yap” ile oturumunu kapat. Şüpheli bir durumda şifreni hemen değiştir.</Text>
+                    </View>
+                  </View>
+                  <Pressable onPress={() => void signOut()} style={{ alignItems: "center", alignSelf: "flex-start", borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 10 }}>
+                    <MaterialCommunityIcons name="logout" size={16} color={colors.accent} />
+                    <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>Bu cihazdan çıkış yap</Text>
+                  </Pressable>
                 </View>
               </View>
             ) : null}
@@ -215,7 +239,7 @@ function ProfileEditScreenInner() {
                 <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Bildirim Tercihleri</Text>
                 {notifRows.map((r, i) => (
                   <View key={r.key} style={{ borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, paddingTop: i === 0 ? 0 : 14 }}>
-                    <ToggleRow label={r.label} sub={r.sub} on={notif[r.key]} onPress={() => setNotif((s) => ({ ...s, [r.key]: !s[r.key] }))} />
+                    <ToggleRow label={r.label} sub={r.sub} on={notif[r.key]} onPress={() => toggleNotif(r.key)} />
                   </View>
                 ))}
               </View>
@@ -236,11 +260,11 @@ function ProfileEditScreenInner() {
                   </Pressable>
                 </View>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
-                  <ToggleRow label="Ortak başvurularını otomatik onayla" sub="Yeni ortak satıcılar onay beklemeden başlasın" on={storePrefs.autoApprove} onPress={() => setStorePrefs((s) => ({ ...s, autoApprove: !s.autoApprove }))} />
+                  <ToggleRow label="Ortak başvurularını otomatik onayla" sub="Yeni ortak satıcılar onay beklemeden başlasın" on={storePrefs.autoApprove} onPress={() => toggleStore("autoApprove")} />
                   <View style={{ backgroundColor: colors.line, height: 1 }} />
-                  <ToggleRow label="Telefon numaramı ilanlarda göster" sub="Alıcılar doğrudan arayabilsin" on={storePrefs.showPhone} onPress={() => setStorePrefs((s) => ({ ...s, showPhone: !s.showPhone }))} />
+                  <ToggleRow label="Telefon numaramı ilanlarda göster" sub="Alıcılar doğrudan arayabilsin" on={storePrefs.showPhone} onPress={() => toggleStore("showPhone")} />
                   <View style={{ backgroundColor: colors.line, height: 1 }} />
-                  <ToggleRow label="Tatil modu" sub="İlanların geçici olarak pasife alınır" on={storePrefs.vacation} onPress={() => setStorePrefs((s) => ({ ...s, vacation: !s.vacation }))} />
+                  <ToggleRow label="Tatil modu" sub="İlanların geçici olarak pasife alınır" on={storePrefs.vacation} onPress={() => toggleStore("vacation")} />
                 </View>
               </View>
             ) : null}
@@ -260,7 +284,7 @@ function ProfileEditScreenInner() {
                     {v.done ? (
                       <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ color: colors.success, fontSize: 12, fontWeight: "800" }}>Onaylı</Text></View>
                     ) : (
-                      <Pressable style={{ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9 }}><Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>Doğrula</Text></Pressable>
+                      <Pressable onPress={() => startVerification(v.label)} style={{ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9 }}><Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>Doğrula</Text></Pressable>
                     )}
                   </View>
                 ))}
@@ -379,25 +403,6 @@ function ToggleRow({ label, on, onPress, sub }: { label: string; on: boolean; on
       <Pressable onPress={onPress} style={{ alignItems: on ? "flex-end" : "flex-start", backgroundColor: on ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}>
         <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} />
       </Pressable>
-    </View>
-  );
-}
-
-function SessionRow({ current, device, icon, meta }: { current?: boolean; device: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; meta: string }) {
-  return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-      <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
-        <MaterialCommunityIcons name={icon} size={20} color={colors.primaryDark} />
-      </View>
-      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-        <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{device}</Text>
-        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{meta}</Text>
-      </View>
-      {current ? (
-        <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}><Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "800" }}>Bu cihaz</Text></View>
-      ) : (
-        <Pressable><Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "800" }}>Çıkış yap</Text></Pressable>
-      )}
     </View>
   );
 }

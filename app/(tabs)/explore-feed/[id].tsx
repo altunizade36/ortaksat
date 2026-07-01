@@ -126,6 +126,17 @@ export default function ExploreFeedScreen() {
         contentContainerStyle={{ backgroundColor: "#000000" }}
         style={{ backgroundColor: "#000000", flex: 1 }}
       >
+      {feed.length === 0 ? (
+        <View style={{ alignItems: "center", gap: 16, height, justifyContent: "center", paddingHorizontal: 32, width }}>
+          <MaterialCommunityIcons name="movie-open-off-outline" size={48} color="rgba(255,255,255,0.7)" />
+          <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "800", textAlign: "center" }}>Şu an gösterilecek keşfet içeriği yok</Text>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600", textAlign: "center" }}>Yeni ilanlar eklendikçe keşfet akışı burada canlanacak.</Text>
+          <Pressable onPress={() => { if (router.canGoBack()) router.back(); else router.replace("/(tabs)/explore"); }} style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 999, flexDirection: "row", gap: 7, paddingHorizontal: 20, paddingVertical: 12 }}>
+            <MaterialCommunityIcons name="chevron-left" size={20} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Keşfete dön</Text>
+          </Pressable>
+        </View>
+      ) : null}
       {feed.map((item, index) => {
         const listing = item.listing;
         const owner = findUser(listing.ownerId);

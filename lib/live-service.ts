@@ -37,6 +37,14 @@ export async function updateUserVerificationLive(userId: string, field: "verifie
   if (error) console.warn("User verification update failed", error);
 }
 
+/** Kullanicinin tercih (bildirim/magaza ayarlari) JSONB kolonunu gunceller. */
+export async function savePreferencesLive(userId: string, preferences: Record<string, boolean>): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.from("profiles").update({ preferences }).eq("id", userId);
+  if (error) { console.warn("Preferences update failed", error); return false; }
+  return true;
+}
+
 /** E-bulten abonesi ekler (herkes; RLS public insert). */
 export async function subscribeNewsletterLive(email: string): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: "Canlı bağlantı yok." };

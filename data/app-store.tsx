@@ -42,6 +42,7 @@ import {
   updatePartnershipStatus,
   updateReportStatusLive,
   updateProfileLive,
+  savePreferencesLive,
   recordLegalConsentLive,
   requestAccountDeletionLive,
   deleteListingLive,
@@ -181,6 +182,7 @@ type AppStore = {
   signInWithGoogle: () => Promise<boolean>;
   signOut: () => Promise<void>;
   updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio">) => Promise<boolean>;
+  savePreferences: (preferences: Record<string, boolean>) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, details?: string) => Promise<boolean>;
   reportUser: (reportedUserId: string, reason: string, details?: string) => Promise<boolean>;
   updateReportStatus: (reportId: string, status: Report["status"]) => Promise<boolean>;
@@ -458,7 +460,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
               successfulSales: 0,
               responseRate: data.response_rate ?? 0,
               role: data.role ?? "user",
-              status: (data.status as User["status"]) ?? "active"
+              status: (data.status as User["status"]) ?? "active",
+              preferences: (data.preferences ?? {}) as Record<string, boolean>
             }
           : fallback;
 
@@ -927,6 +930,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
       async signOut() {
         if (supabase) await supabase.auth.signOut();
         setAuthUser(null);
+      },
+      async savePreferences(preferences) {
+        const merged = { ...(currentUser.preferences ?? {}), ...preferences };
+        const updatedUser: User = { ...currentUser, preferences: merged };
+        const ok = liveUser ? await savePreferencesLive(currentUser.id, merged) : true;
+        if (!ok) { setAuthError("Tercihler kaydedilemedi."); return false; }
+        setUsers((items) => [updatedUser, ...items.filter((item) => item.id !== updatedUser.id)]);
+        if (authUser?.id === updatedUser.id) setAuthUser(updatedUser);
+        return true;
       },
       async updateProfile(input) {
         const nextPhone = input.phone.trim();
