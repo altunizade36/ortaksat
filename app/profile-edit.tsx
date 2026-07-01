@@ -11,7 +11,7 @@ import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
-import { uploadProfileAvatar } from "@/lib/live-service";
+import { changePasswordLive, uploadProfileAvatar } from "@/lib/live-service";
 import { useStore } from "@/lib/use-store";
 
 type SettingsSection = "personal" | "security" | "notifications" | "store" | "verification";
@@ -37,6 +37,41 @@ function ProfileEditScreenInner() {
   const [notif, setNotif] = useState<Record<string, boolean>>({ email: true, sms: false, push: true, whatsapp: true, marketing: false });
   const [storePrefs, setStorePrefs] = useState<Record<string, boolean>>({ autoApprove: false, vacation: false, showPhone: true });
   const [twoFA, setTwoFA] = useState(false);
+  // Şifre değiştir
+  const [pwNew, setPwNew] = useState("");
+  const [pwNew2, setPwNew2] = useState("");
+  const [pwSaving, setPwSaving] = useState(false);
+  const [storeSaving, setStoreSaving] = useState(false);
+
+  async function changePassword() {
+    if (pwNew.length < 8) { Alert.alert("Zayıf şifre", "Yeni şifre en az 8 karakter olmalı."); return; }
+    if (pwNew !== pwNew2) { Alert.alert("Şifreler uyuşmuyor", "Yeni şifre ile tekrarı aynı olmalı."); return; }
+    if (!isLiveAccount) { Alert.alert("Ön izleme hesabı", "Şifre değişikliği yalnızca canlı hesaplarda geçerlidir."); return; }
+    setPwSaving(true);
+    const res = await changePasswordLive(pwNew);
+    setPwSaving(false);
+    if (!res.ok) { Alert.alert("Güncellenemedi", res.error ?? "Şifre güncellenemedi."); return; }
+    setPwNew(""); setPwNew2("");
+    Alert.alert("Şifre güncellendi", "Yeni şifren kaydedildi. Bir sonraki girişte bunu kullan.");
+  }
+
+  async function saveStore() {
+    setStoreSaving(true);
+    const ok = await updateProfile({ name: storeName.trim() || name, phone, avatar, bio });
+    setStoreSaving(false);
+    Alert.alert(ok ? "Kaydedildi" : "Kaydedilemedi", ok ? "Mağaza bilgilerin güncellendi." : (authError ?? "Bir sorun oluştu."));
+  }
+
+  function closeAccount() {
+    Alert.alert(
+      "Hesabı kapat",
+      "Hesap kapatma kalıcıdır ve KVKK kapsamında işlenir. Talebini Yasal & Destek üzerinden başlatalım mı?",
+      [
+        { text: "Vazgeç", style: "cancel" },
+        { text: "Talep oluştur", style: "destructive", onPress: () => router.push("/kvkk") }
+      ]
+    );
+  }
 
   async function pickAvatar() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -157,13 +192,12 @@ function ProfileEditScreenInner() {
               <View style={{ gap: 16 }}>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Şifre değiştir</Text>
-                  <DeskField label="Mevcut şifre" value="" onChangeText={() => {}} icon="lock-outline" secure />
                   <View style={{ flexDirection: "row", gap: 14 }}>
-                    <View style={{ flex: 1 }}><DeskField label="Yeni şifre" value="" onChangeText={() => {}} icon="lock-reset" secure /></View>
-                    <View style={{ flex: 1 }}><DeskField label="Yeni şifre (tekrar)" value="" onChangeText={() => {}} icon="lock-check-outline" secure /></View>
+                    <View style={{ flex: 1 }}><DeskField label="Yeni şifre (en az 8 karakter)" value={pwNew} onChangeText={setPwNew} icon="lock-reset" secure /></View>
+                    <View style={{ flex: 1 }}><DeskField label="Yeni şifre (tekrar)" value={pwNew2} onChangeText={setPwNew2} icon="lock-check-outline" secure /></View>
                   </View>
-                  <Pressable style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 12 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>Şifreyi güncelle</Text>
+                  <Pressable disabled={pwSaving} onPress={() => void changePassword()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, opacity: pwSaving ? 0.6 : 1, paddingHorizontal: 22, paddingVertical: 12 }}>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{pwSaving ? "Güncelleniyor…" : "Şifreyi güncelle"}</Text>
                   </Pressable>
                 </View>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
@@ -197,8 +231,8 @@ function ProfileEditScreenInner() {
                     <MaterialCommunityIcons name="information-outline" size={17} color={colors.info} style={{ marginTop: 1 }} />
                     <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>Ortaksat ödeme almaz veya tutmaz. Bu bilgiyi yalnızca, ortakların komisyonlarını sana doğrudan öderken kullanabilmesi için isteğe bağlı paylaşırsın.</Text>
                   </View>
-                  <Pressable style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 22, paddingVertical: 12 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>Mağaza ayarlarını kaydet</Text>
+                  <Pressable disabled={storeSaving} onPress={() => void saveStore()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, opacity: storeSaving ? 0.6 : 1, paddingHorizontal: 22, paddingVertical: 12 }}>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{storeSaving ? "Kaydediliyor…" : "Mağaza ayarlarını kaydet"}</Text>
                   </Pressable>
                 </View>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
@@ -259,7 +293,7 @@ function ProfileEditScreenInner() {
               <MaterialCommunityIcons name="alert-octagon-outline" size={22} color={colors.accent} />
               <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>Tehlikeli bölge</Text>
               <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>Hesabını kapatırsan ilanların ve komisyon geçmişin kalıcı olarak silinir.</Text>
-              <Pressable style={{ alignItems: "center", borderColor: colors.accent, borderRadius: 10, borderWidth: 1, marginTop: 2, paddingVertical: 10 }}>
+              <Pressable onPress={closeAccount} style={{ alignItems: "center", borderColor: colors.accent, borderRadius: 10, borderWidth: 1, marginTop: 2, paddingVertical: 10 }}>
                 <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>Hesabı kapat</Text>
               </Pressable>
             </View>

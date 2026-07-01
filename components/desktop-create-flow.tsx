@@ -434,8 +434,15 @@ export function DesktopCreateFlow() {
 
       {/* Nav */}
       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-        <Pressable disabled={step === 0} onPress={() => setStep((s) => Math.max(0, s - 1))} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, opacity: step === 0 ? 0.4 : 1, paddingHorizontal: 18, paddingVertical: 11 }}>
-          <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Geri</Text>
+        <Pressable
+          onPress={() => {
+            // İlk adımdayken (kategori) geri = ilan verme ekranından çık.
+            if (step === 0) { if (router.canGoBack()) router.back(); else router.replace("/(tabs)"); return; }
+            setStep((s) => Math.max(0, s - 1));
+          }}
+          style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}
+        >
+          <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{step === 0 ? "Vazgeç" : "Geri"}</Text>
         </Pressable>
         {step < STEPS.length - 1 ? (
           <Pressable disabled={!canNext()} onPress={() => setStep((s) => s + 1)} style={{ alignItems: "center", backgroundColor: canNext() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 22, paddingVertical: 12 }}>

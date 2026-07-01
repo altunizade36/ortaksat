@@ -37,6 +37,22 @@ export async function updateUserVerificationLive(userId: string, field: "verifie
   if (error) console.warn("User verification update failed", error);
 }
 
+/** E-bulten abonesi ekler (herkes; RLS public insert). */
+export async function subscribeNewsletterLive(email: string): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: "Canlı bağlantı yok." };
+  const { error } = await supabase.from("newsletter_subscribers").upsert({ email: email.toLowerCase().trim() }, { onConflict: "email" });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/** Giris yapmis kullanicinin sifresini gunceller (Supabase Auth). */
+export async function changePasswordLive(newPassword: string): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: "Canlı bağlantı yok." };
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 /** Admin: birden cok kullaniciya ayni bildirimi ekler (duyuru). */
 export async function insertBulkNotifications(rows: Array<{ id: string; userId: string; type: string; title: string; body: string }>) {
   if (!supabase || rows.length === 0) return;

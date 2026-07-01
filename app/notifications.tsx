@@ -152,11 +152,11 @@ function NotificationsScreenInner() {
                   <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden" }}>
                     {items.map((n, idx) => {
                       const read = isRead(n);
-                      const meta = typeMeta[n.type];
+                      const meta = typeMeta[n.type] ?? { label: "Bildirim", tint: colors.infoSoft, color: colors.info };
                       return (
                         <Pressable key={n.id} onPress={() => markRead(n)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : read ? colors.surface : colors.primarySoft + "55", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 })}>
                           <View style={{ alignItems: "center", backgroundColor: meta.tint, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
-                            <MaterialCommunityIcons name={typeIcons[n.type]} size={22} color={meta.color} />
+                            <MaterialCommunityIcons name={typeIcons[n.type] ?? "bell-outline"} size={22} color={meta.color} />
                           </View>
                           <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
                             <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>

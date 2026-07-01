@@ -4,6 +4,7 @@ import { useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { subscribeNewsletterLive } from "@/lib/live-service";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter } from "@/components/web-landing";
 import { BLOG_CATEGORIES, BLOG_POSTS, POPULAR_TAGS, type BlogCategory, type BlogPost } from "@/lib/blog";
@@ -23,6 +24,17 @@ export default function BlogPage() {
   const isWideWeb = useIsWideWeb();
   const [active, setActive] = useState<BlogCategory | "Tümü">("Tümü");
   const [email, setEmail] = useState("");
+  const [subState, setSubState] = useState<"idle" | "saving" | "done" | "error">("idle");
+  const [subMsg, setSubMsg] = useState("");
+
+  async function subscribe() {
+    const value = email.trim();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value)) { setSubState("error"); setSubMsg("Geçerli bir e-posta adresi gir."); return; }
+    setSubState("saving");
+    const res = await subscribeNewsletterLive(value);
+    if (res.ok) { setSubState("done"); setSubMsg("Kaydın alındı. Yeni içerikler yayınlandıkça haber vereceğiz."); setEmail(""); }
+    else { setSubState("error"); setSubMsg("Şu an kaydedilemedi, lütfen daha sonra tekrar dene."); }
+  }
 
   const { blogPosts } = useStore();
   // Admin panelden eklenen (Supabase) yazıları statik yazılarla birleştir.
@@ -149,11 +161,14 @@ export default function BlogPage() {
               <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>E-bültenimize abone olun</Text>
               <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 18 }}>Ortak satış ipuçları, yeni rehberler ve özel içerikler mailinize gelsin.</Text>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <TextInput value={email} onChangeText={setEmail} placeholder="E-posta adresiniz" placeholderTextColor={colors.muted} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, fontWeight: "600", height: 42, paddingHorizontal: 12 }} />
-                <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, height: 42, justifyContent: "center", paddingHorizontal: 16 }}>
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Abone Ol</Text>
+                <TextInput value={email} onChangeText={(v) => { setEmail(v); if (subState !== "idle") setSubState("idle"); }} placeholder="E-posta adresiniz" placeholderTextColor={colors.muted} keyboardType="email-address" autoCapitalize="none" style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, fontWeight: "600", height: 42, paddingHorizontal: 12 }} />
+                <Pressable disabled={subState === "saving"} onPress={() => void subscribe()} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, height: 42, justifyContent: "center", opacity: subState === "saving" ? 0.6 : 1, paddingHorizontal: 16 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{subState === "saving" ? "…" : subState === "done" ? "✓" : "Abone Ol"}</Text>
                 </Pressable>
               </View>
+              {subState === "done" || subState === "error" ? (
+                <Text style={{ color: subState === "done" ? colors.success : colors.accent, fontSize: 11.5, fontWeight: "700" }}>{subMsg}</Text>
+              ) : null}
               <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
                 <MaterialCommunityIcons name="check-circle-outline" size={13} color={colors.primary} />
                 <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>İstediğiniz zaman kolayca çıkış yapabilirsiniz.</Text>

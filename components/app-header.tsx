@@ -23,7 +23,11 @@ export function AppHeader() {
   const router = useRouter();
   const { language, t } = useLanguage();
   const isWideWeb = useIsWideWeb();
-  const showBack = !isWideWeb && pathname !== "/" && pathname !== "/index";
+  const isHome = pathname === "/" || pathname === "/index";
+  const showBack = !isWideWeb && !isHome;
+  // Masaüstünde de alt sayfalarda (ilan detayı, sohbet, mağaza, form ekranları…)
+  // geri butonu göster ki kullanıcı tarayıcı geri tuşuna muhtaç kalmasın.
+  const showDesktopBack = isWideWeb && !isHome && router.canGoBack();
 
   const navItems: NavItem[] = [
     { href: "/", label: "Ana Sayfa", match: (p) => p === "/" || p === "/index" },
@@ -49,8 +53,19 @@ export function AppHeader() {
         <MaintenanceBanner />
         <DesktopTopBar />
 
-        {/* HEADER: logo · search · actions */}
+        {/* HEADER: [geri] · logo · search · actions */}
         <View style={{ alignItems: "center", backgroundColor: colors.surface, flexDirection: "row", gap: 28, paddingHorizontal: 32, paddingVertical: 14, position: "relative", zIndex: 30 }}>
+          {showDesktopBack ? (
+            <Pressable
+              accessibilityLabel={translateCopy("Geri", language)}
+              accessibilityRole="button"
+              onPress={goBack}
+              style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, marginRight: -14, opacity: pressed ? 0.75 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
+            >
+              <MaterialCommunityIcons name="chevron-left" size={20} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Geri</Text>
+            </Pressable>
+          ) : null}
           <Link href="/" asChild>
             <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <Brand3DMark size={38} />

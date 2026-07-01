@@ -333,6 +333,10 @@ export default function AuthScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, maxWidth: 720, marginHorizontal: "auto", padding: 16, paddingBottom: 90, width: "100%" }}>
+        <Pressable onPress={() => { if (router.canGoBack()) router.back(); else router.replace("/"); }} style={{ alignItems: "center", alignSelf: "flex-start", borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
+          <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} />
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Ana sayfa</Text>
+        </Pressable>
         <Card>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             <StatusPill label="E-posta altyapısı" tone="success" />

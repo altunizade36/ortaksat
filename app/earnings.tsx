@@ -24,25 +24,15 @@ const STATUS_META: Record<SaleStatus, { label: string; tint: string; color: stri
   disputed: { label: "İtiraz", tint: colors.accentSoft, color: colors.accent }
 };
 
-const CHART = [
-  { m: "Oca", v: 1240 },
-  { m: "Şub", v: 1860 },
-  { m: "Mar", v: 1520 },
-  { m: "Nis", v: 2380 },
-  { m: "May", v: 2940 },
-  { m: "Haz", v: 3420 }
-];
+const TR_MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
 
-type Txn = { id: string; title: string; image?: string; date: string; amount: number; commission: number; status: SaleStatus };
+type Txn = { id: string; title: string; image?: string; date: string; sortAt: number; amount: number; commission: number; status: SaleStatus };
 
-const SAMPLE_TXNS: Txn[] = [
-  { id: "t1", title: "Akıllı çocuk saati", date: "28 Haz 2026", amount: 2450, commission: 294, status: "approved" },
-  { id: "t2", title: "Taşınabilir blender", date: "26 Haz 2026", amount: 1290, commission: 181, status: "paid" },
-  { id: "t3", title: "Minimal gümüş kolye", date: "22 Haz 2026", amount: 540, commission: 90, status: "paid" },
-  { id: "t4", title: "Bebek bakım çantası", date: "19 Haz 2026", amount: 1180, commission: 160, status: "seller_paid" },
-  { id: "t5", title: "Köşe koltuk takımı", date: "14 Haz 2026", amount: 18900, commission: 945, status: "pending" },
-  { id: "t6", title: "Kablosuz kulaklık", date: "09 Haz 2026", amount: 2790, commission: 223, status: "paid" }
-];
+function saleDate(s: { paidAt?: string; approvedAt?: string; createdAt?: string }) {
+  const raw = s.paidAt ?? s.approvedAt ?? s.createdAt ?? "";
+  const t = Date.parse(raw);
+  return Number.isNaN(t) ? 0 : t;
+}
 
 function EarningsScreenInner() {
   const { currentUser, findListing, partnerships, sales } = useStore();
@@ -51,19 +41,48 @@ function EarningsScreenInner() {
 
   const myPartnershipIds = new Set(partnerships.filter((p) => p.partnerId === currentUser.id).map((p) => p.id));
   const partnerSales = sales.filter((s) => myPartnershipIds.has(s.partnershipId));
-  const realTxns: Txn[] = partnerSales.map((s) => {
-    const listing = findListing(s.listingId);
-    return { id: s.id, title: listing ? displayText(listing.title) : "İlan", image: listing?.image, date: s.paidAt ?? s.approvedAt ?? "—", amount: s.amount, commission: s.commissionAmount, status: s.status };
-  });
-  const txns: Txn[] = [...realTxns, ...SAMPLE_TXNS];
+  // Yalnızca gerçek satışlar — sahte/örnek veri yok.
+  const txns: Txn[] = partnerSales
+    .map((s) => {
+      const listing = findListing(s.listingId);
+      return { id: s.id, title: listing ? displayText(listing.title) : "İlan", image: listing?.image, date: s.paidAt ?? s.approvedAt ?? "—", sortAt: saleDate(s), amount: s.amount, commission: s.commissionAmount, status: s.status };
+    })
+    .sort((a, b) => b.sortAt - a.sortAt);
 
   const totalCommission = txns.reduce((sum, t) => sum + t.commission, 0);
   const paidCommission = txns.filter((t) => t.status === "paid").reduce((sum, t) => sum + t.commission, 0);
   const pendingCommission = txns.filter((t) => t.status !== "paid" && t.status !== "cancelled").reduce((sum, t) => sum + t.commission, 0);
+
+  // Son 6 ayın gerçek komisyon kazancı (satış tarihine göre gruplanır).
+  const now = new Date();
+  const CHART = Array.from({ length: 6 }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (5 - i), 1);
+    const v = txns
+      .filter((t) => { const td = new Date(t.sortAt); return t.sortAt > 0 && td.getFullYear() === d.getFullYear() && td.getMonth() === d.getMonth(); })
+      .reduce((sum, t) => sum + t.commission, 0);
+    return { m: TR_MONTHS[d.getMonth()], v };
+  });
   const monthEarn = CHART[CHART.length - 1].v;
-  const chartMax = Math.max(...CHART.map((c) => c.v));
+  const prevMonthEarn = CHART[CHART.length - 2]?.v ?? 0;
+  const growth = prevMonthEarn > 0 ? Math.round(((monthEarn - prevMonthEarn) / prevMonthEarn) * 1000) / 10 : null;
+  const chartMax = Math.max(...CHART.map((c) => c.v), 1);
+  const hasChartData = CHART.some((c) => c.v > 0);
 
   const topListings = [...txns].sort((a, b) => b.commission - a.commission).slice(0, 4);
+
+  function downloadReport() {
+    // Web'de gerçek CSV indir; komisyon hareketlerini dışa aktarır.
+    if (typeof document === "undefined" || txns.length === 0) return;
+    const header = "Ürün,Tarih,Tutar,Komisyon,Durum";
+    const rows = txns.map((t) => [t.title.replace(/[",\n]/g, " "), t.date, t.amount, t.commission, STATUS_META[t.status].label].join(","));
+    const csv = "﻿" + [header, ...rows].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "ortaksat-komisyon-raporu.csv";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
 
   if (isWideWeb) {
     const periods: Array<{ key: typeof period; label: string }> = [
@@ -75,7 +94,7 @@ function EarningsScreenInner() {
       { icon: "cash-multiple", tint: colors.successSoft, color: colors.success, value: money(totalCommission), title: "Toplam kazanç", sub: "Tüm dönemler" },
       { icon: "check-decagram-outline", tint: colors.primarySoft, color: colors.primaryDark, value: money(paidCommission), title: "Tahsil edilen", sub: "Satıcıdan aldıkların" },
       { icon: "clock-outline", tint: colors.goldSoft, color: colors.gold, value: money(pendingCommission), title: "Tahsil edilecek", sub: "Onaylı, henüz alınmadı" },
-      { icon: "trending-up", tint: colors.violetSoft, color: colors.violet, value: money(monthEarn), title: "Bu ay", sub: "Haziran 2026" }
+      { icon: "trending-up", tint: colors.violetSoft, color: colors.violet, value: money(monthEarn), title: "Bu ay", sub: `${TR_MONTHS[now.getMonth()]} ${now.getFullYear()}` }
     ];
 
     return (
@@ -119,11 +138,16 @@ function EarningsScreenInner() {
                   <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Kazanç grafiği</Text>
                   <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Son 6 ay komisyon kazancın</Text>
                 </View>
-                <View style={{ alignItems: "flex-end" }}>
-                  <Text style={{ color: colors.success, fontSize: 13, fontWeight: "900" }}>↑ %16,3</Text>
-                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>geçen aya göre</Text>
-                </View>
+                {growth !== null ? (
+                  <View style={{ alignItems: "flex-end" }}>
+                    <Text style={{ color: growth >= 0 ? colors.success : colors.accent, fontSize: 13, fontWeight: "900" }}>{growth >= 0 ? "↑" : "↓"} %{Math.abs(growth).toString().replace(".", ",")}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>geçen aya göre</Text>
+                  </View>
+                ) : null}
               </View>
+              {!hasChartData ? (
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", paddingVertical: 40, textAlign: "center" }}>Henüz komisyon kazancın yok. Ortak satış yaptıkça grafiğin burada oluşacak.</Text>
+              ) : (
               <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 18, height: 200, justifyContent: "space-between", paddingTop: 10 }}>
                 {CHART.map((c, i) => {
                   const h = Math.round((c.v / chartMax) * 168) + 8;
@@ -137,13 +161,19 @@ function EarningsScreenInner() {
                   );
                 })}
               </View>
+              )}
             </View>
 
             {/* Transactions */}
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden" }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", padding: 18 }}>
                 <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Komisyon hareketleri</Text>
-                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Rapor indir</Text>
+                {txns.length ? (
+                  <Pressable onPress={downloadReport} style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
+                    <MaterialCommunityIcons name="download-outline" size={16} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Rapor indir</Text>
+                  </Pressable>
+                ) : null}
               </View>
               <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderTopWidth: 1, flexDirection: "row", paddingHorizontal: 18, paddingVertical: 10 }}>
                 <Text style={{ color: colors.muted, flex: 3, fontSize: 11.5, fontWeight: "800" }}>ÜRÜN</Text>
@@ -152,6 +182,9 @@ function EarningsScreenInner() {
                 <Text style={{ color: colors.muted, flex: 1.2, fontSize: 11.5, fontWeight: "800", textAlign: "right" }}>KOMİSYON</Text>
                 <Text style={{ color: colors.muted, flex: 1.3, fontSize: 11.5, fontWeight: "800", textAlign: "right" }}>DURUM</Text>
               </View>
+              {txns.length === 0 ? (
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 24, textAlign: "center" }}>Henüz komisyon hareketin yok. Ortak satış tamamlandıkça burada listelenecek.</Text>
+              ) : null}
               {txns.map((t, idx) => {
                 const meta = STATUS_META[t.status];
                 return (
@@ -198,6 +231,7 @@ function EarningsScreenInner() {
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>En çok kazandıran</Text>
+              {topListings.length === 0 ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Ortak satış yaptıkça en çok kazandıran ilanların burada sıralanır.</Text> : null}
               {topListings.map((t, i) => (
                 <View key={t.id} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
                   <Text style={{ color: colors.subtle, fontSize: 14, fontWeight: "900", width: 16 }}>{i + 1}</Text>
