@@ -148,6 +148,23 @@ export async function fetchListingById(id: string): Promise<{ listing: Listing; 
   return { listing, owner };
 }
 
+export type AuditEntry = { id: number; userId: string | null; action: string; entityType: string | null; entityId: string | null; createdAt: string };
+
+// Admin denetim kayıtları (activity_logs). RLS yalnızca admin'e okuma verir;
+// admin değilse boş döner. Son 50 kayıt + son 1 saatteki hız-limiti olay sayısı.
+export async function fetchAdminAudit(): Promise<{ logs: AuditEntry[]; rateHits: number } | null> {
+  if (!supabase) return null;
+  const [logsRes, rateRes] = await Promise.all([
+    supabase.from("activity_logs").select("id,user_id,action,entity_type,entity_id,created_at").order("created_at", { ascending: false }).limit(50),
+    supabase.from("rate_limits").select("id", { count: "exact", head: true }).gte("occurred_at", new Date(Date.now() - 3600_000).toISOString())
+  ]);
+  if (logsRes.error) return null; // admin değil / erişim yok
+  const logs: AuditEntry[] = (logsRes.data ?? []).map((r: { id: number; user_id: string | null; action: string; entity_type: string | null; entity_id: string | null; created_at: string }) => ({
+    id: r.id, userId: r.user_id, action: r.action, entityType: r.entity_type, entityId: r.entity_id, createdAt: (r.created_at || "").slice(0, 16).replace("T", " ")
+  }));
+  return { logs, rateHits: rateRes.count ?? 0 };
+}
+
 export async function loadMarketplaceSnapshot(): Promise<MarketplaceSnapshot | null> {
   if (!supabase) return null;
 

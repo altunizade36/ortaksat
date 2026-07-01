@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
-import { useState, type ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
@@ -10,6 +10,7 @@ import { categoryTree } from "@/lib/category-tree";
 import { commissionAmount, money } from "@/lib/format";
 import { useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince } from "@/lib/locations";
+import { fetchAdminAudit, type AuditEntry } from "@/lib/supabase-data";
 import type { SaleStatus, SuggestionStatus } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
@@ -59,6 +60,11 @@ function AdminScreenInner() {
   } = useStore();
   const [section, setSection] = useState<Section>("dashboard");
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
+  const [audit, setAudit] = useState<{ logs: AuditEntry[]; rateHits: number } | null>(null);
+
+  useEffect(() => {
+    fetchAdminAudit().then(setAudit).catch(() => setAudit(null));
+  }, []);
 
   const isAdmin = currentUser.role === "admin" || currentUser.role === "moderator";
   const activeListings = listings.filter((l) => l.status === "active");
@@ -324,17 +330,35 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "reports" ? (
-          <Panel title="Raporlar" sub="Dışa aktarım (demo)">
-            {["Kullanıcı raporu", "İlan raporu", "Komisyon kayıt raporu", "Talep & satış raporu"].map((r) => (
-              <View key={r} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 11, paddingVertical: 13 }}>
-                <MaterialCommunityIcons name="file-chart-outline" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{r}</Text>
-                <View style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
-                  <MaterialCommunityIcons name="download" size={14} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>CSV</Text>
+          <View style={{ gap: 16 }}>
+            <Panel title="Denetim Kaydı (activity_logs)" sub={audit ? `${audit.logs.length} son kayıt · son 1 saatte ${audit.rateHits} hız-limiti olayı` : "yükleniyor / erişim yok"}>
+              {!audit ? (
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", paddingVertical: 8 }}>Denetim kaydı yüklenemedi (admin değilsen veya henüz kayıt yoksa boş görünür).</Text>
+              ) : audit.logs.length === 0 ? (
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", paddingVertical: 8 }}>Henüz denetim kaydı yok. Kullanıcılar giriş yapıp işlem yaptıkça burada görünür.</Text>
+              ) : (
+                <Table head={["ZAMAN", "AKSİYON", "TİP", "KAYIT"]} cols={[1.4, 1.6, 1, 1.6]}>
+                  {audit.logs.map((a) => (
+                    <Row key={a.id} cols={[1.4, 1.6, 1, 1.6]} cells={[
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{a.createdAt}</Text>,
+                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{a.action}</Text>,
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{a.entityType ?? "—"}</Text>,
+                      <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{a.entityId ? a.entityId.slice(0, 12) : "—"}</Text>
+                    ]} />
+                  ))}
+                </Table>
+              )}
+            </Panel>
+            <Panel title="Raporlar" sub="Dışa aktarım (yakında)">
+              {["Kullanıcı raporu", "İlan raporu", "Komisyon kayıt raporu", "Talep & satış raporu"].map((r) => (
+                <View key={r} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 11, paddingVertical: 13 }}>
+                  <MaterialCommunityIcons name="file-chart-outline" size={18} color={colors.primaryDark} />
+                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{r}</Text>
+                  <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>yakında</Text>
                 </View>
-              </View>
-            ))}
-          </Panel>
+              ))}
+            </Panel>
+          </View>
         ) : null}
       </ScrollView>
     </View>
