@@ -1,7 +1,7 @@
 /* OrtakSat service worker — minimal, güvenli.
    Yalnızca statik varlıkları (JS/CSS/görsel) cache-first sunar; navigasyon ve
    Supabase/API istekleri her zaman ağdan gider (bayat içerik/oturum riski yok). */
-const CACHE = "ortaksat-static-v1";
+const CACHE = "ortaksat-static-v2";
 
 self.addEventListener("install", () => {
   self.skipWaiting();
