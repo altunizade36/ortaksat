@@ -46,6 +46,7 @@ type ProfileRow = {
   rating: number | string | null;
   response_rate: number | null;
   role?: User["role"] | null;
+  status?: string | null;
 };
 
 export type MarketplaceSnapshot = {
@@ -97,7 +98,8 @@ function mapProfile(row: ProfileRow): User {
     listingCount: 0,
     successfulSales: 0,
     responseRate: row.response_rate ?? 0,
-    role: row.role ?? "user"
+    role: row.role ?? "user",
+    status: (row.status as User["status"]) ?? "active"
   };
 }
 

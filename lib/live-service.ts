@@ -15,6 +15,20 @@ const SETTING_COLUMN: Record<string, string> = {
   maintenanceMode: "maintenance_mode"
 };
 
+/** Kullanici rolunu gunceller (yalniz admin; RLS harden_profile_roles uygular). */
+export async function updateUserRoleLive(userId: string, role: string) {
+  if (!supabase) return;
+  const { error } = await supabase.from("profiles").update({ role }).eq("id", userId);
+  if (error) console.warn("User role update failed", error);
+}
+
+/** Kullanici durumunu gunceller (active/suspended/deleted; yalniz admin). */
+export async function updateUserStatusLive(userId: string, status: string) {
+  if (!supabase) return;
+  const { error } = await supabase.from("profiles").update({ status }).eq("id", userId);
+  if (error) console.warn("User status update failed", error);
+}
+
 /** Platform ayarini gunceller (yalniz admin; RLS uygular). */
 export async function updatePlatformSettingLive(key: string, value: boolean) {
   if (!supabase) return;

@@ -28,6 +28,7 @@ export type User = {
   successfulSales: number;
   responseRate: number;
   role?: UserRole;
+  status?: "active" | "suspended" | "deleted";
 };
 
 export type Listing = {

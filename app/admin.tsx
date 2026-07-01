@@ -11,7 +11,7 @@ import { commissionAmount, money } from "@/lib/format";
 import { useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince } from "@/lib/locations";
 import { fetchAdminAudit, type AuditEntry } from "@/lib/supabase-data";
-import type { SaleStatus, SuggestionStatus } from "@/lib/types";
+import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 type Section =
@@ -75,8 +75,9 @@ function AdminScreenInner() {
     listings, users, sales, partnerships, leads, conversations, messages, notifications,
     categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
     updateListingStatus, findUser, signOut, currentUser, reports, updateReportStatus,
-    platformSettings, updatePlatformSetting
+    platformSettings, updatePlatformSetting, setUserRole, setUserStatus
   } = useStore();
+  const canManageUsers = currentUser.role === "admin" || currentUser.role === "super_admin";
   const [section, setSection] = useState<Section>("dashboard");
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [audit, setAudit] = useState<{ logs: AuditEntry[]; rateHits: number } | null>(null);
@@ -156,22 +157,49 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "users" ? (
-          <Panel title="Kullanıcılar" sub={`${users.length} kullanıcı`}>
-            <Table head={["KULLANICI", "ROL", "PUAN", "SATIŞ", "DOĞRULAMA"]} cols={[2, 1, 1, 1, 1.4]}>
-              {users.map((u) => (
-                <Row key={u.id} cols={[2, 1, 1, 1, 1.4]} cells={[
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{u.name}</Text>,
-                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{u.role ?? "Üye"}</Text>,
-                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{u.rating}</Text>,
-                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{u.successfulSales}</Text>,
-                  <View style={{ flexDirection: "row", gap: 4 }}>
-                    {u.verifiedPhone ? <MaterialCommunityIcons name="phone-check" size={15} color={colors.success} /> : null}
-                    {u.verifiedIdentity ? <MaterialCommunityIcons name="card-account-details-outline" size={15} color={colors.success} /> : null}
-                    {u.verifiedInstagram ? <MaterialCommunityIcons name="instagram" size={15} color={colors.violet} /> : null}
-                  </View>
-                ]} />
-              ))}
+          <Panel title="Kullanıcılar" sub={`${users.length} kullanıcı${canManageUsers ? " · rol ve durumu buradan yönet" : ""}`}>
+            <Table head={["KULLANICI", "ROL", "DURUM", "DOĞRULAMA", "İŞLEM"]} cols={[1.8, 1.5, 1, 1, 1.8]}>
+              {users.map((u) => {
+                const suspended = u.status === "suspended";
+                const isSelf = u.id === currentUser.id;
+                const roles: UserRole[] = ["user", "moderator", "admin"];
+                return (
+                  <Row key={u.id} cols={[1.8, 1.5, 1, 1, 1.8]} cells={[
+                    <View style={{ gap: 1 }}>
+                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{u.name}{isSelf ? " (sen)" : ""}</Text>
+                      <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "600" }}>⭐ {u.rating} · {u.successfulSales} satış</Text>
+                    </View>,
+                    canManageUsers && !isSelf ? (
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                        {roles.map((r) => {
+                          const on = (u.role ?? "user") === r || (r === "user" && !["moderator", "admin", "super_admin"].includes(u.role ?? "user"));
+                          return (
+                            <Pressable key={r} onPress={() => setUserRole(u.id, r)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 4 }}>
+                              <Text style={{ color: on ? "#FFFFFF" : colors.muted, fontSize: 10.5, fontWeight: "800" }}>{r === "user" ? "Üye" : r === "moderator" ? "Mod" : "Admin"}</Text>
+                            </Pressable>
+                          );
+                        })}
+                      </View>
+                    ) : (
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{u.role === "admin" || u.role === "super_admin" ? "Admin" : u.role === "moderator" ? "Moderatör" : "Üye"}</Text>
+                    ),
+                    <View style={{ alignSelf: "flex-start", backgroundColor: suspended ? colors.accentSoft : colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: suspended ? colors.accent : colors.success, fontSize: 10, fontWeight: "900" }}>{suspended ? "Askıda" : "Aktif"}</Text></View>,
+                    <View style={{ flexDirection: "row", gap: 4 }}>
+                      {u.verifiedPhone ? <MaterialCommunityIcons name="phone-check" size={15} color={colors.success} /> : null}
+                      {u.verifiedIdentity ? <MaterialCommunityIcons name="card-account-details-outline" size={15} color={colors.success} /> : null}
+                      {u.verifiedInstagram ? <MaterialCommunityIcons name="instagram" size={15} color={colors.violet} /> : null}
+                    </View>,
+                    canManageUsers && !isSelf ? (
+                      <Pressable onPress={() => setUserStatus(u.id, suspended ? "active" : "suspended")} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: suspended ? colors.successSoft : colors.accentSoft, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
+                        <MaterialCommunityIcons name={suspended ? "account-check-outline" : "account-cancel-outline"} size={14} color={suspended ? colors.success : colors.accent} />
+                        <Text style={{ color: suspended ? colors.success : colors.accent, fontSize: 11, fontWeight: "800" }}>{suspended ? "Aktifleştir" : "Askıya al"}</Text>
+                      </Pressable>
+                    ) : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>—</Text>
+                  ]} />
+                );
+              })}
             </Table>
+            {!canManageUsers ? <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", marginTop: 8 }}>Rol/durum değiştirme yalnızca admin hesaplarına açıktır (sen moderatörsün).</Text> : null}
           </Panel>
         ) : null}
 
@@ -179,6 +207,14 @@ function AdminScreenInner() {
           <View style={{ gap: 16 }}>
           {pendingReview.length > 0 ? (
             <Panel title="Moderasyon Kuyruğu" sub={`${pendingReview.length} ilan onay bekliyor`}>
+              <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
+                <Pressable onPress={() => pendingReview.forEach((l) => updateListingStatus(l.id, "active"))} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
+                  <MaterialCommunityIcons name="check-all" size={15} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>Tümünü onayla ({pendingReview.length})</Text>
+                </Pressable>
+                <Pressable onPress={() => pendingReview.forEach((l) => updateListingStatus(l.id, "rejected"))} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 7 }}>
+                  <MaterialCommunityIcons name="close-box-multiple-outline" size={15} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Tümünü reddet</Text>
+                </Pressable>
+              </View>
               <Table head={["İLAN", "KATEGORİ", "SAHİP", "İŞLEM"]} cols={[2.4, 1.3, 1.4, 1.6]}>
                 {pendingReview.map((l) => (
                   <Row key={l.id} cols={[2.4, 1.3, 1.4, 1.6]} cells={[
@@ -202,8 +238,11 @@ function AdminScreenInner() {
                   <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
                   <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{money(l.price)}</Text>,
                   <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{findUser(l.ownerId)?.name ?? "—"}</Text>,
-                  <View style={{ alignSelf: "flex-start", backgroundColor: l.status === "active" ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: l.status === "active" ? colors.success : colors.muted, fontSize: 10.5, fontWeight: "900" }}>{l.status === "active" ? "Yayında" : l.status}</Text></View>,
-                  <Pressable onPress={() => updateListingStatus(l.id, l.status === "active" ? "paused" : "active")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{l.status === "active" ? "Kaldır" : "Yayınla"}</Text></Pressable>
+                  <View style={{ alignSelf: "flex-start", backgroundColor: l.status === "active" ? colors.successSoft : l.status === "rejected" ? colors.accentSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: l.status === "active" ? colors.success : l.status === "rejected" ? colors.accent : colors.muted, fontSize: 10.5, fontWeight: "900" }}>{l.status === "active" ? "Yayında" : l.status === "rejected" ? "Reddedildi" : l.status === "pending_review" ? "İncelemede" : l.status}</Text></View>,
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                    <Pressable onPress={() => updateListingStatus(l.id, l.status === "active" ? "paused" : "active")}><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{l.status === "active" ? "Kaldır" : "Yayınla"}</Text></Pressable>
+                    {l.status !== "rejected" ? <Pressable onPress={() => updateListingStatus(l.id, "rejected")}><Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "800" }}>Sil</Text></Pressable> : null}
+                  </View>
                 ]} />
               ))}
             </Table>

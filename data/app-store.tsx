@@ -45,6 +45,8 @@ import {
   recordLegalConsentLive,
   requestAccountDeletionLive,
   updatePlatformSettingLive,
+  updateUserRoleLive,
+  updateUserStatusLive,
   updateSaleStatusLive
 } from "@/lib/live-service";
 import { rateLimit } from "@/lib/rate-limit";
@@ -71,7 +73,8 @@ import type {
   Sale,
   SaleStatus,
   SuggestionStatus,
-  User
+  User,
+  UserRole
 } from "@/lib/types";
 
 type NewListingInput = Pick<
@@ -181,6 +184,8 @@ type AppStore = {
   setLocationSuggestionStatus: (id: string, status: SuggestionStatus) => void;
   updateLeadStatus: (leadId: string, status: LeadStatus) => void;
   updateListingStatus: (listingId: string, status: Listing["status"]) => void;
+  setUserRole: (userId: string, role: UserRole) => void;
+  setUserStatus: (userId: string, status: NonNullable<User["status"]>) => void;
   updateSaleStatus: (saleId: string, status: SaleStatus) => void;
   findConversation: (id: string) => Conversation | undefined;
   findListing: (id: string) => Listing | undefined;
@@ -1326,9 +1331,23 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       updateListingStatus(listingId, status) {
         const listing = listings.find((item) => item.id === listingId);
-        if (!listing || listing.ownerId !== currentUser.id) return;
+        const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+        // İlan sahibi veya admin/moderatör (moderasyon) değiştirebilir.
+        if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return;
         setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status } : item)));
-        if (liveUser && listing) void updateListingStatusLive({ ...listing, status });
+        if (liveUser) void updateListingStatusLive({ ...listing, status });
+      },
+      setUserRole(userId, role) {
+        const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
+        if (!isAdmin || userId === currentUser.id) return; // kendi rolunu degistirme
+        setUsers((items) => items.map((item) => (item.id === userId ? { ...item, role } : item)));
+        if (liveUser) void updateUserRoleLive(userId, role);
+      },
+      setUserStatus(userId, status) {
+        const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
+        if (!isAdmin || userId === currentUser.id) return;
+        setUsers((items) => items.map((item) => (item.id === userId ? { ...item, status } : item)));
+        if (liveUser) void updateUserStatusLive(userId, status);
       },
       updateSaleStatus(saleId, status) {
         const sale = sales.find((item) => item.id === saleId);
