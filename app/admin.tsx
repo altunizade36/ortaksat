@@ -35,6 +35,14 @@ const NAV: Array<{ key: Section; icon: keyof typeof MaterialCommunityIcons.glyph
   { key: "reports", icon: "chart-box-outline", label: "Raporlar" }
 ];
 
+// Güvenlik: mesajlarda geçince "riskli konuşma" işaretlenecek kelimeler.
+const RISK_WORDS = ["iban", "havale", "eft", "kapora", "kaparo", "site dışı", "whatsapp", "telegram", "dolandırıcı", "dolandiri", "sahte", "acil gönder", "papara", "western union", "hesap numaras", "kart numaras", "kripto", "bitcoin"];
+function conversationRisk(bodies: string[]): string | null {
+  const hay = bodies.join(" ").toLocaleLowerCase("tr-TR");
+  for (const w of RISK_WORDS) if (hay.includes(w)) return w;
+  return null;
+}
+
 const PARTNERSHIP_TONE: Record<string, { tint: string; color: string; label: string }> = {
   pending: { tint: "#FFF2CC", color: "#B8860B", label: "Bekliyor" },
   active: { tint: "#DDF8E9", color: "#0A7A56", label: "Kabul edildi" },
@@ -96,6 +104,8 @@ function AdminScreenInner() {
   const [bcBody, setBcBody] = useState("");
   const [listingFilter, setListingFilter] = useState<"all" | "pending" | "active" | "rejected" | "paused" | "featured">("all");
   const [userFilter, setUserFilter] = useState<"all" | "active" | "suspended" | "seller" | "staff">("all");
+  const [msgFilter, setMsgFilter] = useState<"all" | "risky">("all");
+  const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const uq = userQuery.trim().toLocaleLowerCase("tr-TR");
   const lq = listingQuery.trim().toLocaleLowerCase("tr-TR");
 
@@ -223,6 +233,51 @@ function AdminScreenInner() {
               { key: "seller", label: "Satıcı" },
               { key: "staff", label: "Yönetici", count: liveUsers.filter((u) => u.role === "admin" || u.role === "moderator" || u.role === "super_admin").length }
             ]} />
+            {detailUserId ? (() => {
+              const du = users.find((x) => x.id === detailUserId);
+              if (!du) return null;
+              const uListings = listings.filter((l) => l.ownerId === du.id);
+              const uPartner = partnerships.filter((p) => p.partnerId === du.id);
+              const uReports = reports.filter((r) => r.reportedUserId === du.id);
+              const uMsgs = messages.filter((m) => m.senderId === du.id || m.receiverId === du.id).length;
+              return (
+                <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, gap: 10, marginBottom: 12, padding: 14 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                    <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}><MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} /></View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{du.name}</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{du.phone || "telefon yok"} · {du.role ?? "user"} · {du.status ?? "active"} · ⭐ {du.rating}</Text>
+                    </View>
+                    <Pressable onPress={() => setDetailUserId(null)} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={20} color={colors.muted} /></Pressable>
+                  </View>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                    <MiniStat label="İlan" value={`${uListings.length}`} />
+                    <MiniStat label="Ortaklık" value={`${uPartner.length}`} />
+                    <MiniStat label="Mesaj" value={`${uMsgs}`} />
+                    <MiniStat label="Şikayet" value={`${uReports.length}`} tone={uReports.length ? "accent" : undefined} />
+                    <MiniStat label="Satış" value={`${du.successfulSales}`} />
+                  </View>
+                  {uListings.length ? (
+                    <View style={{ gap: 4 }}>
+                      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "900", textTransform: "uppercase" }}>İlanları</Text>
+                      {uListings.slice(0, 6).map((l) => (
+                        <View key={l.id} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                          <MaterialCommunityIcons name="circle-small" size={16} color={colors.primary} />
+                          <Link href={{ pathname: "/listing/[id]", params: { id: l.id } }} asChild><Pressable style={{ flex: 1 }}><Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{l.title}</Text></Pressable></Link>
+                          <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>{l.status === "active" ? "Yayında" : l.status === "pending_review" ? "İncelemede" : l.status}</Text>
+                        </View>
+                      ))}
+                    </View>
+                  ) : null}
+                  {uReports.length ? (
+                    <View style={{ gap: 4 }}>
+                      <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "900", textTransform: "uppercase" }}>Hakkındaki şikayetler</Text>
+                      {uReports.slice(0, 4).map((r) => <Text key={r.id} numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>• {r.reason}{r.details ? ` — ${r.details}` : ""}</Text>)}
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })() : null}
             <Table head={["KULLANICI", "ROL", "DURUM", "DOĞRULAMA", "İŞLEM"]} cols={[1.8, 1.5, 1, 1.1, 2]}>
               {shownUsers.map((u) => {
                 const suspended = u.status === "suspended";
@@ -230,10 +285,10 @@ function AdminScreenInner() {
                 const roles: UserRole[] = ["user", "moderator", "admin"];
                 return (
                   <Row key={u.id} cols={[1.8, 1.5, 1, 1, 1.8]} cells={[
-                    <View style={{ gap: 1 }}>
-                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{u.name}{isSelf ? " (sen)" : ""}</Text>
-                      <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "600" }}>⭐ {u.rating} · {u.successfulSales} satış</Text>
-                    </View>,
+                    <Pressable onPress={() => setDetailUserId(detailUserId === u.id ? null : u.id)} style={{ gap: 1 }}>
+                      <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{u.name}{isSelf ? " (sen)" : ""}</Text>
+                      <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "600" }}>Detay için tıkla · ⭐ {u.rating}</Text>
+                    </Pressable>,
                     canManageUsers && !isSelf ? (
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
                         {roles.map((r) => {
@@ -474,21 +529,33 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "messages" ? (
-          <Panel title="Mesajlar / Görüşmeler" sub={`${conversations.length} görüşme · ${messages.length} mesaj`}>
-            <Table head={["GÖRÜŞME", "İLAN", "SON MESAJ"]} cols={[1.4, 1.6, 2]}>
-              {conversations.slice(0, 40).map((c) => {
-                const last = messages.filter((m) => m.conversationId === c.id).slice(-1)[0];
-                const listing = listings.find((l) => l.id === c.listingId);
-                return (
-                  <Row key={c.id} cols={[1.4, 1.6, 2]} cells={[
-                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{c.participantIds.map((id) => findUser(id)?.name).filter(Boolean).join(" ↔ ")}</Text>,
-                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{listing?.title ?? "—"}</Text>,
-                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{last?.body ?? "—"}</Text>
-                  ]} />
-                );
-              })}
-            </Table>
-          </Panel>
+          (() => {
+            const convRisk = conversations.map((c) => {
+              const bodies = messages.filter((m) => m.conversationId === c.id).map((m) => m.body);
+              return { c, risk: conversationRisk(bodies), last: bodies[bodies.length - 1], count: bodies.length };
+            });
+            const riskyCount = convRisk.filter((x) => x.risk).length;
+            const shown = msgFilter === "risky" ? convRisk.filter((x) => x.risk) : convRisk;
+            return (
+              <Panel title="Mesaj Moderasyonu" sub={`${conversations.length} görüşme · ${messages.length} mesaj · ${riskyCount} riskli`}>
+                <FilterChips value={msgFilter} onChange={setMsgFilter} options={[{ key: "all", label: "Tümü", count: conversations.length }, { key: "risky", label: "⚠ Riskli", count: riskyCount }]} />
+                {shown.length === 0 ? <EmptyState title="Görüşme yok" body={msgFilter === "risky" ? "Riskli kelime içeren görüşme bulunmuyor." : "Henüz görüşme yok."} /> : null}
+                <Table head={["GÖRÜŞME", "İLAN", "SON MESAJ", "DURUM"]} cols={[1.4, 1.5, 1.8, 1]}>
+                  {shown.slice(0, 60).map(({ c, risk, last }) => {
+                    const listing = listings.find((l) => l.id === c.listingId);
+                    return (
+                      <Row key={c.id} cols={[1.4, 1.5, 1.8, 1]} cells={[
+                        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{c.participantIds.map((id) => findUser(id)?.name).filter(Boolean).join(" ↔ ")}</Text>,
+                        listing ? <Link href={{ pathname: "/listing/[id]", params: { id: listing.id } }} asChild><Pressable><Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{listing.title}</Text></Pressable></Link> : <Text style={{ color: colors.muted, fontSize: 12 }}>—</Text>,
+                        <Text numberOfLines={1} style={{ color: risk ? colors.accent : colors.muted, fontSize: 12, fontWeight: risk ? "700" : "600" }}>{last ?? "—"}</Text>,
+                        risk ? <View style={{ alignSelf: "flex-start", backgroundColor: colors.accentSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="alert" size={11} color={colors.accent} /><Text style={{ color: colors.accent, fontSize: 10, fontWeight: "900" }}>{risk}</Text></View> : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Normal</Text>
+                      ]} />
+                    );
+                  })}
+                </Table>
+              </Panel>
+            );
+          })()
         ) : null}
 
         {section === "commissions" ? (
@@ -823,6 +890,15 @@ function FilterChips<T extends string>({ value, onChange, options }: { value: T;
           </Pressable>
         );
       })}
+    </View>
+  );
+}
+
+function MiniStat({ label, value, tone }: { label: string; value: string; tone?: "accent" }) {
+  return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, minWidth: 74, paddingHorizontal: 12, paddingVertical: 8 }}>
+      <Text style={{ color: tone === "accent" ? colors.accent : colors.ink, fontSize: 17, fontWeight: "900" }}>{value}</Text>
+      <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{label}</Text>
     </View>
   );
 }
