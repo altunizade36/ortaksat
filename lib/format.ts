@@ -54,6 +54,14 @@ export function productUrl(listing: Listing) {
   return `https://ortaksat.com/listing/${listing.id}`;
 }
 
+/** TR cep telefonunu WhatsApp/wa.me için uluslararası haneye çevirir ("0555…" -> "90555…"). Geçersizse "". */
+export function trPhoneIntl(phone: string | undefined | null): string {
+  let d = (phone ?? "").replace(/[^0-9]/g, "");
+  if (d.startsWith("90")) d = d.slice(2);
+  if (d.startsWith("0")) d = d.slice(1);
+  return d.length === 10 && d.startsWith("5") ? "90" + d : "";
+}
+
 export function listingShareTemplates(listing: Listing, url?: string) {
   const link = url ?? `https://ortaksat.com/listing/${listing.id}`;
   const commission = commissionText(listing);

@@ -13,7 +13,7 @@ import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
-import { commissionAmount, commissionText, listingShareTemplates, money, productUrl, shareUrl } from "@/lib/format";
+import { commissionAmount, commissionText, listingShareTemplates, money, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
@@ -171,14 +171,13 @@ export default function ListingDetailScreen() {
 
   async function handleContact() {
     if (!owner) return;
-    const phone = owner.phone.replace(/[^0-9]/g, "");
-    if (currentListing.contactMethod === "whatsapp" && phone) {
-      await Linking.openURL(`https://wa.me/${phone}`);
-      return;
-    }
-    if (currentListing.contactMethod === "phone" && owner.phone) {
-      await Linking.openURL(`tel:${owner.phone}`);
-      return;
+    const waPhone = trPhoneIntl(owner.phone);
+    if (currentListing.contactMethod === "whatsapp") {
+      // Numara uluslararası formata çevrilebiliyorsa WhatsApp'a git; değilse mesaja düş.
+      if (waPhone) { await Linking.openURL(`https://wa.me/${waPhone}?text=${encodeURIComponent(`${currentListing.title} ilanı hakkında bilgi almak istiyorum.`)}`); return; }
+    } else if (currentListing.contactMethod === "phone") {
+      const tel = owner.phone.replace(/[^0-9+]/g, "");
+      if (tel) { await Linking.openURL(`tel:${tel}`); return; }
     }
     const fallbackMessage = `${currentListing.title} ilanı için bilgi almak istiyorum. Fiyat, stok ve teslimat detayları güncel mi?`;
     const conversation = startConversation(currentListing.id, owner.id, message.trim() || fallbackMessage);
