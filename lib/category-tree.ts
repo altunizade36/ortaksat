@@ -184,7 +184,24 @@ const F = {
   pazarlik: { key: "negotiable", label: "Pazarlık olur mu?", type: "bool" } as FieldDef,
   takas: { key: "swap", label: "Takas olur mu?", type: "bool" } as FieldDef,
   marka: { key: "brand", label: "Marka", type: "text", required: true } as FieldDef,
-  model: { key: "model", label: "Model", type: "text", required: true } as FieldDef
+  model: { key: "model", label: "Model", type: "text", required: true } as FieldDef,
+  markaSerbest: { key: "brand", label: "Marka", type: "text" } as FieldDef,
+  kutu: { key: "box", label: "Kutulu mu?", type: "bool" } as FieldDef,
+  depolama: { key: "storage", label: "Depolama", type: "select", options: ["16 GB", "32 GB", "64 GB", "128 GB", "256 GB", "512 GB", "1 TB", "2 TB"] } as FieldDef,
+  ram: { key: "ram", label: "RAM", type: "select", options: ["2 GB", "3 GB", "4 GB", "6 GB", "8 GB", "12 GB", "16 GB", "32 GB", "64 GB"] } as FieldDef,
+  islemci: { key: "cpu", label: "İşlemci", type: "text", placeholder: "ör. Intel i5-12400 / Ryzen 5" } as FieldDef,
+  ekranKarti: { key: "gpu", label: "Ekran kartı", type: "text", placeholder: "ör. RTX 4060 / RX 6600" } as FieldDef,
+  ekranBoyutu: { key: "screenSize", label: "Ekran boyutu", type: "text", suffix: "inç" } as FieldDef,
+  cozunurluk: { key: "resolution", label: "Çözünürlük", type: "select", options: ["HD", "Full HD", "2K/QHD", "4K/UHD", "8K"] } as FieldDef,
+  enerji: { key: "energy", label: "Enerji sınıfı", type: "select", options: ["A+++", "A++", "A+", "A", "B", "C", "D", "E", "F"] } as FieldDef,
+  kapasite: { key: "capacity", label: "Kapasite", type: "text", placeholder: "ör. 8 kg / 500 L" } as FieldDef,
+  beden: { key: "size", label: "Beden", type: "select", options: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "34", "36", "38", "40", "42", "44", "46", "48", "Standart"] } as FieldDef,
+  numara: { key: "shoeSize", label: "Numara (EU)", type: "select", options: ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"] } as FieldDef,
+  cinsiyet: { key: "gender", label: "Cinsiyet", type: "select", options: ["Kadın", "Erkek", "Unisex", "Kız Çocuk", "Erkek Çocuk", "Bebek"] } as FieldDef,
+  materyal: { key: "material", label: "Materyal", type: "text", placeholder: "ör. deri, pamuk, ahşap" } as FieldDef,
+  renkSelect: { key: "color", label: "Renk", type: "select", options: ["Siyah", "Beyaz", "Gri", "Mavi", "Kırmızı", "Yeşil", "Sarı", "Turuncu", "Mor", "Pembe", "Kahverengi", "Bej", "Lacivert", "Çok Renkli", "Diğer"] } as FieldDef,
+  yasGrubu: { key: "ageGroup", label: "Yaş grubu", type: "select", options: ["0-6 ay", "6-12 ay", "1-2 yaş", "2-4 yaş", "4-6 yaş", "6+ yaş"] } as FieldDef,
+  boyut: { key: "dimensions", label: "Ölçüler (En×Boy×Yükseklik)", type: "text", placeholder: "ör. 200×90×85 cm" } as FieldDef
 };
 
 // ---- form schemas (category-specific) ------------------------------------
@@ -326,6 +343,61 @@ export const formSchemas: Record<string, FormSchema> = {
       F.stok, F.price, F.kargo, F.desc
     ]
   },
+  elektronik: {
+    key: "elektronik",
+    title: "Elektronik ürün bilgileri",
+    fields: [F.title, F.markaSerbest, F.model, F.durum, F.depolama, F.ram, F.renkSelect, F.garanti, F.fatura, F.kutu, F.stok, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
+  bilgisayar: {
+    key: "bilgisayar",
+    title: "Bilgisayar bilgileri",
+    fields: [F.title, F.markaSerbest, F.model, F.durum, F.islemci, F.ram, F.depolama, F.ekranKarti, F.ekranBoyutu, F.cozunurluk, F.garanti, F.fatura, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
+  televizyon: {
+    key: "televizyon",
+    title: "Televizyon bilgileri",
+    fields: [F.title, F.markaSerbest, F.model, F.durum, F.ekranBoyutu, F.cozunurluk, { key: "panel", label: "Panel tipi", type: "select", options: ["LED", "QLED", "OLED", "Neo QLED", "NanoCell"] }, { key: "smart", label: "Smart TV mi?", type: "bool" }, F.garanti, F.fatura, F.price, F.kargo, F.pazarlik, F.desc]
+  },
+  beyazEsya: {
+    key: "beyazEsya",
+    title: "Beyaz eşya bilgileri",
+    fields: [F.title, { key: "brand", label: "Marka", type: "select", options: WHITE_GOODS_BRANDS }, F.model, F.durum, F.enerji, F.kapasite, F.renkSelect, F.garanti, F.fatura, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
+  moda: {
+    key: "moda",
+    title: "Giyim bilgileri",
+    fields: [F.title, F.markaSerbest, F.durum, F.beden, F.renkSelect, F.cinsiyet, F.materyal, F.stok, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
+  ayakkabi: {
+    key: "ayakkabi",
+    title: "Ayakkabı & çanta bilgileri",
+    fields: [F.title, F.markaSerbest, F.durum, F.numara, F.renkSelect, F.cinsiyet, F.materyal, F.stok, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
+  mobilya: {
+    key: "mobilya",
+    title: "Mobilya & ev bilgileri",
+    fields: [F.title, F.markaSerbest, F.durum, F.materyal, F.renkSelect, F.boyut, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
+  bebek: {
+    key: "bebek",
+    title: "Anne & bebek ürün bilgileri",
+    fields: [F.title, F.markaSerbest, F.durum, F.yasGrubu, F.cinsiyet, F.renkSelect, F.garanti, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
+  spor: {
+    key: "spor",
+    title: "Spor & outdoor bilgileri",
+    fields: [F.title, F.markaSerbest, F.durum, { key: "sportType", label: "Tür", type: "text", placeholder: "ör. fitness, kamp, bisiklet" }, F.renkSelect, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
+  muzik: {
+    key: "muzik",
+    title: "Müzik enstrümanı bilgileri",
+    fields: [F.title, F.markaSerbest, F.model, F.durum, { key: "instType", label: "Enstrüman türü", type: "text" }, F.renkSelect, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
+  medikal: {
+    key: "medikal",
+    title: "Sağlık & medikal ürün bilgileri",
+    fields: [F.title, F.markaSerbest, F.model, F.durum, F.garanti, F.fatura, F.price, F.kargo, F.pazarlik, F.desc]
+  },
   isMakinesi: {
     key: "isMakinesi",
     title: "Makine / sanayi bilgileri",
@@ -465,8 +537,8 @@ export const categoryTree: CategoryNode[] = [
     leaf("Kiralık Araçlar", "vasitaGenel"),
     leaf("Hasarlı Araçlar", "otomobil"),
     leaf("Klasik Araçlar", "otomobil"),
-    leaf("Deniz Araçları", "vasitaGenel"),
-    leaf("Karavan", "vasitaGenel"),
+    node("Deniz Araçları", leaves(["Sürat Teknesi", "Yelkenli", "Şişme Bot", "Jet Ski", "Balıkçı Teknesi", "Yat", "Gulet", "Kano & Kayak", "Tekne Motoru", "Römork (Deniz)"], "vasitaGenel"), "vasitaGenel"),
+    node("Karavan", leaves(["Motokaravan", "Çekme Karavan", "Kamp Römorku", "Karavan Aksesuarı"], "vasitaGenel"), "vasitaGenel"),
     leaf("ATV", "vasitaGenel"),
     leaf("UTV", "vasitaGenel"),
     leaf("Kamyon & Kamyonet", "vasitaGenel"),
@@ -489,49 +561,52 @@ export const categoryTree: CategoryNode[] = [
   node("İkinci El & Sıfır Alışveriş", [
     node("Elektronik", [
       node("Cep Telefonu", brandModelNodes(["iPhone", "Samsung", "Xiaomi", "Huawei", "Oppo", "Realme", "Vivo", "Tecno", "General Mobile", "OnePlus", "Nothing", "Reeder", "Diğer Marka"], MODELS_BY_BRAND, "telefon"), "telefon"),
-      node("Televizyon", brandModelNodes(TV_BRANDS, TV_MODELS, "alisverisGenel"), "alisverisGenel"),
-      node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "Diğer Tablet"], "alisverisGenel"), "alisverisGenel"),
-      node("Ses & Kulaklık", leaves(["Kablosuz Kulaklık", "Kulak İçi Kulaklık", "Kulak Üstü Kulaklık", "Bluetooth Hoparlör", "Soundbar", "Ev Sinema Sistemi", "Mikrofon"], "alisverisGenel"), "alisverisGenel"),
-      node("Foto & Kamera", leaves(["DSLR Fotoğraf Makinesi", "Aynasız Fotoğraf Makinesi", "Kompakt Kamera", "Aksiyon Kamera", "Objektif", "Tripod", "Drone", "Güvenlik Kamerası"], "alisverisGenel"), "alisverisGenel"),
-      ...leaves(["Akıllı Saat & Bileklik", "Akıllı Ev Ürünleri", "Projeksiyon", "Yazıcı & Tarayıcı", "Elektronik Aksesuar"], "alisverisGenel")
+      node("Televizyon", brandModelNodes(TV_BRANDS, TV_MODELS, "televizyon"), "televizyon"),
+      node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "Diğer Tablet"], "elektronik"), "elektronik"),
+      node("Ses & Kulaklık", leaves(["Kablosuz Kulaklık", "Kulak İçi Kulaklık", "Kulak Üstü Kulaklık", "Bluetooth Hoparlör", "Soundbar", "Ev Sinema Sistemi", "Mikrofon"], "elektronik"), "elektronik"),
+      node("Foto & Kamera", leaves(["DSLR Fotoğraf Makinesi", "Aynasız Fotoğraf Makinesi", "Kompakt Kamera", "Aksiyon Kamera", "Objektif", "Tripod", "Drone", "Güvenlik Kamerası"], "elektronik"), "elektronik"),
+      ...leaves(["Akıllı Saat & Bileklik", "Akıllı Ev Ürünleri", "Projeksiyon", "Yazıcı & Tarayıcı", "Elektronik Aksesuar"], "elektronik")
     ], "alisverisGenel"),
     node("Telefon & Aksesuar", leaves(["Cep Telefonu", "Kılıf", "Şarj & Kablo", "Powerbank", "Ekran Koruyucu", "Kulaklık"], "alisverisGenel"), "alisverisGenel"),
     node("Bilgisayar & Oyun", [
-      node("Dizüstü Bilgisayar", brandModelNodes(COMPUTER_BRANDS, COMPUTER_MODELS, "alisverisGenel"), "alisverisGenel"),
-      node("Masaüstü Bilgisayar", leaves(["Hazır Sistem", "Toplama Sistem", "All-in-One", "Mini PC", "İş İstasyonu"], "alisverisGenel"), "alisverisGenel"),
+      node("Dizüstü Bilgisayar", brandModelNodes(COMPUTER_BRANDS, COMPUTER_MODELS, "bilgisayar"), "bilgisayar"),
+      node("Masaüstü Bilgisayar", leaves(["Hazır Sistem", "Toplama Sistem", "All-in-One", "Mini PC", "İş İstasyonu"], "bilgisayar"), "bilgisayar"),
       node("Bilgisayar Bileşenleri", leaves(["Ekran Kartı", "İşlemci", "Anakart", "RAM", "SSD & HDD", "Güç Kaynağı", "Kasa", "CPU Soğutucu", "Ekran Kartı Yükseltici"], "alisverisGenel"), "alisverisGenel"),
       node("Çevre Birimleri", leaves(["Monitör", "Klavye", "Mouse", "Kulaklık", "Webcam", "Mikrofon", "Yazıcı & Tarayıcı", "Modem & Network", "Harici Disk", "USB Bellek"], "alisverisGenel"), "alisverisGenel"),
       node("Oyun & Konsol", leaves(["PlayStation 5", "PlayStation 4", "Xbox Series X/S", "Xbox One", "Nintendo Switch", "Konsol Oyunları", "Oyun Kolu", "VR Gözlük", "Oyuncu Koltuğu"], "alisverisGenel"), "alisverisGenel"),
       leaf("Yazılım & Lisans", "alisverisGenel")
     ], "alisverisGenel"),
     node("Ev & Yaşam", [
-      node("Mobilya", leaves(["Koltuk Takımı", "Köşe Koltuk", "Kanepe", "Berjer", "Masa", "Sandalye", "Yatak", "Baza", "Gardırop", "Kitaplık", "TV Ünitesi", "Çalışma Masası", "Bebek Mobilyası"], "alisverisGenel"), "alisverisGenel"),
+      node("Mobilya", leaves(["Koltuk Takımı", "Köşe Koltuk", "Kanepe", "Berjer", "Masa", "Sandalye", "Yatak", "Baza", "Gardırop", "Kitaplık", "TV Ünitesi", "Çalışma Masası", "Bebek Mobilyası"], "mobilya"), "mobilya"),
       ...leaves(["Dekorasyon", "Aydınlatma", "Ev Tekstili", "Banyo", "Bahçe & Balkon", "Temizlik Ürünleri", "Düzenleyiciler", "Ev Gereçleri"], "alisverisGenel")
     ], "alisverisGenel"),
-    node("Beyaz Eşya", leaves(["Buzdolabı", "Çamaşır Makinesi", "Bulaşık Makinesi", "Fırın", "Ocak", "Davlumbaz", "Klima", "Derin Dondurucu", "Kurutma Makinesi", "Kombi", "Elektrikli Süpürge", "Robot Süpürge"], "alisverisGenel"), "alisverisGenel"),
+    node("Beyaz Eşya", leaves(["Buzdolabı", "Çamaşır Makinesi", "Bulaşık Makinesi", "Fırın", "Ocak", "Davlumbaz", "Klima", "Derin Dondurucu", "Kurutma Makinesi", "Kombi", "Elektrikli Süpürge", "Robot Süpürge"], "beyazEsya"), "beyazEsya"),
     leaf("Mutfak", "alisverisGenel"),
     node("Moda", [
-      node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "İç Giyim"], "alisverisGenel"), "alisverisGenel"),
-      node("Erkek Giyim", leaves(["Tişört", "Gömlek", "Pantolon", "Ceket", "Mont", "Takım Elbise", "Sweatshirt", "Kazak", "Spor Giyim", "İç Giyim"], "alisverisGenel"), "alisverisGenel"),
-      ...leaves(["Çocuk Giyim", "Ayakkabı", "Çanta", "Saat", "Gözlük", "Takı", "Aksesuar", "Tesettür Giyim", "Spor Giyim"], "alisverisGenel")
-    ], "alisverisGenel"),
-    leaf("Ayakkabı & Çanta", "alisverisGenel"),
+      node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "İç Giyim"], "moda"), "moda"),
+      node("Erkek Giyim", leaves(["Tişört", "Gömlek", "Pantolon", "Ceket", "Mont", "Takım Elbise", "Sweatshirt", "Kazak", "Spor Giyim", "İç Giyim"], "moda"), "moda"),
+      node("Çocuk Giyim", leaves(["Kız Çocuk", "Erkek Çocuk", "Bebek Giyim", "Okul Kıyafeti"], "moda"), "moda"),
+      node("Ayakkabı", leaves(["Kadın Ayakkabı", "Erkek Ayakkabı", "Spor Ayakkabı", "Bot & Çizme", "Sandalet & Terlik", "Çocuk Ayakkabı"], "ayakkabi"), "ayakkabi"),
+      node("Çanta", leaves(["Kadın Çanta", "Sırt Çantası", "Cüzdan", "Valiz & Bavul", "Laptop Çantası", "El Çantası"], "ayakkabi"), "ayakkabi"),
+      ...leaves(["Saat", "Gözlük", "Takı", "Aksesuar", "Tesettür Giyim", "Spor Giyim"], "moda")
+    ], "moda"),
+    leaf("Ayakkabı & Çanta", "ayakkabi"),
     leaf("Takı & Aksesuar", "alisverisGenel"),
     node("Anne & Bebek", [
-      node("Bebek Arabası & Taşıma", leaves(["Travel Sistem Bebek Arabası", "Tekli Bebek Arabası", "İkiz Bebek Arabası", "Puset", "Ana Kucağı", "Kanguru & Taşıyıcı", "Portbebe"], "alisverisGenel"), "alisverisGenel"),
-      node("Oto Koltuğu", leaves(["0-13 kg", "9-36 kg", "15-36 kg", "360° Dönebilen", "Yükseltici"], "alisverisGenel"), "alisverisGenel"),
-      node("Beslenme", leaves(["Mama Sandalyesi", "Biberon & Emzik", "Mama Hazırlama", "Göğüs Pompası", "Termos & Saklama"], "alisverisGenel"), "alisverisGenel"),
-      node("Bebek Odası", leaves(["Beşik", "Park Yatak", "Bebek Yatağı", "Alt Açma Ünitesi", "Bebek Odası Takımı", "Uyku & Tekstil"], "alisverisGenel"), "alisverisGenel"),
-      ...leaves(["Bebek Giyim", "Bebek Bakım & Bez", "Bebek Güvenliği", "Oyuncak", "Anne Ürünleri", "Hamile Giyim", "Bebek Ayakkabı"], "alisverisGenel")
-    ], "alisverisGenel"),
+      node("Bebek Arabası & Taşıma", leaves(["Travel Sistem Bebek Arabası", "Tekli Bebek Arabası", "İkiz Bebek Arabası", "Puset", "Ana Kucağı", "Kanguru & Taşıyıcı", "Portbebe"], "bebek"), "bebek"),
+      node("Oto Koltuğu", leaves(["0-13 kg", "9-36 kg", "15-36 kg", "360° Dönebilen", "Yükseltici"], "bebek"), "bebek"),
+      node("Beslenme", leaves(["Mama Sandalyesi", "Biberon & Emzik", "Mama Hazırlama", "Göğüs Pompası", "Termos & Saklama"], "bebek"), "bebek"),
+      node("Bebek Odası", leaves(["Beşik", "Park Yatak", "Bebek Yatağı", "Alt Açma Ünitesi", "Bebek Odası Takımı", "Uyku & Tekstil"], "bebek"), "bebek"),
+      ...leaves(["Bebek Giyim", "Bebek Bakım & Bez", "Bebek Güvenliği", "Oyuncak", "Anne Ürünleri", "Hamile Giyim", "Bebek Ayakkabı"], "bebek")
+    ], "bebek"),
     node("Kozmetik & Kişisel Bakım", leaves(["Cilt Bakımı", "Saç Bakımı", "Makyaj", "Parfüm", "Erkek Bakım", "Kişisel Bakım Cihazları", "Ağız Bakımı", "Tıraş Ürünleri", "Güneş Bakımı"], "alisverisGenel"), "alisverisGenel"),
     node("Spor & Outdoor", [
-      node("Fitness & Kondisyon", leaves(["Koşu Bandı", "Kondisyon Bisikleti", "Eliptik", "Ağırlık & Dambıl", "Kürek Çekme", "Fitness İstasyonu", "Direniş Bandı", "Yoga & Pilates"], "alisverisGenel"), "alisverisGenel"),
-      node("Bisiklet", leaves(["Dağ Bisikleti", "Yol Bisikleti", "Şehir Bisikleti", "Elektrikli Bisiklet", "Çocuk Bisikleti", "Katlanır Bisiklet", "Bisiklet Parçaları"], "alisverisGenel"), "alisverisGenel"),
-      node("Kamp & Doğa", leaves(["Çadır", "Uyku Tulumu", "Kamp Sandalyesi", "Kamp Ocağı", "Sırt Çantası", "Termos & Matara", "Outdoor Giyim & Ayakkabı"], "alisverisGenel"), "alisverisGenel"),
-      node("Takım Sporları", leaves(["Futbol", "Basketbol", "Voleybol", "Tenis", "Masa Tenisi", "Badminton"], "alisverisGenel"), "alisverisGenel"),
-      ...leaves(["Su Sporları", "Kış Sporları", "Avcılık & Balıkçılık", "Dövüş Sporları", "Kaykay & Paten"], "alisverisGenel")
-    ], "alisverisGenel"),
+      node("Fitness & Kondisyon", leaves(["Koşu Bandı", "Kondisyon Bisikleti", "Eliptik", "Ağırlık & Dambıl", "Kürek Çekme", "Fitness İstasyonu", "Direniş Bandı", "Yoga & Pilates"], "spor"), "spor"),
+      node("Bisiklet", leaves(["Dağ Bisikleti", "Yol Bisikleti", "Şehir Bisikleti", "Elektrikli Bisiklet", "Çocuk Bisikleti", "Katlanır Bisiklet", "Bisiklet Parçaları"], "spor"), "spor"),
+      node("Kamp & Doğa", leaves(["Çadır", "Uyku Tulumu", "Kamp Sandalyesi", "Kamp Ocağı", "Sırt Çantası", "Termos & Matara", "Outdoor Giyim & Ayakkabı"], "spor"), "spor"),
+      node("Takım Sporları", leaves(["Futbol", "Basketbol", "Voleybol", "Tenis", "Masa Tenisi", "Badminton"], "spor"), "spor"),
+      ...leaves(["Su Sporları", "Kış Sporları", "Avcılık & Balıkçılık", "Dövüş Sporları", "Kaykay & Paten"], "spor")
+    ], "spor"),
     node("Kitap & Hobi", leaves(["Kitap", "Dergi", "Müzik Aletleri", "Plak & CD", "Hobi Malzemeleri", "El Sanatları", "Puzzle", "Maket", "Koleksiyon Ürünleri"], "alisverisGenel"), "alisverisGenel"),
     leaf("Koleksiyon", "alisverisGenel"),
     leaf("Ofis & Kırtasiye", "alisverisGenel"),
@@ -594,11 +669,11 @@ export const categoryTree: CategoryNode[] = [
 
   node("Müzik Enstrümanları", leaves([
     "Akustik Gitar", "Elektro Gitar", "Bas Gitar", "Klasik Gitar", "Piyano", "Dijital Piyano & Org", "Keman", "Bateri & Davul", "Perküsyon", "Nefesli Çalgılar", "DJ Ekipmanı", "Stüdyo / Kayıt Ekipmanı", "Amfi & Efekt Pedalı", "Bağlama", "Ud & Kanun", "Ney & Kaval", "Mikrofon", "Enstrüman Aksesuarı"
-  ], "alisverisGenel"), "alisverisGenel", IMG("1511671782779-c97d3d27a1d4")),
+  ], "muzik"), "muzik", IMG("1511671782779-c97d3d27a1d4")),
 
   node("Sağlık & Medikal", leaves([
     "Tekerlekli Sandalye", "Hasta Yatağı", "Tansiyon Aleti", "Şeker Ölçüm Cihazı", "Ortopedik Ürünler", "İşitme Cihazı", "Oksijen Konsantratörü", "Nebulizatör", "Medikal Sarf Malzeme", "Masaj & Terapi Cihazı", "Ateş Ölçer", "Pulse Oksimetre", "Engelli Ürünleri", "Fizik Tedavi Ekipmanı"
-  ], "alisverisGenel"), "alisverisGenel", IMG("1584982751601-97dcc096659c")),
+  ], "medikal"), "medikal", IMG("1584982751601-97dcc096659c")),
 
   node("Diğer", [leaf("Kategori öner", "alisverisGenel")], "alisverisGenel", IMG("1441986300917-64674bd600d8"))
 ];
