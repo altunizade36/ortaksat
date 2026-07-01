@@ -43,8 +43,15 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="twitter:image" content="https://ortaksat.com/og-cover.png" />
 
         <link rel="icon" href="/favicon.ico" />
-        <link rel="apple-touch-icon" href="/favicon.ico" />
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
+        {/* PWA: service worker kaydı (yüklenebilir uygulama) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}"
+          }}
+        />
 
         {/* Crisp web typography */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />

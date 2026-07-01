@@ -1,17 +1,19 @@
 {
-  "name": "ortaksat — Ortak satışla kazan",
-  "short_name": "ortaksat",
-  "description": "İlanını aç, ortakların referans linkiyle paylaşsın, satışta komisyon kazan.",
+  "name": "OrtakSat — Ortak satış platformu",
+  "short_name": "OrtakSat",
+  "description": "İlanını aç, satış yapabilecek ortaklarla eşleş; komisyonu birlikte belirleyin.",
   "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",
   "lang": "tr",
   "dir": "ltr",
-  "background_color": "#EEF1F4",
+  "background_color": "#F4F6F8",
   "theme_color": "#00866F",
-  "categories": ["shopping", "business", "marketplace"],
+  "categories": ["shopping", "business"],
   "icons": [
-    { "src": "/favicon.ico", "sizes": "48x48", "type": "image/x-icon" }
+    { "src": "/pwa-icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]
 }
