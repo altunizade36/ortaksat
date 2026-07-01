@@ -140,6 +140,12 @@ function AdminScreenInner() {
             );
           })}
           <View style={{ flex: 1 }} />
+          <Link href="/" asChild>
+            <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 10 }}>
+              <MaterialCommunityIcons name="storefront-outline" size={18} color="rgba(255,255,255,0.7)" />
+              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13.5, fontWeight: "700" }}>Siteye dön</Text>
+            </Pressable>
+          </Link>
           <Pressable onPress={() => { void signOut(); router.replace("/"); }} style={{ alignItems: "center", flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 10 }}>
             <MaterialCommunityIcons name="logout" size={18} color="rgba(255,255,255,0.7)" />
             <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13.5, fontWeight: "700" }}>Çıkış Yap</Text>
@@ -147,6 +153,12 @@ function AdminScreenInner() {
         </View>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: "#0A5C44", maxHeight: 56 }} contentContainerStyle={{ alignItems: "center", gap: 6, paddingHorizontal: 10 }}>
+          <Link href="/" asChild>
+            <Pressable style={{ alignItems: "center", borderColor: "rgba(255,255,255,0.3)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+              <MaterialCommunityIcons name="storefront-outline" size={15} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>Site</Text>
+            </Pressable>
+          </Link>
           {NAV.map((n) => {
             const on = section === n.key;
             return (
