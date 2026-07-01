@@ -15,22 +15,59 @@ import { supabase } from "@/lib/supabase";
 
 export type ModerationVerdict = "block" | "review" | "none";
 
-// DB seed (prohibited_keywords) ile uyumlu gömülü liste.
+// DB seed (prohibited_keywords) ile uyumlu gömülü liste. Türkiye mevzuatı + pazaryeri
+// standartlarına göre KESİN YASAK ürün/hizmetler. (Kelime-sınırı ile eşleşir.)
 const BLOCK_WORDS = [
-  "silah", "tabanca", "tüfek", "mermi", "uyuşturucu", "esrar", "eroin", "kokain", "bonzai",
-  "birinci kalite replika", "çalıntı", "kumar", "porno", "escort", "pasaport", "ehliyet",
-  "nüfus cüzdanı", "organ", "böbrek"
+  // Silah, mühimmat, patlayıcı
+  "silah", "ateşli silah", "tabanca", "tüfek", "av tüfeği", "pompalı", "mühimmat", "mermi",
+  "fişek", "patlayıcı", "havai fişek", "el bombası", "kurusıkı",
+  // Uyuşturucu / yasa dışı madde
+  "uyuşturucu", "esrar", "eroin", "kokain", "bonzai", "metamfetamin", "ekstazi", "keyif verici madde",
+  // Reçeteli / kontrolsüz medikal
+  "reçeteli ilaç", "antibiyotik", "steroid", "anabolik", "zayıflama ilacı", "hormon ilacı",
+  // Tütün ürünleri
+  "sigara", "tütün", "elektronik sigara", "e-sigara", "vape", "puro", "nargile tütünü", "sarma tütün",
+  // Alkol
+  "alkol", "içki", "bira", "şarap", "rakı", "viski", "votka", "likör", "kaçak içki",
+  // Sahte / replika / çalıntı
+  "replika", "çakma", "birinci kalite replika", "a kalite replika", "sahte ürün", "sahte marka",
+  "çalıntı", "seri numarası silinmiş",
+  // Dinleme / casus / takip
+  "dinleme cihazı", "gizli kamera", "casus kamera", "takip cihazı", "sinyal kesici", "jammer",
+  // Dijital: hesap / hack / spam
+  "hack", "exploit", "zararlı yazılım", "phishing", "çalıntı hesap", "hesap satışı", "oyun hesabı satışı",
+  "sosyal medya hesabı satışı", "sahte takipçi", "sahte beğeni", "takipçi satışı",
+  // Resmi belge
+  "pasaport", "ehliyet", "nüfus cüzdanı", "kimlik kartı", "sahte belge", "sahte fatura", "sahte rapor", "sahte diploma",
+  // İnsan / organ / anne sütü
+  "insan organı", "organ satışı", "böbrek satışı", "anne sütü",
+  // Kumar / bahis
+  "kumar", "bahis", "iddaa", "yasa dışı bahis", "şans oyunu kuponu"
 ];
+
+// Manuel moderasyona (pending_review) düşecek dikkatli/ambigü ifadeler.
 const REVIEW_WORDS = [
-  "fişek", "bıçak", "hap", "reçeteli", "ilaç", "sahte", "replika", "taklit", "a kalite",
-  "kaçak", "bahis", "iddaa", "yetişkin", "kimlik", "diploma"
+  "ilaç", "hap", "medikal", "tıbbi cihaz", "takviye", "reçete",
+  "yetişkin", "18+", "escort", "porno",
+  "kaçak", "gümrüksüz", "sahte", "taklit", "a kalite",
+  "kimlik", "diploma", "sertifika satışı",
+  "bıçak", "kelebek bıçak", "muşta", "biber gazı"
 ];
+
+// Türkçe harf-duyarlı kelime sınırı: kelime, harf olmayan bir karakterle çevrili olmalı.
+// Böylece "hap" -> "kitap" içinde yakalanmaz; "bira" -> "labirent" içinde eşleşmez.
+const LETTER = "a-zçğıiöşü0-9";
+function matchesWord(hay: string, word: string): boolean {
+  if (word.includes(" ")) return hay.includes(word); // çok kelimeli ifade: düz arama yeterli
+  const re = new RegExp(`(^|[^${LETTER}])${word.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}([^${LETTER}]|$)`, "i");
+  return re.test(hay);
+}
 
 function localScan(text: string): ModerationVerdict {
   const hay = (text ?? "").toLocaleLowerCase("tr-TR");
   if (!hay.trim()) return "none";
-  if (BLOCK_WORDS.some((w) => hay.includes(w))) return "block";
-  if (REVIEW_WORDS.some((w) => hay.includes(w))) return "review";
+  if (BLOCK_WORDS.some((w) => matchesWord(hay, w))) return "block";
+  if (REVIEW_WORDS.some((w) => matchesWord(hay, w))) return "review";
   return "none";
 }
 
