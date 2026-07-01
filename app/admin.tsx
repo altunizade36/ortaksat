@@ -15,13 +15,14 @@ import type { SaleStatus, SuggestionStatus } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 type Section =
-  | "dashboard" | "users" | "listings" | "categories" | "locations"
+  | "dashboard" | "users" | "listings" | "complaints" | "categories" | "locations"
   | "messages" | "commissions" | "stats" | "notifications" | "content" | "settings" | "reports";
 
 const NAV: Array<{ key: Section; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
   { key: "dashboard", icon: "view-dashboard-outline", label: "Dashboard" },
   { key: "users", icon: "account-group-outline", label: "Kullanıcılar" },
   { key: "listings", icon: "file-document-outline", label: "İlanlar" },
+  { key: "complaints", icon: "flag-outline", label: "Şikayetler" },
   { key: "categories", icon: "shape-outline", label: "Kategoriler" },
   { key: "locations", icon: "map-marker-outline", label: "Konum Önerileri" },
   { key: "messages", icon: "message-text-outline", label: "Mesajlar" },
@@ -56,7 +57,7 @@ function AdminScreenInner() {
   const {
     listings, users, sales, partnerships, leads, conversations, messages, notifications,
     categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
-    updateListingStatus, findUser, signOut, currentUser
+    updateListingStatus, findUser, signOut, currentUser, reports, updateReportStatus
   } = useStore();
   const [section, setSection] = useState<Section>("dashboard");
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -72,8 +73,9 @@ function AdminScreenInner() {
   const totalCommission = sales.reduce((s, x) => s + x.commissionAmount, 0);
   const pendingCat = categorySuggestions.filter((s) => s.status === "pending").length;
   const pendingLoc = locationSuggestions.filter((s) => s.status === "pending").length;
+  const pendingReports = reports.filter((r) => r.status === "open" || r.status === "reviewing").length;
 
-  const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : k === "listings" ? pendingReview.length : 0);
+  const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : k === "listings" ? pendingReview.length : k === "complaints" ? pendingReports : 0);
 
   return (
     <View style={{ backgroundColor: colors.background, flex: 1, flexDirection: isWideWeb ? "row" : "column", minHeight: "100%" }}>
@@ -186,6 +188,62 @@ function AdminScreenInner() {
             </Table>
           </Panel>
           </View>
+        ) : null}
+
+        {section === "complaints" ? (
+          <Panel title="Şikayetler" sub={`${pendingReports} bekliyor · ${reports.length} toplam`}>
+            {reports.length === 0 ? <EmptyState title="Şikayet yok" body="Kullanıcılar ilan veya satıcı şikayet ettiğinde burada görünür ve buradan işlem yapabilirsin." /> : null}
+            {reports.slice().sort((a, b) => (isOpenReport(a) ? -1 : 1) - (isOpenReport(b) ? -1 : 1) || b.createdAt.localeCompare(a.createdAt)).map((r) => {
+              const target = r.listingId ? listings.find((l) => l.id === r.listingId) : undefined;
+              const reportedUser = r.reportedUserId ? findUser(r.reportedUserId) : undefined;
+              const tone = isOpenReport(r) ? { t: colors.warningSoft, c: colors.warning, l: "Bekliyor" } : r.status === "resolved" ? { t: colors.successSoft, c: colors.success, l: "Çözüldü" } : { t: colors.surfaceAlt, c: colors.muted, l: "Reddedildi" };
+              return (
+                <View key={r.id} style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 7, paddingVertical: 13 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                    <MaterialCommunityIcons name={r.listingId ? "file-alert-outline" : "account-alert-outline"} size={17} color={colors.accent} />
+                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>
+                      {target ? target.title : reportedUser ? reportedUser.name : r.listingId ?? r.reportedUserId ?? "Şikayet"}
+                    </Text>
+                    <View style={{ backgroundColor: tone.t, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2 }}><Text style={{ color: tone.c, fontSize: 10.5, fontWeight: "900" }}>{tone.l}</Text></View>
+                  </View>
+                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>Sebep: {r.reason}</Text>
+                  {r.details ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{r.details}</Text> : null}
+                  <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>
+                    Şikayet eden: {findUser(r.reporterId)?.name ?? r.reporterId.slice(0, 8)} · {r.createdAt}
+                    {reportedUser && r.listingId ? ` · Satıcı: ${findUser(target?.ownerId ?? "")?.name ?? "—"}` : ""}
+                  </Text>
+                  <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
+                    {target ? (
+                      <Link href={{ pathname: "/listing/[id]", params: { id: target.id } }} asChild>
+                        <Pressable style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+                          <MaterialCommunityIcons name="open-in-new" size={14} color={colors.ink} />
+                          <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>İlana git</Text>
+                        </Pressable>
+                      </Link>
+                    ) : null}
+                    {target ? (
+                      <Pressable onPress={() => updateListingStatus(target.id, target.status === "active" ? "paused" : "active")} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+                        <MaterialCommunityIcons name={target.status === "active" ? "eye-off-outline" : "eye-outline"} size={14} color={colors.ink} />
+                        <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{target.status === "active" ? "İlanı kaldır" : "Yayınla"}</Text>
+                      </Pressable>
+                    ) : null}
+                    {isOpenReport(r) ? (
+                      <>
+                        <Pressable onPress={() => void updateReportStatus(r.id, "resolved")} style={{ alignItems: "center", backgroundColor: colors.success, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+                          <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" />
+                          <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>Çözüldü</Text>
+                        </Pressable>
+                        <Pressable onPress={() => void updateReportStatus(r.id, "rejected")} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+                          <MaterialCommunityIcons name="close" size={14} color={colors.muted} />
+                          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Reddet</Text>
+                        </Pressable>
+                      </>
+                    ) : null}
+                  </View>
+                </View>
+              );
+            })}
+          </Panel>
         ) : null}
 
         {section === "categories" ? (
@@ -363,6 +421,11 @@ function AdminScreenInner() {
       </ScrollView>
     </View>
   );
+}
+
+// Şikayet henüz işlem bekliyor mu (açık/incelemede).
+function isOpenReport(r: { status: string }) {
+  return r.status === "open" || r.status === "reviewing";
 }
 
 // ---- pieces --------------------------------------------------------------
