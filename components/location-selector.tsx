@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { districtsOfProvince, locKey, provinces, searchDistricts, searchProvinces } from "@/lib/locations";
@@ -139,33 +139,30 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
 
   // Gerçek mahalle listesi (Supabase)
   return (
-    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
+    <View style={{ gap: 4 }}>
       <Pressable onPress={() => { setOpen((o) => !o); setQuery(""); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
         <MaterialCommunityIcons name="map-marker-outline" size={18} color={value ? colors.primary : colors.muted} />
         <Text numberOfLines={1} style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || "Mahalle seçin"}</Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
       </Pressable>
       {open ? (
-        <>
-          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 900 }} />
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, left: 0, maxHeight: 320, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 50, zIndex: 1000 }}>
-            <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
-              <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
-              <TextInput value={query} onChangeText={setQuery} autoFocus placeholder="Mahalle ara…" placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }} />
-            </View>
-            <View style={{ maxHeight: 230 }}>
-              {results.map((n) => (
-                <Pressable key={n.id} onPress={() => { onChange(n.name); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 10 })}>
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600" }}>{n.name}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Pressable onPress={() => { setManual(true); setOpen(false); }} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 11 }}>
-              <MaterialCommunityIcons name="plus-circle-outline" size={16} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Mahallem listede yok</Text>
-            </Pressable>
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, maxHeight: 320, overflow: "hidden" }}>
+          <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
+            <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
+            <TextInput value={query} onChangeText={setQuery} autoFocus placeholder="Mahalle ara…" placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }} />
           </View>
-        </>
+          <ScrollView style={{ maxHeight: 230 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+            {results.map((n) => (
+              <Pressable key={n.id} onPress={() => { onChange(n.name); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 10 })}>
+                <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600" }}>{n.name}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+          <Pressable onPress={() => { setManual(true); setOpen(false); }} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 11 }}>
+            <MaterialCommunityIcons name="plus-circle-outline" size={16} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Mahallem listede yok</Text>
+          </Pressable>
+        </View>
       ) : null}
     </View>
   );
@@ -193,7 +190,7 @@ function ComboBox({
   const results = open ? search(query).slice(0, 40) : [];
 
   return (
-    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
+    <View style={{ gap: 4 }}>
       <FieldLabel text={label} />
       <Pressable
         onPress={() => { if (!disabled) { setOpen((o) => !o); setQuery(""); } }}
@@ -211,32 +208,29 @@ function ComboBox({
       </Pressable>
 
       {open ? (
-        <>
-          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 900 }} />
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, left: 0, maxHeight: 320, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 76, zIndex: 1000 }}>
-            <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
-              <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
-              <TextInput
-                value={query}
-                onChangeText={setQuery}
-                autoFocus
-                placeholder="Ara…"
-                placeholderTextColor={colors.subtle}
-                style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }}
-              />
-            </View>
-            <View style={{ maxHeight: 270 }}>
-              {results.length === 0 ? (
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 14 }}>Sonuç yok.</Text>
-              ) : null}
-              {results.map((r) => (
-                <Pressable key={r.id} onPress={() => { onSelect(r.id); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 11 })}>
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600" }}>{r.label}</Text>
-                </Pressable>
-              ))}
-            </View>
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, marginTop: 2, maxHeight: 320, overflow: "hidden" }}>
+          <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
+            <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
+            <TextInput
+              value={query}
+              onChangeText={setQuery}
+              autoFocus
+              placeholder="Ara…"
+              placeholderTextColor={colors.subtle}
+              style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }}
+            />
           </View>
-        </>
+          <ScrollView style={{ maxHeight: 270 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+            {results.length === 0 ? (
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 14 }}>Sonuç yok.</Text>
+            ) : null}
+            {results.map((r) => (
+              <Pressable key={r.id} onPress={() => { onSelect(r.id); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 11 })}>
+                <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600" }}>{r.label}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </View>
       ) : null}
     </View>
   );

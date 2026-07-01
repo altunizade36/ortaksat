@@ -306,16 +306,16 @@ export function WebFooter() {
       style={{
         backgroundColor: colors.primaryDark,
         marginHorizontal: -20,
-        marginTop: 24,
-        paddingBottom: 20,
+        marginTop: 18,
+        paddingBottom: 14,
         paddingHorizontal: 32,
-        paddingTop: 24
+        paddingTop: 18
       }}
     >
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 32 }}>
-        <View style={{ flex: 1.6, gap: 10, minWidth: 280 }}>
-          <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>ortaksat</Text>
-          <Text style={{ color: light, fontSize: 14, fontWeight: "600", lineHeight: 21, maxWidth: 380 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 24 }}>
+        <View style={{ flex: 1.6, gap: 8, minWidth: 280 }}>
+          <Text style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900" }}>ortaksat</Text>
+          <Text style={{ color: light, fontSize: 13, fontWeight: "600", lineHeight: 19, maxWidth: 380 }}>
             {t("appSlogan")}. İlanını aç, satış yapabilecek ortaklarla eşleş; komisyonu birlikte belirleyin.
           </Text>
           <View style={{ gap: 8, maxWidth: 380 }}>
@@ -361,7 +361,7 @@ export function WebFooter() {
           </View>
         ))}
       </View>
-      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between", marginTop: 16, paddingTop: 14 }}>
+      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between", marginTop: 12, paddingTop: 10 }}>
         <View style={{ gap: 3 }}>
           <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" }}>
             © 2026 OrtakSat. Tüm hakları saklıdır.
