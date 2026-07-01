@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
+import Head from "expo-router/head";
 import { useEffect, useMemo, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
@@ -197,6 +198,12 @@ export default function ExploreScreen() {
     const sortOrder: SortMode[] = ["recommended", "priceAsc", "priceDesc", "commission", "new"];
     const visibleProducts = productListings.slice(0, productVisible);
 
+    const seoParts = [params.q, provinceName, districtName].filter(Boolean);
+    const seoTitle = seoParts.length ? `${seoParts.join(" ")} ilanları — OrtakSat` : "İlanları Keşfet — OrtakSat";
+    const seoDesc = seoParts.length
+      ? `${seoParts.join(" ")} için ortak satış ilanları. Ürününü paylaş, satış yapabilecek ortaklarla eşleş.`
+      : "Binlerce ortak satış ilanını keşfet. Ürününü paylaş, komisyonu birlikte belirle.";
+
     return (
       <ScrollView
         contentInsetAdjustmentBehavior="automatic"
@@ -205,6 +212,10 @@ export default function ExploreScreen() {
         contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 60, paddingHorizontal: padding, paddingTop: 16 }}
         style={{ backgroundColor: colors.background }}
       >
+        <Head>
+          <title>{seoTitle}</title>
+          <meta name="description" content={seoDesc} />
+        </Head>
         {/* Banner */}
         <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 26 }}>
           <View style={{ flex: 1.3, gap: 10, justifyContent: "center", minWidth: 0 }}>
