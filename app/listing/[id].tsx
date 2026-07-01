@@ -76,6 +76,7 @@ export default function ListingDetailScreen() {
   const [message, setMessage] = useState("");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
+  const [activeImage, setActiveImage] = useState(0);
   const router = useRouter();
 
   // Paylaşılan link herkeste açılsın: ilan bellekte yoksa Supabase'den id ile çek.
@@ -235,14 +236,29 @@ export default function ListingDetailScreen() {
       <WebContainer max={1200} padding={0} style={{ gap: 16 }}>
       <View style={isWideWeb ? { flexDirection: "row", gap: 20, alignItems: "flex-start" } : { gap: 12 }}>
       <View style={isWideWeb ? { flex: 1.12, minWidth: 0 } : undefined}>
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 18 : 0, borderWidth: isWideWeb ? 1 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
-        <SafeRemoteImage uri={currentListing.image} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
-        <View style={{ flexDirection: "row", gap: 8, padding: 12 }}>
-          <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label="Beğen" onPress={() => toggleFavorite(currentListing.id)} />
-          <IconButton icon="share-variant-outline" label="Paylaş" onPress={() => void handleShare()} />
-          {!isOwner ? <IconButton icon="flag-outline" label="Bildir" onPress={() => void handleReport()} /> : null}
-        </View>
-      </View>
+      {(() => {
+        const gallery = [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean);
+        const mainImg = gallery[Math.min(activeImage, gallery.length - 1)] ?? currentListing.image;
+        return (
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 18 : 0, borderWidth: isWideWeb ? 1 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
+            <SafeRemoteImage uri={mainImg} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
+            {gallery.length > 1 ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingTop: 12 }}>
+                {gallery.map((img, i) => (
+                  <Pressable key={img + i} onPress={() => setActiveImage(i)} style={{ borderColor: i === Math.min(activeImage, gallery.length - 1) ? colors.primary : colors.line, borderRadius: 10, borderWidth: i === Math.min(activeImage, gallery.length - 1) ? 2 : 1, height: 64, overflow: "hidden", width: 64 }}>
+                    <SafeRemoteImage uri={img} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+            <View style={{ flexDirection: "row", gap: 8, padding: 12 }}>
+              <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label="Beğen" onPress={() => toggleFavorite(currentListing.id)} />
+              <IconButton icon="share-variant-outline" label="Paylaş" onPress={() => void handleShare()} />
+              {!isOwner ? <IconButton icon="flag-outline" label="Bildir" onPress={() => void handleReport()} /> : null}
+            </View>
+          </View>
+        );
+      })()}
       </View>
 
       <View style={isWideWeb ? { flex: 1, gap: 12, minWidth: 0, marginTop: 16 } : { gap: 12, paddingHorizontal: 12 }}>
