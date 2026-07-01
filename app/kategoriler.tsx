@@ -14,7 +14,6 @@ function descendantLabels(node: CategoryNode): string[] {
   for (const c of node.children ?? []) out.push(...descendantLabels(c));
   return out;
 }
-import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
 
@@ -27,14 +26,6 @@ const PALETTE: Array<[string, string]> = [
   [colors.successSoft, colors.success],
   [colors.warningSoft, colors.warning]
 ];
-
-// Deterministic, plausible listing count so the category page looks populated
-// even where the demo dataset has few/no listings for a category.
-function pseudoCount(key: string) {
-  let h = 0;
-  for (let i = 0; i < key.length; i++) h = (h * 31 + key.charCodeAt(i)) % 100000;
-  return 4000 + (h % 28000);
-}
 
 // Deterministic thousands grouping (no Intl) so SSG and client match (no #418).
 function groupTr(value: number) {
@@ -54,28 +45,31 @@ export default function CategoriesPage() {
   const [query, setQuery] = useState("");
 
   const counts: Record<string, number> = {};
-  const commissionSum: Record<string, number> = {};
   for (const listing of listings) {
     if (listing.status !== "active") continue;
     counts[listing.category] = (counts[listing.category] ?? 0) + 1;
-    commissionSum[listing.category] = (commissionSum[listing.category] ?? 0) + commissionAmount(listing);
   }
   const tops = categoryTree.filter((c) => c.label !== "Diğer");
+  // Gerçek ilan sayıları — uydurma veri yok. Boşsa sayı gösterilmez, "İlan ekle" denir.
   const catData = tops.map((c) => {
     const labels = descendantLabels(c);
     const real = labels.reduce((sum, lbl) => sum + (counts[lbl] ?? 0), 0);
-    const commSum = labels.reduce((sum, lbl) => sum + (commissionSum[lbl] ?? 0), 0);
     return {
       cat: { key: c.key, label: c.label, shortLabel: c.label, subcategories: (c.children ?? []).map((ch) => ch.label) },
-      count: real > 0 ? real : pseudoCount(c.key),
-      image: c.image ?? getCategoryImage(c.key),
-      avgCommission: real > 0 ? Math.round(commSum / real) : 120 + (pseudoCount(c.key) % 160)
+      count: real,
+      subCount: descendantLabels(c).length - 1,
+      image: c.image ?? getCategoryImage(c.key)
     };
   });
   const totalActive = listings.filter((l) => l.status === "active").length;
-  const popular = catData.slice().sort((a, b) => b.count - a.count).slice(0, 8);
-  const topEarning = catData.slice().sort((a, b) => b.avgCommission - a.avgCommission).slice(0, 5);
+  const popular = catData.slice().sort((a, b) => b.count - a.count || b.subCount - a.subCount).slice(0, 8);
   const quickChips = tops.slice(0, 8).map((c) => ({ key: c.key, label: c.label, shortLabel: c.label }));
+
+  const steps: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; body: string }> = [
+    { icon: "tag-plus-outline", title: "İlanını oluştur", body: "Ürününü kategorisiyle yayınla; ücretsiz." },
+    { icon: "account-multiple-outline", title: "Ortak & alıcı bul", body: "İlgilenenler seninle mesajdan iletişime geçer." },
+    { icon: "handshake-outline", title: "Kendi aranızda anlaşın", body: "OrtakSat ödeme/kargo işlemez; taraflar doğrudan anlaşır." }
+  ];
 
   function search() {
     router.push({ pathname: "/explore", params: query.trim() ? { q: query.trim() } : undefined });
@@ -146,7 +140,7 @@ export default function CategoriesPage() {
                     <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                   </View>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy(cat.label, language)}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{groupTr(count)} ilan</Text>
+                  <Text numberOfLines={1} style={{ color: count > 0 ? colors.muted : colors.primaryDark, fontSize: 11, fontWeight: "700" }}>{count > 0 ? `${groupTr(count)} ilan` : "İlan ekle →"}</Text>
                 </Pressable>
               </Link>
             ))}
@@ -156,26 +150,32 @@ export default function CategoriesPage() {
         <View style={{ backgroundColor: colors.primarySoft, borderRadius: 16, flex: 1, gap: 14, minWidth: 0, padding: 16 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <View style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 8, height: 32, justifyContent: "center", width: 32 }}>
-              <MaterialCommunityIcons name="trending-up" size={18} color={colors.primaryDark} />
+              <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={colors.primaryDark} />
             </View>
             <View style={{ flex: 1, gap: 1 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Yüksek kazançlı kategoriler</Text>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>Ortalama kazancı yüksek kategoriler.</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Ortak satış nasıl çalışır?</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>Üç adımda ilan ver, eşleş, anlaş.</Text>
             </View>
           </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-            {topEarning.map(({ cat, avgCommission, image }, i) => (
-              <Link key={cat.key} href={{ pathname: "/explore", params: { q: cat.label } }} asChild>
-                <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 96, flexGrow: 1, gap: 6, maxWidth: 150, padding: 10 }}>
-                  <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 10, height: 56, justifyContent: "center", overflow: "hidden", width: "100%" }}>
-                    <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
-                  </View>
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800", textAlign: "center" }}>{translateCopy(cat.shortLabel, language)}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>Ort. ₺{avgCommission}</Text>
-                </Pressable>
-              </Link>
+          <View style={{ gap: 10 }}>
+            {steps.map((s, i) => (
+              <View key={s.title} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 11, padding: 12 }}>
+                <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 10, height: 38, justifyContent: "center", width: 38 }}>
+                  <MaterialCommunityIcons name={s.icon} size={19} color={colors.primaryDark} />
+                </View>
+                <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{i + 1}. {s.title}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{s.body}</Text>
+                </View>
+              </View>
             ))}
           </View>
+          <Link href="/create" asChild>
+            <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 11 }}>
+              <MaterialCommunityIcons name="plus-circle-outline" size={17} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ücretsiz ilan ver</Text>
+            </Pressable>
+          </Link>
         </View>
       </View>
 
@@ -200,7 +200,7 @@ export default function CategoriesPage() {
                     </View>
                   ))}
                 </View>
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{groupTr(count)} ilan</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{count > 0 ? `${groupTr(count)} aktif ilan` : `${cat.subcategories.length} alt kategori · İlan ekle`}</Text>
               </Pressable>
             </Link>
           ))}
