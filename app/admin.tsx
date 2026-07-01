@@ -86,7 +86,9 @@ function AdminScreenInner() {
   const [bcBody, setBcBody] = useState("");
   const uq = userQuery.trim().toLocaleLowerCase("tr-TR");
   const lq = listingQuery.trim().toLocaleLowerCase("tr-TR");
-  const shownUsers = uq ? users.filter((u) => u.name.toLocaleLowerCase("tr-TR").includes(uq) || (u.role ?? "").includes(uq) || (u.status ?? "").includes(uq)) : users;
+  const liveUsers = users.filter((u) => u.status !== "deleted");
+  const deletedUserCount = users.length - liveUsers.length;
+  const shownUsers = uq ? liveUsers.filter((u) => u.name.toLocaleLowerCase("tr-TR").includes(uq) || (u.role ?? "").includes(uq) || (u.status ?? "").includes(uq)) : liveUsers;
   const shownListings = lq ? listings.filter((l) => l.title.toLocaleLowerCase("tr-TR").includes(lq) || l.category.toLocaleLowerCase("tr-TR").includes(lq) || (findUser(l.ownerId)?.name ?? "").toLocaleLowerCase("tr-TR").includes(lq) || l.status.includes(lq)) : listings;
 
   function promptNotify(userId: string, name: string) {
@@ -188,7 +190,7 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "users" ? (
-          <Panel title="Kullanıcılar" sub={`${shownUsers.length}/${users.length} kullanıcı${canManageUsers ? " · rol, durum, doğrulama, bildirim" : ""}`}>
+          <Panel title="Kullanıcılar" sub={`${shownUsers.length} aktif kullanıcı${deletedUserCount ? ` · ${deletedUserCount} silinmiş (gizli)` : ""}${canManageUsers ? " · rol, durum, doğrulama, bildirim" : ""}`}>
             <AdminSearch value={userQuery} onChange={setUserQuery} placeholder="İsim, rol veya durum ara…" />
             <Table head={["KULLANICI", "ROL", "DURUM", "DOĞRULAMA", "İŞLEM"]} cols={[1.8, 1.5, 1, 1.1, 2]}>
               {shownUsers.map((u) => {
@@ -606,10 +608,10 @@ function Dashboard({ usersN, listingsN, salesN, commission, listings, findUser, 
         <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>Hoş geldin, site genelindeki özet bilgilere buradan ulaşabilirsin.</Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-        <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={`${usersN}`} title="Toplam Kullanıcı" />
-        <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={`${listingsN}`} title="Toplam İlan" />
-        <Stat icon="cart-check" tint={colors.goldSoft} color={colors.gold} value={`${salesN}`} title="Toplam Satış" />
-        <Stat icon="cash-multiple" tint={colors.violetSoft} color={colors.violet} value={money(commission)} title="Toplam Komisyon (kayıt)" />
+        <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={`${usersN}`} title="Toplam Kullanıcı" onPress={() => setSection("users")} />
+        <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={`${listingsN}`} title="Toplam İlan" onPress={() => setSection("listings")} />
+        <Stat icon="cart-check" tint={colors.goldSoft} color={colors.gold} value={`${salesN}`} title="Toplam Satış" onPress={() => setSection("commissions")} />
+        <Stat icon="cash-multiple" tint={colors.violetSoft} color={colors.violet} value={money(commission)} title="Toplam Komisyon (kayıt)" onPress={() => setSection("commissions")} />
       </View>
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
         <View style={{ flex: 2, gap: 16, minWidth: 280 }}>
@@ -660,15 +662,18 @@ function Dashboard({ usersN, listingsN, salesN, commission, listings, findUser, 
   );
 }
 
-function Stat({ icon, tint, color, value, title }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string }) {
+function Stat({ icon, tint, color, value, title, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; onPress?: () => void }) {
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 190, flexGrow: 1, gap: 10, minWidth: 0, padding: 16 }}>
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 190, flexGrow: 1, gap: 10, minWidth: 0, padding: 16 })}>
       <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
         <MaterialCommunityIcons name={icon} size={20} color={color} />
       </View>
       <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{value}</Text>
-      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{title}</Text>
-    </View>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{title}</Text>
+        {onPress ? <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} /> : null}
+      </View>
+    </Pressable>
   );
 }
 
