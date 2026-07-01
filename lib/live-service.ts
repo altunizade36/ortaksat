@@ -59,6 +59,33 @@ export async function deleteListingLive(listingId: string) {
   if (error) console.warn("Listing delete failed", error);
 }
 
+/** Blog yazisi ekle/guncelle (admin). slug uniq -> upsert. */
+export async function saveBlogPostLive(p: { id?: string; slug: string; category: string; title: string; excerpt: string; author: string; authorRole: string; readMin: number; image: string; featured: boolean; body: string[]; status: string }) {
+  if (!supabase) return;
+  const row: Record<string, unknown> = {
+    slug: p.slug, category: p.category, title: p.title, excerpt: p.excerpt, author: p.author, author_role: p.authorRole,
+    read_min: p.readMin, image: p.image, featured: p.featured, body: p.body, status: p.status, updated_at: new Date().toISOString()
+  };
+  if (p.id) row.id = p.id;
+  const { error } = await supabase.from("blog_posts").upsert(row, { onConflict: "slug" });
+  if (error) console.warn("Blog upsert failed", error);
+}
+export async function deleteBlogPostLive(id: string) {
+  if (!supabase) return;
+  const { error } = await supabase.from("blog_posts").delete().eq("id", id);
+  if (error) console.warn("Blog delete failed", error);
+}
+export async function saveContentPageLive(p: { slug: string; title: string; body: string; seoTitle: string; seoDescription: string }) {
+  if (!supabase) return;
+  const { error } = await supabase.from("content_pages").upsert({ slug: p.slug, title: p.title, body: p.body, seo_title: p.seoTitle, seo_description: p.seoDescription, updated_at: new Date().toISOString() }, { onConflict: "slug" });
+  if (error) console.warn("Content page upsert failed", error);
+}
+export async function saveSeoSettingLive(p: { path: string; metaTitle: string; metaDescription: string; ogImage: string; noindex: boolean }) {
+  if (!supabase) return;
+  const { error } = await supabase.from("seo_settings").upsert({ path: p.path, meta_title: p.metaTitle, meta_description: p.metaDescription, og_image: p.ogImage, noindex: p.noindex, updated_at: new Date().toISOString() }, { onConflict: "path" });
+  if (error) console.warn("SEO upsert failed", error);
+}
+
 /** Site duyurusunu (metin + aktiflik) gunceller (yalniz admin). */
 export async function updateAnnouncementLive(text: string, active: boolean) {
   if (!supabase) return;

@@ -8,6 +8,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter } from "@/components/web-landing";
 import { BLOG_CATEGORIES, BLOG_POSTS, POPULAR_TAGS, type BlogCategory, type BlogPost } from "@/lib/blog";
 import { useIsWideWeb } from "@/lib/layout";
+import { useStore } from "@/lib/use-store";
 
 const CAT_COLOR: Record<BlogCategory, [string, string]> = {
   "Satış İpuçları": [colors.primarySoft, colors.primaryDark],
@@ -23,11 +24,19 @@ export default function BlogPage() {
   const [active, setActive] = useState<BlogCategory | "Tümü">("Tümü");
   const [email, setEmail] = useState("");
 
-  const featured = BLOG_POSTS.find((p) => p.featured) ?? BLOG_POSTS[0];
-  const rest = BLOG_POSTS.filter((p) => p.slug !== featured.slug);
+  const { blogPosts } = useStore();
+  // Admin panelden eklenen (Supabase) yazıları statik yazılarla birleştir.
+  const dbPosts: BlogPost[] = blogPosts.filter((p) => p.status === "published").map((p) => ({
+    slug: p.slug, category: p.category as BlogCategory, title: p.title, excerpt: p.excerpt, author: p.author,
+    authorRole: p.authorRole, readMin: p.readMin, date: p.createdAt, dateShort: p.createdAt.slice(5), image: p.image, featured: p.featured, body: p.body
+  }));
+  const ALL_POSTS: BlogPost[] = [...dbPosts, ...BLOG_POSTS.filter((s) => !dbPosts.some((d) => d.slug === s.slug))];
+
+  const featured = ALL_POSTS.find((p) => p.featured) ?? ALL_POSTS[0];
+  const rest = ALL_POSTS.filter((p) => p.slug !== featured.slug);
   const grid = active === "Tümü" ? rest : rest.filter((p) => p.category === active);
-  const popular = BLOG_POSTS.slice(0, 5);
-  const recent = BLOG_POSTS.slice().reverse().slice(0, 5);
+  const popular = ALL_POSTS.slice(0, 5);
+  const recent = ALL_POSTS.slice().reverse().slice(0, 5);
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>

@@ -186,6 +186,35 @@ export async function loadAdminSnapshot(limit = 1000): Promise<{ listings: Listi
   return { listings, users: users.map((u) => ({ ...u, listingCount: counts[u.id] ?? u.listingCount })) };
 }
 
+export type DbBlogPost = { id: string; slug: string; category: string; title: string; excerpt: string; author: string; authorRole: string; readMin: number; image: string; featured: boolean; body: string[]; status: string; createdAt: string };
+export type DbContentPage = { slug: string; title: string; body: string; seoTitle: string; seoDescription: string };
+export type DbSeoSetting = { path: string; metaTitle: string; metaDescription: string; ogImage: string; noindex: boolean };
+
+export async function loadBlogPosts(): Promise<DbBlogPost[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false }).limit(500);
+  if (error || !data) return [];
+  return data.map((r) => ({
+    id: r.id, slug: r.slug, category: r.category, title: r.title, excerpt: r.excerpt ?? "", author: r.author ?? "OrtakSat",
+    authorRole: r.author_role ?? "Editör", readMin: r.read_min ?? 3, image: r.image ?? "", featured: Boolean(r.featured),
+    body: Array.isArray(r.body) ? r.body : [], status: r.status ?? "published", createdAt: (r.created_at ?? "").slice(0, 10)
+  }));
+}
+
+export async function loadContentPages(): Promise<DbContentPage[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("content_pages").select("*").limit(100);
+  if (error || !data) return [];
+  return data.map((r) => ({ slug: r.slug, title: r.title ?? "", body: r.body ?? "", seoTitle: r.seo_title ?? "", seoDescription: r.seo_description ?? "" }));
+}
+
+export async function loadSeoSettings(): Promise<DbSeoSetting[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("seo_settings").select("*").limit(200);
+  if (error || !data) return [];
+  return data.map((r) => ({ path: r.path, metaTitle: r.meta_title ?? "", metaDescription: r.meta_description ?? "", ogImage: r.og_image ?? "", noindex: Boolean(r.noindex) }));
+}
+
 export async function loadPlatformSettings(): Promise<import("@/lib/types").PlatformSettings | null> {
   if (!supabase) return null;
   const { data, error } = await supabase.from("platform_settings").select("*").eq("id", 1).maybeSingle();

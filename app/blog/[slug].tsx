@@ -5,12 +5,17 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter } from "@/components/web-landing";
-import { BLOG_POSTS, getPost } from "@/lib/blog";
+import { BLOG_POSTS, getPost, type BlogCategory, type BlogPost } from "@/lib/blog";
 import { WebContainer } from "@/components/web-container";
+import { useStore } from "@/lib/use-store";
 
 export default function BlogPostPage() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
-  const post = getPost(slug);
+  const { blogPosts } = useStore();
+  const db = blogPosts.find((p) => p.slug === slug && p.status === "published");
+  const post: BlogPost | undefined = db
+    ? { slug: db.slug, category: db.category as BlogCategory, title: db.title, excerpt: db.excerpt, author: db.author, authorRole: db.authorRole, readMin: db.readMin, date: db.createdAt, dateShort: db.createdAt.slice(5), image: db.image, featured: db.featured, body: db.body }
+    : getPost(slug);
 
   if (!post) {
     return (

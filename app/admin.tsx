@@ -10,13 +10,13 @@ import { categoryTree } from "@/lib/category-tree";
 import { commissionAmount, money } from "@/lib/format";
 import { useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince } from "@/lib/locations";
-import { fetchAdminAudit, type AuditEntry } from "@/lib/supabase-data";
+import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting } from "@/lib/supabase-data";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 type Section =
   | "dashboard" | "users" | "listings" | "partnerships" | "complaints" | "categories" | "locations"
-  | "messages" | "commissions" | "stats" | "notifications" | "content" | "settings" | "reports";
+  | "messages" | "commissions" | "stats" | "notifications" | "content" | "blog" | "seo" | "settings" | "reports";
 
 const NAV: Array<{ key: Section; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
   { key: "dashboard", icon: "view-dashboard-outline", label: "Dashboard" },
@@ -31,6 +31,8 @@ const NAV: Array<{ key: Section; icon: keyof typeof MaterialCommunityIcons.glyph
   { key: "stats", icon: "chart-line", label: "İstatistikler" },
   { key: "notifications", icon: "bell-outline", label: "Bildirimler" },
   { key: "content", icon: "file-edit-outline", label: "Site İçerikleri" },
+  { key: "blog", icon: "post-outline", label: "Blog Yönetimi" },
+  { key: "seo", icon: "magnify-scan", label: "SEO Yönetimi" },
   { key: "settings", icon: "cog-outline", label: "Ayarlar" },
   { key: "reports", icon: "chart-box-outline", label: "Raporlar" }
 ];
@@ -94,7 +96,8 @@ function AdminScreenInner() {
     categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
     updateListingStatus, setListingFeatured, deleteListing, findUser, signOut, currentUser, reports, updateReportStatus,
     platformSettings, updatePlatformSetting, setAnnouncement, setUserRole, setUserStatus,
-    setUserVerification, adminNotifyUser, adminBroadcast
+    setUserVerification, adminNotifyUser, adminBroadcast,
+    blogPosts, contentPages, seoSettings, saveBlogPost, deleteBlogPost, saveContentPage, saveSeoSetting
   } = useStore();
   const [annText, setAnnText] = useState(platformSettings.announcement);
   const canManageUsers = currentUser.role === "admin" || currentUser.role === "super_admin";
@@ -621,24 +624,15 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "content" ? (
-          <Panel title="Site İçerikleri" sub="Yasal ve bilgi sayfalarını düzenle">
-            {[
-              { label: "Nasıl Çalışır?", href: "/nasil-calisir" as const, icon: "help-circle-outline" as const },
-              { label: "Hakkımızda", href: "/hakkimizda" as const, icon: "information-outline" as const },
-              { label: "SSS", href: "/sss" as const, icon: "comment-question-outline" as const },
-              { label: "Yasal & Destek", href: "/legal" as const, icon: "file-document-outline" as const },
-              { label: "KVKK", href: "/kvkk" as const, icon: "shield-lock-outline" as const },
-              { label: "Blog", href: "/blog" as const, icon: "post-outline" as const }
-            ].map((c) => (
-              <Link key={c.label} href={c.href} asChild>
-                <Pressable style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 11, paddingVertical: 13 }}>
-                  <MaterialCommunityIcons name={c.icon} size={18} color={colors.primaryDark} />
-                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{c.label}</Text>
-                  <MaterialCommunityIcons name="open-in-new" size={16} color={colors.muted} />
-                </Pressable>
-              </Link>
-            ))}
-          </Panel>
+          <ContentManager pages={contentPages} onSave={saveContentPage} />
+        ) : null}
+
+        {section === "blog" ? (
+          <BlogManager posts={blogPosts} onSave={saveBlogPost} onDelete={deleteBlogPost} confirmAction={confirmAction} />
+        ) : null}
+
+        {section === "seo" ? (
+          <SeoManager settings={seoSettings} onSave={saveSeoSetting} />
         ) : null}
 
         {section === "settings" ? (
@@ -891,6 +885,117 @@ function FilterChips<T extends string>({ value, onChange, options }: { value: T;
         );
       })}
     </View>
+  );
+}
+
+function slugifyTr(s: string) {
+  const map: Record<string, string> = { ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u", İ: "i" };
+  return s.trim().toLocaleLowerCase("tr-TR").replace(/[çğıöşüİ]/g, (m) => map[m] ?? m).replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 60);
+}
+function uuid() {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
+  return `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
+}
+const inputStyle = { backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 42, paddingHorizontal: 12 } as const;
+
+function BlogManager({ posts, onSave, onDelete, confirmAction }: { posts: DbBlogPost[]; onSave: (p: DbBlogPost) => void; onDelete: (id: string) => void; confirmAction: (m: string, cb: () => void) => void }) {
+  const [edit, setEdit] = useState<DbBlogPost | null>(null);
+  const blank = (): DbBlogPost => ({ id: uuid(), slug: "", category: "Satış İpuçları", title: "", excerpt: "", author: "OrtakSat", authorRole: "Editör", readMin: 3, image: "", featured: false, body: [], status: "published", createdAt: new Date().toISOString().slice(0, 10) });
+  if (edit) {
+    return (
+      <Panel title={posts.some((p) => p.id === edit.id) ? "Yazıyı Düzenle" : "Yeni Blog Yazısı"} sub="Alanları doldur ve kaydet">
+        <View style={{ gap: 10 }}>
+          <TextInput value={edit.title} onChangeText={(t) => setEdit({ ...edit, title: t, slug: edit.slug || slugifyTr(t) })} placeholder="Başlık" placeholderTextColor={colors.muted} style={inputStyle} />
+          <TextInput value={edit.slug} onChangeText={(t) => setEdit({ ...edit, slug: slugifyTr(t) })} placeholder="URL (slug)" placeholderTextColor={colors.muted} style={inputStyle} />
+          <TextInput value={edit.category} onChangeText={(t) => setEdit({ ...edit, category: t })} placeholder="Kategori" placeholderTextColor={colors.muted} style={inputStyle} />
+          <TextInput value={edit.image} onChangeText={(t) => setEdit({ ...edit, image: t })} placeholder="Kapak görseli URL" placeholderTextColor={colors.muted} style={inputStyle} />
+          <TextInput value={edit.excerpt} onChangeText={(t) => setEdit({ ...edit, excerpt: t })} placeholder="Özet" placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 56, paddingVertical: 10 }} />
+          <TextInput value={edit.body.join("\n\n")} onChangeText={(t) => setEdit({ ...edit, body: t.split(/\n\n+/) })} placeholder="İçerik (paragrafları boş satırla ayır)" placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 160, paddingVertical: 10 }} />
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+            <Pressable onPress={() => setEdit({ ...edit, featured: !edit.featured })} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}><MaterialCommunityIcons name={edit.featured ? "checkbox-marked" : "checkbox-blank-outline"} size={20} color={colors.primary} /><Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Öne çıkan</Text></Pressable>
+            <Pressable onPress={() => setEdit({ ...edit, status: edit.status === "published" ? "draft" : "published" })} style={{ alignItems: "center", backgroundColor: edit.status === "published" ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}><Text style={{ color: edit.status === "published" ? colors.success : colors.muted, fontSize: 12, fontWeight: "800" }}>{edit.status === "published" ? "Yayında" : "Taslak"}</Text></Pressable>
+          </View>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <Pressable disabled={!edit.title.trim() || !edit.slug.trim()} onPress={() => { onSave(edit); setEdit(null); }} style={{ alignItems: "center", backgroundColor: edit.title.trim() && edit.slug.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="content-save-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kaydet</Text></Pressable>
+            <Pressable onPress={() => setEdit(null)} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 10 }}><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text></Pressable>
+          </View>
+        </View>
+      </Panel>
+    );
+  }
+  return (
+    <Panel title="Blog Yönetimi" sub={`${posts.length} yazı`}>
+      <Pressable onPress={() => setEdit(blank())} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, marginBottom: 12, paddingHorizontal: 16, paddingVertical: 10 }}><MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Yeni Yazı</Text></Pressable>
+      {posts.length === 0 ? <EmptyState title="Blog yazısı yok" body="İlk yazıyı oluştur; ortaksat.com/blog'da yayınlanır." /> : null}
+      <Table head={["BAŞLIK", "KATEGORİ", "DURUM", "İŞLEM"]} cols={[2.4, 1.2, 1, 1.4]}>
+        {posts.map((p) => (
+          <Row key={p.id} cols={[2.4, 1.2, 1, 1.4]} cells={[
+            <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{p.title}</Text>,
+            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{p.category}</Text>,
+            <View style={{ alignSelf: "flex-start", backgroundColor: p.status === "published" ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: p.status === "published" ? colors.success : colors.muted, fontSize: 10, fontWeight: "900" }}>{p.status === "published" ? "Yayında" : "Taslak"}</Text></View>,
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Pressable onPress={() => setEdit(p)}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Düzenle</Text></Pressable>
+              <Pressable onPress={() => confirmAction(`"${p.title}" silinsin mi?`, () => onDelete(p.id))}><Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>Sil</Text></Pressable>
+            </View>
+          ]} />
+        ))}
+      </Table>
+    </Panel>
+  );
+}
+
+const CONTENT_SLUGS = [
+  { slug: "hakkimizda", label: "Hakkımızda" },
+  { slug: "nasil-calisir", label: "Nasıl Çalışır?" },
+  { slug: "sss", label: "Sık Sorulan Sorular" },
+  { slug: "guvenli-alisveris", label: "Güvenli Alışveriş İpuçları" },
+  { slug: "ortak-satis-kurallari", label: "Ortak Satış Kuralları" },
+  { slug: "yasakli-urunler", label: "Yasaklı Ürünler" }
+];
+function ContentManager({ pages, onSave }: { pages: DbContentPage[]; onSave: (p: DbContentPage) => void }) {
+  const [slug, setSlug] = useState(CONTENT_SLUGS[0].slug);
+  const existing = pages.find((p) => p.slug === slug);
+  const [draft, setDraft] = useState<DbContentPage>(existing ?? { slug, title: "", body: "", seoTitle: "", seoDescription: "" });
+  const load = (s: string) => { setSlug(s); const e = pages.find((p) => p.slug === s); setDraft(e ?? { slug: s, title: "", body: "", seoTitle: "", seoDescription: "" }); };
+  return (
+    <Panel title="Site İçerikleri" sub="Bilgi sayfalarını düzenle (Supabase'e kaydedilir)">
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 12 }}>
+        {CONTENT_SLUGS.map((c) => (
+          <Pressable key={c.slug} onPress={() => load(c.slug)} style={{ backgroundColor: slug === c.slug ? colors.primary : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ color: slug === c.slug ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{c.label}</Text></Pressable>
+        ))}
+      </View>
+      <View style={{ gap: 10 }}>
+        <TextInput value={draft.title} onChangeText={(t) => setDraft({ ...draft, title: t })} placeholder="Sayfa başlığı" placeholderTextColor={colors.muted} style={inputStyle} />
+        <TextInput value={draft.body} onChangeText={(t) => setDraft({ ...draft, body: t })} placeholder="Sayfa içeriği" placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 200, paddingVertical: 10 }} />
+        <TextInput value={draft.seoTitle} onChangeText={(t) => setDraft({ ...draft, seoTitle: t })} placeholder="SEO başlığı (meta title)" placeholderTextColor={colors.muted} style={inputStyle} />
+        <TextInput value={draft.seoDescription} onChangeText={(t) => setDraft({ ...draft, seoDescription: t })} placeholder="SEO açıklaması (meta description)" placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 56, paddingVertical: 10 }} />
+        <Pressable onPress={() => onSave({ ...draft, slug })} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="content-save-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kaydet</Text></Pressable>
+      </View>
+    </Panel>
+  );
+}
+
+const SEO_PATHS = ["/", "/explore", "/kategoriler", "/blog", "/nasil-calisir", "/hakkimizda"];
+function SeoManager({ settings, onSave }: { settings: DbSeoSetting[]; onSave: (s: DbSeoSetting) => void }) {
+  const [path, setPath] = useState(SEO_PATHS[0]);
+  const existing = settings.find((s) => s.path === path);
+  const [draft, setDraft] = useState<DbSeoSetting>(existing ?? { path, metaTitle: "", metaDescription: "", ogImage: "", noindex: false });
+  const load = (p: string) => { setPath(p); const e = settings.find((s) => s.path === p); setDraft(e ?? { path: p, metaTitle: "", metaDescription: "", ogImage: "", noindex: false }); };
+  return (
+    <Panel title="SEO Yönetimi" sub="Sayfa bazlı meta etiketleri (Supabase'e kaydedilir)">
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 12 }}>
+        {SEO_PATHS.map((p) => (
+          <Pressable key={p} onPress={() => load(p)} style={{ backgroundColor: path === p ? colors.primary : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ color: path === p ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{p}</Text></Pressable>
+        ))}
+      </View>
+      <View style={{ gap: 10 }}>
+        <TextInput value={draft.metaTitle} onChangeText={(t) => setDraft({ ...draft, metaTitle: t })} placeholder="Meta title" placeholderTextColor={colors.muted} style={inputStyle} />
+        <TextInput value={draft.metaDescription} onChangeText={(t) => setDraft({ ...draft, metaDescription: t })} placeholder="Meta description" placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 56, paddingVertical: 10 }} />
+        <TextInput value={draft.ogImage} onChangeText={(t) => setDraft({ ...draft, ogImage: t })} placeholder="OG image URL" placeholderTextColor={colors.muted} style={inputStyle} />
+        <Pressable onPress={() => setDraft({ ...draft, noindex: !draft.noindex })} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}><MaterialCommunityIcons name={draft.noindex ? "checkbox-marked" : "checkbox-blank-outline"} size={20} color={colors.primary} /><Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>noindex (arama motorlarına kapat)</Text></Pressable>
+        <Pressable onPress={() => onSave({ ...draft, path })} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="content-save-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kaydet</Text></Pressable>
+      </View>
+    </Panel>
   );
 }
 
