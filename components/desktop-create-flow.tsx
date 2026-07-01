@@ -9,7 +9,7 @@ import { colors } from "@/components/colors";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
+import { getFormSchema, MODELS_BY_BRAND, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { money } from "@/lib/format";
 import { formatLocation, getProvince } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
@@ -231,9 +231,18 @@ export function DesktopCreateFlow() {
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{schema.title}</Text>
             <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{leafLabel} için gerekli alanlar. * işaretliler zorunlu.</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-              {schema.fields.map((f) => (
-                <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} />
-              ))}
+              {schema.fields.map((f) => {
+                // Model alanı: marka seçiliyse ve markanın modelleri biliniyorsa bağımlı select.
+                if (f.key === "model") {
+                  const brand = String(values.brand ?? "").trim();
+                  const models = MODELS_BY_BRAND[brand];
+                  if (models && models.length) {
+                    const dep: FieldDef = { ...f, type: "select", options: [...models, "Diğer"] };
+                    return <DField key={f.key} field={dep} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
+                  }
+                }
+                return <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
+              })}
             </View>
           </View>
         ) : null}

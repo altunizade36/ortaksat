@@ -51,6 +51,38 @@ export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW
 export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vestel", "Samsung", "LG", "Profilo", "Altus", "Grundig", "Diğer"];
 const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "Lacivert", "Yeşil", "Kahverengi", "Bej", "Turuncu", "Diğer"];
 
+// Marka -> model haritası (bağımlı model seçimi için). Marka seçilince model bu
+// listeden gelir; markası burada yoksa model serbest metin olarak girilir.
+export const MODELS_BY_BRAND: Record<string, string[]> = {
+  // Otomobil
+  Renault: ["Clio", "Megane", "Fluence", "Symbol", "Captur", "Austral", "Taliant", "Kadjar", "Talisman"],
+  Fiat: ["Egea", "Linea", "Doblo", "Fiorino", "Panda", "500", "Punto", "Tipo"],
+  Volkswagen: ["Golf", "Polo", "Passat", "Jetta", "Tiguan", "T-Roc", "Transporter", "Caddy", "Arteon"],
+  Toyota: ["Corolla", "Yaris", "C-HR", "RAV4", "Hilux", "Camry", "Auris"],
+  Hyundai: ["i10", "i20", "i30", "Accent", "Elantra", "Tucson", "Bayon", "Kona", "Getz"],
+  Ford: ["Focus", "Fiesta", "Mondeo", "Courier", "Transit", "Kuga", "Puma", "Ranger"],
+  Honda: ["Civic", "City", "Accord", "CR-V", "Jazz", "HR-V"],
+  BMW: ["1 Serisi", "2 Serisi", "3 Serisi", "4 Serisi", "5 Serisi", "X1", "X2", "X3", "X5"],
+  "Mercedes-Benz": ["A Serisi", "B Serisi", "C Serisi", "E Serisi", "CLA", "GLA", "GLC", "Vito", "Sprinter"],
+  Audi: ["A1", "A3", "A4", "A5", "A6", "Q2", "Q3", "Q5", "Q7"],
+  Opel: ["Corsa", "Astra", "Insignia", "Mokka", "Crossland", "Grandland"],
+  Peugeot: ["208", "301", "308", "2008", "3008", "5008", "Partner"],
+  "Citroën": ["C3", "C4", "C5 Aircross", "Berlingo", "C-Elysee"],
+  Nissan: ["Qashqai", "Juke", "Micra", "X-Trail", "Note"],
+  Kia: ["Rio", "Ceed", "Sportage", "Stonic", "Picanto", "Cerato"],
+  Dacia: ["Sandero", "Duster", "Logan", "Jogger", "Lodgy"],
+  Tesla: ["Model 3", "Model Y", "Model S", "Model X"],
+  Togg: ["T10X", "T10F"],
+  BYD: ["Atto 3", "Seal", "Dolphin", "Han"],
+  // Cep telefonu
+  iPhone: ["iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro Max", "iPhone 15", "iPhone 14", "iPhone 13", "iPhone 12", "iPhone 11", "iPhone SE"],
+  Samsung: ["Galaxy S24 Ultra", "Galaxy S24", "Galaxy S23", "Galaxy A55", "Galaxy A35", "Galaxy A15", "Galaxy Z Fold", "Galaxy Z Flip", "Galaxy Note"],
+  Xiaomi: ["Redmi Note 13", "Redmi Note 12", "Redmi 13C", "Poco X6", "Mi 11", "13T"],
+  Huawei: ["P60", "P50", "Mate 50", "Nova 12", "Nova 11"],
+  Oppo: ["Reno 11", "Reno 10", "A98", "A78", "A58"],
+  Realme: ["C67", "C55", "11 Pro", "GT Neo", "Number serisi"]
+};
+
 // ---- shared field fragments ---------------------------------------------
 const F = {
   title: { key: "title", label: "İlan başlığı", type: "text", required: true, placeholder: "Kısa ve net bir başlık" } as FieldDef,
