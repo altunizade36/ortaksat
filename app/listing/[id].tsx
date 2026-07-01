@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Accordion } from "@/components/accordion";
+import { AgreementCard } from "@/components/agreement-card";
 import { colors } from "@/components/colors";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
@@ -305,6 +306,8 @@ export default function ListingDetailScreen() {
           onShare={() => void handleShare()}
           partnershipStatus={partnership?.status}
         />
+
+        <AgreementCard listing={currentListing} partnership={partnership} />
       </View>
       </View>
 
