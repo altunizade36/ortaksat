@@ -224,6 +224,52 @@ export async function loadMarketplacePage(offset: number, limit: number): Promis
   return { listings, users };
 }
 
+/**
+ * Sunucu-tarafli arama/filtre. Tum aktif katalogda calisir (yuklu 90 ile sinirli
+ * degil). q basligi/aciklama/kategori/konumda arar; fiyat araligi, "aninda ortak"
+ * ve siralama sunucuda uygulanir; sayfalama offset/limit ile.
+ */
+export async function searchListings(params: {
+  q?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  openOnly?: boolean;
+  sort?: "new" | "priceAsc" | "priceDesc" | "recommended" | "commission";
+  offset?: number;
+  limit?: number;
+}): Promise<{ listings: Listing[]; users: User[] } | null> {
+  if (!supabase) return null;
+  let query = supabase.from("listing_public_cards").select("*").eq("status", "active");
+
+  const q = params.q?.trim();
+  if (q) {
+    // PostgREST .or() wildcard'i '*' kullanir; virgul ayirici oldugu icin temizle.
+    const safe = q.replace(/[,*%()]/g, " ").replace(/\s+/g, " ").trim();
+    if (safe) query = query.or(`title.ilike.*${safe}*,description.ilike.*${safe}*,category.ilike.*${safe}*,location.ilike.*${safe}*`);
+  }
+  if (typeof params.minPrice === "number") query = query.gte("price", params.minPrice);
+  if (typeof params.maxPrice === "number") query = query.lte("price", params.maxPrice);
+  if (params.openOnly) query = query.eq("partnership_mode", "open");
+
+  const sort = params.sort ?? "new";
+  if (sort === "priceAsc") query = query.order("price", { ascending: true });
+  else if (sort === "priceDesc") query = query.order("price", { ascending: false });
+  else query = query.order("created_at", { ascending: false });
+
+  const offset = params.offset ?? 0;
+  const limit = params.limit ?? 40;
+  query = query.range(offset, offset + limit - 1);
+
+  const { data, error } = await query;
+  if (error) return null;
+  const listings = ((data ?? []) as PublicListingCardRow[]).map(mapListing);
+  if (listings.length === 0) return { listings: [], users: [] };
+  const ownerIds = Array.from(new Set(listings.map((l) => l.ownerId)));
+  const { data: profileData } = await supabase.from("profiles").select("*").in("id", ownerIds);
+  const users = ((profileData ?? []) as ProfileRow[]).map(mapProfile);
+  return { listings, users };
+}
+
 export async function loadAccountSnapshot(userId: string): Promise<AccountSnapshot | null> {
   if (!supabase) return null;
 

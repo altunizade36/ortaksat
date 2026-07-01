@@ -158,9 +158,30 @@ export function AppHeader() {
 }
 
 function DesktopActions() {
-  const { currentUser, messages, notifications } = useStore();
+  const { currentUser, isAuthenticated, messages, notifications } = useStore();
   const unreadMessages = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
   const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
+
+  // Girişsizken belirgin "Giriş / Kayıt ol" butonu göster (kullanıcı giriş
+  // noktasını kolayca bulsun). Girişliyken hesap ikonları + Hesabım menüsü.
+  if (!isAuthenticated) {
+    return (
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+        <Link href="/auth" asChild>
+          <Pressable style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 8 })}>
+            <MaterialCommunityIcons name="login" size={17} color={colors.primaryDark} />
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Giriş yap</Text>
+          </Pressable>
+        </Link>
+        <Link href="/auth" asChild>
+          <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 9 })}>
+            <MaterialCommunityIcons name="account-plus-outline" size={17} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Kayıt ol</Text>
+          </Pressable>
+        </Link>
+      </View>
+    );
+  }
 
   const items: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href; badge?: number }> = [
     { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },

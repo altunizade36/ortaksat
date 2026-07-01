@@ -14,6 +14,7 @@ import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { REFERENCE_NOW, searchKey } from "@/lib/locale";
 import { LocationSelector } from "@/components/location-selector";
 import { districtsOfProvince, getDistrict, getProvince, locKey, provinces } from "@/lib/locations";
+import { searchListings } from "@/lib/supabase-data";
 import { displayText } from "@/lib/text";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -59,6 +60,59 @@ export default function ExploreScreen() {
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [productVisible, setProductVisible] = useState(20);
   const [visibleCount, setVisibleCount] = useState(INITIAL_EXPLORE_ITEMS);
+  // Sunucu-tarafli arama: q girilince tum katalogda arar (yuklu 90 ile sinirli
+  // degil). Bos q -> null (mevcut istemci davranisi).
+  const [serverResults, setServerResults] = useState<Listing[] | null>(null);
+  const [serverOwners, setServerOwners] = useState<Record<string, User>>({});
+  const [serverOffset, setServerOffset] = useState(0);
+  const [serverHasMore, setServerHasMore] = useState(false);
+  const [serverLoading, setServerLoading] = useState(false);
+  const SERVER_PAGE = 40;
+  const queryText = (params.q ?? "").trim();
+
+  useEffect(() => {
+    let alive = true;
+    if (!queryText) { setServerResults(null); setServerOwners({}); setServerOffset(0); setServerHasMore(false); return; }
+    setServerLoading(true);
+    const priceParts = priceRange ? priceRange.split("-") : [];
+    const minPrice = priceParts[0] ? Number(priceParts[0]) : undefined;
+    const maxPrice = priceParts[1] ? Number(priceParts[1]) : undefined;
+    const sort = sortMode === "priceAsc" || sortMode === "priceDesc" || sortMode === "commission" || sortMode === "new" ? sortMode : "new";
+    const handle = setTimeout(() => {
+      void searchListings({ q: queryText, minPrice, maxPrice, openOnly: statusOpen, sort, offset: 0, limit: SERVER_PAGE }).then((res) => {
+        if (!alive) return;
+        setServerLoading(false);
+        if (!res) { setServerResults([]); setServerHasMore(false); return; }
+        setServerResults(res.listings);
+        setServerOwners(Object.fromEntries(res.users.map((u) => [u.id, u])));
+        setServerOffset(res.listings.length);
+        setServerHasMore(res.listings.length >= SERVER_PAGE);
+      });
+    }, 280);
+    return () => { alive = false; clearTimeout(handle); };
+  }, [queryText, priceRange, statusOpen, sortMode]);
+
+  const loadMoreServer = () => {
+    if (!queryText || serverLoading || !serverHasMore) return;
+    setServerLoading(true);
+    const priceParts = priceRange ? priceRange.split("-") : [];
+    const minPrice = priceParts[0] ? Number(priceParts[0]) : undefined;
+    const maxPrice = priceParts[1] ? Number(priceParts[1]) : undefined;
+    const sort = sortMode === "priceAsc" || sortMode === "priceDesc" || sortMode === "commission" || sortMode === "new" ? sortMode : "new";
+    void searchListings({ q: queryText, minPrice, maxPrice, openOnly: statusOpen, sort, offset: serverOffset, limit: SERVER_PAGE }).then((res) => {
+      setServerLoading(false);
+      if (!res) { setServerHasMore(false); return; }
+      setServerOffset((o) => o + res.listings.length);
+      if (res.listings.length < SERVER_PAGE) setServerHasMore(false);
+      setServerOwners((prev) => ({ ...prev, ...Object.fromEntries(res.users.map((u) => [u.id, u])) }));
+      setServerResults((prev) => {
+        const seen = new Set((prev ?? []).map((l) => l.id));
+        const fresh = res.listings.filter((l) => !seen.has(l.id));
+        return [...(prev ?? []), ...fresh];
+      });
+    });
+  };
+  const resolveOwner = (id: string) => serverOwners[id] ?? findUser(id);
   const feedFilters: Array<{ key: FeedFilter; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
     { key: "all", label: t("all"), icon: "grid" },
     { key: "commission", label: "Yüksek komisyon", icon: "cash-plus" },
@@ -87,10 +141,13 @@ export default function ExploreScreen() {
   const districtName = useMemo(() => (districtId != null ? getDistrict(districtId)?.name : undefined), [districtId]);
   const hasPanelFilter = provinceId != null || Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter);
 
+  // q girildiyse temel set sunucu sonuclari (tum katalog); degilse yuklu katalog.
+  const baseListings = serverResults ?? marketplaceListings;
+
   const activeListings = useMemo(() => {
     const provKey = provinceName ? locKey(provinceName) : "";
     const distKey = districtName ? locKey(districtName) : "";
-    const filtered = marketplaceListings
+    const filtered = baseListings
       .filter((listing) => {
         if (city && listing.location !== city) return false;
         if (provKey && !locKey(listing.location).includes(provKey)) return false;
@@ -116,8 +173,8 @@ export default function ExploreScreen() {
       .sort((a, b) => (filter === "commission" ? commissionAmount(b) - commissionAmount(a) : exploreScore(b, seed) - exploreScore(a, seed)));
 
     if (filtered.length || tokens.length > 0 || filter !== "all" || hasPanelFilter) return filtered;
-    return marketplaceListings.sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));
-  }, [city, districtName, filter, findUser, hasPanelFilter, marketplaceListings, minCommission, priceRange, provinceName, seed, statusOpen, stockFilter, tokens]);
+    return baseListings.slice().sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));
+  }, [baseListings, city, districtName, filter, findUser, hasPanelFilter, minCommission, priceRange, provinceName, seed, statusOpen, stockFilter, tokens]);
 
   const productListings = useMemo(() => {
     const arr = activeListings.filter((listing) => {
@@ -179,8 +236,12 @@ export default function ExploreScreen() {
     if (distanceToBottom < 520) {
       setVisibleCount((current) => {
         const next = Math.min(mediaItems.length, current + EXPLORE_PAGE_SIZE);
-        // Yüklü medya bitmeye yakınsa sunucudan sonraki katalog sayfasını çek.
-        if (next >= mediaItems.length && marketplaceHasMore) loadMoreMarketplace();
+        // Yüklü medya bitmeye yakınsa sonraki sayfayı çek (arama -> sunucu araması,
+        // aksi halde katalog sayfasi).
+        if (next >= mediaItems.length) {
+          if (queryText && serverHasMore) loadMoreServer();
+          else if (!queryText && marketplaceHasMore) loadMoreMarketplace();
+        }
         return next;
       });
     }
@@ -352,18 +413,18 @@ export default function ExploreScreen() {
             ) : (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
                 {visibleProducts.map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={productGrid.cardWidth} />
+                  <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={productGrid.cardWidth} />
                 ))}
               </View>
             )}
 
             {visibleProducts.length < productListings.length ? (
-              <Pressable onPress={() => { setProductVisible((c) => c + 20); if (productVisible + 20 >= productListings.length && marketplaceHasMore) loadMoreMarketplace(); }} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 28, paddingVertical: 12 }}>
+              <Pressable onPress={() => { setProductVisible((c) => c + 20); if (productVisible + 20 >= productListings.length) { if (queryText && serverHasMore) loadMoreServer(); else if (!queryText && marketplaceHasMore) loadMoreMarketplace(); } }} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 28, paddingVertical: 12 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>Daha fazla göster</Text>
               </Pressable>
-            ) : marketplaceHasMore ? (
-              <Pressable onPress={() => loadMoreMarketplace()} disabled={marketplaceLoadingMore} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, opacity: marketplaceLoadingMore ? 0.6 : 1, paddingHorizontal: 28, paddingVertical: 12 }}>
-                <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{marketplaceLoadingMore ? "Yükleniyor…" : "Daha fazla ilan yükle"}</Text>
+            ) : (queryText ? serverHasMore : marketplaceHasMore) ? (
+              <Pressable onPress={() => (queryText ? loadMoreServer() : loadMoreMarketplace())} disabled={queryText ? serverLoading : marketplaceLoadingMore} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, opacity: (queryText ? serverLoading : marketplaceLoadingMore) ? 0.6 : 1, paddingHorizontal: 28, paddingVertical: 12 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{(queryText ? serverLoading : marketplaceLoadingMore) ? "Yükleniyor…" : "Daha fazla ilan yükle"}</Text>
               </Pressable>
             ) : null}
           </View>
