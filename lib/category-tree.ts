@@ -170,6 +170,13 @@ export const COMMERCIAL_MODELS: Record<string, string[]> = {
   Opel: ["Movano", "Vivaro", "Combo"]
 };
 
+// Deniz motoru, saat, gözlük, kozmetik/parfüm markaları.
+export const MARINE_ENGINE_BRANDS = ["Yamaha", "Mercury", "Honda", "Suzuki", "Tohatsu", "Volvo Penta", "Mercruiser", "Selva", "Parsun", "Evinrude", "Diğer"];
+export const WATCH_BRANDS = ["Rolex", "Omega", "Casio", "Seiko", "Citizen", "Tissot", "Fossil", "Michael Kors", "Daniel Wellington", "Apple Watch", "Samsung Galaxy Watch", "Huawei Watch", "Garmin", "Swatch", "Guess", "Emporio Armani", "Diğer"];
+export const EYEWEAR_BRANDS = ["Ray-Ban", "Oakley", "Gucci", "Prada", "Police", "Persol", "Carrera", "Tom Ford", "Versace", "Emporio Armani", "Dolce & Gabbana", "Diğer"];
+export const COSMETIC_BRANDS = ["MAC", "Maybelline", "L'Oréal Paris", "Estée Lauder", "Clinique", "NYX", "Nivea", "Garnier", "The Ordinary", "Dior", "Chanel", "Flormar", "Golden Rose", "Diğer"];
+export const PERFUME_BRANDS = ["Dior", "Chanel", "Tom Ford", "Versace", "Hugo Boss", "Giorgio Armani", "Yves Saint Laurent", "Bvlgari", "Lacoste", "Calvin Klein", "Paco Rabanne", "Montblanc", "Diğer"];
+
 // ---- shared field fragments ---------------------------------------------
 const F = {
   title: { key: "title", label: "İlan başlığı", type: "text", required: true, placeholder: "Kısa ve net bir başlık" } as FieldDef,
@@ -398,6 +405,16 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Sağlık & medikal ürün bilgileri",
     fields: [F.title, F.markaSerbest, F.model, F.durum, F.garanti, F.fatura, F.price, F.kargo, F.pazarlik, F.desc]
   },
+  aksesuar: {
+    key: "aksesuar",
+    title: "Saat, gözlük & takı bilgileri",
+    fields: [F.title, F.markaSerbest, F.model, F.durum, F.renkSelect, F.cinsiyet, F.materyal, F.garanti, F.fatura, F.kutu, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
+  kozmetik: {
+    key: "kozmetik",
+    title: "Kozmetik & parfüm bilgileri",
+    fields: [F.title, F.markaSerbest, { key: "cosmeticType", label: "Ürün türü", type: "text", placeholder: "ör. parfüm, ruj, fondöten" }, { key: "condition", label: "Ürün durumu", type: "select", required: true, options: ["Sıfır (Ambalajlı)", "Açılmış - Az kullanılmış", "Tester"] }, { key: "volume", label: "Hacim / miktar", type: "text", placeholder: "ör. 100 ml" }, F.stok, F.price, F.kargo, F.desc]
+  },
   isMakinesi: {
     key: "isMakinesi",
     title: "Makine / sanayi bilgileri",
@@ -537,7 +554,10 @@ export const categoryTree: CategoryNode[] = [
     leaf("Kiralık Araçlar", "vasitaGenel"),
     leaf("Hasarlı Araçlar", "otomobil"),
     leaf("Klasik Araçlar", "otomobil"),
-    node("Deniz Araçları", leaves(["Sürat Teknesi", "Yelkenli", "Şişme Bot", "Jet Ski", "Balıkçı Teknesi", "Yat", "Gulet", "Kano & Kayak", "Tekne Motoru", "Römork (Deniz)"], "vasitaGenel"), "vasitaGenel"),
+    node("Deniz Araçları", [
+      ...leaves(["Sürat Teknesi", "Yelkenli", "Şişme Bot", "Jet Ski", "Balıkçı Teknesi", "Yat", "Gulet", "Kano & Kayak", "Römork (Deniz)"], "vasitaGenel"),
+      node("Tekne Motoru", brandModelNodes(MARINE_ENGINE_BRANDS, {}, "vasitaGenel"), "vasitaGenel")
+    ], "vasitaGenel"),
     node("Karavan", leaves(["Motokaravan", "Çekme Karavan", "Kamp Römorku", "Karavan Aksesuarı"], "vasitaGenel"), "vasitaGenel"),
     leaf("ATV", "vasitaGenel"),
     leaf("UTV", "vasitaGenel"),
@@ -588,7 +608,10 @@ export const categoryTree: CategoryNode[] = [
       node("Çocuk Giyim", leaves(["Kız Çocuk", "Erkek Çocuk", "Bebek Giyim", "Okul Kıyafeti"], "moda"), "moda"),
       node("Ayakkabı", leaves(["Kadın Ayakkabı", "Erkek Ayakkabı", "Spor Ayakkabı", "Bot & Çizme", "Sandalet & Terlik", "Çocuk Ayakkabı"], "ayakkabi"), "ayakkabi"),
       node("Çanta", leaves(["Kadın Çanta", "Sırt Çantası", "Cüzdan", "Valiz & Bavul", "Laptop Çantası", "El Çantası"], "ayakkabi"), "ayakkabi"),
-      ...leaves(["Saat", "Gözlük", "Takı", "Aksesuar", "Tesettür Giyim", "Spor Giyim"], "moda")
+      node("Saat", brandModelNodes(WATCH_BRANDS, {}, "aksesuar"), "aksesuar"),
+      node("Gözlük", brandModelNodes(EYEWEAR_BRANDS, {}, "aksesuar"), "aksesuar"),
+      node("Takı & Mücevher", leaves(["Yüzük", "Kolye", "Bilezik", "Küpe", "Altın", "Pırlanta", "Gümüş", "Saat Kordonu"], "aksesuar"), "aksesuar"),
+      ...leaves(["Tesettür Giyim", "Spor Giyim"], "moda")
     ], "moda"),
     leaf("Ayakkabı & Çanta", "ayakkabi"),
     leaf("Takı & Aksesuar", "alisverisGenel"),
@@ -599,7 +622,11 @@ export const categoryTree: CategoryNode[] = [
       node("Bebek Odası", leaves(["Beşik", "Park Yatak", "Bebek Yatağı", "Alt Açma Ünitesi", "Bebek Odası Takımı", "Uyku & Tekstil"], "bebek"), "bebek"),
       ...leaves(["Bebek Giyim", "Bebek Bakım & Bez", "Bebek Güvenliği", "Oyuncak", "Anne Ürünleri", "Hamile Giyim", "Bebek Ayakkabı"], "bebek")
     ], "bebek"),
-    node("Kozmetik & Kişisel Bakım", leaves(["Cilt Bakımı", "Saç Bakımı", "Makyaj", "Parfüm", "Erkek Bakım", "Kişisel Bakım Cihazları", "Ağız Bakımı", "Tıraş Ürünleri", "Güneş Bakımı"], "alisverisGenel"), "alisverisGenel"),
+    node("Kozmetik & Kişisel Bakım", [
+      node("Parfüm", brandModelNodes(PERFUME_BRANDS, {}, "kozmetik"), "kozmetik"),
+      node("Makyaj", brandModelNodes(COSMETIC_BRANDS, {}, "kozmetik"), "kozmetik"),
+      ...leaves(["Cilt Bakımı", "Saç Bakımı", "Erkek Bakım", "Kişisel Bakım Cihazları", "Ağız Bakımı", "Tıraş Ürünleri", "Güneş Bakımı"], "kozmetik")
+    ], "kozmetik"),
     node("Spor & Outdoor", [
       node("Fitness & Kondisyon", leaves(["Koşu Bandı", "Kondisyon Bisikleti", "Eliptik", "Ağırlık & Dambıl", "Kürek Çekme", "Fitness İstasyonu", "Direniş Bandı", "Yoga & Pilates"], "spor"), "spor"),
       node("Bisiklet", leaves(["Dağ Bisikleti", "Yol Bisikleti", "Şehir Bisikleti", "Elektrikli Bisiklet", "Çocuk Bisikleti", "Katlanır Bisiklet", "Bisiklet Parçaları"], "spor"), "spor"),
