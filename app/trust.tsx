@@ -115,7 +115,7 @@ export default function TrustScreen() {
             <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 9, overflow: "hidden" }}>
               <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: "100%", width: `${trust.overall}%` }} />
             </View>
-            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>Son güncelleme: 24 Haziran 2026</Text>
+            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>Puan, işlem geçmişin arttıkça otomatik güncellenir.</Text>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             <TrustMiniStat icon="store-check-outline" label="Satıcı Güven Skoru" value={`%${trust.seller.score}`} tag="Yüksek" />
