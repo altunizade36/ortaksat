@@ -73,6 +73,11 @@ function MessagesScreenInner() {
       markConversationRead(params.c);
     }
   }, [params.c, markConversationRead]);
+
+  // Acik konusmaya realtime yeni mesaj geldiginde otomatik okundu isaretle.
+  useEffect(() => {
+    if (activeId) markConversationRead(activeId);
+  }, [activeId, messages.length, markConversationRead]);
   const myConversations = conversations
     .filter((conversation) => conversation.participantIds.includes(currentUser.id))
     .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));

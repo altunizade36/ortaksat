@@ -34,7 +34,7 @@ function ChatScreenInner() {
 
   useEffect(() => {
     if (conversation) markConversationRead(conversation.id);
-  }, [conversation?.id, markConversationRead]);
+  }, [conversation?.id, messages.length, markConversationRead]);
 
   // Masaüstünde tek başına sohbet ekranı yerine 3-panelli mesaj kutusunu kullan
   // (Sahibinden benzeri). Konuşmayı seçili açacak şekilde yönlendir.
