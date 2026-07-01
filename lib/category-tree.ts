@@ -55,7 +55,7 @@ function brandModelNodes(brands: string[], models: Record<string, string[]>, for
 }
 
 // ---- marka/değer listeleri ----------------------------------------------
-export const CAR_BRANDS = ["Audi", "BMW", "Chevrolet", "Citroën", "Dacia", "Fiat", "Ford", "Honda", "Hyundai", "Kia", "Mercedes-Benz", "Nissan", "Opel", "Peugeot", "Renault", "Seat", "Škoda", "Toyota", "Volkswagen", "Volvo", "Tesla", "BYD", "Togg", "Diğer"];
+export const CAR_BRANDS = ["Alfa Romeo", "Audi", "BMW", "BYD", "Chery", "Chevrolet", "Citroën", "Dacia", "Fiat", "Ford", "Honda", "Hyundai", "Jeep", "Kia", "Land Rover", "Mazda", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "Nissan", "Opel", "Peugeot", "Renault", "Seat", "Škoda", "Suzuki", "Tesla", "Togg", "Toyota", "Volkswagen", "Volvo", "Diğer"];
 export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Bajaj", "TVS", "CFMoto", "Mondial", "Kuba", "RKS", "Diğer"];
 export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vestel", "Samsung", "LG", "Profilo", "Altus", "Grundig", "Diğer"];
 const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "Lacivert", "Yeşil", "Kahverengi", "Bej", "Turuncu", "Diğer"];
@@ -64,29 +64,29 @@ const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "
 // listeden gelir; markası burada yoksa model serbest metin olarak girilir.
 export const MODELS_BY_BRAND: Record<string, string[]> = {
   // Otomobil
-  Renault: ["Clio", "Megane", "Fluence", "Symbol", "Captur", "Austral", "Taliant", "Kadjar", "Talisman"],
-  Fiat: ["Egea", "Linea", "Doblo", "Fiorino", "Panda", "500", "Punto", "Tipo"],
-  Volkswagen: ["Golf", "Polo", "Passat", "Jetta", "Tiguan", "T-Roc", "Transporter", "Caddy", "Arteon"],
-  Toyota: ["Corolla", "Yaris", "C-HR", "RAV4", "Hilux", "Camry", "Auris"],
-  Hyundai: ["i10", "i20", "i30", "Accent", "Elantra", "Tucson", "Bayon", "Kona", "Getz"],
-  Ford: ["Focus", "Fiesta", "Mondeo", "Courier", "Transit", "Kuga", "Puma", "Ranger"],
-  Honda: ["Civic", "City", "Accord", "CR-V", "Jazz", "HR-V"],
-  BMW: ["1 Serisi", "2 Serisi", "3 Serisi", "4 Serisi", "5 Serisi", "X1", "X2", "X3", "X5"],
-  "Mercedes-Benz": ["A Serisi", "B Serisi", "C Serisi", "E Serisi", "CLA", "GLA", "GLC", "Vito", "Sprinter"],
-  Audi: ["A1", "A3", "A4", "A5", "A6", "Q2", "Q3", "Q5", "Q7"],
-  Opel: ["Corsa", "Astra", "Insignia", "Mokka", "Crossland", "Grandland"],
-  Peugeot: ["208", "301", "308", "2008", "3008", "5008", "Partner"],
-  "Citroën": ["C3", "C4", "C5 Aircross", "Berlingo", "C-Elysee"],
-  Nissan: ["Qashqai", "Juke", "Micra", "X-Trail", "Note"],
-  Kia: ["Rio", "Ceed", "Sportage", "Stonic", "Picanto", "Cerato"],
-  Dacia: ["Sandero", "Duster", "Logan", "Jogger", "Lodgy"],
+  Renault: ["Clio", "Megane", "Fluence", "Symbol", "Captur", "Austral", "Taliant", "Kadjar", "Talisman", "Zoe", "Koleos", "Latitude", "Laguna", "Scenic", "Twingo"],
+  Fiat: ["Egea", "Linea", "Doblo", "Fiorino", "Panda", "500", "500L", "500X", "Punto", "Tipo", "Bravo", "Albea", "Palio", "Marea"],
+  Volkswagen: ["Golf", "Polo", "Passat", "Jetta", "Tiguan", "T-Roc", "T-Cross", "Touareg", "Transporter", "Caddy", "Arteon", "Scirocco", "Bora", "Beetle", "ID.4", "ID.3"],
+  Toyota: ["Corolla", "Yaris", "Yaris Cross", "C-HR", "RAV4", "Hilux", "Camry", "Auris", "Avensis", "Land Cruiser", "Proace", "bZ4X"],
+  Hyundai: ["i10", "i20", "i30", "Accent", "Elantra", "Tucson", "Bayon", "Kona", "Getz", "Santa Fe", "ix35", "Accent Blue", "IONIQ"],
+  Ford: ["Focus", "Fiesta", "Mondeo", "Courier", "Transit", "Kuga", "Puma", "Ranger", "EcoSport", "Explorer", "Tourneo", "C-Max", "Connect"],
+  Honda: ["Civic", "City", "Accord", "CR-V", "Jazz", "HR-V", "ZR-V", "e:Ny1", "Insight"],
+  BMW: ["1 Serisi", "2 Serisi", "3 Serisi", "4 Serisi", "5 Serisi", "6 Serisi", "7 Serisi", "8 Serisi", "X1", "X2", "X3", "X4", "X5", "X6", "X7", "i3", "i4", "iX", "Z4", "M Serisi"],
+  "Mercedes-Benz": ["A Serisi", "B Serisi", "C Serisi", "E Serisi", "S Serisi", "CLA", "CLS", "GLA", "GLB", "GLC", "GLE", "GLS", "G Serisi", "EQC", "EQE", "AMG", "Vito", "Sprinter"],
+  Audi: ["A1", "A3", "A4", "A5", "A6", "A7", "A8", "Q2", "Q3", "Q5", "Q7", "Q8", "TT", "R8", "e-tron", "RS Serisi", "S Serisi"],
+  Opel: ["Corsa", "Astra", "Insignia", "Mokka", "Crossland", "Grandland", "Vectra", "Zafira", "Meriva", "Combo Life"],
+  Peugeot: ["208", "301", "308", "2008", "3008", "5008", "508", "Partner", "Rifter", "207", "206", "406", "e-208"],
+  "Citroën": ["C3", "C4", "C5 Aircross", "C5 X", "Berlingo", "C-Elysee", "C3 Aircross", "DS3", "DS4", "Xsara"],
+  Nissan: ["Qashqai", "Juke", "Micra", "X-Trail", "Note", "Navara", "Leaf", "Pulsar", "Primera"],
+  Kia: ["Rio", "Ceed", "Sportage", "Stonic", "Picanto", "Cerato", "Sorento", "Niro", "Soul", "EV6", "Venga"],
+  Dacia: ["Sandero", "Duster", "Logan", "Jogger", "Lodgy", "Dokker", "Spring"],
   Tesla: ["Model 3", "Model Y", "Model S", "Model X"],
   Togg: ["T10X", "T10F"],
   BYD: ["Atto 3", "Seal", "Dolphin", "Han"],
   // Cep telefonu
   iPhone: ["iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro Max", "iPhone 15", "iPhone 14", "iPhone 13", "iPhone 12", "iPhone 11", "iPhone SE"],
-  Samsung: ["Galaxy S24 Ultra", "Galaxy S24", "Galaxy S23", "Galaxy A55", "Galaxy A35", "Galaxy A15", "Galaxy Z Fold", "Galaxy Z Flip", "Galaxy Note"],
-  Xiaomi: ["Redmi Note 13", "Redmi Note 12", "Redmi 13C", "Poco X6", "Mi 11", "13T"],
+  Samsung: ["Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy S23 Ultra", "Galaxy S23", "Galaxy S22", "Galaxy A55", "Galaxy A35", "Galaxy A25", "Galaxy A15", "Galaxy A05", "Galaxy M Serisi", "Galaxy Z Fold5", "Galaxy Z Flip5", "Galaxy Note 20", "Galaxy S21 FE"],
+  Xiaomi: ["14 Pro", "14", "13T Pro", "13T", "Redmi Note 13 Pro", "Redmi Note 13", "Redmi Note 12", "Redmi 13C", "Redmi 12", "Poco X6 Pro", "Poco X6", "Poco F5", "Poco C65"],
   Huawei: ["P60", "P50", "Mate 50", "Nova 12", "Nova 11"],
   Oppo: ["Reno 11", "Reno 10", "A98", "A78", "A58"],
   Realme: ["C67", "C55", "11 Pro", "GT Neo", "Number serisi"],
@@ -127,6 +127,47 @@ export const MOTO_MODELS: Record<string, string[]> = {
   Mondial: ["Drift", "150 MG", "Roadster", "XCR"],
   Kuba: ["Milano", "Titan", "GTS"],
   RKS: ["Beta", "Titanic", "Falcon"]
+};
+
+// Dizüstü / masaüstü bilgisayar markaları -> seri.
+export const COMPUTER_BRANDS = ["Apple", "Asus", "Lenovo", "HP", "Dell", "Acer", "MSI", "Monster", "Casper", "Huawei", "Samsung", "Toshiba", "Gigabyte", "Diğer"];
+export const COMPUTER_MODELS: Record<string, string[]> = {
+  Apple: ["MacBook Air", "MacBook Pro", "iMac", "Mac Mini", "Mac Studio"],
+  Asus: ["ROG", "TUF Gaming", "Zenbook", "Vivobook", "ProArt", "ExpertBook"],
+  Lenovo: ["ThinkPad", "IdeaPad", "Legion", "Yoga", "LOQ", "ThinkBook"],
+  HP: ["Pavilion", "Omen", "Victus", "EliteBook", "ProBook", "Envy", "Spectre"],
+  Dell: ["XPS", "Inspiron", "Latitude", "Alienware", "Vostro", "G Serisi"],
+  Acer: ["Aspire", "Nitro", "Predator", "Swift", "TravelMate"],
+  MSI: ["Katana", "Stealth", "Raider", "Modern", "Cyborg", "Thin"],
+  Monster: ["Tulpar", "Abra", "Semruk"],
+  Casper: ["Excalibur", "Nirvana"],
+  Huawei: ["MateBook D", "MateBook X", "MateBook 14"],
+  Samsung: ["Galaxy Book", "Galaxy Book Pro"]
+};
+
+// Televizyon markaları -> seri.
+export const TV_BRANDS = ["Samsung", "LG", "Vestel", "Philips", "Sony", "TCL", "Arçelik", "Beko", "Xiaomi", "Panasonic", "Grundig", "Diğer"];
+export const TV_MODELS: Record<string, string[]> = {
+  Samsung: ["Crystal UHD", "QLED", "Neo QLED", "OLED", "The Frame", "DU/CU Serisi"],
+  LG: ["OLED", "QNED", "NanoCell", "UHD", "UR/UT Serisi"],
+  Sony: ["Bravia", "OLED", "X Serisi"],
+  TCL: ["QLED", "C Serisi", "P Serisi"],
+  Xiaomi: ["TV A2", "TV P1", "TV Q2"],
+  Vestel: ["Satellite", "Regal"]
+};
+
+// Ticari araç markaları -> model.
+export const COMMERCIAL_BRANDS = ["Ford", "Mercedes-Benz", "Volkswagen", "Fiat", "Renault", "Peugeot", "Citroën", "Iveco", "Opel", "Hyundai", "Isuzu", "Diğer"];
+export const COMMERCIAL_MODELS: Record<string, string[]> = {
+  Ford: ["Transit", "Transit Custom", "Courier", "Ranger", "Cargo"],
+  "Mercedes-Benz": ["Sprinter", "Vito", "Citan", "Atego", "Actros"],
+  Volkswagen: ["Transporter", "Crafter", "Caddy Cargo", "Amarok"],
+  Fiat: ["Ducato", "Doblo Cargo", "Fiorino", "Scudo"],
+  Renault: ["Master", "Trafic", "Kangoo", "Express"],
+  Peugeot: ["Boxer", "Partner", "Expert", "Bipper"],
+  "Citroën": ["Jumper", "Berlingo", "Jumpy"],
+  Iveco: ["Daily", "Eurocargo"],
+  Opel: ["Movano", "Vivaro", "Combo"]
 };
 
 // ---- shared field fragments ---------------------------------------------
@@ -419,7 +460,7 @@ export const categoryTree: CategoryNode[] = [
     node("Arazi, SUV & Pickup", leaves(["Toyota", "Nissan", "Ford", "Hyundai", "Kia", "Volkswagen", "Dacia", "Suzuki", "Jeep", "Land Rover", "Mitsubishi", "Chery", "MG", "Diğer"], "otomobil"), "otomobil"),
     node("Motosiklet", brandModelNodes(MOTO_BRANDS, MOTO_MODELS, "motosiklet"), "motosiklet"),
     leaf("Minivan & Panelvan", "vasitaGenel"),
-    node("Ticari Araçlar", leaves(["Kamyonet", "Panelvan", "Minibüs", "Otobüs", "Çekici", "Kamyon"], "vasitaGenel"), "vasitaGenel"),
+    node("Ticari Araçlar", brandModelNodes(COMMERCIAL_BRANDS, COMMERCIAL_MODELS, "vasitaGenel"), "vasitaGenel"),
     node("Elektrikli Araçlar", leaves(["Elektrikli Otomobil", "Hibrit", "Plug-in Hibrit"], "otomobil"), "otomobil"),
     leaf("Kiralık Araçlar", "vasitaGenel"),
     leaf("Hasarlı Araçlar", "otomobil"),
@@ -448,10 +489,21 @@ export const categoryTree: CategoryNode[] = [
   node("İkinci El & Sıfır Alışveriş", [
     node("Elektronik", [
       node("Cep Telefonu", brandModelNodes(["iPhone", "Samsung", "Xiaomi", "Huawei", "Oppo", "Realme", "Vivo", "Tecno", "General Mobile", "OnePlus", "Nothing", "Reeder", "Diğer Marka"], MODELS_BY_BRAND, "telefon"), "telefon"),
-      ...leaves(["Tablet", "Akıllı Saat", "Kulaklık", "Hoparlör", "Televizyon", "Kamera", "Fotoğraf Makinesi", "Oyun Konsolu", "Drone", "Akıllı Ev Ürünleri", "Güvenlik Kamerası", "Projeksiyon", "Elektronik Aksesuar"], "alisverisGenel")
+      node("Televizyon", brandModelNodes(TV_BRANDS, TV_MODELS, "alisverisGenel"), "alisverisGenel"),
+      node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "Diğer Tablet"], "alisverisGenel"), "alisverisGenel"),
+      node("Ses & Kulaklık", leaves(["Kablosuz Kulaklık", "Kulak İçi Kulaklık", "Kulak Üstü Kulaklık", "Bluetooth Hoparlör", "Soundbar", "Ev Sinema Sistemi", "Mikrofon"], "alisverisGenel"), "alisverisGenel"),
+      node("Foto & Kamera", leaves(["DSLR Fotoğraf Makinesi", "Aynasız Fotoğraf Makinesi", "Kompakt Kamera", "Aksiyon Kamera", "Objektif", "Tripod", "Drone", "Güvenlik Kamerası"], "alisverisGenel"), "alisverisGenel"),
+      ...leaves(["Akıllı Saat & Bileklik", "Akıllı Ev Ürünleri", "Projeksiyon", "Yazıcı & Tarayıcı", "Elektronik Aksesuar"], "alisverisGenel")
     ], "alisverisGenel"),
     node("Telefon & Aksesuar", leaves(["Cep Telefonu", "Kılıf", "Şarj & Kablo", "Powerbank", "Ekran Koruyucu", "Kulaklık"], "alisverisGenel"), "alisverisGenel"),
-    node("Bilgisayar & Oyun", leaves(["Dizüstü Bilgisayar", "Masaüstü Bilgisayar", "Monitör", "Klavye & Mouse", "Oyuncu Ekipmanları", "Oyun Konsolu", "Konsol Oyunları", "Ekran Kartı", "İşlemci", "Anakart", "RAM", "SSD & HDD", "Yazıcı & Tarayıcı", "Modem & Network", "Yazılım Lisansı"], "alisverisGenel"), "alisverisGenel"),
+    node("Bilgisayar & Oyun", [
+      node("Dizüstü Bilgisayar", brandModelNodes(COMPUTER_BRANDS, COMPUTER_MODELS, "alisverisGenel"), "alisverisGenel"),
+      node("Masaüstü Bilgisayar", leaves(["Hazır Sistem", "Toplama Sistem", "All-in-One", "Mini PC", "İş İstasyonu"], "alisverisGenel"), "alisverisGenel"),
+      node("Bilgisayar Bileşenleri", leaves(["Ekran Kartı", "İşlemci", "Anakart", "RAM", "SSD & HDD", "Güç Kaynağı", "Kasa", "CPU Soğutucu", "Ekran Kartı Yükseltici"], "alisverisGenel"), "alisverisGenel"),
+      node("Çevre Birimleri", leaves(["Monitör", "Klavye", "Mouse", "Kulaklık", "Webcam", "Mikrofon", "Yazıcı & Tarayıcı", "Modem & Network", "Harici Disk", "USB Bellek"], "alisverisGenel"), "alisverisGenel"),
+      node("Oyun & Konsol", leaves(["PlayStation 5", "PlayStation 4", "Xbox Series X/S", "Xbox One", "Nintendo Switch", "Konsol Oyunları", "Oyun Kolu", "VR Gözlük", "Oyuncu Koltuğu"], "alisverisGenel"), "alisverisGenel"),
+      leaf("Yazılım & Lisans", "alisverisGenel")
+    ], "alisverisGenel"),
     node("Ev & Yaşam", [
       node("Mobilya", leaves(["Koltuk Takımı", "Köşe Koltuk", "Kanepe", "Berjer", "Masa", "Sandalye", "Yatak", "Baza", "Gardırop", "Kitaplık", "TV Ünitesi", "Çalışma Masası", "Bebek Mobilyası"], "alisverisGenel"), "alisverisGenel"),
       ...leaves(["Dekorasyon", "Aydınlatma", "Ev Tekstili", "Banyo", "Bahçe & Balkon", "Temizlik Ürünleri", "Düzenleyiciler", "Ev Gereçleri"], "alisverisGenel")
@@ -465,9 +517,21 @@ export const categoryTree: CategoryNode[] = [
     ], "alisverisGenel"),
     leaf("Ayakkabı & Çanta", "alisverisGenel"),
     leaf("Takı & Aksesuar", "alisverisGenel"),
-    node("Anne & Bebek", leaves(["Bebek Arabası", "Oto Koltuğu", "Bebek Giyim", "Bebek Bakım", "Mama Sandalyesi", "Beşik", "Oyuncak", "Bebek Güvenlik", "Anne Ürünleri", "Hamile Giyim"], "alisverisGenel"), "alisverisGenel"),
+    node("Anne & Bebek", [
+      node("Bebek Arabası & Taşıma", leaves(["Travel Sistem Bebek Arabası", "Tekli Bebek Arabası", "İkiz Bebek Arabası", "Puset", "Ana Kucağı", "Kanguru & Taşıyıcı", "Portbebe"], "alisverisGenel"), "alisverisGenel"),
+      node("Oto Koltuğu", leaves(["0-13 kg", "9-36 kg", "15-36 kg", "360° Dönebilen", "Yükseltici"], "alisverisGenel"), "alisverisGenel"),
+      node("Beslenme", leaves(["Mama Sandalyesi", "Biberon & Emzik", "Mama Hazırlama", "Göğüs Pompası", "Termos & Saklama"], "alisverisGenel"), "alisverisGenel"),
+      node("Bebek Odası", leaves(["Beşik", "Park Yatak", "Bebek Yatağı", "Alt Açma Ünitesi", "Bebek Odası Takımı", "Uyku & Tekstil"], "alisverisGenel"), "alisverisGenel"),
+      ...leaves(["Bebek Giyim", "Bebek Bakım & Bez", "Bebek Güvenliği", "Oyuncak", "Anne Ürünleri", "Hamile Giyim", "Bebek Ayakkabı"], "alisverisGenel")
+    ], "alisverisGenel"),
     node("Kozmetik & Kişisel Bakım", leaves(["Cilt Bakımı", "Saç Bakımı", "Makyaj", "Parfüm", "Erkek Bakım", "Kişisel Bakım Cihazları", "Ağız Bakımı", "Tıraş Ürünleri", "Güneş Bakımı"], "alisverisGenel"), "alisverisGenel"),
-    node("Spor & Outdoor", leaves(["Fitness Ekipmanları", "Kamp Malzemeleri", "Bisiklet", "Koşu Ürünleri", "Yoga & Pilates", "Futbol", "Basketbol", "Tenis", "Balıkçılık", "Outdoor Giyim"], "alisverisGenel"), "alisverisGenel"),
+    node("Spor & Outdoor", [
+      node("Fitness & Kondisyon", leaves(["Koşu Bandı", "Kondisyon Bisikleti", "Eliptik", "Ağırlık & Dambıl", "Kürek Çekme", "Fitness İstasyonu", "Direniş Bandı", "Yoga & Pilates"], "alisverisGenel"), "alisverisGenel"),
+      node("Bisiklet", leaves(["Dağ Bisikleti", "Yol Bisikleti", "Şehir Bisikleti", "Elektrikli Bisiklet", "Çocuk Bisikleti", "Katlanır Bisiklet", "Bisiklet Parçaları"], "alisverisGenel"), "alisverisGenel"),
+      node("Kamp & Doğa", leaves(["Çadır", "Uyku Tulumu", "Kamp Sandalyesi", "Kamp Ocağı", "Sırt Çantası", "Termos & Matara", "Outdoor Giyim & Ayakkabı"], "alisverisGenel"), "alisverisGenel"),
+      node("Takım Sporları", leaves(["Futbol", "Basketbol", "Voleybol", "Tenis", "Masa Tenisi", "Badminton"], "alisverisGenel"), "alisverisGenel"),
+      ...leaves(["Su Sporları", "Kış Sporları", "Avcılık & Balıkçılık", "Dövüş Sporları", "Kaykay & Paten"], "alisverisGenel")
+    ], "alisverisGenel"),
     node("Kitap & Hobi", leaves(["Kitap", "Dergi", "Müzik Aletleri", "Plak & CD", "Hobi Malzemeleri", "El Sanatları", "Puzzle", "Maket", "Koleksiyon Ürünleri"], "alisverisGenel"), "alisverisGenel"),
     leaf("Koleksiyon", "alisverisGenel"),
     leaf("Ofis & Kırtasiye", "alisverisGenel"),
