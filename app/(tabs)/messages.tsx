@@ -3,8 +3,8 @@ import { Image } from "expo-image";
 import { Link, useLocalSearchParams } from "expo-router";
 
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
@@ -64,6 +64,7 @@ function MessagesScreenInner() {
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [activeId, setActiveId] = useState<string | null>(params.c ?? null);
   const [draft, setDraft] = useState("");
+  const deskScrollRef = useRef<ScrollView>(null);
 
   // Bir ilandan/sohbet bağlantısından gelen konuşmayı seçili aç.
   useEffect(() => {
@@ -130,6 +131,15 @@ function MessagesScreenInner() {
       if (!activeConversation || !draft.trim()) return;
       sendConversationMessage(activeConversation.id, draft.trim());
       setDraft("");
+      requestAnimationFrame(() => deskScrollRef.current?.scrollToEnd({ animated: true }));
+    };
+    // Web: Enter gonderir, Shift+Enter yeni satir.
+    const onComposerKeyPress = (e: { nativeEvent: { key?: string; shiftKey?: boolean } }) => {
+      if (Platform.OS !== "web") return;
+      if (e.nativeEvent.key === "Enter" && !e.nativeEvent.shiftKey) {
+        (e as unknown as { preventDefault?: () => void }).preventDefault?.();
+        sendDraft();
+      }
     };
 
     const filters: Array<{ key: InboxFilter; label: string; count: number }> = [
@@ -240,7 +250,7 @@ function MessagesScreenInner() {
                   </View>
                 </View>
 
-                <ScrollView showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ gap: 8, padding: 22 }}>
+                <ScrollView ref={deskScrollRef} onContentSizeChange={() => deskScrollRef.current?.scrollToEnd({ animated: false })} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ gap: 8, padding: 22 }}>
                   {activeMessages.length === 0 ? (
                     <EmptyState title="Henüz mesaj yok" body="İlk mesajı yaz ve konuşmayı başlat." />
                   ) : null}
@@ -279,7 +289,7 @@ function MessagesScreenInner() {
                     ))}
                   </View>
                   <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
-                    <TextInput value={draft} onChangeText={setDraft} multiline placeholder="Mesajınızı yazınız" placeholderTextColor={colors.muted} onSubmitEditing={sendDraft} blurOnSubmit style={{ color: colors.ink, flex: 1, fontSize: 14, maxHeight: 110, minHeight: 46, paddingVertical: 12 }} />
+                    <TextInput value={draft} onChangeText={setDraft} multiline placeholder="Mesajınızı yazınız" placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ color: colors.ink, flex: 1, fontSize: 14, maxHeight: 110, minHeight: 46, paddingVertical: 12 }} />
                     <MaterialCommunityIcons name="paperclip" size={19} color={colors.muted} />
                     <MaterialCommunityIcons name="emoticon-happy-outline" size={19} color={colors.muted} />
                     <Pressable disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 10, height: 36, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 40 })}>

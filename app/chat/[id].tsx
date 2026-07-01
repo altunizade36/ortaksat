@@ -1,7 +1,7 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
@@ -28,6 +28,7 @@ function ChatScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { currentUser, findConversation, findListing, findUser, leads, markConversationRead, messages, partnerships, sales, sendConversationMessage } = useStore();
   const [body, setBody] = useState("");
+  const scrollRef = useRef<ScrollView>(null);
   const conversation = findConversation(id);
 
   useEffect(() => {
@@ -83,6 +84,7 @@ function ChatScreenInner() {
     if (!body.trim()) return;
     sendConversationMessage(currentConversation.id, body.trim());
     setBody("");
+    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }
 
   return (
@@ -134,21 +136,34 @@ function ChatScreenInner() {
         </View>
       </View>
 
-      <ScrollView contentContainerStyle={{ flexGrow: 1, gap: 8, justifyContent: conversationMessages.length === 0 ? "center" : "flex-start", padding: 12, paddingBottom: 16 }}>
+      <ScrollView ref={scrollRef} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, gap: 6, justifyContent: conversationMessages.length === 0 ? "center" : "flex-start", padding: 12, paddingBottom: 16 }}>
         {conversationMessages.length === 0 ? (
           <EmptyState title={language === "en" ? "No messages yet" : "Henüz mesaj yok"} body={language === "en" ? "Write the first message and start the conversation." : "İlk mesajı yaz ve konuşmayı başlat."} />
         ) : null}
-        {conversationMessages.map((message) => {
+        {conversationMessages.map((message, i) => {
           const mine = message.senderId === currentUser.id;
+          const showDay = i === 0 || chatMsgDay(message.createdAt) !== chatMsgDay(conversationMessages[i - 1].createdAt);
           return (
-            <View key={message.id} style={{ alignItems: mine ? "flex-end" : "flex-start" }}>
-              <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderRadius: 8, borderWidth: 1, maxWidth: "82%", padding: 10 }}>
-                <Text selectable style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 14, fontWeight: "700", lineHeight: 20 }}>
-                  {message.body}
-                </Text>
-                <Text selectable style={{ color: mine ? "#DFF7EF" : colors.muted, fontSize: 10, fontWeight: "800", marginTop: 5, textAlign: "right" }}>
-                  {shortDate(message.createdAt)}
-                </Text>
+            <View key={message.id} style={{ gap: 6 }}>
+              {showDay ? (
+                <View style={{ alignItems: "center", marginVertical: 3 }}>
+                  <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 3 }}>
+                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{chatDayHeader(chatMsgDay(message.createdAt), language)}</Text>
+                  </View>
+                </View>
+              ) : null}
+              <View style={{ alignItems: mine ? "flex-end" : "flex-start" }}>
+                <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "82%", paddingHorizontal: 12, paddingVertical: 8 }}>
+                  <Text selectable style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 20 }}>
+                    {message.body}
+                  </Text>
+                  <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3 }}>
+                    <Text selectable style={{ color: mine ? "#DFF7EF" : colors.subtle, fontSize: 10, fontWeight: "700" }}>
+                      {chatMsgTime(message.createdAt) || shortDate(message.createdAt)}
+                    </Text>
+                    {mine ? <MaterialCommunityIcons name={message.read ? "check-all" : "check"} size={13} color={message.read ? "#DFF7EF" : "rgba(255,255,255,0.7)"} /> : null}
+                  </View>
+                </View>
               </View>
             </View>
           );
@@ -197,6 +212,22 @@ function ChatScreenInner() {
       </View>
     </KeyboardAvoidingView>
   );
+}
+
+function chatMsgTime(createdAt: string) {
+  const m = /\d{2}:\d{2}/.exec(createdAt);
+  return m ? m[0] : "";
+}
+function chatMsgDay(createdAt: string) {
+  return createdAt.slice(0, 10);
+}
+function chatDayHeader(day: string, language: "tr" | "en") {
+  const today = new Date().toISOString().slice(0, 10);
+  if (day === today) return language === "en" ? "Today" : "Bugün";
+  const d = new Date(day);
+  if (Number.isNaN(d.getTime())) return day;
+  const months = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+  return `${String(d.getDate()).padStart(2, "0")} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
 function buildChatContext({
