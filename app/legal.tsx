@@ -339,15 +339,12 @@ export default function LegalScreen() {
                 ))}
               </View>
 
-              <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Destek istatistikleriniz</Text>
-                <LegalStat icon="clock-fast" label="Ortalama yanıt süresi" value="2 saat 15 dk" sub="Son 30 gün ortalaması" />
-                <LegalStat icon="check-circle-outline" label="Çözüm oranı" value="%96" sub="Son 30 gün" />
-                <LegalStat icon="ticket-confirmation-outline" label="Destek talepleriniz" value="3" sub="Aktif talepler" />
-                <Pressable style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 10 }}>
-                  <MaterialCommunityIcons name="format-list-bulleted" size={16} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Taleplerim</Text>
-                </Pressable>
+              <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Destek nasıl işler?</Text>
+                <SupportStep icon="pencil-outline" text="Aşağıdaki formdan destek talebini oluştur." />
+                <SupportStep icon="content-save-check-outline" text="Talebin kayıt altına alınır ve sırayla incelenir." />
+                <SupportStep icon="flag-outline" text="Bir ilan/kullanıcı için Güven Merkezi'nden bildirim açabilirsin." />
+                <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 17 }}>Şu an telefon/canlı destek hattı bulunmuyor; en hızlı ve kayıtlı yol destek talebidir.</Text>
               </View>
 
               <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
@@ -472,6 +469,17 @@ function LegalStat({ icon, label, value, sub }: { icon: keyof typeof MaterialCom
         <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "600" }}>{sub}</Text>
       </View>
       <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{value}</Text>
+    </View>
+  );
+}
+
+function SupportStep({ icon, text }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; text: string }) {
+  return (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+      <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, height: 32, justifyContent: "center", width: 32 }}>
+        <MaterialCommunityIcons name={icon} size={16} color={colors.primaryDark} />
+      </View>
+      <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700", lineHeight: 18 }}>{text}</Text>
     </View>
   );
 }
