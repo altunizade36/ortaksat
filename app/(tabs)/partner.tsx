@@ -9,7 +9,7 @@ import { colors } from "@/components/colors";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
-import { commissionAmount, commissionText, listingShareTemplates, money, shareUrl } from "@/lib/format";
+import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, shareUrl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
@@ -76,6 +76,19 @@ export default function PartnerScreen() {
     return tokens.every((token) => haystack.includes(token));
   });
 
+  // Ortaklık fırsatları: başkalarının TÜM aktif ilanları (herkese açık, global).
+  const joinedIds = new Set(myPartnerships.map((p) => p.listingId));
+  const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id);
+
+  function onJoin(listingId: string) {
+    const result = joinListing(listingId, { note: "Ortak satış panelinden başvuru.", shareChannel: "Instagram ve WhatsApp", audience: "Kendi çevrem ve sosyal medya", platformHandle: "", reachEstimate: 250 });
+    const ok = Boolean(result);
+    Alert.alert(
+      translateCopy(ok ? (result?.status === "active" ? "Ortaklık aktif" : "Başvuru gönderildi") : "İşlem yapılamadı", language),
+      translateCopy(ok ? (result?.status === "active" ? "Paylaşım bağlantın hazır." : "Satıcı onayından sonra bağlantın açılır.") : "Kendi ilanına ortak olamazsın, giriş yapman gerekir veya ilan aktif değil.", language)
+    );
+  }
+
   async function copyText(label: string, text: string) {
     await Clipboard.setStringAsync(text);
     Alert.alert(translateCopy("Kopyala", language), language === "en" ? `${translateCopy(label, language)} copied to clipboard.` : `${label} panoya kopyalandı.`);
@@ -103,8 +116,6 @@ export default function PartnerScreen() {
   }
 
   if (isWideWeb) {
-    const joinedIds = new Set(myPartnerships.map((p) => p.listingId));
-    const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id);
     const oppCategoryOptions = Array.from(new Set(allOpportunities.map((l) => l.category))).sort((a, b) => a.localeCompare(b, "tr"));
     const oppCityOptions = Array.from(new Set(allOpportunities.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr"));
     const opportunities = allOpportunities.filter((l) => {
@@ -124,17 +135,9 @@ export default function PartnerScreen() {
     const rateListings = opportunities.filter((l) => l.commissionType === "rate");
     const avgCommissionPct = rateListings.length ? Math.round((rateListings.reduce((s, l) => s + l.commissionValue, 0) / rateListings.length) * 10) / 10 : 0;
     const myLeadCount = leads.filter((lead) => myPartnerships.some((p) => p.id === lead.partnershipId)).length;
-    const perfClicks = myLeadCount * 12 + 18;
-    const perfViews = perfClicks * 6;
     const earnGoal = 5000;
     const earnProgress = Math.min(100, Math.round(((approved + paid) / earnGoal) * 100));
     const activities = mySales.slice().sort((a, b) => (b.paidAt ?? b.approvedAt ?? b.id).localeCompare(a.paidAt ?? a.approvedAt ?? a.id)).slice(0, 4);
-
-    function onJoin(listingId: string) {
-      const result = joinListing(listingId, { note: "Ortak satış panelinden başvuru.", shareChannel: "Instagram ve WhatsApp", audience: "Kendi çevrem ve sosyal medya", platformHandle: "", reachEstimate: 250 });
-      const ok = Boolean(result);
-      Alert.alert(translateCopy(ok ? (result?.status === "active" ? "Ortaklık aktif" : "Başvuru gönderildi") : "İşlem yapılamadı", language), translateCopy(ok ? (result?.status === "active" ? "Paylaşım bağlantın hazır." : "Satıcı onayından sonra bağlantın açılır.") : "Kendi ilanına ortak olamazsın veya ilan aktif değil.", language));
-    }
 
     const tabs: Array<{ key: typeof tab; label: string; count?: number }> = [
       { key: "all", label: "Tüm fırsatlar" },
@@ -334,8 +337,8 @@ export default function PartnerScreen() {
             <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Bu ayki performansınız</Text>
             <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Son 30 gün</Text>
           </View>
-          <PerfMetric icon="eye-outline" label="Görüntülenme" value={`${perfViews}`} />
-          <PerfMetric icon="cursor-default-click-outline" label="Tıklama" value={`${perfClicks}`} />
+          <PerfMetric icon="handshake-outline" label="Aktif ortaklık" value={`${activePartnerships.length}`} />
+          <PerfMetric icon="account-clock-outline" label="Talep" value={`${myLeadCount}`} />
           <PerfMetric icon="star-outline" label="Satış" value={`${mySales.length}`} />
           <PerfMetric icon="cash" label="Kazanç" value={money(approved + paid)} />
           <View style={{ flex: 1, gap: 6, minWidth: 200 }}>
@@ -384,6 +387,35 @@ export default function PartnerScreen() {
         </View>
       </Card>
 
+      {allOpportunities.length > 0 ? (
+        <Card>
+          <SectionTitle title="Ortak satış fırsatları" action={`${allOpportunities.length}`} />
+          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>Beğendiğin ürüne ortak ol, kendi kitlene sat, satış olunca komisyon kazan.</Text>
+          {allOpportunities.slice(0, oppVisible).map((listing) => {
+            const owner = findUser(listing.ownerId);
+            const joined = joinedIds.has(listing.id);
+            return (
+              <View key={listing.id} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingTop: 10 }}>
+                <SafeRemoteImage uri={listing.image} style={{ backgroundColor: colors.line, borderRadius: 8, height: 52, width: 52 }} contentFit="cover" />
+                <Pressable onPress={() => router.push(`/listing/${listing.id}`)} style={{ flex: 1, gap: 2, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{displayText(listing.title)}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{commissionText(listing)} · kazanç {moneyIn(commissionAmount(listing), listing.currency)}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{displayText(listing.location)}{owner ? ` · ${displayText(owner.name)}` : ""}</Text>
+                </Pressable>
+                <Pressable onPress={() => onJoin(listing.id)} disabled={joined} style={({ pressed }) => ({ alignItems: "center", backgroundColor: joined ? colors.surfaceAlt : colors.primary, borderColor: joined ? colors.line : colors.primary, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 13, paddingVertical: 8 })}>
+                  <Text style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{joined ? "Ortak" : "Ortak ol"}</Text>
+                </Pressable>
+              </View>
+            );
+          })}
+          {allOpportunities.length > oppVisible ? (
+            <Pressable onPress={() => setOppVisible((v) => v + 8)} style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderWidth: 1.5, marginTop: 4, paddingVertical: 11 }}>
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Daha fazla fırsat göster</Text>
+            </Pressable>
+          ) : null}
+        </Card>
+      ) : null}
+
       <Card>
         <SectionTitle title="Aktif ortaklıklarım" action={`${visiblePartnerships.length}`} />
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 48, paddingHorizontal: 12 }}>
@@ -422,9 +454,7 @@ export default function PartnerScreen() {
         if (!listing) return null;
         const listingLeads = leads.filter((lead) => lead.partnershipId === partnership.id);
         const listingSales = mySales.filter((sale) => sale.partnershipId === partnership.id);
-        const clicks = partnerClickEstimate(listing.leadCount, listing.partnerCount, listingLeads.length);
         const earned = listingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
-        const conversionRate = clicks > 0 ? Math.round((listingSales.length / clicks) * 100) : 0;
         const url = shareUrl(listing, partnership.refCode);
         const templates = listingShareTemplates(listing, url);
         const sellerPaidCount = listingSales.filter((sale) => sale.status === "seller_paid").length;
@@ -487,12 +517,9 @@ export default function PartnerScreen() {
               onShare={() => sharePartnership(listing.id, partnership.refCode)}
             />
 
-            <SectionTitle title="Performans" action={`%${conversionRate} dönüşüm`} />
+            <SectionTitle title="Performans" />
             <View style={{ flexDirection: "row", gap: 8 }}>
-              <Metric label="Tıklama" value={`${clicks}`} />
               <Metric label="Talep" value={`${listingLeads.length}`} />
-            </View>
-            <View style={{ flexDirection: "row", gap: 8 }}>
               <Metric label="Satış" value={`${listingSales.length}`} />
               <Metric label="Kazanç" value={money(earned)} />
             </View>
