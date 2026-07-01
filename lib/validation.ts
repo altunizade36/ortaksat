@@ -14,7 +14,7 @@ export const LIMITS = {
   name: { min: 2, max: 80 },
   title: { min: 10, max: 70 },
   description: { min: 20, max: 4000 },
-  price: { min: 1, max: 10_000_000_000 },
+  price: { min: 1, max: 999_999_999_999 },
   message: { min: 1, max: 2000 },
   supportSubject: { min: 3, max: 120 },
   supportMessage: { min: 10, max: 2000 },

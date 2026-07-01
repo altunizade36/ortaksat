@@ -6,7 +6,7 @@ import { Pressable, Text, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getCategoryShortLabel, inferListingSubcategory } from "@/lib/categories";
-import { commissionAmount, money } from "@/lib/format";
+import { commissionAmount, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { compactNumber, REFERENCE_NOW } from "@/lib/locale";
 import { displayText } from "@/lib/text";
@@ -67,11 +67,11 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
 
               <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "space-between" }}>
                 <Text adjustsFontSizeToFit minimumFontScale={0.7} numberOfLines={1} selectable style={{ color: colors.ink, flexShrink: 1, fontSize: 18, fontVariant: ["tabular-nums"], fontWeight: "900", minWidth: 0 }}>
-                  {money(listing.price)}
+                  {moneyIn(listing.price, listing.currency)}
                 </Text>
                 <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, flexShrink: 1, maxWidth: "58%", minWidth: 0, paddingHorizontal: 8, paddingVertical: 4 }}>
                   <Text adjustsFontSizeToFit minimumFontScale={0.7} numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-                    {t("earning")} {money(commission)}
+                    {t("earning")} {moneyIn(commission, listing.currency)}
                   </Text>
                 </View>
               </View>

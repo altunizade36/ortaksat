@@ -10,7 +10,7 @@ import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getFormSchema, MODELS_BY_BRAND, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
-import { money } from "@/lib/format";
+import { CURRENCIES, moneyIn, type CurrencyCode } from "@/lib/format";
 import { formatLocation, getProvince } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
 import { categoryRisk, moderateListingText, MODERATION_MESSAGES, scanTextLocal } from "@/lib/moderation";
@@ -35,6 +35,7 @@ export function DesktopCreateFlow() {
   const [loc, setLoc] = useState<LocationValue>({});
   const [visibility, setVisibility] = useState<"city_only" | "district_only" | "neighborhood" | "full_address_private">("neighborhood");
 
+  const [currency, setCurrency] = useState<CurrencyCode>("TRY");
   const [commissionType, setCommissionType] = useState<CommissionType>("rate");
   const [commissionValue, setCommissionValue] = useState("15");
   const [partnershipMode, setPartnershipMode] = useState<PartnershipMode>("approval");
@@ -166,6 +167,7 @@ export function DesktopCreateFlow() {
         adAssets: uploadedImages.slice(1, 5),
         tags: tags.length ? tags : ["ortak satış"],
         price,
+        currency,
         commissionType,
         commissionValue: Number(commissionValue) || 0,
         partnershipMode,
@@ -243,6 +245,21 @@ export function DesktopCreateFlow() {
                 }
                 return <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
               })}
+            </View>
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Para birimi</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {CURRENCIES.map((c) => {
+                  const on = currency === c.code;
+                  return (
+                    <Pressable key={c.code} onPress={() => setCurrency(c.code)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 15, paddingVertical: 9 }}>
+                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 15, fontWeight: "900" }}>{c.symbol}</Text>
+                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{c.label}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>Fiyatı istediğin tutarda gir; üst sınır yok. Nokta binlik ayırıcıdır (örn. 1.500.000).</Text>
             </View>
           </View>
         ) : null}
@@ -376,10 +393,10 @@ export function DesktopCreateFlow() {
                 <View style={{ gap: 6, padding: 14 }}>
                   <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{path.map((p) => p.label).join(" › ")}</Text>
                   <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{String(values.title ?? leafLabel)}</Text>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{money(parseTrPrice(String(values.price ?? "")))}</Text>
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(parseTrPrice(String(values.price ?? "")), currency)}</Text>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{formatLocation(loc, visibility) || "Konum belirtilmedi"}</Text>
                   <View style={{ alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
-                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{commissionType === "rate" ? `%${commissionValue} komisyon` : `${money(Number(commissionValue) || 0)} komisyon`}</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{commissionType === "rate" ? `%${commissionValue} komisyon` : `${moneyIn(Number(commissionValue) || 0, currency)} komisyon`}</Text>
                   </View>
                 </View>
               </View>

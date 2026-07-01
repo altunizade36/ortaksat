@@ -100,6 +100,7 @@ type NewListingInput = Pick<
   | "adAssets"
   | "tags"
   | "price"
+  | "currency"
   | "commissionType"
   | "commissionValue"
   | "category"

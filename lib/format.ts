@@ -29,6 +29,20 @@ export function money(value: number) {
   return formatted;
 }
 
+export type CurrencyCode = "TRY" | "USD" | "EUR";
+export const CURRENCIES: Array<{ code: CurrencyCode; symbol: string; label: string }> = [
+  { code: "TRY", symbol: "₺", label: "Türk Lirası (₺)" },
+  { code: "USD", symbol: "$", label: "Dolar ($)" },
+  { code: "EUR", symbol: "€", label: "Euro (€)" }
+];
+const CURRENCY_SYMBOL: Record<string, string> = { TRY: "₺", USD: "$", EUR: "€" };
+
+/** İlanın para birimine göre fiyat gösterimi (₺/$/€ + deterministik binlik ayırıcı). */
+export function moneyIn(value: number, currency?: string | null) {
+  const sym = CURRENCY_SYMBOL[currency ?? "TRY"] ?? "₺";
+  return `${sym}${groupThousands(value)}`;
+}
+
 export function commissionText(listing: Listing) {
   if (listing.commissionType === "rate") {
     return localize(`%${listing.commissionValue} komisyon`, `${listing.commissionValue}% commission`);

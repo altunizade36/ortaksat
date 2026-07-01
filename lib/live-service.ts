@@ -213,6 +213,7 @@ export async function insertListing(listing: Listing) {
     commission_value: listing.commissionValue,
     category: listing.category,
     location: listing.location,
+    currency: listing.currency ?? "TRY",
     province_id: listing.provinceId ?? null,
     district_id: listing.districtId ?? null,
     neighborhood_id: listing.neighborhoodId ?? null,

@@ -13,7 +13,7 @@ import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
-import { commissionAmount, commissionText, listingShareTemplates, money, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
+import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
@@ -154,7 +154,7 @@ export default function ListingDetailScreen() {
   async function handleShare() {
     // Ortak aktif paylaşımıysa referans linki (komisyon takibi), değilse düz ürün linki.
     const url = activeShareUrl ?? productUrl(currentListing);
-    await Share.share({ title: currentListing.title, message: `${currentListing.title}\n${money(currentListing.price)}\n${url}`, url });
+    await Share.share({ title: currentListing.title, message: `${currentListing.title}\n${moneyIn(currentListing.price, currentListing.currency)}\n${url}`, url });
   }
 
   async function copyText(label: string, text: string) {
@@ -232,7 +232,7 @@ export default function ListingDetailScreen() {
     Alert.alert(translateCopy(ok ? "Bildirim alındı" : "Giriş gerekli", language), translateCopy(ok ? "Moderasyon ekibi bu ilanı inceleyecek." : "İlan bildirmek için e-posta ile giriş yapmalısın.", language));
   }
 
-  const metaDesc = `${currentListing.title} — ${money(currentListing.price)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
+  const metaDesc = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
   const metaUrl = `https://ortaksat.com/listing/${currentListing.id}`;
 
   return (
@@ -295,8 +295,8 @@ export default function ListingDetailScreen() {
           </Text>
 
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <Metric label="Fiyat" value={money(currentListing.price)} />
-            <Metric label="Ortak kazancı" value={money(commission)} />
+            <Metric label="Fiyat" value={moneyIn(currentListing.price, currentListing.currency)} />
+            <Metric label="Ortak kazancı" value={moneyIn(commission, currentListing.currency)} />
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Metric label="Stok" value={`${currentListing.stockCount}`} />
@@ -361,7 +361,7 @@ export default function ListingDetailScreen() {
         <Card>
           <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ortak satış", language)}</Text>
           <Text selectable style={{ color: colors.primaryDark, fontSize: 16, fontWeight: "900" }}>
-            {commissionText(currentListing)} · {money(commission)} {translateCopy("tahmini kazanç", language)}
+            {commissionText(currentListing)} · {moneyIn(commission, currentListing.currency)} {translateCopy("tahmini kazanç", language)}
           </Text>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Metric label="Vade" value={`${currentListing.commissionDueDays} gün`} />
@@ -431,7 +431,7 @@ export default function ListingDetailScreen() {
             <SpecRow label="Kategori" value={currentListing.category} />
             <SpecRow label="Konum" value={currentListing.location} />
             <SpecRow label="Stok" value={`${currentListing.stockCount} adet`} />
-            <SpecRow label="Komisyon" value={currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : money(commission)} />
+            <SpecRow label="Komisyon" value={currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : moneyIn(commission, currentListing.currency)} />
             <SpecRow label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında ortaklık" : "Satıcı onaylı"} />
             <SpecRow label="İletişim" value={contactLabel(currentListing.contactMethod)} />
           </Accordion>
@@ -731,7 +731,7 @@ function ListingDecisionCard({
         <DecisionMetric icon="shield-check-outline" label="Satıcı güveni" value={ownerTrustScore === undefined ? "-" : `%${ownerTrustScore}`} tone={(ownerTrustScore ?? 0) >= 70 ? "success" : "warning"} />
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <DecisionMetric icon="cash-plus" label="Ortak kazancı" value={money(commission)} tone="success" />
+        <DecisionMetric icon="cash-plus" label="Ortak kazancı" value={moneyIn(commission, listing.currency)} tone="success" />
         <DecisionMetric icon="calendar-clock" label="Vade" value={`${listing.commissionDueDays} gün`} tone="neutral" />
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>

@@ -47,6 +47,7 @@ export type Listing = {
   adAssets?: string[];
   tags: string[];
   price: number;
+  currency?: "TRY" | "USD" | "EUR";
   commissionType: CommissionType;
   commissionValue: number;
   category: string;
