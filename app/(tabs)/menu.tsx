@@ -100,7 +100,7 @@ export default function MenuScreen() {
             style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "700", minHeight: 48 }}
           />
           {query ? (
-            <Pressable onPress={() => setQuery("")} hitSlop={10}>
+            <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Aramayı temizle">
               <MaterialCommunityIcons name="close-circle" size={20} color={colors.muted} />
             </Pressable>
           ) : null}

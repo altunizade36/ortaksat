@@ -128,7 +128,7 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
         <View style={{ alignItems: "center", backgroundColor: districtId ? colors.surfaceAlt : colors.background, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, opacity: districtId ? 1 : 0.55, paddingHorizontal: 12 }}>
           <MaterialCommunityIcons name="map-marker-outline" size={18} color={colors.muted} />
           <TextInput editable={!!districtId} value={value ?? ""} onChangeText={onChange} placeholder={districtId ? "Mahalle yazın" : "Önce ilçe seçin"} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 44, paddingVertical: 8 }} />
-          {hasData ? <Pressable onPress={() => { setManual(false); }} hitSlop={8}><MaterialCommunityIcons name="format-list-bulleted" size={17} color={colors.muted} /></Pressable> : null}
+          {hasData ? <Pressable accessibilityRole="button" accessibilityLabel="Listeden seç" onPress={() => { setManual(false); }} hitSlop={8}><MaterialCommunityIcons name="format-list-bulleted" size={17} color={colors.muted} /></Pressable> : null}
         </View>
         {districtId && (value?.trim().length ?? 0) > 1 ? (
           <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", marginTop: 4 }}>Mahalleniz listede yoksa yazdığınız ad öneri olarak kaydedilir, ekibimiz inceler.</Text>
@@ -201,7 +201,7 @@ function ComboBox({
           {valueLabel ?? placeholder}
         </Text>
         {valueLabel && onClear ? (
-          <Pressable onPress={() => { onClear(); setOpen(false); }} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Temizle" onPress={() => { onClear(); setOpen(false); }} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable>
         ) : (
           <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
         )}

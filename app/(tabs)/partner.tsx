@@ -396,7 +396,7 @@ export default function PartnerScreen() {
             style={{ color: colors.ink, flex: 1, fontSize: 15, minHeight: 46, paddingVertical: 8 }}
           />
           {query ? (
-            <Pressable onPress={() => setQuery("")} hitSlop={10}>
+            <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Aramayı temizle">
               <MaterialCommunityIcons name="close-circle" size={19} color={colors.muted} />
             </Pressable>
           ) : null}
@@ -736,7 +736,7 @@ function ShareRow({ title, url, onCopy, compact }: { title: string; url: string;
         <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(title)}</Text>
         <Text numberOfLines={1} style={{ color: colors.muted, fontSize: compact ? 10 : 11, fontWeight: "600" }}>{url}</Text>
       </View>
-      <Pressable onPress={onCopy} hitSlop={8} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 32, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 32 })}>
+      <Pressable onPress={onCopy} hitSlop={8} accessibilityRole="button" accessibilityLabel="Bağlantıyı kopyala" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 32, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 32 })}>
         <MaterialCommunityIcons name="content-copy" size={15} color={colors.primaryDark} />
       </Pressable>
     </View>

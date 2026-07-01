@@ -251,7 +251,7 @@ function AdminScreenInner() {
                       <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{du.name}</Text>
                       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{du.phone || "telefon yok"} · {du.role ?? "user"} · {du.status ?? "active"} · ⭐ {du.rating}</Text>
                     </View>
-                    <Pressable onPress={() => setDetailUserId(null)} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={20} color={colors.muted} /></Pressable>
+                    <Pressable accessibilityRole="button" accessibilityLabel="Kapat" onPress={() => setDetailUserId(null)} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={20} color={colors.muted} /></Pressable>
                   </View>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                     <MiniStat label="İlan" value={`${uListings.length}`} />
@@ -309,10 +309,10 @@ function AdminScreenInner() {
                     <View style={{ alignSelf: "flex-start", backgroundColor: suspended ? colors.accentSoft : colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: suspended ? colors.accent : colors.success, fontSize: 10, fontWeight: "900" }}>{suspended ? "Askıda" : "Aktif"}</Text></View>,
                     canManageUsers && !isSelf ? (
                       <View style={{ flexDirection: "row", gap: 6 }}>
-                        <Pressable onPress={() => setUserVerification(u.id, "verifiedPhone", !u.verifiedPhone)}>
+                        <Pressable accessibilityRole="button" accessibilityLabel="Telefon doğrulamasını değiştir" onPress={() => setUserVerification(u.id, "verifiedPhone", !u.verifiedPhone)}>
                           <MaterialCommunityIcons name="phone-check" size={17} color={u.verifiedPhone ? colors.success : colors.line} />
                         </Pressable>
-                        <Pressable onPress={() => setUserVerification(u.id, "verifiedIdentity", !u.verifiedIdentity)}>
+                        <Pressable accessibilityRole="button" accessibilityLabel="Kimlik doğrulamasını değiştir" onPress={() => setUserVerification(u.id, "verifiedIdentity", !u.verifiedIdentity)}>
                           <MaterialCommunityIcons name="card-account-details-outline" size={17} color={u.verifiedIdentity ? colors.success : colors.line} />
                         </Pressable>
                       </View>
@@ -1092,7 +1092,7 @@ function AdminSearch({ value, onChange, placeholder }: { value: string; onChange
     <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, marginBottom: 12, paddingHorizontal: 12 }}>
       <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
       <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 13, minHeight: 38, paddingVertical: 6 }} />
-      {value ? <Pressable onPress={() => onChange("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable> : null}
+      {value ? <Pressable accessibilityRole="button" accessibilityLabel="Aramayı temizle" onPress={() => onChange("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable> : null}
     </View>
   );
 }

@@ -253,7 +253,7 @@ export default function SellerScreen() {
             style={{ color: colors.ink, flex: 1, fontSize: 15, minHeight: 46, paddingVertical: 8 }}
           />
           {query ? (
-            <Pressable onPress={() => setQuery("")} hitSlop={10}>
+            <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Aramayı temizle">
               <MaterialCommunityIcons name="close-circle" size={19} color={colors.muted} />
             </Pressable>
           ) : null}

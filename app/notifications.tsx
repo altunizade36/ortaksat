@@ -130,7 +130,7 @@ function NotificationsScreenInner() {
             <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Tümünü okundu işaretle</Text>
           </Pressable>
           <Link href="/profile-edit" asChild>
-            <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, height: 38, justifyContent: "center", width: 40 })}>
+            <Pressable accessibilityRole="button" accessibilityLabel="Ayarlar" style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, height: 38, justifyContent: "center", width: 40 })}>
               <MaterialCommunityIcons name="cog-outline" size={19} color={colors.muted} />
             </Pressable>
           </Link>

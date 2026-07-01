@@ -270,9 +270,9 @@ export default function ExploreFeedScreen() {
             </View>
 
             <View style={{ bottom: insets.bottom + 132, gap: 15, position: "absolute", right: 14 }}>
-              <SideAction active={favorited} icon={favorited ? "heart" : "heart-outline"} label={`${listing.favoriteCount}`} onPress={() => toggleFavorite(listing.id)} />
+              <SideAction active={favorited} icon={favorited ? "heart" : "heart-outline"} label={`${listing.favoriteCount}`} a11y={favorited ? "Beğeniyi kaldır" : "Beğen"} onPress={() => toggleFavorite(listing.id)} />
               <SideAction active={favorited} icon={favorited ? "bookmark" : "bookmark-outline"} label={favorited ? "Kayıtlı" : "Kaydet"} onPress={() => { if (!favorited) toggleFavorite(listing.id); }} />
-              <SideAction icon="comment-text-outline" label={`${reviews.filter((review) => review.listingId === listing.id).length}`} onPress={() => setOpenComments((items) => ({ ...items, [listing.id]: !items[listing.id] }))} />
+              <SideAction icon="comment-text-outline" label={`${reviews.filter((review) => review.listingId === listing.id).length}`} a11y="Yorumlar" onPress={() => setOpenComments((items) => ({ ...items, [listing.id]: !items[listing.id] }))} />
               <SideAction icon="message-text-outline" label="Mesaj" onPress={() => sendProductMessage(listing)} />
               <SideAction icon="share-variant" label="Paylaş" onPress={() => void shareListing(listing)} />
             </View>
@@ -325,10 +325,10 @@ function ReviewLine({ review }: { review: Review }) {
   );
 }
 
-function SideAction({ active, icon, label, onPress }: { active?: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void }) {
+function SideAction({ active, icon, label, a11y, onPress }: { active?: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; a11y?: string; onPress: () => void }) {
   const { language } = useLanguage();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ alignItems: "center", opacity: pressed ? 0.72 : 1 })}>
+    <Pressable accessibilityRole="button" accessibilityLabel={translateCopy(a11y ?? label, language)} onPress={onPress} style={({ pressed }) => ({ alignItems: "center", opacity: pressed ? 0.72 : 1 })}>
       <View style={{ alignItems: "center", backgroundColor: active ? colors.primary : "rgba(255,255,255,0.92)", borderRadius: 999, height: 46, justifyContent: "center", width: 46 }}>
         <MaterialCommunityIcons name={icon} size={22} color={active ? "#FFFFFF" : colors.primaryDark} />
       </View>

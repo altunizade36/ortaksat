@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getFormSchema, resolveFormKey, suggestCategories, type CategoryNode } from "@/lib/category-tree";
+import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
 /**
@@ -15,6 +16,7 @@ import { useStore } from "@/lib/use-store";
  */
 export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onChange: (path: CategoryNode[]) => void }) {
   const { categoryTree } = useStore();
+  const isWideWeb = useIsWideWeb();
   const [trail, setTrail] = useState<CategoryNode[]>(value ?? []);
   const [query, setQuery] = useState("");
   const suggestions = query.trim().length >= 2 ? suggestCategories(query, 7) : [];
@@ -98,10 +100,11 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
 
       {!finalized ? (
         <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-          {/* Pane 1: top categories */}
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 230, flexGrow: 1, maxWidth: 280, overflow: "hidden" }}>
+          {/* Pane 1: top categories — mobilde bir üst kategori seçilince gizlenir (dar ekranda alt kategoriye odak). */}
+          {isWideWeb || !top ? (
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 230, flexGrow: 1, maxWidth: isWideWeb ? 280 : undefined, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
             <Text style={{ backgroundColor: colors.surfaceAlt, color: colors.muted, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.4, paddingHorizontal: 14, paddingVertical: 9, textTransform: "uppercase" }}>Ana Kategori</Text>
-            <ScrollView style={{ maxHeight: 420 }}>
+            <ScrollView style={{ maxHeight: isWideWeb ? 420 : 320 }}>
               {categoryTree.map((n) => {
                 const on = top?.key === n.key;
                 return (
@@ -114,13 +117,21 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
               })}
             </ScrollView>
           </View>
+          ) : null}
 
           {/* Pane 2: current level children */}
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 230, flexGrow: 1.4, minWidth: 0, overflow: "hidden" }}>
-            <Text style={{ backgroundColor: colors.surfaceAlt, color: colors.muted, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.4, paddingHorizontal: 14, paddingVertical: 9, textTransform: "uppercase" }}>
-              {current ? `${current.label} — Alt Kategori` : "Önce ana kategori seçin"}
-            </Text>
-            <ScrollView style={{ maxHeight: 420 }}>
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 230, flexGrow: 1.4, minWidth: 0, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
+            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 9 }}>
+              {!isWideWeb && top ? (
+                <Pressable accessibilityRole="button" accessibilityLabel="Üst kategoriye dön" onPress={() => setTrail([])} hitSlop={8}>
+                  <MaterialCommunityIcons name="chevron-left" size={18} color={colors.primaryDark} />
+                </Pressable>
+              ) : null}
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.4, textTransform: "uppercase" }}>
+                {current ? `${current.label} — Alt Kategori` : "Önce ana kategori seçin"}
+              </Text>
+            </View>
+            <ScrollView style={{ maxHeight: isWideWeb ? 420 : 360 }}>
               {!current ? (
                 <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 16 }}>Soldan bir ana kategori seçerek başlayın ya da yukarıdan arayın.</Text>
               ) : midItems.length === 0 ? (
@@ -142,7 +153,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
           </View>
 
           {/* Pane 3: summary */}
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 220, flexGrow: 1, gap: 10, maxWidth: 300, padding: 16 }}>
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 220, flexGrow: 1, gap: 10, maxWidth: isWideWeb ? 300 : undefined, padding: 16, width: isWideWeb ? undefined : "100%" }}>
             <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>Seçim özeti</Text>
             {previewPath.length ? (
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{previewPath.map((p) => p.label).join(" › ")}</Text>

@@ -227,7 +227,7 @@ function ChatScreenInner() {
       ) : null}
 
       <View style={{ alignItems: "flex-end", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, padding: 10 }}>
-        <Pressable disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Dosya ekle" disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
           <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} />
         </Pressable>
         <TextInput
@@ -238,7 +238,7 @@ function ChatScreenInner() {
           placeholderTextColor={colors.muted}
           style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, maxHeight: 110, minHeight: 44, paddingHorizontal: 12, paddingVertical: 10 }}
         />
-        <Pressable disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 8, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Gönder" disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 8, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
           <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
         </Pressable>
       </View>

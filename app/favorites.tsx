@@ -137,7 +137,7 @@ function FavoritesScreenInner() {
                 <View key={name} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 7 }}>
                   <MaterialCommunityIcons name="playlist-star" size={18} color={colors.muted} />
                   <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{name}</Text>
-                  <Pressable onPress={() => setExtraLists((s) => s.filter((x) => x !== name))} hitSlop={8}><MaterialCommunityIcons name="close" size={15} color={colors.subtle} /></Pressable>
+                  <Pressable accessibilityRole="button" accessibilityLabel="Listeyi kaldır" onPress={() => setExtraLists((s) => s.filter((x) => x !== name))} hitSlop={8}><MaterialCommunityIcons name="close" size={15} color={colors.subtle} /></Pressable>
                 </View>
               ))}
               <Pressable onPress={() => setNewListOpen((v) => !v)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 6, opacity: pressed ? 0.7 : 1, paddingVertical: 10 })}>
@@ -220,7 +220,7 @@ function FavoritesScreenInner() {
           style={{ color: colors.ink, flex: 1, fontSize: 15, minHeight: 48, paddingVertical: 8 }}
         />
         {query ? (
-          <Pressable onPress={() => setQuery("")} hitSlop={10}>
+          <Pressable accessibilityRole="button" accessibilityLabel="Aramayı temizle" onPress={() => setQuery("")} hitSlop={10}>
             <MaterialCommunityIcons name="close-circle" size={19} color={colors.muted} />
           </Pressable>
         ) : null}
