@@ -13,7 +13,7 @@ import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from 
 import { money } from "@/lib/format";
 import { formatLocation, getProvince } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
-import { moderateListingText, MODERATION_MESSAGES } from "@/lib/moderation";
+import { categoryRisk, moderateListingText, MODERATION_MESSAGES } from "@/lib/moderation";
 import { rateLimit } from "@/lib/rate-limit";
 import type { CommissionType, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -117,13 +117,15 @@ export function DesktopCreateFlow() {
         return;
       }
 
-      // Yasaklı/şüpheli içerik taraması.
-      const verdict = await moderateListingText(title, description);
-      if (verdict === "block") {
+      // Yasaklı/şüpheli içerik taraması (kelime) + hassas kategori kontrolü.
+      const kwVerdict = await moderateListingText(title, description);
+      if (kwVerdict === "block") {
         setError(MODERATION_MESSAGES.block);
         setStep(1);
         return;
       }
+      const catVerdict = categoryRisk(path.map((p) => p.label).concat(leafLabel));
+      const verdict = kwVerdict === "review" || catVerdict === "review" ? "review" : "none";
       const statusOverride = verdict === "review" ? ("pending_review" as const) : undefined;
 
       // "Diğer" seçildiyse kategori önerisi olarak admin incelemesine düşür.

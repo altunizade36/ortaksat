@@ -91,6 +91,26 @@ export async function moderateListingText(title: string, description: string): P
   return verdict;
 }
 
+// Manuel moderasyona düşen hassas kategoriler (spec'e göre). Etiket eşleşmesi
+// küçük harfe indirgenip alt-dize ile kontrol edilir.
+const REVIEW_CATEGORIES = [
+  "yardımcı", "bakıcı", "refakatçi", // yardımcı arayanlar (kesin manuel)
+  "hayvan", "sahiplendir", "kedi", "köpek", "kuş", "veteriner", "petshop",
+  "bebek", "anne", "çocuk bakım",
+  "kozmetik", "parfüm", "cilt bakım", "medikal", "sağlık",
+  "altın", "takı", "koleksiyon", "antika", "mücevher",
+  "iş ilanı", "eleman", "iş makinesi",
+  "danışmanlık", "hukuki", "avukat", "güvenlik hizmet",
+  "dijital", "hesap", "yazılım hizmet"
+];
+
+/** Seçilen kategori yolu hassas mı? En az "review" gerektirir. */
+export function categoryRisk(categoryLabels: (string | undefined)[]): ModerationVerdict {
+  const hay = categoryLabels.filter(Boolean).join(" ").toLocaleLowerCase("tr-TR");
+  if (!hay) return "none";
+  return REVIEW_CATEGORIES.some((c) => hay.includes(c)) ? "review" : "none";
+}
+
 export const MODERATION_MESSAGES: Record<Exclude<ModerationVerdict, "none">, string> = {
   block:
     "Bu ilan, yasaklı ürün/hizmet içerdiği için yayınlanamaz (ör. silah, uyuşturucu, sahte belge). Lütfen içeriği düzenleyin.",
