@@ -6,11 +6,10 @@ import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from "r
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { EmptyState } from "@/components/ui";
-import { categoryTree } from "@/lib/category-tree";
 import { commissionAmount, money } from "@/lib/format";
 import { useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince } from "@/lib/locations";
-import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting } from "@/lib/supabase-data";
+import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
@@ -97,7 +96,8 @@ function AdminScreenInner() {
     updateListingStatus, setListingFeatured, deleteListing, findUser, signOut, currentUser, reports, updateReportStatus,
     platformSettings, updatePlatformSetting, setAnnouncement, setUserRole, setUserStatus,
     setUserVerification, adminNotifyUser, adminBroadcast,
-    blogPosts, contentPages, seoSettings, saveBlogPost, deleteBlogPost, saveContentPage, saveSeoSetting
+    blogPosts, contentPages, seoSettings, saveBlogPost, deleteBlogPost, saveContentPage, saveSeoSetting,
+    categoryTree, extraCategories, saveCategory, deleteCategory
   } = useStore();
   const [annText, setAnnText] = useState(platformSettings.announcement);
   const canManageUsers = currentUser.role === "admin" || currentUser.role === "super_admin";
@@ -491,6 +491,7 @@ function AdminScreenInner() {
 
         {section === "categories" ? (
           <View style={{ gap: 16 }}>
+            <CategoryManager extra={extraCategories} onSave={saveCategory} onDelete={deleteCategory} confirmAction={confirmAction} />
             <Panel title="Kategori Önerileri" sub={`${pendingCat} bekliyor`}>
               {categorySuggestions.length === 0 ? <EmptyState title="Öneri yok" body="Henüz kategori önerisi gelmedi." /> : null}
               {categorySuggestions.map((s) => (
@@ -940,6 +941,43 @@ function BlogManager({ posts, onSave, onDelete, confirmAction }: { posts: DbBlog
           ]} />
         ))}
       </Table>
+    </Panel>
+  );
+}
+
+function CategoryManager({ extra, onSave, onDelete, confirmAction }: { extra: ExtraCategory[]; onSave: (c: ExtraCategory) => void; onDelete: (id: string) => void; confirmAction: (m: string, cb: () => void) => void }) {
+  const [label, setLabel] = useState("");
+  const [image, setImage] = useState("");
+  const [subs, setSubs] = useState("");
+  const add = () => {
+    const key = `x-${slugifyTr(label)}`;
+    if (!label.trim() || !key) return;
+    const subcategories = subs.split(",").map((s) => s.trim()).filter(Boolean).map((l) => ({ label: l, slug: slugifyTr(l) }));
+    onSave({ id: uuid(), key, label: label.trim(), slug: slugifyTr(label), image: image.trim(), subcategories, sortOrder: 999, isActive: true });
+    setLabel(""); setImage(""); setSubs("");
+  };
+  return (
+    <Panel title="Ekstra Kategoriler" sub="Kod ağacına ek ana kategoriler; kategori sayfası ve ilan verme akışında görünür">
+      <View style={{ gap: 10, marginBottom: 12 }}>
+        <TextInput value={label} onChangeText={setLabel} placeholder="Kategori adı (ör. Sanat & Koleksiyon)" placeholderTextColor={colors.muted} style={inputStyle} />
+        <TextInput value={image} onChangeText={setImage} placeholder="Görsel URL (opsiyonel)" placeholderTextColor={colors.muted} style={inputStyle} />
+        <TextInput value={subs} onChangeText={setSubs} placeholder="Alt kategoriler (virgülle: Tablo, Heykel, Antika)" placeholderTextColor={colors.muted} style={inputStyle} />
+        <Pressable disabled={!label.trim()} onPress={add} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: label.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 10 }}>
+          <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kategori Ekle</Text>
+        </Pressable>
+      </View>
+      {extra.length === 0 ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Henüz ekstra kategori yok. Yukarıdan ekleyebilirsin.</Text> : null}
+      {extra.map((c) => (
+        <View key={c.id} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 11 }}>
+          <MaterialCommunityIcons name="shape-outline" size={17} color={colors.primaryDark} />
+          <View style={{ flex: 1 }}>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{c.label}</Text>
+            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{c.subcategories.map((s) => s.label).join(", ") || "alt kategori yok"}</Text>
+          </View>
+          <Pressable onPress={() => onSave({ ...c, isActive: !c.isActive })}><Text style={{ color: c.isActive ? colors.success : colors.muted, fontSize: 12, fontWeight: "800" }}>{c.isActive ? "Aktif" : "Gizli"}</Text></Pressable>
+          <Pressable onPress={() => confirmAction(`"${c.label}" kategorisi silinsin mi?`, () => onDelete(c.id))}><Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>Sil</Text></Pressable>
+        </View>
+      ))}
     </Panel>
   );
 }

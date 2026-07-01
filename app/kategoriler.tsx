@@ -7,7 +7,7 @@ import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter, WebTrustStrip } from "@/components/web-landing";
 import { getCategoryImage } from "@/lib/categories";
-import { categoryTree, type CategoryNode } from "@/lib/category-tree";
+import { type CategoryNode } from "@/lib/category-tree";
 
 function descendantLabels(node: CategoryNode): string[] {
   const out = [node.label];
@@ -40,7 +40,7 @@ function groupTr(value: number) {
 
 export default function CategoriesPage() {
   const { language } = useLanguage();
-  const { listings } = useStore();
+  const { listings, categoryTree } = useStore();
   const router = useRouter();
   const [query, setQuery] = useState("");
 

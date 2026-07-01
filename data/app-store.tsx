@@ -52,6 +52,8 @@ import {
   deleteBlogPostLive,
   saveContentPageLive,
   saveSeoSettingLive,
+  saveCategoryLive,
+  deleteCategoryLive,
   updatePlatformSettingLive,
   updateUserRoleLive,
   updateUserStatusLive,
@@ -60,7 +62,8 @@ import {
 } from "@/lib/live-service";
 import { rateLimit } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings, loadSeoSettings, type DbBlogPost, type DbContentPage, type DbSeoSetting } from "@/lib/supabase-data";
+import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings, loadSeoSettings, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
+import { categoryTree as baseCategoryTree, type CategoryNode } from "@/lib/category-tree";
 import { displayText, repairTurkishText } from "@/lib/text";
 import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
 import type {
@@ -163,6 +166,10 @@ type AppStore = {
   deleteBlogPost: (id: string) => void;
   saveContentPage: (page: DbContentPage) => void;
   saveSeoSetting: (setting: DbSeoSetting) => void;
+  categoryTree: CategoryNode[];
+  extraCategories: ExtraCategory[];
+  saveCategory: (c: ExtraCategory) => void;
+  deleteCategory: (id: string) => void;
   emailVerified: boolean;
   isSuspended: boolean;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
@@ -350,6 +357,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [blogPosts, setBlogPosts] = useState<DbBlogPost[]>([]);
   const [contentPages, setContentPages] = useState<DbContentPage[]>([]);
   const [seoSettings, setSeoSettings] = useState<DbSeoSetting[]>([]);
+  const [extraCategories, setExtraCategories] = useState<ExtraCategory[]>([]);
   // Preview (no-Supabase) auth registry so register/login/logout work end-to-end in demo mode.
   const [mockAccounts, setMockAccounts] = useState<Record<string, { password: string; user: User }>>({});
   // Öneriler: canlıda boş başlar (gerçek kullanıcı önerileriyle dolar), önizlemede örnek.
@@ -379,11 +387,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
       setBackendMode("supabase");
       const settings = await loadPlatformSettings();
       if (mounted && settings) setPlatformSettings(settings);
-      const [posts, pages, seo] = await Promise.all([loadBlogPosts(), loadContentPages(), loadSeoSettings()]);
+      const [posts, pages, seo, cats] = await Promise.all([loadBlogPosts(), loadContentPages(), loadSeoSettings(), loadCategories()]);
       if (!mounted) return;
       setBlogPosts(posts);
       setContentPages(pages);
       setSeoSettings(seo);
+      setExtraCategories(cats);
     }
 
     hydrateFromSupabase();
@@ -1529,6 +1538,30 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setSeoSettings((items) => [setting, ...items.filter((x) => x.path !== setting.path)]);
         if (liveUser) void saveSeoSettingLive(setting);
       },
+      // Temel (kod) ağaç + admin'in eklediği aktif ekstra kategoriler.
+      categoryTree: [
+        ...baseCategoryTree,
+        ...extraCategories.filter((c) => c.isActive).map<CategoryNode>((c) => ({
+          key: c.key,
+          label: c.label,
+          slug: c.slug || c.key,
+          image: c.image || undefined,
+          children: c.subcategories.length ? c.subcategories.map((s) => ({ key: `${c.key}-${s.slug || s.label}`, label: s.label, slug: s.slug || s.label })) : undefined
+        }))
+      ],
+      extraCategories,
+      saveCategory(c) {
+        const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+        if (!isStaff) return;
+        setExtraCategories((items) => [...items.filter((x) => x.id !== c.id && x.key !== c.key), c].sort((a, b) => a.sortOrder - b.sortOrder));
+        if (liveUser) void saveCategoryLive(c);
+      },
+      deleteCategory(id) {
+        const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+        if (!isStaff) return;
+        setExtraCategories((items) => items.filter((x) => x.id !== id));
+        if (liveUser) void deleteCategoryLive(id);
+      },
       marketplaceHasMore,
       marketplaceLoadingMore,
       loadMoreMarketplace() {
@@ -1571,7 +1604,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return favorites.some((item) => item.listingId === listingId && item.userId === currentUser.id);
       }
     };
-  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, messages, notifications, orders, partnerships, platformSettings, reports, reviews, sales, seoSettings, users]);
+  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, messages, notifications, orders, partnerships, platformSettings, reports, reviews, sales, seoSettings, users]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

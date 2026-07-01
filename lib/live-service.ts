@@ -59,6 +59,20 @@ export async function deleteListingLive(listingId: string) {
   if (error) console.warn("Listing delete failed", error);
 }
 
+/** Ekstra kategori ekle/guncelle (admin). key uniq -> upsert. */
+export async function saveCategoryLive(c: { id?: string; key: string; label: string; slug: string; image: string; subcategories: Array<{ label: string; slug: string }>; sortOrder: number; isActive: boolean }) {
+  if (!supabase) return;
+  const row: Record<string, unknown> = { key: c.key, label: c.label, slug: c.slug, image: c.image, subcategories: c.subcategories, sort_order: c.sortOrder, is_active: c.isActive };
+  if (c.id) row.id = c.id;
+  const { error } = await supabase.from("categories").upsert(row, { onConflict: "key" });
+  if (error) console.warn("Category upsert failed", error);
+}
+export async function deleteCategoryLive(id: string) {
+  if (!supabase) return;
+  const { error } = await supabase.from("categories").delete().eq("id", id);
+  if (error) console.warn("Category delete failed", error);
+}
+
 /** Blog yazisi ekle/guncelle (admin). slug uniq -> upsert. */
 export async function saveBlogPostLive(p: { id?: string; slug: string; category: string; title: string; excerpt: string; author: string; authorRole: string; readMin: number; image: string; featured: boolean; body: string[]; status: string }) {
   if (!supabase) return;

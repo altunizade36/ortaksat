@@ -190,6 +190,17 @@ export type DbBlogPost = { id: string; slug: string; category: string; title: st
 export type DbContentPage = { slug: string; title: string; body: string; seoTitle: string; seoDescription: string };
 export type DbSeoSetting = { path: string; metaTitle: string; metaDescription: string; ogImage: string; noindex: boolean };
 
+export type ExtraCategory = { id: string; key: string; label: string; slug: string; image: string; subcategories: Array<{ label: string; slug: string }>; sortOrder: number; isActive: boolean };
+export async function loadCategories(): Promise<ExtraCategory[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("categories").select("*").order("sort_order", { ascending: true }).limit(200);
+  if (error || !data) return [];
+  return data.map((r) => ({
+    id: r.id, key: r.key, label: r.label, slug: r.slug ?? "", image: r.image ?? "",
+    subcategories: Array.isArray(r.subcategories) ? r.subcategories : [], sortOrder: r.sort_order ?? 0, isActive: Boolean(r.is_active)
+  }));
+}
+
 export async function loadBlogPosts(): Promise<DbBlogPost[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.from("blog_posts").select("*").order("created_at", { ascending: false }).limit(500);

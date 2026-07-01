@@ -4,7 +4,8 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { categoryTree, getFormSchema, resolveFormKey, suggestCategories, type CategoryNode } from "@/lib/category-tree";
+import { getFormSchema, resolveFormKey, suggestCategories, type CategoryNode } from "@/lib/category-tree";
+import { useStore } from "@/lib/use-store";
 
 /**
  * Sahibinden-style multi-level category picker.
@@ -13,6 +14,7 @@ import { categoryTree, getFormSchema, resolveFormKey, suggestCategories, type Ca
  * onChange(path) çağrılır; form alanları bu path'e göre değişir.
  */
 export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onChange: (path: CategoryNode[]) => void }) {
+  const { categoryTree } = useStore();
   const [trail, setTrail] = useState<CategoryNode[]>(value ?? []);
   const [query, setQuery] = useState("");
   const suggestions = query.trim().length >= 2 ? suggestCategories(query, 7) : [];
