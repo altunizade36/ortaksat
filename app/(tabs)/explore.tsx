@@ -170,7 +170,7 @@ export default function ExploreScreen() {
         const haystack = searchKey([listing.title, listing.category, listing.location, listing.description, listing.tags.join(" "), owner?.name].filter(Boolean).join(" "));
         return tokens.every((token) => haystack.includes(token));
       })
-      .sort((a, b) => (filter === "commission" ? commissionAmount(b) - commissionAmount(a) : exploreScore(b, seed) - exploreScore(a, seed)));
+      .sort((a, b) => (Number(Boolean(b.featured)) - Number(Boolean(a.featured))) || (filter === "commission" ? commissionAmount(b) - commissionAmount(a) : exploreScore(b, seed) - exploreScore(a, seed)));
 
     if (filtered.length || tokens.length > 0 || filter !== "all" || hasPanelFilter) return filtered;
     return baseListings.slice().sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));

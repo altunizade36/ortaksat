@@ -90,6 +90,8 @@ export default function HomeScreen() {
       .filter((item) => tokens.length === 0 || item.score > 0)
       .sort((a, b) => {
         if (tokens.length > 0 && b.score !== a.score) return b.score - a.score;
+        const feat = Number(Boolean(b.listing.featured)) - Number(Boolean(a.listing.featured));
+        if (feat !== 0) return feat;
         if (sortMode === "commission") return commissionAmount(b.listing) - commissionAmount(a.listing);
         if (sortMode === "newest") return b.listing.createdAt.localeCompare(a.listing.createdAt);
         return momentumScore(b.listing) + refreshBoost(b.listing, seed) - (momentumScore(a.listing) + refreshBoost(a.listing, seed));

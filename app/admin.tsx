@@ -74,10 +74,11 @@ function AdminScreenInner() {
   const {
     listings, users, sales, partnerships, leads, conversations, messages, notifications,
     categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
-    updateListingStatus, deleteListing, findUser, signOut, currentUser, reports, updateReportStatus,
-    platformSettings, updatePlatformSetting, setUserRole, setUserStatus,
+    updateListingStatus, setListingFeatured, deleteListing, findUser, signOut, currentUser, reports, updateReportStatus,
+    platformSettings, updatePlatformSetting, setAnnouncement, setUserRole, setUserStatus,
     setUserVerification, adminNotifyUser, adminBroadcast
   } = useStore();
+  const [annText, setAnnText] = useState(platformSettings.announcement);
   const canManageUsers = currentUser.role === "admin" || currentUser.role === "super_admin";
   const [userQuery, setUserQuery] = useState("");
   const [listingQuery, setListingQuery] = useState("");
@@ -281,6 +282,7 @@ function AdminScreenInner() {
                   <View style={{ alignSelf: "flex-start", backgroundColor: l.status === "active" ? colors.successSoft : l.status === "rejected" ? colors.accentSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: l.status === "active" ? colors.success : l.status === "rejected" ? colors.accent : colors.muted, fontSize: 10.5, fontWeight: "900" }}>{l.status === "active" ? "Yayında" : l.status === "rejected" ? "Reddedildi" : l.status === "pending_review" ? "İncelemede" : l.status}</Text></View>,
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     <Pressable onPress={() => updateListingStatus(l.id, l.status === "active" ? "paused" : "active")}><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{l.status === "active" ? "Kaldır" : "Yayınla"}</Text></Pressable>
+                    <Pressable onPress={() => setListingFeatured(l.id, !l.featured)}><Text style={{ color: l.featured ? colors.gold : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{l.featured ? "★ Öne çıkan" : "☆ Öne çıkar"}</Text></Pressable>
                     {l.status !== "rejected" ? <Pressable onPress={() => updateListingStatus(l.id, "rejected")}><Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "800" }}>Reddet</Text></Pressable> : null}
                     <Pressable onPress={() => confirmAction(`"${l.title}" ilanı kalıcı olarak silinsin mi? Bu işlem geri alınamaz.`, () => deleteListing(l.id))}><Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "900" }}>Kalıcı Sil</Text></Pressable>
                   </View>
@@ -491,6 +493,23 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "settings" ? (
+          <View style={{ gap: 16 }}>
+          <Panel title="Site Duyurusu" sub="Tüm sayfaların üstünde çıkan duyuru banner'ı">
+            <View style={{ gap: 10 }}>
+              <TextInput value={annText} onChangeText={setAnnText} placeholder="Duyuru metni (ör. Bayrama özel: ilan vermek ücretsiz!)" placeholderTextColor={colors.muted} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 56, paddingHorizontal: 12, paddingVertical: 10 }} />
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                <Pressable onPress={() => setAnnouncement(annText, true)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 10 }}>
+                  <MaterialCommunityIcons name="bullhorn-outline" size={15} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Yayınla</Text>
+                </Pressable>
+                <Pressable onPress={() => setAnnouncement(annText, false)} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 9 }}>
+                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Kapat</Text>
+                </Pressable>
+                <View style={{ alignItems: "center", backgroundColor: platformSettings.announcementActive ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                  <Text style={{ color: platformSettings.announcementActive ? colors.success : colors.muted, fontSize: 11, fontWeight: "900" }}>{platformSettings.announcementActive ? "YAYINDA" : "Kapalı"}</Text>
+                </View>
+              </View>
+            </View>
+          </Panel>
           <Panel title="Ayarlar" sub="Platform genel ayarları — anında kaydedilir ve tüm siteye uygulanır">
             {([
               { key: "allowSignups", label: "Yeni kayıtlara izin ver", desc: "Kapalıyken yeni hesap kaydı engellenir." },
@@ -513,6 +532,7 @@ function AdminScreenInner() {
             })}
             <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", marginTop: 8 }}>Değişiklikler Supabase'e kaydedilir ve tüm ziyaretçilere anında yansır.</Text>
           </Panel>
+          </View>
         ) : null}
 
         {section === "reports" ? (

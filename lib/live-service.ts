@@ -45,11 +45,28 @@ export async function insertBulkNotifications(rows: Array<{ id: string; userId: 
   if (error) console.warn("Bulk notification insert failed", error);
 }
 
+/** Ilani one cikar/geri al (admin; RLS uygular). */
+export async function updateListingFeaturedLive(listingId: string, featured: boolean) {
+  if (!supabase) return;
+  const { error } = await supabase.from("listings").update({ featured }).eq("id", listingId);
+  if (error) console.warn("Listing featured update failed", error);
+}
+
 /** Ilani kalici siler (sahibi veya admin; RLS uygular). Iliskili kayitlar FK cascade ile temizlenir. */
 export async function deleteListingLive(listingId: string) {
   if (!supabase) return;
   const { error } = await supabase.from("listings").delete().eq("id", listingId);
   if (error) console.warn("Listing delete failed", error);
+}
+
+/** Site duyurusunu (metin + aktiflik) gunceller (yalniz admin). */
+export async function updateAnnouncementLive(text: string, active: boolean) {
+  if (!supabase) return;
+  const { error } = await supabase
+    .from("platform_settings")
+    .update({ announcement: text, announcement_active: active, updated_at: new Date().toISOString() })
+    .eq("id", 1);
+  if (error) console.warn("Announcement update failed", error);
 }
 
 /** Platform ayarini gunceller (yalniz admin; RLS uygular). */

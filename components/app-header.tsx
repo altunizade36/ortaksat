@@ -172,8 +172,17 @@ function MaintenanceBanner() {
       </View>
     );
   }
-  if (!platformSettings.maintenanceMode) return null;
   const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+  // Admin duyurusu (bakim modundan bagimsiz, ozel metin).
+  if (platformSettings.announcementActive && platformSettings.announcement.trim()) {
+    return (
+      <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, flexDirection: "row", gap: 8, justifyContent: "center", paddingHorizontal: 16, paddingVertical: 7 }}>
+        <MaterialCommunityIcons name="bullhorn-outline" size={15} color="#FFFFFF" />
+        <Text numberOfLines={2} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800", textAlign: "center" }}>{platformSettings.announcement.trim()}</Text>
+      </View>
+    );
+  }
+  if (!platformSettings.maintenanceMode) return null;
   return (
     <View style={{ alignItems: "center", backgroundColor: isStaff ? colors.goldSoft : colors.accent, flexDirection: "row", gap: 8, justifyContent: "center", paddingHorizontal: 16, paddingVertical: 7 }}>
       <MaterialCommunityIcons name="wrench-outline" size={15} color={isStaff ? colors.gold : "#FFFFFF"} />

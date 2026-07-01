@@ -12,7 +12,7 @@ import { compactNumber, REFERENCE_NOW } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Listing, User } from "@/lib/types";
 
-type StatusTone = "success" | "accent" | "info" | "dark";
+type StatusTone = "success" | "accent" | "info" | "dark" | "gold";
 
 function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: User; width?: number }) {
   const { language, t } = useLanguage();
@@ -21,8 +21,9 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
   const isHighConversion = conversionScore >= 18;
   const isNew = isNewListing(listing.createdAt);
-  const statusLabel = listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? t("newListing") : `${compactNumber(listing.partnerCount)} ${t("partners")}`;
-  const statusTone: StatusTone = listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
+  const featured = Boolean(listing.featured);
+  const statusLabel = featured ? "★ Öne Çıkan" : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? t("newListing") : `${compactNumber(listing.partnerCount)} ${t("partners")}`;
+  const statusTone: StatusTone = featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
   const subcategory = inferListingSubcategory(listing);
   const isVerified = Boolean(owner?.verifiedPhone || owner?.verifiedIdentity);
 
@@ -117,7 +118,7 @@ function isNewListing(value: string) {
 
 function StatusBadge({ label, tone }: { label: string; tone: StatusTone }) {
   const backgroundColor =
-    tone === "success" ? "rgba(0,134,111,0.96)" : tone === "accent" ? "rgba(229,75,75,0.96)" : tone === "info" ? "rgba(49,87,213,0.96)" : "rgba(17,24,39,0.78)";
+    tone === "success" ? "rgba(0,134,111,0.96)" : tone === "accent" ? "rgba(229,75,75,0.96)" : tone === "info" ? "rgba(49,87,213,0.96)" : tone === "gold" ? "rgba(202,138,4,0.97)" : "rgba(17,24,39,0.78)";
 
   return (
     <View style={{ alignSelf: "flex-start", backgroundColor, borderRadius: 999, maxWidth: "72%", paddingHorizontal: 10, paddingVertical: 5 }}>

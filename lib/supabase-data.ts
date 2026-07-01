@@ -32,6 +32,7 @@ type PublicListingCardRow = {
   lead_count: number | string | null;
   favorite_count: number | string | null;
   review_count: number | string | null;
+  featured?: boolean | null;
 };
 
 type ProfileRow = {
@@ -133,7 +134,8 @@ function mapListing(row: PublicListingCardRow): Listing {
     reviewCount: toNumber(row.review_count),
     deliveryNote: repairTurkishText(row.delivery_note ?? ""),
     contactMethod: row.contact_method,
-    createdAt: row.created_at.slice(0, 10)
+    createdAt: row.created_at.slice(0, 10),
+    featured: Boolean(row.featured)
   };
 }
 
@@ -192,7 +194,9 @@ export async function loadPlatformSettings(): Promise<import("@/lib/types").Plat
     allowSignups: data.allow_signups ?? true,
     reviewBeforePublish: data.review_before_publish ?? false,
     requireEmailVerification: data.require_email_verification ?? false,
-    maintenanceMode: data.maintenance_mode ?? false
+    maintenanceMode: data.maintenance_mode ?? false,
+    announcement: data.announcement ?? "",
+    announcementActive: data.announcement_active ?? false
   };
 }
 

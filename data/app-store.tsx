@@ -45,7 +45,9 @@ import {
   recordLegalConsentLive,
   requestAccountDeletionLive,
   deleteListingLive,
+  updateListingFeaturedLive,
   insertBulkNotifications,
+  updateAnnouncementLive,
   updatePlatformSettingLive,
   updateUserRoleLive,
   updateUserStatusLive,
@@ -149,6 +151,7 @@ type AppStore = {
   reports: Report[];
   platformSettings: PlatformSettings;
   updatePlatformSetting: (key: keyof PlatformSettings, value: boolean) => void;
+  setAnnouncement: (text: string, active: boolean) => void;
   emailVerified: boolean;
   isSuspended: boolean;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
@@ -188,6 +191,7 @@ type AppStore = {
   setLocationSuggestionStatus: (id: string, status: SuggestionStatus) => void;
   updateLeadStatus: (leadId: string, status: LeadStatus) => void;
   updateListingStatus: (listingId: string, status: Listing["status"]) => void;
+  setListingFeatured: (listingId: string, featured: boolean) => void;
   deleteListing: (listingId: string) => void;
   setUserRole: (userId: string, role: UserRole) => void;
   setUserStatus: (userId: string, status: NonNullable<User["status"]>) => void;
@@ -323,7 +327,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
     allowSignups: true,
     reviewBeforePublish: false,
     requireEmailVerification: false,
-    maintenanceMode: false
+    maintenanceMode: false,
+    announcement: "",
+    announcementActive: false
   });
   // Katalog sayfalama (sunucu tarafli). mpOffsetRef = simdiye kadar cekilen
   // katalog ilan sayisi; hasMore = daha var mi; loadingMore = yukleme kilidi.
@@ -628,7 +634,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
             allowSignups: row.allow_signups ?? true,
             reviewBeforePublish: row.review_before_publish ?? false,
             requireEmailVerification: row.require_email_verification ?? false,
-            maintenanceMode: row.maintenance_mode ?? false
+            maintenanceMode: row.maintenance_mode ?? false,
+            announcement: row.announcement ?? "",
+            announcementActive: row.announcement_active ?? false
           });
         }
       )
@@ -1374,6 +1382,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status } : item)));
         if (liveUser) void updateListingStatusLive({ ...listing, status });
       },
+      setListingFeatured(listingId, featured) {
+        const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+        if (!isStaff) return;
+        setListings((items) => items.map((item) => (item.id === listingId ? { ...item, featured } : item)));
+        if (liveUser) void updateListingFeaturedLive(listingId, featured);
+      },
       deleteListing(listingId) {
         const listing = listings.find((item) => item.id === listingId);
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
@@ -1463,6 +1477,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (currentUser.role !== "admin" && currentUser.role !== "super_admin") return;
         setPlatformSettings((prev) => ({ ...prev, [key]: value }));
         void updatePlatformSettingLive(key, value);
+      },
+      setAnnouncement(text, active) {
+        if (currentUser.role !== "admin" && currentUser.role !== "super_admin") return;
+        setPlatformSettings((prev) => ({ ...prev, announcement: text, announcementActive: active }));
+        void updateAnnouncementLive(text, active);
       },
       marketplaceHasMore,
       marketplaceLoadingMore,

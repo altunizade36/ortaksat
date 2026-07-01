@@ -71,6 +71,7 @@ export type Listing = {
   deliveryNote: string;
   contactMethod: "whatsapp" | "phone" | "message";
   createdAt: string;
+  featured?: boolean;
 };
 
 export type Partnership = {
@@ -167,6 +168,8 @@ export type PlatformSettings = {
   reviewBeforePublish: boolean;
   requireEmailVerification: boolean;
   maintenanceMode: boolean;
+  announcement: string;
+  announcementActive: boolean;
 };
 
 export type Message = {
