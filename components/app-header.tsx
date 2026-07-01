@@ -194,10 +194,17 @@ type AccountItem = { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: 
 
 function AccountMenu() {
   const [open, setOpen] = useState(false);
-  const { isAuthenticated, currentUser, messages, notifications } = useStore();
+  const router = useRouter();
+  const { isAuthenticated, currentUser, messages, notifications, signOut } = useStore();
   const unreadMessages = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
   const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
   const hasUnread = unreadMessages + unreadNotifications > 0;
+
+  async function handleSignOut() {
+    setOpen(false);
+    await signOut();
+    router.replace("/");
+  }
 
   // Gruplanmış menü: hesap · yönetim · oturum. Her grup arasında ince ayraç.
   const groups: AccountItem[][] = [
@@ -264,16 +271,21 @@ function AccountMenu() {
               </View>
             ))}
 
-            {/* Oturum aksiyonu */}
+            {/* Oturum aksiyonu: girişliyse Çıkış Yap, değilse Giriş / Kayıt ol */}
             <View style={{ borderTopColor: colors.line, borderTopWidth: 1, padding: 10 }}>
-              <Link href="/auth" asChild>
-                <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primaryDark : colors.primary, borderRadius: 10, paddingVertical: 11 })}>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "center" }}>
-                    <MaterialCommunityIcons name={isAuthenticated ? "account-cog-outline" : "login"} size={17} color="#FFFFFF" />
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{isAuthenticated ? "Hesap ayarları" : "Giriş / Kayıt ol"}</Text>
-                  </View>
+              {isAuthenticated ? (
+                <Pressable onPress={() => void handleSignOut()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.accentSoft : colors.surface, borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 })}>
+                  <MaterialCommunityIcons name="logout" size={17} color={colors.accent} />
+                  <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "900" }}>Çıkış Yap</Text>
                 </Pressable>
-              </Link>
+              ) : (
+                <Link href="/auth" asChild>
+                  <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primaryDark : colors.primary, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 })}>
+                    <MaterialCommunityIcons name="login" size={17} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Giriş / Kayıt ol</Text>
+                  </Pressable>
+                </Link>
+              )}
             </View>
           </View>
         </>
