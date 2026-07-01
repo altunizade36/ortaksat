@@ -162,7 +162,7 @@ type AppStore = {
   toggleFavorite: (listingId: string) => void;
   startConversation: (listingId: string, receiverId: string, body?: string) => Conversation | undefined;
   sendMessage: (listingId: string, receiverId: string, body: string) => void;
-  sendConversationMessage: (conversationId: string, body: string) => void;
+  sendConversationMessage: (conversationId: string, body: string, attachment?: { url: string; type: "image" | "file"; name?: string }) => void;
   markConversationRead: (conversationId: string) => void;
   markNotificationRead: (notificationId: string) => void;
   categorySuggestions: CategorySuggestion[];
@@ -455,7 +455,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
             receiverId: row.receiver_id,
             body: row.body,
             createdAt: row.created_at.slice(0, 16).replace("T", " "),
-            read: row.read
+            read: row.read,
+            attachmentUrl: row.attachment_url ?? undefined,
+            attachmentType: row.attachment_type ?? undefined,
+            attachmentName: row.attachment_name ?? undefined
           };
           setMessages((items) => (items.some((item) => item.id === message.id) ? items : [message, ...items]));
         }
@@ -1106,8 +1109,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
       sendMessage(listingId, receiverId, body) {
         createOrReuseConversation(listingId, receiverId, body);
       },
-      sendConversationMessage(conversationId, body) {
-        if (!body.trim()) return;
+      sendConversationMessage(conversationId, body, attachment) {
+        const trimmed = body.trim();
+        if (!trimmed && !attachment) return;
         const conversation = conversations.find((item) => item.id === conversationId);
         if (!conversation || conversation.status !== "open") return;
         const receiverId = conversation.participantIds.find((id) => id !== currentUser.id);
@@ -1118,13 +1122,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
           listingId: conversation.listingId,
           senderId: currentUser.id,
           receiverId,
-          body: body.trim(),
+          body: trimmed,
           createdAt: new Date().toISOString().slice(0, 16).replace("T", " "),
-          read: false
+          read: false,
+          attachmentUrl: attachment?.url,
+          attachmentType: attachment?.type,
+          attachmentName: attachment?.name
         };
         setMessages((items) => [message, ...items]);
         setConversations((items) => items.map((item) => (item.id === conversationId ? { ...item, lastMessageAt: message.createdAt } : item)));
-        notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${message.body}`);
+        const preview = trimmed || (attachment?.type === "file" ? `📎 ${attachment.name ?? "Dosya"}` : "📷 Görsel");
+        notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${preview}`);
         if (liveUser) void insertMessage(message);
       },
       markConversationRead(conversationId) {

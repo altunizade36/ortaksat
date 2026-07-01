@@ -1,13 +1,16 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
+import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState, PrimaryButton } from "@/components/ui";
 import { money } from "@/lib/format";
+import { uploadMessageAttachment } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { searchKey, shortDate } from "@/lib/locale";
@@ -29,6 +32,7 @@ function ChatScreenInner() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { currentUser, findConversation, findListing, findUser, leads, markConversationRead, messages, partnerships, sales, sendConversationMessage } = useStore();
   const [body, setBody] = useState("");
+  const [attaching, setAttaching] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   const conversation = findConversation(id);
 
@@ -88,6 +92,23 @@ function ChatScreenInner() {
     requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
   }
 
+  async function attachImage() {
+    if (attaching) return;
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) return;
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.85 });
+    if (result.canceled || !result.assets?.[0]?.uri) return;
+    setAttaching(true);
+    try {
+      const url = await uploadMessageAttachment(result.assets[0].uri, currentUser.id);
+      sendConversationMessage(currentConversation.id, body.trim(), { url, type: "image" });
+      setBody("");
+      requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+    } finally {
+      setAttaching(false);
+    }
+  }
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ backgroundColor: colors.background, flex: 1 }}>
       <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, padding: 12 }}>
@@ -144,11 +165,22 @@ function ChatScreenInner() {
                 </View>
               ) : null}
               <View style={{ alignItems: mine ? "flex-end" : "flex-start" }}>
-                <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "82%", paddingHorizontal: 12, paddingVertical: 8 }}>
-                  <Text selectable style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 20 }}>
-                    {message.body}
-                  </Text>
-                  <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3 }}>
+                <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "82%", overflow: "hidden", paddingHorizontal: message.attachmentType === "image" ? 4 : 12, paddingVertical: message.attachmentType === "image" ? 4 : 8 }}>
+                  {message.attachmentType === "image" && message.attachmentUrl ? (
+                    <SafeRemoteImage uri={message.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 180, width: 220 }} />
+                  ) : null}
+                  {message.attachmentType === "file" && message.attachmentUrl ? (
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}>
+                      <MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} />
+                      <Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 170 }}>{message.attachmentName ?? "Dosya"}</Text>
+                    </View>
+                  ) : null}
+                  {message.body ? (
+                    <Text selectable style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 20, paddingHorizontal: message.attachmentType === "image" ? 8 : 0, paddingTop: message.attachmentType === "image" ? 5 : 0 }}>
+                      {message.body}
+                    </Text>
+                  ) : null}
+                  <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: message.attachmentType === "image" ? 8 : 0, paddingBottom: message.attachmentType === "image" ? 4 : 0 }}>
                     <Text selectable style={{ color: mine ? "#DFF7EF" : colors.subtle, fontSize: 10, fontWeight: "700" }}>
                       {chatMsgTime(message.createdAt) || shortDate(message.createdAt)}
                     </Text>
@@ -188,7 +220,10 @@ function ChatScreenInner() {
         </View>
       ) : null}
 
-      <View style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, padding: 10 }}>
+      <View style={{ alignItems: "flex-end", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, padding: 10 }}>
+        <Pressable disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
+          <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} />
+        </Pressable>
         <TextInput
           value={body}
           onChangeText={setBody}

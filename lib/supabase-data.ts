@@ -346,7 +346,10 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       receiverId: row.receiver_id,
       body: row.body,
       createdAt: row.created_at.slice(0, 16).replace("T", " "),
-      read: row.read
+      read: row.read,
+      attachmentUrl: row.attachment_url ?? undefined,
+      attachmentType: row.attachment_type ?? undefined,
+      attachmentName: row.attachment_name ?? undefined
     })),
     notifications: (notificationsResult.data ?? []).map((row) => ({
       id: row.id,

@@ -504,7 +504,7 @@ export async function insertConversation(conversation: Conversation) {
 
 export async function insertMessage(message: Message) {
   if (!supabase) return;
-  const { error } = await supabase.from("messages").insert({
+  const payload: Record<string, unknown> = {
     id: message.id,
     conversation_id: message.conversationId,
     listing_id: message.listingId,
@@ -512,8 +512,25 @@ export async function insertMessage(message: Message) {
     receiver_id: message.receiverId,
     body: message.body,
     read: message.read
-  });
+  };
+  // Ek alanlarini yalnizca ek varsa gonder (migration uygulanmamis ortamlarda
+  // metin mesajlari etkilenmesin).
+  if (message.attachmentUrl) {
+    payload.attachment_url = message.attachmentUrl;
+    payload.attachment_type = message.attachmentType ?? "image";
+    if (message.attachmentName) payload.attachment_name = message.attachmentName;
+  }
+  const { error } = await supabase.from("messages").insert(payload);
   if (error) console.warn("Supabase message insert failed", error);
+}
+
+/**
+ * Mesaj eki yukler (gorsel/video). Mevcut listing-images bucket'ini kullanir;
+ * sikistirma + boyut siniri uploadListingImage ile ayni. Canli olmayan modda
+ * (uuid olmayan userId) yerel uri'yi aynen dondurur, boylece onizleme calisir.
+ */
+export async function uploadMessageAttachment(uri: string, userId: string) {
+  return uploadListingImage(uri, userId);
 }
 
 

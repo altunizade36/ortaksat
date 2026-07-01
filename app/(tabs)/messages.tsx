@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
+import * as ImagePicker from "expo-image-picker";
 import { Link, useLocalSearchParams } from "expo-router";
 
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -11,6 +12,7 @@ import { AuthRequired } from "@/components/auth-gate";
 import { EmptyState, StatusPill } from "@/components/ui";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { uploadMessageAttachment } from "@/lib/live-service";
 import { useIsWideWeb } from "@/lib/layout";
 import { searchKey, shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
@@ -30,6 +32,13 @@ type InboxFilter = "all" | "unread" | "action" | "sales" | "partner";
 function msgTime(createdAt: string) {
   const m = /\d{2}:\d{2}/.exec(createdAt);
   return m ? m[0] : "";
+}
+function messagePreview(m: Message | undefined): string {
+  if (!m) return "";
+  if (m.body) return m.body;
+  if (m.attachmentType === "file") return `📎 ${m.attachmentName ?? "Dosya"}`;
+  if (m.attachmentUrl) return "📷 Görsel";
+  return "";
 }
 function msgDay(createdAt: string) {
   return createdAt.slice(0, 10);
@@ -64,6 +73,7 @@ function MessagesScreenInner() {
   const [filter, setFilter] = useState<InboxFilter>("all");
   const [activeId, setActiveId] = useState<string | null>(params.c ?? null);
   const [draft, setDraft] = useState("");
+  const [attaching, setAttaching] = useState(false);
   const deskScrollRef = useRef<ScrollView>(null);
 
   // Bir ilandan/sohbet bağlantısından gelen konuşmayı seçili aç.
@@ -137,6 +147,22 @@ function MessagesScreenInner() {
       sendConversationMessage(activeConversation.id, draft.trim());
       setDraft("");
       requestAnimationFrame(() => deskScrollRef.current?.scrollToEnd({ animated: true }));
+    };
+    const attachImage = async () => {
+      if (!activeConversation || attaching) return;
+      const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      if (!perm.granted) return;
+      const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.85 });
+      if (result.canceled || !result.assets?.[0]?.uri) return;
+      setAttaching(true);
+      try {
+        const url = await uploadMessageAttachment(result.assets[0].uri, currentUser.id);
+        sendConversationMessage(activeConversation.id, draft.trim(), { url, type: "image" });
+        setDraft("");
+        requestAnimationFrame(() => deskScrollRef.current?.scrollToEnd({ animated: true }));
+      } finally {
+        setAttaching(false);
+      }
     };
     // Web: Enter gonderir, Shift+Enter yeni satir.
     const onComposerKeyPress = (e: { nativeEvent: { key?: string; shiftKey?: boolean } }) => {
@@ -226,7 +252,7 @@ function MessagesScreenInner() {
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{otherUser?.name ?? t("user")}</Text>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                         <Text numberOfLines={1} style={{ color: unread ? colors.ink : colors.muted, flex: 1, fontSize: 12, fontWeight: unread ? "800" : "500" }}>
-                          {last ? `${last.senderId === currentUser.id ? "Sen: " : ""}${last.body}` : t("conversationStarted")}
+                          {last ? `${last.senderId === currentUser.id ? "Sen: " : ""}${messagePreview(last)}` : t("conversationStarted")}
                         </Text>
                         {unread ? <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{unread}</Text></View> : null}
                       </View>
@@ -272,9 +298,22 @@ function MessagesScreenInner() {
                           </View>
                         ) : null}
                         <View style={{ alignItems: mine ? "flex-end" : "flex-start" }}>
-                          <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "68%", paddingHorizontal: 13, paddingVertical: 9 }}>
-                            <Text style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 19 }}>{m.body}</Text>
-                            <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3 }}>
+                          <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "68%", overflow: "hidden", paddingHorizontal: m.attachmentType === "image" ? 4 : 13, paddingVertical: m.attachmentType === "image" ? 4 : 9 }}>
+                            {m.attachmentType === "image" && m.attachmentUrl ? (
+                              <Link href={m.attachmentUrl as never} asChild>
+                                <Pressable><SafeRemoteImage uri={m.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, width: 240 }} /></Pressable>
+                              </Link>
+                            ) : null}
+                            {m.attachmentType === "file" && m.attachmentUrl ? (
+                              <Link href={m.attachmentUrl as never} asChild>
+                                <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}>
+                                  <MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} />
+                                  <Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? "Dosya"}</Text>
+                                </Pressable>
+                              </Link>
+                            ) : null}
+                            {m.body ? <Text style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 19, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingTop: m.attachmentType === "image" ? 5 : 0 }}>{m.body}</Text> : null}
+                            <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingBottom: m.attachmentType === "image" ? 4 : 0 }}>
                               <Text style={{ color: mine ? "#DFF7EF" : colors.subtle, fontSize: 10, fontWeight: "700" }}>{msgTime(m.createdAt)}</Text>
                               {mine ? <MaterialCommunityIcons name={m.read ? "check-all" : "check"} size={13} color={m.read ? "#DFF7EF" : "rgba(255,255,255,0.7)"} /> : null}
                             </View>
@@ -295,8 +334,9 @@ function MessagesScreenInner() {
                   </View>
                   <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
                     <TextInput value={draft} onChangeText={setDraft} multiline placeholder="Mesajınızı yazınız" placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ color: colors.ink, flex: 1, fontSize: 14, maxHeight: 110, minHeight: 46, paddingVertical: 12 }} />
-                    <MaterialCommunityIcons name="paperclip" size={19} color={colors.muted} />
-                    <MaterialCommunityIcons name="emoticon-happy-outline" size={19} color={colors.muted} />
+                    <Pressable onPress={() => void attachImage()} disabled={attaching} hitSlop={8}>
+                      <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={19} color={attaching ? colors.primary : colors.muted} />
+                    </Pressable>
                     <Pressable disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 10, height: 36, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 40 })}>
                       <MaterialCommunityIcons name="send" size={17} color="#FFFFFF" />
                     </Pressable>
@@ -497,7 +537,7 @@ function MessagesScreenInner() {
                   {t("source")}: {context.source}
                 </Text>
                 <Text selectable numberOfLines={2} style={{ color: lastMessage?.senderId === currentUser.id ? colors.muted : colors.ink, fontSize: 13, fontWeight: unreadCount ? "900" : "700", lineHeight: 18 }}>
-                  {lastMessage ? `${lastMessage.senderId === currentUser.id ? t("youPrefix") : ""}${lastMessage.body}` : t("conversationStarted")}
+                  {lastMessage ? `${lastMessage.senderId === currentUser.id ? t("youPrefix") : ""}${messagePreview(lastMessage)}` : t("conversationStarted")}
                 </Text>
               </View>
             </Pressable>

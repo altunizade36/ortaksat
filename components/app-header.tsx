@@ -190,11 +190,14 @@ function DesktopActions() {
   );
 }
 
-type AccountItem = { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href; tint?: string; color?: string };
+type AccountItem = { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href; tint?: string; color?: string; badge?: number };
 
 function AccountMenu() {
   const [open, setOpen] = useState(false);
-  const { isAuthenticated, currentUser } = useStore();
+  const { isAuthenticated, currentUser, messages, notifications } = useStore();
+  const unreadMessages = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
+  const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
+  const hasUnread = unreadMessages + unreadNotifications > 0;
 
   // Gruplanmış menü: hesap · yönetim · oturum. Her grup arasında ince ayraç.
   const groups: AccountItem[][] = [
@@ -204,7 +207,7 @@ function AccountMenu() {
       { icon: "handshake-outline", label: "Ortak Satışlarım", href: "/partner" },
       { icon: "cash-multiple", label: "Kazançlarım", href: "/earnings" },
       { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
-      { icon: "message-text-outline", label: "Mesajlarım", href: "/messages" }
+      { icon: "message-text-outline", label: "Mesajlarım", href: "/messages", badge: unreadMessages }
     ],
     [
       { icon: "shield-check-outline", label: "Güven Merkezi", href: "/trust" },
@@ -219,6 +222,7 @@ function AccountMenu() {
       <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: open ? colors.primarySoft : colors.surface, borderColor: open ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 7 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 26, justifyContent: "center", width: 26 }}>
           <MaterialCommunityIcons name="account" size={17} color={colors.primaryDark} />
+          {hasUnread && !open ? <View style={{ backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1, height: 10, position: "absolute", right: -2, top: -2, width: 10 }} /> : null}
         </View>
         <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Hesabım</Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={16} color={colors.muted} />
@@ -247,7 +251,12 @@ function AccountMenu() {
                         <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 30, justifyContent: "center", width: 30 }}>
                           <MaterialCommunityIcons name={item.icon} size={16} color={colors.primaryDark} />
                         </View>
-                        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
+                        <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
+                        {item.badge ? (
+                          <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, justifyContent: "center", minWidth: 18, paddingHorizontal: 5, paddingVertical: 1 }}>
+                            <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{item.badge > 9 ? "9+" : item.badge}</Text>
+                          </View>
+                        ) : null}
                       </View>
                     </Pressable>
                   </Link>

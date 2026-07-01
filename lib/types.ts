@@ -170,6 +170,9 @@ export type Message = {
   body: string;
   createdAt: string;
   read: boolean;
+  attachmentUrl?: string;
+  attachmentType?: "image" | "file";
+  attachmentName?: string;
 };
 
 export type Notification = {
