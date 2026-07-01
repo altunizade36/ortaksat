@@ -54,6 +54,7 @@ import {
   saveSeoSettingLive,
   saveCategoryLive,
   deleteCategoryLive,
+  bulkInsertCategoriesLive,
   updatePlatformSettingLive,
   updateUserRoleLive,
   updateUserStatusLive,
@@ -170,6 +171,7 @@ type AppStore = {
   extraCategories: ExtraCategory[];
   saveCategory: (c: ExtraCategory) => void;
   deleteCategory: (id: string) => void;
+  importCategories: (items: ExtraCategory[]) => number;
   emailVerified: boolean;
   isSuspended: boolean;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
@@ -1561,6 +1563,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (!isStaff) return;
         setExtraCategories((items) => items.filter((x) => x.id !== id));
         if (liveUser) void deleteCategoryLive(id);
+      },
+      importCategories(list) {
+        const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+        if (!isStaff || list.length === 0) return 0;
+        setExtraCategories((items) => {
+          const byKey = new Map(items.map((x) => [x.key, x]));
+          for (const c of list) byKey.set(c.key, c);
+          return Array.from(byKey.values()).sort((a, b) => a.sortOrder - b.sortOrder);
+        });
+        if (liveUser) void bulkInsertCategoriesLive(list);
+        return list.length;
       },
       marketplaceHasMore,
       marketplaceLoadingMore,

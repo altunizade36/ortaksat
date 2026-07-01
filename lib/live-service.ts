@@ -72,6 +72,13 @@ export async function deleteCategoryLive(id: string) {
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) console.warn("Category delete failed", error);
 }
+/** Toplu ekstra kategori yukleme (JSON ice aktarim). key uniq -> upsert. */
+export async function bulkInsertCategoriesLive(rows: Array<{ id: string; key: string; label: string; slug: string; image: string; subcategories: Array<{ label: string; slug: string }>; sortOrder: number; isActive: boolean }>) {
+  if (!supabase || rows.length === 0) return;
+  const payload = rows.map((c) => ({ id: c.id, key: c.key, label: c.label, slug: c.slug, image: c.image, subcategories: c.subcategories, sort_order: c.sortOrder, is_active: c.isActive }));
+  const { error } = await supabase.from("categories").upsert(payload, { onConflict: "key" });
+  if (error) console.warn("Bulk category insert failed", error);
+}
 
 /** Blog yazisi ekle/guncelle (admin). slug uniq -> upsert. */
 export async function saveBlogPostLive(p: { id?: string; slug: string; category: string; title: string; excerpt: string; author: string; authorRole: string; readMin: number; image: string; featured: boolean; body: string[]; status: string }) {

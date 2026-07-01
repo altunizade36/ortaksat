@@ -97,7 +97,7 @@ function AdminScreenInner() {
     platformSettings, updatePlatformSetting, setAnnouncement, setUserRole, setUserStatus,
     setUserVerification, adminNotifyUser, adminBroadcast,
     blogPosts, contentPages, seoSettings, saveBlogPost, deleteBlogPost, saveContentPage, saveSeoSetting,
-    categoryTree, extraCategories, saveCategory, deleteCategory
+    categoryTree, extraCategories, saveCategory, deleteCategory, importCategories
   } = useStore();
   const [annText, setAnnText] = useState(platformSettings.announcement);
   const canManageUsers = currentUser.role === "admin" || currentUser.role === "super_admin";
@@ -491,7 +491,7 @@ function AdminScreenInner() {
 
         {section === "categories" ? (
           <View style={{ gap: 16 }}>
-            <CategoryManager extra={extraCategories} onSave={saveCategory} onDelete={deleteCategory} confirmAction={confirmAction} />
+            <CategoryManager extra={extraCategories} onSave={saveCategory} onDelete={deleteCategory} onImport={importCategories} confirmAction={confirmAction} />
             <Panel title="Kategori Önerileri" sub={`${pendingCat} bekliyor`}>
               {categorySuggestions.length === 0 ? <EmptyState title="Öneri yok" body="Henüz kategori önerisi gelmedi." /> : null}
               {categorySuggestions.map((s) => (
@@ -945,10 +945,40 @@ function BlogManager({ posts, onSave, onDelete, confirmAction }: { posts: DbBlog
   );
 }
 
-function CategoryManager({ extra, onSave, onDelete, confirmAction }: { extra: ExtraCategory[]; onSave: (c: ExtraCategory) => void; onDelete: (id: string) => void; confirmAction: (m: string, cb: () => void) => void }) {
+// JSON ice aktarim: esnek sema. Kabul edilen ogeler:
+//  { name|label, image?, subcategories?: (string | {name|label})[] }
+function parseCategoryImport(raw: string): ExtraCategory[] {
+  const data = JSON.parse(raw);
+  const arr = Array.isArray(data) ? data : Array.isArray(data?.categories) ? data.categories : [];
+  const out: ExtraCategory[] = [];
+  arr.forEach((c: Record<string, unknown>, i: number) => {
+    const label = String((c.name ?? c.label ?? c.title ?? "") as string).trim();
+    if (!label) return;
+    const subsRaw = (c.subcategories ?? c.children ?? c.subs ?? []) as unknown[];
+    const subcategories = (Array.isArray(subsRaw) ? subsRaw : []).map((s) => {
+      const sl = typeof s === "string" ? s : String((s as Record<string, unknown>)?.name ?? (s as Record<string, unknown>)?.label ?? "");
+      return { label: sl.trim(), slug: slugifyTr(sl) };
+    }).filter((s) => s.label);
+    out.push({ id: uuid(), key: `x-${slugifyTr(label)}-${i}`, label, slug: slugifyTr(label), image: String((c.image ?? c.icon ?? "") as string), subcategories, sortOrder: 1000 + i, isActive: true });
+  });
+  return out;
+}
+
+function CategoryManager({ extra, onSave, onDelete, onImport, confirmAction }: { extra: ExtraCategory[]; onSave: (c: ExtraCategory) => void; onDelete: (id: string) => void; onImport: (list: ExtraCategory[]) => number; confirmAction: (m: string, cb: () => void) => void }) {
   const [label, setLabel] = useState("");
   const [image, setImage] = useState("");
   const [subs, setSubs] = useState("");
+  const [importText, setImportText] = useState("");
+  const [importMsg, setImportMsg] = useState("");
+  const doImport = () => {
+    try {
+      const list = parseCategoryImport(importText);
+      if (!list.length) { setImportMsg("Geçerli kategori bulunamadı. JSON dizi formatını kontrol et."); return; }
+      confirmAction(`${list.length} kategori içe aktarılsın mı?`, () => { const n = onImport(list); setImportMsg(`✓ ${n} kategori içe aktarıldı.`); setImportText(""); });
+    } catch (e) {
+      setImportMsg("JSON çözümlenemedi: " + (e as Error).message);
+    }
+  };
   const add = () => {
     const key = `x-${slugifyTr(label)}`;
     if (!label.trim() || !key) return;
@@ -965,6 +995,17 @@ function CategoryManager({ extra, onSave, onDelete, confirmAction }: { extra: Ex
         <Pressable disabled={!label.trim()} onPress={add} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: label.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 10 }}>
           <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kategori Ekle</Text>
         </Pressable>
+      </View>
+      <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, marginBottom: 12, padding: 12 }}>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>JSON ile Toplu İçe Aktar</Text>
+        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>Bir JSON dizisi yapıştır (binlerce kategori). Örnek: {`[{"name":"Elektronik","subcategories":["Telefon","Bilgisayar"]},{"name":"Vasıta","subcategories":[{"name":"Otomobil"}]}]`}</Text>
+        <TextInput value={importText} onChangeText={setImportText} placeholder='[{"name":"...","subcategories":["..."]}]' placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 120, paddingVertical: 10 }} />
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+          <Pressable disabled={!importText.trim()} onPress={doImport} style={{ alignItems: "center", backgroundColor: importText.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 10 }}>
+            <MaterialCommunityIcons name="upload-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>İçe Aktar</Text>
+          </Pressable>
+          {importMsg ? <Text style={{ color: importMsg.startsWith("✓") ? colors.success : colors.accent, fontSize: 12, fontWeight: "700" }}>{importMsg}</Text> : null}
+        </View>
       </View>
       {extra.length === 0 ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Henüz ekstra kategori yok. Yukarıdan ekleyebilirsin.</Text> : null}
       {extra.map((c) => (
