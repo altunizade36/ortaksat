@@ -54,10 +54,21 @@ function brandModelNodes(brands: string[], models: Record<string, string[]>, for
   });
 }
 
+// Her markayı, verilen alt-kategori (ör. parça grubu) yapraklarıyla bir node yapar.
+function brandGroupNodes(brands: string[], groups: string[], formKey: string): CategoryNode[] {
+  return brands.map((b) => node(b, leaves(groups, formKey), formKey));
+}
+
+// Otomobil yedek parça grupları (marka bazlı listelenir).
+const CAR_PART_GROUPS = ["Motor Parçaları", "Fren Sistemi", "Süspansiyon & Rot-Balans", "Şanzıman & Debriyaj", "Egzoz Sistemi", "Soğutma & Radyatör", "Elektrik & Aydınlatma", "Kaporta & Dış Aksam", "Far & Stop", "Cam & Ayna", "İç Aksam & Döşeme", "Filtreler", "Triger & Kayış Seti", "Amortisör", "Yakıt Sistemi", "Klima & Kalorifer", "Marş & Alternatör", "Turbo & Yağlama"];
+
 // ---- marka/değer listeleri ----------------------------------------------
 export const CAR_BRANDS = ["Alfa Romeo", "Audi", "BMW", "BYD", "Chery", "Chevrolet", "Citroën", "Dacia", "Fiat", "Ford", "Honda", "Hyundai", "Jeep", "Kia", "Land Rover", "Mazda", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "Nissan", "Opel", "Peugeot", "Renault", "Seat", "Škoda", "Suzuki", "Tesla", "Togg", "Toyota", "Volkswagen", "Volvo", "Diğer"];
 export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Bajaj", "TVS", "CFMoto", "Mondial", "Kuba", "RKS", "Diğer"];
-export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vestel", "Samsung", "LG", "Profilo", "Altus", "Grundig", "Diğer"];
+export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vestel", "Samsung", "LG", "Profilo", "Altus", "Grundig", "Regal", "Silverline", "Electrolux", "Whirlpool", "Simfer", "Kumtel", "Luxell", "Sharp", "Hisense", "Midea", "Candy", "Indesit", "Ariston", "Diğer"];
+// Kombi/klima markaları (beyaz eşyadan farklı).
+export const HEATING_BRANDS = ["Baymak", "DemirDöküm", "Vaillant", "Buderus", "Bosch", "ECA", "Airfel", "Viessmann", "Warmhaus", "Diğer"];
+export const AC_BRANDS = ["Arçelik", "Vestel", "Samsung", "LG", "Bosch", "Daikin", "Mitsubishi", "Toshiba", "Baymak", "Gree", "Midea", "Beko", "Diğer"];
 const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "Lacivert", "Yeşil", "Kahverengi", "Bej", "Turuncu", "Diğer"];
 
 // Marka -> model haritası (bağımlı model seçimi için). Marka seçilince model bu
@@ -423,6 +434,16 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Sağlık & medikal ürün bilgileri",
     fields: [F.title, F.markaSerbest, F.model, F.durum, F.garanti, F.fatura, F.price, F.kargo, F.pazarlik, F.desc]
   },
+  kitap: {
+    key: "kitap",
+    title: "Kitap & yayın bilgileri",
+    fields: [F.title, { key: "author", label: "Yazar", type: "text" }, { key: "publisher", label: "Yayınevi", type: "text" }, { key: "genre", label: "Tür", type: "text", placeholder: "ör. roman, tarih, ders kitabı" }, { key: "language", label: "Dil", type: "select", options: ["Türkçe", "İngilizce", "Almanca", "Arapça", "Diğer"] }, { key: "condition", label: "Durum", type: "select", required: true, options: ["Sıfır", "Az kullanılmış", "İkinci el", "Sahaf / eski baskı"] }, F.stok, F.price, F.kargo, F.pazarlik, F.desc]
+  },
+  koleksiyon: {
+    key: "koleksiyon",
+    title: "Koleksiyon & antika bilgileri",
+    fields: [F.title, { key: "collectType", label: "Koleksiyon türü", type: "text", placeholder: "ör. para, pul, antika saat" }, { key: "year", label: "Yıl / dönem", type: "text" }, { key: "origin", label: "Menşei / ülke", type: "text" }, { key: "condition", label: "Durum", type: "select", required: true, options: ["Kusursuz", "Çok iyi", "İyi", "Orta", "Restore edilmiş"] }, { key: "authenticity", label: "Orijinallik", type: "select", options: ["Orijinal", "Replika", "Belgeli", "Bilinmiyor"] }, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+  },
   aksesuar: {
     key: "aksesuar",
     title: "Saat, gözlük & takı bilgileri",
@@ -603,14 +624,16 @@ export const categoryTree: CategoryNode[] = [
   ], "vasitaGenel", IMG("1503376780353-7e6692767b70")),
 
   node("Yedek Parça, Aksesuar & Tuning", [
-    node("Otomobil Yedek Parça", leaves(["Motor Parçaları", "Fren Sistemi", "Süspansiyon", "Şanzıman", "Debriyaj", "Egzoz", "Radyatör & Soğutma", "Elektrik & Aydınlatma", "Kaporta", "Tampon", "Far", "Stop", "Ayna", "Cam", "Kapı", "Airbag"], "yedekParca"), "yedekParca"),
-    node("Motosiklet Yedek Parça", leaves(["Motor", "Zincir & Dişli", "Fren", "Lastik", "Far", "Ayna", "Egzoz"], "yedekParca"), "yedekParca"),
-    node("Araç Aksesuarları", leaves(["İç Aksesuar", "Dış Aksesuar", "Kılıf & Paspas", "Telefon Tutucu", "Araç İçi Organizer"], "yedekParca"), "yedekParca"),
-    node("Jant & Lastik", leaves(["Yaz Lastiği", "Kış Lastiği", "4 Mevsim Lastik", "Jant", "Bijon"], "yedekParca"), "yedekParca"),
-    node("Ses & Görüntü Sistemleri", leaves(["Oto Teyp", "Hoparlör", "Amfi", "Subwoofer", "Multimedya Ekran"], "yedekParca"), "yedekParca"),
-    node("Tuning Ürünleri", leaves(["Body Kit", "Spoiler", "Performans Filtre", "Yazılım Hizmeti"], "yedekParca"), "yedekParca"),
-    node("Oto Elektronik", leaves(["Akü", "Sensör", "Araç Kamerası", "Park Sensörü", "Navigasyon"], "yedekParca"), "yedekParca"),
-    leaf("Araç Bakım Ürünleri", "yedekParca")
+    node("Otomobil Yedek Parça (Markaya Göre)", brandGroupNodes(CAR_BRANDS, CAR_PART_GROUPS, "yedekParca"), "yedekParca"),
+    node("Parça Grubuna Göre", leaves(CAR_PART_GROUPS, "yedekParca"), "yedekParca"),
+    node("Motosiklet Yedek Parça", leaves(["Motor", "Zincir & Dişli", "Fren", "Lastik & Jant", "Far & Sinyal", "Ayna", "Egzoz", "Gidon & Kumanda", "Şanzıman", "Elektrik"], "yedekParca"), "yedekParca"),
+    node("Ağır Vasıta & Ticari Parça", leaves(["Kamyon Parçası", "Otobüs Parçası", "Traktör Parçası", "İş Makinesi Parçası", "Römork Parçası"], "yedekParca"), "yedekParca"),
+    node("Jant & Lastik", leaves(["Yaz Lastiği", "Kış Lastiği", "4 Mevsim Lastik", "Çelik Jant", "Alaşım (Alüminyum) Jant", "Bijon & Somun", "Lastik Zinciri", "İç Lastik"], "yedekParca"), "yedekParca"),
+    node("Araç Aksesuarları", leaves(["İç Aksesuar", "Dış Aksesuar", "Kılıf & Paspas", "Telefon Tutucu", "Araç İçi Organizer", "Bagaj & Portbagaj", "Çeki Demiri", "Branda"], "yedekParca"), "yedekParca"),
+    node("Ses & Görüntü Sistemleri", leaves(["Oto Teyp", "Hoparlör", "Amfi", "Subwoofer", "Multimedya Ekran", "Anten", "Kablo & Aksesuar"], "yedekParca"), "yedekParca"),
+    node("Oto Elektronik", leaves(["Akü", "Sensör", "Araç Kamerası", "Park Sensörü", "Navigasyon", "Alarm & İmmobilizer", "Xenon & LED", "Beyin (ECU)"], "yedekParca"), "yedekParca"),
+    node("Tuning & Performans", leaves(["Body Kit", "Spoiler", "Performans Filtre", "Spor Egzoz", "Coilover / Süspansiyon", "Chip Tuning / Yazılım", "Direksiyon & Vites"], "yedekParca"), "yedekParca"),
+    node("Bakım & Sarf", leaves(["Motor Yağı", "Antifriz", "Silecek", "Fren Balatası", "Filtre Seti", "Buji", "Cam Suyu & Katkı", "Temizlik & Bakım"], "yedekParca"), "yedekParca")
   ], "yedekParca", IMG("1486262715619-67b85e0b08d3")),
 
   node("İkinci El & Sıfır Alışveriş", [
@@ -635,7 +658,18 @@ export const categoryTree: CategoryNode[] = [
       node("Mobilya", leaves(["Koltuk Takımı", "Köşe Koltuk", "Kanepe", "Berjer", "Masa", "Sandalye", "Yatak", "Baza", "Gardırop", "Kitaplık", "TV Ünitesi", "Çalışma Masası", "Bebek Mobilyası"], "mobilya"), "mobilya"),
       ...leaves(["Dekorasyon", "Aydınlatma", "Ev Tekstili", "Banyo", "Bahçe & Balkon", "Temizlik Ürünleri", "Düzenleyiciler", "Ev Gereçleri"], "alisverisGenel")
     ], "alisverisGenel"),
-    node("Beyaz Eşya", leaves(["Buzdolabı", "Çamaşır Makinesi", "Bulaşık Makinesi", "Fırın", "Ocak", "Davlumbaz", "Klima", "Derin Dondurucu", "Kurutma Makinesi", "Kombi", "Elektrikli Süpürge", "Robot Süpürge"], "beyazEsya"), "beyazEsya"),
+    node("Beyaz Eşya", [
+      node("Buzdolabı", leaves(WHITE_GOODS_BRANDS, "beyazEsya"), "beyazEsya"),
+      node("Çamaşır Makinesi", leaves(WHITE_GOODS_BRANDS, "beyazEsya"), "beyazEsya"),
+      node("Kurutma Makinesi", leaves(WHITE_GOODS_BRANDS, "beyazEsya"), "beyazEsya"),
+      node("Bulaşık Makinesi", leaves(WHITE_GOODS_BRANDS, "beyazEsya"), "beyazEsya"),
+      node("Fırın & Ankastre", leaves(["Ankastre Fırın", "Set Üstü Fırın", "Mikrodalga", "Ankastre Ocak", "Ankastre Set", "Davlumbaz"], "beyazEsya"), "beyazEsya"),
+      node("Ocak & Set Üstü", leaves(["Gazlı Ocak", "Elektrikli Ocak", "İndüksiyon Ocak", "Vitroseramik", "Set Üstü Fırın"], "beyazEsya"), "beyazEsya"),
+      node("Klima", leaves(AC_BRANDS, "beyazEsya"), "beyazEsya"),
+      node("Kombi & Isıtma", leaves(HEATING_BRANDS, "beyazEsya"), "beyazEsya"),
+      node("Süpürge", leaves(["Robot Süpürge", "Dikey Süpürge", "Toz Torbalı", "Toz Torbasız", "Islak-Kuru", "Halı Yıkama"], "beyazEsya"), "beyazEsya"),
+      ...leaves(["Derin Dondurucu", "Su Sebili", "Şofben & Termosifon", "Bulaşık Kurutma"], "beyazEsya")
+    ], "beyazEsya"),
     leaf("Mutfak", "alisverisGenel"),
     node("Moda", [
       node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "İç Giyim"], "moda"), "moda"),
@@ -669,8 +703,19 @@ export const categoryTree: CategoryNode[] = [
       node("Takım Sporları", leaves(["Futbol", "Basketbol", "Voleybol", "Tenis", "Masa Tenisi", "Badminton"], "spor"), "spor"),
       ...leaves(["Su Sporları", "Kış Sporları", "Avcılık & Balıkçılık", "Dövüş Sporları", "Kaykay & Paten"], "spor")
     ], "spor"),
-    node("Kitap & Hobi", leaves(["Kitap", "Dergi", "Müzik Aletleri", "Plak & CD", "Hobi Malzemeleri", "El Sanatları", "Puzzle", "Maket", "Koleksiyon Ürünleri"], "alisverisGenel"), "alisverisGenel"),
-    leaf("Koleksiyon", "alisverisGenel"),
+    node("Kitap & Hobi", [
+      node("Kitap", leaves(["Roman", "Öykü & Şiir", "Edebiyat & Klasikler", "Kişisel Gelişim", "Bilim & Felsefe", "Tarih & Politika", "Din & Maneviyat", "Çocuk & Gençlik", "Ders & Sınav Kitabı", "Akademik & Referans", "Sanat & Tasarım", "Çizgi Roman & Manga", "Yabancı Dil", "Sözlük & Ansiklopedi", "Sağlık & Yaşam", "Yemek & Mutfak", "Sahaf / Eski Baskı"], "kitap"), "kitap"),
+      node("Dergi & Gazete", leaves(["Dergi", "Gazete", "Koleksiyon Dergi", "Fasikül"], "kitap"), "kitap"),
+      node("Müzik & Film", leaves(["Plak (LP)", "CD", "Kaset", "DVD & Blu-ray", "Dijital Müzik"], "alisverisGenel"), "alisverisGenel"),
+      node("Hobi & El Sanatları", leaves(["Model & Maket", "Puzzle & Yapboz", "Örgü & Dikiş", "Resim & Boyama", "Takı Tasarım", "Ahşap Boyama", "Seramik & Kil", "Astronomi & Teleskop", "RC / Drone Hobi", "Kokulu Taş & Mum"], "alisverisGenel"), "alisverisGenel"),
+      node("Kırtasiye & Ofis", leaves(["Defter & Bloknot", "Kalem", "Dosya & Klasör", "Sanat Malzemesi", "Okul Malzemesi"], "alisverisGenel"), "alisverisGenel")
+    ], "kitap"),
+    node("Koleksiyon & Antika", [
+      node("Nümizmatik (Para)", leaves(["Osmanlı Parası", "Cumhuriyet Parası", "Madeni Para", "Kağıt Para (Banknot)", "Yabancı Para", "Hatıra Para", "Altın Sikke"], "koleksiyon"), "koleksiyon"),
+      node("Filateli (Pul)", leaves(["Osmanlı Pulu", "Cumhuriyet Pulu", "Yabancı Pul", "İlk Gün Zarfı", "Blok Pul"], "koleksiyon"), "koleksiyon"),
+      node("Antika", leaves(["Antika Mobilya", "Antika Saat", "Gramofon & Radyo", "Porselen & Seramik", "Bakır & Pirinç", "Antika Aydınlatma", "Tablo & Yağlıboya", "El Yazması & Belge"], "koleksiyon"), "koleksiyon"),
+      node("Koleksiyon Ürünleri", leaves(["Kartpostal", "Rozet & Madalya", "Telefon Kartı", "Kibrit & Etiket", "Plak Koleksiyonu", "Oyuncak Koleksiyonu", "Figür & Aksiyon Figür", "Model Araba", "Askeri Malzeme", "Taş & Mineral", "İmza & Fotoğraf", "Saat Koleksiyonu"], "koleksiyon"), "koleksiyon")
+    ], "koleksiyon"),
     leaf("Ofis & Kırtasiye", "alisverisGenel"),
     leaf("Oyuncak", "alisverisGenel"),
     node("Dijital Ürünler", leaves(["Yazılım Lisansı", "Dijital Eğitim", "E-kitap", "Tasarım Dosyası", "Oyun Kodu", "Tema & Şablon", "Dijital Hesap", "Online Hizmet"], "alisverisGenel"), "alisverisGenel"),
