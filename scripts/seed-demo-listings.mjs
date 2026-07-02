@@ -72,19 +72,19 @@ const PRODUCTS = [
   ["Erkek Giyim", "Erkek Takım Elbise", 4200, "mens suit", "open"],
   ["Erkek Giyim", "Deri Ceket", 3800, "leather jacket", "open"],
   ["Erkek Giyim", "Slim Fit Gömlek", 850, "dress shirt", "open"],
-  ["Ayakkabı", "Nike Air Max 270", 4200, "nike shoes", "open"],
-  ["Ayakkabı", "Adidas Ultraboost", 4800, "adidas shoes", "open"],
+  ["Ayakkabı", "Erkek Spor Ayakkabı", 4200, "running shoes", "open"],
+  ["Ayakkabı", "Koşu Ayakkabısı", 4800, "sneakers", "open"],
   ["Ayakkabı", "Klasik Deri Ayakkabı", 2600, "leather shoes", "open"],
   ["Çanta", "Hakiki Deri Kadın Çanta", 3400, "handbag", "open"],
   ["Çanta", "Laptop Sırt Çantası", 1200, "backpack", "open"],
-  ["Saat", "Rolex Datejust (2.el)", 480000, "rolex watch", "approval"],
-  ["Saat", "Omega Seamaster", 320000, "omega watch", "approval"],
+  ["Saat", "Klasik Otomatik Kol Saati", 480000, "luxury watch", "approval"],
+  ["Saat", "Çelik Kordon Kol Saati", 320000, "wristwatch", "approval"],
   ["Saat", "Apple Watch Series 9", 18000, "smartwatch", "open"],
-  ["Saat", "Casio G-Shock", 3500, "casio watch", "open"],
-  ["Güneş Gözlüğü", "Ray-Ban Aviator", 5200, "rayban sunglasses", "open"],
-  ["Güneş Gözlüğü", "Oakley Holbrook", 4600, "oakley sunglasses", "open"],
-  ["Parfüm", "Dior Sauvage EDP 100ml", 4200, "dior perfume", "open"],
-  ["Parfüm", "Chanel No.5 EDP", 5800, "chanel perfume", "open"],
+  ["Saat", "Dijital Spor Saat", 3500, "digital watch", "open"],
+  ["Güneş Gözlüğü", "Aviator Güneş Gözlüğü", 5200, "sunglasses", "open"],
+  ["Güneş Gözlüğü", "Spor Güneş Gözlüğü", 4600, "sport sunglasses", "open"],
+  ["Parfüm", "Erkek Parfüm 100ml", 4200, "perfume bottle", "open"],
+  ["Parfüm", "Kadın Parfüm EDP", 5800, "perfume", "open"],
   ["Kozmetik", "Profesyonel Makyaj Seti", 2400, "makeup cosmetics", "open"],
   ["Kozmetik", "Cilt Bakım Seti", 1800, "skincare products", "open"],
   ["Bebek", "Travel Sistem Bebek Arabası", 12000, "baby stroller", "approval"],
@@ -129,44 +129,54 @@ function slugify(s) {
   return s.replace(/[çğıöşüÇĞİÖŞÜ]/g, (m) => map[m] ?? m).toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "").slice(0, 60);
 }
 
-// LoremFlickr'dan anahtar kelimeyle eşleşen görseli çözüp stabil URL döndürür.
-async function resolveImage(keyword, lock) {
+import fs from "node:fs";
+import path from "node:path";
+
+const BASE_URL = "https://ortaksat.com/demo"; // repo public/demo/ -> canlıda bu adres
+const OUT_DIR = path.join(process.cwd(), "public", "demo");
+
+// LoremFlickr'dan anahtar kelimeyle eşleşen görselin BYTE'larını indirir (kalıcı
+// olarak public/demo'ya kaydedilecek). HTML hata sayfalarını eler (>10KB & image/*).
+const UA = { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120 Safari/537.36", Accept: "image/*" } };
+async function fetchImageBytes(keyword, lock) {
   const q = keyword.trim().replace(/\s+/g, ",");
   const url = `https://loremflickr.com/800/800/${encodeURIComponent(q)}?lock=${lock}`;
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 5; attempt++) {
     try {
-      const r = await fetch(url);
-      if (r.ok && r.url && r.url.includes("/cache/")) return r.url;
-      if (r.status === 403 || r.status === 429 || r.status === 500) { await sleep(400 * (attempt + 1)); continue; }
-    } catch { await sleep(400 * (attempt + 1)); }
+      const r = await fetch(url, UA);
+      const ct = r.headers.get("content-type") || "";
+      if (r.ok && ct.startsWith("image/")) {
+        const b = Buffer.from(await r.arrayBuffer());
+        if (b.length > 10000) return b;
+      }
+      await sleep(500 * (attempt + 1));
+    } catch { await sleep(500 * (attempt + 1)); }
   }
   return null;
 }
 
 async function main() {
   if (!CONN) { console.error("SUPABASE_DB_URL yok"); process.exit(1); }
+  fs.mkdirSync(OUT_DIR, { recursive: true });
+  for (const f of fs.readdirSync(OUT_DIR)) { try { fs.unlinkSync(path.join(OUT_DIR, f)); } catch {} }
+
   const c = new pg.Client(CONN);
   await c.connect();
   const del = await c.query("delete from listings where demo = true returning id");
   console.log("Silinen eski demo ilan:", del.rowCount);
 
-  const used = new Set();
   let n = 0, failed = 0;
   for (let i = 0; i < PRODUCTS.length; i++) {
     const [cat, title, price, keyword, mode] = PRODUCTS[i];
-    // Benzersizlik: farklı lock -> farklı görsel. Çakışırsa lock'u değiştir.
-    let image = null;
-    for (let lock = 1000 + i; lock < 1000 + i + 40 && !image; lock += 11) {
-      const resolved = await resolveImage(keyword, lock);
-      if (resolved && !used.has(resolved)) image = resolved;
-    }
-    if (!image) {
-      // Son çare: kategori anahtarıyla farklı lock dene, yine olmazsa atla-güvenli statik.
-      const resolved = await resolveImage(cat.split(" ")[0] || "product", 7000 + i);
-      image = resolved && !used.has(resolved) ? resolved : `https://loremflickr.com/800/800/product?lock=${9000 + i}`;
-      failed++;
-    }
-    used.add(image);
+    // Farklı lock -> farklı görsel (benzersiz). Başarısızsa lock değiştir, sonra kategori anahtarına düş.
+    let bytes = null;
+    for (let lock = 1000 + i; lock < 1000 + i + 60 && !bytes; lock += 13) bytes = await fetchImageBytes(keyword, lock);
+    if (!bytes) { bytes = await fetchImageBytes(cat.split(" ")[0] || "product", 8000 + i); if (!bytes) failed++; }
+    if (!bytes) { console.warn("Görsel indirilemedi:", title); continue; }
+
+    const file = `${String(i + 1).padStart(3, "0")}-${slugify(title)}.jpg`;
+    fs.writeFileSync(path.join(OUT_DIR, file), bytes);
+    const image = `${BASE_URL}/${file}`;
 
     const id = crypto.randomUUID();
     const city = CITIES[n % CITIES.length];
@@ -182,10 +192,10 @@ async function main() {
     );
     await c.query("insert into listing_images (listing_id, url, sort_order) values ($1,$2,0)", [id, image]);
     n++;
-    if (n % 20 === 0) console.log(`... ${n}/${PRODUCTS.length}`);
-    await sleep(120);
+    if (n % 20 === 0) console.log(`... ${n}/${PRODUCTS.length} indirildi`);
+    await sleep(150);
   }
-  console.log(`Eklenen demo ilan: ${n} · benzersiz görsel: ${used.size} · çözülemeyen(fallback): ${failed}`);
+  console.log(`Eklenen demo ilan: ${n} · public/demo'ya kaydedildi · fallback: ${failed}`);
   await c.end();
 }
 main().catch((e) => { console.error("HATA:", e.message); process.exit(1); });
