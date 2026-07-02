@@ -38,6 +38,8 @@ export function DesktopCreateFlow() {
   const [currency, setCurrency] = useState<CurrencyCode>("TRY");
   const [commissionType, setCommissionType] = useState<CommissionType>("rate");
   const [commissionValue, setCommissionValue] = useState("15");
+  const [bonusAmount, setBonusAmount] = useState("");
+  const [bonusQuota, setBonusQuota] = useState("");
   const [partnershipMode, setPartnershipMode] = useState<PartnershipMode>("approval");
   const [autoApprove, setAutoApprove] = useState(false);
   const [maxPartners, setMaxPartners] = useState("");
@@ -170,6 +172,8 @@ export function DesktopCreateFlow() {
         currency,
         commissionType,
         commissionValue: Number(commissionValue) || 0,
+        bonusAmount: Number(bonusAmount) > 0 && Number(bonusQuota) > 0 ? Number(bonusAmount) : undefined,
+        bonusQuota: Number(bonusAmount) > 0 && Number(bonusQuota) > 0 ? Number(bonusQuota) : undefined,
         partnershipMode,
         category: leafLabel || path[0]?.label || "Genel",
         location: formatLocation(loc, visibility) || getProvince(loc.provinceId)?.name || "Türkiye",
@@ -340,6 +344,25 @@ export function DesktopCreateFlow() {
               </View>
             </View>
 
+            {/* Teşvik bonusu (opsiyonel): ilk N satışa komisyon üstüne ek ödül. */}
+            <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                <MaterialCommunityIcons name="rocket-launch-outline" size={16} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Hızlı başlangıç bonusu (opsiyonel)</Text>
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>İlk satışları yapan ortaklara komisyonun üstüne ek ödül taahhüt et — ilanın öne çıkar, ortaklar daha hızlı harekete geçer.</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                <View style={{ flex: 1, minWidth: 150 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>Bonus tutarı ({CURRENCIES.find((c) => c.code === currency)?.symbol ?? "₺"})</Text>
+                  <TextInput value={bonusAmount} onChangeText={setBonusAmount} keyboardType="numeric" placeholder="Örn. 500" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                </View>
+                <View style={{ flex: 1, minWidth: 150 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>İlk kaç satış için?</Text>
+                  <TextInput value={bonusQuota} onChangeText={setBonusQuota} keyboardType="numeric" placeholder="Örn. 5" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                </View>
+              </View>
+            </View>
+
             <View style={{ gap: 6 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Ortaklık kabul şekli</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -395,8 +418,15 @@ export function DesktopCreateFlow() {
                   <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{String(values.title ?? leafLabel)}</Text>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(parseTrPrice(String(values.price ?? "")), currency)}</Text>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{formatLocation(loc, visibility) || "Konum belirtilmedi"}</Text>
-                  <View style={{ alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
-                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{commissionType === "rate" ? `%${commissionValue} komisyon` : `${moneyIn(Number(commissionValue) || 0, currency)} komisyon`}</Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                    <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+                      <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{commissionType === "rate" ? `%${commissionValue} komisyon` : `${moneyIn(Number(commissionValue) || 0, currency)} komisyon`}</Text>
+                    </View>
+                    {Number(bonusAmount) > 0 && Number(bonusQuota) > 0 ? (
+                      <View style={{ backgroundColor: colors.warningSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+                        <Text style={{ color: colors.warning, fontSize: 11, fontWeight: "900" }}>ilk {Number(bonusQuota)} satışa +{moneyIn(Number(bonusAmount), currency)} bonus</Text>
+                      </View>
+                    ) : null}
                   </View>
                 </View>
               </View>

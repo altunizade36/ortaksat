@@ -507,6 +507,12 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
             <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>Kazanç {moneyIn(commission, listing.currency)}</Text>
           </View>
         </View>
+        {listing.bonusAmount && listing.bonusAmount > 0 && listing.bonusQuota ? (
+          <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.warningSoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+            <MaterialCommunityIcons name="rocket-launch" size={11} color={colors.warning} />
+            <Text style={{ color: colors.warning, fontSize: 10, fontWeight: "900" }}>ilk {listing.bonusQuota} satışa +{moneyIn(listing.bonusAmount, listing.currency)}</Text>
+          </View>
+        ) : null}
         <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 5, marginTop: 4, paddingTop: 8 }}>
           <MaterialCommunityIcons name="map-marker-outline" size={12} color={colors.subtle} />
           <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>{displayText(listing.location)}</Text>

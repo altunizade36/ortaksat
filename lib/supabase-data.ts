@@ -17,6 +17,8 @@ type PublicListingCardRow = {
   demo?: boolean | null;
   commission_type: Listing["commissionType"];
   commission_value: number | string;
+  bonus_amount?: number | string | null;
+  bonus_quota?: number | string | null;
   category: string;
   location: string;
   status: Listing["status"];
@@ -122,6 +124,8 @@ function mapListing(row: PublicListingCardRow): Listing {
     demo: Boolean(row.demo),
     commissionType: row.commission_type,
     commissionValue: toNumber(row.commission_value),
+    bonusAmount: row.bonus_amount != null ? toNumber(row.bonus_amount) : undefined,
+    bonusQuota: row.bonus_quota != null ? toNumber(row.bonus_quota) : undefined,
     category: displayText(row.category),
     location: displayText(row.location),
     image: row.image_url ?? "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200",

@@ -51,6 +51,10 @@ export type Listing = {
   demo?: boolean;
   commissionType: CommissionType;
   commissionValue: number;
+  // Teşvik bonusu: ilk `bonusQuota` satışı yapan ortaklara komisyona ek olarak
+  // `bonusAmount` (ilan para birimi) ödenir. Satıcının taahhüdüdür; platform tutmaz.
+  bonusAmount?: number;
+  bonusQuota?: number;
   category: string;
   location: string;
   // Yapısal konum (filtreleme/index için). location ise insan-okur tek satırdır.

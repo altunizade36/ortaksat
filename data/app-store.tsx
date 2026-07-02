@@ -103,6 +103,8 @@ type NewListingInput = Pick<
   | "currency"
   | "commissionType"
   | "commissionValue"
+  | "bonusAmount"
+  | "bonusQuota"
   | "category"
   | "location"
   | "provinceId"
