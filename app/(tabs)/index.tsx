@@ -11,7 +11,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState } from "@/components/ui";
 import type { CategoryNode } from "@/lib/category-tree";
 import { Marketplace3DHero } from "@/components/three-d-showcase";
-import { WebFooter, WebHowItWorks, WebWhy } from "@/components/web-landing";
+import { WebFooter } from "@/components/web-landing";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -134,8 +134,6 @@ export default function HomeScreen() {
       {isWideWeb ? (
         <>
           <HomeDesktop />
-          <WebHowItWorks />
-          <WebWhy />
           <WebFooter />
         </>
       ) : (

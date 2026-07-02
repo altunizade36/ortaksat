@@ -63,6 +63,9 @@ export function HomeDesktop() {
   const [locOpen, setLocOpen] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [onlyFeatured, setOnlyFeatured] = useState(false);
+  const [minCommission, setMinCommission] = useState(0);
+  const [inStock, setInStock] = useState(false);
+  const [onlyNew, setOnlyNew] = useState(false);
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
   const [visibleCount, setVisibleCount] = useState(18);
   const [recentIds, setRecentIds] = useState<string[]>([]);
@@ -90,10 +93,13 @@ export function HomeDesktop() {
       if (locFilter && l.location !== locFilter) return false;
       if (onlyOpen && l.partnershipMode !== "open") return false;
       if (onlyFeatured && !l.featured) return false;
+      if (minCommission && commissionAmount(l) < minCommission) return false;
+      if (inStock && l.stockCount <= 0) return false;
+      if (onlyNew && !(Date.parse(l.createdAt ?? "") > Date.now() - 7 * 86400000)) return false;
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, catLabelSet, pMin, pMax, locFilter, onlyOpen, onlyFeatured]);
+  }, [active, catLabelSet, pMin, pMax, locFilter, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -108,14 +114,15 @@ export function HomeDesktop() {
   const grid = sorted.slice(0, visibleCount);
 
   // Filtre/sıralama değişince baştan göster.
-  useEffect(() => { setVisibleCount(18); }, [selectedNode, pMin, pMax, locFilter, onlyOpen, onlyFeatured, sortMode]);
+  useEffect(() => { setVisibleCount(18); }, [selectedNode, pMin, pMax, locFilter, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew, sortMode]);
 
   const topCats = categoryTree.filter((c) => c.label !== "Diğer");
   const popular = topCats.slice(0, 12);
   // Ortak-satış modeli: en çok kazandıran (en yüksek komisyonlu) fırsatlar.
   const topEarn = useMemo(() => [...active].filter((l) => commissionAmount(l) > 0).sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [active]);
-  const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (locFilter ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0);
-  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLocFilter(""); setConditions({}); setSellerTypes({}); setOnlyOpen(false); setOnlyFeatured(false); };
+  const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (locFilter ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0) + (minCommission ? 1 : 0) + (inStock ? 1 : 0) + (onlyNew ? 1 : 0);
+  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLocFilter(""); setConditions({}); setSellerTypes({}); setOnlyOpen(false); setOnlyFeatured(false); setMinCommission(0); setInStock(false); setOnlyNew(false); };
+  const COMMISSION_PRESETS: Array<[number, string]> = [[500, "500 ₺+"], [1000, "1.000 ₺+"], [5000, "5.000 ₺+"], [25000, "25.000 ₺+"]];
   const PRICE_PRESETS: Array<[string, string, string]> = [["0", "1000", "0 - 1.000 ₺"], ["1000", "5000", "1.000 - 5.000 ₺"], ["5000", "25000", "5.000 - 25.000 ₺"], ["25000", "100000", "25.000 - 100.000 ₺"], ["100000", "", "100.000 ₺ +"]];
   const SORTS: Array<[typeof sortMode, string]> = [["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"], ["commission", "Kazanç"]];
 
@@ -226,10 +233,27 @@ export function HomeDesktop() {
             ) : null}
           </View>
 
+          {/* Ortak kazancı (min komisyon) */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>En Az Ortak Kazancı</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {COMMISSION_PRESETS.map(([v, lbl]) => {
+                const on = minCommission === v;
+                return (
+                  <Pressable key={v} onPress={() => setMinCommission(on ? 0 : v)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 5 }}>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "800" }}>{lbl}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
           {/* Hızlı anahtarlar */}
           <View style={{ gap: 10 }}>
             <SwitchRow label="Sadece ortak satışa açık" on={onlyOpen} onPress={() => setOnlyOpen((v) => !v)} />
             <SwitchRow label="Öne çıkan ilanlar" on={onlyFeatured} onPress={() => setOnlyFeatured((v) => !v)} />
+            <SwitchRow label="Stokta olanlar" on={inStock} onPress={() => setInStock((v) => !v)} />
+            <SwitchRow label="Yeni ilanlar (7 gün)" on={onlyNew} onPress={() => setOnlyNew((v) => !v)} />
           </View>
 
           {/* Ürün Durumu */}
@@ -258,52 +282,37 @@ export function HomeDesktop() {
       <View style={{ flex: 1, gap: 18, minWidth: 0 }}>
         {/* Hero + istatistikler */}
         <View style={{ alignItems: "stretch", flexDirection: "row", gap: 16 }}>
-          <View style={{ backgroundColor: colors.primary, borderRadius: 22, flex: 1, flexDirection: "row", minWidth: 0, overflow: "hidden", padding: 30 }}>
-            <View style={{ flex: 1.3, gap: 14, justifyContent: "center", minWidth: 0 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 30, fontWeight: "900", lineHeight: 36 }}>
-                Ortak alın,{"\n"}<Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text>
+          <View style={{ backgroundColor: colors.primary, borderRadius: 18, flex: 1, flexDirection: "row", minWidth: 0, overflow: "hidden", paddingHorizontal: 22, paddingVertical: 18 }}>
+            <View style={{ flex: 1.4, gap: 10, justifyContent: "center", minWidth: 0 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 21, fontWeight: "900", lineHeight: 26 }}>
+                Ortak alın, <Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text>
               </Text>
-              <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 14.5, fontWeight: "600", lineHeight: 21, maxWidth: 460 }}>
-                Binlerce ürünü ortak satın, komisyon kazan. Güvenli, hızlı ve kazançlı alışverişin adresi.
+              <Text numberOfLines={2} style={{ color: "rgba(255,255,255,0.9)", fontSize: 12.5, fontWeight: "600", lineHeight: 17, maxWidth: 380 }}>
+                Binlerce ürünü ortak sat, komisyon kazan. Güvenli, hızlı, kazançlı.
               </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, marginTop: 2 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 2 }}>
                 <Link href="/create" asChild>
-                  <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 11, flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingVertical: 13 }}>
-                    <MaterialCommunityIcons name="store-plus-outline" size={18} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>İlan Ver</Text>
+                  <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
+                    <MaterialCommunityIcons name="store-plus-outline" size={16} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>İlan Ver</Text>
                   </Pressable>
                 </Link>
                 <Link href="/partner" asChild>
-                  <Pressable style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 20, paddingVertical: 13 }}>
-                    <MaterialCommunityIcons name="handshake-outline" size={18} color="#FFFFFF" />
-                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>Ortak Satışa Katıl</Text>
+                  <Pressable style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 8 }}>
+                    <MaterialCommunityIcons name="handshake-outline" size={16} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ortak Satışa Katıl</Text>
                   </Pressable>
                 </Link>
               </View>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 10, marginTop: 6 }}>
-                <View style={{ flexDirection: "row" }}>
-                  {["face1", "face2", "face3", "face4"].map((f, i) => (
-                    <View key={f} style={{ borderColor: colors.primary, borderRadius: 999, borderWidth: 2, height: 28, marginLeft: i === 0 ? 0 : -9, overflow: "hidden", width: 28 }}>
-                      <SafeRemoteImage uri={HERO(f)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-                    </View>
-                  ))}
-                </View>
-                <Text numberOfLines={2} style={{ color: "rgba(255,255,255,0.9)", flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16 }}>
-                  Aracı platform · Şeffaf süreç{"\n"}Komisyonu taraflar belirler
-                </Text>
-              </View>
             </View>
-            {/* Gerçek görsellerle illüstrasyon: yeşil daire + ortaklık fotoğrafı + ürünler */}
-            <View style={{ alignItems: "center", flex: 1, justifyContent: "center", minHeight: 320, minWidth: 0, position: "relative" }}>
-              {/* Yeşil daire arka plan */}
-              <View style={{ backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 236, position: "absolute", width: 236 }} />
-              {/* Merkez: ortaklık fotoğrafı */}
-              <View style={{ borderColor: "#FFFFFF", borderRadius: 22, borderWidth: 4, height: 186, overflow: "hidden", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.28, shadowRadius: 22, width: 200 }}>
+            {/* Kompakt görsel küme: yeşil daire + ortaklık fotoğrafı + ürünler */}
+            <View style={{ alignItems: "center", flex: 0.9, justifyContent: "center", minHeight: 168, minWidth: 0, position: "relative" }}>
+              <View style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 999, height: 150, position: "absolute", width: 150 }} />
+              <View style={{ borderColor: "#FFFFFF", borderRadius: 16, borderWidth: 3, height: 116, overflow: "hidden", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.26, shadowRadius: 16, width: 132 }}>
                 <SafeRemoteImage uri={HERO("people")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
               </View>
-              {/* Etrafında gerçek ürün fotoğrafları */}
               {HERO_FLOAT.map((f) => (
-                <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 60, left: `${f.x}%`, marginLeft: -30, marginTop: -30, overflow: "hidden", position: "absolute", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.22, shadowRadius: 12, top: `${f.y}%`, width: 60 }}>
+                <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 40, left: `${f.x}%`, marginLeft: -20, marginTop: -20, overflow: "hidden", position: "absolute", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, top: `${f.y}%`, width: 40 }}>
                   <SafeRemoteImage uri={HERO(f.img)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
                 </View>
               ))}
@@ -311,15 +320,15 @@ export function HomeDesktop() {
           </View>
 
           {/* İstatistik kartları */}
-          <View style={{ gap: 12, width: 210 }}>
+          <View style={{ gap: 9, width: 178 }}>
             {stats.map((s) => (
-              <View key={s.label} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flex: 1, flexDirection: "row", gap: 12, paddingHorizontal: 16 }}>
-                <View style={{ alignItems: "center", backgroundColor: s.tint, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
-                  <MaterialCommunityIcons name={s.icon} size={21} color={s.color} />
+              <View key={s.label} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flex: 1, flexDirection: "row", gap: 10, paddingHorizontal: 12, paddingVertical: 10 }}>
+                <View style={{ alignItems: "center", backgroundColor: s.tint, borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
+                  <MaterialCommunityIcons name={s.icon} size={18} color={s.color} />
                 </View>
-                <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 20, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{new Intl.NumberFormat("tr-TR").format(s.value)}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{s.label}</Text>
+                <View style={{ flex: 1, gap: 0, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 16.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{new Intl.NumberFormat("tr-TR").format(s.value)}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{s.label}</Text>
                 </View>
               </View>
             ))}
@@ -328,32 +337,18 @@ export function HomeDesktop() {
 
         {/* Ortak-satış: nasıl kazanılır + en çok kazandıran fırsatlar */}
         {topEarn.length > 0 ? (
-          <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, gap: 14, padding: 20 }}>
-            <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 12 }}>
-              <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
-                <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900" }}>Ortak ol, satış yap, komisyonu kazan</Text>
-                <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>Satıcının ürününü kendi çevrene sat ya da alıcı getir; satış gerçekleşince komisyonu satıcı sana öder. Ortaksat yalnızca aracıdır.</Text>
+          <View style={{ backgroundColor: colors.primaryDark, borderRadius: 16, gap: 12, padding: 16 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+              <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "900" }}>En Çok Kazandıran Fırsatlar</Text>
+                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, fontWeight: "600" }}>Ortak ol, sat, komisyonu kazan — komisyonu satıcı öder.</Text>
               </View>
               <Link href="/partner" asChild>
-                <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
-                  <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>Fırsatları Gör</Text>
-                  <MaterialCommunityIcons name="arrow-right" size={15} color={colors.primaryDark} />
+                <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 14, paddingVertical: 8 }}>
+                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Tümü</Text>
+                  <MaterialCommunityIcons name="arrow-right" size={14} color={colors.primaryDark} />
                 </Pressable>
               </Link>
-            </View>
-            {/* 3 adım */}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-              {[["magnify", "Fırsat seç", "Kazançlı bir ürün bul"], ["link-variant", "Ortak ol", "Kendi paylaşım linkini al"], ["cash-multiple", "Komisyonu kazan", "Satışta komisyon senin"]].map(([ic, t, s], i) => (
-                <View key={t} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.10)", borderRadius: 12, flex: 1, flexDirection: "row", gap: 10, minWidth: 190, paddingHorizontal: 13, paddingVertical: 11 }}>
-                  <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{i + 1}</Text>
-                  </View>
-                  <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{t}</Text>
-                    <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.78)", fontSize: 11, fontWeight: "600" }}>{s}</Text>
-                  </View>
-                </View>
-              ))}
             </View>
             {/* En çok kazandıran fırsatlar */}
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
