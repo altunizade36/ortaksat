@@ -4,6 +4,7 @@ import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
+import { BulkListingModal } from "@/components/bulk-listing-modal";
 import { colors } from "@/components/colors";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { commissionAmount, money, moneyIn } from "@/lib/format";
@@ -47,6 +48,7 @@ export default function SellerScreen() {
   const {
     approvePartnership,
     canReviewSale,
+    createListing,
     createSaleReview,
     createSaleFromLead,
     currentUser,
@@ -66,7 +68,34 @@ export default function SellerScreen() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [bulkOpen, setBulkOpen] = useState(false);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
+
+  function handleBulkCreate(row: { title: string; price: number; commission: number; category: string; image: string }) {
+    createListing({
+      title: row.title,
+      description: "Açıklama düzenleme ekranından eklenebilir.",
+      salesPitch: ["Ürünün ana faydasını kısa ve net anlat."],
+      shareTemplates: { instagram: "", whatsapp: "", tiktok: "" },
+      adAssets: [],
+      tags: ["ortak satış"],
+      price: row.price,
+      currency: "TRY",
+      commissionType: "rate",
+      commissionValue: row.commission,
+      category: row.category,
+      location: myListings[0]?.location || "Türkiye",
+      image: row.image,
+      stockCount: 1,
+      minPartnerRating: 4,
+      commissionDueDays: 3,
+      returnWindowDays: 7,
+      partnerRules: ["Komisyon sadece onaylı satış kaydında oluşur."],
+      deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; Ortaksat para tutmaz.",
+      contactMethod: "message",
+      partnershipMode: "approval"
+    });
+  }
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status !== "rejected");
   const myListingIds = new Set(myListings.map((listing) => listing.id));
   const myPartnershipIds = partnerships.filter((partnership) => myListingIds.has(partnership.listingId)).map((partnership) => partnership.id);
@@ -262,6 +291,15 @@ export default function SellerScreen() {
 
       <Card>
         <SectionTitle title="İlan yönetimi" action={`${visibleListings.length}`} />
+        <Pressable
+          onPress={() => setBulkOpen(true)}
+          accessibilityRole="button"
+          accessibilityLabel="Toplu ilan ekle"
+          style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 13, paddingVertical: 8 }}
+        >
+          <MaterialCommunityIcons name="table-arrow-up" size={16} color={colors.primaryDark} />
+          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>Toplu ilan ekle</Text>
+        </Pressable>
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 48, paddingHorizontal: 12 }}>
           <MaterialCommunityIcons name="magnify" size={21} color={colors.primary} />
           <TextInput
@@ -518,6 +556,7 @@ export default function SellerScreen() {
         );
       })}
       </WebContainer>
+      <BulkListingModal visible={bulkOpen} onClose={() => setBulkOpen(false)} onCreate={handleBulkCreate} />
     </ScrollView>
   );
 }
