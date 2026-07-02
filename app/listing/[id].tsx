@@ -121,6 +121,10 @@ export default function ListingDetailScreen() {
   const partnership = findPartnership(currentListing.id);
   const activeShareUrl = partnership?.status === "active" ? shareUrl(currentListing, partnership.refCode) : undefined;
   const isOwner = currentListing.ownerId === currentUser.id;
+  const isDemo = Boolean(currentListing.demo);
+  function demoBlocked() {
+    Alert.alert("Örnek ilan", "Bu bir örnek (vitrin) ilandır; yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık bu ilanda kapalıdır.");
+  }
   const listingReviews = reviews.filter((item) => item.listingId === currentListing.id);
   const favorited = isFavorite(currentListing.id);
   const commission = commissionAmount(currentListing);
@@ -137,6 +141,7 @@ export default function ListingDetailScreen() {
     .slice(0, 8);
 
   function handleJoin() {
+    if (isDemo) return demoBlocked();
     const result = joinListing(currentListing.id, {
       note: applicationNote.trim(),
       shareChannel: applicationChannel.trim(),
@@ -170,6 +175,7 @@ export default function ListingDetailScreen() {
   }
 
   async function handleContact() {
+    if (isDemo) return demoBlocked();
     if (!owner) return;
     const waPhone = trPhoneIntl(owner.phone);
     if (currentListing.contactMethod === "whatsapp") {
@@ -186,6 +192,7 @@ export default function ListingDetailScreen() {
   }
 
   function handlePartnershipMessage() {
+    if (isDemo) return demoBlocked();
     if (!owner) return;
     const conversation = startConversation(currentListing.id, owner.id, `${currentListing.title} için ortaklık başvurumu ve satış detaylarını konuşmak istiyorum.`);
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
@@ -252,6 +259,17 @@ export default function ListingDetailScreen() {
         <meta name="twitter:image" content={currentListing.image} />
       </Head>
       <WebContainer max={1200} padding={0} style={{ gap: 16 }}>
+      {isDemo ? (
+        <View style={{ alignItems: "center", backgroundColor: "#FEF7DC", borderColor: "#F5C518", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, marginHorizontal: isWideWeb ? 0 : 12, padding: 13 }}>
+          <View style={{ alignItems: "center", backgroundColor: "#F5C518", borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
+            <MaterialCommunityIcons name="eye-outline" size={19} color="#1A1A00" />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Örnek (vitrin) ilan</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>Bu ilan yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık kapalıdır.</Text>
+          </View>
+        </View>
+      ) : null}
       <View style={isWideWeb ? { flexDirection: "row", gap: 20, alignItems: "flex-start" } : { gap: 12 }}>
       <View style={isWideWeb ? { flex: 1.12, minWidth: 0 } : undefined}>
       {(() => {

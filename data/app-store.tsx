@@ -699,7 +699,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
     function createOrReuseConversation(listingId: string, receiverId: string, body?: string) {
       if (isSuspended) return undefined;
       const listing = listings.find((item) => item.id === listingId);
-      if (!listing || receiverId === currentUser.id) return undefined;
+      if (!listing || listing.demo || receiverId === currentUser.id) return undefined;
       const existing = conversations.find(
         (item) => item.listingId === listingId && item.participantIds.includes(currentUser.id) && item.participantIds.includes(receiverId)
       );
@@ -1251,6 +1251,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       joinListing(listingId, input) {
         if (isSuspended) { setAuthError("Hesabın askıya alındığı için işlem yapamazsın."); return undefined; }
         const listing = listings.find((item) => item.id === listingId);
+        if (listing?.demo) { setAuthError("Bu bir örnek (vitrin) ilandır; ortaklık kapalıdır."); return undefined; }
         if (!listing || listing.ownerId === currentUser.id || listing.status !== "active") {
           setAuthError("Bu ilana ortak olunamaz. İlan pasif olabilir veya kendi ilanın olabilir.");
           return undefined;

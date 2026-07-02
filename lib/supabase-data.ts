@@ -14,6 +14,7 @@ type PublicListingCardRow = {
   tags: string[] | null;
   price: number | string;
   currency?: string | null;
+  demo?: boolean | null;
   commission_type: Listing["commissionType"];
   commission_value: number | string;
   category: string;
@@ -118,6 +119,7 @@ function mapListing(row: PublicListingCardRow): Listing {
     tags: (row.tags ?? []).map(repairTurkishText),
     price: toNumber(row.price),
     currency: (row.currency as Listing["currency"]) ?? "TRY",
+    demo: Boolean(row.demo),
     commissionType: row.commission_type,
     commissionValue: toNumber(row.commission_value),
     category: displayText(row.category),

@@ -48,6 +48,7 @@ export type Listing = {
   tags: string[];
   price: number;
   currency?: "TRY" | "USD" | "EUR";
+  demo?: boolean;
   commissionType: CommissionType;
   commissionValue: number;
   category: string;
