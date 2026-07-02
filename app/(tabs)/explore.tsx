@@ -12,6 +12,7 @@ import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { REFERENCE_NOW, searchKey } from "@/lib/locale";
+import { useSavedSearches } from "@/lib/saved-searches";
 import { LocationSelector } from "@/components/location-selector";
 import { districtsOfProvince, getDistrict, getProvince, locKey, provinces } from "@/lib/locations";
 import { searchListings } from "@/lib/supabase-data";
@@ -46,6 +47,7 @@ export default function ExploreScreen() {
   const router = useRouter();
   const params = useLocalSearchParams<{ q?: string; province?: string; district?: string }>();
   const { findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceLoadingMore } = useStore();
+  const { items: savedSearches, add: addSaved, remove: removeSaved } = useSavedSearches();
   const [refreshing, setRefreshing] = useState(false);
   const [seed, setSeed] = useState(1);
   const [filter, setFilter] = useState<FeedFilter>("all");
@@ -403,6 +405,32 @@ export default function ExploreScreen() {
               </View>
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{productListings.length} ilan bulundu</Text>
             </View>
+
+            {/* Kayıtlı aramalar + arama kaydet */}
+            {(queryText || savedSearches.length > 0) ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {queryText && !savedSearches.some((s) => s.q.toLocaleLowerCase("tr-TR") === queryText.toLocaleLowerCase("tr-TR")) ? (
+                  <Pressable onPress={() => addSaved(queryText)} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}>
+                    <MaterialCommunityIcons name="bell-plus-outline" size={15} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>“{queryText}” aramasını kaydet</Text>
+                  </Pressable>
+                ) : null}
+                {savedSearches.map((s) => {
+                  const tokens = searchKey(s.q).split(" ").filter(Boolean);
+                  const newCount = listings.filter((l) => l.status === "active" && Date.parse(l.createdAt ?? "") > s.ts && tokens.every((tk) => searchKey(`${l.title} ${l.category} ${l.location}`).includes(tk))).length;
+                  return (
+                    <View key={s.id} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingLeft: 12, paddingRight: 6, paddingVertical: 5 }}>
+                      <MaterialCommunityIcons name="bookmark-outline" size={14} color={colors.muted} />
+                      <Pressable onPress={() => router.setParams({ q: s.q })}><Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{s.q}</Text></Pressable>
+                      {newCount > 0 ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{newCount} yeni</Text></View> : null}
+                      <Pressable accessibilityRole="button" accessibilityLabel="Kayıtlı aramayı sil" onPress={() => removeSaved(s.id)} hitSlop={6} style={{ alignItems: "center", height: 22, justifyContent: "center", width: 22 }}>
+                        <MaterialCommunityIcons name="close" size={14} color={colors.subtle} />
+                      </Pressable>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
 
             {visibleProducts.length === 0 ? (
               <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 40 }}>
