@@ -253,6 +253,22 @@ export default function ListingDetailScreen() {
 
   const metaDesc = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
   const metaUrl = `https://ortaksat.com/listing/${currentListing.id}`;
+  // JSON-LD Product şeması — Google zengin sonuç (fiyat, stok, kategori) için.
+  const productLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: currentListing.title,
+    image: [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean).slice(0, 5),
+    description: metaDesc,
+    category: currentListing.category,
+    offers: {
+      "@type": "Offer",
+      price: currentListing.price,
+      priceCurrency: currentListing.currency ?? "TRY",
+      availability: currentListing.stockCount > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      url: metaUrl
+    }
+  });
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: 96 }}>
@@ -269,6 +285,7 @@ export default function ListingDetailScreen() {
         <meta name="twitter:title" content={`${currentListing.title} — OrtakSat`} />
         <meta name="twitter:description" content={metaDesc} />
         <meta name="twitter:image" content={currentListing.image} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productLd }} />
       </Head>
       <WebContainer max={1200} padding={0} style={{ gap: 16 }}>
       {/* Breadcrumb: Ana Sayfa › Kategori › Ürün */}

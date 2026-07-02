@@ -61,6 +61,9 @@ export default function Root({ children }: PropsWithChildren) {
           rel="stylesheet"
         />
 
+        {/* Yapısal veri: kuruluş + site araması (Google sitelinks arama kutusu) */}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: orgJsonLd }} />
+
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: responsiveShell }} />
       </head>
@@ -68,6 +71,29 @@ export default function Root({ children }: PropsWithChildren) {
     </html>
   );
 }
+
+const orgJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      name: "OrtakSat",
+      url: "https://ortaksat.com",
+      logo: "https://ortaksat.com/apple-touch-icon.png",
+      description: "Ortak satış pazaryeri: ilanını aç, ortakların referans linkiyle paylaşsın, satışta komisyon kazan."
+    },
+    {
+      "@type": "WebSite",
+      name: "OrtakSat",
+      url: "https://ortaksat.com",
+      potentialAction: {
+        "@type": "SearchAction",
+        target: { "@type": "EntryPoint", urlTemplate: "https://ortaksat.com/explore?q={search_term_string}" },
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+});
 
 const responsiveShell = `
 :root { color-scheme: light; }
