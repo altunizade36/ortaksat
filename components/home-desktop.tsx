@@ -30,12 +30,12 @@ const HERO = (n: string) => `https://ortaksat.com/hero2/${n}.jpg`;
 // SABİT tanıtım kümesi — merkez tokalaşma (anlaşma) fotoğrafı + çevresinde sabit
 // ürün görselleri. Bilerek statiktir; canlı ilanlardan çekilmez, değişmez.
 const HERO_FLOAT: Array<{ img: string; x: number; y: number }> = [
-  { img: "headphones", x: 22, y: 15 },
-  { img: "laptop", x: 78, y: 13 },
-  { img: "camera", x: 86, y: 50 },
-  { img: "watch", x: 14, y: 50 },
-  { img: "plant", x: 27, y: 85 },
-  { img: "chair", x: 73, y: 85 }
+  { img: "headphones", x: 27, y: 18 },
+  { img: "laptop", x: 73, y: 16 },
+  { img: "camera", x: 80, y: 50 },
+  { img: "watch", x: 20, y: 50 },
+  { img: "plant", x: 31, y: 82 },
+  { img: "chair", x: 69, y: 82 }
 ];
 
 export function HomeDesktop() {
@@ -293,7 +293,7 @@ export function HomeDesktop() {
             </View>
             {/* Kompakt görsel küme: yeşil daire + ortaklık fotoğrafı + ürünler.
                 maxWidth ile ürünler karttan uzaklaşmaz; ring dengeli durur. */}
-            <View style={{ alignItems: "center", alignSelf: "center", flex: 0.9, justifyContent: "center", maxWidth: 300, minHeight: 168, minWidth: 0, position: "relative", width: "100%" }}>
+            <View style={{ alignItems: "center", alignSelf: "center", flex: 0.9, justifyContent: "center", maxWidth: 260, minHeight: 168, minWidth: 0, position: "relative", width: "100%" }}>
               <View style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 999, height: 150, position: "absolute", width: 150 }} />
               <View style={{ borderColor: "#FFFFFF", borderRadius: 16, borderWidth: 3, height: 116, overflow: "hidden", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.26, shadowRadius: 16, width: 132 }}>
                 <SafeRemoteImage uri={HERO("deal")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
