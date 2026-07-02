@@ -6,6 +6,7 @@ import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 
 import { BulkListingModal } from "@/components/bulk-listing-modal";
 import { colors } from "@/components/colors";
+import { QuickStart } from "@/components/quick-start";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -378,12 +379,7 @@ export default function SellerScreen() {
         </Card>
       ) : null}
 
-      {myListings.length === 0 ? (
-        <Card>
-          <EmptyState title={t("noSellerListings")} body={t("noSellerListingsBody")} />
-          <PrimaryButton href="/create" icon="store-plus-outline">Yeni ilan aç</PrimaryButton>
-        </Card>
-      ) : null}
+      {myListings.length === 0 ? <QuickStart role="seller" /> : null}
       {myListings.length > 0 && visibleListings.length === 0 ? (
         <EmptyState title={t("noResults")} body={t("sellerNoResultBody")} />
       ) : null}

@@ -8,6 +8,7 @@ import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View } f
 import { colors } from "@/components/colors";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { PartnerLeaderboard } from "@/components/partner-leaderboard";
+import { QuickStart } from "@/components/quick-start";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, shareUrl } from "@/lib/format";
@@ -456,12 +457,7 @@ export default function PartnerScreen() {
         </ScrollView>
       </Card>
 
-      {myPartnerships.length === 0 ? (
-        <Card>
-          <EmptyState title={t("noPartnerships")} body={t("noPartnershipsBody")} />
-          <PrimaryButton href="/(tabs)/explore" icon="play-box-multiple-outline">Ortak satış ilanlarını keşfet</PrimaryButton>
-        </Card>
-      ) : null}
+      {myPartnerships.length === 0 ? <QuickStart role="partner" /> : null}
       {myPartnerships.length > 0 && visiblePartnerships.length === 0 ? <EmptyState title={t("noResults")} body={t("partnerNoResultBody")} /> : null}
 
       {visiblePartnerships.map((partnership) => {
