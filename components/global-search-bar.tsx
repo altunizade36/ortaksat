@@ -1,76 +1,116 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { SafeRemoteImage } from "@/components/safe-remote-image";
+import { suggestCategories } from "@/lib/category-tree";
+import { moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { searchKey } from "@/lib/locale";
+import { displayText } from "@/lib/text";
+import { useStore } from "@/lib/use-store";
 
 export function GlobalSearchBar() {
   const router = useRouter();
   const params = useLocalSearchParams<{ q?: string }>();
   const { language, t } = useLanguage();
+  const { listings } = useStore();
   const [value, setValue] = useState(params.q ?? "");
+  const [focused, setFocused] = useState(false);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     setValue(params.q ?? "");
   }, [params.q]);
 
-  function submitSearch() {
-    const query = value.trim();
+  const q = value.trim();
+  const suggestions = useMemo(() => {
+    if (q.length < 2) return { cats: [] as ReturnType<typeof suggestCategories>, products: [] as typeof listings };
+    const tokens = searchKey(q).split(" ").filter(Boolean);
+    const products = listings
+      .filter((l) => l.status === "active")
+      .map((l) => ({ l, key: searchKey(`${l.title} ${l.category} ${l.location}`) }))
+      .filter((x) => tokens.every((tk) => x.key.includes(tk)))
+      .slice(0, 6)
+      .map((x) => x.l);
+    return { cats: suggestCategories(q, 4), products };
+  }, [q, listings]);
+
+  const hasSug = focused && q.length >= 2 && (suggestions.cats.length > 0 || suggestions.products.length > 0);
+
+  function submitSearch(query?: string) {
+    const finalQ = (query ?? value).trim();
     inputRef.current?.blur();
-    router.push({ pathname: "/(tabs)/explore", params: query ? { q: query } : undefined });
+    setFocused(false);
+    router.push({ pathname: "/(tabs)/explore", params: finalQ ? { q: finalQ } : undefined });
   }
 
   return (
-    <Pressable
-      accessibilityRole="search"
-      onPress={() => inputRef.current?.focus()}
-      style={{
-        alignItems: "center",
-        backgroundColor: colors.surfaceAlt,
-        borderColor: colors.line,
-        borderRadius: 999,
-        borderWidth: 1,
-        flexDirection: "row",
-        gap: 10,
-        height: 46,
-        paddingLeft: 16,
-        paddingRight: 6,
-        minWidth: 0,
-        width: "100%"
-      }}
-    >
-      <MaterialCommunityIcons name="magnify" size={21} color={colors.muted} />
-      <TextInput
-        ref={inputRef}
-        value={value}
-        onChangeText={setValue}
-        onSubmitEditing={submitSearch}
-        blurOnSubmit
-        placeholder={t("searchPlaceholder")}
-        placeholderTextColor={colors.muted}
-        returnKeyType="search"
-        submitBehavior="submit"
-        style={{
-          color: colors.ink,
-          flex: 1,
-          fontSize: 15,
-          fontWeight: "700",
-          height: 40,
-          paddingVertical: 0
-        }}
-      />
-      <Pressable
-        accessibilityLabel={translateCopy("Ara", language)}
-        accessibilityRole="button"
-        onPress={submitSearch}
-        style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 5, height: 36, paddingHorizontal: 16 }}
+    <View style={{ position: "relative", width: "100%", zIndex: hasSug ? 1000 : 1 }}>
+      <View
+        style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: focused ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 10, height: 46, minWidth: 0, paddingLeft: 16, paddingRight: 6, width: "100%" }}
       >
-        <MaterialCommunityIcons name="magnify" size={17} color="#FFFFFF" />
-        <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ara", language)}</Text>
-      </Pressable>
-    </Pressable>
+        <MaterialCommunityIcons name="magnify" size={21} color={colors.muted} />
+        <TextInput
+          ref={inputRef}
+          value={value}
+          onChangeText={setValue}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setTimeout(() => setFocused(false), 180)}
+          onSubmitEditing={() => submitSearch()}
+          blurOnSubmit
+          placeholder={t("searchPlaceholder")}
+          placeholderTextColor={colors.muted}
+          returnKeyType="search"
+          submitBehavior="submit"
+          style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "700", height: 40, paddingVertical: 0 }}
+        />
+        {value ? (
+          <Pressable accessibilityRole="button" accessibilityLabel="Temizle" onPress={() => { setValue(""); inputRef.current?.focus(); }} hitSlop={8}>
+            <MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} />
+          </Pressable>
+        ) : null}
+        <Pressable
+          accessibilityLabel={translateCopy("Ara", language)}
+          accessibilityRole="button"
+          onPress={() => submitSearch()}
+          style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 5, height: 36, paddingHorizontal: 16 }}
+        >
+          <MaterialCommunityIcons name="magnify" size={17} color="#FFFFFF" />
+          <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ara", language)}</Text>
+        </Pressable>
+      </View>
+
+      {hasSug ? (
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, left: 0, overflow: "hidden", position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.16, shadowRadius: 26, top: 52, zIndex: 1000 }}>
+          {suggestions.cats.map((c) => (
+            <Pressable key={`c-${c.labels.join(">")}`} onPress={() => submitSearch(c.labels[c.labels.length - 1])} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 10 })}>
+              <MaterialCommunityIcons name="tag-outline" size={17} color={colors.primary} />
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }} numberOfLines={1}>{c.labels[c.labels.length - 1]}</Text>
+              <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }} numberOfLines={1}>{c.labels.join(" › ")}</Text>
+            </Pressable>
+          ))}
+          {suggestions.cats.length > 0 && suggestions.products.length > 0 ? <View style={{ backgroundColor: colors.line, height: 1 }} /> : null}
+          {suggestions.products.map((l) => (
+            <Pressable key={`p-${l.id}`} onPress={() => { inputRef.current?.blur(); setFocused(false); router.push(`/listing/${l.id}`); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 12, paddingVertical: 8 })}>
+              <View style={{ backgroundColor: colors.line, borderRadius: 8, height: 38, overflow: "hidden", width: 38 }}>
+                <SafeRemoteImage uri={l.image} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+              </View>
+              <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(l.title)}</Text>
+                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{displayText(l.category)}</Text>
+              </View>
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{moneyIn(l.price, l.currency)}</Text>
+            </Pressable>
+          ))}
+          <Pressable onPress={() => submitSearch()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 })}>
+            <MaterialCommunityIcons name="magnify" size={16} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>“{q}” için tüm sonuçlar</Text>
+          </Pressable>
+        </View>
+      ) : null}
+    </View>
   );
 }
