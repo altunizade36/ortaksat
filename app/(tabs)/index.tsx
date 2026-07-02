@@ -23,8 +23,8 @@ import { useStore } from "@/lib/use-store";
 type SortMode = "featured" | "commission" | "newest";
 type FilterKey = "all" | "trending" | "open" | "highCommission" | "lowStock" | string;
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
-const INITIAL_HOME_ITEMS = 20;
-const HOME_PAGE_SIZE = 16;
+const INITIAL_HOME_ITEMS = 24;
+const HOME_PAGE_SIZE = 24;
 
 export default function HomeScreen() {
   const { language, t } = useLanguage();
@@ -106,17 +106,22 @@ export default function HomeScreen() {
     setVisibleCount(INITIAL_HOME_ITEMS);
   }, [filter, query, sortMode]);
 
+  function showMore() {
+    if (visibleCount < filteredListings.length) {
+      setVisibleCount((current) => Math.min(filteredListings.length, current + HOME_PAGE_SIZE));
+    } else if (marketplaceHasMore) {
+      loadMoreMarketplace();
+      setVisibleCount((current) => current + HOME_PAGE_SIZE);
+    }
+  }
+
   function loadMoreIfNeeded(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const distanceToBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
-    if (distanceToBottom < 420) {
-      setVisibleCount((current) => {
-        const next = Math.min(filteredListings.length, current + HOME_PAGE_SIZE);
-        if (next >= filteredListings.length && marketplaceHasMore) loadMoreMarketplace();
-        return next;
-      });
-    }
+    if (distanceToBottom < 600) showMore();
   }
+
+  const hasMoreToShow = visibleListings.length < filteredListings.length || marketplaceHasMore;
 
   return (
     <ScrollView
@@ -207,10 +212,13 @@ export default function HomeScreen() {
         ))}
       </View>
 
-      {visibleListings.length < filteredListings.length ? (
-        <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "800", textAlign: "center" }}>
-          {visibleListings.length} / {filteredListings.length} {t("results")}
-        </Text>
+      {hasMoreToShow ? (
+        <Pressable onPress={showMore} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 26, paddingVertical: 13 })}>
+          <MaterialCommunityIcons name="chevron-down" size={18} color={colors.primaryDark} />
+          <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Daha fazla ürün göster</Text>
+        </Pressable>
+      ) : filteredListings.length > 0 ? (
+        <Text selectable style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>Tüm ürünleri gördün · {filteredListings.length} ürün</Text>
       ) : null}
 
       {isWideWeb ? <WebHowItWorks /> : null}

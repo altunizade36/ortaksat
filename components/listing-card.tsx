@@ -71,12 +71,12 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
                 {displayText(listing.title)}
               </Text>
 
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "space-between" }}>
-                <Text adjustsFontSizeToFit minimumFontScale={0.7} numberOfLines={1} selectable style={{ color: colors.ink, flexShrink: 1, fontSize: 18, fontVariant: ["tabular-nums"], fontWeight: "900", minWidth: 0 }}>
+              <View style={{ gap: 5 }}>
+                <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 19, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
                   {moneyIn(listing.price, listing.currency)}
                 </Text>
-                <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, flexShrink: 1, maxWidth: "58%", minWidth: 0, paddingHorizontal: 8, paddingVertical: 4 }}>
-                  <Text adjustsFontSizeToFit minimumFontScale={0.7} numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
+                <View style={{ alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
                     {t("earning")} {moneyIn(commission, listing.currency)}
                   </Text>
                 </View>
