@@ -1143,8 +1143,13 @@ export function StoreProvider({ children }: PropsWithChildren) {
             listing.id === input.listingId ? { ...listing, leadCount: listing.leadCount + 1 } : listing
           )
         );
-        if (listing) notify(listing.ownerId, "lead", "Yeni alıcı talebi", `${listing.title} için yeni talep geldi.`);
-        notify(partnership.partnerId, "lead", "Talebin satıcıya iletildi", `${listing.title} için getirdiğin müşteri kaydedildi.`);
+        // Canlı modda talep bildirimleri DB tetikleyicisiyle (notify_on_lead) üretilir
+        // — hem uygulama içi hem referans linki talepleri tek kaynaktan. Çift olmasın diye
+        // client-side bildirimi yalnız local/demo modda gönderiyoruz.
+        if (!liveUser) {
+          if (listing) notify(listing.ownerId, "lead", "Yeni alıcı talebi", `${listing.title} için yeni talep geldi.`);
+          notify(partnership.partnerId, "lead", "Talebin satıcıya iletildi", `${listing.title} için getirdiğin müşteri kaydedildi.`);
+        }
         if (liveUser) void insertLead(lead);
         return lead;
       },
