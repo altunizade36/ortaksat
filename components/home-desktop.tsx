@@ -25,13 +25,15 @@ function descendantLabels(node: CategoryNode, out: string[] = []): string[] {
 
 // Hero'da gerçek görseller (ikon değil). public/hero -> ortaksat.com/hero
 const HERO = (n: string) => `https://ortaksat.com/hero/${n}.jpg`;
-const HERO_FLOAT: Array<{ img: string; x: number; y: number }> = [
-  { img: "headphones", x: 15, y: 13 },
-  { img: "laptop", x: 83, y: 9 },
-  { img: "camera", x: 94, y: 45 },
-  { img: "watch", x: 6, y: 44 },
-  { img: "plant", x: 21, y: 88 },
-  { img: "chair", x: 85, y: 85 }
+// Yüzen daire konumları — merkez ortaklık fotoğrafının çevresine gerçek satıştaki
+// ürünler yerleştirilir (ortak sat & satış temasını canlı ürünlerle anlatır).
+const HERO_POS: Array<{ x: number; y: number }> = [
+  { x: 15, y: 13 },
+  { x: 83, y: 9 },
+  { x: 94, y: 45 },
+  { x: 6, y: 44 },
+  { x: 21, y: 88 },
+  { x: 85, y: 85 }
 ];
 
 export function HomeDesktop() {
@@ -39,6 +41,18 @@ export function HomeDesktop() {
   const { categoryTree, listings, isFavorite, toggleFavorite } = useStore();
 
   const active = useMemo(() => listings.filter((l) => l.status === "active"), [listings]);
+  // Hero'daki yüzen daireler: gerçek satıştaki, benzersiz görselli ürünler (öne çıkanlar önce).
+  const heroFloat = useMemo(() => {
+    const seen = new Set<string>();
+    const picks: Array<{ id: string; image: string }> = [];
+    for (const l of [...active].sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || commissionAmount(b) - commissionAmount(a))) {
+      if (!l.image || seen.has(l.image)) continue;
+      seen.add(l.image);
+      picks.push({ id: l.id, image: l.image });
+      if (picks.length >= HERO_POS.length) break;
+    }
+    return HERO_POS.map((pos, i) => (picks[i] ? { ...pos, ...picks[i] } : null)).filter((v): v is { x: number; y: number; id: string; image: string } => v !== null);
+  }, [active]);
   const today = new Date().toISOString().slice(0, 10);
   const stats = useMemo(() => {
     const openCount = active.filter((l) => l.partnershipMode === "open").length;
@@ -311,10 +325,16 @@ export function HomeDesktop() {
               <View style={{ borderColor: "#FFFFFF", borderRadius: 16, borderWidth: 3, height: 116, overflow: "hidden", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.26, shadowRadius: 16, width: 132 }}>
                 <SafeRemoteImage uri={HERO("people")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
               </View>
-              {HERO_FLOAT.map((f) => (
-                <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 40, left: `${f.x}%`, marginLeft: -20, marginTop: -20, overflow: "hidden", position: "absolute", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.2, shadowRadius: 8, top: `${f.y}%`, width: 40 }}>
-                  <SafeRemoteImage uri={HERO(f.img)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-                </View>
+              {heroFloat.map((f) => (
+                <Pressable
+                  key={f.id}
+                  onPress={() => router.push({ pathname: "/listing/[id]", params: { id: f.id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel="Öne çıkan ürünü aç"
+                  style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 44, left: `${f.x}%`, marginLeft: -22, marginTop: -22, overflow: "hidden", position: "absolute", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.22, shadowRadius: 8, top: `${f.y}%`, width: 44 }}
+                >
+                  <SafeRemoteImage uri={f.image} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+                </Pressable>
               ))}
             </View>
           </View>
