@@ -75,10 +75,20 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
                 <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 19, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
                   {moneyIn(listing.price, listing.currency)}
                 </Text>
-                <View style={{ alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
-                  <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-                    {t("earning")} {moneyIn(commission, listing.currency)}
-                  </Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
+                      {t("earning")} {moneyIn(commission, listing.currency)}
+                    </Text>
+                  </View>
+                  {listing.bonusAmount && listing.bonusAmount > 0 && listing.bonusQuota ? (
+                    <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3 }}>
+                      <MaterialCommunityIcons name="rocket-launch" size={11} color={colors.warning} />
+                      <Text numberOfLines={1} style={{ color: colors.warning, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
+                        +{moneyIn(listing.bonusAmount, listing.currency)} bonus
+                      </Text>
+                    </View>
+                  ) : null}
                 </View>
               </View>
 
