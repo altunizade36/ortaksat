@@ -59,8 +59,6 @@ export function HomeDesktop() {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
-  const [conditions, setConditions] = useState<Record<string, boolean>>({});
-  const [sellerTypes, setSellerTypes] = useState<Record<string, boolean>>({});
   const [locFilter, setLocFilter] = useState<string>("");
   const [locOpen, setLocOpen] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(false);
@@ -123,8 +121,8 @@ export function HomeDesktop() {
   // Ortak-satış modeli: en çok kazandıran (en yüksek komisyonlu) fırsatlar.
   const topEarn = useMemo(() => [...active].filter((l) => commissionAmount(l) > 0).sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [active]);
   const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (locFilter ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0) + (minCommission ? 1 : 0) + (inStock ? 1 : 0) + (onlyNew ? 1 : 0);
-  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLocFilter(""); setConditions({}); setSellerTypes({}); setOnlyOpen(false); setOnlyFeatured(false); setMinCommission(0); setInStock(false); setOnlyNew(false); };
-  const COMMISSION_PRESETS: Array<[number, string]> = [[500, "500 ₺+"], [1000, "1.000 ₺+"], [5000, "5.000 ₺+"], [25000, "25.000 ₺+"]];
+  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLocFilter(""); setOnlyOpen(false); setOnlyFeatured(false); setMinCommission(0); setInStock(false); setOnlyNew(false); };
+  const COMMISSION_PRESETS: Array<[number, string]> = [[500, "500 ₺+"], [1000, "1.000 ₺+"], [2500, "2.500 ₺+"], [5000, "5.000 ₺+"]];
   const PRICE_PRESETS: Array<[string, string, string]> = [["0", "1000", "0 - 1.000 ₺"], ["1000", "5000", "1.000 - 5.000 ₺"], ["5000", "25000", "5.000 - 25.000 ₺"], ["25000", "100000", "25.000 - 100.000 ₺"], ["100000", "", "100.000 ₺ +"]];
   const SORTS: Array<[typeof sortMode, string]> = [["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"], ["commission", "Kazanç"]];
 
@@ -194,10 +192,10 @@ export function HomeDesktop() {
           {/* Fiyat aralığı: min/max + hazır aralıklar */}
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Fiyat Aralığı (₺)</Text>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-              <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" placeholder="En az" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, paddingHorizontal: 10, textAlign: "center" }} />
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+              <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" placeholder="En az" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, minWidth: 0, paddingHorizontal: 8, textAlign: "center" }} />
               <Text style={{ color: colors.subtle, fontSize: 13, fontWeight: "800" }}>—</Text>
-              <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" placeholder="En çok" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, paddingHorizontal: 10, textAlign: "center" }} />
+              <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" placeholder="En çok" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, minWidth: 0, paddingHorizontal: 8, textAlign: "center" }} />
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {PRICE_PRESETS.map(([mn, mx, lbl]) => {
@@ -256,22 +254,6 @@ export function HomeDesktop() {
             <SwitchRow label="Öne çıkan ilanlar" on={onlyFeatured} onPress={() => setOnlyFeatured((v) => !v)} />
             <SwitchRow label="Stokta olanlar" on={inStock} onPress={() => setInStock((v) => !v)} />
             <SwitchRow label="Yeni ilanlar (7 gün)" on={onlyNew} onPress={() => setOnlyNew((v) => !v)} />
-          </View>
-
-          {/* Ürün Durumu */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Ürün Durumu</Text>
-            {["Sıfır", "İkinci El", "Yenilenmiş"].map((c) => (
-              <CheckRow key={c} label={c} on={!!conditions[c]} onPress={() => setConditions((s) => ({ ...s, [c]: !s[c] }))} />
-            ))}
-          </View>
-
-          {/* Satıcı Tipi */}
-          <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Satıcı Tipi</Text>
-            {["Bireysel", "Kurumsal"].map((c) => (
-              <CheckRow key={c} label={c} on={!!sellerTypes[c]} onPress={() => setSellerTypes((s) => ({ ...s, [c]: !s[c] }))} />
-            ))}
           </View>
 
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, paddingVertical: 11 }}>
@@ -537,13 +519,3 @@ function SwitchRow({ label, on, onPress }: { label: string; on: boolean; onPress
   );
 }
 
-function CheckRow({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
-      <View style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 6, borderWidth: 1.5, height: 19, justifyContent: "center", width: 19 }}>
-        {on ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" /> : null}
-      </View>
-      <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{label}</Text>
-    </Pressable>
-  );
-}
