@@ -11,6 +11,7 @@ import { AgreementCard } from "@/components/agreement-card";
 import { colors } from "@/components/colors";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
+import { EarningsCalculator } from "@/components/earnings-calculator";
 import { ListingQA } from "@/components/listing-qa";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
@@ -345,6 +346,8 @@ export default function ListingDetailScreen() {
             <Metric label="Beğeni" value={`${currentListing.favoriteCount}`} />
           </View>
         </Card>
+
+        {!isOwner ? <EarningsCalculator listing={currentListing} isDemo={isDemo} onJoin={handleJoin} /> : null}
 
         <ListingDecisionCard
           listing={currentListing}
