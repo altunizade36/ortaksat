@@ -531,18 +531,34 @@ export default function SellerScreen() {
                   <Metric label="İade sonu" value={sale.returnUntil ?? "-"} />
                 </View>
                 {sale.payoutNote ? (
-                  <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
+                  <Text selectable style={{ color: sale.status === "disputed" ? colors.accent : colors.muted, fontSize: 13, fontWeight: sale.status === "disputed" ? "800" : "400", lineHeight: 19 }}>
                     {sale.payoutNote}
                   </Text>
                 ) : null}
-                <View style={{ flexDirection: "row", gap: 8 }}>
-                  <View style={{ flex: 1 }}>
-                    <PrimaryButton tone="secondary" onPress={() => updateSaleStatus(sale.id, "approved")}>İade Bitti</PrimaryButton>
+                {sale.status === "paid" ? (
+                  <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 8, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 9 }}>
+                    <MaterialCommunityIcons name="check-circle" size={15} color={colors.success} />
+                    <Text style={{ color: colors.success, fontSize: 12.5, fontWeight: "800" }}>Komisyon kapandı</Text>
                   </View>
-                  <View style={{ flex: 1 }}>
-                    <PrimaryButton tone="soft" onPress={() => confirmPaidSale(sale.id)}>Ödendi Bildir</PrimaryButton>
+                ) : sale.status === "disputed" ? (
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <View style={{ flex: 1 }}><PrimaryButton tone="soft" onPress={() => confirmPaidSale(sale.id)}>Yeniden Ödedim</PrimaryButton></View>
+                    <View style={{ flex: 1 }}><PrimaryButton tone="secondary" onPress={() => updateSaleStatus(sale.id, "cancelled")}>İptal Et</PrimaryButton></View>
                   </View>
-                </View>
+                ) : sale.status === "seller_paid" ? (
+                  <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 8, paddingVertical: 9 }}>
+                    <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "800" }}>Ortak onayı bekleniyor</Text>
+                  </View>
+                ) : (
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <View style={{ flex: 1 }}>
+                      <PrimaryButton tone="secondary" onPress={() => updateSaleStatus(sale.id, "approved")}>İade Bitti</PrimaryButton>
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <PrimaryButton tone="soft" onPress={() => confirmPaidSale(sale.id)}>Ödendi Bildir</PrimaryButton>
+                    </View>
+                  </View>
+                )}
                 <ReviewPrompt sale={sale} canReviewSale={canReviewSale} createSaleReview={createSaleReview} />
               </View>
             ))}

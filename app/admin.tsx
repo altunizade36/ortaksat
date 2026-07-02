@@ -564,8 +564,14 @@ function AdminScreenInner() {
 
         {section === "commissions" ? (
           <Panel title="Komisyon Kayıtları" sub="Ortaksat para tutmaz; bu kayıtlar taraflar arası komisyonun takibidir.">
+            {sales.filter((s) => s.status === "disputed").length > 0 ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 10, flexDirection: "row", gap: 8, marginBottom: 10, padding: 11 }}>
+                <MaterialCommunityIcons name="scale-balance" size={17} color={colors.accent} />
+                <Text style={{ color: colors.accent, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{sales.filter((s) => s.status === "disputed").length} anlaşmazlık kaydı arabuluculuk bekliyor (en üstte).</Text>
+              </View>
+            ) : null}
             <Table head={["İLAN", "KOMİSYON", "ORTAKLIK", "DURUM"]} cols={[2.2, 1, 1.4, 1.2]}>
-              {sales.map((s) => {
+              {[...sales].sort((a, b) => (a.status === "disputed" ? -1 : 0) - (b.status === "disputed" ? -1 : 0)).map((s) => {
                 const listing = listings.find((l) => l.id === s.listingId);
                 const p = partnerships.find((x) => x.id === s.partnershipId);
                 return (

@@ -6,6 +6,7 @@ import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { DisputeModal } from "@/components/dispute-modal";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { PartnerLeaderboard } from "@/components/partner-leaderboard";
 import { QuickStart } from "@/components/quick-start";
@@ -53,6 +54,7 @@ export default function PartnerScreen() {
   const isWideWeb = useIsWideWeb();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<PartnerFilter>("all");
+  const [disputeSaleId, setDisputeSaleId] = useState<string | null>(null);
   const [tab, setTab] = useState<"all" | "pending" | "active" | "earning" | "links">("all");
   const [oppCategory, setOppCategory] = useState("");
   const [oppCommission, setOppCommission] = useState(0);
@@ -274,7 +276,20 @@ export default function PartnerScreen() {
                   (tab === "earning"
                     ? mySales.map((s) => {
                         const l = listings.find((x) => x.id === s.listingId);
-                        return <OppMiniRow key={s.id} title={l?.title ?? "Ürün"} image={l?.image} right={money(s.commissionAmount)} sub={saleLabels[s.status]} />;
+                        const canConfirm = s.status === "seller_paid" || s.status === "disputed";
+                        const canDispute = s.status !== "paid" && s.status !== "cancelled" && s.status !== "disputed";
+                        return (
+                          <View key={s.id} style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 10 }}>
+                            <OppMiniRow title={l?.title ?? "Ürün"} image={l?.image} right={money(s.commissionAmount)} sub={saleLabels[s.status]} />
+                            {s.status === "disputed" && s.payoutNote ? <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>{s.payoutNote}</Text> : null}
+                            {canConfirm || canDispute ? (
+                              <View style={{ flexDirection: "row", gap: 8 }}>
+                                {canConfirm ? <View style={{ flex: 1 }}><PrimaryButton tone="soft" onPress={() => updateSaleStatus(s.id, "paid")}>{s.status === "disputed" ? "Çözüldü · Aldım" : "Ödemeyi Aldım"}</PrimaryButton></View> : null}
+                                {canDispute ? <View style={{ flex: 1 }}><PrimaryButton tone="secondary" onPress={() => setDisputeSaleId(s.id)}>Anlaşmazlık</PrimaryButton></View> : null}
+                              </View>
+                            ) : null}
+                          </View>
+                        );
                       })
                     : (tab === "active" ? activePartnerships : pendingPartnerships).map((p) => {
                         const l = listings.find((x) => x.id === p.listingId);
@@ -368,6 +383,11 @@ export default function PartnerScreen() {
             <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Detaylı Rapor</Text>
           </Pressable>
         </View>
+        <DisputeModal
+          visible={disputeSaleId !== null}
+          onClose={() => setDisputeSaleId(null)}
+          onSubmit={(reason) => { if (disputeSaleId) updateSaleStatus(disputeSaleId, "disputed", reason); setDisputeSaleId(null); }}
+        />
       </ScrollView>
     );
   }
@@ -563,9 +583,9 @@ export default function PartnerScreen() {
                   <Metric label="İade sonu" value={sale.returnUntil ?? "-"} />
                 </View>
                 <StatusPill label={saleLabels[sale.status]} tone={sale.status === "paid" ? "success" : "warning"} />
-                {sale.payoutNote ? <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{sale.payoutNote}</Text> : null}
-                {sale.status === "seller_paid" ? <PrimaryButton tone="soft" onPress={() => updateSaleStatus(sale.id, "paid")}>Ödemeyi Aldım</PrimaryButton> : null}
-                {sale.status !== "paid" && sale.status !== "cancelled" ? <PrimaryButton tone="secondary" onPress={() => updateSaleStatus(sale.id, "disputed")}>Anlaşmazlık Bildir</PrimaryButton> : null}
+                {sale.payoutNote ? <Text selectable style={{ color: sale.status === "disputed" ? colors.accent : colors.muted, fontSize: 13, lineHeight: 19 }}>{sale.payoutNote}</Text> : null}
+                {sale.status === "seller_paid" || sale.status === "disputed" ? <PrimaryButton tone="soft" onPress={() => updateSaleStatus(sale.id, "paid")}>{sale.status === "disputed" ? "Çözüldü · Ödemeyi Aldım" : "Ödemeyi Aldım"}</PrimaryButton> : null}
+                {sale.status !== "paid" && sale.status !== "cancelled" && sale.status !== "disputed" ? <PrimaryButton tone="secondary" onPress={() => setDisputeSaleId(sale.id)}>Anlaşmazlık Bildir</PrimaryButton> : null}
                 <ReviewPrompt sale={sale} canReviewSale={canReviewSale} createSaleReview={createSaleReview} />
               </View>
             ))}
@@ -573,6 +593,11 @@ export default function PartnerScreen() {
         );
       })}
       </WebContainer>
+      <DisputeModal
+        visible={disputeSaleId !== null}
+        onClose={() => setDisputeSaleId(null)}
+        onSubmit={(reason) => { if (disputeSaleId) updateSaleStatus(disputeSaleId, "disputed", reason); setDisputeSaleId(null); }}
+      />
     </ScrollView>
   );
 }

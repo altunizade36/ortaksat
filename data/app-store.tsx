@@ -223,7 +223,7 @@ type AppStore = {
   setUserVerification: (userId: string, field: "verifiedPhone" | "verifiedIdentity", value: boolean) => void;
   adminNotifyUser: (userId: string, title: string, body: string) => void;
   adminBroadcast: (title: string, body: string) => void;
-  updateSaleStatus: (saleId: string, status: SaleStatus) => void;
+  updateSaleStatus: (saleId: string, status: SaleStatus, reason?: string) => void;
   findConversation: (id: string) => Conversation | undefined;
   findListing: (id: string) => Listing | undefined;
   findUser: (id: string) => User | undefined;
@@ -1481,13 +1481,24 @@ export function StoreProvider({ children }: PropsWithChildren) {
         ]);
         if (liveUser) void insertBulkNotifications(rows);
       },
-      updateSaleStatus(saleId, status) {
+      updateSaleStatus(saleId, status, reason) {
         const sale = sales.find((item) => item.id === saleId);
         const saleListing = sale ? listings.find((item) => item.id === sale.listingId) : undefined;
         const salePartnership = sale ? partnerships.find((item) => item.id === sale.partnershipId) : undefined;
+        const isSeller = saleListing?.ownerId === currentUser.id;
+        const isPartner = salePartnership?.partnerId === currentUser.id;
         const sellerAction = status === "approved" || status === "seller_paid" || status === "cancelled";
-        const partnerAction = status === "paid" || status === "disputed";
-        if (!sale || (sellerAction && saleListing?.ownerId !== currentUser.id) || (partnerAction && salePartnership?.partnerId !== currentUser.id)) return;
+        const partnerAction = status === "paid";
+        // İtiraz (disputed) ve çözüm iki taraftan da açılabilir; diğer aksiyonlar role bağlı.
+        if (
+          !sale ||
+          (sellerAction && !isSeller) ||
+          (partnerAction && !isPartner) ||
+          (status === "disputed" && !isSeller && !isPartner)
+        ) {
+          return;
+        }
+        const disputeText = reason?.trim() ? `Anlaşmazlık: ${reason.trim()}` : "Komisyon için anlaşmazlık kaydı açıldı.";
         const updatedSale = sale
           ? {
               ...sale,
@@ -1506,7 +1517,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
                       : status === "cancelled"
                         ? "Satış veya komisyon iptal edildi."
                         : status === "disputed"
-                          ? "Komisyon için anlaşmazlık kaydı açıldı."
+                          ? disputeText
                           : sale.payoutNote
             }
           : undefined;
@@ -1518,6 +1529,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (sale && status === "paid") {
           const listing = listings.find((item) => item.id === sale.listingId);
           if (listing) notify(listing.ownerId, "payout", "Ortak ödemeyi onayladı", `${sale.commissionAmount} TL komisyon kapandı.`);
+        }
+        if (sale && status === "cancelled" && salePartnership) {
+          notify(salePartnership.partnerId, "payout", "Satış/komisyon iptal edildi", `${saleListing?.title ?? "İlan"} için komisyon kaydı iptal edildi.`);
+        }
+        if (sale && status === "disputed") {
+          // İtirazı karşı tarafa bildir (kim açtıysa diğerine gider).
+          const other = isSeller ? salePartnership?.partnerId : saleListing?.ownerId;
+          if (other) notify(other, "payout", "Komisyon anlaşmazlığı açıldı", `${saleListing?.title ?? "İlan"} komisyonu için anlaşmazlık bildirildi. Panelden inceleyip çözebilirsin.`);
         }
         if (liveUser && updatedSale) void updateSaleStatusLive(updatedSale);
       },
