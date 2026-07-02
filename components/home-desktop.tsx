@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -53,14 +53,20 @@ export function HomeDesktop() {
   // Filtreler
   const [selectedNode, setSelectedNode] = useState<CategoryNode | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
-  const [maxPrice, setMaxPrice] = useState<number>(0); // 0 = sınırsız
-  const [trackW, setTrackW] = useState(1);
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
   const [conditions, setConditions] = useState<Record<string, boolean>>({});
   const [sellerTypes, setSellerTypes] = useState<Record<string, boolean>>({});
   const [locFilter, setLocFilter] = useState<string>("");
+  const [locOpen, setLocOpen] = useState(false);
+  const [onlyOpen, setOnlyOpen] = useState(false);
+  const [onlyFeatured, setOnlyFeatured] = useState(false);
+  const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
+  const [visibleCount, setVisibleCount] = useState(18);
 
-  const PRICE_CAP = 5_000_000;
-  const locations = useMemo(() => Array.from(new Set(active.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")).slice(0, 40), [active]);
+  const locations = useMemo(() => Array.from(new Set(active.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")).slice(0, 60), [active]);
+  const pMin = Number(priceMin.replace(/[^\d]/g, "")) || 0;
+  const pMax = Number(priceMax.replace(/[^\d]/g, "")) || 0;
 
   // Seçili kategorinin (ve tüm alt kategorilerinin) etiket kümesi.
   const catLabelSet = useMemo(() => (selectedNode ? new Set(descendantLabels(selectedNode).map((s) => s.toLocaleLowerCase("tr-TR"))) : null), [selectedNode]);
@@ -74,25 +80,37 @@ export function HomeDesktop() {
   const filtered = useMemo(() => {
     return active.filter((l) => {
       if (!matchesCat(l)) return false;
-      if (maxPrice > 0 && l.price > maxPrice) return false;
+      if (pMin && l.price < pMin) return false;
+      if (pMax && l.price > pMax) return false;
       if (locFilter && l.location !== locFilter) return false;
+      if (onlyOpen && l.partnershipMode !== "open") return false;
+      if (onlyFeatured && !l.featured) return false;
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, catLabelSet, maxPrice, locFilter]);
+  }, [active, catLabelSet, pMin, pMax, locFilter, onlyOpen, onlyFeatured]);
 
-  const grid = useMemo(() => {
-    return [...filtered].sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || (b.createdAt ?? "").localeCompare(a.createdAt ?? "")).slice(0, 24);
-  }, [filtered]);
+  const sorted = useMemo(() => {
+    const arr = [...filtered];
+    if (sortMode === "priceAsc") arr.sort((a, b) => a.price - b.price);
+    else if (sortMode === "priceDesc") arr.sort((a, b) => b.price - a.price);
+    else if (sortMode === "newest") arr.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    else if (sortMode === "commission") arr.sort((a, b) => commissionAmount(b) - commissionAmount(a));
+    else arr.sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
+    return arr;
+  }, [filtered, sortMode]);
+
+  const grid = sorted.slice(0, visibleCount);
+
+  // Filtre/sıralama değişince baştan göster.
+  useEffect(() => { setVisibleCount(18); }, [selectedNode, pMin, pMax, locFilter, onlyOpen, onlyFeatured, sortMode]);
 
   const topCats = categoryTree.filter((c) => c.label !== "Diğer");
   const popular = topCats.slice(0, 12);
-
-  function setPriceFromTap(x: number) {
-    const frac = Math.max(0, Math.min(1, x / trackW));
-    setMaxPrice(frac >= 0.98 ? 0 : Math.round((frac * PRICE_CAP) / 1000) * 1000);
-  }
-  const priceFrac = maxPrice === 0 ? 1 : Math.min(1, maxPrice / PRICE_CAP);
+  const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (locFilter ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0);
+  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLocFilter(""); setConditions({}); setSellerTypes({}); setOnlyOpen(false); setOnlyFeatured(false); };
+  const PRICE_PRESETS: Array<[string, string, string]> = [["0", "1000", "0 - 1.000 ₺"], ["1000", "5000", "1.000 - 5.000 ₺"], ["5000", "25000", "5.000 - 25.000 ₺"], ["25000", "100000", "25.000 - 100.000 ₺"], ["100000", "", "100.000 ₺ +"]];
+  const SORTS: Array<[typeof sortMode, string]> = [["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"], ["commission", "Kazanç"]];
 
   return (
     <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
@@ -152,41 +170,70 @@ export function HomeDesktop() {
             <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
               <MaterialCommunityIcons name="tune-variant" size={16} color={colors.primaryDark} />
               <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Filtrele</Text>
+              {activeFilterCount > 0 ? <View style={{ backgroundColor: colors.primary, borderRadius: 999, minWidth: 18, paddingHorizontal: 5, paddingVertical: 1 }}><Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900", textAlign: "center" }}>{activeFilterCount}</Text></View> : null}
             </View>
-            <Pressable onPress={() => { setSelectedNode(null); setExpandedKey(null); setMaxPrice(0); setLocFilter(""); setConditions({}); setSellerTypes({}); }}>
-              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Temizle</Text>
-            </Pressable>
+            <Pressable onPress={resetFilters}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Temizle</Text></Pressable>
           </View>
 
-          {/* Fiyat aralığı (dokun-ayarla slider) */}
+          {/* Fiyat aralığı: min/max + hazır aralıklar */}
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Fiyat Aralığı</Text>
-            <Pressable onPress={(e) => setPriceFromTap(e.nativeEvent.locationX)} onLayout={(e) => setTrackW(e.nativeEvent.layout.width)} style={{ justifyContent: "center", height: 22 }}>
-              <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 5 }} />
-              <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: 5, position: "absolute", width: `${priceFrac * 100}%` }} />
-              <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 3, height: 18, left: `${priceFrac * 100}%`, marginLeft: -9, position: "absolute", width: 18 }} />
-            </Pressable>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>₺0</Text>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{maxPrice === 0 ? "₺5.000.000+" : moneyIn(maxPrice, "TRY")}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Fiyat Aralığı (₺)</Text>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" placeholder="En az" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, paddingHorizontal: 10, textAlign: "center" }} />
+              <Text style={{ color: colors.subtle, fontSize: 13, fontWeight: "800" }}>—</Text>
+              <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" placeholder="En çok" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, paddingHorizontal: 10, textAlign: "center" }} />
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {PRICE_PRESETS.map(([mn, mx, lbl]) => {
+                const on = priceMin === mn && priceMax === mx;
+                return (
+                  <Pressable key={lbl} onPress={() => { if (on) { setPriceMin(""); setPriceMax(""); } else { setPriceMin(mn); setPriceMax(mx); } }} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 }}>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 10.5, fontWeight: "800" }}>{lbl}</Text>
+                  </Pressable>
+                );
+              })}
             </View>
           </View>
 
-          {/* Konum */}
+          {/* Konum: inline açılır (altta kalmaz, içeriği aşağı iter) */}
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Konum</Text>
-            <FilterDropdown value={locFilter || "Tüm Türkiye"} options={["Tüm Türkiye", ...locations]} onSelect={(v) => setLocFilter(v === "Tüm Türkiye" ? "" : v)} />
+            <Pressable onPress={() => setLocOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: locOpen ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 42, paddingHorizontal: 12 }}>
+              <MaterialCommunityIcons name="map-marker-outline" size={16} color={colors.primary} />
+              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{locFilter || "Tüm Türkiye"}</Text>
+              <MaterialCommunityIcons name={locOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+            </Pressable>
+            {locOpen ? (
+              <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, maxHeight: 220, overflow: "hidden" }}>
+                <ScrollView nestedScrollEnabled style={{ maxHeight: 220 }}>
+                  {["Tüm Türkiye", ...locations].map((o) => {
+                    const on = (locFilter || "Tüm Türkiye") === o;
+                    return (
+                      <Pressable key={o} onPress={() => { setLocFilter(o === "Tüm Türkiye" ? "" : o); setLocOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed || on ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 9 })}>
+                        <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: on ? "800" : "600" }}>{o}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </ScrollView>
+              </View>
+            ) : null}
           </View>
 
-          {/* Ürün Durumu (görsel filtre) */}
+          {/* Hızlı anahtarlar */}
+          <View style={{ gap: 10 }}>
+            <SwitchRow label="Sadece ortak satışa açık" on={onlyOpen} onPress={() => setOnlyOpen((v) => !v)} />
+            <SwitchRow label="Öne çıkan ilanlar" on={onlyFeatured} onPress={() => setOnlyFeatured((v) => !v)} />
+          </View>
+
+          {/* Ürün Durumu */}
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Ürün Durumu</Text>
-            {["Sıfır", "İkinci El", "Tertemiz"].map((c) => (
+            {["Sıfır", "İkinci El", "Yenilenmiş"].map((c) => (
               <CheckRow key={c} label={c} on={!!conditions[c]} onPress={() => setConditions((s) => ({ ...s, [c]: !s[c] }))} />
             ))}
           </View>
 
-          {/* Satıcı Tipi (görsel filtre) */}
+          {/* Satıcı Tipi */}
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Satıcı Tipi</Text>
             {["Bireysel", "Kurumsal"].map((c) => (
@@ -194,9 +241,9 @@ export function HomeDesktop() {
             ))}
           </View>
 
-          <Pressable onPress={() => {}} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 12 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Sonuçları Göster ({filtered.length})</Text>
-          </Pressable>
+          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, paddingVertical: 11 }}>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{filtered.length} sonuç bulundu</Text>
+          </View>
         </View>
       </View>
 
@@ -288,15 +335,30 @@ export function HomeDesktop() {
           </ScrollView>
         </View>
 
-        {/* Öne çıkan ilanlar */}
-        <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10 }}>
-          <View style={{ flex: 1, gap: 2 }}>
-            <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Öne Çıkan İlanlar</Text>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>En popüler ve yeni eklenen ilanlar</Text>
+        {/* İlanlar başlığı + sıralama */}
+        <View style={{ gap: 10 }}>
+          <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10 }}>
+            <View style={{ flex: 1, gap: 2 }}>
+              <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{selectedNode ? selectedNode.label : "Öne Çıkan İlanlar"}</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{filtered.length} ilan listeleniyor</Text>
+            </View>
+            <Link href="/explore" asChild>
+              <Pressable><Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Tümünü Gör →</Text></Pressable>
+            </Link>
           </View>
-          <Link href="/explore" asChild>
-            <Pressable><Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Tümünü Gör →</Text></Pressable>
-          </Link>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Sırala:</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
+              {SORTS.map(([key, lbl]) => {
+                const on = sortMode === key;
+                return (
+                  <Pressable key={key} onPress={() => setSortMode(key)} style={{ backgroundColor: on ? colors.ink : colors.surface, borderColor: on ? colors.ink : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 7 }}>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{lbl}</Text>
+                  </Pressable>
+                );
+              })}
+            </ScrollView>
+          </View>
         </View>
 
         {grid.length === 0 ? (
@@ -306,11 +368,21 @@ export function HomeDesktop() {
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Filtreleri değiştirerek tekrar dene.</Text>
           </View>
         ) : (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-            {grid.map((l) => (
-              <HomeCard key={l.id} listing={l} favorited={isFavorite(l.id)} onFav={() => toggleFavorite(l.id)} onOpen={() => router.push(`/listing/${l.id}`)} />
-            ))}
-          </View>
+          <>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+              {grid.map((l) => (
+                <HomeCard key={l.id} listing={l} favorited={isFavorite(l.id)} onFav={() => toggleFavorite(l.id)} onOpen={() => router.push(`/listing/${l.id}`)} />
+              ))}
+            </View>
+            {visibleCount < filtered.length ? (
+              <Pressable onPress={() => setVisibleCount((c) => c + 18)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, opacity: pressed ? 0.85 : 1, paddingHorizontal: 26, paddingVertical: 13 })}>
+                <MaterialCommunityIcons name="chevron-down" size={18} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Daha fazla göster ({filtered.length - visibleCount})</Text>
+              </Pressable>
+            ) : (
+              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>Tüm ilanları gördün · {filtered.length} ilan</Text>
+            )}
+          </>
         )}
       </View>
     </View>
@@ -363,26 +435,14 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
   );
 }
 
-function FilterDropdown({ value, options, onSelect }: { value: string; options: string[]; onSelect: (v: string) => void }) {
-  const [open, setOpen] = useState(false);
+function SwitchRow({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   return (
-    <View style={{ position: "relative", zIndex: open ? 50 : 1 }}>
-      <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 42, paddingHorizontal: 12 }}>
-        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{value}</Text>
-        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
-      </Pressable>
-      {open ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, maxHeight: 240, overflow: "hidden", position: "absolute", right: 0, left: 0, top: 46, zIndex: 50 }}>
-          <ScrollView nestedScrollEnabled style={{ maxHeight: 240 }}>
-            {options.map((o) => (
-              <Pressable key={o} onPress={() => { onSelect(o); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed || o === value ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 10 })}>
-                <Text style={{ color: o === value ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: o === value ? "800" : "600" }}>{o}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
-        </View>
-      ) : null}
-    </View>
+    <Pressable onPress={onPress} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+      <View style={{ alignItems: on ? "flex-end" : "flex-start", backgroundColor: on ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 38 }}>
+        <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
+      </View>
+      <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{label}</Text>
+    </Pressable>
   );
 }
 
