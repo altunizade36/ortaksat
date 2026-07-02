@@ -44,6 +44,14 @@ export default function StoreScreen() {
   const seller = id ? findUser(id) : undefined;
   const isOwnStore = seller?.id === currentUser.id;
   const trust = seller ? calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: seller }) : undefined;
+  // Ortak (partner) karnesi — kişinin başkalarının ürünlerini satarak/getirerek yaptığı iş.
+  const partnerAllPartnerships = seller ? partnerships.filter((p) => p.partnerId === seller.id) : [];
+  const partnerActiveCount = partnerAllPartnerships.filter((p) => p.status === "active").length;
+  const partnerPartnershipIds = new Set(partnerAllPartnerships.map((p) => p.id));
+  const partnerSalesList = sales.filter((s) => partnerPartnershipIds.has(s.partnershipId));
+  const partnerBroughtSales = partnerSalesList.length;
+  const partnerEarned = partnerSalesList.reduce((sum, s) => sum + s.commissionAmount, 0);
+  const hasPartnerActivity = partnerAllPartnerships.length > 0 || partnerBroughtSales > 0;
   const sellerListings = useMemo(() => {
     return listings
       .filter((listing) => listing.ownerId === id && listing.status !== "rejected")
@@ -192,6 +200,21 @@ export default function StoreScreen() {
                       <DeskAboutRow icon="shield-check" label="Satıcı güven puanı" value={`%${trust?.seller.score ?? 0}`} />
                     </View>
                   </View>
+                  {hasPartnerActivity ? (
+                    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
+                      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                        <MaterialCommunityIcons name="handshake-outline" size={19} color={colors.primaryDark} />
+                        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Ortak karnesi</Text>
+                      </View>
+                      <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>Bu kişinin başka satıcıların ürünlerini ortak olarak satarak / alıcı getirerek oluşturduğu performans.</Text>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                        <PartnerScoreCell value={`${partnerBroughtSales}`} label="Getirdiği satış" />
+                        <PartnerScoreCell value={`${partnerActiveCount}`} label="Aktif ortaklık" />
+                        <PartnerScoreCell value={money(partnerEarned)} label="Kazandırdığı komisyon" />
+                        <PartnerScoreCell value={`%${trust?.partner.score ?? 0}`} label="Ortak güven puanı" />
+                      </View>
+                    </View>
+                  ) : null}
                   {featured.length > 0 ? (
                     <View style={{ gap: 12 }}>
                       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
@@ -377,6 +400,21 @@ export default function StoreScreen() {
           <Metric label={t("earning")} value={money(totalCommission)} />
         </View>
 
+        {hasPartnerActivity ? (
+          <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 8, padding: 12 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+              <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} />
+              <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Ortak karnesi</Text>
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              <PartnerScoreCell value={`${partnerBroughtSales}`} label="Getirdiği satış" />
+              <PartnerScoreCell value={`${partnerActiveCount}`} label="Aktif ortaklık" />
+              <PartnerScoreCell value={money(partnerEarned)} label="Kazandırdığı komisyon" />
+              <PartnerScoreCell value={`%${trust?.partner.score ?? 0}`} label="Ortak güveni" />
+            </View>
+          </View>
+        ) : null}
+
         <View style={{ flexDirection: "row", gap: 8 }}>
           {isOwnStore ? (
             <View style={{ flex: 1 }}>
@@ -457,6 +495,15 @@ function DeskProfileStat({ value, label, last }: { value: string; label: string;
     <View style={{ alignItems: "center", borderRightColor: colors.line, borderRightWidth: last ? 0 : 1, flex: 1, gap: 3 }}>
       <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{value}</Text>
       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{label}</Text>
+    </View>
+  );
+}
+
+function PartnerScoreCell({ value, label }: { value: string; label: string }) {
+  return (
+    <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, flexBasis: 130, flexGrow: 1, gap: 3, padding: 13 }}>
+      <Text style={{ color: colors.primaryDark, fontSize: 19, fontWeight: "900" }}>{value}</Text>
+      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{label}</Text>
     </View>
   );
 }
