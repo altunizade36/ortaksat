@@ -7,6 +7,7 @@ import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View } f
 
 import { colors } from "@/components/colors";
 import { LegalNote } from "@/components/legal-disclaimer";
+import { PartnerLeaderboard } from "@/components/partner-leaderboard";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, shareUrl } from "@/lib/format";
@@ -45,7 +46,7 @@ const intentLabels: Record<PurchaseIntent, string> = {
 type PartnerFilter = "all" | "active" | "pending" | "earning";
 
 export default function PartnerScreen() {
-  const { canReviewSale, createSaleReview, currentUser, findUser, joinListing, leads, listings, partnerships, sales, startConversation, updateSaleStatus } = useStore();
+  const { canReviewSale, createSaleReview, currentUser, findUser, joinListing, leads, listings, partnerships, sales, startConversation, updateSaleStatus, users } = useStore();
   const { language, t } = useLanguage();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
@@ -293,6 +294,7 @@ export default function PartnerScreen() {
 
           {/* Sidebar */}
           <View style={{ gap: 16, width: 320 }}>
+            <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Paylaşım bağlantılarım</Text>
@@ -397,6 +399,8 @@ export default function PartnerScreen() {
           <Metric label="Başvuru" value={`${pendingPartnerships.length}`} />
         </View>
       </Card>
+
+      <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
 
       {allOpportunities.length > 0 ? (
         <Card>
