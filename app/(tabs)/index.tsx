@@ -23,8 +23,8 @@ import { useStore } from "@/lib/use-store";
 type SortMode = "featured" | "commission" | "newest";
 type FilterKey = "all" | "trending" | "open" | "highCommission" | "lowStock" | string;
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
-const INITIAL_HOME_ITEMS = 24;
-const HOME_PAGE_SIZE = 24;
+const INITIAL_HOME_ITEMS = 18;
+const HOME_PAGE_SIZE = 12;
 
 export default function HomeScreen() {
   const { language, t } = useLanguage();
