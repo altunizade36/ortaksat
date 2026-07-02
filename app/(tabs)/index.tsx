@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link, type Href } from "expo-router";
+import { Link, useRouter, type Href } from "expo-router";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
@@ -29,6 +29,7 @@ const HOME_PAGE_SIZE = 12;
 export default function HomeScreen() {
   const { language, t } = useLanguage();
   const { width } = useWindowDimensions();
+  const router = useRouter();
   const params = useLocalSearchParams<{ q?: string }>();
   const { categoryTree, currentUser, findUser, listings, loadMoreMarketplace, marketplaceHasMore } = useStore();
   const query = params.q ?? "";
@@ -62,6 +63,7 @@ export default function HomeScreen() {
   const maxCommission = activeListings.reduce((max, listing) => Math.max(max, commissionAmount(listing)), 0);
   const maxMomentum = activeListings.reduce((max, listing) => Math.max(max, momentumScore(listing)), 0);
   const topListings = activeListings.slice().sort((a, b) => momentumScore(b) + refreshBoost(b, seed) - (momentumScore(a) + refreshBoost(a, seed))).slice(0, 5);
+  const topEarn = useMemo(() => activeListings.filter((l) => commissionAmount(l) > 0).slice().sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [activeListings]);
   const myActiveListings = activeListings.filter((listing) => listing.ownerId === currentUser.id).length;
   const openPartnerListings = activeListings.filter((listing) => listing.partnershipMode === "open").length;
   const cityCount = new Set(activeListings.map((listing) => listing.location)).size;
@@ -138,9 +140,51 @@ export default function HomeScreen() {
         </>
       ) : (
         <>
-          <Marketplace3DHero listings={topListings} />
-          <HomeQuickActions currentUserId={currentUser.id} />
+          {/* Kompakt yeşil hero (mobil) */}
+          <View style={{ backgroundColor: colors.primary, borderRadius: 16, gap: 10, overflow: "hidden", padding: 16 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900", lineHeight: 25 }}>Ortak alın, <Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text></Text>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>Binlerce ürünü ortak sat, komisyon kazan. Güvenli, hızlı, kazançlı.</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              <Link href="/create" asChild>
+                <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 15, paddingVertical: 9 }}>
+                  <MaterialCommunityIcons name="store-plus-outline" size={16} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>İlan Ver</Text>
+                </Pressable>
+              </Link>
+              <Link href="/partner" asChild>
+                <Pressable style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 15, paddingVertical: 8 }}>
+                  <MaterialCommunityIcons name="handshake-outline" size={16} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ortak Satışa Katıl</Text>
+                </Pressable>
+              </Link>
+            </View>
+          </View>
           <CategoryShowcase categoryTree={categoryTree} isWideWeb={false} />
+
+          {/* En çok kazandıran fırsatlar (mobil şerit) */}
+          {topEarn.length > 0 ? (
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>En Çok Kazandıran Fırsatlar</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
+                {topEarn.map((l) => (
+                  <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
+                    <View style={{ height: 90, width: "100%" }}>
+                      <SafeRemoteImage uri={l.image} style={{ height: 90, width: "100%" }} contentFit="cover" />
+                      <View style={{ backgroundColor: colors.gold, borderRadius: 6, left: 7, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 7 }}>
+                        <Text style={{ color: "#1A1400", fontSize: 9, fontWeight: "900" }}>Kazanç {money(commissionAmount(l))}</Text>
+                      </View>
+                    </View>
+                    <View style={{ gap: 3, padding: 8 }}>
+                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{l.title}</Text>
+                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(l.price)}</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          <HomeQuickActions currentUserId={currentUser.id} />
           {activeListings.length > 0 ? (
             <MarketplacePulse
               averageCommission={averageCommission}
