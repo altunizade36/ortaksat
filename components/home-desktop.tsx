@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
+import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import type { CategoryNode } from "@/lib/category-tree";
 import { commissionAmount, moneyIn } from "@/lib/format";
@@ -466,6 +467,8 @@ export function HomeDesktop() {
 }
 
 function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; favorited: boolean; onFav: () => void; onOpen: () => void }) {
+  const { has, toggle } = useCompare();
+  const inCompare = has(listing.id);
   const commission = commissionAmount(listing);
   const ageDays = (Date.now() - Date.parse(listing.createdAt ?? "")) / 86400000;
   const isNew = Number.isFinite(ageDays) && ageDays >= 0 && ageDays <= 7;
@@ -486,6 +489,9 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
           ) : null}
           <Pressable accessibilityRole="button" accessibilityLabel="Favorilere ekle" onPress={onFav} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 10, width: 30 }}>
             <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={17} color={favorited ? colors.accent : colors.muted} />
+          </Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel="Karşılaştır" onPress={() => toggle(listing.id)} style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 46, width: 30 }}>
+            <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
           </Pressable>
           {isNew && !listing.demo ? (
             <View style={{ backgroundColor: colors.info, borderRadius: 6, bottom: 10, left: 10, paddingHorizontal: 7, paddingVertical: 2, position: "absolute" }}>

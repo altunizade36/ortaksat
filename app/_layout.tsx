@@ -5,6 +5,7 @@ import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppHeader } from "@/components/app-header";
 import { colors } from "@/components/colors";
+import { CompareBar } from "@/components/compare-bar";
 import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
@@ -53,6 +54,7 @@ function RootStack() {
         <Stack.Screen name="listing-edit/[id]" options={{ presentation: "modal", title: t("editListing") }} />
         <Stack.Screen name="listing/[id]" options={{ headerLargeTitle: false, title: t("listingDetail") }} />
       </Stack>
+      <CompareBar />
     </View>
   );
 }
