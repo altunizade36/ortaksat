@@ -24,7 +24,9 @@ function descendantLabels(node: CategoryNode, out: string[] = []): string[] {
 }
 
 // Hero'da gerçek görseller (ikon değil). public/hero -> ortaksat.com/hero
-const HERO = (n: string) => `https://ortaksat.com/hero/${n}.jpg`;
+// Yeni klasör (hero2) — eski /hero/ dosyaları CDN/tarayıcıda önbelleğe takıldığı
+// için taze URL'ler kullanılır. Merkez "deal" = ayakta anlaşma/tokalaşma görseli.
+const HERO = (n: string) => `https://ortaksat.com/hero2/${n}.jpg`;
 // SABİT tanıtım kümesi — merkez tokalaşma (anlaşma) fotoğrafı + çevresinde sabit
 // ürün görselleri. Bilerek statiktir; canlı ilanlardan çekilmez, değişmez.
 const HERO_FLOAT: Array<{ img: string; x: number; y: number }> = [
@@ -293,7 +295,7 @@ export function HomeDesktop() {
             <View style={{ alignItems: "center", flex: 0.9, justifyContent: "center", minHeight: 168, minWidth: 0, position: "relative" }}>
               <View style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 999, height: 150, position: "absolute", width: 150 }} />
               <View style={{ borderColor: "#FFFFFF", borderRadius: 16, borderWidth: 3, height: 116, overflow: "hidden", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.26, shadowRadius: 16, width: 132 }}>
-                <SafeRemoteImage uri={HERO("people")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+                <SafeRemoteImage uri={HERO("deal")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
               </View>
               {HERO_FLOAT.map((f) => (
                 <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 44, left: `${f.x}%`, marginLeft: -22, marginTop: -22, overflow: "hidden", position: "absolute", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.22, shadowRadius: 8, top: `${f.y}%`, width: 44 }}>
