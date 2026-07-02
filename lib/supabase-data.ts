@@ -194,6 +194,18 @@ export type DbBlogPost = { id: string; slug: string; category: string; title: st
 export type DbContentPage = { slug: string; title: string; body: string; seoTitle: string; seoDescription: string };
 export type DbSeoSetting = { path: string; metaTitle: string; metaDescription: string; ogImage: string; noindex: boolean };
 
+export type ListingQuestion = { id: string; listingId: string; askerId: string | null; askerName: string; question: string; answer: string | null; answeredAt: string | null; createdAt: string };
+export async function loadListingQuestions(listingId: string): Promise<ListingQuestion[]> {
+  if (!supabase || !listingId) return [];
+  const { data, error } = await supabase.from("listing_questions").select("*").eq("listing_id", listingId).order("created_at", { ascending: false }).limit(50);
+  if (error || !data) return [];
+  return (data as Array<Record<string, unknown>>).map((r) => ({
+    id: String(r.id), listingId: String(r.listing_id), askerId: (r.asker_id as string) ?? null,
+    askerName: displayText((r.asker_name as string) ?? "Kullanıcı"), question: repairTurkishText(String(r.question ?? "")),
+    answer: r.answer ? repairTurkishText(String(r.answer)) : null, answeredAt: (r.answered_at as string) ?? null, createdAt: String(r.created_at ?? "")
+  }));
+}
+
 export type ExtraCategory = { id: string; key: string; label: string; slug: string; image: string; subcategories: Array<{ label: string; slug: string }>; sortOrder: number; isActive: boolean };
 export async function loadCategories(): Promise<ExtraCategory[]> {
   if (!supabase) return [];

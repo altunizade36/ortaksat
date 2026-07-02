@@ -37,6 +37,22 @@ export async function updateUserVerificationLive(userId: string, field: "verifie
   if (error) console.warn("User verification update failed", error);
 }
 
+/** Ilana herkese acik soru sorar (giris gerekli; RLS asker_id=auth.uid). */
+export async function askQuestionLive(listingId: string, askerId: string, askerName: string, question: string): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: "Canlı bağlantı yok." };
+  const { error } = await supabase.from("listing_questions").insert({ listing_id: listingId, asker_id: askerId, asker_name: askerName, question: question.trim() });
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
+/** Ilan sahibi soruyu cevaplar (RLS: yalniz ilan sahibi). */
+export async function answerQuestionLive(questionId: string, answer: string): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: false, error: "Canlı bağlantı yok." };
+  const { error } = await supabase.from("listing_questions").update({ answer: answer.trim(), answered_at: new Date().toISOString() }).eq("id", questionId);
+  if (error) return { ok: false, error: error.message };
+  return { ok: true };
+}
+
 /** Kullanicinin tercih (bildirim/magaza ayarlari) JSONB kolonunu gunceller. */
 export async function savePreferencesLive(userId: string, preferences: Record<string, boolean>): Promise<boolean> {
   if (!supabase) return false;

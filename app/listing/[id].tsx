@@ -11,6 +11,7 @@ import { AgreementCard } from "@/components/agreement-card";
 import { colors } from "@/components/colors";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
+import { ListingQA } from "@/components/listing-qa";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
@@ -479,6 +480,8 @@ export default function ListingDetailScreen() {
             <SpecRow label="Süreç güvenli mi?" value="Komisyon şartı ve talepler sistemde kayıt altındadır." />
           </Accordion>
         </View>
+
+        <ListingQA listingId={currentListing.id} isOwner={isOwner} isDemo={isDemo} />
 
         <RelatedListingsSection
           cardWidth={relatedCardWidth}
