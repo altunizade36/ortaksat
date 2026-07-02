@@ -507,16 +507,11 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
             <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>Kazanç {moneyIn(commission, listing.currency)}</Text>
           </View>
         </View>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 6, marginTop: 2 }}>
-          <View style={{ flexDirection: "row" }}>
-            {["face1", "face2", "face3"].map((f, i) => (
-              <View key={f} style={{ borderColor: colors.surface, borderRadius: 999, borderWidth: 1.5, height: 18, marginLeft: i === 0 ? 0 : -6, overflow: "hidden", width: 18 }}>
-                <SafeRemoteImage uri={HERO(f)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-              </View>
-            ))}
-          </View>
+        <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 5, marginTop: 4, paddingTop: 8 }}>
           <MaterialCommunityIcons name="map-marker-outline" size={12} color={colors.subtle} />
           <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>{displayText(listing.location)}</Text>
+          <MaterialCommunityIcons name={listing.partnershipMode === "open" ? "flash" : "handshake-outline"} size={12} color={colors.primary} />
+          <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{listing.partnershipMode === "open" ? "Anında ortak" : "Ortaklığa açık"}</Text>
         </View>
       </Pressable>
     </View>
