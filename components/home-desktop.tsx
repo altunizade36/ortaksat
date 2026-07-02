@@ -391,6 +391,9 @@ export function HomeDesktop() {
 
 function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; favorited: boolean; onFav: () => void; onOpen: () => void }) {
   const commission = commissionAmount(listing);
+  const ageDays = (Date.now() - Date.parse(listing.createdAt ?? "")) / 86400000;
+  const isNew = Number.isFinite(ageDays) && ageDays >= 0 && ageDays <= 7;
+  const lowStock = listing.stockCount > 0 && listing.stockCount <= 3;
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 176, flexGrow: 1, maxWidth: 240, minWidth: 0, overflow: "hidden", shadowColor: "#101828", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 14 }}>
       <Pressable onPress={onOpen}>
@@ -408,11 +411,19 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
           <Pressable accessibilityRole="button" accessibilityLabel="Favorilere ekle" onPress={onFav} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 10, width: 30 }}>
             <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={17} color={favorited ? colors.accent : colors.muted} />
           </Pressable>
+          {isNew && !listing.demo ? (
+            <View style={{ backgroundColor: colors.info, borderRadius: 6, bottom: 10, left: 10, paddingHorizontal: 7, paddingVertical: 2, position: "absolute" }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 9.5, fontWeight: "900" }}>YENİ</Text>
+            </View>
+          ) : null}
         </View>
       </Pressable>
       <Pressable onPress={onOpen} style={{ gap: 6, padding: 12 }}>
         <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 14, fontWeight: "800", lineHeight: 18, minHeight: 36 }}>{displayText(listing.title)}</Text>
-        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{getCategoryShortLabel(listing.category)}</Text>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "space-between" }}>
+          <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>{getCategoryShortLabel(listing.category)}</Text>
+          {lowStock ? <Text style={{ color: colors.accent, fontSize: 10.5, fontWeight: "900" }}>Son {listing.stockCount} ürün</Text> : null}
+        </View>
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "space-between" }}>
           <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{moneyIn(listing.price, listing.currency)}</Text>
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
