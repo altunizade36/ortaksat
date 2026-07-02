@@ -6,7 +6,7 @@ import { Alert, KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, Vie
 import { colors } from "@/components/colors";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { money } from "@/lib/format";
-import { insertReferralLead, resolveReferralLink, type ReferralLink } from "@/lib/live-service";
+import { insertReferralLead, logReferralClick, resolveReferralLink, type ReferralLink } from "@/lib/live-service";
 import { localize } from "@/lib/locale";
 import { useStore } from "@/lib/use-store";
 
@@ -46,6 +46,8 @@ export default function ReferralLeadScreen() {
       if (mounted) {
         setRemoteReferral(result);
         setLoading(false);
+        // Tıklamayı kaydet (ortağın dönüşüm ölçümü için).
+        if (result?.partnershipId) void logReferralClick(result.listingId, result.partnershipId, ref);
       }
     }
 

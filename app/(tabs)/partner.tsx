@@ -2,7 +2,7 @@
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -10,6 +10,7 @@ import { LegalNote } from "@/components/legal-disclaimer";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, shareUrl } from "@/lib/format";
+import { loadClickCounts } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
@@ -58,6 +59,16 @@ export default function PartnerScreen() {
   const [oppGuven, setOppGuven] = useState("");
   const [oppVisible, setOppVisible] = useState(8);
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
+  const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
+  const myPartnershipKey = myPartnerships.map((p) => p.id).join(",");
+  useEffect(() => {
+    const ids = myPartnershipKey ? myPartnershipKey.split(",") : [];
+    if (ids.length === 0) { setClickCounts({}); return; }
+    let alive = true;
+    void loadClickCounts(ids).then((c) => { if (alive) setClickCounts(c); });
+    return () => { alive = false; };
+  }, [myPartnershipKey]);
+  const totalClicks = Object.values(clickCounts).reduce((a, b) => a + b, 0);
   const activePartnerships = myPartnerships.filter((item) => item.status === "active");
   const pendingPartnerships = myPartnerships.filter((item) => item.status === "pending");
   const mySales = sales.filter((sale) => myPartnerships.some((partnership) => partnership.id === sale.partnershipId));
@@ -337,7 +348,7 @@ export default function PartnerScreen() {
             <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Bu ayki performansınız</Text>
             <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Son 30 gün</Text>
           </View>
-          <PerfMetric icon="handshake-outline" label="Aktif ortaklık" value={`${activePartnerships.length}`} />
+          <PerfMetric icon="cursor-default-click-outline" label="Link tıklama" value={`${totalClicks}`} />
           <PerfMetric icon="account-clock-outline" label="Talep" value={`${myLeadCount}`} />
           <PerfMetric icon="star-outline" label="Satış" value={`${mySales.length}`} />
           <PerfMetric icon="cash" label="Kazanç" value={money(approved + paid)} />
@@ -519,7 +530,10 @@ export default function PartnerScreen() {
 
             <SectionTitle title="Performans" />
             <View style={{ flexDirection: "row", gap: 8 }}>
+              <Metric label="Tıklama" value={`${clickCounts[partnership.id] ?? 0}`} />
               <Metric label="Talep" value={`${listingLeads.length}`} />
+            </View>
+            <View style={{ flexDirection: "row", gap: 8 }}>
               <Metric label="Satış" value={`${listingSales.length}`} />
               <Metric label="Kazanç" value={money(earned)} />
             </View>

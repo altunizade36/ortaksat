@@ -37,6 +37,23 @@ export async function updateUserVerificationLive(userId: string, field: "verifie
   if (error) console.warn("User verification update failed", error);
 }
 
+/** Referans linki tiklamasini kaydeder (anonim; RLS public insert). */
+export async function logReferralClick(listingId: string | undefined, partnershipId: string | undefined, refCode: string | undefined) {
+  if (!supabase || !partnershipId) return;
+  const { error } = await supabase.from("referral_clicks").insert({ listing_id: listingId ?? null, partnership_id: partnershipId, ref_code: refCode ?? null });
+  if (error) console.warn("Referral click log failed", error);
+}
+
+/** Ortagin ortakliklarinin tiklama sayilarini dondurur (partnershipId -> adet). */
+export async function loadClickCounts(partnershipIds: string[]): Promise<Record<string, number>> {
+  if (!supabase || partnershipIds.length === 0) return {};
+  const { data, error } = await supabase.from("referral_clicks").select("partnership_id").in("partnership_id", partnershipIds).limit(5000);
+  if (error || !data) return {};
+  const out: Record<string, number> = {};
+  for (const r of data as Array<{ partnership_id: string }>) out[r.partnership_id] = (out[r.partnership_id] ?? 0) + 1;
+  return out;
+}
+
 /** Ilana herkese acik soru sorar (giris gerekli; RLS asker_id=auth.uid). */
 export async function askQuestionLive(listingId: string, askerId: string, askerName: string, question: string): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: "Canlı bağlantı yok." };
