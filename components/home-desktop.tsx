@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
+import type { CategoryNode } from "@/lib/category-tree";
 import { commissionAmount, moneyIn } from "@/lib/format";
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
@@ -13,7 +14,23 @@ import { useStore } from "@/lib/use-store";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
-const HERO_ICONS: IconName[] = ["headphones", "laptop", "camera", "watch", "sofa", "leaf"];
+// Bir kategori düğümünün tüm alt etiketleri (hiyerarşik filtre için).
+function descendantLabels(node: CategoryNode, out: string[] = []): string[] {
+  out.push(node.label);
+  for (const ch of node.children ?? []) descendantLabels(ch, out);
+  return out;
+}
+
+// Hero'da gerçek görseller (ikon değil). public/hero -> ortaksat.com/hero
+const HERO = (n: string) => `https://ortaksat.com/hero/${n}.jpg`;
+const HERO_FLOAT: Array<{ img: string; x: number; y: number }> = [
+  { img: "headphones", x: 15, y: 13 },
+  { img: "laptop", x: 83, y: 9 },
+  { img: "camera", x: 94, y: 45 },
+  { img: "watch", x: 6, y: 44 },
+  { img: "plant", x: 21, y: 88 },
+  { img: "chair", x: 85, y: 85 }
+];
 
 export function HomeDesktop() {
   const router = useRouter();
@@ -34,7 +51,8 @@ export function HomeDesktop() {
   }, [active, today]);
 
   // Filtreler
-  const [activeCat, setActiveCat] = useState<string | null>(null);
+  const [selectedNode, setSelectedNode] = useState<CategoryNode | null>(null);
+  const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [maxPrice, setMaxPrice] = useState<number>(0); // 0 = sınırsız
   const [trackW, setTrackW] = useState(1);
   const [conditions, setConditions] = useState<Record<string, boolean>>({});
@@ -44,14 +62,24 @@ export function HomeDesktop() {
   const PRICE_CAP = 5_000_000;
   const locations = useMemo(() => Array.from(new Set(active.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")).slice(0, 40), [active]);
 
+  // Seçili kategorinin (ve tüm alt kategorilerinin) etiket kümesi.
+  const catLabelSet = useMemo(() => (selectedNode ? new Set(descendantLabels(selectedNode).map((s) => s.toLocaleLowerCase("tr-TR"))) : null), [selectedNode]);
+  const matchesCat = (l: Listing) => {
+    if (!catLabelSet) return true;
+    const c = l.category.toLocaleLowerCase("tr-TR");
+    const short = getCategoryShortLabel(l.category).toLocaleLowerCase("tr-TR");
+    return catLabelSet.has(c) || catLabelSet.has(short);
+  };
+
   const filtered = useMemo(() => {
     return active.filter((l) => {
-      if (activeCat && getCategoryShortLabel(l.category) !== activeCat && l.category !== activeCat) return false;
+      if (!matchesCat(l)) return false;
       if (maxPrice > 0 && l.price > maxPrice) return false;
       if (locFilter && l.location !== locFilter) return false;
       return true;
     });
-  }, [active, activeCat, maxPrice, locFilter]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [active, catLabelSet, maxPrice, locFilter]);
 
   const grid = useMemo(() => {
     return [...filtered].sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || (b.createdAt ?? "").localeCompare(a.createdAt ?? "")).slice(0, 24);
@@ -76,19 +104,41 @@ export function HomeDesktop() {
             <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>Kategoriler</Text>
           </View>
           <View style={{ backgroundColor: colors.line, height: 1 }} />
-          <ScrollView style={{ maxHeight: 360 }}>
+          <ScrollView style={{ maxHeight: 440 }} nestedScrollEnabled showsVerticalScrollIndicator>
             {topCats.map((n) => {
-              const on = activeCat === n.label;
+              const on = selectedNode?.key === n.key;
+              const expanded = expandedKey === n.key;
+              const children = n.children ?? [];
               return (
-                <Pressable key={n.key} onPress={() => setActiveCat(on ? null : n.label)} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", flexDirection: "row", gap: 11, paddingHorizontal: 16, paddingVertical: 10 }}>
-                  <MaterialCommunityIcons name={getCategoryIcon(n.label)} size={17} color={on ? colors.primaryDark : colors.muted} />
-                  <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 13, fontWeight: on ? "900" : "600" }}>{n.label}</Text>
-                  <MaterialCommunityIcons name="chevron-right" size={16} color={colors.subtle} />
-                </Pressable>
+                <View key={n.key}>
+                  <Pressable
+                    onPress={() => { setSelectedNode(n); setExpandedKey(expanded ? null : n.key); }}
+                    style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 14, paddingVertical: 10 }}
+                  >
+                    <MaterialCommunityIcons name={getCategoryIcon(n.label)} size={17} color={on ? colors.primaryDark : colors.muted} />
+                    <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 13, fontWeight: on ? "900" : "600" }}>{n.label}</Text>
+                    {children.length ? <MaterialCommunityIcons name={expanded ? "chevron-down" : "chevron-right"} size={16} color={colors.subtle} /> : null}
+                  </Pressable>
+                  {expanded && children.length ? (
+                    <View style={{ backgroundColor: colors.surfaceAlt, paddingVertical: 4 }}>
+                      <Pressable onPress={() => setSelectedNode(n)} style={{ paddingHorizontal: 16, paddingLeft: 44, paddingVertical: 8 }}>
+                        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Tümü · {n.label}</Text>
+                      </Pressable>
+                      {children.map((ch) => {
+                        const con = selectedNode?.key === ch.key;
+                        return (
+                          <Pressable key={ch.key} onPress={() => setSelectedNode(con ? n : ch)} style={{ paddingHorizontal: 16, paddingLeft: 44, paddingVertical: 8 }}>
+                            <Text numberOfLines={1} style={{ color: con ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: con ? "800" : "600" }}>{ch.label}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+                </View>
               );
             })}
             <Link href="/kategoriler" asChild>
-              <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 11, paddingHorizontal: 16, paddingVertical: 11 }}>
+              <Pressable style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 11, paddingHorizontal: 16, paddingVertical: 11 }}>
                 <MaterialCommunityIcons name="dots-grid" size={17} color={colors.primaryDark} />
                 <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "800" }}>Tüm Kategoriler</Text>
               </Pressable>
@@ -103,7 +153,7 @@ export function HomeDesktop() {
               <MaterialCommunityIcons name="tune-variant" size={16} color={colors.primaryDark} />
               <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Filtrele</Text>
             </View>
-            <Pressable onPress={() => { setActiveCat(null); setMaxPrice(0); setLocFilter(""); setConditions({}); setSellerTypes({}); }}>
+            <Pressable onPress={() => { setSelectedNode(null); setExpandedKey(null); setMaxPrice(0); setLocFilter(""); setConditions({}); setSellerTypes({}); }}>
               <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Temizle</Text>
             </Pressable>
           </View>
@@ -178,9 +228,9 @@ export function HomeDesktop() {
               </View>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 10, marginTop: 6 }}>
                 <View style={{ flexDirection: "row" }}>
-                  {[colors.gold, colors.info, colors.accent, colors.violet].map((cc, i) => (
-                    <View key={i} style={{ alignItems: "center", backgroundColor: cc, borderColor: colors.primary, borderRadius: 999, borderWidth: 2, height: 28, justifyContent: "center", marginLeft: i === 0 ? 0 : -9, width: 28 }}>
-                      <MaterialCommunityIcons name="account" size={15} color="#FFFFFF" />
+                  {["face1", "face2", "face3", "face4"].map((f, i) => (
+                    <View key={f} style={{ borderColor: colors.primary, borderRadius: 999, borderWidth: 2, height: 28, marginLeft: i === 0 ? 0 : -9, overflow: "hidden", width: 28 }}>
+                      <SafeRemoteImage uri={HERO(f)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
                     </View>
                   ))}
                 </View>
@@ -189,20 +239,20 @@ export function HomeDesktop() {
                 </Text>
               </View>
             </View>
-            {/* İllüstrasyon kümesi */}
-            <View style={{ alignItems: "center", flex: 1, justifyContent: "center", minWidth: 0, position: "relative" }}>
-              <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 190, justifyContent: "center", width: 190 }}>
-                <MaterialCommunityIcons name="handshake" size={92} color="#FFFFFF" />
+            {/* Gerçek görsellerle illüstrasyon: yeşil daire + ortaklık fotoğrafı + ürünler */}
+            <View style={{ alignItems: "center", flex: 1, justifyContent: "center", minHeight: 320, minWidth: 0, position: "relative" }}>
+              {/* Yeşil daire arka plan */}
+              <View style={{ backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 236, position: "absolute", width: 236 }} />
+              {/* Merkez: ortaklık fotoğrafı */}
+              <View style={{ borderColor: "#FFFFFF", borderRadius: 22, borderWidth: 4, height: 186, overflow: "hidden", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.28, shadowRadius: 22, width: 200 }}>
+                <SafeRemoteImage uri={HERO("people")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
               </View>
-              {HERO_ICONS.map((ic, i) => {
-                const ang = (i / HERO_ICONS.length) * Math.PI * 2 - Math.PI / 2;
-                const R = 118;
-                return (
-                  <View key={ic} style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 999, height: 46, justifyContent: "center", left: `50%`, marginLeft: Math.cos(ang) * R - 23, marginTop: Math.sin(ang) * R - 23, position: "absolute", top: `50%`, width: 46 }}>
-                    <MaterialCommunityIcons name={ic} size={22} color={colors.primaryDark} />
-                  </View>
-                );
-              })}
+              {/* Etrafında gerçek ürün fotoğrafları */}
+              {HERO_FLOAT.map((f) => (
+                <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 60, left: `${f.x}%`, marginLeft: -30, marginTop: -30, overflow: "hidden", position: "absolute", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.22, shadowRadius: 12, top: `${f.y}%`, width: 60 }}>
+                  <SafeRemoteImage uri={HERO(f.img)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+                </View>
+              ))}
             </View>
           </View>
 
@@ -227,9 +277,9 @@ export function HomeDesktop() {
           <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Popüler Kategoriler</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
             {popular.map((n) => {
-              const on = activeCat === n.label;
+              const on = selectedNode?.key === n.key;
               return (
-                <Pressable key={n.key} onPress={() => setActiveCat(on ? null : n.label)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 9 }}>
+                <Pressable key={n.key} onPress={() => { setSelectedNode(on ? null : n); setExpandedKey(on ? null : n.key); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 9 }}>
                   <MaterialCommunityIcons name={getCategoryIcon(n.label)} size={16} color={on ? "#FFFFFF" : colors.primary} />
                   <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>{n.label}</Text>
                 </Pressable>
@@ -299,9 +349,9 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
         </View>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 6, marginTop: 2 }}>
           <View style={{ flexDirection: "row" }}>
-            {[colors.primary, colors.gold, colors.info].map((cc, i) => (
-              <View key={i} style={{ alignItems: "center", backgroundColor: cc, borderColor: colors.surface, borderRadius: 999, borderWidth: 1.5, height: 18, justifyContent: "center", marginLeft: i === 0 ? 0 : -6, width: 18 }}>
-                <MaterialCommunityIcons name="account" size={10} color="#FFFFFF" />
+            {["face1", "face2", "face3"].map((f, i) => (
+              <View key={f} style={{ borderColor: colors.surface, borderRadius: 999, borderWidth: 1.5, height: 18, marginLeft: i === 0 ? 0 : -6, overflow: "hidden", width: 18 }}>
+                <SafeRemoteImage uri={HERO(f)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
               </View>
             ))}
           </View>
