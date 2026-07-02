@@ -14,6 +14,7 @@ import { ListingCard } from "@/components/listing-card";
 import { EarningsCalculator } from "@/components/earnings-calculator";
 import { ListingQA } from "@/components/listing-qa";
 import { ShareRow } from "@/components/share-row";
+import { Skeleton } from "@/components/skeleton";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
@@ -111,16 +112,28 @@ export default function ListingDetailScreen() {
   }, [listing?.id]);
 
   if (!listing) {
+    if (fetching) {
+      return (
+        <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16 }}>
+          <View style={{ alignSelf: "center", gap: 14, maxWidth: 1000, width: "100%" }}>
+            <Skeleton style={{ borderRadius: 16, height: 300, width: "100%" }} />
+            <Skeleton style={{ height: 14, width: "35%" }} />
+            <Skeleton style={{ height: 26, width: "80%" }} />
+            <Skeleton style={{ height: 30, width: "40%" }} />
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <Skeleton style={{ borderRadius: 12, flex: 1, height: 70 }} />
+              <Skeleton style={{ borderRadius: 12, flex: 1, height: 70 }} />
+            </View>
+            <Skeleton style={{ borderRadius: 12, height: 48, width: "100%" }} />
+            <Skeleton style={{ height: 14, width: "90%" }} />
+            <Skeleton style={{ height: 14, width: "75%" }} />
+          </View>
+        </ScrollView>
+      );
+    }
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ alignItems: "center", flexGrow: 1, justifyContent: "center", padding: 24 }}>
-        {fetching ? (
-          <View style={{ alignItems: "center", gap: 10 }}>
-            <ActivityIndicator color={colors.primary} />
-            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "700" }}>İlan yükleniyor…</Text>
-          </View>
-        ) : (
-          <EmptyState title="İlan bulunamadı" body="Bu ilan kaldırılmış, satılmış ya da bağlantı artık geçerli değil." />
-        )}
+        <EmptyState title="İlan bulunamadı" body="Bu ilan kaldırılmış, satılmış ya da bağlantı artık geçerli değil." />
       </ScrollView>
     );
   }

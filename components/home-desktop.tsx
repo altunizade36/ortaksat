@@ -9,6 +9,7 @@ import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import type { CategoryNode } from "@/lib/category-tree";
 import { commissionAmount, moneyIn } from "@/lib/format";
+import { SkeletonGrid } from "@/components/skeleton";
 import { getRecent } from "@/lib/recent";
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
@@ -42,7 +43,7 @@ const HERO_FLOAT: Array<{ img: string; dx: number; dy: number }> = [
 
 export function HomeDesktop() {
   const router = useRouter();
-  const { categoryTree, listings, isFavorite, toggleFavorite } = useStore();
+  const { categoryTree, listings, isFavorite, toggleFavorite, marketplaceInitialLoading } = useStore();
 
   const active = useMemo(() => listings.filter((l) => l.status === "active"), [listings]);
   const today = new Date().toISOString().slice(0, 10);
@@ -422,7 +423,9 @@ export function HomeDesktop() {
           </View>
         </View>
 
-        {grid.length === 0 ? (
+        {grid.length === 0 && marketplaceInitialLoading ? (
+          <SkeletonGrid count={9} cardWidth={200} gap={14} />
+        ) : grid.length === 0 ? (
           <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 40 }}>
             <MaterialCommunityIcons name="magnify-close" size={30} color={colors.primary} />
             <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Sonuç bulunamadı</Text>

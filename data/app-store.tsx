@@ -150,6 +150,7 @@ type AppStore = {
   listings: Listing[];
   marketplaceHasMore: boolean;
   marketplaceLoadingMore: boolean;
+  marketplaceInitialLoading: boolean;
   loadMoreMarketplace: () => void;
   partnerships: Partnership[];
   leads: Lead[];
@@ -361,6 +362,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const mpOffsetRef = useRef(0);
   const [marketplaceHasMore, setMarketplaceHasMore] = useState(isSupabaseConfigured);
   const [marketplaceLoadingMore, setMarketplaceLoadingMore] = useState(false);
+  // İlk ilan yüklemesi sürerken skeleton göstermek için (yalnız canlı modda).
+  const [marketplaceInitialLoading, setMarketplaceInitialLoading] = useState(isSupabaseConfigured);
   const [blogPosts, setBlogPosts] = useState<DbBlogPost[]>([]);
   const [contentPages, setContentPages] = useState<DbContentPage[]>([]);
   const [seoSettings, setSeoSettings] = useState<DbSeoSetting[]>([]);
@@ -385,10 +388,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
     async function hydrateFromSupabase() {
       if (!isSupabaseConfigured) return;
       const snapshot = await loadMarketplaceSnapshot();
-      if (!mounted || !snapshot) return;
+      if (!mounted || !snapshot) {
+        if (mounted) setMarketplaceInitialLoading(false);
+        return;
+      }
       // Canlı: yalnızca gerçek Supabase verisi (demo/mock birleştirme yok).
       setUsers(snapshot.users);
       setListings(snapshot.listings);
+      setMarketplaceInitialLoading(false);
       mpOffsetRef.current = snapshot.listings.length;
       setMarketplaceHasMore(snapshot.listings.length >= 90);
       setBackendMode("supabase");
@@ -1617,6 +1624,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       marketplaceHasMore,
       marketplaceLoadingMore,
+      marketplaceInitialLoading,
       loadMoreMarketplace() {
         if (!isSupabaseConfigured || !marketplaceHasMore || marketplaceLoadingMore) return;
         setMarketplaceLoadingMore(true);
@@ -1657,7 +1665,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return favorites.some((item) => item.listingId === listingId && item.userId === currentUser.id);
       }
     };
-  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, messages, notifications, orders, partnerships, platformSettings, reports, reviews, sales, seoSettings, users]);
+  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, messages, notifications, orders, partnerships, platformSettings, reports, reviews, sales, seoSettings, users]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

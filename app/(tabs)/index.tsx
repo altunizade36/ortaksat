@@ -7,6 +7,7 @@ import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshCo
 import { colors } from "@/components/colors";
 import { HomeDesktop } from "@/components/home-desktop";
 import { ListingCard } from "@/components/listing-card";
+import { SkeletonGrid } from "@/components/skeleton";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState } from "@/components/ui";
 import type { CategoryNode } from "@/lib/category-tree";
@@ -31,7 +32,7 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const params = useLocalSearchParams<{ q?: string }>();
-  const { categoryTree, currentUser, findUser, listings, loadMoreMarketplace, marketplaceHasMore } = useStore();
+  const { categoryTree, currentUser, findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceInitialLoading } = useStore();
   const query = params.q ?? "";
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sortMode, setSortMode] = useState<SortMode>("featured");
@@ -239,9 +240,13 @@ export default function HomeScreen() {
             onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}
             style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: columnGap, width: "100%" }}
           >
-            {visibleListings.map((listing) => (
-              <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} />
-            ))}
+            {visibleListings.length === 0 && marketplaceInitialLoading ? (
+              <SkeletonGrid count={6} cardWidth={cardWidth} gap={columnGap} />
+            ) : (
+              visibleListings.map((listing) => (
+                <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} />
+              ))
+            )}
           </View>
 
           {hasMoreToShow ? (

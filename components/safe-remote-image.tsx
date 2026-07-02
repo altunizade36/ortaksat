@@ -8,7 +8,7 @@ type SafeRemoteImageProps = Omit<ImageProps, "source"> & {
   fallback?: ImageProps["source"];
 };
 
-export function SafeRemoteImage({ fallback = fallbackImage, onError, uri, transition, ...props }: SafeRemoteImageProps) {
+export function SafeRemoteImage({ fallback = fallbackImage, onError, uri, transition, style, ...props }: SafeRemoteImageProps) {
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {
@@ -18,6 +18,8 @@ export function SafeRemoteImage({ fallback = fallbackImage, onError, uri, transi
   return (
     <Image
       {...props}
+      // Yüklenirken nötr bir zemin; boş/beyaz sıçrama yerine yumuşak iskelet hissi.
+      style={[{ backgroundColor: "#EDF0F2" }, style]}
       source={!uri || failed ? fallback : { uri }}
       // Görseller ekrana "çarparak" değil, yumuşak bir geçişle (fade) gelsin.
       transition={transition ?? { duration: 260, effect: "cross-dissolve" }}
