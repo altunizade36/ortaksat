@@ -111,6 +111,8 @@ export function HomeDesktop() {
 
   const topCats = categoryTree.filter((c) => c.label !== "Diğer");
   const popular = topCats.slice(0, 12);
+  // Ortak-satış modeli: en çok kazandıran (en yüksek komisyonlu) fırsatlar.
+  const topEarn = useMemo(() => [...active].filter((l) => commissionAmount(l) > 0).sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [active]);
   const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (locFilter ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0);
   const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLocFilter(""); setConditions({}); setSellerTypes({}); setOnlyOpen(false); setOnlyFeatured(false); };
   const PRICE_PRESETS: Array<[string, string, string]> = [["0", "1000", "0 - 1.000 ₺"], ["1000", "5000", "1.000 - 5.000 ₺"], ["5000", "25000", "5.000 - 25.000 ₺"], ["25000", "100000", "25.000 - 100.000 ₺"], ["100000", "", "100.000 ₺ +"]];
@@ -322,6 +324,58 @@ export function HomeDesktop() {
             ))}
           </View>
         </View>
+
+        {/* Ortak-satış: nasıl kazanılır + en çok kazandıran fırsatlar */}
+        {topEarn.length > 0 ? (
+          <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, gap: 14, padding: 20 }}>
+            <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 12 }}>
+              <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+                <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900" }}>Ortak ol, satış yap, komisyonu kazan</Text>
+                <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>Satıcının ürününü kendi çevrene sat ya da alıcı getir; satış gerçekleşince komisyonu satıcı sana öder. Ortaksat yalnızca aracıdır.</Text>
+              </View>
+              <Link href="/partner" asChild>
+                <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
+                  <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>Fırsatları Gör</Text>
+                  <MaterialCommunityIcons name="arrow-right" size={15} color={colors.primaryDark} />
+                </Pressable>
+              </Link>
+            </View>
+            {/* 3 adım */}
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+              {[["magnify", "Fırsat seç", "Kazançlı bir ürün bul"], ["link-variant", "Ortak ol", "Kendi paylaşım linkini al"], ["cash-multiple", "Komisyonu kazan", "Satışta komisyon senin"]].map(([ic, t, s], i) => (
+                <View key={t} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.10)", borderRadius: 12, flex: 1, flexDirection: "row", gap: 10, minWidth: 190, paddingHorizontal: 13, paddingVertical: 11 }}>
+                  <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
+                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{i + 1}</Text>
+                  </View>
+                  <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                    <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{t}</Text>
+                    <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.78)", fontSize: 11, fontWeight: "600" }}>{s}</Text>
+                  </View>
+                </View>
+              ))}
+            </View>
+            {/* En çok kazandıran fırsatlar */}
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 4 }}>
+              {topEarn.map((l) => (
+                <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderRadius: 14, overflow: "hidden", width: 156 }}>
+                  <View style={{ height: 92, width: "100%" }}>
+                    <SafeRemoteImage uri={l.image} style={{ height: 92, width: "100%" }} contentFit="cover" />
+                    <View style={{ backgroundColor: colors.gold, borderRadius: 6, left: 8, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 8 }}>
+                      <Text style={{ color: "#1A1400", fontSize: 9.5, fontWeight: "900" }}>Kazanç {moneyIn(commissionAmount(l), l.currency)}</Text>
+                    </View>
+                  </View>
+                  <View style={{ gap: 4, padding: 9 }}>
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{displayText(l.title)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{moneyIn(l.price, l.currency)}</Text>
+                    <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, paddingVertical: 6 }}>
+                      <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>Ortak Ol</Text>
+                    </View>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
 
         {/* Son gezdiklerin */}
         {recentListings.length > 0 ? (
