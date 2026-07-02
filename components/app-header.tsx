@@ -51,10 +51,8 @@ export function AppHeader() {
     return (
       <View>
         <MaintenanceBanner />
-        <DesktopTopBar />
-
-        {/* HEADER: [geri] · logo · search · actions */}
-        <View style={{ alignItems: "center", backgroundColor: colors.surface, flexDirection: "row", gap: 28, paddingHorizontal: 32, paddingVertical: 14, position: "relative", zIndex: 30 }}>
+        {/* Tek temiz üst bar: [geri] · logo · arama · aksiyonlar */}
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 24, paddingHorizontal: 28, paddingVertical: 12, position: "relative", zIndex: 30 }}>
           {showDesktopBack ? (
             <Pressable
               accessibilityLabel={translateCopy("Geri", language)}
@@ -81,34 +79,6 @@ export function AppHeader() {
           {/* Boşluk: aksiyonları en sağa sabitler */}
           <View style={{ flex: 1, minWidth: 16 }} />
           <DesktopActions />
-        </View>
-
-        {/* NAV BAR: tabs + primary CTAs */}
-        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 32, paddingVertical: 8, position: "relative", zIndex: 1 }}>
-          {navItems.map((item) => {
-            const active = item.match(pathname);
-            return (
-              <Link key={item.label} href={item.href} asChild>
-                <Pressable style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : "transparent", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 14, paddingVertical: 9 }}>
-                  <Text numberOfLines={1} style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 14, fontWeight: active ? "900" : "700" }}>{item.label}</Text>
-                  {item.caret ? <MaterialCommunityIcons name="chevron-down" size={16} color={colors.muted} /> : null}
-                </Pressable>
-              </Link>
-            );
-          })}
-          <View style={{ flex: 1 }} />
-          <Link href="/create" asChild>
-            <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
-              <MaterialCommunityIcons name="store-plus-outline" size={16} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>İlan Ver</Text>
-            </Pressable>
-          </Link>
-          <Link href="/partner" asChild>
-            <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1.5, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 8 }}>
-              <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Ortak Satıcı Ol</Text>
-            </Pressable>
-          </Link>
         </View>
       </View>
     );
@@ -235,9 +205,10 @@ function DesktopActions() {
   }
 
   const items: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href; badge?: number }> = [
+    { icon: "plus-box-outline", label: "İlan Ver", href: "/create" },
     { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
     { icon: "message-text-outline", label: "Mesajlar", href: "/messages", badge: unreadMessages },
-    { icon: "bell-outline", label: "Bildirim", href: "/notifications-tab", badge: unreadNotifications }
+    { icon: "bell-outline", label: "Bildirimler", href: "/notifications-tab", badge: unreadNotifications }
   ];
 
   return (

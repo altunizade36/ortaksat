@@ -5,13 +5,13 @@ import { useEffect, useMemo, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
+import { HomeDesktop } from "@/components/home-desktop";
 import { ListingCard } from "@/components/listing-card";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState } from "@/components/ui";
 import type { CategoryNode } from "@/lib/category-tree";
 import { Marketplace3DHero } from "@/components/three-d-showcase";
-import { WebHero } from "@/components/web-hero";
-import { WebFooter, WebHowItWorks, WebTrustStrip, WebWhy } from "@/components/web-landing";
+import { WebFooter, WebHowItWorks, WebWhy } from "@/components/web-landing";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -133,97 +133,87 @@ export default function HomeScreen() {
     >
       {isWideWeb ? (
         <>
-          <WebHero totalListings={activeListings.length} averageCommission={averageCommission} cityCount={cityCount} />
-          <WebTrustStrip />
+          <HomeDesktop />
+          <WebHowItWorks />
+          <WebWhy />
+          <WebFooter />
         </>
       ) : (
-        <Marketplace3DHero listings={topListings} />
-      )}
+        <>
+          <Marketplace3DHero listings={topListings} />
+          <HomeQuickActions currentUserId={currentUser.id} />
+          <CategoryShowcase categoryTree={categoryTree} isWideWeb={false} />
+          {activeListings.length > 0 ? (
+            <MarketplacePulse
+              averageCommission={averageCommission}
+              cityCount={cityCount}
+              myActiveListings={myActiveListings}
+              openPartnerListings={openPartnerListings}
+              totalListings={activeListings.length}
+            />
+          ) : null}
 
-      {!isWideWeb ? <HomeQuickActions currentUserId={currentUser.id} /> : null}
-
-      <CategoryShowcase categoryTree={categoryTree} isWideWeb={isWideWeb} />
-
-      {activeListings.length > 0 ? (
-        <MarketplacePulse
-          averageCommission={averageCommission}
-          cityCount={cityCount}
-          myActiveListings={myActiveListings}
-          openPartnerListings={openPartnerListings}
-          totalListings={activeListings.length}
-        />
-      ) : null}
-
-      <View style={{ gap: 7 }}>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
-          {filters.map((item) => (
-            <FilterChip key={item.key} label={item.label} icon={item.icon} active={item.key === filter} onPress={() => setFilter(item.key)} />
-          ))}
-        </ScrollView>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
-          {(Object.keys(sortLabels) as SortMode[]).map((item) => (
-            <SortChip key={item} active={sortMode === item} label={sortLabels[item]} onPress={() => setSortMode(item)} />
-          ))}
-        </ScrollView>
-      </View>
-
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text selectable style={{ color: colors.ink, flex: 1, fontSize: isWideWeb ? 24 : 19, fontWeight: "900" }}>{isWideWeb ? "Öne çıkan ilanlar" : t("marketListings")}</Text>
-        {isWideWeb ? (
-          <Link href="/explore" asChild>
-            <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-              <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>Tüm ilanları gör</Text>
-              <MaterialCommunityIcons name="arrow-right" size={18} color={colors.primaryDark} />
-            </Pressable>
-          </Link>
-        ) : (
-          <Text selectable style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>
-            {filteredListings.length} {t("results")}
-          </Text>
-        )}
-      </View>
-
-      {filteredListings.length === 0 ? (
-        activeListings.length === 0 && !query ? (
-          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 18, borderWidth: 1, gap: 12, paddingHorizontal: 20, paddingVertical: 28 }}>
-            <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, height: 60, justifyContent: "center", width: 60 }}>
-              <MaterialCommunityIcons name="rocket-launch-outline" size={30} color={colors.primary} />
-            </View>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900", textAlign: "center" }}>{translateCopy("İlk ilanı sen ver", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 420, textAlign: "center" }}>{translateCopy("OrtakSat yeni büyüyor. Ürününü ekle, ortak satıcılarla eşleş ve ilk kazananlardan ol. Yayınlaman ücretsiz.", language)}</Text>
-            <Link href="/create" asChild>
-              <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, opacity: pressed ? 0.85 : 1, paddingHorizontal: 22, paddingVertical: 13 })}>
-                <MaterialCommunityIcons name="store-plus-outline" size={18} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy("Hemen ilan ver", language)}</Text>
-              </Pressable>
-            </Link>
+          <View style={{ gap: 7 }}>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+              {filters.map((item) => (
+                <FilterChip key={item.key} label={item.label} icon={item.icon} active={item.key === filter} onPress={() => setFilter(item.key)} />
+              ))}
+            </ScrollView>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
+              {(Object.keys(sortLabels) as SortMode[]).map((item) => (
+                <SortChip key={item} active={sortMode === item} label={sortLabels[item]} onPress={() => setSortMode(item)} />
+              ))}
+            </ScrollView>
           </View>
-        ) : (
-          <EmptyState title={t("noResults")} body={t("noResultsBody")} />
-        )
-      ) : null}
 
-      <View
-        onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}
-        style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: columnGap, width: "100%" }}
-      >
-        {visibleListings.map((listing) => (
-          <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} />
-        ))}
-      </View>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 19, fontWeight: "900" }}>{t("marketListings")}</Text>
+            <Text selectable style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>
+              {filteredListings.length} {t("results")}
+            </Text>
+          </View>
 
-      {hasMoreToShow ? (
-        <Pressable onPress={showMore} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 26, paddingVertical: 13 })}>
-          <MaterialCommunityIcons name="chevron-down" size={18} color={colors.primaryDark} />
-          <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Daha fazla ürün göster</Text>
-        </Pressable>
-      ) : filteredListings.length > 0 ? (
-        <Text selectable style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>Tüm ürünleri gördün · {filteredListings.length} ürün</Text>
-      ) : null}
+          {filteredListings.length === 0 ? (
+            activeListings.length === 0 && !query ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 18, borderWidth: 1, gap: 12, paddingHorizontal: 20, paddingVertical: 28 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, height: 60, justifyContent: "center", width: 60 }}>
+                  <MaterialCommunityIcons name="rocket-launch-outline" size={30} color={colors.primary} />
+                </View>
+                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900", textAlign: "center" }}>{translateCopy("İlk ilanı sen ver", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 420, textAlign: "center" }}>{translateCopy("OrtakSat yeni büyüyor. Ürününü ekle, ortak satıcılarla eşleş ve ilk kazananlardan ol. Yayınlaman ücretsiz.", language)}</Text>
+                <Link href="/create" asChild>
+                  <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, opacity: pressed ? 0.85 : 1, paddingHorizontal: 22, paddingVertical: 13 })}>
+                    <MaterialCommunityIcons name="store-plus-outline" size={18} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy("Hemen ilan ver", language)}</Text>
+                  </Pressable>
+                </Link>
+              </View>
+            ) : (
+              <EmptyState title={t("noResults")} body={t("noResultsBody")} />
+            )
+          ) : null}
 
-      {isWideWeb ? <WebHowItWorks /> : null}
-      {isWideWeb ? <WebWhy /> : null}
-      {isWeb ? <WebFooter /> : null}
+          <View
+            onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}
+            style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: columnGap, width: "100%" }}
+          >
+            {visibleListings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} />
+            ))}
+          </View>
+
+          {hasMoreToShow ? (
+            <Pressable onPress={showMore} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 26, paddingVertical: 13 })}>
+              <MaterialCommunityIcons name="chevron-down" size={18} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Daha fazla ürün göster</Text>
+            </Pressable>
+          ) : filteredListings.length > 0 ? (
+            <Text selectable style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>Tüm ürünleri gördün · {filteredListings.length} ürün</Text>
+          ) : null}
+
+          {isWeb ? <WebFooter /> : null}
+        </>
+      )}
     </ScrollView>
   );
 }
