@@ -1,7 +1,7 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
-import { type Href, useLocalSearchParams, useRouter } from "expo-router";
+import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
@@ -19,6 +19,7 @@ import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { fetchListingById } from "@/lib/supabase-data";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { pushRecent } from "@/lib/recent";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { LeadSource, Listing, PartnershipStatus, PurchaseIntent, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -99,6 +100,11 @@ export default function ListingDetailScreen() {
   }, [id, storeListing]);
 
   const listing = storeListing ?? remote?.listing;
+
+  // Son gezilen ilanları kaydet — "Son Gezdiklerin" için.
+  useEffect(() => {
+    if (listing?.id) pushRecent(listing.id);
+  }, [listing?.id]);
 
   if (!listing) {
     return (
@@ -259,6 +265,14 @@ export default function ListingDetailScreen() {
         <meta name="twitter:image" content={currentListing.image} />
       </Head>
       <WebContainer max={1200} padding={0} style={{ gap: 16 }}>
+      {/* Breadcrumb: Ana Sayfa › Kategori › Ürün */}
+      <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, marginHorizontal: isWideWeb ? 0 : 12 }}>
+        <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
+        <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
+        <Link href="/kategoriler" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{currentListing.category}</Text></Pressable></Link>
+        <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
+        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{currentListing.title}</Text>
+      </View>
       {isDemo ? (
         <View style={{ alignItems: "center", backgroundColor: "#FEF7DC", borderColor: "#F5C518", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, marginHorizontal: isWideWeb ? 0 : 12, padding: 13 }}>
           <View style={{ alignItems: "center", backgroundColor: "#F5C518", borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>

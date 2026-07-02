@@ -8,6 +8,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import type { CategoryNode } from "@/lib/category-tree";
 import { commissionAmount, moneyIn } from "@/lib/format";
+import { getRecent } from "@/lib/recent";
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -63,6 +64,9 @@ export function HomeDesktop() {
   const [onlyFeatured, setOnlyFeatured] = useState(false);
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
   const [visibleCount, setVisibleCount] = useState(18);
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+  useEffect(() => { setRecentIds(getRecent()); }, []);
+  const recentListings = useMemo(() => recentIds.map((id) => listings.find((l) => l.id === id)).filter((l): l is Listing => !!l && l.status === "active").slice(0, 8), [recentIds, listings]);
 
   const locations = useMemo(() => Array.from(new Set(active.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")).slice(0, 60), [active]);
   const pMin = Number(priceMin.replace(/[^\d]/g, "")) || 0;
@@ -318,6 +322,24 @@ export function HomeDesktop() {
             ))}
           </View>
         </View>
+
+        {/* Son gezdiklerin */}
+        {recentListings.length > 0 ? (
+          <View style={{ gap: 10 }}>
+            <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Son Gezdiklerin</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 12 }}>
+              {recentListings.map((l) => (
+                <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 150 }}>
+                  <SafeRemoteImage uri={l.image} style={{ height: 96, width: "100%" }} contentFit="cover" />
+                  <View style={{ gap: 3, padding: 9 }}>
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{displayText(l.title)}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{moneyIn(l.price, l.currency)}</Text>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
 
         {/* Popüler kategoriler */}
         <View style={{ gap: 10 }}>
