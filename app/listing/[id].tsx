@@ -4,7 +4,7 @@ import { Image } from "expo-image";
 import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Accordion } from "@/components/accordion";
 import { AgreementCard } from "@/components/agreement-card";
@@ -81,6 +81,7 @@ export default function ListingDetailScreen() {
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
   const [activeImage, setActiveImage] = useState(0);
+  const [lightbox, setLightbox] = useState(false);
   const router = useRouter();
 
   // Paylaşılan link herkeste açılsın: ilan bellekte yoksa Supabase'den id ile çek.
@@ -123,6 +124,8 @@ export default function ListingDetailScreen() {
   }
 
   const currentListing = listing;
+  const gallery = [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean);
+  const galleryIdx = Math.min(activeImage, Math.max(0, gallery.length - 1));
   const owner = findUser(currentListing.ownerId) ?? remote?.owner;
   const ownerTrust = owner ? calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: owner }).seller : undefined;
   const partnership = findPartnership(currentListing.id);
@@ -288,15 +291,20 @@ export default function ListingDetailScreen() {
       <View style={isWideWeb ? { flexDirection: "row", gap: 20, alignItems: "flex-start" } : { gap: 12 }}>
       <View style={isWideWeb ? { flex: 1.12, minWidth: 0 } : undefined}>
       {(() => {
-        const gallery = [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean);
-        const mainImg = gallery[Math.min(activeImage, gallery.length - 1)] ?? currentListing.image;
+        const mainImg = gallery[galleryIdx] ?? currentListing.image;
         return (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 18 : 0, borderWidth: isWideWeb ? 1 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
-            <SafeRemoteImage uri={mainImg} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
+            <Pressable onPress={() => setLightbox(true)} style={{ position: "relative" }}>
+              <SafeRemoteImage uri={mainImg} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
+              <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
+                <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>Büyüt{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
+              </View>
+            </Pressable>
             {gallery.length > 1 ? (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingTop: 12 }}>
                 {gallery.map((img, i) => (
-                  <Pressable key={img + i} onPress={() => setActiveImage(i)} style={{ borderColor: i === Math.min(activeImage, gallery.length - 1) ? colors.primary : colors.line, borderRadius: 10, borderWidth: i === Math.min(activeImage, gallery.length - 1) ? 2 : 1, height: 64, overflow: "hidden", width: 64 }}>
+                  <Pressable key={img + i} onPress={() => setActiveImage(i)} style={{ borderColor: i === galleryIdx ? colors.primary : colors.line, borderRadius: 10, borderWidth: i === galleryIdx ? 2 : 1, height: 64, overflow: "hidden", width: 64 }}>
                     <SafeRemoteImage uri={img} style={{ height: "100%", width: "100%" }} contentFit="cover" />
                   </Pressable>
                 ))}
@@ -531,6 +539,31 @@ export default function ListingDetailScreen() {
         </Card>
       </View>
       </WebContainer>
+
+      {/* Tam ekran görsel (lightbox) */}
+      <Modal visible={lightbox} transparent animationType="fade" onRequestClose={() => setLightbox(false)}>
+        <View style={{ backgroundColor: "rgba(0,0,0,0.92)", flex: 1, justifyContent: "center" }}>
+          <Pressable onPress={() => setLightbox(false)} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 42, justifyContent: "center", position: "absolute", right: 18, top: 18, width: 42, zIndex: 5 }}>
+            <MaterialCommunityIcons name="close" size={24} color="#FFFFFF" />
+          </Pressable>
+          <SafeRemoteImage uri={gallery[galleryIdx] ?? currentListing.image} style={{ height: "78%", width: "100%" }} contentFit="contain" />
+          {gallery.length > 1 ? (
+            <>
+              <Pressable onPress={() => setActiveImage((galleryIdx - 1 + gallery.length) % gallery.length)} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", left: 14, position: "absolute", top: "46%", width: 48 }}>
+                <MaterialCommunityIcons name="chevron-left" size={30} color="#FFFFFF" />
+              </Pressable>
+              <Pressable onPress={() => setActiveImage((galleryIdx + 1) % gallery.length)} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", position: "absolute", right: 14, top: "46%", width: 48 }}>
+                <MaterialCommunityIcons name="chevron-right" size={30} color="#FFFFFF" />
+              </Pressable>
+              <View style={{ alignItems: "center", bottom: 26, flexDirection: "row", gap: 8, justifyContent: "center", left: 0, position: "absolute", right: 0 }}>
+                {gallery.map((_, i) => (
+                  <Pressable key={i} onPress={() => setActiveImage(i)} style={{ backgroundColor: i === galleryIdx ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 999, height: 8, width: i === galleryIdx ? 22 : 8 }} />
+                ))}
+              </View>
+            </>
+          ) : null}
+        </View>
+      </Modal>
     </ScrollView>
   );
 }
