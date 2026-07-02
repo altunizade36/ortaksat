@@ -1,13 +1,14 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { loadClickCounts } from "@/lib/live-service";
 import { searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import { calculateUserTrustScores } from "@/lib/trust-score";
@@ -65,8 +66,25 @@ export default function SellerScreen() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status !== "rejected");
   const myListingIds = new Set(myListings.map((listing) => listing.id));
+  const myPartnershipIds = partnerships.filter((partnership) => myListingIds.has(partnership.listingId)).map((partnership) => partnership.id);
+  const partnershipIdsKey = myPartnershipIds.join(",");
+
+  useEffect(() => {
+    if (!partnershipIdsKey) {
+      setClickCounts({});
+      return;
+    }
+    let mounted = true;
+    void loadClickCounts(partnershipIdsKey.split(",")).then((counts) => {
+      if (mounted) setClickCounts(counts);
+    });
+    return () => {
+      mounted = false;
+    };
+  }, [partnershipIdsKey]);
   const myLeads = leads.filter((lead) => myListingIds.has(lead.listingId));
   const mySales = sales.filter((sale) => myListingIds.has(sale.listingId));
   const myApplications = partnerships.filter((partnership) => myListingIds.has(partnership.listingId) && partnership.status === "pending");
@@ -341,6 +359,7 @@ export default function SellerScreen() {
         const unpaidListingSales = listingSales.filter((sale) => sale.status !== "paid");
         const convertedListingLeads = listingLeads.filter((lead) => lead.status === "converted").length;
         const conversionRate = listingLeads.length > 0 ? Math.round((convertedListingLeads / listingLeads.length) * 100) : 0;
+        const listingClicks = listingPartnerships.reduce((sum, item) => sum + (clickCounts[item.id] ?? 0), 0);
         const nextAction = sellerNextAction(listing, listingLeads, listingSales, pendingPartners);
         const hasSaleForLead = (leadId: string) => listingSales.some((sale) => sale.leadId === leadId);
 
@@ -374,7 +393,9 @@ export default function SellerScreen() {
             <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 10, flexDirection: "row", flexWrap: "wrap", gap: 6, padding: 10 }}>
               <SellerStat label="Stok" value={`${listing.stockCount}`} warn={listing.stockCount <= 3 && listing.status === "active"} />
               <SellerStat label="Aktif ortak" value={`${activePartners}`} />
+              <SellerStat label="Link tıklama" value={`${listingClicks}`} />
               <SellerStat label="Talep" value={`${listingLeads.length}`} />
+              <SellerStat label="Dönüşüm" value={`%${conversionRate}`} />
               <SellerStat label="Satış" value={`${listingSales.length}`} />
               <SellerStat label="Bekleyen ödeme" value={moneyIn(unpaidTotal, listing.currency)} warn={unpaidListingSales.length > 0} />
             </View>

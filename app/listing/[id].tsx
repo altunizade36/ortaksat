@@ -13,6 +13,7 @@ import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
 import { EarningsCalculator } from "@/components/earnings-calculator";
 import { ListingQA } from "@/components/listing-qa";
+import { ShareRow } from "@/components/share-row";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
@@ -348,6 +349,13 @@ export default function ListingDetailScreen() {
         </Card>
 
         {!isOwner ? <EarningsCalculator listing={currentListing} isDemo={isDemo} onJoin={handleJoin} /> : null}
+
+        {!isDemo ? (
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 9, padding: 14 }}>
+            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Bu ürünü paylaş</Text>
+            <ShareRow url={productUrl(currentListing)} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} />
+          </View>
+        ) : null}
 
         <ListingDecisionCard
           listing={currentListing}
