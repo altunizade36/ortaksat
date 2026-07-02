@@ -29,13 +29,15 @@ function descendantLabels(node: CategoryNode, out: string[] = []): string[] {
 const HERO = (n: string) => `https://ortaksat.com/hero2/${n}.jpg`;
 // SABİT tanıtım kümesi — merkez tokalaşma (anlaşma) fotoğrafı + çevresinde sabit
 // ürün görselleri. Bilerek statiktir; canlı ilanlardan çekilmez, değişmez.
-const HERO_FLOAT: Array<{ img: string; x: number; y: number }> = [
-  { img: "headphones", x: 27, y: 18 },
-  { img: "laptop", x: 73, y: 16 },
-  { img: "camera", x: 80, y: 50 },
-  { img: "watch", x: 20, y: 50 },
-  { img: "plant", x: 31, y: 82 },
-  { img: "chair", x: 69, y: 82 }
+// Merkez karta göre SABİT piksel offset'leri (dx,dy) — ekran genişliğinden bağımsız,
+// binmeyen dengeli elips halka. Kart ~132x116; daireler 44px.
+const HERO_FLOAT: Array<{ img: string; dx: number; dy: number }> = [
+  { img: "headphones", dx: -100, dy: -66 },
+  { img: "laptop", dx: 100, dy: -66 },
+  { img: "watch", dx: -110, dy: 6 },
+  { img: "camera", dx: 110, dy: 6 },
+  { img: "plant", dx: -88, dy: 76 },
+  { img: "chair", dx: 88, dy: 76 }
 ];
 
 export function HomeDesktop() {
@@ -293,13 +295,13 @@ export function HomeDesktop() {
             </View>
             {/* Kompakt görsel küme: yeşil daire + ortaklık fotoğrafı + ürünler.
                 maxWidth ile ürünler karttan uzaklaşmaz; ring dengeli durur. */}
-            <View style={{ alignItems: "center", alignSelf: "center", flex: 0.9, justifyContent: "center", maxWidth: 260, minHeight: 168, minWidth: 0, position: "relative", width: "100%" }}>
+            <View style={{ alignItems: "center", alignSelf: "center", flex: 0.9, justifyContent: "center", minHeight: 210, minWidth: 0, position: "relative", width: "100%" }}>
               <View style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 999, height: 150, position: "absolute", width: 150 }} />
               <View style={{ borderColor: "#FFFFFF", borderRadius: 16, borderWidth: 3, height: 116, overflow: "hidden", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.26, shadowRadius: 16, width: 132 }}>
                 <SafeRemoteImage uri={HERO("deal")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
               </View>
               {HERO_FLOAT.map((f) => (
-                <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 44, left: `${f.x}%`, marginLeft: -22, marginTop: -22, overflow: "hidden", position: "absolute", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.22, shadowRadius: 8, top: `${f.y}%`, width: 44 }}>
+                <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 46, left: "50%", marginLeft: f.dx - 23, marginTop: f.dy - 23, overflow: "hidden", position: "absolute", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.22, shadowRadius: 8, top: "50%", width: 46 }}>
                   <SafeRemoteImage uri={HERO(f.img)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
                 </View>
               ))}
