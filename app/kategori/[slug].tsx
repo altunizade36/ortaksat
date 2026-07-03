@@ -21,14 +21,20 @@ function descendantLabels(node: CategoryNode): string[] {
   return out;
 }
 
-function findBySlug(nodes: CategoryNode[], slug: string): CategoryNode | undefined {
+// Kök→hedef ata zinciri: breadcrumb'da her üst kategoriye tıklanabilir çıkış için.
+function findTrail(nodes: CategoryNode[], slug: string, trail: CategoryNode[] = []): CategoryNode[] | undefined {
   for (const n of nodes) {
-    if (n.slug === slug || n.key === slug) return n;
-    const found = n.children ? findBySlug(n.children, slug) : undefined;
-    if (found) return found;
+    const next = [...trail, n];
+    if (n.slug === slug || n.key === slug) return next;
+    if (n.children) {
+      const found = findTrail(n.children, slug, next);
+      if (found) return found;
+    }
   }
   return undefined;
 }
+
+const catHref = (slug: string): Href => ({ pathname: "/kategori/[slug]", params: { slug } }) as unknown as Href;
 
 const PAGE = 24;
 
@@ -43,7 +49,9 @@ export default function CategoryLandingScreen() {
   const [band, setBand] = useState<[number, number] | null>(null);
   const [onlyOpen, setOnlyOpen] = useState(false);
 
-  const node = useMemo(() => (slug ? findBySlug(categoryTree, slug) : undefined), [categoryTree, slug]);
+  const trail = useMemo(() => (slug ? findTrail(categoryTree, slug) : undefined), [categoryTree, slug]);
+  const node = trail ? trail[trail.length - 1] : undefined;
+  const ancestors = trail ? trail.slice(0, -1) : [];
 
   const items = useMemo(() => {
     if (!node) return [];
@@ -100,11 +108,17 @@ export default function CategoryLandingScreen() {
       </Head>
 
       <WebContainer max={1240} padding={12} style={{ gap: 14 }}>
-        {/* Breadcrumb */}
+        {/* Breadcrumb — tam ata zinciri (her üst kategori tıklanabilir) */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
           <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
           <Link href="/kategoriler" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Kategoriler</Text></Pressable></Link>
+          {ancestors.map((a) => (
+            <View key={a.key} style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+              <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
+              <Link href={catHref(a.slug)} asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{a.label}</Text></Pressable></Link>
+            </View>
+          ))}
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
           <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{node.label}</Text>
         </View>
