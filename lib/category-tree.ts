@@ -903,7 +903,10 @@ export const categoryTree: CategoryNode[] = [
       node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "Diğer Tablet"], "elektronik"), "elektronik"),
       node("Ses & Kulaklık", leaves(["Kablosuz Kulaklık", "Kulak İçi Kulaklık", "Kulak Üstü Kulaklık", "Bluetooth Hoparlör", "Soundbar", "Ev Sinema Sistemi", "Mikrofon"], "elektronik"), "elektronik"),
       node("Foto & Kamera", leaves(["DSLR Fotoğraf Makinesi", "Aynasız Fotoğraf Makinesi", "Kompakt Kamera", "Aksiyon Kamera", "Objektif", "Tripod", "Drone", "Güvenlik Kamerası"], "elektronik"), "elektronik"),
-      ...leaves(["Akıllı Saat & Bileklik", "Akıllı Ev Ürünleri", "Projeksiyon", "Yazıcı & Tarayıcı", "Elektronik Aksesuar"], "elektronik")
+      node("Giyilebilir Teknoloji", leaves(["Akıllı Saat", "Akıllı Bileklik", "VR Gözlük", "Akıllı Yüzük", "Akıllı Gözlük"], "elektronik"), "elektronik"),
+      node("Akıllı Ev", leaves(["Akıllı Ampul & Priz", "Güvenlik Kamerası", "Akıllı Kilit", "Sesli Asistan", "Akıllı Termostat", "Robot Süpürge"], "elektronik"), "elektronik"),
+      node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Hoverboard", "Elektrikli Kaykay", "Segway", "Scooter Yedek Parça"], "elektronik"), "elektronik"),
+      ...leaves(["Projeksiyon", "Yazıcı & Tarayıcı", "Network & Modem", "Elektronik Aksesuar"], "elektronik")
     ], "alisverisGenel"),
     node("Telefon & Aksesuar", leaves(["Cep Telefonu", "Kılıf", "Şarj & Kablo", "Powerbank", "Ekran Koruyucu", "Kulaklık"], "alisverisGenel"), "alisverisGenel"),
     node("Bilgisayar & Oyun", [
@@ -1078,10 +1081,14 @@ const HINTS: Array<{ words: string[]; path: string[] }> = [
   { words: ["araba", "otomobil", "araç", "arac"], path: ["Vasıta", "Otomobil"] },
   { words: ["kose koltuk", "koltuk", "kanepe"], path: ["İkinci El & Sıfır Alışveriş", "Ev & Yaşam", "Mobilya"] },
   { words: ["daire", "ev", "kiralik", "satilik", "konut"], path: ["Emlak", "Konut"] },
-  { words: ["arsa", "tarla"], path: ["Emlak", "Arsa"] },
-  { words: ["motosiklet", "motor", "scooter"], path: ["Vasıta", "Motosiklet"] },
+  { words: ["arsa", "tarla", "arazi"], path: ["Emlak", "Arsa / Arazi"] },
+  { words: ["motosiklet", "motor"], path: ["Vasıta", "Motosiklet"] },
   { words: ["bisiklet"], path: ["İkinci El & Sıfır Alışveriş", "Spor & Outdoor", "Bisiklet"] },
-  { words: ["kopek", "kedi", "yavru"], path: ["Hayvanlar Alemi", "Evcil Hayvanlar"] }
+  { words: ["scooter", "elektrikli scooter", "hoverboard"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "Elektrikli Ulaşım"] },
+  { words: ["laptop", "bilgisayar", "notebook"], path: ["İkinci El & Sıfır Alışveriş", "Bilgisayar & Oyun", "Dizüstü Bilgisayar"] },
+  { words: ["buzdolabi", "camasir makinesi", "beyaz esya"], path: ["İkinci El & Sıfır Alışveriş", "Beyaz Eşya"] },
+  { words: ["ayakkabi", "spor ayakkabi", "sneaker"], path: ["İkinci El & Sıfır Alışveriş", "Moda", "Ayakkabı"] },
+  { words: ["kopek", "kedi", "yavru", "sahiplen"], path: ["Hayvanlar Alemi", "Sahiplendirme"] }
 ];
 
 function pathByLabels(labels: string[]): CategoryNode[] {
