@@ -10,6 +10,7 @@ import { EmptyState } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
 import { type CategoryNode } from "@/lib/category-tree";
+import { getCategoryIcon } from "@/lib/categories";
 import { commissionAmount } from "@/lib/format";
 import { responsiveGrid } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
@@ -109,9 +110,14 @@ export default function CategoryLandingScreen() {
         </View>
 
         {/* Başlık */}
-        <View style={{ gap: 4 }}>
-          <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{node.label} ilanları</Text>
-          <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{items.length} ortak satış ilanı · komisyonlu ürünleri keşfet</Text>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 14, height: 52, justifyContent: "center", width: 52 }}>
+            <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={26} color={colors.primaryDark} />
+          </View>
+          <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+            <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{node.label} ilanları</Text>
+            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{items.length} ortak satış ilanı · komisyonlu ürünleri keşfet</Text>
+          </View>
         </View>
 
         {/* Alt kategoriler (varsa) */}
