@@ -5,7 +5,7 @@ import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { getCategoryShortLabel, inferListingSubcategory } from "@/lib/categories";
+import { getCategoryIcon, getCategoryShortLabel, inferListingSubcategory } from "@/lib/categories";
 import { useCompare } from "@/lib/compare";
 import { commissionAmount, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -67,9 +67,12 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
             </View>
 
             <View style={{ gap: 8, padding: 12 }}>
-              <Text numberOfLines={1} selectable style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800", letterSpacing: 0.3, textTransform: "uppercase" }}>
-                {translateCopy(subcategory, language)}
-              </Text>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                <MaterialCommunityIcons name={getCategoryIcon(listing.category)} size={12} color={colors.primaryDark} />
+                <Text numberOfLines={1} selectable style={{ color: colors.primaryDark, flex: 1, fontSize: 11, fontWeight: "800", letterSpacing: 0.3, textTransform: "uppercase" }}>
+                  {translateCopy(subcategory, language)}
+                </Text>
+              </View>
               <Text numberOfLines={2} selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "800", lineHeight: 19, minHeight: 38 }}>
                 {displayText(listing.title)}
               </Text>
