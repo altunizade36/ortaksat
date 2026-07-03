@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link, useRouter } from "expo-router";
+import { Link, useRouter, type Href } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
@@ -385,15 +385,14 @@ export function HomeDesktop() {
         <View style={{ gap: 10 }}>
           <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Popüler Kategoriler</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
-            {popular.map((n) => {
-              const on = selectedNode?.key === n.key;
-              return (
-                <Pressable key={n.key} onPress={() => { setSelectedNode(on ? null : n); setExpandedKey(on ? null : n.key); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 9 }}>
-                  <MaterialCommunityIcons name={getCategoryIcon(n.label)} size={16} color={on ? "#FFFFFF" : colors.primary} />
-                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>{n.label}</Text>
+            {popular.map((n) => (
+              <Link key={n.key} href={{ pathname: "/kategori/[slug]", params: { slug: n.key } } as unknown as Href} asChild>
+                <Pressable accessibilityRole="link" accessibilityLabel={`${n.label} kategorisi`} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 9 }}>
+                  <MaterialCommunityIcons name={getCategoryIcon(n.label)} size={16} color={colors.primary} />
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{n.label}</Text>
                 </Pressable>
-              );
-            })}
+              </Link>
+            ))}
           </ScrollView>
         </View>
 

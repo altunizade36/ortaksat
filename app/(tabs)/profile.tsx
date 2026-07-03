@@ -4,6 +4,7 @@ import { Link, type Href } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { ProfileStrength } from "@/components/profile-strength";
 import { AuthRequired } from "@/components/auth-gate";
 import { Card, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
@@ -234,6 +235,8 @@ function ProfileScreenInner() {
           <Metric label={t("generalTrust")} value={`%${trust.overall}`} />
           <Metric label={t("responseRate")} value={`%${currentUser.responseRate}`} />
         </View>
+
+        <ProfileStrength user={currentUser} hasListing={myListings.length > 0} />
 
         <View style={{ flexDirection: "row", gap: 8 }}>
           <View style={{ flex: 1 }}>
