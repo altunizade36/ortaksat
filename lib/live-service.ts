@@ -232,8 +232,8 @@ export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone"
   return true;
 }
 
-export async function insertListing(listing: Listing) {
-  if (!supabase) return;
+export async function insertListing(listing: Listing): Promise<boolean> {
+  if (!supabase) return true;
 
   const { error } = await supabase.from("listings").insert({
     id: listing.id,
@@ -271,9 +271,10 @@ export async function insertListing(listing: Listing) {
 
   if (error) {
     console.warn("Supabase listing insert failed", error);
-    return;
+    return false;
   }
 
+  // Görsel ikincil: ilan yazıldıysa görsel hatası tüm işlemi başarısız saymaz.
   if (listing.image) {
     const imageError = (await supabase.from("listing_images").insert({
       listing_id: listing.id,
@@ -282,6 +283,7 @@ export async function insertListing(listing: Listing) {
     })).error;
     if (imageError) console.warn("Supabase listing image insert failed", imageError);
   }
+  return true;
 }
 
 // Yüklemede izin verilen tipler ve boyut sınırları (DB bucket limitiyle uyumlu).
@@ -414,8 +416,8 @@ export async function uploadProfileAvatar(uri: string, userId: string) {
   return supabase.storage.from("profile-avatars").getPublicUrl(path).data.publicUrl;
 }
 
-export async function insertPartnership(partnership: Partnership) {
-  if (!supabase) return;
+export async function insertPartnership(partnership: Partnership): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase.from("partnerships").insert({
     id: partnership.id,
     listing_id: partnership.listingId,
@@ -429,11 +431,12 @@ export async function insertPartnership(partnership: Partnership) {
     reach_estimate: partnership.reachEstimate ?? 0,
     approved_at: partnership.approvedAt ?? null
   });
-  if (error) console.warn("Supabase partnership insert failed", error);
+  if (error) { console.warn("Supabase partnership insert failed", error); return false; }
+  return true;
 }
 
-export async function updatePartnershipStatus(partnership: Partnership) {
-  if (!supabase) return;
+export async function updatePartnershipStatus(partnership: Partnership): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase
     .from("partnerships")
     .update({
@@ -446,11 +449,12 @@ export async function updatePartnershipStatus(partnership: Partnership) {
       approved_at: partnership.approvedAt ?? null
     })
     .eq("id", partnership.id);
-  if (error) console.warn("Supabase partnership update failed", error);
+  if (error) { console.warn("Supabase partnership update failed", error); return false; }
+  return true;
 }
 
-export async function insertLead(lead: Lead) {
-  if (!supabase) return;
+export async function insertLead(lead: Lead): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase.from("leads").insert({
     id: lead.id,
     listing_id: lead.listingId,
@@ -462,7 +466,8 @@ export async function insertLead(lead: Lead) {
     intent: lead.intent,
     status: lead.status
   });
-  if (error) console.warn("Supabase lead insert failed", error);
+  if (error) { console.warn("Supabase lead insert failed", error); return false; }
+  return true;
 }
 
 export type ReferralLink = {
@@ -540,8 +545,8 @@ export async function updateLeadStatusLive(lead: Lead) {
   if (error) console.warn("Supabase lead update failed", error);
 }
 
-export async function insertSaleFromLead(sale: Sale, listing: Listing) {
-  if (!supabase) return;
+export async function insertSaleFromLead(sale: Sale, listing: Listing): Promise<boolean> {
+  if (!supabase) return true;
 
   const orderId = makeUuid();
   const orderError = (await supabase.from("orders").insert({
@@ -555,7 +560,7 @@ export async function insertSaleFromLead(sale: Sale, listing: Listing) {
 
   if (orderError) {
     console.warn("Supabase order insert failed", orderError);
-    return;
+    return false;
   }
 
   const commissionError = (await supabase.from("commissions").insert({
@@ -578,11 +583,12 @@ export async function insertSaleFromLead(sale: Sale, listing: Listing) {
     payout_note: sale.payoutNote ?? null
   })).error;
 
-  if (commissionError) console.warn("Supabase commission insert failed", commissionError);
+  if (commissionError) { console.warn("Supabase commission insert failed", commissionError); return false; }
+  return true;
 }
 
-export async function updateSaleStatusLive(sale: Sale) {
-  if (!supabase) return;
+export async function updateSaleStatusLive(sale: Sale): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase
     .from("commissions")
     .update({
@@ -594,7 +600,8 @@ export async function updateSaleStatusLive(sale: Sale) {
       payout_note: sale.payoutNote ?? null
     })
     .eq("id", sale.id);
-  if (error) console.warn("Supabase commission update failed", error);
+  if (error) { console.warn("Supabase commission update failed", error); return false; }
+  return true;
 }
 
 export async function updateListingStatusLive(listing: Listing) {

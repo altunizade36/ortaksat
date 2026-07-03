@@ -153,6 +153,9 @@ type AppStore = {
   marketplaceInitialLoading: boolean;
   loadMoreMarketplace: () => void;
   refreshMarketplace: () => Promise<void>;
+  // Kritik akış yazımı canlıda başarısız olduğunda dolan görünür hata (UI Alert gösterir).
+  syncError: string | null;
+  clearSyncError: () => void;
   partnerships: Partnership[];
   leads: Lead[];
   sales: Sale[];
@@ -365,6 +368,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [marketplaceLoadingMore, setMarketplaceLoadingMore] = useState(false);
   // İlk ilan yüklemesi sürerken skeleton göstermek için (yalnız canlı modda).
   const [marketplaceInitialLoading, setMarketplaceInitialLoading] = useState(isSupabaseConfigured);
+  // Kritik akışlarda arka plan Supabase yazımı başarısız olursa kullanıcıya gösterilecek hata.
+  const [syncError, setSyncError] = useState<string | null>(null);
   const [blogPosts, setBlogPosts] = useState<DbBlogPost[]>([]);
   const [contentPages, setContentPages] = useState<DbContentPage[]>([]);
   const [seoSettings, setSeoSettings] = useState<DbSeoSetting[]>([]);
@@ -764,11 +769,21 @@ export function StoreProvider({ children }: PropsWithChildren) {
       setNotifications((items) => [notification, ...items]);
       if (liveUser) void insertNotification(notification);
     }
+    // Kritik yazımlar için güvenlik: canlı Supabase yazımı başarısız (false/exception)
+    // olursa optimistik yerel değişikliği GERİ AL (rollback) ve görünür hata göster.
+    // Yalnız canlı modda çağrılır; demo/mock modda mevcut local-only davranış korunur.
+    function persistCritical(write: Promise<boolean>, rollback: () => void, message: string) {
+      write
+        .then((ok) => { if (!ok) { rollback(); setSyncError(message); } })
+        .catch(() => { rollback(); setSyncError(message); });
+    }
 
     return {
       backendMode,
       authReady,
       authError,
+      syncError,
+      clearSyncError() { setSyncError(null); },
       currentUser,
       isAuthenticated,
       users,
@@ -1093,7 +1108,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         };
         setListings((items) => [listing, ...items]);
         if (liveUser) {
-          void insertListing(listing);
+          persistCritical(insertListing(listing), () => {
+            setListings((items) => items.filter((l) => l.id !== listing.id));
+          }, "İlan kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
           void logActivity("listing_create", { userId: currentUser.id, entityType: "listing", entityId: listing.id, metadata: { status: listing.status, category: listing.category } });
         }
         return listing;
@@ -1162,7 +1179,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
           if (listing) notify(listing.ownerId, "lead", "Yeni alıcı talebi", `${listing.title} için yeni talep geldi.`);
           notify(partnership.partnerId, "lead", "Talebin satıcıya iletildi", `${listing.title} için getirdiğin müşteri kaydedildi.`);
         }
-        if (liveUser) void insertLead(lead);
+        if (liveUser) persistCritical(insertLead(lead), () => {
+          setLeads((items) => items.filter((l) => l.id !== lead.id));
+          setListings((items) => items.map((l) => (l.id === input.listingId ? { ...l, leadCount: Math.max(0, l.leadCount - 1) } : l)));
+        }, "Talep kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
         return lead;
       },
       createReview(listingId, rating, comment) {
@@ -1263,7 +1283,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const updatedListing: Listing = { ...listing, stockCount: nextStockCount, status: nextListingStatus };
         setListings((items) => items.map((item) => (item.id === listing.id ? updatedListing : item)));
         if (partnership) notify(partnership.partnerId, "sale", "Satış kaydı oluştu", `${listing.title} için komisyon kaydı iade penceresine alındı.`);
-        if (liveUser) void insertSaleFromLead(sale, listing);
+        if (liveUser) persistCritical(insertSaleFromLead(sale, listing), () => {
+          setSales((items) => items.filter((s) => s.id !== sale.id));
+          setOrders((items) => items.filter((o) => o.id !== order.id));
+          setLeads((items) => items.map((l) => (l.id === leadId ? lead : l)));
+          setListings((items) => items.map((l) => (l.id === listing.id ? listing : l)));
+        }, "Satış kaydı oluşturulamadı. Bağlantını kontrol edip tekrar dene.");
         if (liveUser) void updateListingInventoryLive(updatedListing);
         return sale;
       },
@@ -1316,7 +1341,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         } else {
           notify(listing.ownerId, "application", "Yeni ortak başvurusu", `${currentUser.name}, ${listing.title} ilanına başvurdu.`);
         }
-        if (liveUser) void insertPartnership(partnership);
+        if (liveUser) persistCritical(insertPartnership(partnership), () => {
+          setPartnerships((items) => items.filter((p) => p.id !== partnership.id));
+          if (status === "active") setListings((items) => items.map((l) => (l.id === listingId ? { ...l, partnerCount: Math.max(0, l.partnerCount - 1) } : l)));
+        }, "Ortaklık kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
         return partnership;
       },
       approvePartnership(partnershipId) {
@@ -1331,7 +1359,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
           )
         );
         notify(partnership.partnerId, "application", "Ortaklık kabul edildi", "Paylaşım linkin aktif edildi.");
-        if (liveUser) void updatePartnershipStatus(updatedPartnership);
+        if (liveUser) persistCritical(updatePartnershipStatus(updatedPartnership), () => {
+          setPartnerships((items) => items.map((item) => (item.id === partnershipId ? partnership : item)));
+          setListings((items) => items.map((item) => (item.id === partnership.listingId ? { ...item, partnerCount: Math.max(0, item.partnerCount - 1) } : item)));
+        }, "Başvuru onayı kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
       },
       rejectPartnership(partnershipId) {
         const partnership = partnerships.find((item) => item.id === partnershipId);
@@ -1344,7 +1375,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
           items.map((item) => (item.id === partnershipId && updatedPartnership ? updatedPartnership : item))
         );
         if (partnership) notify(partnership.partnerId, "application", "Ortaklık reddedildi", "Satıcı bu başvuruyu uygun görmedi.");
-        if (liveUser && updatedPartnership) void updatePartnershipStatus(updatedPartnership);
+        if (liveUser && updatedPartnership && partnership) persistCritical(updatePartnershipStatus(updatedPartnership), () => {
+          setPartnerships((items) => items.map((item) => (item.id === partnershipId ? partnership : item)));
+        }, "Başvuru reddi kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
       },
       toggleFavorite(listingId) {
         const existing = favorites.find((item) => item.listingId === listingId && item.userId === currentUser.id);
@@ -1551,7 +1584,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
           const other = isSeller ? salePartnership?.partnerId : saleListing?.ownerId;
           if (other) notify(other, "payout", "Komisyon anlaşmazlığı açıldı", `${saleListing?.title ?? "İlan"} komisyonu için anlaşmazlık bildirildi. Panelden inceleyip çözebilirsin.`);
         }
-        if (liveUser && updatedSale) void updateSaleStatusLive(updatedSale);
+        if (liveUser && updatedSale && sale) persistCritical(updateSaleStatusLive(updatedSale), () => {
+          setSales((items) => items.map((item) => (item.id === saleId ? sale : item)));
+        }, "Durum güncellemesi kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
       },
       platformSettings,
       emailVerified,
@@ -1682,7 +1717,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return favorites.some((item) => item.listingId === listingId && item.userId === currentUser.id);
       }
     };
-  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, messages, notifications, orders, partnerships, platformSettings, reports, reviews, sales, seoSettings, users]);
+  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, messages, notifications, orders, partnerships, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

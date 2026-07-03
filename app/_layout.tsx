@@ -1,6 +1,7 @@
 import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
-import { View } from "react-native";
+import { useEffect } from "react";
+import { Alert, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
 import { AppHeader } from "@/components/app-header";
@@ -10,6 +11,7 @@ import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
 import { LanguageProvider, useLanguage } from "@/lib/i18n";
+import { useStore } from "@/lib/use-store";
 
 // expo-router, alt ağaçta render hatası yakalarsa bu fallback'i gösterir.
 export { RouteErrorBoundary as ErrorBoundary };
@@ -55,6 +57,19 @@ function RootStack() {
         <Stack.Screen name="listing/[id]" options={{ headerLargeTitle: false, title: t("listingDetail") }} />
       </Stack>
       <CompareBar />
+      <SyncErrorListener />
     </View>
   );
+}
+
+// Kritik akış yazımı canlıda başarısız olduğunda kullanıcıya görünür hata gösterir
+// (rollback store'da yapılır). Demo/mock modda syncError hiç dolmaz.
+function SyncErrorListener() {
+  const { syncError, clearSyncError } = useStore();
+  useEffect(() => {
+    if (!syncError) return;
+    Alert.alert("Kaydedilemedi", syncError);
+    clearSyncError();
+  }, [syncError, clearSyncError]);
+  return null;
 }
