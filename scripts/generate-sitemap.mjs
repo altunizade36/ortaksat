@@ -36,11 +36,29 @@ const CATEGORY_SLUGS = [
   "ofis-ve-kirtasiye", "oyuncak", "bahce-ve-yasam", "evcil-hayvan-urunleri"
 ];
 
+// Şehir × kategori SEO sayfaları (/kategori/[slug]/[sehir]). Büyük şehirler ×
+// yüksek ticari niyetli kategoriler = uzun-kuyruk bedava Google trafiği.
+// ÖNEMLİ: şehir slug'ları lib/cities.ts SEO_CITY_SLUGS ile, kategori slug'ları
+// yukarıdaki CATEGORY_SLUGS ile birebir aynı olmalı.
+const SEO_CITY_SLUGS = [
+  "istanbul", "ankara", "izmir", "bursa", "antalya", "adana",
+  "konya", "gaziantep", "kocaeli", "mersin", "kayseri", "eskisehir"
+];
+const CITY_CATEGORY_SLUGS = [
+  "emlak", "vasita", "cep-telefonu", "dizustu-bilgisayar", "televizyon", "beyaz-esya",
+  "mobilya", "kadin-giyim", "erkek-giyim", "ayakkabi", "spor-ve-outdoor", "kucuk-ev-aletleri"
+];
+const CITY_CATEGORY_PAGES = CITY_CATEGORY_SLUGS.flatMap((cat) =>
+  SEO_CITY_SLUGS.map((city) => [`/kategori/${cat}/${city}`, "daily", "0.65"])
+);
+
 const STATIC = [
   ["/", "daily", "1.0"],
   ["/explore", "hourly", "0.9"],
   ["/kategoriler", "weekly", "0.8"],
   ...CATEGORY_SLUGS.map((s) => [`/kategori/${s}`, "daily", "0.75"]),
+  ...CITY_CATEGORY_PAGES,
+  ["/ortak-kazanc", "weekly", "0.7"],
   ["/nasil-calisir", "monthly", "0.6"],
   ["/hakkimizda", "monthly", "0.5"],
   ["/sss", "monthly", "0.5"],
