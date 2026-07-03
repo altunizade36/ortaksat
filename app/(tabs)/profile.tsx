@@ -1,7 +1,7 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, type Href } from "expo-router";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { ProfileStrength } from "@/components/profile-strength";
@@ -197,7 +197,7 @@ function ProfileScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
       <WebContainer max={1000} padding={0} style={{ gap: 12 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>

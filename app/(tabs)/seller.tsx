@@ -2,7 +2,7 @@
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { BulkListingModal } from "@/components/bulk-listing-modal";
 import { colors } from "@/components/colors";
@@ -214,7 +214,7 @@ export default function SellerScreen() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: 96 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
       <WebContainer max={1200} padding={0} style={{ gap: 14 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>

@@ -7,6 +7,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/components/colors";
 import { GlobalSearchBar } from "@/components/global-search-bar";
+import { MobileNavMenu } from "@/components/mobile-nav-menu";
 import { HeaderActions } from "@/components/header-actions";
 import { Brand3DMark } from "@/components/three-d-showcase";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -124,6 +125,7 @@ export function AppHeader() {
             <MaterialCommunityIcons name="chevron-left" size={26} color={colors.primaryDark} />
           </Pressable>
         ) : null}
+        {!showBack ? <View style={{ marginRight: 8, zIndex: 2 }}><MobileNavMenu /></View> : null}
         <Link href="/" asChild>
           <Pressable style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minWidth: 0 }}>
             <Brand3DMark size={40} />

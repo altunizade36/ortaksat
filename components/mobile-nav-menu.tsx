@@ -1,0 +1,118 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useRouter, type Href } from "expo-router";
+import { useState } from "react";
+import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { colors } from "@/components/colors";
+import { useStore } from "@/lib/use-store";
+
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+type NavItem = { label: string; href: Href; icon: IconName; badge?: number };
+
+/**
+ * Mobil web üst-menü (hamburger). Alt tab bar yerine geçer; sitenin tüm ana
+ * bölümlerine buradan erişilir — daha "web sitesi" gibi bir gezinme.
+ */
+export function MobileNavMenu() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const { isAuthenticated, currentUser, messages, notifications, signOut } = useStore();
+  const [open, setOpen] = useState(false);
+
+  const unreadMsg = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
+  const unreadNotif = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
+
+  const primary: NavItem[] = [
+    { label: "Ana Sayfa", href: "/", icon: "home-outline" },
+    { label: "Keşfet", href: "/explore", icon: "play-box-multiple-outline" },
+    { label: "Kategoriler", href: "/kategoriler", icon: "shape-outline" },
+    { label: "İlan Ver", href: "/create", icon: "store-plus-outline" },
+    { label: "Ortak Satış Fırsatları", href: "/partner", icon: "handshake-outline" }
+  ];
+  const account: NavItem[] = [
+    { label: "Favorilerim", href: "/favorites", icon: "heart-outline" },
+    { label: "Mesajlar", href: "/(tabs)/messages", icon: "message-text-outline", badge: unreadMsg },
+    { label: "Bildirimler", href: "/(tabs)/notifications-tab", icon: "bell-outline", badge: unreadNotif },
+    { label: "Satıcı Panelim", href: "/(tabs)/seller", icon: "storefront-outline" },
+    { label: "Profilim", href: "/(tabs)/profile", icon: "account-circle-outline" },
+    { label: "Menü & Ayarlar", href: "/(tabs)/menu", icon: "cog-outline" }
+  ];
+
+  function go(href: Href) {
+    setOpen(false);
+    router.push(href);
+  }
+
+  return (
+    <>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Menü"
+        hitSlop={10}
+        onPress={() => setOpen(true)}
+        style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}
+      >
+        <MaterialCommunityIcons name="menu" size={22} color={colors.primaryDark} />
+      </Pressable>
+
+      <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
+        <View style={{ backgroundColor: "rgba(16,24,40,0.5)", flex: 1, flexDirection: "row" }}>
+          <View style={{ backgroundColor: colors.background, maxWidth: 340, paddingTop: insets.top + 10, width: "86%" }}>
+            {/* Başlık */}
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingBottom: 12, paddingHorizontal: 16 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, height: 40, justifyContent: "center", width: 40 }}>
+                <MaterialCommunityIcons name="handshake" size={22} color="#FFFFFF" />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900" }}>ortaksat</Text>
+                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isAuthenticated ? currentUser.name : "Ortak satışla kazan"}</Text>
+              </View>
+              <Pressable accessibilityLabel="Kapat" hitSlop={10} onPress={() => setOpen(false)} style={{ alignItems: "center", height: 36, justifyContent: "center", width: 36 }}>
+                <MaterialCommunityIcons name="close" size={24} color={colors.muted} />
+              </Pressable>
+            </View>
+
+            <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 20 }}>
+              <View style={{ backgroundColor: colors.line, height: 1, marginBottom: 6 }} />
+              {primary.map((item) => <Row key={item.label} item={item} onPress={() => go(item.href)} />)}
+              <View style={{ backgroundColor: colors.line, height: 1, marginVertical: 6 }} />
+              {account.map((item) => <Row key={item.label} item={item} onPress={() => go(item.href)} />)}
+              <View style={{ backgroundColor: colors.line, height: 1, marginVertical: 6 }} />
+              {isAuthenticated ? (
+                <Row item={{ label: "Çıkış Yap", href: "/", icon: "logout" }} danger onPress={() => { setOpen(false); void signOut(); }} />
+              ) : (
+                <Row item={{ label: "Giriş Yap / Kayıt Ol", href: "/auth", icon: "login" }} accent onPress={() => go("/auth")} />
+              )}
+            </ScrollView>
+          </View>
+
+          {/* Sağ boşluğa dokununca kapat */}
+          <Pressable accessibilityLabel="Menüyü kapat" onPress={() => setOpen(false)} style={{ flex: 1 }} />
+        </View>
+      </Modal>
+    </>
+  );
+}
+
+function Row({ item, onPress, danger, accent }: { item: NavItem; onPress: () => void; danger?: boolean; accent?: boolean }) {
+  const color = danger ? colors.accent : accent ? colors.primaryDark : colors.ink;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={item.label}
+      onPress={onPress}
+      style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 13, paddingHorizontal: 16, paddingVertical: 13 })}
+    >
+      <MaterialCommunityIcons name={item.icon} size={21} color={danger ? colors.accent : colors.primary} />
+      <Text style={{ color, flex: 1, fontSize: 14.5, fontWeight: "800" }}>{item.label}</Text>
+      {item.badge && item.badge > 0 ? (
+        <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, minWidth: 20, paddingHorizontal: 6, paddingVertical: 1 }}>
+          <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "900" }}>{item.badge > 9 ? "9+" : item.badge}</Text>
+        </View>
+      ) : (
+        <MaterialCommunityIcons name="chevron-right" size={18} color={colors.subtle} />
+      )}
+    </Pressable>
+  );
+}

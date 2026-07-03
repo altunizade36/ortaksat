@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, type Href } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { WebContainer } from "@/components/web-container";
@@ -68,7 +68,7 @@ export default function MenuScreen() {
   }, [language, tokens]);
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: "#FFFFFF", gap: 8, padding: 12, paddingBottom: 108 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: "#FFFFFF", gap: 8, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 108 }}>
       <WebContainer max={1000} padding={0} style={{ gap: 8 }}>
       <View style={{ gap: 8, marginBottom: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>

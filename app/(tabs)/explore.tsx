@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useMemo, useState } from "react";
-import { NativeScrollEvent, NativeSyntheticEvent, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
@@ -528,7 +528,7 @@ export default function ExploreScreen() {
       onScroll={loadMoreIfNeeded}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ backgroundColor: colors.surface, paddingBottom: 102 }}
+      contentContainerStyle={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === "web" ? 28 : 102 }}
       style={{ backgroundColor: colors.surface }}
     >
       <View style={isWideWeb ? { flexDirection: "row", gap: 20, paddingHorizontal: padding, paddingTop: 6, alignItems: "flex-start" } : undefined}>

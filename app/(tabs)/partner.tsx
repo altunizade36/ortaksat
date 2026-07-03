@@ -3,7 +3,7 @@ import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
+import { Alert, Linking, Platform, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { DisputeModal } from "@/components/dispute-modal";
@@ -412,7 +412,7 @@ export default function PartnerScreen() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: 96 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
       <WebContainer max={1200} padding={0} style={{ gap: 14 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>

@@ -461,7 +461,7 @@ function MessagesScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, maxWidth: 960, marginHorizontal: "auto", padding: 12, paddingBottom: 96, width: "100%" }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, maxWidth: 960, marginHorizontal: "auto", padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96, width: "100%" }}>
       <View style={{ gap: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>
           {t("salesMessages")}
