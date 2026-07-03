@@ -66,6 +66,15 @@ function NotificationsScreenInner() {
   const p0 = currentUser.preferences ?? {};
   const [prefs, setPrefs] = useState<Record<string, boolean>>({ push: p0.notif_push ?? true, email: p0.notif_email ?? true, sms: p0.notif_sms ?? false, whatsapp: p0.notif_whatsapp ?? true });
   const togglePref = (key: string) => setPrefs((s) => { const v = !s[key]; void savePreferences({ [`notif_${key}`]: v }); return { ...s, [key]: v }; });
+  // Tür bazında sustur — kalıcı tercih; susturulan tür listeden gizlenir.
+  const [mutes, setMutes] = useState<Record<string, boolean>>(() => {
+    const m: Record<string, boolean> = {};
+    (Object.keys(typeMeta) as NotificationType[]).forEach((tp) => { m[tp] = (p0 as Record<string, boolean>)[`notif_mute_${tp}`] === true; });
+    return m;
+  });
+  const toggleMute = (tp: NotificationType) => setMutes((s) => { const v = !s[tp]; void savePreferences({ [`notif_mute_${tp}`]: v }); return { ...s, [tp]: v }; });
+  const mutedCount = Object.values(mutes).filter(Boolean).length;
+  const visibleNotifications = myNotifications.filter((n) => !mutes[n.type]);
 
   if (isWideWeb) {
     const dateGroup = (createdAt: string): DeskNotif["group"] => {
@@ -76,7 +85,7 @@ function NotificationsScreenInner() {
       if (days < 7) return "Bu hafta";
       return "Daha önce";
     };
-    const realDesk: DeskNotif[] = myNotifications.map((n) => ({
+    const realDesk: DeskNotif[] = myNotifications.filter((n) => !mutes[n.type]).map((n) => ({
       id: n.id, type: n.type, title: n.title, body: n.body, createdAt: n.createdAt, group: dateGroup(n.createdAt), real: true
     }));
     // Canlıda yalnızca gerçek bildirimler; örnek (SAMPLE) veriler sadece yerel önizlemede.
@@ -240,6 +249,20 @@ function NotificationsScreenInner() {
                   </Pressable>
                 </View>
               ))}
+
+              <View style={{ backgroundColor: colors.line, height: 1, marginVertical: 4 }} />
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Bildirim türleri</Text>
+              {(Object.keys(typeMeta) as NotificationType[]).map((tp) => (
+                <View key={tp} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                  <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, height: 34, justifyContent: "center", width: 34 }}>
+                    <MaterialCommunityIcons name={typeIcons[tp]} size={18} color={mutes[tp] ? colors.subtle : typeMeta[tp].color} />
+                  </View>
+                  <Text style={{ color: mutes[tp] ? colors.muted : colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{typeMeta[tp].label}</Text>
+                  <Pressable accessibilityRole="switch" accessibilityState={{ checked: !mutes[tp] }} accessibilityLabel={`${typeMeta[tp].label} bildirimleri`} onPress={() => toggleMute(tp)} style={{ alignItems: mutes[tp] ? "flex-start" : "flex-end", backgroundColor: mutes[tp] ? colors.line : colors.primary, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+                    <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
+                  </Pressable>
+                </View>
+              ))}
             </View>
 
             <View style={{ backgroundColor: colors.primaryDark, borderRadius: 16, gap: 8, padding: 18 }}>
@@ -282,11 +305,26 @@ function NotificationsScreenInner() {
         </View>
       </Card>
 
-      <SectionTitle title="Son bildirimler" action={`${myNotifications.length}`} />
+      <SectionTitle title="Son bildirimler" action={`${visibleNotifications.length}`} />
 
-      {myNotifications.length === 0 ? <EmptyState title="Bildirim yok" body="Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek." /> : null}
+      {/* Tür bazında sustur */}
+      <Card>
+        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900", marginBottom: 4 }}>Bildirim türleri</Text>
+        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Kapattığın tür bildirim listende görünmez.</Text>
+        {(Object.keys(typeMeta) as NotificationType[]).map((tp) => (
+          <Pressable key={tp} onPress={() => toggleMute(tp)} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 8 }}>
+            <MaterialCommunityIcons name={typeIcons[tp]} size={18} color={mutes[tp] ? colors.subtle : typeMeta[tp].color} />
+            <Text style={{ color: mutes[tp] ? colors.muted : colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{typeMeta[tp].label}</Text>
+            <View style={{ alignItems: mutes[tp] ? "flex-start" : "flex-end", backgroundColor: mutes[tp] ? colors.line : colors.primary, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+              <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
+            </View>
+          </Pressable>
+        ))}
+      </Card>
 
-      {myNotifications.map((notification) => (
+      {visibleNotifications.length === 0 ? <EmptyState title={mutedCount > 0 ? "Görünür bildirim yok" : "Bildirim yok"} body={mutedCount > 0 ? "Bazı türleri kapattın. Görmek için yukarıdan aç." : "Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek."} /> : null}
+
+      {visibleNotifications.map((notification) => (
         <Card key={notification.id}>
           <View style={{ flexDirection: "row", gap: 11 }}>
             <View
