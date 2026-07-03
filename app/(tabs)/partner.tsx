@@ -171,8 +171,8 @@ export default function PartnerScreen() {
     const rateListings = opportunities.filter((l) => l.commissionType === "rate");
     const avgCommissionPct = rateListings.length ? Math.round((rateListings.reduce((s, l) => s + l.commissionValue, 0) / rateListings.length) * 10) / 10 : 0;
     const myLeadCount = leads.filter((lead) => myPartnerships.some((p) => p.id === lead.partnershipId)).length;
-    const earnGoal = 5000;
-    const earnProgress = Math.min(100, Math.round(((approved + paid) / earnGoal) * 100));
+    // Gerçek tahsil oranı: kayıtlı toplam komisyonun ne kadarı ödendi (sahte hedef yok).
+    const collectRate = totalEarn > 0 ? Math.min(100, Math.round((paid / totalEarn) * 100)) : 0;
     const activities = mySales.slice().sort((a, b) => (b.paidAt ?? b.approvedAt ?? b.id).localeCompare(a.paidAt ?? a.approvedAt ?? a.id)).slice(0, 4);
 
     const tabs: Array<{ key: typeof tab; label: string; count?: number }> = [
@@ -387,24 +387,30 @@ export default function PartnerScreen() {
         {/* Performance bar */}
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 24, paddingHorizontal: 20, paddingVertical: 16 }}>
           <View style={{ gap: 1 }}>
-            <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Bu ayki performansınız</Text>
-            <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Son 30 gün</Text>
+            <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Performans özeti</Text>
+            <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Tüm zamanlar</Text>
           </View>
           <PerfMetric icon="cursor-default-click-outline" label="Link tıklama" value={`${totalClicks}`} />
           <PerfMetric icon="account-clock-outline" label="Talep" value={`${myLeadCount}`} />
           <PerfMetric icon="star-outline" label="Satış" value={`${mySales.length}`} />
           <PerfMetric icon="cash" label="Kazanç" value={money(approved + paid)} />
           <View style={{ flex: 1, gap: 6, minWidth: 200 }}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>Hedefe ilerleme</Text>
-              <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "900" }}>{money(approved + paid)} / {money(earnGoal)}</Text>
-            </View>
-            <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 8, overflow: "hidden" }}>
-              <View style={{ backgroundColor: colors.primary, height: "100%", width: `${earnProgress}%` }} />
-            </View>
+            {totalEarn > 0 ? (
+              <>
+                <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>Tahsil edilen komisyon</Text>
+                  <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "900" }}>{money(paid)} / {money(totalEarn)}</Text>
+                </View>
+                <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 8, overflow: "hidden" }}>
+                  <View style={{ backgroundColor: colors.primary, height: "100%", width: `${collectRate}%` }} />
+                </View>
+              </>
+            ) : (
+              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>Henüz kazanç verisi yok — ilk satışında burada görünecek.</Text>
+            )}
           </View>
           <Pressable onPress={() => setTab("earning")} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 16, paddingVertical: 10 })}>
-            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Detaylı Rapor</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Kazanç Detayı</Text>
           </Pressable>
         </View>
         <DisputeModal
