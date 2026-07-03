@@ -11,16 +11,29 @@ const BASE = "https://ortaksat.com";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "..", "public", "sitemap.xml");
 
-// Üst kategori landing sayfaları (SEO hub'ları) — slug'lar category-tree sl() ile birebir.
+// Üst + alt kategori landing sayfaları (SEO hub'ları).
+// ÖNEMLİ: slug'lar category-tree.ts'deki sl() ile BİREBİR aynı olmalı.
+// sl(), TR_MAP üzerinden "&" karakterini "ve" yapar (örn. "Bilgisayar & Oyun"
+// -> "bilgisayar-ve-oyun"). Bu liste gerçek ağaç slug'larına karşı doğrulanmıştır
+// (scripts/validate-slugs — findBySlug ile 56/56 çözümlenir).
 const CATEGORY_SLUGS = [
+  // 15 üst kategori
   "emlak", "vasita", "yedek-parca-aksesuar-ve-tuning", "ikinci-el-ve-sifir-alisveris",
   "is-makineleri-ve-sanayi", "ustalar-ve-hizmetler", "ozel-ders-ve-egitim", "is-ilanlari",
   "yardimci-arayanlar", "hayvanlar-alemi", "arayanlar-talep-ilanlari",
   "dijital-urunler-ve-hizmetler", "yapi-market-ve-bahce", "muzik-enstrumanlari", "saglik-ve-medikal",
-  // Popüler retail alt-kategori landing sayfaları (yüksek arama hacmi)
-  "elektronik", "bilgisayar-ve-oyun", "ev-ve-yasam", "beyaz-esya", "mutfak", "kucuk-ev-aletleri",
-  "moda", "anne-ve-bebek", "kozmetik-ve-kisisel-bakim", "spor-ve-outdoor", "kitap-ve-hobi",
-  "supermarket-ve-gida", "ofis-ve-kirtasiye", "oyuncak", "bahce-ve-yasam", "evcil-hayvan-urunleri"
+  // Emlak alt kırılımları (yüksek arama hacmi)
+  "konut", "is-yeri", "arsa-arazi", "bina", "turistik-tesis", "devre-mulk",
+  // Vasıta alt kırılımları
+  "otomobil-markaya-gore", "otomobil-kasa-tipine-gore", "motosiklet-markaya-gore",
+  "arazi-suv-ve-pickup", "elektrikli-ve-hibrit-araclar", "ticari-araclar", "agir-vasita",
+  "deniz-araclari", "karavan",
+  // Popüler retail alt-kategori landing sayfaları
+  "elektronik", "cep-telefonu", "televizyon", "bilgisayar-ve-oyun", "dizustu-bilgisayar",
+  "ev-ve-yasam", "mobilya", "beyaz-esya", "klima", "mutfak", "kucuk-ev-aletleri",
+  "moda", "kadin-giyim", "erkek-giyim", "ayakkabi", "anne-ve-bebek", "kozmetik-ve-kisisel-bakim",
+  "spor-ve-outdoor", "bisiklet", "kitap-ve-hobi", "koleksiyon-ve-antika", "supermarket-ve-gida",
+  "ofis-ve-kirtasiye", "oyuncak", "bahce-ve-yasam", "evcil-hayvan-urunleri"
 ];
 
 const STATIC = [
