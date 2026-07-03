@@ -142,10 +142,11 @@ function MessagesScreenInner() {
     const activeListing = activeConversation ? findListing(activeConversation.listingId) : undefined;
     const activeOtherId = activeConversation?.participantIds.find((id) => id !== currentUser.id);
     const activeOther = activeOtherId ? findUser(activeOtherId) : undefined;
-    // Eskiden yeniye sırala; aynı zaman damgasında ekleme sırasını koru (tie-break).
+    // Eskiden yeniye sırala. `messages` dizisi yeni→eski tutulur (başa eklenir);
+    // aynı zaman damgasında daha yüksek index = daha eski, o yüzden önce gelir.
     const msgIndex = new Map(messages.map((m, i) => [m.id, i]));
     const activeMessages = activeConversation
-      ? messages.filter((m) => m.conversationId === activeConversation.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt) || ((msgIndex.get(a.id) ?? 0) - (msgIndex.get(b.id) ?? 0)))
+      ? messages.filter((m) => m.conversationId === activeConversation.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt) || ((msgIndex.get(b.id) ?? 0) - (msgIndex.get(a.id) ?? 0)))
       : [];
     const activeContext = activeConversation
       ? buildConversationContext({ conversation: activeConversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t })

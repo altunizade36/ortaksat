@@ -54,10 +54,12 @@ function ChatScreenInner() {
   const otherId = conversation?.participantIds.find((item) => item !== currentUser.id);
   const otherUser = otherId ? findUser(otherId) : undefined;
   const conversationMessages = useMemo(() => {
+    // messages dizisi yeni→eski (başa eklenir); aynı zaman damgasında yüksek index
+    // = daha eski, bu yüzden önce gelir (eskiden yeniye doğru thread).
     const idx = new Map(messages.map((m, i) => [m.id, i]));
     return messages
       .filter((item) => item.conversationId === id)
-      .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || ((idx.get(a.id) ?? 0) - (idx.get(b.id) ?? 0)));
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || ((idx.get(b.id) ?? 0) - (idx.get(a.id) ?? 0)));
   }, [id, messages]);
 
   if (isWideWeb) {
@@ -237,6 +239,13 @@ function ChatScreenInner() {
           multiline
           placeholder={translateCopy("Mesaj yaz", language)}
           placeholderTextColor={colors.muted}
+          onKeyPress={(e) => {
+            const ev = e.nativeEvent as { key?: string; shiftKey?: boolean };
+            if (Platform.OS === "web" && ev.key === "Enter" && !ev.shiftKey) {
+              (e as unknown as { preventDefault?: () => void }).preventDefault?.();
+              send();
+            }
+          }}
           style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, maxHeight: 110, minHeight: 44, paddingHorizontal: 12, paddingVertical: 10 }}
         />
         <Pressable accessibilityRole="button" accessibilityLabel="Gönder" disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 8, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
