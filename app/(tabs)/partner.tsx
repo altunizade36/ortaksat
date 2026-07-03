@@ -338,7 +338,7 @@ export default function PartnerScreen() {
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Paylaşım bağlantılarım</Text>
-                <Pressable onPress={() => setTab("links")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text></Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel="Tüm paylaşım bağlantılarını gör" onPress={() => setTab("links")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text></Pressable>
               </View>
               {activePartnerships.length === 0 ? (
                 <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Ortak olduğunda paylaşım bağlantıların burada görünür.</Text>
@@ -348,10 +348,11 @@ export default function PartnerScreen() {
                   return l ? <ShareRow key={p.id} title={l.title} url={shareUrl(l, p.refCode)} onCopy={() => void copyText("Bağlantı", shareUrl(l, p.refCode))} compact /> : null;
                 })
               )}
+              {/* Paylaşım linkleri ortak olunca otomatik üretilir; buradan yeni ürüne ortak olunur. */}
               <Link href="/explore" asChild>
-                <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                  <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.primary} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Yeni özel bağlantı oluştur</Text>
+                <Pressable accessibilityRole="link" accessibilityLabel="Ortak olacak ürün bul" style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                  <MaterialCommunityIcons name="store-search-outline" size={18} color={colors.primary} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Ortak olacak ürün bul</Text>
                 </Pressable>
               </Link>
             </View>
@@ -359,7 +360,7 @@ export default function PartnerScreen() {
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Son aktivitelerim</Text>
-                <Pressable onPress={() => setTab("earning")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text></Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel="Tüm kazanç hareketlerini gör" onPress={() => setTab("earning")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text></Pressable>
               </View>
               {activities.length === 0 ? (
                 <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Satış ve komisyon hareketlerin burada listelenir.</Text>
