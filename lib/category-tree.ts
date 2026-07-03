@@ -140,7 +140,31 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   "General Mobile": ["GM 24", "GM 23", "GM 22", "GM 21"],
   OnePlus: ["12", "11", "Nord 3", "Nord CE 3"],
   Nothing: ["Phone (2)", "Phone (2a)", "Phone (1)"],
-  Reeder: ["S19 Max Pro", "P13 Blue Max", "S23 Pro"]
+  Reeder: ["S19 Max Pro", "P13 Blue Max", "S23 Pro"],
+  // Yeni eklenen otomobil markalarının modelleri
+  Cadillac: ["Escalade", "CT4", "CT5", "CT6", "XT4", "XT5", "XT6", "ATS", "CTS", "SRX", "BLS", "Lyriq"],
+  Chrysler: ["300C", "Voyager", "Grand Voyager", "PT Cruiser", "Sebring", "Pacifica", "Crossfire"],
+  DFSK: ["Glory 580", "Glory 500", "K01", "Mini Truck", "Seres 3"],
+  Dodge: ["Charger", "Challenger", "Durango", "Journey", "Nitro", "Ram", "Caliber", "Avenger"],
+  Fisker: ["Ocean", "Karma"],
+  Geely: ["Coolray", "Emgrand", "Tugella", "Okavango", "Atlas", "Monjaro", "Geometry C"],
+  Genesis: ["G70", "G80", "G90", "GV60", "GV70", "GV80"],
+  GMC: ["Sierra", "Yukon", "Acadia", "Terrain", "Canyon", "Hummer EV"],
+  Hongqi: ["H5", "H9", "E-HS9", "HS5", "HS7"],
+  Lancia: ["Ypsilon", "Delta", "Musa", "Thema", "Kappa", "Lybra"],
+  Leapmotor: ["T03", "C10", "C11", "C01"],
+  Lotus: ["Emira", "Evora", "Elise", "Exige", "Eletre"],
+  Lucid: ["Air", "Gravity"],
+  Mahindra: ["Scorpio", "XUV500", "XUV700", "Thar", "Pik-Up", "KUV100"],
+  Maybach: ["S580", "S680", "GLS 600", "57", "62"],
+  McLaren: ["720S", "570S", "650S", "GT", "Artura", "750S", "765LT"],
+  NIO: ["ET5", "ET7", "ES6", "ES8", "EL7", "EC6"],
+  Ora: ["Funky Cat", "03", "07", "Good Cat"],
+  Proton: ["Saga", "Persona", "X50", "X70", "Gen-2", "Savvy"],
+  "Rolls-Royce": ["Phantom", "Ghost", "Wraith", "Cullinan", "Dawn", "Spectre"],
+  Seres: ["3", "5", "SF5"],
+  Skywell: ["ET5"],
+  Tofaş: ["Şahin", "Doğan", "Kartal", "Serçe", "Murat 124", "Murat 131", "Tempra", "Tipo", "Uno"]
 };
 
 // Motosiklet markaları -> model/seri (araba markalarıyla çakışmasın diye ayrı).
@@ -171,7 +195,19 @@ export const MOTO_MODELS: Record<string, string[]> = {
   Arora: ["Cappella", "Titan", "Vertu", "Speedmax"],
   Yuki: ["YK", "Panter", "Sirius"],
   Motolux: ["Efsane", "Panama", "Star"],
-  Falcon: ["Serdar", "Motoran", "Dark"]
+  Falcon: ["Serdar", "Motoran", "Dark"],
+  Zontes: ["310R", "310T", "310X", "350GK", "350T", "125U", "155U", "703F"],
+  Voge: ["300R", "300AC", "500R", "525DSX", "650DS", "900DSX", "SR4"],
+  "QJ Motor": ["SRK 250", "SRK 400", "SRT 550", "SRV 550", "SRK 600", "SRK 700"],
+  Keeway: ["RKF 125", "RKS 125", "RKV 200", "Superlight 200", "Vieste 300", "K-Light"],
+  Hero: ["Splendor", "HF Deluxe", "Glamour", "Xpulse 200", "Destini", "Maestro"],
+  Husqvarna: ["Svartpilen", "Vitpilen", "701", "TE", "FE", "Norden 901"],
+  Indian: ["Scout", "Chief", "Chieftain", "Roadmaster", "FTR", "Springfield"],
+  "MV Agusta": ["Brutale", "F3", "F4", "Dragster", "Turismo Veloce", "Rush"],
+  Bimota: ["Tesi", "KB4", "DB"],
+  "Can-Am": ["Ryker", "Spyder", "Maverick", "Outlander"],
+  Lifan: ["KP", "KPT", "KPR"],
+  "Segway Powersports": ["Snarler", "Villain", "Fugleman"]
 };
 
 // Dizüstü / masaüstü bilgisayar markaları -> seri.
