@@ -59,6 +59,8 @@ const STATIC = [
   ...CATEGORY_SLUGS.map((s) => [`/kategori/${s}`, "daily", "0.75"]),
   ...CITY_CATEGORY_PAGES,
   ["/ortak-kazanc", "weekly", "0.7"],
+  ["/satici-ol", "weekly", "0.75"],
+  ["/influencer-kazanc", "weekly", "0.75"],
   ["/nasil-calisir", "monthly", "0.6"],
   ["/hakkimizda", "monthly", "0.5"],
   ["/sss", "monthly", "0.5"],
@@ -109,14 +111,28 @@ async function fetchListings() {
   }
 }
 
+// Blog yazısı slug'larını lib/blog.ts'ten okur (statik içerik SEO'su). TS dosyasını
+// import edemeyiz; slug: "..." satırlarını regex ile çıkarıp senkron kalırız.
+function blogSlugs() {
+  try {
+    const src = readFileSync(join(__dirname, "..", "lib", "blog.ts"), "utf8");
+    const slugs = [...src.matchAll(/slug:\s*"([^"]+)"/g)].map((m) => m[1]);
+    return [...new Set(slugs)];
+  } catch {
+    return [];
+  }
+}
+
 async function main() {
   loadDotEnv();
   const rows = await fetchListings();
+  const posts = blogSlugs();
 
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ...STATIC.map(([loc, cf, pr]) => urlTag(loc, cf, pr)),
+    ...posts.map((s) => urlTag(`/blog/${s}`, "monthly", "0.55")),
     ...rows.map((r) => urlTag(`/listing/${r.id}`, "weekly", "0.7", r.created_at)),
     "</urlset>",
     ""
