@@ -80,7 +80,7 @@ export default function TabsLayout() {
     <Tabs
       screenOptions={{
         header: () => <AppHeader />,
-        sceneStyle: { backgroundColor: "#FFFFFF" },
+        sceneStyle: { backgroundColor: colors.background },
         tabBarActiveTintColor: colors.primary,
         tabBarBadgeStyle: {
           backgroundColor: colors.accent,
