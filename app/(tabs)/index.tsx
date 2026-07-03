@@ -8,6 +8,7 @@ import { colors } from "@/components/colors";
 import { HomeDesktop } from "@/components/home-desktop";
 import { ListingCard } from "@/components/listing-card";
 import { SkeletonGrid } from "@/components/skeleton";
+import { getRecent } from "@/lib/recent";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState } from "@/components/ui";
 import type { CategoryNode } from "@/lib/category-tree";
@@ -40,6 +41,9 @@ export default function HomeScreen() {
   const [seed, setSeed] = useState(1);
   const [gridWidth, setGridWidth] = useState(0);
   const [visibleCount, setVisibleCount] = useState(INITIAL_HOME_ITEMS);
+  // Son gezilen ilanlar (localStorage, istemci-only — SSG hydration güvenli).
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+  useEffect(() => { setRecentIds(getRecent()); }, []);
   const quickFilters: Array<{ key: FilterKey; label: string; icon: IconName }> = useMemo(() => [
     { key: "all", label: t("all"), icon: "view-grid" },
     { key: "trending", label: t("trend"), icon: "fire" },
@@ -65,6 +69,7 @@ export default function HomeScreen() {
   const maxMomentum = activeListings.reduce((max, listing) => Math.max(max, momentumScore(listing)), 0);
   const topListings = activeListings.slice().sort((a, b) => momentumScore(b) + refreshBoost(b, seed) - (momentumScore(a) + refreshBoost(a, seed))).slice(0, 5);
   const topEarn = useMemo(() => activeListings.filter((l) => commissionAmount(l) > 0).slice().sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [activeListings]);
+  const recentListings = useMemo(() => recentIds.map((id) => listings.find((l) => l.id === id)).filter((l): l is Listing => Boolean(l) && l!.status === "active").slice(0, 10), [recentIds, listings]);
   const myActiveListings = activeListings.filter((listing) => listing.ownerId === currentUser.id).length;
   const openPartnerListings = activeListings.filter((listing) => listing.partnershipMode === "open").length;
   const cityCount = new Set(activeListings.map((listing) => listing.location)).size;
@@ -178,6 +183,23 @@ export default function HomeScreen() {
                         <Text style={{ color: "#1A1400", fontSize: 9, fontWeight: "900" }}>Kazanç {money(commissionAmount(l))}</Text>
                       </View>
                     </View>
+                    <View style={{ gap: 3, padding: 8 }}>
+                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{l.title}</Text>
+                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(l.price)}</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {recentListings.length >= 3 ? (
+            <View style={{ gap: 8 }}>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Son Gezdiklerin</Text>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
+                {recentListings.map((l) => (
+                  <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={l.title} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
+                    <SafeRemoteImage uri={l.image} style={{ height: 90, width: "100%" }} contentFit="cover" />
                     <View style={{ gap: 3, padding: 8 }}>
                       <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{l.title}</Text>
                       <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(l.price)}</Text>
