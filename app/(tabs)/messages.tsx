@@ -305,6 +305,8 @@ function MessagesScreenInner() {
                   {activeMessages.map((m, i) => {
                     const mine = m.senderId === currentUser.id;
                     const showDay = i === 0 || msgDay(m.createdAt) !== msgDay(activeMessages[i - 1].createdAt);
+                    const nextM = activeMessages[i + 1];
+                    const lastOfGroup = !nextM || nextM.senderId !== m.senderId || msgDay(nextM.createdAt) !== msgDay(m.createdAt);
                     return (
                       <View key={m.id} style={{ gap: 8 }}>
                         {showDay ? (
@@ -330,10 +332,12 @@ function MessagesScreenInner() {
                               </Link>
                             ) : null}
                             {m.body ? <Text style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 19, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingTop: m.attachmentType === "image" ? 5 : 0 }}>{m.body}</Text> : null}
-                            <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingBottom: m.attachmentType === "image" ? 4 : 0 }}>
-                              <Text style={{ color: mine ? "#DFF7EF" : colors.subtle, fontSize: 10, fontWeight: "700" }}>{msgTime(m.createdAt)}</Text>
-                              {mine ? <MaterialCommunityIcons name={m.read ? "check-all" : "check"} size={13} color={m.read ? "#DFF7EF" : "rgba(255,255,255,0.7)"} /> : null}
-                            </View>
+                            {lastOfGroup ? (
+                              <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingBottom: m.attachmentType === "image" ? 4 : 0 }}>
+                                <Text style={{ color: mine ? "#DFF7EF" : colors.subtle, fontSize: 10, fontWeight: "700" }}>{msgTime(m.createdAt)}</Text>
+                                {mine ? <MaterialCommunityIcons name={m.read ? "check-all" : "check"} size={13} color={m.read ? "#DFF7EF" : "rgba(255,255,255,0.7)"} /> : null}
+                              </View>
+                            ) : null}
                           </View>
                         </View>
                       </View>

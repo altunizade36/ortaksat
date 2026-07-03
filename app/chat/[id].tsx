@@ -164,6 +164,8 @@ function ChatScreenInner() {
         {conversationMessages.map((message, i) => {
           const mine = message.senderId === currentUser.id;
           const showDay = i === 0 || chatMsgDay(message.createdAt) !== chatMsgDay(conversationMessages[i - 1].createdAt);
+          const nextMsg = conversationMessages[i + 1];
+          const lastOfGroup = !nextMsg || nextMsg.senderId !== message.senderId || chatMsgDay(nextMsg.createdAt) !== chatMsgDay(message.createdAt);
           return (
             <View key={message.id} style={{ gap: 6 }}>
               {showDay ? (
@@ -189,12 +191,14 @@ function ChatScreenInner() {
                       {message.body}
                     </Text>
                   ) : null}
-                  <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: message.attachmentType === "image" ? 8 : 0, paddingBottom: message.attachmentType === "image" ? 4 : 0 }}>
-                    <Text selectable style={{ color: mine ? "#DFF7EF" : colors.subtle, fontSize: 10, fontWeight: "700" }}>
-                      {chatMsgTime(message.createdAt) || shortDate(message.createdAt)}
-                    </Text>
-                    {mine ? <MaterialCommunityIcons name={message.read ? "check-all" : "check"} size={13} color={message.read ? "#DFF7EF" : "rgba(255,255,255,0.7)"} /> : null}
-                  </View>
+                  {lastOfGroup ? (
+                    <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: message.attachmentType === "image" ? 8 : 0, paddingBottom: message.attachmentType === "image" ? 4 : 0 }}>
+                      <Text selectable style={{ color: mine ? "#DFF7EF" : colors.subtle, fontSize: 10, fontWeight: "700" }}>
+                        {chatMsgTime(message.createdAt) || shortDate(message.createdAt)}
+                      </Text>
+                      {mine ? <MaterialCommunityIcons name={message.read ? "check-all" : "check"} size={13} color={message.read ? "#DFF7EF" : "rgba(255,255,255,0.7)"} /> : null}
+                    </View>
+                  ) : null}
                 </View>
               </View>
             </View>
