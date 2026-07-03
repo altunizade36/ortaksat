@@ -277,7 +277,7 @@ export function WebFooter() {
       heading: "Destek",
       links: [
         { label: "Yardım Merkezi", href: "/sss" },
-        { label: "Güvenlik", href: "/trust" },
+        { label: "Güvenli Alışveriş", href: "/guvenli-alisveris" },
         { label: "Hakkımızda", href: "/hakkimizda" },
         { label: "İletişim", href: "/legal" }
       ]

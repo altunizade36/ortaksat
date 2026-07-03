@@ -19,6 +19,7 @@ import { ShareRow } from "@/components/share-row";
 import { Skeleton } from "@/components/skeleton";
 import { tokenize } from "@/lib/search";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
+import { SafetyNote } from "@/components/safety-note";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -622,7 +623,10 @@ export default function ListingDetailScreen() {
 
           {/* İletişim */}
           {!isOwner && !isDemo ? (
-            <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{contactLabel(currentListing.contactMethod)}</PrimaryButton>
+            <View style={{ gap: 10 }}>
+              <SafetyNote />
+              <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{contactLabel(currentListing.contactMethod)}</PrimaryButton>
+            </View>
           ) : null}
 
           {/* Satıcı mini kartı */}

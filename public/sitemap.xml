@@ -206,6 +206,7 @@
   <url><loc>https://ortaksat.com/ortak-kazanc</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
   <url><loc>https://ortaksat.com/satici-ol</loc><changefreq>weekly</changefreq><priority>0.75</priority></url>
   <url><loc>https://ortaksat.com/influencer-kazanc</loc><changefreq>weekly</changefreq><priority>0.75</priority></url>
+  <url><loc>https://ortaksat.com/guvenli-alisveris</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://ortaksat.com/nasil-calisir</loc><changefreq>monthly</changefreq><priority>0.6</priority></url>
   <url><loc>https://ortaksat.com/hakkimizda</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>
   <url><loc>https://ortaksat.com/sss</loc><changefreq>monthly</changefreq><priority>0.5</priority></url>

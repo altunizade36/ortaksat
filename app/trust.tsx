@@ -241,13 +241,13 @@ export default function TrustScreen() {
                   <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{s}</Text>
                 </View>
               ))}
-              <Link href="/legal" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Tüm güvenlik ipuçları →</Text></Pressable></Link>
+              <Link href="/guvenli-alisveris" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Güvenli alışveriş rehberi →</Text></Pressable></Link>
             </View>
 
             <View style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Dolandırıcılığı Önleyin</Text>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Şüpheli bir durumla karşılaşırsan bildir. Ekibimiz kayıt üzerinden inceleme yapar.</Text>
-              <Link href="/legal" asChild>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Şüpheli bir durumla karşılaşırsan ilan veya profildeki "Bildir" ile kayda geçir. Ekibimiz kayıt üzerinden inceleme yapar.</Text>
+              <Link href="/guvenli-alisveris" asChild>
                 <Pressable style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
                   <MaterialCommunityIcons name="flag-variant-outline" size={17} color="#FFFFFF" />
                   <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Şikayet / Bildirim Oluştur</Text>
