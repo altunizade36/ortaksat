@@ -330,7 +330,7 @@ function MessagesScreenInner() {
                   <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>%{respRate} yanıt</Text>
                 </View>
 
-                <ScrollView ref={deskScrollRef} onContentSizeChange={() => deskScrollRef.current?.scrollToEnd({ animated: false })} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-end", padding: 22 }}>
+                <ScrollView ref={deskScrollRef} onContentSizeChange={() => deskScrollRef.current?.scrollToEnd({ animated: false })} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-start", padding: 22 }}>
                   {activeMessages.length === 0 ? <EmptyState title="Henüz mesaj yok" body="İlk mesajı yaz ve konuşmayı başlat." /> : null}
                   {activeMessages.map((m, i) => {
                     const mine = m.senderId === currentUser.id;
@@ -400,7 +400,8 @@ function MessagesScreenInner() {
 
           {/* SAĞ: İlan Detayları */}
           {activeConversation && activeContext && roomForContextPanel ? (
-            <ScrollView style={{ borderLeftColor: colors.line, borderLeftWidth: 1, width: 320 }} contentContainerStyle={{ gap: 14, padding: 16 }} showsVerticalScrollIndicator={false}>
+            <View style={{ borderLeftColor: colors.line, borderLeftWidth: 1, width: 320 }}>
+            <ScrollView style={{ flex: 1 }} contentContainerStyle={{ gap: 14, padding: 16 }} showsVerticalScrollIndicator={false}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                 <Text style={{ color: colors.ink, flex: 1, fontSize: 15.5, fontWeight: "900" }}>İlan Detayları</Text>
                 {activeListing ? <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}><Text style={{ color: colors.success, fontSize: 10.5, fontWeight: "900" }}>Aktif ilan</Text></View> : null}
@@ -466,6 +467,7 @@ function MessagesScreenInner() {
                 </View>
               )}
             </ScrollView>
+            </View>
           ) : null}
         </View>
       </View>
