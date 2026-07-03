@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter, type Href } from "expo-router";
 import Head from "expo-router/head";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -38,16 +38,32 @@ export default function CategoryLandingScreen() {
   const { width } = useWindowDimensions();
   const { listings, categoryTree, findUser } = useStore();
   const [visible, setVisible] = useState(PAGE);
+  const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
+  const [band, setBand] = useState<[number, number] | null>(null);
+  const [onlyOpen, setOnlyOpen] = useState(false);
 
   const node = useMemo(() => (slug ? findBySlug(categoryTree, slug) : undefined), [categoryTree, slug]);
 
   const items = useMemo(() => {
     if (!node) return [];
     const labels = new Set(descendantLabels(node));
-    return listings
-      .filter((l) => l.status === "active" && labels.has(l.category))
-      .sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || commissionAmount(b) - commissionAmount(a));
-  }, [listings, node]);
+    const out = listings.filter((l) => {
+      if (l.status !== "active" || !labels.has(l.category)) return false;
+      if (band && (l.price < band[0] || l.price > band[1])) return false;
+      if (onlyOpen && l.partnershipMode !== "open") return false;
+      return true;
+    });
+    out.sort((a, b) => {
+      if (sortMode === "newest") return b.createdAt.localeCompare(a.createdAt);
+      if (sortMode === "priceAsc") return a.price - b.price;
+      if (sortMode === "priceDesc") return b.price - a.price;
+      if (sortMode === "commission") return commissionAmount(b) - commissionAmount(a);
+      return Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || commissionAmount(b) - commissionAmount(a);
+    });
+    return out;
+  }, [listings, node, band, onlyOpen, sortMode]);
+
+  useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug]);
 
   const cardWidth = responsiveGrid({ available: Math.min(width, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
   const title = node ? `${node.label} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
@@ -111,8 +127,36 @@ export default function CategoryLandingScreen() {
           </View>
         ) : null}
 
+        {/* Sıralama + hızlı filtreler */}
+        <View style={{ gap: 8 }}>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
+            {([["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["commission", "En çok kazandıran"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"]] as const).map(([k, lbl]) => {
+              const on = sortMode === k;
+              return (
+                <Pressable key={k} onPress={() => setSortMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{lbl}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
+            <Pressable onPress={() => setOnlyOpen((v) => !v)} style={{ alignItems: "center", backgroundColor: onlyOpen ? colors.primarySoft : colors.surface, borderColor: onlyOpen ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+              <MaterialCommunityIcons name="flash" size={13} color={onlyOpen ? colors.primaryDark : colors.muted} />
+              <Text style={{ color: onlyOpen ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: "800" }}>Anında ortak</Text>
+            </Pressable>
+            {([[0, 1000, "0–1.000 ₺"], [1000, 5000, "1.000–5.000 ₺"], [5000, 25000, "5.000–25.000 ₺"], [25000, 100000, "25.000–100.000 ₺"], [100000, Number.MAX_SAFE_INTEGER, "100.000 ₺+"]] as const).map(([mn, mx, lbl]) => {
+              const on = band?.[0] === mn && band?.[1] === mx;
+              return (
+                <Pressable key={lbl} onPress={() => setBand(on ? null : [mn, mx])} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{lbl}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        </View>
+
         {items.length === 0 ? (
-          <EmptyState title="Bu kategoride ilan yok" body="Yakında eklenecek. Farklı bir kategoriye göz atabilirsin." />
+          <EmptyState title="Bu kategoride ilan yok" body={band || onlyOpen ? "Filtreye uyan ilan yok; filtreleri gevşetmeyi dene." : "Yakında eklenecek. Farklı bir kategoriye göz atabilirsin."} />
         ) : (
           <>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
