@@ -259,17 +259,26 @@ export function WebFooter() {
       heading: "Pazaryeri",
       links: [
         { label: "Keşfet", href: "/explore" },
-        { label: "İlan Ver", href: "/create" },
+        { label: "İlan Ver (Satıcı)", href: "/create" },
+        { label: "Satıcı Ol", href: "/satici-ol" },
+        { label: "Kategoriler", href: "/kategoriler" }
+      ]
+    },
+    {
+      heading: "Kazan",
+      links: [
+        { label: "Ortak / Influencer Ol", href: "/influencer-kazanc" },
+        { label: "Kazanç Hesapla", href: "/ortak-kazanc" },
         { label: "Ortak Satış", href: "/partner" },
-        { label: "Kategoriler", href: "/explore" }
+        { label: "Nasıl Çalışır?", href: "/nasil-calisir" }
       ]
     },
     {
       heading: "Destek",
       links: [
-        { label: "Nasıl Çalışır?", href: "/nasil-calisir" },
         { label: "Yardım Merkezi", href: "/sss" },
         { label: "Güvenlik", href: "/trust" },
+        { label: "Hakkımızda", href: "/hakkimizda" },
         { label: "İletişim", href: "/legal" }
       ]
     },
