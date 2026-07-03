@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link, useRouter } from "expo-router";
+import { Link, useRouter, type Href } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
@@ -56,9 +56,22 @@ export default function NotificationsScreen() {
 
 function NotificationsScreenInner() {
   const { language } = useLanguage();
-  const { currentUser, markNotificationRead, notifications, savePreferences } = useStore();
+  const { currentUser, listings, markNotificationRead, notifications, partnerships, savePreferences } = useStore();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
+
+  // Bildirime tıklayınca gidilecek hedef — ROL DUYARLI:
+  //  • İlanın sahibi (satıcı) isem → satıcı panelinde ilgili ilanı aç (?focus=)
+  //  • Ortaklığın ortağı isem → ortak panelinde ilgili ortaklığı öne al (?focus=)
+  //  • Değilsem → ilan detayına git. Metadata yoksa null (sadece okundu işaretlenir).
+  const hrefForMeta = (meta?: NotificationMeta): Href | null => {
+    if (!meta?.listingId) return null;
+    const listing = listings.find((l) => l.id === meta.listingId);
+    const partnership = meta.partnershipId ? partnerships.find((p) => p.id === meta.partnershipId) : undefined;
+    if (listing && listing.ownerId === currentUser.id) return `/(tabs)/seller?focus=${meta.listingId}` as Href;
+    if (partnership && partnership.partnerId === currentUser.id) return `/(tabs)/partner?focus=${meta.listingId}` as Href;
+    return { pathname: "/listing/[id]", params: { id: meta.listingId } } as unknown as Href;
+  };
   const myNotifications = notifications.filter((notification) => notification.userId === currentUser.id);
   const unreadCount = myNotifications.filter((notification) => !notification.read).length;
 
@@ -114,10 +127,11 @@ function NotificationsScreenInner() {
       setReadMap((s) => ({ ...s, [n.id]: true }));
       if (n.real) markNotificationRead(n.id);
     };
-    // Tıklayınca okundu işaretle + ilgili ilana git (metadata varsa).
+    // Tıklayınca okundu işaretle + rol-duyarlı hedefe git (satıcı/ortak/ilan).
     const openDesk = (n: DeskNotif) => {
       markRead(n);
-      if (n.metadata?.listingId) router.push({ pathname: "/listing/[id]", params: { id: n.metadata.listingId } });
+      const href = hrefForMeta(n.metadata);
+      if (href) router.push(href);
     };
     const markAll = () => {
       const next: Record<string, boolean> = {};
@@ -332,13 +346,13 @@ function NotificationsScreenInner() {
       {visibleNotifications.length === 0 ? <EmptyState title={mutedCount > 0 ? "Görünür bildirim yok" : "Bildirim yok"} body={mutedCount > 0 ? "Bazı türleri kapattın. Görmek için yukarıdan aç." : "Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek."} /> : null}
 
       {visibleNotifications.map((notification) => {
-        const lid = notification.metadata?.listingId;
+        const href = hrefForMeta(notification.metadata);
         const openMobile = () => {
           if (!notification.read) markNotificationRead(notification.id);
-          if (lid) router.push({ pathname: "/listing/[id]", params: { id: lid } });
+          if (href) router.push(href);
         };
         return (
-        <Pressable key={notification.id} accessibilityRole="button" accessibilityLabel={lid ? `${notification.title} — ilana git` : notification.title} onPress={openMobile}>
+        <Pressable key={notification.id} accessibilityRole="button" accessibilityLabel={href ? `${notification.title} — aç` : notification.title} onPress={openMobile}>
         <Card>
           <View style={{ flexDirection: "row", gap: 11 }}>
             <View

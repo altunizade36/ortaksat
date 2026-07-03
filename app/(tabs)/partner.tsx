@@ -1,7 +1,7 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
-import { Link, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Linking, Platform, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 
@@ -63,6 +63,11 @@ export default function PartnerScreen() {
   const [oppStock, setOppStock] = useState("");
   const [oppGuven, setOppGuven] = useState("");
   const [oppVisible, setOppVisible] = useState(8);
+  // Bildirim derin-linki (?focus=<listingId>): ilgili ortaklığı "Aktif" sekmesinde öne al.
+  const params = useLocalSearchParams<{ focus?: string }>();
+  const focusId = Array.isArray(params.focus) ? params.focus[0] : params.focus;
+  useEffect(() => { if (focusId) setTab("active"); }, [focusId]);
+  const focusFirst = (a: { listingId: string }, b: { listingId: string }) => (focusId ? (a.listingId === focusId ? -1 : b.listingId === focusId ? 1 : 0) : 0);
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   const myPartnershipKey = myPartnerships.map((p) => p.id).join(",");
@@ -74,7 +79,7 @@ export default function PartnerScreen() {
     return () => { alive = false; };
   }, [myPartnershipKey]);
   const totalClicks = Object.values(clickCounts).reduce((a, b) => a + b, 0);
-  const activePartnerships = myPartnerships.filter((item) => item.status === "active");
+  const activePartnerships = myPartnerships.filter((item) => item.status === "active").slice().sort(focusFirst);
   const pendingPartnerships = myPartnerships.filter((item) => item.status === "pending");
   const mySales = sales.filter((sale) => myPartnerships.some((partnership) => partnership.id === sale.partnershipId));
   const waiting = mySales.filter((sale) => sale.status === "pending" || sale.status === "return_pending" || sale.status === "disputed").reduce((sum, sale) => sum + sale.commissionAmount, 0);
@@ -105,7 +110,7 @@ export default function PartnerScreen() {
     if (tokens.length === 0) return true;
     const haystack = searchKey([listing?.title, listing?.category, listing?.location, partnership.note, partnership.shareChannel, partnership.audience].filter(Boolean).join(" "));
     return tokens.every((token) => haystack.includes(token));
-  });
+  }).sort(focusFirst);
 
   // Ortaklık fırsatları: başkalarının TÜM aktif ilanları (herkese açık, global).
   const joinedIds = new Set(myPartnerships.map((p) => p.listingId));

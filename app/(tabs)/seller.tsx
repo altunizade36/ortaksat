@@ -1,6 +1,6 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
@@ -76,6 +76,14 @@ export default function SellerScreen() {
   // Grafik yalnız istemcide (new Date) render edilsin — SSG hydration uyuşmazlığı olmasın.
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
+
+  // Bildirim derin-linki (?focus=<listingId>): ilgili ilanın talep/ödeme yönetimini aç,
+  // filtreleri temizle ve listede en üste al.
+  const params = useLocalSearchParams<{ focus?: string }>();
+  const focusId = Array.isArray(params.focus) ? params.focus[0] : params.focus;
+  useEffect(() => {
+    if (focusId) { setExpandedId(focusId); setFilter("all"); setQuery(""); }
+  }, [focusId]);
 
   function handleBulkCreate(row: { title: string; price: number; commission: number; category: string; image: string }) {
     createListing({
@@ -168,7 +176,11 @@ export default function SellerScreen() {
     if (filter === "lowStock" && !(listing.status === "active" && listing.stockCount <= 3)) return false;
     if (tokens.length === 0) return true;
     return matchesQuery(listing, undefined, tokens);
-  }).sort((a, b) => sellerPriority(b, myLeads, mySales, partnerships) - sellerPriority(a, myLeads, mySales, partnerships));
+  }).sort((a, b) => {
+    // Derin-linkten gelen ilan her zaman en üstte.
+    if (focusId) { if (a.id === focusId) return -1; if (b.id === focusId) return 1; }
+    return sellerPriority(b, myLeads, mySales, partnerships) - sellerPriority(a, myLeads, mySales, partnerships);
+  });
 
   function convertLead(leadId: string) {
     const sale = createSaleFromLead(leadId);
