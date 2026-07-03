@@ -930,7 +930,8 @@ export const categoryTree: CategoryNode[] = [
       node("Süpürge", leaves(["Robot Süpürge", "Dikey Süpürge", "Toz Torbalı", "Toz Torbasız", "Islak-Kuru", "Halı Yıkama"], "beyazEsya"), "beyazEsya"),
       ...leaves(["Derin Dondurucu", "Su Sebili", "Şofben & Termosifon", "Bulaşık Kurutma"], "beyazEsya")
     ], "beyazEsya"),
-    leaf("Mutfak", "alisverisGenel"),
+    node("Mutfak", leaves(["Tencere & Tava", "Düdüklü Tencere", "Çaydanlık & Cezve", "Bıçak & Kesim Aletleri", "Sofra Takımı", "Bardak & Kupa", "Saklama Kabı", "Pişirme Kabı", "Fırın & Pasta Malzemesi", "Kahve & Çay Ekipmanı", "Mutfak Gereçleri", "Mutfak Düzenleme"], "alisverisGenel"), "alisverisGenel"),
+    node("Küçük Ev Aletleri", leaves(["Elektrikli Süpürge", "Robot Süpürge", "Dikey Süpürge", "Ütü & Ütü Sistemi", "Blender & Rondo", "El Blenderi", "Su Isıtıcı (Kettle)", "Airfryer & Fritöz", "Kahve Makinesi", "Çay Makinesi", "Tost & Izgara Makinesi", "Mikser & Çırpıcı", "Meyve/Sebze Sıkacağı", "Doğrayıcı", "Ekmek & Yoğurt Makinesi", "Semaver", "Nem Alma & Hava Temizleyici", "Saç Kurutma & Şekillendirme"], "beyazEsya"), "beyazEsya"),
     node("Moda", [
       node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "İç Giyim"], "moda"), "moda"),
       node("Erkek Giyim", leaves(["Tişört", "Gömlek", "Pantolon", "Ceket", "Mont", "Takım Elbise", "Sweatshirt", "Kazak", "Spor Giyim", "İç Giyim"], "moda"), "moda"),
@@ -942,8 +943,6 @@ export const categoryTree: CategoryNode[] = [
       node("Takı & Mücevher", leaves(["Yüzük", "Kolye", "Bilezik", "Küpe", "Altın", "Pırlanta", "Gümüş", "Saat Kordonu"], "aksesuar"), "aksesuar"),
       ...leaves(["Tesettür Giyim", "Spor Giyim"], "moda")
     ], "moda"),
-    leaf("Ayakkabı & Çanta", "ayakkabi"),
-    leaf("Takı & Aksesuar", "alisverisGenel"),
     node("Anne & Bebek", [
       node("Bebek Arabası & Taşıma", leaves(["Travel Sistem Bebek Arabası", "Tekli Bebek Arabası", "İkiz Bebek Arabası", "Puset", "Ana Kucağı", "Kanguru & Taşıyıcı", "Portbebe"], "bebek"), "bebek"),
       node("Oto Koltuğu", leaves(["0-13 kg", "9-36 kg", "15-36 kg", "360° Dönebilen", "Yükseltici"], "bebek"), "bebek"),
@@ -976,11 +975,13 @@ export const categoryTree: CategoryNode[] = [
       node("Antika", leaves(["Antika Mobilya", "Antika Saat", "Gramofon & Radyo", "Porselen & Seramik", "Bakır & Pirinç", "Antika Aydınlatma", "Tablo & Yağlıboya", "El Yazması & Belge"], "koleksiyon"), "koleksiyon"),
       node("Koleksiyon Ürünleri", leaves(["Kartpostal", "Rozet & Madalya", "Telefon Kartı", "Kibrit & Etiket", "Plak Koleksiyonu", "Oyuncak Koleksiyonu", "Figür & Aksiyon Figür", "Model Araba", "Askeri Malzeme", "Taş & Mineral", "İmza & Fotoğraf", "Saat Koleksiyonu"], "koleksiyon"), "koleksiyon")
     ], "koleksiyon"),
-    leaf("Ofis & Kırtasiye", "alisverisGenel"),
-    leaf("Oyuncak", "alisverisGenel"),
+    node("Süpermarket & Gıda", leaves(["Temel Gıda", "Kahvaltılık", "Atıştırmalık & Şekerleme", "Bakliyat & Makarna", "Konserve & Hazır Yemek", "Kahve & Çay", "İçecek", "Su & Maden Suyu", "Süt & Süt Ürünleri", "Bebek Maması & Gıdası", "Organik & Glutensiz", "Baharat & Sos", "Zeytin & Zeytinyağı", "Bal & Reçel", "Kuruyemiş & Kurutulmuş Gıda", "Deterjan & Temizlik", "Kağıt Ürünleri", "Kişisel Temizlik & Hijyen"], "alisverisGenel"), "alisverisGenel"),
+    node("Ofis & Kırtasiye", leaves(["Kırtasiye Malzemesi", "Defter & Bloknot", "Kalem & Yazı Gereçleri", "Ofis Mobilyası", "Yazıcı & Sarf Malzeme", "Dosyalama & Arşiv", "Sunum & Pano", "Hesap Makinesi", "Ofis Elektroniği", "Okul Malzemesi"], "alisverisGenel"), "alisverisGenel"),
+    node("Oyuncak", leaves(["Eğitici Oyuncak", "Peluş Oyuncak", "Yapı & Bloklar (Lego)", "Uzaktan Kumandalı", "Bebek & Figür", "Puzzle & Zeka Oyunları", "Kutu Oyunları", "Oyun Seti", "Araba & Araç Oyuncak", "Su & Kum Oyuncakları", "Elektronik Oyuncak", "Bebek Oyuncakları (0-3 yaş)"], "alisverisGenel"), "alisverisGenel"),
+    node("Bahçe & Yaşam", leaves(["Bahçe Mobilyası", "Şemsiye & Gölgelik", "Barbekü & Mangal", "Saksı & Çiçeklik", "Yapay Çiçek & Bitki", "Bahçe Dekorasyonu", "Havuz & Şişme", "Kamp & Piknik"], "alisverisGenel"), "alisverisGenel"),
     node("Dijital Ürünler", leaves(["Yazılım Lisansı", "Dijital Eğitim", "E-kitap", "Tasarım Dosyası", "Oyun Kodu", "Tema & Şablon", "Dijital Hesap", "Online Hizmet"], "alisverisGenel"), "alisverisGenel"),
+    node("Evcil Hayvan Ürünleri", leaves(["Kedi Ürünleri", "Köpek Ürünleri", "Kuş Ürünleri", "Balık & Akvaryum", "Kemirgen Ürünleri", "Mama & Yem", "Kafes & Aksesuar", "Pet Bakım & Hijyen", "Tasma & Gezdirme", "Oyuncak & Kaşıma"], "alisverisGenel"), "alisverisGenel"),
     leaf("Hediyelik Ürünler", "alisverisGenel"),
-    leaf("Evcil Hayvan Ürünleri", "alisverisGenel"),
     leaf("Diğer Alışveriş", "alisverisGenel")
   ], "alisverisGenel", IMG("1498049794561-7780e7231661")),
 
