@@ -362,6 +362,9 @@ export default function ListingDetailScreen() {
 
   const metaDesc = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
   const metaUrl = `https://ortaksat.com/listing/${currentListing.id}`;
+  // Sosyal paylaşımda kazanç kancası — ortak linki paylaşınca önizlemede görünür.
+  const ogTitle = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)} · Ortak ol, ${commissionText(currentListing)} kazan | OrtakSat`;
+  const ogDesc = `${moneyIn(currentListing.price, currentListing.currency)} · ${commissionText(currentListing)}. Bu ürünü paylaş, satışta komisyon kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
   // JSON-LD Product şeması — Google zengin sonuç (fiyat, stok, kategori) için.
   const productLd = JSON.stringify({
     "@context": "https://schema.org",
@@ -386,14 +389,20 @@ export default function ListingDetailScreen() {
         <meta name="description" content={metaDesc} />
         <link rel="canonical" href={metaUrl} />
         <meta property="og:type" content="product" />
-        <meta property="og:title" content={`${currentListing.title} — OrtakSat`} />
-        <meta property="og:description" content={metaDesc} />
+        <meta property="og:site_name" content="OrtakSat" />
+        <meta property="og:locale" content="tr_TR" />
+        <meta property="og:title" content={ogTitle} />
+        <meta property="og:description" content={ogDesc} />
         <meta property="og:image" content={currentListing.image} />
+        <meta property="og:image:alt" content={currentListing.imageAlt || currentListing.title} />
         <meta property="og:url" content={metaUrl} />
+        <meta property="product:price:amount" content={String(currentListing.price)} />
+        <meta property="product:price:currency" content={currentListing.currency ?? "TRY"} />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:title" content={`${currentListing.title} — OrtakSat`} />
-        <meta name="twitter:description" content={metaDesc} />
+        <meta name="twitter:title" content={ogTitle} />
+        <meta name="twitter:description" content={ogDesc} />
         <meta name="twitter:image" content={currentListing.image} />
+        <meta name="twitter:image:alt" content={currentListing.imageAlt || currentListing.title} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productLd }} />
       </Head>
       <WebContainer max={1200} padding={0} style={{ gap: 16 }}>
