@@ -1,6 +1,6 @@
 ﻿import { supabase } from "@/lib/supabase";
 import { commissionAmount } from "@/lib/format";
-import type { Conversation, Lead, Listing, Message, ModerationStatus, Notification, Partnership, Report, Review, Sale, User } from "@/lib/types";
+import type { CategorySuggestion, Conversation, Lead, Listing, LocationSuggestion, Message, ModerationStatus, Notification, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -878,3 +878,53 @@ export async function requestAccountDeletionLive(input: { userId: string; reason
 }
 
 
+// ---- Kategori / konum önerileri (kalıcı) ---------------------------------
+// RLS: kullanıcı kendi önerisini insert eder (user_id = auth.uid()); durum
+// güncellemesini yalnız admin yapabilir (is_admin). Tablolar 20260630120000
+// migration'ında tanımlı (category_suggestions / location_suggestions).
+
+export async function insertCategorySuggestion(s: CategorySuggestion): Promise<boolean> {
+  if (!supabase) return true;
+  const { error } = await supabase.from("category_suggestions").insert({
+    id: s.id,
+    user_id: s.userId,
+    listing_id: s.listingId ?? null,
+    suggested_path: s.suggestedPath,
+    note: s.note ?? null,
+    status: s.status
+  });
+  if (error) { console.warn("Supabase category suggestion insert failed", error); return false; }
+  return true;
+}
+
+export async function insertLocationSuggestion(s: LocationSuggestion): Promise<boolean> {
+  if (!supabase) return true;
+  const { error } = await supabase.from("location_suggestions").insert({
+    id: s.id,
+    user_id: s.userId,
+    province_id: s.provinceId ?? null,
+    district_id: s.districtId ?? null,
+    suggested_name: s.suggestedName,
+    type: s.type,
+    note: s.note ?? null,
+    status: s.status
+  });
+  if (error) { console.warn("Supabase location suggestion insert failed", error); return false; }
+  return true;
+}
+
+export async function updateCategorySuggestionStatusLive(id: string, status: SuggestionStatus, reviewerId?: string): Promise<boolean> {
+  if (!supabase) return true;
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("category_suggestions").update({ status, reviewed_by: reviewerId ?? null, reviewed_at: now, updated_at: now }).eq("id", id);
+  if (error) { console.warn("Supabase category suggestion update failed", error); return false; }
+  return true;
+}
+
+export async function updateLocationSuggestionStatusLive(id: string, status: SuggestionStatus, reviewerId?: string): Promise<boolean> {
+  if (!supabase) return true;
+  const now = new Date().toISOString();
+  const { error } = await supabase.from("location_suggestions").update({ status, reviewed_by: reviewerId ?? null, reviewed_at: now, updated_at: now }).eq("id", id);
+  if (error) { console.warn("Supabase location suggestion update failed", error); return false; }
+  return true;
+}

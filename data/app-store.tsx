@@ -60,11 +60,15 @@ import {
   updateUserRoleLive,
   updateUserStatusLive,
   updateUserVerificationLive,
-  updateSaleStatusLive
+  updateSaleStatusLive,
+  insertCategorySuggestion,
+  insertLocationSuggestion,
+  updateCategorySuggestionStatusLive,
+  updateLocationSuggestionStatusLive
 } from "@/lib/live-service";
 import { rateLimit } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings, loadSeoSettings, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
+import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings, loadSeoSettings, loadSuggestions, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import { categoryTree as baseCategoryTree, type CategoryNode } from "@/lib/category-tree";
 import { displayText, repairTurkishText } from "@/lib/text";
 import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
@@ -483,8 +487,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
 
       await ensureProfile(profile);
       const account = await loadAccountSnapshot(profile.id);
+      const suggestions = await loadSuggestions();
       if (!mounted) return;
       setAuthUser(profile);
+      // Kategori/konum önerileri (RLS: kendi + admin hepsi) — kalıcı yüklensin.
+      setCategorySuggestions(suggestions.categorySuggestions);
+      setLocationSuggestions(suggestions.locationSuggestions);
       setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
       if (account) {
         setPartnerships(account.partnerships);
@@ -1447,22 +1455,22 @@ export function StoreProvider({ children }: PropsWithChildren) {
       categorySuggestions,
       locationSuggestions,
       addCategorySuggestion(input) {
-        setCategorySuggestions((items) => [
-          { id: newId("cs", liveUser), userId: currentUser.id, userName: currentUser.name, suggestedPath: input.suggestedPath, note: input.note, listingId: input.listingId, status: "pending", createdAt: today() },
-          ...items
-        ]);
+        const suggestion: CategorySuggestion = { id: newId("cs", liveUser), userId: currentUser.id, userName: currentUser.name, suggestedPath: input.suggestedPath, note: input.note, listingId: input.listingId, status: "pending", createdAt: today() };
+        setCategorySuggestions((items) => [suggestion, ...items]);
+        if (liveUser) void insertCategorySuggestion(suggestion);
       },
       addLocationSuggestion(input) {
-        setLocationSuggestions((items) => [
-          { id: newId("ls", liveUser), userId: currentUser.id, userName: currentUser.name, provinceId: input.provinceId, districtId: input.districtId, suggestedName: input.suggestedName, type: "neighborhood", note: input.note, status: "pending", createdAt: today() },
-          ...items
-        ]);
+        const suggestion: LocationSuggestion = { id: newId("ls", liveUser), userId: currentUser.id, userName: currentUser.name, provinceId: input.provinceId, districtId: input.districtId, suggestedName: input.suggestedName, type: "neighborhood", note: input.note, status: "pending", createdAt: today() };
+        setLocationSuggestions((items) => [suggestion, ...items]);
+        if (liveUser) void insertLocationSuggestion(suggestion);
       },
       setCategorySuggestionStatus(id, status) {
         setCategorySuggestions((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
+        if (liveUser) void updateCategorySuggestionStatusLive(id, status, currentUser.id);
       },
       setLocationSuggestionStatus(id, status) {
         setLocationSuggestions((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
+        if (liveUser) void updateLocationSuggestionStatusLive(id, status, currentUser.id);
       },
       updateLeadStatus(leadId, status) {
         const lead = leads.find((item) => item.id === leadId);

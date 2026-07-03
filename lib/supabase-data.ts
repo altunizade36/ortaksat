@@ -1,7 +1,7 @@
 ﻿import { supabase } from "@/lib/supabase";
 import { msgStamp } from "@/lib/format";
 import { displayText, repairTurkishText } from "@/lib/text";
-import type { Conversation, Favorite, Lead, Listing, Message, Notification, NotificationMeta, Order, Partnership, Report, Review, Sale, User } from "@/lib/types";
+import type { CategorySuggestion, Conversation, Favorite, Lead, Listing, LocationSuggestion, Message, Notification, NotificationMeta, Order, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
 
 type PublicListingCardRow = {
   id: string;
@@ -202,6 +202,37 @@ export async function loadAdminSnapshot(limit = 1000): Promise<{ listings: Listi
   const users = ((profilesResult.data ?? []) as ProfileRow[]).map(mapProfile);
   const counts = listings.reduce<Record<string, number>>((acc, l) => { acc[l.ownerId] = (acc[l.ownerId] ?? 0) + 1; return acc; }, {});
   return { listings, users: users.map((u) => ({ ...u, listingCount: counts[u.id] ?? u.listingCount })) };
+}
+
+/** Kategori + konum önerilerini çeker. RLS: kullanıcı kendi önerilerini, admin
+ *  hepsini görür (user_id=auth.uid() OR is_admin()). Giriş yoksa/hata boş döner. */
+export async function loadSuggestions(): Promise<{ categorySuggestions: CategorySuggestion[]; locationSuggestions: LocationSuggestion[] }> {
+  if (!supabase) return { categorySuggestions: [], locationSuggestions: [] };
+  const [catRes, locRes] = await Promise.all([
+    supabase.from("category_suggestions").select("*").order("created_at", { ascending: false }).limit(500),
+    supabase.from("location_suggestions").select("*").order("created_at", { ascending: false }).limit(500)
+  ]);
+  const categorySuggestions = ((catRes.data ?? []) as Array<Record<string, any>>).map((r) => ({
+    id: String(r.id),
+    userId: String(r.user_id ?? ""),
+    listingId: r.listing_id ?? undefined,
+    suggestedPath: String(r.suggested_path ?? ""),
+    note: r.note ?? undefined,
+    status: (r.status ?? "pending") as SuggestionStatus,
+    createdAt: String(r.created_at ?? "").slice(0, 10)
+  }));
+  const locationSuggestions = ((locRes.data ?? []) as Array<Record<string, any>>).map((r) => ({
+    id: String(r.id),
+    userId: String(r.user_id ?? ""),
+    provinceId: r.province_id ?? undefined,
+    districtId: r.district_id ?? undefined,
+    suggestedName: String(r.suggested_name ?? ""),
+    type: String(r.type ?? "neighborhood"),
+    note: r.note ?? undefined,
+    status: (r.status ?? "pending") as SuggestionStatus,
+    createdAt: String(r.created_at ?? "").slice(0, 10)
+  }));
+  return { categorySuggestions, locationSuggestions };
 }
 
 export type DbBlogPost = { id: string; slug: string; category: string; title: string; excerpt: string; author: string; authorRole: string; readMin: number; image: string; featured: boolean; body: string[]; status: string; createdAt: string };
