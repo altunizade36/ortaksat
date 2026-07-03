@@ -67,10 +67,30 @@ export default function Root({ children }: PropsWithChildren) {
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: responsiveShell }} />
       </head>
-      <body>{children}</body>
+      <body>
+        {children}
+        {/* Açılış ekranı — JS/veri yüklenene kadar boş beyaz sıçrama yerine markalı,
+            yumuşak bir yükleme gösterir; uygulama hazır olunca kaybolur. */}
+        <div id="boot-splash" aria-hidden="true">
+          <div className="bs-inner">
+            <div className="bs-logo">Ortak<span>Sat</span></div>
+            <div className="bs-spin" />
+          </div>
+        </div>
+        <script dangerouslySetInnerHTML={{ __html: bootScript }} />
+      </body>
     </html>
   );
 }
+
+// Açılış ekranını, JS bundle yüklenip hidrasyon/reflow bittikten SONRA kaldırır —
+// böylece react-native-web'in ilk layout sıçraması kullanıcıya görünmez.
+const bootScript =
+  "(function(){var s=document.getElementById('boot-splash');if(!s)return;" +
+  "var d=false;function done(){if(d||!s)return;d=true;s.style.opacity='0';s.style.pointerEvents='none';setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s);},400);}" +
+  "function ready(){requestAnimationFrame(function(){requestAnimationFrame(done);});}" +
+  "if(document.readyState==='complete'){ready();}else{window.addEventListener('load',ready);}" +
+  "setTimeout(done,6000);})();";
 
 const orgJsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -99,6 +119,28 @@ const responsiveShell = `
 :root { color-scheme: light; }
 * { -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; }
+
+/* Açılış ekranı (boot splash) — markalı yumuşak yükleme */
+#boot-splash {
+  position: fixed; inset: 0; z-index: 99999;
+  display: flex; align-items: center; justify-content: center;
+  background: #F4F6F8;
+  transition: opacity .38s ease;
+}
+#boot-splash .bs-inner { display: flex; flex-direction: column; align-items: center; gap: 20px; }
+#boot-splash .bs-logo { font-size: 26px; font-weight: 900; letter-spacing: -0.3px; color: #0F172A; }
+#boot-splash .bs-logo span { color: #00866F; }
+#boot-splash .bs-spin {
+  width: 30px; height: 30px; border-radius: 999px;
+  border: 3px solid rgba(0,134,111,0.18); border-top-color: #00866F;
+  animation: bs-rot .7s linear infinite;
+}
+@keyframes bs-rot { to { transform: rotate(360deg); } }
+@media (prefers-color-scheme: dark) {
+  #boot-splash { background: #0B1220; }
+  #boot-splash .bs-logo { color: #E5E9EE; }
+}
+
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
