@@ -45,9 +45,14 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
   const seen = new Set<string>();
   const out: Array<{ slug: string }> = [];
   const add = (slug: string) => { if (slug && !seen.has(slug)) { seen.add(slug); out.push({ slug }); } };
+  // 0-2. seviye: üst + alt + marka/detay hub'ları (ör. cep-telefonu → apple,
+  // vasita → otomobil-markaya-gore → bmw). Model seviyesi (3+) fallback ile çalışır.
   for (const top of CATEGORY_TREE) {
     add(top.slug);
-    for (const sub of top.children ?? []) add(sub.slug);
+    for (const sub of top.children ?? []) {
+      add(sub.slug);
+      for (const sub2 of sub.children ?? []) add(sub2.slug);
+    }
   }
   // Şehir sayfası olan yüksek-talep retail kategorilerinin hub'ını da garanti et.
   for (const slug of CITY_CATEGORY_SLUGS) add(slug);

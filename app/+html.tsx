@@ -53,6 +53,19 @@ export default function Root({ children }: PropsWithChildren) {
           }}
         />
 
+        {/* Analytics — Vercel Web Analytics + Speed Insights. Birinci taraf, çerezsiz,
+            KVKK/GDPR dostu. Vercel panelinde "Web Analytics" ve "Speed Insights"
+            açık olmalı (ücretsiz). window.va/si kuyruğu script yüklenene kadar tutar. */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};" +
+              "window.si=window.si||function(){(window.siq=window.siq||[]).push(arguments);};"
+          }}
+        />
+        <script defer src="/_vercel/insights/script.js" />
+        <script defer src="/_vercel/speed-insights/script.js" />
+
         {/* Crisp web typography */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />

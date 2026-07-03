@@ -370,6 +370,159 @@ export const BLOG_POSTS: BlogPost[] = [
       "Test et ve tekrarla. Hangi ürün, hangi kanca ve hangi uzunluk daha çok tıklama getirdi? OrtakSat panelinde satışları izleyip kazandıran formatı çoğaltmak, tek videoya güvenmekten çok daha sürdürülebilirdir.",
       commonLegalNote
     ]
+  },
+  {
+    slug: "affiliate-marketing-nedir-turkiyede-nasil-baslanir",
+    category: "Pazarlama",
+    title: "Affiliate Marketing (Satış Ortaklığı) Nedir, Türkiye'de Nasıl Başlanır?",
+    excerpt: "Satış ortaklığının mantığını, kimler için uygun olduğunu ve Türkiye'de sıfır bütçeyle nasıl başlanacağını sade bir dille anlatıyoruz.",
+    author: "OrtakSat Editör Ekibi",
+    authorRole: "Editör",
+    readMin: 6,
+    date: "28 Haziran 2026",
+    dateShort: "28 Haz",
+    image: img("1460925895917-afdab827c52f"),
+    body: [
+      "Affiliate marketing, yani satış ortaklığı, bir ürünü sen üretmeden ya da stoklamadan tanıtıp satışa aracılık etmen ve satış gerçekleşince komisyon kazanmandır. Türkçesiyle: başkasının ürününü kendi kitlene önerirsin, senin önerinle satış olursa pay alırsın.",
+      "Model üç tarafı buluşturur: ürünü olan satıcı, ürünü tanıtan ortak (sen) ve satın alan alıcı. Satıcı görünürlük ve satış kazanır, ortak emeğinin karşılığında komisyon alır, alıcı ise güvendiği birinin önerisiyle ürüne ulaşır. OrtakSat bu üçünü aracı olarak buluşturur; ödeme ve teslimatı taraflar kendi arasında yapar.",
+      "Neden Türkiye için uygun? Çünkü başlamak için sermaye, şirket veya teknik bilgi gerekmez. Bir Instagram hesabı, bir WhatsApp grubu ya da yakın çevren bile ilk kitlendir. Riskin düşük olması, denemeyi kolaylaştırır.",
+      "Nasıl başlanır? Önce ulaşabildiğin kitleyi ve ilgi alanını belirle. Sonra bu kitleye uygun 2-3 ürün seç, sana özel referans linkini al ve dürüst bir şekilde tanıt. İlk hedefin büyük kazanç değil, hangi ürünün ilgi çektiğini öğrenmek olsun.",
+      "En sık yapılan hata, herkese her ürünü göndermektir. Bu, hem güveni yıpratır hem de dönüşümü düşürür. Bunun yerine gerçekten inandığın, kitlenin işine yarayacak ürünleri seçmek uzun vadede çok daha fazla kazandırır.",
+      "Kazancın; kitlenin büyüklüğüne, ürünün komisyonuna ve anlatım kalitene bağlıdır. Garanti bir rakam yoktur. Ama sermaye koymadan başlayabildiğin için, satış ortaklığı ek gelire adım atmanın en düşük riskli yollarından biridir.",
+      commonLegalNote
+    ]
+  },
+  {
+    slug: "universite-ogrencileri-icin-evden-ek-gelir",
+    category: "Girişimcilik",
+    title: "Üniversite Öğrencileri İçin Evden Ek Gelir: Sermayesiz 5 Yol",
+    excerpt: "Ders arasında, sermaye koymadan gelir elde etmek isteyen öğrenciler için gerçekçi ve düşük riskli yöntemler.",
+    author: "OrtakSat Editör Ekibi",
+    authorRole: "Editör",
+    readMin: 5,
+    date: "29 Haziran 2026",
+    dateShort: "29 Haz",
+    image: img("1521791136064-7986c2920216"),
+    body: [
+      "Öğrenciyken ek gelir aramak yaygın; ama çoğu 'iş' ya sermaye ya da esnek olmayan mesai ister. Oysa ders programına uyan, sıfır sermayeli ve evden yapılabilen yöntemler var. İşte gerçekçi olanlar.",
+      "1. Satış ortaklığı (affiliate). Sosyal medya hesabın varsa ürün seçip referans linkini paylaşırsın; satış olursa komisyon kazanırsın. Stok, para yatırma ve kargo yok. OrtakSat'ta bugün başlayabilirsin.",
+      "2. İçerik üretimi. TikTok/Reels'te ilgilendiğin bir konuda kısa videolar üretip, tanıttığın ürünlerin ortak linkini profiline koyabilirsin. Kitlen büyüdükçe kazancın da artar.",
+      "3. Freelance mikro işler. Çeviri, tasarım, metin yazımı gibi becerilerini serbest platformlarda saatlik değerlendirebilirsin. Bu sermaye istemez, sadece zaman ve beceri ister.",
+      "4. Not/ders paylaşımı ve özel ders. Güçlü olduğun dersleri alt sınıflara online anlatmak hem gelir hem tecrübe kazandırır.",
+      "5. İkinci el satışı. Kullanmadığın eşyaları satmak hızlı nakit sağlar; ilan açmayı öğrenmek de satış becerini geliştirir.",
+      "Hepsinin ortak yanı: düşük risk. Büyük vaatlere ('günde 1000 TL garanti') kanma; bunlar genelde tuzaktır. Küçük ama düzenli başla, hangi yöntemin sana uyduğunu gör ve onu büyüt.",
+      commonLegalNote
+    ]
+  },
+  {
+    slug: "referans-linki-nedir-nasil-para-kazandirir",
+    category: "Komisyon Rehberleri",
+    title: "Referans Linki Nedir ve Nasıl Para Kazandırır?",
+    excerpt: "Referans (ortak) linkinin ne işe yaradığını, satışı sana nasıl bağladığını ve komisyonun nasıl hesaplandığını örnekle anlatıyoruz.",
+    author: "OrtakSat Editör Ekibi",
+    authorRole: "Editör",
+    readMin: 5,
+    date: "30 Haziran 2026",
+    dateShort: "30 Haz",
+    image: img("1554224155-6726b3ff858f"),
+    body: [
+      "Referans linki, bir ürüne ortak olduğunda sana özel oluşturulan bir bağlantıdır. Bu link, o ürünün sayfasına gider ama içinde 'seni' tanımlayan bir kod taşır. Böylece linkten gelen alıcı satın alırsa, satış sana bağlanır ve komisyonu kazanırsın.",
+      "Mantığı basit: satıcı ürünü ekler ve komisyon oranını belirler. Sen ürüne ortak olursun, referans linkin oluşur. Linki paylaşırsın; alıcı tıklar, satıcıyla iletişime geçer ve satış gerçekleşirse komisyon senin olur.",
+      "Örnek: Satıcı 2.000 TL'lik bir ürüne %10 komisyon tanımladı. Senin linkinden gelen bir alıcı ürünü aldı. Bu satıştan kazancın 200 TL olur. Komisyon oranını ve tutarını, paylaşmadan önce ilanda net görürsün.",
+      "Link neden önemli? Çünkü hangi ortağın satışı getirdiğini kanıtlar. Link olmadan 'ben getirdim' demek havada kalır. Referans linki, emeğini kayıt altına alan dijital imzandır.",
+      "Linkini nerede paylaşırsın? Instagram/TikTok profilinde, hikayede, WhatsApp durumunda, Telegram kanalında ya da mesajla. Önemli olan doğru kitleye, dürüst bir anlatımla ulaştırmaktır.",
+      "OrtakSat'ta ödeme ve komisyon platform üzerinden geçmez; komisyonu satış sonrası satıcı doğrudan sana öder. Link yalnızca atfı (kimin getirdiğini) kaydeder. Bu yüzden dürüst paylaşım ve iyi ürün seçimi kazancının anahtarıdır.",
+      commonLegalNote
+    ]
+  },
+  {
+    slug: "whatsapp-telegram-gruplariyla-satis-ortakligi",
+    category: "Pazarlama",
+    title: "WhatsApp ve Telegram Gruplarıyla Satış Ortaklığı Nasıl Yapılır?",
+    excerpt: "Büyük bir sosyal medya hesabın olmasa da mesajlaşma gruplarıyla ortak satış yapabilirsin. Dürüst ve etkili yöntemler.",
+    author: "OrtakSat Editör Ekibi",
+    authorRole: "Editör",
+    readMin: 5,
+    date: "1 Temmuz 2026",
+    dateShort: "1 Tem",
+    image: img("1611162617474-5b21e879e113"),
+    body: [
+      "Ortak satış için illa on binlerce takipçi gerekmez. WhatsApp ve Telegram gruplarındaki ilgili, güvenen küçük kitleler çoğu zaman büyük ama ilgisiz takipçiden daha çok satış getirir. Önemli olan doğru grupta, doğru ürünü, doğru şekilde paylaşmaktır.",
+      "1. Doğru grubu seç. Site/mahalle, hobi, anne, öğrenci, ikinci el alışveriş grupları gibi ilgi alanı belli topluluklar en verimlisidir. Alakasız gruba ürün yağdırmak hem işe yaramaz hem seni spam'e düşürür.",
+      "2. Grup kurallarına uy. Çoğu grubun paylaşım kuralı vardır. Kuralları çiğnemek seni gruptan attırır. Yöneticiyle konuşup ürün paylaşımına izin olup olmadığını öğren.",
+      "3. Ürünü kısa ve net anlat. Fiyat, ürünün ne işe yaradığı ve linki bir arada olsun. 'Şuna baktım, fiyatına göre iş görür' gibi samimi, abartısız bir cümle spam görünümlü uzun reklamdan daha çok tıklanır.",
+      "4. İş birliğini gizleme. 'Bu ürünün ortak satıcısıyım, linkten alırsanız bana da katkısı olur' demek güveni artırır. Şeffaflık, mesajlaşma gruplarında özellikle önemlidir çünkü topluluk birbirini tanır.",
+      "5. Değer kat, sadece satma. Ara ara faydalı içerik, fırsat ve dürüst yorum paylaşmak seni 'sürekli reklam atan kişi' olmaktan çıkarır, 'iyi öneriler yapan kişi' yapar. Uzun vadede satışı bu güven getirir.",
+      commonLegalNote
+    ]
+  },
+  {
+    slug: "mikro-influencer-ilk-1000-tl-nasil-kazanilir",
+    category: "Pazarlama",
+    title: "Mikro-Influencer Olarak İlk 1000 TL'ni Nasıl Kazanırsın?",
+    excerpt: "Küçük ama etkileşimli bir hesabı gelire çevirmenin adım adım yolu. Takipçi sayısı değil, güven ve doğru ürün kazandırır.",
+    author: "OrtakSat Editör Ekibi",
+    authorRole: "Editör",
+    readMin: 6,
+    date: "2 Temmuz 2026",
+    dateShort: "2 Tem",
+    image: img("1483985988355-763728e1935b"),
+    body: [
+      "Mikro-influencer, genelde 1.000–30.000 takipçili, ama kitlesiyle güçlü bağı olan içerik üreticisidir. Markalar bu hesapları sever çünkü etkileşimleri yüksektir. İyi haber: gelire çevirmek için büyük markalarla anlaşmayı beklemene gerek yok; ortak satışla bugün başlayabilirsin.",
+      "1. Nişini netleştir. Her şeyi paylaşan hesap kimseye satamaz. Moda, teknoloji, ev-yaşam, bebek, spor... kitleni tanı ve o alandaki ürünleri seç. OrtakSat'ta ürünü seçip referans linkini alırsın.",
+      "2. Güvenini koru. Kitlenin sana güvenmesi en büyük sermayendir. Sadece gerçekten iyi bulduğun, kitleye faydalı ürünleri öner. Tek bir kötü öneri, aylarca kurduğun güveni sarsabilir.",
+      "3. Ürünü kullanarak göster. 'Şunu aldım, şu işime yaradı' formatı, cilalı reklamdan çok daha ikna edicidir. Gerçek kullanım, gerçek ortam, abartısız anlatım.",
+      "4. Net çağrı yap. 'Detaylar profildeki linkte' ya da 'açıklamadan ulaşabilirsin' gibi ne yapılacağını açıkça söyle. Belirsiz bırakılan paylaşım ilgi toplasa da satışa dönmez.",
+      "5. Ölç ve tekrarla. Hangi ürün, hangi format ve hangi saat daha çok tıklama getirdi? Kazandıran paylaşımı çoğalt. İlk 1000 TL genelde birkaç iyi üründen, birkaç iyi paylaşımdan gelir; sırrı tutarlılıktır.",
+      "Unutma: kazanç garantisi yoktur ve tek videoda zengin olunmaz. Ama küçük, güvenen bir kitleyle dürüst çalışırsan, mikro-influencer olmak istikrarlı bir ek gelir kanalına dönüşebilir.",
+      commonLegalNote
+    ]
+  },
+  {
+    slug: "ikinci-el-alirken-dolandiriciliktan-korunma",
+    category: "Satış İpuçları",
+    title: "İkinci El Alırken Dolandırıcılıktan Korunmanın 8 Yolu",
+    excerpt: "İnternetten ikinci el alırken en sık düşülen tuzaklar ve bunlardan korunmanın pratik yolları.",
+    author: "OrtakSat Editör Ekibi",
+    authorRole: "Editör",
+    readMin: 6,
+    date: "3 Temmuz 2026",
+    dateShort: "3 Tem",
+    image: img("1507679799987-c73779587ccf"),
+    body: [
+      "İkinci el alışveriş büyük fırsatlar sunar ama dikkatsizlikte risk de taşır. Dolandırıcılığın neredeyse tamamı iki hatadan doğar: ürünü görmeden ödeme yapmak ve platform dışına çıkmak. Aşağıdaki adımlar seni korur.",
+      "1. Ürünü görmeden kapora/ön ödeme gönderme. En yaygın tuzak budur. 'Başkası almadan kapora at' baskısı neredeyse her zaman kötü bir işarettir.",
+      "2. Mümkünse görerek al. Elden teslimde kalabalık, güvenli ve gündüz bir yerde buluş. Ürünü kontrol etmeden parayı verme.",
+      "3. Satıcının geçmişine bak. Puan, doğrulama rozeti, tamamlanan satış sayısı ve yanıt oranı güven verir. Yeni ve geçmişi olmayan bir hesabın büyük ödeme istemesi dikkat gerektirir.",
+      "4. Platform dışına çekilmeye direnç göster. Sohbeti hemen başka bir uygulamaya taşıyıp oradan ödeme isteyen kişiye şüpheyle yaklaş.",
+      "5. Sahte kargo/ödeme linklerine tıklama. 'Ödemeyi onayla', 'kargonu takip et' gibi mesajlarla gelen linkler kart/banka bilgini çalmayı hedefleyebilir.",
+      "6. Fiyat çok iyiyse dur ve düşün. Piyasanın çok altında, 'acele et' baskısıyla gelen teklif genelde gerçek değildir.",
+      "7. IBAN ve isim uyumuna bak. Ödeme yapman gerekiyorsa, hesabın ilandaki kişiyle aynı olmasına dikkat et. 'Başkasının hesabına yatır' diyen satıcıdan uzak dur.",
+      "8. Şüpheliyi bildir, kanıtı sakla. İlan sayfasındaki 'Bildir' ile kayda geçir. Maddi kayıp veya suç şüphesinde 155 (Polis) / 156 (Jandarma) hattına başvur; mesaj, dekont ve kargo kaydını sakla.",
+      commonLegalNote
+    ]
+  },
+  {
+    slug: "sahte-ilan-nasil-anlasilir-kirmizi-bayraklar",
+    category: "Satış İpuçları",
+    title: "Sahte İlan Nasıl Anlaşılır? Dikkat Edilmesi Gereken Kırmızı Bayraklar",
+    excerpt: "Gerçek gibi görünen sahte ilanları ayırt etmenin somut işaretleri ve şüphelendiğinde yapman gerekenler.",
+    author: "OrtakSat Editör Ekibi",
+    authorRole: "Editör",
+    readMin: 5,
+    date: "4 Temmuz 2026",
+    dateShort: "4 Tem",
+    image: img("1556742049-0cfed4f6a45d"),
+    body: [
+      "Sahte ilanlar genelde gerçek bir üründen çalınmış fotoğraflarla, cazip bir fiyatla hazırlanır. Amaç, seni ürünü görmeden ödeme yapmaya ikna etmektir. Birkaç işaret bunları ele verir.",
+      "Aşırı düşük fiyat. Piyasanın çok altında, 'kaçırma' baskısıyla sunulan fiyat en büyük kırmızı bayraktır. Gerçek satıcı ürününü sudan ucuza vermez.",
+      "Genel, stok fotoğrafı. Ürünün yalnızca tek, parlak, 'katalog' fotoğrafı varsa dikkat et. Gerçek satıcı ürünü farklı açılardan, gerçek ortamda gösterebilir. Fotoğrafı ters görsel aramada aratmak da işe yarar.",
+      "Acele ve baskı. 'Şimdi kapora at', 'başkası bekliyor', 'bugün son' gibi ifadeler seni düşünmeden hareket ettirmeye çalışır. Acele ettiren satıcıya güvenme.",
+      "Platform dışına çekme. Konuşmayı hemen WhatsApp/Telegram'a taşıyıp oradan ödeme isteyen satıcı, kayıt bırakmamak istiyordur.",
+      "Eksik veya kaçamak bilgi. Ürünün durumu, teslimat ve iade konusundaki net sorulara muğlak cevap veriyorsa, ya bilgisi yoktur ya da niyeti kötüdür.",
+      "Şüphelendiğinde: ödeme yapma, ürünü görmeden para gönderme ve ilanı 'Bildir' ile kayda geçir. Şüphen doğrulanmasa bile bildirmek topluluğu korur.",
+      commonLegalNote
+    ]
   }
 ];
 
