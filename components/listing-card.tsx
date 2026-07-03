@@ -6,6 +6,7 @@ import { Pressable, Text, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getCategoryShortLabel, inferListingSubcategory } from "@/lib/categories";
+import { useCompare } from "@/lib/compare";
 import { commissionAmount, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { compactNumber, REFERENCE_NOW } from "@/lib/locale";
@@ -26,6 +27,8 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
   const statusTone: StatusTone = featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
   const subcategory = inferListingSubcategory(listing);
   const isVerified = Boolean(owner?.verifiedPhone || owner?.verifiedIdentity);
+  const { has, toggle } = useCompare();
+  const inCompare = has(listing.id);
 
   return (
     <View style={{ width }}>
@@ -117,6 +120,17 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
           </View>
         </Pressable>
       </Link>
+      {!listing.demo ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityState={{ selected: inCompare }}
+          accessibilityLabel={inCompare ? "Karşılaştırmadan çıkar" : "Karşılaştır"}
+          onPress={() => toggle(listing.id)}
+          style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderColor: inCompare ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 30, justifyContent: "center", position: "absolute", right: 8, top: 8, width: 30, zIndex: 4 }}
+        >
+          <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
+        </Pressable>
+      ) : null}
     </View>
   );
 }

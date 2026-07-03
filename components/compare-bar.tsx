@@ -21,7 +21,7 @@ export function CompareBar() {
   const [open, setOpen] = useState(false);
 
   const items = ids.map((id) => listings.find((l) => l.id === id)).filter((l): l is Listing => !!l);
-  if (!isWideWeb || items.length === 0) return null;
+  if (items.length === 0) return null;
 
   const rows: Array<{ label: string; get: (l: Listing) => string }> = [
     { label: "Fiyat", get: (l) => moneyIn(l.price, l.currency) },
@@ -36,7 +36,7 @@ export function CompareBar() {
   return (
     <>
       {/* Yüzen bar */}
-      <View pointerEvents="box-none" style={{ alignItems: "center", bottom: 18, left: 0, position: "absolute", right: 0, zIndex: 2000 }}>
+      <View pointerEvents="box-none" style={{ alignItems: "center", bottom: isWideWeb ? 18 : 92, left: 0, position: "absolute", right: 0, zIndex: 2000 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.ink, borderRadius: 999, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 10, shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.3, shadowRadius: 24 }}>
           <View style={{ flexDirection: "row" }}>
             {items.map((l, i) => (
