@@ -1,12 +1,13 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { BulkListingModal } from "@/components/bulk-listing-modal";
 import { colors } from "@/components/colors";
 import { QuickStart } from "@/components/quick-start";
+import { MiniBarChart } from "@/components/mini-bar-chart";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -72,6 +73,9 @@ export default function SellerScreen() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
+  // Grafik yalnız istemcide (new Date) render edilsin — SSG hydration uyuşmazlığı olmasın.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
 
   function handleBulkCreate(row: { title: string; price: number; commission: number; category: string; image: string }) {
     createListing({
@@ -117,6 +121,18 @@ export default function SellerScreen() {
     };
   }, [partnershipIdsKey]);
   const myLeads = leads.filter((lead) => myListingIds.has(lead.listingId));
+  // Son 14 gün gelen talep serisi (gerçek createdAt; istemci tarafında hesaplanır).
+  const activitySeries = useMemo(() => {
+    const now = new Date();
+    const out: Array<{ label: string; value: number }> = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      const value = myLeads.filter((l) => (l.createdAt ?? "").slice(0, 10) === key).length;
+      out.push({ label: `${d.getDate()}.${d.getMonth() + 1}`, value });
+    }
+    return out;
+  }, [myLeads]);
   const mySales = sales.filter((sale) => myListingIds.has(sale.listingId));
   const myApplications = partnerships.filter((partnership) => myListingIds.has(partnership.listingId) && partnership.status === "pending");
   const openCommission = mySales.filter((sale) => sale.status !== "paid").reduce((sum, sale) => sum + sale.commissionAmount, 0);
@@ -289,6 +305,10 @@ export default function SellerScreen() {
           <OperationTile icon="account-plus-outline" label="Başvuru" tone={myApplications.length ? "warning" : "neutral"} value={`${myApplications.length}`} />
         </View>
       </Card>
+
+      {mounted && myLeads.length > 0 ? (
+        <MiniBarChart data={activitySeries} title="Son 14 gün · gelen talep" totalLabel={`${activitySeries.reduce((s, d) => s + d.value, 0)} talep`} />
+      ) : null}
 
       <Card>
         <SectionTitle title="İlan yönetimi" action={`${visibleListings.length}`} />
