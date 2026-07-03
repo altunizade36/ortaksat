@@ -3,8 +3,8 @@ import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
-import { useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Modal, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Accordion } from "@/components/accordion";
 import { AgreementCard } from "@/components/agreement-card";
@@ -86,7 +86,23 @@ export default function ListingDetailScreen() {
   const [reviewRating, setReviewRating] = useState(5);
   const [activeImage, setActiveImage] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [zoomed, setZoomed] = useState(false);
+  const swipeStartX = useRef(0);
   const router = useRouter();
+
+  // Lightbox açıkken web'de klavye: ← → gezinme, Esc kapatma.
+  useEffect(() => {
+    if (!lightbox || Platform.OS !== "web" || typeof window === "undefined") return;
+    const l = storeListing ?? remote?.listing;
+    const n = l ? [l.image, ...(l.adAssets ?? [])].filter(Boolean).length : 0;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setLightbox(false);
+      else if (e.key === "ArrowRight" && n > 1) { setActiveImage((i) => (i + 1) % n); setZoomed(false); }
+      else if (e.key === "ArrowLeft" && n > 1) { setActiveImage((i) => (i - 1 + n) % n); setZoomed(false); }
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [lightbox, storeListing, remote?.listing?.id]);
 
   // Paylaşılan link herkeste açılsın: ilan bellekte yoksa Supabase'den id ile çek.
   useEffect(() => {
@@ -595,18 +611,41 @@ export default function ListingDetailScreen() {
       </WebContainer>
 
       {/* Tam ekran görsel (lightbox) */}
-      <Modal visible={lightbox} transparent animationType="fade" onRequestClose={() => setLightbox(false)}>
+      <Modal visible={lightbox} transparent animationType="fade" onRequestClose={() => { setLightbox(false); setZoomed(false); }}>
         <View style={{ backgroundColor: "rgba(0,0,0,0.92)", flex: 1, justifyContent: "center" }}>
-          <Pressable onPress={() => setLightbox(false)} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 42, justifyContent: "center", position: "absolute", right: 18, top: 18, width: 42, zIndex: 5 }}>
+          <Pressable accessibilityLabel="Kapat" onPress={() => { setLightbox(false); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 42, justifyContent: "center", position: "absolute", right: 18, top: 18, width: 42, zIndex: 5 }}>
             <MaterialCommunityIcons name="close" size={24} color="#FFFFFF" />
           </Pressable>
-          <SafeRemoteImage uri={gallery[galleryIdx] ?? currentListing.image} style={{ height: "78%", width: "100%" }} contentFit="contain" />
+          <Pressable
+            onPress={() => setZoomed((z) => !z)}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={zoomed ? "Uzaklaştır" : "Yakınlaştır"}
+            onTouchStart={(e) => { swipeStartX.current = e.nativeEvent.pageX; }}
+            onTouchEnd={(e) => {
+              const dx = e.nativeEvent.pageX - swipeStartX.current;
+              if (!zoomed && Math.abs(dx) > 50 && gallery.length > 1) {
+                setActiveImage((dx < 0 ? galleryIdx + 1 : galleryIdx - 1 + gallery.length) % gallery.length);
+              }
+            }}
+            style={{ alignItems: "center", height: "78%", justifyContent: "center", overflow: "hidden", width: "100%" }}
+          >
+            <SafeRemoteImage
+              uri={gallery[galleryIdx] ?? currentListing.image}
+              style={{ height: "100%", transform: [{ scale: zoomed ? 2.2 : 1 }], width: "100%" }}
+              contentFit="contain"
+            />
+          </Pressable>
+          <View style={{ alignItems: "center", bottom: 74, left: 0, position: "absolute", right: 0 }}>
+            <View style={{ backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}>
+              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "700" }}>{zoomed ? "Uzaklaştırmak için dokun" : "Yakınlaştırmak için dokun · kaydırarak gez"}</Text>
+            </View>
+          </View>
           {gallery.length > 1 ? (
             <>
-              <Pressable onPress={() => setActiveImage((galleryIdx - 1 + gallery.length) % gallery.length)} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", left: 14, position: "absolute", top: "46%", width: 48 }}>
+              <Pressable accessibilityLabel="Önceki görsel" onPress={() => { setActiveImage((galleryIdx - 1 + gallery.length) % gallery.length); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", left: 14, position: "absolute", top: "46%", width: 48 }}>
                 <MaterialCommunityIcons name="chevron-left" size={30} color="#FFFFFF" />
               </Pressable>
-              <Pressable onPress={() => setActiveImage((galleryIdx + 1) % gallery.length)} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", position: "absolute", right: 14, top: "46%", width: 48 }}>
+              <Pressable accessibilityLabel="Sonraki görsel" onPress={() => { setActiveImage((galleryIdx + 1) % gallery.length); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", position: "absolute", right: 14, top: "46%", width: 48 }}>
                 <MaterialCommunityIcons name="chevron-right" size={30} color="#FFFFFF" />
               </Pressable>
               <View style={{ alignItems: "center", bottom: 26, flexDirection: "row", gap: 8, justifyContent: "center", left: 0, position: "absolute", right: 0 }}>
