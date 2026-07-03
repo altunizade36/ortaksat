@@ -10,6 +10,7 @@ import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
+import { hasSeenWelcome, markWelcomeSeen } from "@/lib/onboarding";
 import { useStore } from "@/lib/use-store";
 
 type AuthMode = "login" | "register" | "reset";
@@ -31,10 +32,22 @@ export default function AuthScreen() {
 
   const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
 
-  // Giriş başarılı olunca (e-posta/şifre VEYA Google dönüşü) ana sayfaya geç.
+  // Giriş başarılı olunca: yeni üye ilk kez /hosgeldin rehberine (rol seçimi),
+  // önceden görmüşse doğrudan ana sayfaya. Herhangi bir hata olursa güvenle "/".
   useEffect(() => {
-    if (isAuthenticated) router.replace("/");
-  }, [isAuthenticated, router]);
+    if (!isAuthenticated) return;
+    const uid = currentUser?.id;
+    try {
+      if (uid && !hasSeenWelcome(uid)) {
+        markWelcomeSeen(uid);
+        router.replace("/hosgeldin");
+        return;
+      }
+    } catch {
+      // yut — aşağıda ana sayfaya düşer
+    }
+    router.replace("/");
+  }, [isAuthenticated, currentUser, router]);
 
   async function loginWithGoogle() {
     // Google ilk kullanımda hesap oluşturabildiği için yasal onay zorunlu.
