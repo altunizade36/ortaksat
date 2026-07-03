@@ -15,6 +15,7 @@ import { EarningsCalculator } from "@/components/earnings-calculator";
 import { ListingQA } from "@/components/listing-qa";
 import { ShareRow } from "@/components/share-row";
 import { Skeleton } from "@/components/skeleton";
+import { tokenize } from "@/lib/search";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
@@ -160,10 +161,22 @@ export default function ListingDetailScreen() {
     .filter((item) => item.ownerId === currentListing.ownerId && item.id !== currentListing.id && item.status === "active")
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 8);
+  // Benzerlik: aynı kategori (güçlü sinyal) + başlık/etiket terim örtüşmesi + popülerlik.
+  const meTerms = new Set(tokenize(`${currentListing.title} ${currentListing.tags.join(" ")}`));
   const similarListings = listings
-    .filter((item) => item.category === currentListing.category && item.ownerId !== currentListing.ownerId && item.status === "active")
-    .sort((a, b) => b.leadCount + b.partnerCount - (a.leadCount + a.partnerCount))
-    .slice(0, 8);
+    .filter((item) => item.ownerId !== currentListing.ownerId && item.status === "active" && item.id !== currentListing.id)
+    .map((item) => {
+      const terms = tokenize(`${item.title} ${item.tags.join(" ")}`);
+      let overlap = 0;
+      for (const term of terms) if (meTerms.has(term)) overlap += 1;
+      const sameCat = item.category === currentListing.category ? 2.5 : 0;
+      const pop = (item.leadCount + item.partnerCount) * 0.002;
+      return { item, s: overlap * 1.5 + sameCat + pop };
+    })
+    .filter((x) => x.s > 0)
+    .sort((a, b) => b.s - a.s)
+    .slice(0, 8)
+    .map((x) => x.item);
 
   function handleJoin() {
     if (isDemo) return demoBlocked();
