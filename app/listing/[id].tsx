@@ -382,137 +382,117 @@ export default function ListingDetailScreen() {
       </View>
 
       <View style={isWideWeb ? { flex: 1, gap: 12, minWidth: 0, marginTop: 16 } : { gap: 12, paddingHorizontal: 12 }}>
-        <Card>
+        {/* Satın alma / ortak kutusu — e-ticaret tarzı tek, net karar alanı */}
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             <StatusPill label={currentListing.category} />
             <StatusPill label={currentListing.partnershipMode === "open" ? "Anında ortaklık" : "Satıcı onaylı"} tone={currentListing.partnershipMode === "open" ? "success" : "warning"} />
-            <StatusPill label={currentListing.status === "active" ? "Aktif" : "Pasif"} tone={currentListing.status === "active" ? "success" : "warning"} />
           </View>
 
-          <Text selectable style={{ color: colors.ink, fontSize: 24, fontWeight: "900", lineHeight: 30 }}>
-            {currentListing.title}
-          </Text>
-          <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
-            {currentListing.description}
-          </Text>
+          <Text selectable style={{ color: colors.ink, fontSize: 23, fontWeight: "900", lineHeight: 29 }}>{currentListing.title}</Text>
 
+          <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            <MaterialCommunityIcons name="star" size={15} color={colors.gold} />
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{owner?.rating ?? 0}</Text>
+            <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}> · {owner?.successfulSales ?? 0} satış · {currentListing.location}</Text>
+          </View>
+
+          <Text selectable style={{ color: colors.ink, fontSize: 28, fontWeight: "900" }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
+
+          {/* Ortak kazancı vurgusu — modelimizin çekirdeği */}
+          <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 14, borderWidth: 1, gap: 4, padding: 13 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+              <MaterialCommunityIcons name="cash-multiple" size={17} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "900", letterSpacing: 0.3 }}>ORTAK KAZANCI</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 20, fontWeight: "900" }}>{moneyIn(commission, currentListing.currency)}</Text>
+            </View>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)} · Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.</Text>
+          </View>
+
+          {/* Anahtar bilgiler */}
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <Metric label="Fiyat" value={moneyIn(currentListing.price, currentListing.currency)} />
-            <Metric label="Ortak kazancı" value={moneyIn(commission, currentListing.currency)} />
+            <Metric label="Stok" value={`${currentListing.stockCount} adet`} />
+            <Metric label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında" : "Onaylı"} />
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <Metric label="Stok" value={`${currentListing.stockCount}`} />
-            <Metric label="Ortak" value={`${currentListing.partnerCount}`} />
-            <Metric label="Beğeni" value={`${currentListing.favoriteCount}`} />
+            <Metric label="İade" value={`${currentListing.returnWindowDays} gün`} />
+            <Metric label="Komisyon vadesi" value={`${currentListing.commissionDueDays} gün`} />
           </View>
-        </Card>
 
-        {!isOwner ? <EarningsCalculator listing={currentListing} isDemo={isDemo} onJoin={handleJoin} /> : null}
+          {/* Durum-duyarlı ana aksiyon */}
+          {isOwner ? (
+            <View style={{ gap: 8 }}>
+              <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: currentListing.id } }} icon="pencil-outline">İlanı Düzenle</PrimaryButton>
+              <PrimaryButton href="/(tabs)/seller" tone="secondary" icon="storefront-outline">Satıcı panelinde yönet</PrimaryButton>
+            </View>
+          ) : isDemo ? (
+            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
+              <MaterialCommunityIcons name="lock-outline" size={16} color={colors.muted} />
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>Örnek ilan — ortaklık ve iletişim kapalıdır.</Text>
+            </View>
+          ) : partnership?.status === "active" ? (
+            <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 9, padding: 12 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>Ortaksın · paylaşım bağlantın hazır</Text>
+              </View>
+              {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
+            </View>
+          ) : partnership?.status === "pending" ? (
+            <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
+              <MaterialCommunityIcons name="clock-outline" size={16} color={colors.warning} />
+              <Text style={{ color: colors.warning, flex: 1, fontSize: 12.5, fontWeight: "800" }}>Başvurun satıcı onayında.</Text>
+            </View>
+          ) : (
+            <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{currentListing.partnershipMode === "open" ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder"}</PrimaryButton>
+          )}
 
-        {!isDemo ? (
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 9, padding: 14 }}>
-            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Bu ürünü paylaş</Text>
-            <ShareRow url={productUrl(currentListing)} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} />
+          {/* İletişim */}
+          {!isOwner && !isDemo ? (
+            <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{contactLabel(currentListing.contactMethod)}</PrimaryButton>
+          ) : null}
+
+          {/* Satıcı mini kartı */}
+          <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingTop: 12 }}>
+            <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}>
+              <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{(owner?.name ?? "S").slice(0, 1).toLocaleUpperCase("tr-TR")}</Text>
+            </View>
+            <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{owner?.name ?? "Satıcı"}</Text>
+              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>%{ownerTrust?.score ?? 0} güven · %{owner?.responseRate ?? 0} yanıt</Text>
+            </View>
+            <Link href={{ pathname: "/store/[id]", params: { id: currentListing.ownerId } }} asChild>
+              <Pressable accessibilityRole="link" accessibilityLabel="Mağazayı aç" style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}>
+                <MaterialCommunityIcons name="store-search-outline" size={14} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Mağaza</Text>
+              </Pressable>
+            </Link>
           </View>
-        ) : null}
-
-        <ListingDecisionCard
-          listing={currentListing}
-          commission={commission}
-          ownerTrustScore={ownerTrust?.score}
-          partnershipStatus={partnership?.status}
-        />
-
-        <ListingActionCard
-          activeShareUrl={activeShareUrl}
-          contactMethod={currentListing.contactMethod}
-          isOwner={isOwner}
-          listing={currentListing}
-          onContact={() => void handleContact()}
-          onJoin={handleJoin}
-          onMessageSeller={handlePartnershipMessage}
-          onShare={() => void handleShare()}
-          partnershipStatus={partnership?.status}
-        />
-
-        <AgreementCard listing={currentListing} partnership={partnership} />
+        </View>
       </View>
       </View>
 
       <View style={{ gap: 12, paddingHorizontal: isWideWeb ? 0 : 12 }}>
-        <Card>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-            <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 46, justifyContent: "center", width: 46 }}>
-              <Text selectable style={{ color: colors.primaryDark, fontSize: 16, fontWeight: "900" }}>{owner?.avatar ?? "S"}</Text>
-            </View>
-            <View style={{ flex: 1, gap: 4 }}>
-              <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{owner?.name ?? "Satıcı"}</Text>
-              <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
-                {owner?.rating ?? 0} puan · %{owner?.responseRate ?? 0} yanıt · {owner?.successfulSales ?? 0} satış
-              </Text>
-            </View>
-          </View>
-          {ownerTrust ? (
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Metric label="Satıcı güveni" value={`%${ownerTrust.score}`} />
-              <Metric label="Durum" value={ownerTrust.label} />
-            </View>
-          ) : null}
-          {!isOwner && currentListing.contactMethod === "message" ? <Field label="Satıcıya mesaj" value={message} onChangeText={setMessage} multiline /> : null}
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              {!isOwner ? <PrimaryButton icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{contactLabel(currentListing.contactMethod)}</PrimaryButton> : <PrimaryButton href="/(tabs)/seller" tone="secondary" icon="storefront-outline">Satıcı panelinde yönet</PrimaryButton>}
-            </View>
-            <View style={{ flex: 1 }}>
-              <PrimaryButton href={{ pathname: "/store/[id]", params: { id: currentListing.ownerId } }} tone="secondary" icon="store-search-outline">Mağaza</PrimaryButton>
-            </View>
-          </View>
-        </Card>
+        {/* Etkileşimli kazanç hesaplayıcı */}
+        {!isOwner && !isDemo ? <EarningsCalculator listing={currentListing} isDemo={isDemo} onJoin={handleJoin} /> : null}
 
+        {/* Ortak satış nasıl işler? — tek, konsolide süreç bölümü */}
         <Card>
-          <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ortak satış", language)}</Text>
-          <Text selectable style={{ color: colors.primaryDark, fontSize: 16, fontWeight: "900" }}>
-            {commissionText(currentListing)} · {moneyIn(commission, currentListing.currency)} {translateCopy("tahmini kazanç", language)}
-          </Text>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <Metric label="Vade" value={`${currentListing.commissionDueDays} gün`} />
-            <Metric label="İade" value={`${currentListing.returnWindowDays} gün`} />
-            <Metric label="Min. puan" value={`${currentListing.minPartnerRating}+`} />
-          </View>
-          <View style={{ backgroundColor: colors.primarySoft, borderRadius: 8, gap: 6, padding: 10 }}>
+          <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Ortak satış nasıl işler?</Text>
+          <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 8, padding: 12 }}>
             <Bullet icon="handshake-outline" text={partnershipModeDescription(currentListing.partnershipMode)} tone="info" />
-            <Bullet icon="link-variant" text="Onay sonrası özel bağlantın açılır; alıcı talebi o bağlantıdan doğru ortağa bağlanır." tone="info" />
-            <Bullet icon="cash-check" text="Satıcı satışı onaylar, iade penceresi biter, komisyon uygulama dışında ödenir ve iki tarafça takip edilir." tone="info" />
+            <Bullet icon="link-variant" text="Onay sonrası sana özel paylaşım bağlantısı açılır; alıcı talebi doğru ortağa bağlanır." tone="info" />
+            <Bullet icon="cash-check" text="Satıcı satışı onaylar, iade penceresi biter, komisyon uygulama dışında ödenir; iki taraf da takip eder." tone="info" />
           </View>
-          <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{translateCopy("Teslimat", language)}: {translateCopy(currentListing.deliveryNote, language)}</Text>
-          {currentListing.salesPitch.slice(0, 3).map((pitch) => <Bullet key={pitch} icon="check-circle" text={pitch} tone="success" />)}
+          {currentListing.partnerRules.slice(0, 4).map((rule) => <Bullet key={rule} icon="shield-check-outline" text={rule} tone="success" />)}
+          <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
+            Min. ortak puanı {currentListing.minPartnerRating}+ · Komisyon vadesi {currentListing.commissionDueDays} gün · İade {currentListing.returnWindowDays} gün
+          </Text>
         </Card>
 
         <PartnerSaleTimeline listing={currentListing} partnershipStatus={partnership?.status} />
 
-        {!isOwner ? (
-          <PartnershipBox
-            listing={currentListing}
-            status={partnership?.status}
-            activeShareUrl={activeShareUrl}
-            applicationNote={applicationNote}
-            setApplicationNote={setApplicationNote}
-            applicationChannel={applicationChannel}
-            setApplicationChannel={setApplicationChannel}
-            applicationAudience={applicationAudience}
-            setApplicationAudience={setApplicationAudience}
-            applicationHandle={applicationHandle}
-            setApplicationHandle={setApplicationHandle}
-            applicationReach={applicationReach}
-            setApplicationReach={setApplicationReach}
-            handleJoin={handleJoin}
-            handleShare={handleShare}
-            copyText={copyText}
-            openShareTarget={openShareTarget}
-            mode={currentListing.partnershipMode}
-            onMessageSeller={handlePartnershipMessage}
-          />
-        ) : null}
+        <AgreementCard listing={currentListing} partnership={partnership} />
 
         {partnership?.status === "active" ? (
           <Card>
@@ -525,11 +505,6 @@ export default function ListingDetailScreen() {
             <PrimaryButton icon="account-plus-outline" onPress={handleCreateLead}>Talebi kaydet</PrimaryButton>
           </Card>
         ) : null}
-
-        <Card>
-          <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Kurallar ve güven", language)}</Text>
-          {currentListing.partnerRules.slice(0, 4).map((rule) => <Bullet key={rule} icon="shield-check-outline" text={rule} tone="info" />)}
-        </Card>
 
         <View style={{ gap: 10 }}>
           <Accordion title="Ürün açıklaması" icon="text-box-outline" defaultOpen>
