@@ -5,8 +5,11 @@ import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-na
 
 import { colors } from "@/components/colors";
 import { WebContainer } from "@/components/web-container";
+import { getCategoryIcon } from "@/lib/categories";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { searchKey } from "@/lib/locale";
+import { type CategoryNode } from "@/lib/category-tree";
+import { useStore } from "@/lib/use-store";
 
 type MenuGroup = {
   title: string;
@@ -15,46 +18,46 @@ type MenuGroup = {
   children: Array<{ label: string; href?: Href }>;
 };
 
-const groups: MenuGroup[] = [
-  {
-    title: "Ortak Satış Merkezi",
-    icon: "handshake-outline",
-    tone: "partner",
-    children: [
-      { label: "Ortak satış ilanları", href: "/(tabs)/explore" },
-      { label: "Komisyon kazan", href: "/(tabs)/partner" },
-      { label: "Teklif gönder", href: "/(tabs)/partner" },
-      { label: "Ortaklık taleplerim", href: "/(tabs)/partner" },
-      { label: "Kazançlarım", href: "/(tabs)/partner" },
-      { label: "Satış takibi", href: "/(tabs)/seller" },
-      { label: "Ortak satış eğitimleri", href: "/trust" },
-      { label: "Davet et kazan", href: "/(tabs)/partner" }
-    ]
-  },
-  { title: "Elektronik", icon: "cellphone-link", children: ["Telefon ve tablet", "Bilgisayar", "Ses ve görüntü", "Akıllı saat"].map((label) => ({ label })) },
-  { title: "Ev ve Yaşam", icon: "home-variant-outline", children: ["Mobilya", "Beyaz eşya", "Mutfak", "Dekorasyon"].map((label) => ({ label })) },
-  { title: "Moda", icon: "hanger", children: ["Ayakkabı", "Kozmetik", "Çanta", "Aksesuar"].map((label) => ({ label })) },
-  { title: "Anne Bebek", icon: "baby-face-outline", children: ["Bebek bakım", "Oyuncak", "Çocuk giyim", "Okul ürünleri"].map((label) => ({ label })) },
-  { title: "Spor", icon: "dumbbell", children: ["Fitness", "Outdoor", "Bisiklet", "Takım sporları"].map((label) => ({ label })) },
-  { title: "Otomotiv", icon: "car-outline", children: ["Araç aksesuar", "Yedek parça", "Motosiklet", "Lastik"].map((label) => ({ label })) },
-  { title: "Evcil Hayvan", icon: "paw-outline", children: ["Mama", "Bakım", "Oyuncak", "Aksesuar"].map((label) => ({ label })) },
-  { title: "Kitap", icon: "book-open-page-variant-outline", children: ["Roman", "Eğitim", "Çocuk kitabı", "Dergi"].map((label) => ({ label })) },
-  { title: "Hobi", icon: "palette-outline", children: ["Koleksiyon", "El işi", "Müzik ekipmanı", "Dijital oyun"].map((label) => ({ label })) },
-  { title: "Bahçe", icon: "flower-outline", children: ["Bahçe mobilyası", "Bitki", "Sulama", "Bahçe aleti"].map((label) => ({ label })) },
-  { title: "Endüstriyel Ürünler", icon: "factory", children: ["Makine", "Hırdavat", "Paketleme", "Toptan ürün"].map((label) => ({ label })) },
-  { title: "Hizmetler", icon: "briefcase-outline", children: ["Temizlik", "Tamir", "Danışmanlık", "Etkinlik"].map((label) => ({ label })) },
-  { title: "Emlak", icon: "office-building-outline", children: ["Konut", "İşyeri", "Arsa", "Kiralık"].map((label) => ({ label })) },
-  { title: "Araç", icon: "car-multiple", children: ["Otomobil", "Ticari araç", "Kiralama", "Karavan"].map((label) => ({ label })) },
-  { title: "İş Makinesi", icon: "excavator", children: ["Forklift", "Ekskavatör", "Vinç", "Kiralık makine"].map((label) => ({ label })) },
-  { title: "İkinci El", icon: "recycle-variant", children: ["Elektronik", "Ev eşyası", "Giyim", "Yenilenmiş ürün"].map((label) => ({ label })) },
-  { title: "Dijital Ürünler", icon: "cloud-outline", children: ["E-kitap", "Tasarım", "Yazılım", "Dijital eğitim"].map((label) => ({ label })) }
-];
+// Ortak satış merkezi = uygulama-içi navigasyon (kategori değil), her zaman en üstte.
+const partnerGroup: MenuGroup = {
+  title: "Ortak Satış Merkezi",
+  icon: "handshake-outline",
+  tone: "partner",
+  children: [
+    { label: "Ortak satış ilanları", href: "/(tabs)/explore" },
+    { label: "Komisyon kazan", href: "/(tabs)/partner" },
+    { label: "Teklif gönder", href: "/(tabs)/partner" },
+    { label: "Ortaklık taleplerim", href: "/(tabs)/partner" },
+    { label: "Kazançlarım", href: "/(tabs)/partner" },
+    { label: "Satış takibi", href: "/(tabs)/seller" },
+    { label: "Ortak satış eğitimleri", href: "/trust" },
+    { label: "Davet et kazan", href: "/(tabs)/partner" }
+  ]
+};
+
+const landing = (slug: string): Href => ({ pathname: "/kategori/[slug]", params: { slug } }) as unknown as Href;
 
 export default function MenuScreen() {
   const { language } = useLanguage();
+  const { categoryTree } = useStore();
   const [open, setOpen] = useState<string>("Ortak Satış Merkezi");
   const [query, setQuery] = useState("");
   const tokens = searchKey(query).split(" ").filter(Boolean);
+
+  // Menü kategorileri artık gerçek kategori ağacından türer; her satır
+  // /kategori/[slug] landing sayfasına bağlanır (mobilde tüm ağaç gezilebilir + SEO).
+  const groups: MenuGroup[] = useMemo(() => {
+    const catGroups: MenuGroup[] = categoryTree.map((top: CategoryNode) => ({
+      title: top.label,
+      icon: getCategoryIcon(top.label),
+      children: [
+        { label: `Tüm ${top.label} ilanları`, href: landing(top.slug) },
+        ...(top.children ?? []).map((c: CategoryNode) => ({ label: c.label, href: landing(c.slug) }))
+      ]
+    }));
+    return [partnerGroup, ...catGroups];
+  }, [categoryTree]);
+
   const visibleGroups = useMemo(() => {
     if (tokens.length === 0) return groups;
     return groups
@@ -65,7 +68,7 @@ export default function MenuScreen() {
         return groupMatch ? group : { ...group, children };
       })
       .filter((group) => group.children.length > 0 || tokens.every((token) => searchKey(`${group.title} ${translateCopy(group.title, language)}`).includes(token)));
-  }, [language, tokens]);
+  }, [groups, language, tokens]);
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: "#FFFFFF", gap: 8, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 108 }}>
