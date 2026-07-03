@@ -9,7 +9,7 @@ import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import type { CategoryNode } from "@/lib/category-tree";
 import { commissionAmount, moneyIn } from "@/lib/format";
-import { SkeletonGrid } from "@/components/skeleton";
+import { Skeleton } from "@/components/skeleton";
 import { getRecent } from "@/lib/recent";
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
@@ -277,7 +277,7 @@ export function HomeDesktop() {
                 Ortak alın, <Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text>
               </Text>
               <Text numberOfLines={2} style={{ color: "rgba(255,255,255,0.9)", fontSize: 12.5, fontWeight: "600", lineHeight: 17, maxWidth: 380 }}>
-                Binlerce ürünü ortak sat, komisyon kazan. Güvenli, hızlı, kazançlı.
+                Ürünleri ortak sat, komisyon kazan. Güvenli, hızlı, kazançlı.
               </Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 2 }}>
                 <Link href="/create" asChild>
@@ -423,12 +423,43 @@ export function HomeDesktop() {
         </View>
 
         {grid.length === 0 && marketplaceInitialLoading ? (
-          <SkeletonGrid count={9} cardWidth={200} gap={14} />
+          // HomeCard ile birebir aynı flex düzeni — skeleton→içerik geçişinde
+          // kart genişliği/satır sayısı değişmez, "pop"/layout-shift olmaz.
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+            {Array.from({ length: 9 }).map((_, i) => (
+              <View key={i} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 176, flexGrow: 1, gap: 9, maxWidth: 240, minWidth: 0, overflow: "hidden", padding: 10 }}>
+                <Skeleton style={{ borderRadius: 10, height: 150, marginHorizontal: -10, marginTop: -10, width: "auto" }} />
+                <Skeleton style={{ height: 12, width: "55%" }} />
+                <Skeleton style={{ height: 15, width: "92%" }} />
+                <Skeleton style={{ height: 15, width: "70%" }} />
+                <Skeleton style={{ height: 18, width: "42%" }} />
+                <Skeleton style={{ borderRadius: 999, height: 22, width: "58%" }} />
+              </View>
+            ))}
+          </View>
+        ) : grid.length === 0 && active.length === 0 ? (
+          // Katalogda hiç ilan yok → ilk-ilan çağrısı (mobil ile tutarlı).
+          <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 44 }}>
+            <MaterialCommunityIcons name="storefront-outline" size={34} color={colors.primary} />
+            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Henüz ilan yok</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", textAlign: "center" }}>İlk ilanı sen ver, ortaklarınla birlikte sat ve kazan.</Text>
+            <Link href="/create" asChild>
+              <Pressable accessibilityRole="button" accessibilityLabel="İlk ilanı ver" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 22, paddingVertical: 12 })}>
+                <MaterialCommunityIcons name="store-plus-outline" size={17} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>İlk İlanı Ver</Text>
+              </Pressable>
+            </Link>
+          </View>
         ) : grid.length === 0 ? (
           <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 40 }}>
             <MaterialCommunityIcons name="magnify-close" size={30} color={colors.primary} />
             <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Sonuç bulunamadı</Text>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Filtreleri değiştirerek tekrar dene.</Text>
+            {activeFilterCount > 0 ? (
+              <Pressable accessibilityRole="button" accessibilityLabel="Filtreleri temizle" onPress={resetFilters} style={({ pressed }) => ({ backgroundColor: colors.primarySoft, borderRadius: 9, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 8 })}>
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>Filtreleri temizle</Text>
+              </Pressable>
+            ) : null}
           </View>
         ) : (
           <>
@@ -517,7 +548,7 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
 
 function SwitchRow({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+    <Pressable accessibilityRole="switch" accessibilityState={{ checked: on }} accessibilityLabel={label} onPress={onPress} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
       <View style={{ alignItems: on ? "flex-end" : "flex-start", backgroundColor: on ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 38 }}>
         <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
       </View>

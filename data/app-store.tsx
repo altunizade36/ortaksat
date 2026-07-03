@@ -16,7 +16,7 @@ import {
 } from "@/data/mock-data";
 import { logActivity } from "@/lib/audit";
 import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@/lib/auth-links";
-import { commissionAmount } from "@/lib/format";
+import { commissionAmount, msgStamp } from "@/lib/format";
 import {
   deleteFavorite,
   ensureProfile,
@@ -152,6 +152,7 @@ type AppStore = {
   marketplaceLoadingMore: boolean;
   marketplaceInitialLoading: boolean;
   loadMoreMarketplace: () => void;
+  refreshMarketplace: () => Promise<void>;
   partnerships: Partnership[];
   leads: Lead[];
   sales: Sale[];
@@ -547,8 +548,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
             partnerId: row.partner_id ?? undefined,
             participantIds: row.participant_ids,
             status: row.status,
-            lastMessageAt: row.last_message_at?.slice(0, 16).replace("T", " ") ?? row.created_at.slice(0, 16).replace("T", " "),
-            createdAt: row.created_at.slice(0, 16).replace("T", " ")
+            lastMessageAt: row.last_message_at ? msgStamp(row.last_message_at) : msgStamp(row.created_at),
+            createdAt: msgStamp(row.created_at)
           };
           setConversations((items) => [conversation, ...items.filter((item) => item.id !== conversation.id)]);
         }
@@ -566,13 +567,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
             senderId: row.sender_id,
             receiverId: row.receiver_id,
             body: row.body,
-            createdAt: row.created_at.slice(0, 16).replace("T", " "),
+            createdAt: msgStamp(row.created_at),
             read: row.read,
             attachmentUrl: row.attachment_url ?? undefined,
             attachmentType: row.attachment_type ?? undefined,
             attachmentName: row.attachment_name ?? undefined
           };
           setMessages((items) => (items.some((item) => item.id === message.id) ? items : [message, ...items]));
+          // Gerçek-zamanlı gelen mesaj, konuşmanın son-mesaj zamanını da güncellesin
+          // (yoksa gelen kutusu sıralaması ve gösterilen saat bayat kalır).
+          setConversations((items) => items.map((item) => (item.id === message.conversationId ? { ...item, lastMessageAt: message.createdAt } : item)));
         }
       )
       .on(
@@ -712,7 +716,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       const existing = conversations.find(
         (item) => item.listingId === listingId && item.participantIds.includes(currentUser.id) && item.participantIds.includes(receiverId)
       );
-      const now = new Date().toISOString().slice(0, 19).replace("T", " ");
+      const now = msgStamp();
       const conversation: Conversation = existing ?? {
         id: newId("c", liveUser),
         listingId,
@@ -1383,8 +1387,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           senderId: currentUser.id,
           receiverId,
           body: trimmed,
-          // Saniye hassasiyeti — aynı dakikadaki mesajların sırası korunur.
-          createdAt: new Date().toISOString().slice(0, 19).replace("T", " "),
+          // Yerel saat + saniye hassasiyeti — aynı dakikadaki mesajların sırası korunur.
+          createdAt: msgStamp(),
           read: false,
           attachmentUrl: attachment?.url,
           attachmentType: attachment?.type,
@@ -1649,6 +1653,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
             }
           })
           .finally(() => setMarketplaceLoadingMore(false));
+      },
+      // Pull-to-refresh: ilk katalog snapshot'ını yeniden çeker (gerçek yeniden
+      // yükleme — sahte gecikme/karıştırma yok). Önizleme modunda no-op.
+      async refreshMarketplace() {
+        if (!isSupabaseConfigured) return;
+        const snapshot = await loadMarketplaceSnapshot();
+        if (!snapshot) return;
+        setUsers(snapshot.users);
+        setListings(snapshot.listings);
+        mpOffsetRef.current = snapshot.listings.length;
+        setMarketplaceHasMore(snapshot.listings.length >= 90);
       },
       findConversation(id) {
         return conversationById.get(id);

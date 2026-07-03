@@ -33,12 +33,11 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const params = useLocalSearchParams<{ q?: string }>();
-  const { categoryTree, currentUser, findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceInitialLoading } = useStore();
+  const { categoryTree, currentUser, findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceInitialLoading, refreshMarketplace } = useStore();
   const query = params.q ?? "";
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sortMode, setSortMode] = useState<SortMode>("featured");
   const [refreshing, setRefreshing] = useState(false);
-  const [seed, setSeed] = useState(1);
   const [gridWidth, setGridWidth] = useState(0);
   const [visibleCount, setVisibleCount] = useState(INITIAL_HOME_ITEMS);
   // Son gezilen ilanlar (localStorage, istemci-only — SSG hydration güvenli).
@@ -62,24 +61,27 @@ export default function HomeScreen() {
   const columnGap = isWideWeb ? 14 : 10;
   const measuredGridWidth = gridWidth || width - horizontalPadding * 2;
   const { cardWidth } = responsiveGrid({ available: measuredGridWidth, gap: columnGap, minCardWidth: isWideWeb ? 176 : 168 });
-  const activeListings = listings.filter((listing) => listing.status === "active");
+  const activeListings = useMemo(() => listings.filter((listing) => listing.status === "active"), [listings]);
   const categories = useMemo(() => Array.from(new Set(activeListings.map((listing) => listing.category))), [activeListings]);
   const filters = useMemo(() => [...quickFilters, ...categories.map((item) => ({ key: `cat:${item}`, label: translateCopy(getCategoryShortLabel(item), language), icon: getCategoryIcon(item) }))], [categories, language, quickFilters]);
-  const maxCommission = activeListings.reduce((max, listing) => Math.max(max, commissionAmount(listing)), 0);
-  const maxMomentum = activeListings.reduce((max, listing) => Math.max(max, momentumScore(listing)), 0);
-  const topListings = activeListings.slice().sort((a, b) => momentumScore(b) + refreshBoost(b, seed) - (momentumScore(a) + refreshBoost(a, seed))).slice(0, 5);
+  const maxCommission = useMemo(() => activeListings.reduce((max, listing) => Math.max(max, commissionAmount(listing)), 0), [activeListings]);
+  const maxMomentum = useMemo(() => activeListings.reduce((max, listing) => Math.max(max, momentumScore(listing)), 0), [activeListings]);
   const topEarn = useMemo(() => activeListings.filter((l) => commissionAmount(l) > 0).slice().sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [activeListings]);
   const recentListings = useMemo(() => recentIds.map((id) => listings.find((l) => l.id === id)).filter((l): l is Listing => Boolean(l) && l!.status === "active").slice(0, 10), [recentIds, listings]);
   const newestListings = useMemo(() => [...activeListings].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 10), [activeListings]);
-  const myActiveListings = activeListings.filter((listing) => listing.ownerId === currentUser.id).length;
-  const openPartnerListings = activeListings.filter((listing) => listing.partnershipMode === "open").length;
-  const cityCount = new Set(activeListings.map((listing) => listing.location)).size;
-  const averageCommission = activeListings.length ? Math.round(activeListings.reduce((sum, listing) => sum + commissionAmount(listing), 0) / activeListings.length) : 0;
+  const stats = useMemo(() => ({
+    myActiveListings: activeListings.filter((listing) => listing.ownerId === currentUser.id).length,
+    openPartnerListings: activeListings.filter((listing) => listing.partnershipMode === "open").length,
+    cityCount: new Set(activeListings.map((listing) => listing.location)).size,
+    averageCommission: activeListings.length ? Math.round(activeListings.reduce((sum, listing) => sum + commissionAmount(listing), 0) / activeListings.length) : 0
+  }), [activeListings, currentUser.id]);
+  const { myActiveListings, openPartnerListings, cityCount, averageCommission } = stats;
 
   function refresh() {
     setRefreshing(true);
-    setSeed((value) => value + 1);
-    setTimeout(() => setRefreshing(false), 420);
+    // Gerçek yeniden yükleme: katalog snapshot'ını Supabase'den tekrar çek.
+    // (Eski davranış sahte 420ms gecikme + sıralamayı karıştırmaktı.)
+    Promise.resolve(refreshMarketplace()).finally(() => setRefreshing(false));
   }
 
   const filteredListings = useMemo(() => {
@@ -105,10 +107,10 @@ export default function HomeScreen() {
         if (feat !== 0) return feat;
         if (sortMode === "commission") return commissionAmount(b.listing) - commissionAmount(a.listing);
         if (sortMode === "newest") return b.listing.createdAt.localeCompare(a.listing.createdAt);
-        return momentumScore(b.listing) + refreshBoost(b.listing, seed) - (momentumScore(a.listing) + refreshBoost(a.listing, seed));
+        return momentumScore(b.listing) - momentumScore(a.listing);
       })
       .map((item) => item.listing);
-  }, [activeListings, filter, findUser, maxCommission, maxMomentum, query, seed, sortMode]);
+  }, [activeListings, filter, findUser, maxCommission, maxMomentum, query, sortMode]);
   const visibleListings = filteredListings.slice(0, visibleCount);
 
   useEffect(() => {
@@ -318,10 +320,6 @@ export default function HomeScreen() {
 
 function momentumScore(listing: Listing) {
   return listing.leadCount * 2 + listing.partnerCount + listing.favoriteCount / 10;
-}
-
-function refreshBoost(listing: Listing, seed: number) {
-  return ((listing.id.charCodeAt(listing.id.length - 1) || 0) * 13 + seed * 19) % 37;
 }
 
 function searchScore(listing: Listing, owner: User | undefined, tokens: string[]) {
