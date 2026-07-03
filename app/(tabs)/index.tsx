@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter, type Href } from "expo-router";
 import { useLocalSearchParams } from "expo-router";
+import Head from "expo-router/head";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
@@ -158,6 +159,22 @@ export default function HomeScreen() {
       scrollEventThrottle={16}
       contentContainerStyle={{ gap: 10, padding: horizontalPadding, paddingBottom: isWideWeb ? 0 : isWeb ? 28 : 100 }}
     >
+      <Head>
+        <title>OrtakSat — Komisyonla Ortak Satış Platformu | İlan Ver, Ortak Ol Kazan</title>
+        <meta name="description" content="OrtakSat: ürününü ücretsiz listele, komisyonunu belirle; ortaklar referans linkiyle paylaşıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan. Emlak, telefon, bilgisayar, giyim, ev ve daha fazlası." />
+        <link rel="canonical" href="https://ortaksat.com/" />
+        <meta property="og:type" content="website" />
+        <meta property="og:site_name" content="OrtakSat" />
+        <meta property="og:locale" content="tr_TR" />
+        <meta property="og:title" content="OrtakSat — Komisyonla Ortak Satış Platformu" />
+        <meta property="og:description" content="Ürününü ücretsiz listele, komisyonunu belirle; ortaklar senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan." />
+        <meta property="og:url" content="https://ortaksat.com/" />
+        <meta property="og:image" content="https://ortaksat.com/og-cover.png" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:title" content="OrtakSat — Komisyonla Ortak Satış Platformu" />
+        <meta name="twitter:description" content="Ürününü ücretsiz listele; ortaklar senin için satsın. Sıfır sermaye ile ortak ol, kazan." />
+        <meta name="twitter:image" content="https://ortaksat.com/og-cover.png" />
+      </Head>
       {isWideWeb ? (
         <>
           <HomeDesktop />
