@@ -756,7 +756,9 @@ export async function insertNotification(notification: Notification) {
     type: notification.type,
     title: notification.title,
     body: notification.body,
-    read: notification.read
+    read: notification.read,
+    // Client kaynaklı bildirimlerde metadata varsa koru; yoksa DB default '{}' uygular.
+    ...(notification.metadata ? { metadata: notification.metadata } : {})
   });
   if (error) console.warn("Supabase notification insert failed", error);
 }

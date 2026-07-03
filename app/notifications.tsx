@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, useRouter } from "expo-router";
 import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
@@ -10,7 +10,7 @@ import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/com
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
-import type { NotificationType } from "@/lib/types";
+import type { NotificationMeta, NotificationType } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 const typeIcons: Record<NotificationType, keyof typeof MaterialCommunityIcons.glyphMap> = {
@@ -31,7 +31,7 @@ const typeMeta: Record<NotificationType, { label: string; tint: string; color: s
   system: { label: "Duyuru", tint: colors.accentSoft, color: colors.accent }
 };
 
-type DeskNotif = { id: string; type: NotificationType; title: string; body: string; createdAt: string; group: "Bugün" | "Bu hafta" | "Daha önce"; real: boolean };
+type DeskNotif = { id: string; type: NotificationType; title: string; body: string; createdAt: string; group: "Bugün" | "Bu hafta" | "Daha önce"; real: boolean; metadata?: NotificationMeta };
 
 const SAMPLE: DeskNotif[] = [
   { id: "s1", type: "application", title: "Yeni ortaklık başvurusu", body: "Mehmet K., “Akıllı çocuk saati” ilanın için ortak satıcı olmak istiyor. Başvuruyu inceleyip onaylayabilirsin.", createdAt: "12 dk önce", group: "Bugün", real: false },
@@ -57,6 +57,7 @@ export default function NotificationsScreen() {
 function NotificationsScreenInner() {
   const { language } = useLanguage();
   const { currentUser, markNotificationRead, notifications, savePreferences } = useStore();
+  const router = useRouter();
   const isWideWeb = useIsWideWeb();
   const myNotifications = notifications.filter((notification) => notification.userId === currentUser.id);
   const unreadCount = myNotifications.filter((notification) => !notification.read).length;
@@ -86,7 +87,7 @@ function NotificationsScreenInner() {
       return "Daha önce";
     };
     const realDesk: DeskNotif[] = myNotifications.filter((n) => !mutes[n.type]).map((n) => ({
-      id: n.id, type: n.type, title: n.title, body: n.body, createdAt: n.createdAt, group: dateGroup(n.createdAt), real: true
+      id: n.id, type: n.type, title: n.title, body: n.body, createdAt: n.createdAt, group: dateGroup(n.createdAt), real: true, metadata: n.metadata
     }));
     // Canlıda yalnızca gerçek bildirimler; örnek (SAMPLE) veriler sadece yerel önizlemede.
     const all: DeskNotif[] = isSupabaseConfigured ? realDesk : [...realDesk, ...SAMPLE];
@@ -112,6 +113,11 @@ function NotificationsScreenInner() {
     const markRead = (n: DeskNotif) => {
       setReadMap((s) => ({ ...s, [n.id]: true }));
       if (n.real) markNotificationRead(n.id);
+    };
+    // Tıklayınca okundu işaretle + ilgili ilana git (metadata varsa).
+    const openDesk = (n: DeskNotif) => {
+      markRead(n);
+      if (n.metadata?.listingId) router.push({ pathname: "/listing/[id]", params: { id: n.metadata.listingId } });
     };
     const markAll = () => {
       const next: Record<string, boolean> = {};
@@ -172,8 +178,9 @@ function NotificationsScreenInner() {
                     {items.map((n, idx) => {
                       const read = isRead(n);
                       const meta = typeMeta[n.type] ?? { label: "Bildirim", tint: colors.infoSoft, color: colors.info };
+                      const hasLink = Boolean(n.metadata?.listingId);
                       return (
-                        <Pressable key={n.id} onPress={() => markRead(n)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : read ? colors.surface : colors.primarySoft + "55", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 })}>
+                        <Pressable key={n.id} accessibilityRole="button" accessibilityLabel={hasLink ? `${n.title} — ilana git` : n.title} onPress={() => openDesk(n)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : read ? colors.surface : colors.primarySoft + "55", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 })}>
                           <View style={{ alignItems: "center", backgroundColor: meta.tint, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
                             <MaterialCommunityIcons name={typeIcons[n.type] ?? "bell-outline"} size={22} color={meta.color} />
                           </View>
@@ -188,7 +195,7 @@ function NotificationsScreenInner() {
                             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{n.body}</Text>
                             <View style={{ alignItems: "center", flexDirection: "row", gap: 10, marginTop: 2 }}>
                               <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{n.createdAt}</Text>
-                              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{read ? "Görüntülendi" : "Okundu işaretle"}</Text>
+                              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{hasLink ? "İlana git →" : read ? "Görüntülendi" : "Okundu işaretle"}</Text>
                             </View>
                           </View>
                         </Pressable>
@@ -324,8 +331,15 @@ function NotificationsScreenInner() {
 
       {visibleNotifications.length === 0 ? <EmptyState title={mutedCount > 0 ? "Görünür bildirim yok" : "Bildirim yok"} body={mutedCount > 0 ? "Bazı türleri kapattın. Görmek için yukarıdan aç." : "Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek."} /> : null}
 
-      {visibleNotifications.map((notification) => (
-        <Card key={notification.id}>
+      {visibleNotifications.map((notification) => {
+        const lid = notification.metadata?.listingId;
+        const openMobile = () => {
+          if (!notification.read) markNotificationRead(notification.id);
+          if (lid) router.push({ pathname: "/listing/[id]", params: { id: lid } });
+        };
+        return (
+        <Pressable key={notification.id} accessibilityRole="button" accessibilityLabel={lid ? `${notification.title} — ilana git` : notification.title} onPress={openMobile}>
+        <Card>
           <View style={{ flexDirection: "row", gap: 11 }}>
             <View
               style={{
@@ -360,7 +374,9 @@ function NotificationsScreenInner() {
             </PrimaryButton>
           ) : null}
         </Card>
-      ))}
+        </Pressable>
+        );
+      })}
     </ScrollView>
   );
 }

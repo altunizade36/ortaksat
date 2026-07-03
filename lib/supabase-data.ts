@@ -1,7 +1,7 @@
 ﻿import { supabase } from "@/lib/supabase";
 import { msgStamp } from "@/lib/format";
 import { displayText, repairTurkishText } from "@/lib/text";
-import type { Conversation, Favorite, Lead, Listing, Message, Notification, Order, Partnership, Report, Review, Sale, User } from "@/lib/types";
+import type { Conversation, Favorite, Lead, Listing, Message, Notification, NotificationMeta, Order, Partnership, Report, Review, Sale, User } from "@/lib/types";
 
 type PublicListingCardRow = {
   id: string;
@@ -72,6 +72,15 @@ export type AccountSnapshot = {
   notifications: Notification[];
   reports: Report[];
 };
+
+/** Bildirim metadata'sını (jsonb → nesne) güvenli çözer; boşsa undefined. */
+export function parseNotifMeta(raw: unknown): NotificationMeta | undefined {
+  if (!raw || typeof raw !== "object") return undefined;
+  const m = raw as Record<string, unknown>;
+  const pick = (v: unknown) => (typeof v === "string" && v ? v : undefined);
+  const meta: NotificationMeta = { listingId: pick(m.listingId), leadId: pick(m.leadId), partnershipId: pick(m.partnershipId) };
+  return meta.listingId || meta.leadId || meta.partnershipId ? meta : undefined;
+}
 
 function toNumber(value: number | string | null | undefined, fallback = 0) {
   if (value === null || value === undefined) return fallback;
@@ -524,7 +533,8 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       title: row.title,
       body: row.body,
       read: row.read,
-      createdAt: row.created_at.slice(0, 10)
+      createdAt: row.created_at.slice(0, 10),
+      metadata: parseNotifMeta(row.metadata)
     })),
     reports: (reportsResult.data ?? []).map((row) => ({
       id: row.id,

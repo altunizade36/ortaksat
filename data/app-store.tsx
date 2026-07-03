@@ -64,7 +64,7 @@ import {
 } from "@/lib/live-service";
 import { rateLimit } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings, loadSeoSettings, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
+import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings, loadSeoSettings, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import { categoryTree as baseCategoryTree, type CategoryNode } from "@/lib/category-tree";
 import { displayText, repairTurkishText } from "@/lib/text";
 import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
@@ -592,7 +592,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
             title: row.title,
             body: row.body,
             read: row.read,
-            createdAt: row.created_at.slice(0, 16).replace("T", " ")
+            createdAt: row.created_at.slice(0, 16).replace("T", " "),
+            metadata: parseNotifMeta(row.metadata)
           };
           setNotifications((items) => [notification, ...items.filter((item) => item.id !== notification.id)]);
         }
