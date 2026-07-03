@@ -4,6 +4,7 @@ import Head from "expo-router/head";
 import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
+import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
 import { EmptyState } from "@/components/ui";
@@ -11,7 +12,7 @@ import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
 import { categoryTree as CATEGORY_TREE, type CategoryNode } from "@/lib/category-tree";
 import { getCategoryIcon } from "@/lib/categories";
-import { CITY_CATEGORY_SLUGS } from "@/lib/cities";
+import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, findProvince } from "@/lib/cities";
 import { commissionAmount } from "@/lib/format";
 import { responsiveGrid } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
@@ -36,6 +37,7 @@ function findTrail(nodes: CategoryNode[], slug: string, trail: CategoryNode[] = 
 }
 
 const catHref = (slug: string): Href => ({ pathname: "/kategori/[slug]", params: { slug } }) as unknown as Href;
+const cityHref = (slug: string, sehir: string): Href => ({ pathname: "/kategori/[slug]/[sehir]", params: { slug, sehir } }) as unknown as Href;
 
 // Statik export: üst + alt kategori hub sayfalarını build'de kendi H1/içeriğiyle
 // önceden üret (SEO). Marka/model gibi derin slug'lar [slug] fallback ile çalışır.
@@ -110,6 +112,14 @@ export default function CategoryLandingScreen() {
     );
   }
 
+  const faq = [
+    { q: `${node.label} ilanları OrtakSat'ta nasıl satılır?`, a: "İlanını ücretsiz eklersin ve komisyon oranını kendin belirlersin. Ortaklar ürününü kendi takipçisiyle paylaşır; satış olursa komisyonu anlaştığın kanaldan doğrudan ortağa ödersin. Ödeme ve teslimat alıcı ile satıcı arasında yapılır." },
+    { q: `${node.label} kategorisinde komisyon oranını kim belirler?`, a: "İlanı açan satıcı belirler — yüzde (%) veya sabit tutar (₺) olarak. Ortak, paylaşmadan önce kazancını ilanda net görür." },
+    { q: `OrtakSat ${node.label.toLocaleLowerCase("tr-TR")} alım satımında ödeme veya kargo yapar mı?`, a: "Hayır. OrtakSat aracı bir ilan ve eşleşme platformudur; para tutmaz, kargo yapmaz. Ödeme ve teslimatı alıcı ile satıcı kendi arasında yapar." },
+    { q: `${node.label} ürününü ortak olarak nasıl paylaşırım?`, a: "Ürüne ortak olursun ve sana özel bir referans linki oluşur. Bu linki Instagram, TikTok veya WhatsApp'ta paylaşırsın; linkten gelen alıcı satın alırsa komisyon senin olur." }
+  ];
+  const faqLd = JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
+
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, paddingBottom: 40, paddingTop: 14 }}>
       <Head>
@@ -121,6 +131,7 @@ export default function CategoryLandingScreen() {
         <meta property="og:description" content={desc} />
         <meta property="og:url" content={url} />
         {items[0]?.image ? <meta property="og:image" content={items[0].image} /> : null}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd }} />
       </Head>
 
       <WebContainer max={1240} padding={12} style={{ gap: 14 }}>
@@ -208,6 +219,34 @@ export default function CategoryLandingScreen() {
             ) : null}
           </>
         )}
+
+        {/* Şehre göre — derin iç bağlantı (şehir×kategori SEO sayfalarına) */}
+        <View style={{ gap: 8, marginTop: 6 }}>
+          <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Şehre göre {node.label}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {SEO_CITY_SLUGS.map((c) => (
+              <Link key={c} href={cityHref(node.slug, c)} asChild>
+                <Pressable style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{findProvince(c)} {node.label}</Text>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
+        </View>
+
+        {/* SSS — benzersiz içerik + FAQPage zengin sonuç */}
+        <View style={{ gap: 10, marginTop: 4 }}>
+          <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{node.label} — Sık Sorulan Sorular</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+            {faq.map((item) => (
+              <View key={item.q} style={{ flexBasis: 440, flexGrow: 1, maxWidth: 720 }}>
+                <Accordion title={item.q} icon="comment-question-outline">
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{item.a}</Text>
+                </Accordion>
+              </View>
+            ))}
+          </View>
+        </View>
       </WebContainer>
       <WebFooter />
     </ScrollView>
