@@ -473,7 +473,7 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
               <Text style={{ color: "#1A1A00", fontSize: 9, fontWeight: "900" }}>ÖRNEK</Text>
             </View>
           ) : null}
-          <Pressable accessibilityRole="button" accessibilityLabel="Favorilere ekle" onPress={onFav} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 10, width: 30 }}>
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: favorited }} accessibilityLabel={favorited ? "Favorilerden çıkar" : "Favorilere ekle"} onPress={onFav} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 10, width: 30 }}>
             <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={17} color={favorited ? colors.accent : colors.muted} />
           </Pressable>
           <Pressable accessibilityRole="button" accessibilityLabel="Karşılaştır" onPress={() => toggle(listing.id)} style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 46, width: 30 }}>

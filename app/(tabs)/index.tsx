@@ -141,24 +141,27 @@ export default function HomeScreen() {
         </>
       ) : (
         <>
-          {/* Kompakt yeşil hero (mobil) */}
-          <View style={{ backgroundColor: colors.primary, borderRadius: 16, gap: 10, overflow: "hidden", padding: 16 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900", lineHeight: 25 }}>Ortak alın, <Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text></Text>
-            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>Binlerce ürünü ortak sat, komisyon kazan. Güvenli, hızlı, kazançlı.</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              <Link href="/create" asChild>
-                <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 15, paddingVertical: 9 }}>
-                  <MaterialCommunityIcons name="store-plus-outline" size={16} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>İlan Ver</Text>
-                </Pressable>
-              </Link>
-              <Link href="/partner" asChild>
-                <Pressable style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 15, paddingVertical: 8 }}>
-                  <MaterialCommunityIcons name="handshake-outline" size={16} color="#FFFFFF" />
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ortak Satışa Katıl</Text>
-                </Pressable>
-              </Link>
+          {/* Kompakt yeşil hero (mobil) — web ile tutarlı: tokalaşma + ürün kümesi */}
+          <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 16, flexDirection: "row", gap: 10, overflow: "hidden", padding: 16 }}>
+            <View style={{ flex: 1, gap: 10, minWidth: 0 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 19, fontWeight: "900", lineHeight: 24 }}>Ortak alın, <Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text></Text>
+              <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600", lineHeight: 16 }}>Ürününü ortaklar paylaşsın, satışta komisyon kazan.</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                <Link href="/create" asChild>
+                  <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}>
+                    <MaterialCommunityIcons name="store-plus-outline" size={16} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>İlan Ver</Text>
+                  </Pressable>
+                </Link>
+                <Link href="/partner" asChild>
+                  <Pressable style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
+                    <MaterialCommunityIcons name="handshake-outline" size={16} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ortak Ol</Text>
+                  </Pressable>
+                </Link>
+              </View>
             </View>
+            <MobileHeroCluster />
           </View>
           <CategoryShowcase categoryTree={categoryTree} isWideWeb={false} />
 
@@ -502,5 +505,29 @@ function FilterChip({ active, icon, label, onPress }: { active?: boolean; icon: 
         {translatedLabel}
       </Text>
     </Pressable>
+  );
+}
+
+// Mobil hero görsel kümesi — web ile tutarlı: tokalaşma (anlaşma) + sabit ürünler.
+const MHERO = (n: string) => `https://ortaksat.com/hero2/${n}.jpg`;
+const MHERO_FLOAT: Array<{ img: string; top: number; left: number }> = [
+  { img: "headphones", top: -6, left: -8 },
+  { img: "watch", top: 34, left: -14 },
+  { img: "plant", top: 74, left: 6 }
+];
+
+function MobileHeroCluster() {
+  return (
+    <View style={{ height: 118, position: "relative", width: 118 }}>
+      <View style={{ backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 104, position: "absolute", right: 0, top: 7, width: 104 }} />
+      <View style={{ borderColor: "#FFFFFF", borderRadius: 14, borderWidth: 2.5, height: 88, overflow: "hidden", position: "absolute", right: 4, top: 15, width: 96 }}>
+        <SafeRemoteImage uri={MHERO("deal")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+      </View>
+      {MHERO_FLOAT.map((f) => (
+        <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 34, left: f.left, overflow: "hidden", position: "absolute", top: f.top, width: 34 }}>
+          <SafeRemoteImage uri={MHERO(f.img)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+        </View>
+      ))}
+    </View>
   );
 }
