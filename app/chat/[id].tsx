@@ -157,7 +157,7 @@ function ChatScreenInner() {
         )}
       </View>
 
-      <ScrollView ref={scrollRef} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, gap: 6, justifyContent: conversationMessages.length === 0 ? "center" : "flex-end", padding: 12, paddingBottom: 16 }}>
+      <ScrollView ref={scrollRef} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, justifyContent: conversationMessages.length === 0 ? "center" : "flex-end", padding: 12, paddingBottom: 16 }}>
         {conversationMessages.length === 0 ? (
           <EmptyState title={language === "en" ? "No messages yet" : "Henüz mesaj yok"} body={language === "en" ? "Write the first message and start the conversation." : "İlk mesajı yaz ve konuşmayı başlat."} />
         ) : null}
@@ -165,9 +165,11 @@ function ChatScreenInner() {
           const mine = message.senderId === currentUser.id;
           const showDay = i === 0 || chatMsgDay(message.createdAt) !== chatMsgDay(conversationMessages[i - 1].createdAt);
           const nextMsg = conversationMessages[i + 1];
+          const prevMsg = conversationMessages[i - 1];
+          const grouped = Boolean(prevMsg) && prevMsg.senderId === message.senderId && !showDay;
           const lastOfGroup = !nextMsg || nextMsg.senderId !== message.senderId || chatMsgDay(nextMsg.createdAt) !== chatMsgDay(message.createdAt);
           return (
-            <View key={message.id} style={{ gap: 6 }}>
+            <View key={message.id} style={{ gap: 6, marginTop: i === 0 ? 0 : showDay ? 6 : grouped ? 2 : 10 }}>
               {showDay ? (
                 <View style={{ alignItems: "center", marginVertical: 3 }}>
                   <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 3 }}>

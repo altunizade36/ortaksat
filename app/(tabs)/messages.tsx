@@ -298,7 +298,7 @@ function MessagesScreenInner() {
                   </View>
                 </View>
 
-                <ScrollView ref={deskScrollRef} onContentSizeChange={() => deskScrollRef.current?.scrollToEnd({ animated: false })} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, gap: 8, justifyContent: activeMessages.length === 0 ? "center" : "flex-end", padding: 22 }}>
+                <ScrollView ref={deskScrollRef} onContentSizeChange={() => deskScrollRef.current?.scrollToEnd({ animated: false })} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-end", padding: 22 }}>
                   {activeMessages.length === 0 ? (
                     <EmptyState title="Henüz mesaj yok" body="İlk mesajı yaz ve konuşmayı başlat." />
                   ) : null}
@@ -306,9 +306,11 @@ function MessagesScreenInner() {
                     const mine = m.senderId === currentUser.id;
                     const showDay = i === 0 || msgDay(m.createdAt) !== msgDay(activeMessages[i - 1].createdAt);
                     const nextM = activeMessages[i + 1];
+                    const prevM = activeMessages[i - 1];
+                    const grouped = Boolean(prevM) && prevM.senderId === m.senderId && !showDay;
                     const lastOfGroup = !nextM || nextM.senderId !== m.senderId || msgDay(nextM.createdAt) !== msgDay(m.createdAt);
                     return (
-                      <View key={m.id} style={{ gap: 8 }}>
+                      <View key={m.id} style={{ gap: 8, marginTop: i === 0 ? 0 : showDay ? 6 : grouped ? 2 : 10 }}>
                         {showDay ? (
                           <View style={{ alignItems: "center", marginVertical: 4 }}>
                             <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 3 }}>
