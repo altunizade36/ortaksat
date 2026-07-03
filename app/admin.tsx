@@ -94,6 +94,7 @@ function AdminScreenInner() {
     listings, users, sales, partnerships, leads, conversations, messages, notifications,
     categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
     updateListingStatus, setListingFeatured, deleteListing, findUser, signOut, currentUser, reports, updateReportStatus,
+    approvePartnership, rejectPartnership, updateSaleStatus,
     platformSettings, updatePlatformSetting, setAnnouncement, setUserRole, setUserStatus,
     setUserVerification, adminNotifyUser, adminBroadcast,
     blogPosts, contentPages, seoSettings, saveBlogPost, deleteBlogPost, saveContentPage, saveSeoSetting,
@@ -146,6 +147,8 @@ function AdminScreenInner() {
   const activeListings = listings.filter((l) => l.status === "active");
   const pendingReview = listings.filter((l) => l.status === "pending_review");
   const totalCommission = sales.reduce((s, x) => s + x.commissionAmount, 0);
+  const disputedSalesN = sales.filter((s) => s.status === "disputed").length;
+  const unpaidCommission = sales.filter((s) => s.status !== "paid" && s.status !== "cancelled").reduce((a, s) => a + s.commissionAmount, 0);
   const pendingCat = categorySuggestions.filter((s) => s.status === "pending").length;
   const pendingLoc = locationSuggestions.filter((s) => s.status === "pending").length;
   const pendingReports = reports.filter((r) => r.status === "open" || r.status === "reviewing").length;
@@ -222,6 +225,7 @@ function AdminScreenInner() {
           <Dashboard
             usersN={liveUsers.length} listingsN={listings.length} salesN={sales.length} commission={totalCommission}
             activeN={activeListings.length} pendingN={pendingReview.length} reportsN={pendingReports} partnershipsN={pendingPartnerships} messagesN={messages.length}
+            disputedN={disputedSalesN} unpaidCommission={unpaidCommission} pendingCat={pendingCat} pendingLoc={pendingLoc}
             listings={listings} users={users} findUser={findUser} notifications={notifications} leads={leads} setSection={setSection}
           />
         ) : null}
@@ -351,10 +355,10 @@ function AdminScreenInner() {
           {pendingReview.length > 0 ? (
             <Panel title="Moderasyon Kuyruğu" sub={`${pendingReview.length} ilan onay bekliyor`}>
               <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
-                <Pressable onPress={() => pendingReview.forEach((l) => updateListingStatus(l.id, "active"))} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
+                <Pressable onPress={() => confirmAction(`Onay bekleyen ${pendingReview.length} ilanın TÜMÜ yayınlansın mı?`, () => pendingReview.forEach((l) => updateListingStatus(l.id, "active")))} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
                   <MaterialCommunityIcons name="check-all" size={15} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>Tümünü onayla ({pendingReview.length})</Text>
                 </Pressable>
-                <Pressable onPress={() => pendingReview.forEach((l) => updateListingStatus(l.id, "rejected"))} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 7 }}>
+                <Pressable onPress={() => confirmAction(`Onay bekleyen ${pendingReview.length} ilanın TÜMÜ reddedilsin mi? Bu işlem geri alınamaz.`, () => pendingReview.forEach((l) => updateListingStatus(l.id, "rejected")))} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 7 }}>
                   <MaterialCommunityIcons name="close-box-multiple-outline" size={15} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Tümünü reddet</Text>
                 </Pressable>
               </View>
@@ -407,7 +411,7 @@ function AdminScreenInner() {
         {section === "partnerships" ? (
           <Panel title="Ortak Satış Talepleri" sub={`${pendingPartnerships} bekliyor · ${partnerships.length} toplam`}>
             {partnerships.length === 0 ? <EmptyState title="Ortak satış talebi yok" body="Bir kullanıcı bir ilana ortak satıcı olmak için başvurduğunda burada görünür." /> : null}
-            <Table head={["İLAN", "İLAN SAHİBİ", "ORTAK ADAYI", "KOMİSYON", "DURUM", "TARİH"]} cols={[2, 1.4, 1.4, 1, 1.1, 1]}>
+            <Table head={["İLAN", "İLAN SAHİBİ", "ORTAK ADAYI", "KOMİSYON", "DURUM", "TARİH", "İŞLEM"]} cols={[1.9, 1.3, 1.3, 1, 1, 0.9, 1.4]}>
               {partnerships.slice().sort((a, b) => (a.status === "pending" ? -1 : 1) - (b.status === "pending" ? -1 : 1) || b.createdAt.localeCompare(a.createdAt)).map((p) => {
                 const listing = listings.find((l) => l.id === p.listingId);
                 const owner = listing ? findUser(listing.ownerId) : undefined;
@@ -415,7 +419,7 @@ function AdminScreenInner() {
                 const tone = PARTNERSHIP_TONE[p.status] ?? { tint: colors.surfaceAlt, color: colors.muted, label: p.status };
                 const comm = listing ? (listing.commissionType === "rate" ? `%${listing.commissionValue}` : money(listing.commissionValue)) : "—";
                 return (
-                  <Row key={p.id} cols={[2, 1.4, 1.4, 1, 1.1, 1]} cells={[
+                  <Row key={p.id} cols={[1.9, 1.3, 1.3, 1, 1, 0.9, 1.4]} cells={[
                     listing ? (
                       <Link href={{ pathname: "/listing/[id]", params: { id: listing.id } }} asChild>
                         <Pressable><Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{listing.title}</Text></Pressable>
@@ -425,7 +429,13 @@ function AdminScreenInner() {
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{partner?.name ?? "—"}</Text>,
                     <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{comm}</Text>,
                     <View style={{ alignSelf: "flex-start", backgroundColor: tone.tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: tone.color, fontSize: 10.5, fontWeight: "900" }}>{tone.label}</Text></View>,
-                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.createdAt}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.createdAt}</Text>,
+                    p.status === "pending" ? (
+                      <View style={{ flexDirection: "row", gap: 8 }}>
+                        <Pressable onPress={() => approvePartnership(p.id)} accessibilityRole="button" accessibilityLabel="Ortaklığı onayla"><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>Onayla</Text></Pressable>
+                        <Pressable onPress={() => confirmAction("Bu ortaklık başvurusu reddedilsin mi?", () => rejectPartnership(p.id))} accessibilityRole="button" accessibilityLabel="Ortaklığı reddet"><Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "900" }}>Reddet</Text></Pressable>
+                      </View>
+                    ) : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>—</Text>
                   ]} />
                 );
               })}
@@ -439,6 +449,8 @@ function AdminScreenInner() {
             {reports.slice().sort((a, b) => (isOpenReport(a) ? -1 : 1) - (isOpenReport(b) ? -1 : 1) || b.createdAt.localeCompare(a.createdAt)).map((r) => {
               const target = r.listingId ? listings.find((l) => l.id === r.listingId) : undefined;
               const reportedUser = r.reportedUserId ? findUser(r.reportedUserId) : undefined;
+              // Şikayet edilen kullanıcı: doğrudan kullanıcı şikayeti ya da ilan sahibi.
+              const actUser = reportedUser ?? (target ? findUser(target.ownerId) : undefined);
               const tone = isOpenReport(r) ? { t: colors.warningSoft, c: colors.warning, l: "Bekliyor" } : r.status === "resolved" ? { t: colors.successSoft, c: colors.success, l: "Çözüldü" } : { t: colors.surfaceAlt, c: colors.muted, l: "Reddedildi" };
               return (
                 <View key={r.id} style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 7, paddingVertical: 13 }}>
@@ -469,6 +481,18 @@ function AdminScreenInner() {
                         <MaterialCommunityIcons name={target.status === "active" ? "eye-off-outline" : "eye-outline"} size={14} color={colors.ink} />
                         <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{target.status === "active" ? "İlanı kaldır" : "Yayınla"}</Text>
                       </Pressable>
+                    ) : null}
+                    {actUser && canManageUsers && actUser.id !== currentUser.id ? (
+                      <>
+                        <Pressable onPress={() => confirmAction(`${actUser.name} kullanıcısı ${actUser.status === "suspended" ? "aktifleştirilsin" : "askıya alınsın"} mı?`, () => setUserStatus(actUser.id, actUser.status === "suspended" ? "active" : "suspended"))} style={{ alignItems: "center", backgroundColor: actUser.status === "suspended" ? colors.successSoft : colors.accentSoft, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+                          <MaterialCommunityIcons name={actUser.status === "suspended" ? "account-check-outline" : "account-cancel-outline"} size={14} color={actUser.status === "suspended" ? colors.success : colors.accent} />
+                          <Text style={{ color: actUser.status === "suspended" ? colors.success : colors.accent, fontSize: 12, fontWeight: "800" }}>{actUser.status === "suspended" ? "Aktifleştir" : "Kullanıcıyı askıya al"}</Text>
+                        </Pressable>
+                        <Pressable onPress={() => promptNotify(actUser.id, actUser.name)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+                          <MaterialCommunityIcons name="bell-outline" size={14} color={colors.ink} />
+                          <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>Kullanıcıyı uyar</Text>
+                        </Pressable>
+                      </>
                     ) : null}
                     {isOpenReport(r) ? (
                       <>
@@ -570,16 +594,22 @@ function AdminScreenInner() {
                 <Text style={{ color: colors.accent, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{sales.filter((s) => s.status === "disputed").length} anlaşmazlık kaydı arabuluculuk bekliyor (en üstte).</Text>
               </View>
             ) : null}
-            <Table head={["İLAN", "KOMİSYON", "ORTAKLIK", "DURUM"]} cols={[2.2, 1, 1.4, 1.2]}>
+            <Table head={["İLAN", "KOMİSYON", "ORTAKLIK", "DURUM", "ARABULUCULUK"]} cols={[2, 1, 1.3, 1, 1.5]}>
               {[...sales].sort((a, b) => (a.status === "disputed" ? -1 : 0) - (b.status === "disputed" ? -1 : 0)).map((s) => {
                 const listing = listings.find((l) => l.id === s.listingId);
                 const p = partnerships.find((x) => x.id === s.partnershipId);
                 return (
-                  <Row key={s.id} cols={[2.2, 1, 1.4, 1.2]} cells={[
+                  <Row key={s.id} cols={[2, 1, 1.3, 1, 1.5]} cells={[
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{listing?.title ?? s.listingId}</Text>,
                     <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{money(s.commissionAmount)}</Text>,
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{p ? findUser(p.partnerId)?.name : "—"}</Text>,
-                    <View style={{ alignSelf: "flex-start", backgroundColor: SALE_TONE[s.status].tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: SALE_TONE[s.status].color, fontSize: 10.5, fontWeight: "900" }}>{SALE_TONE[s.status].label}</Text></View>
+                    <View style={{ alignSelf: "flex-start", backgroundColor: SALE_TONE[s.status].tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: SALE_TONE[s.status].color, fontSize: 10.5, fontWeight: "900" }}>{SALE_TONE[s.status].label}</Text></View>,
+                    s.status === "disputed" ? (
+                      <View style={{ flexDirection: "row", gap: 10 }}>
+                        <Pressable onPress={() => confirmAction("Anlaşmazlık çözülüp komisyon ONAYLANSIN mı?", () => updateSaleStatus(s.id, "approved"))} accessibilityRole="button" accessibilityLabel="Anlaşmazlığı çöz ve onayla"><Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "900" }}>Çöz · Onayla</Text></Pressable>
+                        <Pressable onPress={() => confirmAction("Bu komisyon kaydı İPTAL edilsin mi?", () => updateSaleStatus(s.id, "cancelled"))} accessibilityRole="button" accessibilityLabel="Komisyonu iptal et"><Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "900" }}>İptal</Text></Pressable>
+                      </View>
+                    ) : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>—</Text>
                   ]} />
                 );
               })}
@@ -733,12 +763,14 @@ function confirmAction(message: string, onYes: () => void) {
 type DashProps = {
   usersN: number; listingsN: number; salesN: number; commission: number;
   activeN: number; pendingN: number; reportsN: number; partnershipsN: number; messagesN: number;
+  disputedN: number; unpaidCommission: number; pendingCat: number; pendingLoc: number;
   listings: ReturnType<typeof useStore>["listings"]; users: ReturnType<typeof useStore>["users"]; findUser: ReturnType<typeof useStore>["findUser"];
   notifications: ReturnType<typeof useStore>["notifications"]; leads: ReturnType<typeof useStore>["leads"];
   setSection: (s: Section) => void;
 };
-function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, reportsN, partnershipsN, messagesN, listings, users, findUser, notifications, leads, setSection }: DashProps) {
+function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, reportsN, partnershipsN, messagesN, disputedN, unpaidCommission, pendingCat, pendingLoc, listings, users, findUser, notifications, leads, setSection }: DashProps) {
   const recentUsers = users.slice().filter((u) => u.status !== "deleted").slice(-5).reverse();
+  const chart = monthlyListingChart(listings);
   return (
     <View style={{ gap: 16 }}>
       <View style={{ gap: 3 }}>
@@ -754,10 +786,14 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
         <Stat icon="handshake-outline" tint={colors.violetSoft} color={colors.violet} value={`${partnershipsN}`} title="Bekleyen Ortaklık" onPress={() => setSection("partnerships")} />
         <Stat icon="message-text" tint={colors.primarySoft} color={colors.primaryDark} value={`${messagesN}`} title="Toplam Mesaj" onPress={() => setSection("messages")} />
         <Stat icon="cash-multiple" tint={colors.goldSoft} color={colors.gold} value={money(commission)} title="Komisyon (kayıt)" onPress={() => setSection("commissions")} />
+        <Stat icon="scale-balance" tint={colors.accentSoft} color={colors.accent} value={`${disputedN}`} title="Anlaşmazlık (komisyon)" onPress={() => setSection("commissions")} />
+        <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(unpaidCommission)} title="Tahsil edilmemiş komisyon" onPress={() => setSection("commissions")} />
+        <Stat icon="tag-plus-outline" tint={colors.violetSoft} color={colors.violet} value={`${pendingCat}`} title="Kategori önerisi" onPress={() => setSection("categories")} />
+        <Stat icon="map-marker-plus-outline" tint={colors.infoSoft} color={colors.info} value={`${pendingLoc}`} title="Konum önerisi" onPress={() => setSection("locations")} />
       </View>
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
         <View style={{ flex: 2, gap: 16, minWidth: 280 }}>
-          <Panel title="Aylık İlan Grafiği" sub="Son 12 ay — gerçek veri"><BarChart data={monthlyListingChart(listings).data} labels={monthlyListingChart(listings).labels} /></Panel>
+          <Panel title="Aylık İlan Grafiği" sub="Son 12 ay — gerçek veri"><BarChart data={chart.data} labels={chart.labels} /></Panel>
           <Panel title="Son Eklenen İlanlar">
             <Table head={["İLAN", "KATEGORİ", "FİYAT", "DURUM"]} cols={[2.2, 1.2, 1, 1]}>
               {listings.slice(0, 6).map((l) => (
@@ -797,7 +833,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
           <Panel title="Kısayollar">
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {[
-                { label: "Yeni İlan Ekle", icon: "file-plus-outline" as const, go: "listings" as Section },
+                { label: "İlan Yönetimi", icon: "file-document-edit-outline" as const, go: "listings" as Section },
                 { label: "Kullanıcılar", icon: "account-multiple-outline" as const, go: "users" as Section },
                 { label: "Önerileri İncele", icon: "shape-plus" as const, go: "categories" as Section },
                 { label: "Raporlar", icon: "chart-box-outline" as const, go: "reports" as Section }

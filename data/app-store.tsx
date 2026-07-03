@@ -712,6 +712,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
     // yapmadan gezebilir; aksiyonlar (ilan ver, favori, mesaj) /auth'a yönlenir.
     const currentUser = authUser ?? (isSupabaseConfigured ? ANON_USER : (users.find((user) => user.id === currentUserId) ?? users[0] ?? ANON_USER));
     const liveUser = isLiveUser(currentUser);
+    // Personel (admin/moderatör): ortaklık onayı/reddi ve komisyon anlaşmazlığı
+    // gibi normalde satıcı/ortağa özel aksiyonları panelden yönetebilir (override).
+    const staff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
     const isAuthenticated = isSupabaseConfigured ? authUser != null : true;
     // Askiya alinmis kullanici hicbir islem (ilan/mesaj/ortaklik/talep/favori)
     // yapamaz; RLS'e ek istemci koruması.
@@ -1358,7 +1361,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       approvePartnership(partnershipId) {
         const partnership = partnerships.find((item) => item.id === partnershipId);
         const listing = partnership ? listings.find((item) => item.id === partnership.listingId) : undefined;
-        if (!partnership || !listing || listing.ownerId !== currentUser.id || partnership.status !== "pending") return;
+        if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "pending") return;
         const updatedPartnership: Partnership = { ...partnership, status: "active", approvedAt: today() };
         setPartnerships((items) => items.map((item) => (item.id === partnershipId ? updatedPartnership : item)));
         setListings((items) =>
@@ -1375,7 +1378,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       rejectPartnership(partnershipId) {
         const partnership = partnerships.find((item) => item.id === partnershipId);
         const listing = partnership ? listings.find((item) => item.id === partnership.listingId) : undefined;
-        if (!partnership || !listing || listing.ownerId !== currentUser.id || partnership.status !== "pending") return;
+        if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "pending") return;
         const updatedPartnership = partnership
           ? { ...partnership, status: "rejected" as const, rejectionReason: "Satıcı bu başvuruyu uygun görmedi." }
           : undefined;
@@ -1544,11 +1547,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const sellerAction = status === "approved" || status === "seller_paid" || status === "cancelled";
         const partnerAction = status === "paid";
         // İtiraz (disputed) ve çözüm iki taraftan da açılabilir; diğer aksiyonlar role bağlı.
+        // Personel (admin/moderatör) panelden her aksiyonu yürütebilir (anlaşmazlık çözümü/iptal).
         if (
           !sale ||
-          (sellerAction && !isSeller) ||
-          (partnerAction && !isPartner) ||
-          (status === "disputed" && !isSeller && !isPartner)
+          (sellerAction && !isSeller && !staff) ||
+          (partnerAction && !isPartner && !staff) ||
+          (status === "disputed" && !isSeller && !isPartner && !staff)
         ) {
           return;
         }
