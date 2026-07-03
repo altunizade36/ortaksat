@@ -12,6 +12,7 @@ import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { loadClickCounts } from "@/lib/live-service";
 import { searchKey } from "@/lib/locale";
+import { matchesQuery } from "@/lib/search";
 import { displayText } from "@/lib/text";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { Lead, LeadSource, Listing, Partnership, PurchaseIntent, Sale, SaleStatus } from "@/lib/types";
@@ -150,8 +151,7 @@ export default function SellerScreen() {
     if (filter === "payments" && !listingSales.some((sale) => sale.status === "approved" || sale.status === "seller_paid" || sale.status === "return_pending" || sale.status === "disputed")) return false;
     if (filter === "lowStock" && !(listing.status === "active" && listing.stockCount <= 3)) return false;
     if (tokens.length === 0) return true;
-    const haystack = searchKey([listing.title, listing.category, listing.location, listing.description, ...listing.tags].join(" "));
-    return tokens.every((token) => haystack.includes(token));
+    return matchesQuery(listing, undefined, tokens);
   }).sort((a, b) => sellerPriority(b, myLeads, mySales, partnerships) - sellerPriority(a, myLeads, mySales, partnerships));
 
   function convertLead(leadId: string) {

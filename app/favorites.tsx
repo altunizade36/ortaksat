@@ -13,6 +13,7 @@ import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
+import { matchesQuery } from "@/lib/search";
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -38,8 +39,7 @@ function FavoritesScreenInner() {
     .filter(Boolean);
   const visibleListings = favoriteListings.filter((listing) => {
     if (!listing || tokens.length === 0) return true;
-    const haystack = searchKey([listing.title, listing.category, listing.location, listing.description, ...listing.tags].join(" "));
-    return tokens.every((token) => haystack.includes(token));
+    return matchesQuery(listing, undefined, tokens);
   });
 
   if (isWideWeb) {
