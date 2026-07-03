@@ -217,8 +217,138 @@ export function getCategory(category: string) {
   return listingCategories.find((item) => item.key === category);
 }
 
-export function getCategoryIcon(category: string): keyof typeof MaterialCommunityIcons.glyphMap {
-  return getCategory(category)?.icon ?? "tag-outline";
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
+
+// Her kategori/alt-kategori için belirgin ikon — sahibinden-tarzı taksonomi dahil.
+const CATEGORY_ICONS: Record<string, IconName> = {
+  // Üst kategoriler
+  "Emlak": "home-city-outline",
+  "Vasıta": "car-outline",
+  "Yedek Parça, Aksesuar & Tuning": "car-wrench",
+  "İkinci El & Sıfır Alışveriş": "shopping-outline",
+  "İş Makineleri & Sanayi": "excavator",
+  "Ustalar & Hizmetler": "account-hard-hat",
+  "Özel Ders & Eğitim": "school-outline",
+  "İş İlanları": "briefcase-outline",
+  "Yardımcı Arayanlar": "account-search-outline",
+  "Hayvanlar Alemi": "paw",
+  "Arayanlar / Talep İlanları": "hand-heart-outline",
+  "Dijital Ürünler & Hizmetler": "cloud-download-outline",
+  "Yapı Market & Bahçe": "hammer-wrench",
+  "Müzik Enstrümanları": "guitar-electric",
+  "Sağlık & Medikal": "medical-bag",
+  "Diğer": "dots-horizontal-circle-outline",
+  // Önemli alt kategoriler (kenar çubuğu / filtre / ilan-ver)
+  "Elektronik": "cellphone-link",
+  "Cep Telefonu": "cellphone",
+  "Telefon & Aksesuar": "cellphone",
+  "Televizyon": "television",
+  "Tablet": "tablet",
+  "Ses & Kulaklık": "headphones",
+  "Foto & Kamera": "camera-outline",
+  "Bilgisayar & Oyun": "laptop",
+  "Dizüstü Bilgisayar": "laptop",
+  "Masaüstü Bilgisayar": "desktop-tower-monitor",
+  "Oyun & Konsol": "controller-classic-outline",
+  "Ev & Yaşam": "home-variant-outline",
+  "Mobilya": "sofa-outline",
+  "Beyaz Eşya": "fridge-outline",
+  "Buzdolabı": "fridge-outline",
+  "Çamaşır Makinesi": "washing-machine",
+  "Bulaşık Makinesi": "dishwasher",
+  "Klima": "air-conditioner",
+  "Mutfak": "silverware-fork-knife",
+  "Moda": "hanger",
+  "Kadın Giyim": "human-female",
+  "Erkek Giyim": "human-male",
+  "Çocuk Giyim": "human-child",
+  "Ayakkabı": "shoe-sneaker",
+  "Ayakkabı & Çanta": "shoe-sneaker",
+  "Çanta": "bag-personal-outline",
+  "Saat": "watch-variant",
+  "Gözlük": "glasses",
+  "Takı & Mücevher": "diamond-stone",
+  "Takı & Aksesuar": "diamond-stone",
+  "Anne & Bebek": "baby-carriage",
+  "Kozmetik & Kişisel Bakım": "lipstick",
+  "Spor & Outdoor": "dumbbell",
+  "Fitness & Kondisyon": "dumbbell",
+  "Bisiklet": "bike",
+  "Kamp & Doğa": "tent",
+  "Kitap & Hobi": "book-open-page-variant-outline",
+  "Kitap": "book-open-variant",
+  "Müzik & Film": "filmstrip",
+  "Koleksiyon & Antika": "treasure-chest",
+  "Koleksiyon Ürünleri": "treasure-chest",
+  "Oyuncak": "teddy-bear",
+  "Ofis & Kırtasiye": "pencil-box-outline",
+  "Dijital Ürünler": "cloud-download-outline",
+  "Evcil Hayvan Ürünleri": "paw",
+  // Emlak / vasıta alt dalları
+  "Konut": "home-outline",
+  "İş Yeri": "office-building-outline",
+  "Arsa / Arazi": "island",
+  "Bina": "office-building-outline",
+  "Otomobil": "car-outline",
+  "Arazi, SUV & Pickup": "truck-outline",
+  "Motosiklet": "motorbike",
+  "Minivan & Panelvan": "van-passenger",
+  "Ticari Araçlar": "truck-outline",
+  "Deniz Araçları": "sail-boat",
+  "Karavan": "rv-truck",
+  "Hasarlı Araçlar": "car-wrench"
+};
+
+// Etiket eşleşmezse anahtar-kelimeyle en yakın ikonu bul.
+const ICON_KEYWORDS: Array<[RegExp, IconName]> = [
+  [/telefon|cep/, "cellphone"],
+  [/bilgisayar|laptop|pc/, "laptop"],
+  [/televizyon|tv/, "television"],
+  [/kulaklık|ses|hoparlör/, "headphones"],
+  [/kamera|foto/, "camera-outline"],
+  [/oyun|konsol/, "controller-classic-outline"],
+  [/beyaz eşya|buzdolab|çamaşır|bulaşık|kurutma|fırın|ocak/, "fridge-outline"],
+  [/klima|kombi|ısıt/, "air-conditioner"],
+  [/mobilya|koltuk|kanepe/, "sofa-outline"],
+  [/mutfak/, "silverware-fork-knife"],
+  [/giyim|moda|elbise|gömlek/, "hanger"],
+  [/ayakkabı/, "shoe-sneaker"],
+  [/çanta|valiz|bavul/, "bag-personal-outline"],
+  [/saat/, "watch-variant"],
+  [/gözlük/, "glasses"],
+  [/takı|mücevher|altın|pırlanta/, "diamond-stone"],
+  [/bebek|anne/, "baby-carriage"],
+  [/kozmetik|makyaj|parfüm|bakım/, "lipstick"],
+  [/spor|fitness|outdoor/, "dumbbell"],
+  [/bisiklet/, "bike"],
+  [/kamp|çadır/, "tent"],
+  [/kitap|dergi|roman/, "book-open-variant"],
+  [/müzik|enstrüman|gitar/, "guitar-electric"],
+  [/film|dvd|plak/, "filmstrip"],
+  [/koleksiyon|antika|pul|para/, "treasure-chest"],
+  [/oyuncak/, "teddy-bear"],
+  [/kırtasiye|ofis|kalem/, "pencil-box-outline"],
+  [/hayvan|evcil|kedi|köpek/, "paw"],
+  [/emlak|konut|daire|ev|arsa|arazi|bina/, "home-city-outline"],
+  [/araç|araba|otomobil|vasıta|motosiklet/, "car-outline"],
+  [/yedek parça|tuning|aksesuar/, "car-wrench"],
+  [/iş makinesi|sanayi|fabrika/, "excavator"],
+  [/usta|hizmet|tesisat|tamir/, "account-hard-hat"],
+  [/eğitim|ders|kurs|okul/, "school-outline"],
+  [/iş ilan|kariyer/, "briefcase-outline"],
+  [/dijital|yazılım|lisans/, "cloud-download-outline"],
+  [/yapı market|bahçe|hırdavat/, "hammer-wrench"],
+  [/sağlık|medikal|tıbbi/, "medical-bag"],
+  [/hediye/, "gift-outline"]
+];
+
+export function getCategoryIcon(category: string): IconName {
+  if (CATEGORY_ICONS[category]) return CATEGORY_ICONS[category];
+  const fromCfg = getCategory(category)?.icon;
+  if (fromCfg) return fromCfg;
+  const lower = category.toLocaleLowerCase("tr-TR");
+  for (const [re, icon] of ICON_KEYWORDS) if (re.test(lower)) return icon;
+  return "shape-outline";
 }
 
 export function getCategoryShortLabel(category: string) {
