@@ -119,7 +119,94 @@ const PRODUCTS = [
   ["Yapı Market & Bahçe", "Benzinli Çim Biçme Makinesi", 8500, "lawn mower", "open"],
   ["Yapı Market & Bahçe", "Profesyonel Matkap Seti", 3200, "power drill", "open"],
   ["Deniz Araçları", "Şişme Bot 4 Kişilik", 42000, "inflatable boat", "approval"],
-  ["Deniz Araçları", "Jet Ski Yamaha", 480000, "jetski", "approval"]
+  ["Deniz Araçları", "Jet Ski Yamaha", 480000, "jetski", "approval"],
+  // --- Katalog genişletme (kolaj planı 86-196): sona eklendi, 1-109 dokunulmadı ---
+  ["Bilgisayar & Donanım", "Samsung Odyssey G5 Monitör", 14000, "gaming monitor", "open"],
+  ["Bilgisayar & Donanım", "Oyuncu Koltuğu", 6500, "gaming chair", "open"],
+  ["Bilgisayar & Donanım", "Masaüstü Gaming PC", 55000, "desktop gaming pc", "open"],
+  ["Bilgisayar & Donanım", "24\" Full HD Monitör", 6800, "computer monitor", "open"],
+  ["Bilgisayar & Donanım", "Mekanik Klavye RGB", 2400, "mechanical keyboard", "open"],
+  ["Bilgisayar & Donanım", "Gaming Mouse", 1800, "gaming mouse", "open"],
+  ["Bilgisayar & Donanım", "Gaming Kulaklık", 2600, "gaming headset", "open"],
+  ["Bilgisayar & Donanım", "Powerbank 20000 mAh", 1600, "power bank", "open"],
+  ["Bilgisayar & Donanım", "USB Bellek 128GB", 450, "usb flash drive", "open"],
+  ["Bilgisayar & Donanım", "Harici Harddisk 1TB", 2200, "external hard drive", "open"],
+  ["Bilgisayar & Donanım", "Modem / Router", 1900, "wifi router", "open"],
+  ["Fotoğraf & Kamera", "GoPro Hero 12", 24000, "gopro action camera", "open"],
+  ["Fotoğraf & Kamera", "Aksiyon Kamera 4K", 3800, "action camera", "open"],
+  ["Fotoğraf & Kamera", "Projeksiyon Cihazı", 18000, "projector", "open"],
+  ["Fotoğraf & Kamera", "Projeksiyon Perdesi", 2400, "projector screen", "open"],
+  ["Fotoğraf & Kamera", "Telefon Tripod", 800, "phone tripod", "open"],
+  ["Fotoğraf & Kamera", "Ring Light", 1200, "ring light", "open"],
+  ["Fotoğraf & Kamera", "Fotoğraf Stüdyo Seti", 5400, "photo studio", "open"],
+  ["Fotoğraf & Kamera", "Grafik Tablet", 4200, "graphics tablet", "open"],
+  ["Akıllı Ev", "Akıllı Kapı Zili", 2400, "smart doorbell", "open"],
+  ["Akıllı Ev", "Akıllı Ampul", 350, "smart bulb", "open"],
+  ["Akıllı Ev", "Cam Temizleme Robotu", 5800, "window cleaning robot", "open"],
+  ["Akıllı Ev", "Güvenlik Kamerası", 2200, "security camera", "open"],
+  ["Akıllı Ev", "Güneş Paneli Seti", 24000, "solar panel", "open"],
+  ["Akıllı Ev", "Uydu Alıcı Seti", 1400, "satellite receiver", "open"],
+  ["Oto Aksesuar", "4 Mevsim Lastik Seti 4 Adet", 18000, "car tires", "open"],
+  ["Oto Aksesuar", "Port Bagaj", 6500, "car roof box", "open"],
+  ["Spor & Outdoor", "Dağ Bisikleti", 16000, "mountain bike", "open"],
+  ["Spor & Outdoor", "Kamp Masa Sandalye Seti", 2800, "camping table chairs", "open"],
+  ["Spor & Outdoor", "Kamp ve Trekking Çantası", 3400, "hiking backpack", "open"],
+  ["Spor & Outdoor", "Uyku Tulumu", 1600, "sleeping bag", "open"],
+  ["Spor & Outdoor", "Kamp Ocağı", 1200, "camping stove", "open"],
+  ["Spor & Outdoor", "Buzluk 45L", 2400, "cooler box", "open"],
+  ["Spor & Outdoor", "Olta Takım Seti", 3200, "fishing rod", "open"],
+  ["Yapı Market & Bahçe", "Bahçe Mangal Seti", 8500, "barbecue grill", "open"],
+  ["Yapı Market & Bahçe", "Basınçlı Yıkama Makinesi", 4800, "pressure washer", "open"],
+  ["Yapı Market & Bahçe", "Intex Metal Frame Havuz", 6800, "frame swimming pool", "open"],
+  ["Bebek", "Park Yatak", 3800, "baby travel cot", "open"],
+  ["Ev Dekorasyon", "Boy Aynası", 1800, "standing mirror", "open"],
+  ["Ev Dekorasyon", "Portmanto Askılık", 900, "coat rack stand", "open"],
+  ["Ev Dekorasyon", "Ayakkabılık Dolabı", 2200, "shoe rack cabinet", "open"],
+  ["Ev Dekorasyon", "Bonsai Ağacı", 1400, "bonsai tree", "open"],
+  ["Ev Dekorasyon", "Salon Bitkisi", 800, "houseplant", "open"],
+  ["Mobilya", "Çalışma Masası", 4200, "office desk", "open"],
+  ["Mobilya", "Ofis Sandalyesi", 3200, "office chair", "open"],
+  ["Ofis & Kırtasiye", "Yazı Tahtası", 1600, "whiteboard", "open"],
+  ["Çanta", "Valiz Seti 3'lü", 4800, "luggage suitcase set", "open"],
+  ["Küçük Ev Aleti", "Çelik Tencere Seti", 3800, "cookware pots set", "open"],
+  ["Küçük Ev Aleti", "Yemek Takımı 24 Parça", 2400, "dinnerware set", "open"],
+  ["Küçük Ev Aleti", "Çatal Kaşık Bıçak Seti", 1800, "cutlery set", "open"],
+  ["Küçük Ev Aleti", "Blender Seti", 1600, "kitchen blender", "open"],
+  ["Küçük Ev Aleti", "Stand Mikser", 4200, "stand mixer", "open"],
+  ["Küçük Ev Aleti", "Waffle Makinesi", 1200, "waffle maker", "open"],
+  ["Küçük Ev Aleti", "Ekmek Kızartma Makinesi", 900, "toaster", "open"],
+  ["Küçük Ev Aleti", "Su Sebili", 2800, "water dispenser", "open"],
+  ["Küçük Ev Aleti", "Mutfak Robotu", 6500, "food processor", "open"],
+  ["Küçük Ev Aleti", "Buharlı Ütü (Dikey)", 2200, "garment steamer", "open"],
+  ["Küçük Ev Aleti", "Buhar Ütü", 1800, "steam iron", "open"],
+  ["Küçük Ev Aleti", "Şarjlı Dikey Süpürge", 5800, "cordless stick vacuum", "open"],
+  ["Küçük Ev Aleti", "Elektrikli Süpürge", 3200, "vacuum cleaner", "open"],
+  ["Küçük Ev Aleti", "Isıtıcı (Infrared)", 1400, "space heater", "open"],
+  ["Küçük Ev Aleti", "Ayaklı Vantilatör", 900, "standing fan", "open"],
+  ["Küçük Ev Aleti", "Nem Alma Cihazı", 3800, "dehumidifier", "open"],
+  ["Küçük Ev Aleti", "Hava Nemlendirici", 1400, "air humidifier", "open"],
+  ["Küçük Ev Aleti", "Hava Temizleyici", 5400, "air purifier", "open"],
+  ["Küçük Ev Aleti", "Kıyma Makinesi", 2200, "meat grinder", "open"],
+  ["Küçük Ev Aleti", "Katı Meyve Sıkacağı", 1600, "citrus juicer", "open"],
+  ["Küçük Ev Aleti", "Su Isıtıcı (Kettle)", 900, "electric kettle", "open"],
+  ["Küçük Ev Aleti", "Kahve Öğütücü", 1400, "coffee grinder", "open"],
+  ["Küçük Ev Aleti", "Türk Kahvesi Makinesi", 1800, "turkish coffee maker", "open"],
+  ["Küçük Ev Aleti", "Filtre Kahve Makinesi", 2400, "drip coffee maker", "open"],
+  ["Küçük Ev Aleti", "5'i 1 Arada Tost Makinesi", 2200, "sandwich toaster grill", "open"],
+  ["Küçük Ev Aleti", "Dikiş Makinesi", 4800, "sewing machine", "open"],
+  ["Beyaz Eşya", "İndüksiyon Ocak", 8500, "induction cooktop", "approval"],
+  ["Beyaz Eşya", "Ankastre Fırın", 12000, "built-in oven", "approval"],
+  ["Beyaz Eşya", "Ankastre Ocak", 6500, "gas cooktop", "approval"],
+  ["Beyaz Eşya", "Davlumbaz", 4800, "kitchen range hood", "approval"],
+  ["Beyaz Eşya", "Ankastre Bulaşık Makinesi", 22000, "built-in dishwasher", "approval"],
+  ["Beyaz Eşya", "Mikrodalga Fırın", 4200, "microwave oven", "open"],
+  ["Beyaz Eşya", "Ankastre Buzdolabı", 42000, "built-in refrigerator", "approval"],
+  ["Beyaz Eşya", "Sandık Tipi Derin Dondurucu", 18000, "chest freezer", "approval"],
+  ["Beyaz Eşya", "Dikey Derin Dondurucu", 16000, "upright freezer", "approval"],
+  ["Beyaz Eşya", "Klima 12000 BTU", 18000, "air conditioner", "approval"],
+  ["Beyaz Eşya", "Yağlı Radyatör", 2400, "oil heater radiator", "open"],
+  ["Kitap & Hobi", "Overlok Makinesi", 8500, "overlock machine", "open"],
+  ["Kitap & Hobi", "Transfer Baskı Makinesi", 12000, "heat press machine", "open"]
 ];
 
 const money = (n) => new Intl.NumberFormat("tr-TR").format(n);
@@ -133,7 +220,25 @@ import fs from "node:fs";
 import path from "node:path";
 
 const BASE_URL = "https://ortaksat.com/demo"; // repo public/demo/ -> canlıda bu adres
+const DEMO_PRODUCTS_BASE_URL = "https://ortaksat.com/demo-products"; // curated category assets in public/demo-products/
 const OUT_DIR = path.join(process.cwd(), "public", "demo");
+const DEMO_PRODUCT_IMAGE_BY_FILE = {
+  "092-xbox-series-x.jpg": "games/xbox-series-x.jpg",
+  "093-nintendo-switch-oled.jpg": "games/nintendo-switch-oled.jpg",
+  "094-canon-eos-r6-body.jpg": "camera/canon-eos-r6-body.jpg",
+  "095-sony-alpha-a7-iv.jpg": "camera/sony-alpha-a7-iv.jpg",
+  "096-dji-mini-4-pro-drone.jpg": "camera/dji-mini-4-pro-drone.jpg",
+  "099-mustakil-villa-havuzlu.jpg": "real-estate/mustakil-villa-havuzlu.jpg",
+  "101-1-1-kiralik-daire.jpg": "real-estate/1-1-kiralik-daire.jpg",
+  "102-2-1-esyali-kiralik.jpg": "real-estate/2-1-esyali-kiralik.jpg",
+  "103-imarli-arsa-500m.jpg": "real-estate/imarli-arsa-500m.jpg",
+  "104-cadde-ustu-dukkan.jpg": "real-estate/cadde-ustu-dukkan.jpg",
+  "105-plaza-kat-ofis.jpg": "real-estate/plaza-kat-ofis.jpg",
+  "106-benzinli-cim-bicme-makinesi.jpg": "garden/benzinli-cim-bicme-makinesi.jpg",
+  "107-profesyonel-matkap-seti.jpg": "garden/profesyonel-matkap-seti.jpg",
+  "108-sisme-bot-4-kisilik.jpg": "vehicles/sisme-bot-4-kisilik.jpg",
+  "109-jet-ski-yamaha.jpg": "vehicles/jet-ski-yamaha.jpg"
+};
 
 // LoremFlickr'dan anahtar kelimeyle eşleşen görselin BYTE'larını indirir (kalıcı
 // olarak public/demo'ya kaydedilecek). HTML hata sayfalarını eler (>10KB & image/*).
@@ -158,7 +263,8 @@ async function fetchImageBytes(keyword, lock) {
 async function main() {
   if (!CONN) { console.error("SUPABASE_DB_URL yok"); process.exit(1); }
   fs.mkdirSync(OUT_DIR, { recursive: true });
-  for (const f of fs.readdirSync(OUT_DIR)) { try { fs.unlinkSync(path.join(OUT_DIR, f)); } catch {} }
+  // ÖNEMLİ: mevcut görselleri SİLME. Gerçek/curated ürün görselleri korunur; aşağıda
+  // yalnızca dosyası olmayan (yeni) ürünler için keyword ile placeholder indirilir.
 
   const c = new pg.Client(CONN);
   await c.connect();
@@ -168,15 +274,19 @@ async function main() {
   let n = 0, failed = 0;
   for (let i = 0; i < PRODUCTS.length; i++) {
     const [cat, title, price, keyword, mode] = PRODUCTS[i];
-    // Farklı lock -> farklı görsel (benzersiz). Başarısızsa lock değiştir, sonra kategori anahtarına düş.
-    let bytes = null;
-    for (let lock = 1000 + i; lock < 1000 + i + 60 && !bytes; lock += 13) bytes = await fetchImageBytes(keyword, lock);
-    if (!bytes) { bytes = await fetchImageBytes(cat.split(" ")[0] || "product", 8000 + i); if (!bytes) failed++; }
-    if (!bytes) { console.warn("Görsel indirilemedi:", title); continue; }
-
     const file = `${String(i + 1).padStart(3, "0")}-${slugify(title)}.jpg`;
-    fs.writeFileSync(path.join(OUT_DIR, file), bytes);
-    const image = `${BASE_URL}/${file}`;
+    const outPath = path.join(OUT_DIR, file);
+    const curatedImage = DEMO_PRODUCT_IMAGE_BY_FILE[file];
+    // Görsel zaten varsa (gerçek/curated ürün görseli) DOKUNMA; yalnızca eksikse indir.
+    if (!curatedImage && !fs.existsSync(outPath)) {
+      // Farklı lock -> farklı görsel (benzersiz). Başarısızsa lock değiştir, sonra kategori anahtarına düş.
+      let bytes = null;
+      for (let lock = 1000 + i; lock < 1000 + i + 60 && !bytes; lock += 13) bytes = await fetchImageBytes(keyword, lock);
+      if (!bytes) { bytes = await fetchImageBytes(cat.split(" ")[0] || "product", 8000 + i); if (!bytes) failed++; }
+      if (!bytes) { console.warn("Görsel indirilemedi:", title); continue; }
+      fs.writeFileSync(outPath, bytes);
+    }
+    const image = curatedImage ? `${DEMO_PRODUCTS_BASE_URL}/${curatedImage}` : `${BASE_URL}/${file}`;
 
     const id = crypto.randomUUID();
     const city = CITIES[n % CITIES.length];
