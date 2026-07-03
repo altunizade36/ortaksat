@@ -417,6 +417,11 @@ export function DesktopCreateFlow() {
                   <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{path.map((p) => p.label).join(" › ")}</Text>
                   <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{String(values.title ?? leafLabel)}</Text>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(parseTrPrice(String(values.price ?? "")), currency)}</Text>
+                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 8, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 9, paddingVertical: 6 }}>
+                    <MaterialCommunityIcons name="cash-multiple" size={14} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11, fontWeight: "800" }}>Ortak kazancı</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{moneyIn(commissionType === "rate" ? Math.round((parseTrPrice(String(values.price ?? "")) * (Number(commissionValue) || 0)) / 100) : Number(commissionValue) || 0, currency)}</Text>
+                  </View>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{formatLocation(loc, visibility) || "Konum belirtilmedi"}</Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
