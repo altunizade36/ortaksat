@@ -77,11 +77,12 @@ export default function ListingDetailScreen() {
   const storeListing = findListing(id);
   const [remote, setRemote] = useState<{ listing: Listing; owner?: User } | null>(null);
   const [fetching, setFetching] = useState(false);
+  // Başvuru formu — gerçek kullanıcı girdisi (eski sabit/tohum metinler kaldırıldı).
   const [applicationNote, setApplicationNote] = useState("");
-  const [applicationChannel, setApplicationChannel] = useState("Instagram ve WhatsApp");
-  const [applicationAudience, setApplicationAudience] = useState("Aileler, yakın çevrem ve sosyal medya takipçilerim");
+  const [applicationChannel, setApplicationChannel] = useState("WhatsApp");
+  const [applicationAudience, setApplicationAudience] = useState("");
   const [applicationHandle, setApplicationHandle] = useState("");
-  const [applicationReach, setApplicationReach] = useState("250");
+  const [applicationReach, setApplicationReach] = useState("");
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [leadNote, setLeadNote] = useState("");
@@ -238,12 +239,17 @@ export default function ListingDetailScreen() {
 
   function handleJoin() {
     if (isDemo) return demoBlocked();
+    // Onaylı ilanlarda başvuru notu zorunlu — satıcı gerçek gerekçeyi görsün.
+    if (currentListing.partnershipMode !== "open" && !applicationNote.trim()) {
+      Alert.alert(translateCopy("Eksik başvuru", language), translateCopy("Lütfen neden bu ürünü satmak istediğini kısaca yaz.", language));
+      return;
+    }
     const result = joinListing(currentListing.id, {
       note: applicationNote.trim(),
       shareChannel: applicationChannel.trim(),
       audience: applicationAudience.trim(),
       platformHandle: applicationHandle.trim(),
-      reachEstimate: Number(applicationReach)
+      reachEstimate: Number((applicationReach || "").replace(/[^0-9]/g, "")) || 0
     });
     if (!result) {
       Alert.alert(translateCopy("İşlem yapılamadı", language), translateCopy(authError ?? "Kendi ilanına ortak olamazsın veya ilan aktif olmayabilir.", language));
@@ -518,7 +524,81 @@ export default function ListingDetailScreen() {
               <Text style={{ color: colors.warning, flex: 1, fontSize: 12.5, fontWeight: "800" }}>Başvurun satıcı onayında.</Text>
             </View>
           ) : (
-            <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{currentListing.partnershipMode === "open" ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder"}</PrimaryButton>
+            <View style={{ gap: 10 }}>
+              {/* Onaylı ilanlarda küçük başvuru formu (açık modda gösterilmez). */}
+              {currentListing.partnershipMode !== "open" ? (
+                <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 11, padding: 12 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                    <MaterialCommunityIcons name="account-edit-outline" size={16} color={colors.primaryDark} />
+                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>Başvuru bilgilerin</Text>
+                    <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>Satıcı görecek</Text>
+                  </View>
+                  {/* Neden satmak istiyor (zorunlu) */}
+                  <View style={{ gap: 5 }}>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Neden bu ürünü satmak istiyorsun? *</Text>
+                    <TextInput
+                      value={applicationNote}
+                      onChangeText={setApplicationNote}
+                      placeholder="Kısaca anlat: kime, nerede ve nasıl ulaştıracaksın?"
+                      placeholderTextColor={colors.subtle}
+                      multiline
+                      style={{ backgroundColor: colors.surface, borderColor: applicationNote.trim() ? colors.line : colors.warning, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 64, padding: 10, textAlignVertical: "top" }}
+                    />
+                  </View>
+                  {/* Kanal seçimi */}
+                  <View style={{ gap: 5 }}>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Hangi kanalda paylaşacaksın?</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                      {["WhatsApp", "Instagram", "TikTok", "Diğer"].map((ch) => {
+                        const on = applicationChannel === ch;
+                        return (
+                          <Pressable key={ch} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`Kanal: ${ch}`} onPress={() => setApplicationChannel(ch)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 7 }}>
+                            <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{ch}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                  {/* Erişim + kullanıcı adı (yan yana) */}
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <View style={{ flex: 1, gap: 5 }}>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Tahmini erişim (kişi)</Text>
+                      <TextInput
+                        value={applicationReach}
+                        onChangeText={(txt) => setApplicationReach(txt.replace(/[^0-9]/g, ""))}
+                        keyboardType="number-pad"
+                        placeholder="ör. 500"
+                        placeholderTextColor={colors.subtle}
+                        style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
+                      />
+                    </View>
+                    <View style={{ flex: 1.35, gap: 5 }}>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Sosyal medya adın (ops.)</Text>
+                      <TextInput
+                        value={applicationHandle}
+                        onChangeText={setApplicationHandle}
+                        autoCapitalize="none"
+                        placeholder="@kullaniciadi"
+                        placeholderTextColor={colors.subtle}
+                        style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
+                      />
+                    </View>
+                  </View>
+                  {/* Kitle tanımı (opsiyonel) */}
+                  <View style={{ gap: 5 }}>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Tahmini kitle (opsiyonel)</Text>
+                    <TextInput
+                      value={applicationAudience}
+                      onChangeText={setApplicationAudience}
+                      placeholder="ör. genç anneler, üniversite çevresi…"
+                      placeholderTextColor={colors.subtle}
+                      style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
+                    />
+                  </View>
+                </View>
+              ) : null}
+              <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{currentListing.partnershipMode === "open" ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder"}</PrimaryButton>
+            </View>
           )}
 
           {/* İletişim */}
