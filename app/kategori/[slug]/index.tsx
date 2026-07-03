@@ -9,8 +9,9 @@ import { ListingCard } from "@/components/listing-card";
 import { EmptyState } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
-import { type CategoryNode } from "@/lib/category-tree";
+import { categoryTree as CATEGORY_TREE, type CategoryNode } from "@/lib/category-tree";
 import { getCategoryIcon } from "@/lib/categories";
+import { CITY_CATEGORY_SLUGS } from "@/lib/cities";
 import { commissionAmount } from "@/lib/format";
 import { responsiveGrid } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
@@ -35,6 +36,21 @@ function findTrail(nodes: CategoryNode[], slug: string, trail: CategoryNode[] = 
 }
 
 const catHref = (slug: string): Href => ({ pathname: "/kategori/[slug]", params: { slug } }) as unknown as Href;
+
+// Statik export: üst + alt kategori hub sayfalarını build'de kendi H1/içeriğiyle
+// önceden üret (SEO). Marka/model gibi derin slug'lar [slug] fallback ile çalışır.
+export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
+  const seen = new Set<string>();
+  const out: Array<{ slug: string }> = [];
+  const add = (slug: string) => { if (slug && !seen.has(slug)) { seen.add(slug); out.push({ slug }); } };
+  for (const top of CATEGORY_TREE) {
+    add(top.slug);
+    for (const sub of top.children ?? []) add(sub.slug);
+  }
+  // Şehir sayfası olan yüksek-talep retail kategorilerinin hub'ını da garanti et.
+  for (const slug of CITY_CATEGORY_SLUGS) add(slug);
+  return out;
+}
 
 const PAGE = 24;
 

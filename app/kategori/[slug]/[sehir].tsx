@@ -11,7 +11,7 @@ import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
 import { type CategoryNode } from "@/lib/category-tree";
 import { getCategoryIcon } from "@/lib/categories";
-import { SEO_CITY_SLUGS, citySlug, findProvince, listingInCity } from "@/lib/cities";
+import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, citySlug, findProvince, listingInCity } from "@/lib/cities";
 import { commissionAmount } from "@/lib/format";
 import { responsiveGrid } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
@@ -39,6 +39,12 @@ const cityHref = (slug: string, sehir: string): Href =>
 const catHref = (slug: string): Href => ({ pathname: "/kategori/[slug]", params: { slug } }) as unknown as Href;
 
 const PAGE = 24;
+
+// Statik export: 12 kategori × 12 şehir = 144 sayfayı build'de kendi H1/içeriğiyle
+// önceden üret (SEO). Listelenmeyen kombinasyonlar [sehir] fallback ile çalışır.
+export async function generateStaticParams(): Promise<Array<{ slug: string; sehir: string }>> {
+  return CITY_CATEGORY_SLUGS.flatMap((slug) => SEO_CITY_SLUGS.map((sehir) => ({ slug, sehir })));
+}
 
 export default function CityCategoryScreen() {
   const params = useLocalSearchParams<{ slug: string; sehir: string }>();

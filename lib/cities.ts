@@ -42,6 +42,13 @@ export const SEO_CITY_SLUGS: string[] = [
   "konya", "gaziantep", "kocaeli", "mersin", "kayseri", "eskisehir"
 ];
 
+// Şehir×kategori statik sayfalarının kategori tarafı. scripts/generate-sitemap.mjs
+// içindeki CITY_CATEGORY_SLUGS ile BİREBİR aynı olmalı.
+export const CITY_CATEGORY_SLUGS: string[] = [
+  "emlak", "vasita", "cep-telefonu", "dizustu-bilgisayar", "televizyon", "beyaz-esya",
+  "mobilya", "kadin-giyim", "erkek-giyim", "ayakkabi", "spor-ve-outdoor", "kucuk-ev-aletleri"
+];
+
 // Bir ilanın konumu verilen şehre ait mi? location "İstanbul" ya da
 // "Kadıköy, İstanbul" gibi olabilir; token bazlı (il adları tek kelime) eşleşir.
 export function listingInCity(location: string | undefined, wantedCitySlug: string): boolean {
