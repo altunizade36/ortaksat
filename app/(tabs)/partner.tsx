@@ -2,12 +2,13 @@
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { Link, useRouter } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Linking, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { DisputeModal } from "@/components/dispute-modal";
 import { LegalNote } from "@/components/legal-disclaimer";
+import { MiniBarChart } from "@/components/mini-bar-chart";
 import { PartnerLeaderboard } from "@/components/partner-leaderboard";
 import { QuickStart } from "@/components/quick-start";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -79,6 +80,21 @@ export default function PartnerScreen() {
   const waiting = mySales.filter((sale) => sale.status === "pending" || sale.status === "return_pending" || sale.status === "disputed").reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const approved = mySales.filter((sale) => sale.status === "approved" || sale.status === "seller_paid").reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const paid = mySales.filter((sale) => sale.status === "paid").reduce((sum, sale) => sum + sale.commissionAmount, 0);
+  const myPartnershipIdSet = new Set(myPartnerships.map((p) => p.id));
+  const myBroughtLeads = leads.filter((l) => l.partnershipId && myPartnershipIdSet.has(l.partnershipId));
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  // Son 14 gün · getirdiğin talep (gerçek createdAt; istemci-only render).
+  const leadSeries = useMemo(() => {
+    const now = new Date();
+    const out: Array<{ label: string; value: number }> = [];
+    for (let i = 13; i >= 0; i--) {
+      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - i);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+      out.push({ label: `${d.getDate()}.${d.getMonth() + 1}`, value: myBroughtLeads.filter((l) => (l.createdAt ?? "").slice(0, 10) === key).length });
+    }
+    return out;
+  }, [myBroughtLeads]);
   const tokens = searchKey(query).split(" ").filter(Boolean);
   const visiblePartnerships = myPartnerships.filter((partnership) => {
     const listing = listings.find((item) => item.id === partnership.listingId);
@@ -310,6 +326,9 @@ export default function PartnerScreen() {
 
           {/* Sidebar */}
           <View style={{ gap: 16, width: 320 }}>
+            {mounted && myBroughtLeads.length > 0 ? (
+              <MiniBarChart data={leadSeries} title="Son 14 gün · getirdiğin talep" totalLabel={`${myBroughtLeads.length} talep`} />
+            ) : null}
             <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
@@ -420,6 +439,10 @@ export default function PartnerScreen() {
           <Metric label="Başvuru" value={`${pendingPartnerships.length}`} />
         </View>
       </Card>
+
+      {mounted && myBroughtLeads.length > 0 ? (
+        <MiniBarChart data={leadSeries} title="Son 14 gün · getirdiğin talep" totalLabel={`${myBroughtLeads.length} talep`} />
+      ) : null}
 
       <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
 
