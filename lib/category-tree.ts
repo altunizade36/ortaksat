@@ -1055,13 +1055,27 @@ export const categoryTree: CategoryNode[] = [
     node("Güvenlik & Sağlık", leaves(["Özel Güvenlik", "Kamera & Alarm Sistemi", "Sağlık & Hasta Bakımı", "Yaşlı Bakımı", "Fizyoterapi", "Diyetisyen", "Psikolog & Danışman", "Evde Sağlık"], "hizmet"), "hizmet")
   ], "hizmet", IMG("1581578731548-c64695cc6952")),
 
-  node("Özel Ders & Eğitim", leaves([
-    "İlkokul Dersleri", "Ortaokul Dersleri", "Lise Dersleri", "Üniversite Dersleri", "Yabancı Dil", "Sınav Hazırlık", "Yazılım & Kodlama", "Müzik Dersleri", "Spor Dersleri", "Sanat Dersleri", "Online Eğitim", "Kariyer Eğitimi", "Direksiyon Dersi", "Kişisel Gelişim"
-  ], "ders"), "ders", IMG("1503676260728-1c00da094a0b")),
+  node("Özel Ders & Eğitim", [
+    node("Akademik Dersler", leaves(["İlkokul Dersleri", "Ortaokul Dersleri", "Lise Dersleri", "Üniversite Dersleri", "Matematik", "Fizik", "Kimya", "Biyoloji", "Türkçe & Edebiyat", "Geometri"], "ders"), "ders"),
+    node("Sınav Hazırlık", leaves(["LGS", "YKS (TYT-AYT)", "KPSS", "ALES", "DGS", "YDS/YÖKDİL", "IELTS/TOEFL", "Ehliyet Teori", "Meslek Sınavları"], "ders"), "ders"),
+    node("Yabancı Dil", leaves(["İngilizce", "Almanca", "Fransızca", "İspanyolca", "İtalyanca", "Arapça", "Rusça", "Çince", "Japonca", "İşaret Dili"], "ders"), "ders"),
+    node("Müzik & Sanat", leaves(["Piyano", "Gitar", "Keman", "Bağlama", "Şan & Vokal", "Resim & Çizim", "Bale & Dans", "Tiyatro & Drama", "Fotoğrafçılık", "Hat & Ebru"], "ders"), "ders"),
+    node("Spor Dersleri", leaves(["Yüzme", "Tenis", "Fitness & PT", "Yoga & Pilates", "Basketbol", "Futbol", "Dövüş Sanatları", "Kayak", "Binicilik"], "ders"), "ders"),
+    node("Meslek & Yazılım", leaves(["Yazılım & Kodlama", "Web Tasarım", "Grafik Tasarım", "Dijital Pazarlama", "Muhasebe Eğitimi", "Bilgisayar Kullanımı", "Ofis Programları", "Yapay Zeka & Veri"], "ders"), "ders"),
+    node("Kişisel Gelişim & Diğer", leaves(["Direksiyon Dersi", "Diksiyon & Sunum", "Satranç", "Kişisel Gelişim", "Koçluk", "El Sanatları", "Aşçılık", "Kariyer Danışmanlığı"], "ders"), "ders"),
+    leaf("Online Eğitim", "ders")
+  ], "ders", IMG("1503676260728-1c00da094a0b")),
 
-  node("İş İlanları", leaves([
-    "Tam Zamanlı", "Yarı Zamanlı", "Freelance", "Staj", "Uzaktan Çalışma", "Satış & Pazarlama", "Mağaza Personeli", "Kurye", "Çağrı Merkezi", "Yazılım", "Tasarım", "Muhasebe", "İnsan Kaynakları", "Üretim", "Lojistik", "Sağlık", "Eğitim", "Turizm", "Güvenlik", "Hizmet Sektörü"
-  ], "isIlani"), "isIlani", IMG("1521737604893-d14cc237f11d")),
+  node("İş İlanları", [
+    node("Çalışma Şekli", leaves(["Tam Zamanlı", "Yarı Zamanlı", "Freelance / Serbest", "Staj", "Uzaktan (Remote)", "Dönemsel / Sezonluk", "Gündelik / Günlük", "Vardiyalı"], "isIlani"), "isIlani"),
+    node("Satış, Pazarlama & Perakende", leaves(["Satış Temsilcisi", "Saha Satış", "Mağaza Personeli", "Kasiyer", "Reyon Görevlisi", "Pazarlama Uzmanı", "Dijital Pazarlama", "Mağaza Müdürü"], "isIlani"), "isIlani"),
+    node("Bilişim & Yazılım", leaves(["Yazılım Geliştirici", "Web Geliştirici", "Mobil Geliştirici", "Test Uzmanı", "DevOps & Sistem", "Veri Analisti", "Siber Güvenlik", "IT Destek"], "isIlani"), "isIlani"),
+    node("Ofis & Yönetim", leaves(["Muhasebe & Finans", "İnsan Kaynakları", "Sekreter & Asistan", "Yönetici & Müdür", "Satın Alma", "Halkla İlişkiler", "Hukuk & Avukatlık", "Ofis Elemanı"], "isIlani"), "isIlani"),
+    node("Üretim, Lojistik & Sanayi", leaves(["Üretim İşçisi", "Kalite Kontrol", "Depo & Sevkiyat", "Forklift Operatörü", "Şoför", "Kurye & Motokurye", "Vinç/İş Makinesi Operatörü", "Teknik Bakım"], "isIlani"), "isIlani"),
+    node("Hizmet & Turizm", leaves(["Garson & Komi", "Aşçı & Mutfak", "Barista", "Resepsiyon", "Kat Görevlisi", "Animasyon", "Temizlik Personeli", "Güvenlik Görevlisi", "Çağrı Merkezi"], "isIlani"), "isIlani"),
+    node("Sağlık & Eğitim", leaves(["Doktor", "Hemşire", "Sağlık Teknikeri", "Fizyoterapist", "Öğretmen", "Öğretim Görevlisi", "Bakıcı & Refakatçi", "Eczane Personeli"], "isIlani"), "isIlani"),
+    node("İnşaat & Mühendislik", leaves(["İnşaat Mühendisi", "Mimar", "Makine Mühendisi", "Elektrik Mühendisi", "Usta & Kalfa", "Şantiye Şefi", "Teknik Ressam", "İş Güvenliği Uzmanı"], "isIlani"), "isIlani")
+  ], "isIlani", IMG("1521737604893-d14cc237f11d")),
 
   node("Yardımcı Arayanlar", leaves([
     "Bebek Bakıcısı", "Çocuk Bakıcısı", "Yaşlı Bakıcısı", "Hasta Bakıcısı", "Ev Yardımcısı", "Temizlikçi", "Gündelik Yardımcı", "Bahçıvan", "Şoför", "Özel Ders Yardımcısı", "Evcil Hayvan Bakıcısı"
