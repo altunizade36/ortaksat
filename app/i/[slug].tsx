@@ -8,6 +8,7 @@ import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } fro
 import { money } from "@/lib/format";
 import { insertReferralLead, logReferralClick, resolveReferralLink, type ReferralLink } from "@/lib/live-service";
 import { localize } from "@/lib/locale";
+import { saveRefAttribution } from "@/lib/referral";
 import { useStore } from "@/lib/use-store";
 
 export default function ReferralLeadScreen() {
@@ -34,6 +35,11 @@ export default function ReferralLeadScreen() {
   const location = remoteReferral?.location ?? localListing?.location;
   const canSubmit = Boolean(title && ref && (remoteReferral || localPartnership));
 
+  // Yerel (önizleme/bellek) eşleşmede de atfı sakla — landing'den ilana geçişte korunur.
+  useEffect(() => {
+    if (localListing && localPartnership && ref) saveRefAttribution(localListing.id, localPartnership.id, ref);
+  }, [localListing?.id, localPartnership?.id, ref]);
+
   useEffect(() => {
     let mounted = true;
 
@@ -46,8 +52,12 @@ export default function ReferralLeadScreen() {
       if (mounted) {
         setRemoteReferral(result);
         setLoading(false);
-        // Tıklamayı kaydet (ortağın dönüşüm ölçümü için).
-        if (result?.partnershipId) void logReferralClick(result.listingId, result.partnershipId, ref);
+        // Tıklamayı kaydet (ortağın dönüşüm ölçümü için) + atfı sakla ki alıcı buradan
+        // normal ilan detayına geçse bile ortak bağlantısı kaybolmasın.
+        if (result?.partnershipId) {
+          void logReferralClick(result.listingId, result.partnershipId, ref);
+          saveRefAttribution(result.listingId, result.partnershipId, ref);
+        }
       }
     }
 

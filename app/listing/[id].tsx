@@ -24,6 +24,8 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { fetchListingById } from "@/lib/supabase-data";
+import { insertReferralLead, logReferralClick, resolveReferralLink } from "@/lib/live-service";
+import { getRefAttribution, saveRefAttribution } from "@/lib/referral";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { pushRecent } from "@/lib/recent";
 import { calculateUserTrustScores } from "@/lib/trust-score";
@@ -44,7 +46,10 @@ const intentLabels: Record<PurchaseIntent, string> = {
 };
 
 export default function ListingDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string; ref?: string; p?: string }>();
+  const id = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
+  // Ortak referans kodu: ?ref= veya kısa ?p= (varsa). Landing dışı akışta da yakalanır.
+  const refParam = (Array.isArray(params.ref) ? params.ref[0] : params.ref) || (Array.isArray(params.p) ? params.p[0] : params.p) || "";
   const { language } = useLanguage();
   const { width } = useWindowDimensions();
   const isWideWeb = useIsWideWeb();
@@ -89,6 +94,10 @@ export default function ListingDetailScreen() {
   const [lightbox, setLightbox] = useState(false);
   const [zoomed, setZoomed] = useState(false);
   const swipeStartX = useRef(0);
+  // Ortak referans atfı: bu ilana hangi ortağın yönlendirdiği (varsa).
+  const [attributedPartnershipId, setAttributedPartnershipId] = useState<string | null>(null);
+  const refCapturedFor = useRef<string>(""); // aynı ref'i aynı ilan için tekrar çözme/loglama kilidi
+  const contactLeadDone = useRef(false); // iletişimde tek bir atıf-lead üret
   const router = useRouter();
 
   // Lightbox açıkken web'de klavye: ← → gezinme, Esc kapatma.
@@ -128,6 +137,38 @@ export default function ListingDetailScreen() {
   useEffect(() => {
     if (listing?.id) pushRecent(listing.id);
   }, [listing?.id]);
+
+  // Ortak referans yakalama: URL'de ?ref= / ?p= varsa (ya da landing'de saklanmışsa)
+  // çöz + kısa süreli sakla; tıklamayı logla. Geçersiz/expired/pasifse SESSİZCE yok say.
+  useEffect(() => {
+    const lst = storeListing ?? remote?.listing;
+    if (!lst) return;
+    // Önce depoda (landing'de veya önceki ziyarette) saklı geçerli atıf varsa kullan.
+    const existing = getRefAttribution(lst.id);
+    if (existing) setAttributedPartnershipId(existing.partnershipId);
+    if (!refParam) return;
+    const captureKey = `${lst.id}::${refParam}`;
+    if (refCapturedFor.current === captureKey) return; // bu ref bu ilan için işlendi
+    // 1) Yerel eşleşme (önizleme/demo veya bellekteki aktif ortaklık).
+    const local = partnerships.find((p) => p.refCode === refParam && p.listingId === lst.id && p.status === "active");
+    if (local) {
+      refCapturedFor.current = captureKey;
+      saveRefAttribution(lst.id, local.id, refParam);
+      setAttributedPartnershipId(local.id);
+      void logReferralClick(lst.id, local.id, refParam);
+      return;
+    }
+    // 2) Canlı: referral_public_links üzerinden çöz (yalnız aktif ortaklıklar görünür).
+    if (isSupabaseConfigured && lst.slug) {
+      refCapturedFor.current = captureKey; // tekrar çözmeyi engelle
+      void resolveReferralLink(lst.slug, refParam).then((res) => {
+        if (!res?.partnershipId) return; // geçersiz/expired → sessizce yok say
+        saveRefAttribution(res.listingId || lst.id, res.partnershipId, refParam);
+        setAttributedPartnershipId(res.partnershipId);
+        void logReferralClick(res.listingId || lst.id, res.partnershipId, refParam);
+      });
+    }
+  }, [storeListing, remote?.listing?.id, refParam, partnerships]);
 
   if (!listing) {
     if (fetching) {
@@ -229,9 +270,32 @@ export default function ListingDetailScreen() {
     await Linking.openURL(url);
   }
 
+  // Ortak bağlantısıyla gelen ziyaretçi satıcıyla iletişime geçince, lead'i o ortağa
+  // bağla. Canlıda buyer'ın store'unda ortaklık bulunmaz → landing'deki gibi
+  // insertReferralLead (doğrudan Supabase). Önizlemede bellekteki ortaklıkla createLead.
+  function attributeReferralLead(sourceForLead: LeadSource) {
+    if (contactLeadDone.current || isOwner) return;
+    const pid = attributedPartnershipId ?? getRefAttribution(currentListing.id)?.partnershipId ?? null;
+    if (!pid) return;
+    const buyerName = currentUser.name || "İlan ziyaretçisi";
+    const buyerPhone = currentUser.phone || "";
+    const note = "Ortak bağlantısıyla gelen ziyaretçi satıcıyla iletişime geçti.";
+    const local = partnerships.find((p) => p.id === pid && p.listingId === currentListing.id && p.status === "active");
+    if (local) {
+      if (local.partnerId === currentUser.id) return; // ortak kendi linkinden lead üretmesin
+      const created = createLead({ listingId: currentListing.id, partnershipId: pid, buyerName, buyerPhone, source: sourceForLead, intent: "warm", note });
+      if (created) contactLeadDone.current = true;
+    } else if (isSupabaseConfigured) {
+      contactLeadDone.current = true;
+      void insertReferralLead({ listingId: currentListing.id, partnershipId: pid, buyerName, buyerPhone: buyerPhone || "-", note });
+    }
+  }
+
   async function handleContact() {
     if (isDemo) return demoBlocked();
     if (!owner) return;
+    // İletişimden önce (varsa) ortağa atıf-lead'i düş — kanal kaynağı iletişim yöntemine göre.
+    attributeReferralLead(currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "web");
     const waPhone = trPhoneIntl(owner.phone);
     if (currentListing.contactMethod === "whatsapp") {
       // Numara uluslararası formata çevrilebiliyorsa WhatsApp'a git; değilse mesaja düş.
