@@ -203,7 +203,31 @@ export default function CategoryLandingScreen() {
         </View>
 
         {items.length === 0 ? (
-          <EmptyState title="Bu kategoride ilan yok" body={band || onlyOpen ? "Filtreye uyan ilan yok; filtreleri gevşetmeyi dene." : "Yakında eklenecek. Farklı bir kategoriye göz atabilirsin."} />
+          band || onlyOpen ? (
+            <EmptyState title="Filtreye uyan ilan yok" body="Filtreleri gevşetmeyi dene ya da farklı bir kategoriye göz at." />
+          ) : (
+            <View style={{ backgroundColor: colors.primarySoft, borderRadius: 16, gap: 12, padding: 20 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                <MaterialCommunityIcons name="storefront-plus-outline" size={24} color={colors.primaryDark} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{node.label} kategorisinde ilk ilanı sen ekle</Text>
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 20 }}>
+                Bu kategoride henüz ilan yok. Ürününü ücretsiz ekle, komisyonunu belirle; ortaklar senin için satsın. İlk olan öne çıkar. Ya da bir ürüne ortak olup kazanmaya başla.
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                <Pressable onPress={() => router.push("/create")} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}>
+                  <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ücretsiz İlan Ver</Text>
+                </Pressable>
+                <Link href="/influencer-kazanc" asChild>
+                  <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}>
+                    <MaterialCommunityIcons name="cash-multiple" size={16} color={colors.primaryDark} />
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Ortak Ol, Kazan</Text>
+                  </Pressable>
+                </Link>
+              </View>
+            </View>
+          )
         ) : (
           <>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
