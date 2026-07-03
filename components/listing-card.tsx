@@ -18,7 +18,6 @@ type StatusTone = "success" | "accent" | "info" | "dark" | "gold";
 function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: User; width?: number }) {
   const { language, t } = useLanguage();
   const commission = commissionAmount(listing);
-  const imageSize = Math.max(148, width ?? 156);
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
   const isHighConversion = conversionScore >= 18;
   const isNew = isNewListing(listing.createdAt);
@@ -27,8 +26,13 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
   const statusTone: StatusTone = featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
   const subcategory = inferListingSubcategory(listing);
   const isVerified = Boolean(owner?.verifiedPhone || owner?.verifiedIdentity);
+  const rating = owner?.rating ?? 0;
+  const hasRating = rating > 0;
+  const sellerSales = owner?.successfulSales ?? 0;
   const { has, toggle } = useCompare();
   const inCompare = has(listing.id);
+  const imageUri = listing.imageUrl ?? listing.image;
+  const imageAlt = listing.imageAlt ?? `${displayText(listing.title)} ilan görseli`;
 
   return (
     <View style={{ width }}>
@@ -48,8 +52,18 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
               shadowRadius: 18
             }}
           >
-            <View style={{ backgroundColor: colors.line, height: imageSize, overflow: "hidden", width: "100%" }}>
-              <SafeRemoteImage uri={listing.image} style={{ height: imageSize, width: "100%" }} contentFit="cover" transition={160} />
+            <View style={{ aspectRatio: 1, backgroundColor: colors.line, overflow: "hidden", width: "100%" }}>
+              <SafeRemoteImage
+                uri={imageUri}
+                fallbackUri={listing.fallbackCategoryImage}
+                style={{ height: "100%", width: "100%" }}
+                contentFit="cover"
+                transition={160}
+                loading="lazy"
+                priority="low"
+                alt={imageAlt}
+                accessibilityLabel={imageAlt}
+              />
               {listing.demo ? (
                 <View style={{ alignItems: "center", backgroundColor: "#F5C518", flexDirection: "row", gap: 5, justifyContent: "center", left: 0, position: "absolute", right: 0, top: 0, paddingVertical: 3, zIndex: 3 }}>
                   <MaterialCommunityIcons name="eye-outline" size={12} color="#1A1A00" />
@@ -99,18 +113,38 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
               </View>
 
               <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                <MaterialCommunityIcons name="star" size={13} color={colors.gold} />
-                <Text numberOfLines={1} selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
-                  {owner?.rating ?? 0}
-                </Text>
+                {hasRating ? (
+                  <>
+                    <MaterialCommunityIcons name="star" size={13} color={colors.gold} />
+                    <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "800" }}>
+                      {rating.toFixed(1)}
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="sprout-outline" size={13} color={colors.info} />
+                    <Text numberOfLines={1} style={{ color: colors.info, fontSize: 11.5, fontWeight: "800" }}>Yeni satıcı</Text>
+                  </>
+                )}
                 {isVerified ? <MaterialCommunityIcons name="check-decagram" size={13} color={colors.primary} /> : null}
                 <Text numberOfLines={1} selectable style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "700" }}>
                   {" · "}{displayText(listing.location)}
                 </Text>
-                <MaterialCommunityIcons name="account-group-outline" size={13} color={colors.subtle} />
-                <Text numberOfLines={1} selectable style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>
-                  {compactNumber(listing.partnerCount)} ortak
-                </Text>
+                {sellerSales > 0 ? (
+                  <>
+                    <MaterialCommunityIcons name="check-circle" size={13} color={colors.success} />
+                    <Text numberOfLines={1} selectable style={{ color: colors.success, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "800" }}>
+                      {compactNumber(sellerSales)} satış
+                    </Text>
+                  </>
+                ) : (
+                  <>
+                    <MaterialCommunityIcons name="account-group-outline" size={13} color={colors.subtle} />
+                    <Text numberOfLines={1} selectable style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>
+                      {compactNumber(listing.partnerCount)} ortak
+                    </Text>
+                  </>
+                )}
               </View>
 
               <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 2, minHeight: 38, paddingHorizontal: 8 }}>

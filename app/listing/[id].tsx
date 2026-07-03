@@ -487,7 +487,13 @@ export default function ListingDetailScreen() {
                 <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>Yeni satıcı</Text>
               </View>
             )}
-            <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}> · {owner?.successfulSales ?? 0} satış · {currentListing.location}</Text>
+            {owner?.verifiedPhone || owner?.verifiedIdentity ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 2 }}>
+                <MaterialCommunityIcons name="check-decagram" size={12} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>Doğrulanmış</Text>
+              </View>
+            ) : null}
+            <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{owner?.successfulSales ? ` · ${owner.successfulSales} satış` : ""} · {currentListing.location}</Text>
           </View>
 
           <Text selectable style={{ color: colors.ink, fontSize: 28, fontWeight: "900" }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
