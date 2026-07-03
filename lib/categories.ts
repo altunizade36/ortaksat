@@ -302,7 +302,18 @@ const CATEGORY_ICONS: Record<string, IconName> = {
   "Ticari Araçlar": "truck-outline",
   "Deniz Araçları": "sail-boat",
   "Karavan": "rv-truck",
-  "Hasarlı Araçlar": "car-wrench"
+  "Hasarlı Araçlar": "car-wrench",
+  "Otomobil (Markaya Göre)": "car-outline",
+  "Otomobil (Kasa Tipine Göre)": "car-estate",
+  "Motosiklet (Markaya Göre)": "motorbike",
+  "Motosiklet (Türe Göre)": "motorbike",
+  "Ağır Vasıta": "truck-outline",
+  "Yat": "sail-boat",
+  "ATV & UTV": "car-outline",
+  "Klasik & Koleksiyon Araçlar": "car-convertible",
+  "Yalı": "home-city-outline",
+  "Köşk & Konak": "home-city-outline",
+  "Çiftlik & Bağ Evi": "barn"
 };
 
 // Etiket eşleşmezse anahtar-kelimeyle en yakın ikonu bul.
@@ -339,7 +350,11 @@ const ICON_KEYWORDS: Array<[RegExp, IconName]> = [
   [/kırtasiye|ofis|kalem/, "pencil-box-outline"],
   [/hayvan|evcil|kedi|köpek/, "paw"],
   [/emlak|konut|daire|ev|arsa|arazi|bina/, "home-city-outline"],
-  [/araç|araba|otomobil|vasıta|motosiklet/, "car-outline"],
+  [/motosiklet|scooter|moped/, "motorbike"],
+  [/yat|tekne|deniz araç|gulet|katamaran/, "sail-boat"],
+  [/kamyon|otobüs|çekici|dorse|ağır vasıta|tır/, "truck-outline"],
+  [/karavan/, "rv-truck"],
+  [/araç|araba|otomobil|vasıta/, "car-outline"],
   [/yedek parça|tuning|aksesuar/, "car-wrench"],
   [/iş makinesi|sanayi|fabrika/, "excavator"],
   [/usta|hizmet|tesisat|tamir/, "account-hard-hat"],
