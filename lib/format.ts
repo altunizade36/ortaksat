@@ -87,3 +87,24 @@ export function listingShareTemplates(listing: Listing, url?: string) {
     tiktok: listing.shareTemplates?.tiktok || `${listing.title} için kısa tanıtım: ${firstPitch} ${commission}. Detay linki profilde: ${link}`
   };
 }
+
+/**
+ * Mesaj/sohbet zaman damgası: YEREL saat, saniye hassasiyeti "YYYY-MM-DD HH:MM:SS".
+ * `iso` verilirse (sunucudan gelen UTC ISO) yerel saate çevrilir; verilmezse şu an.
+ * Amaç: gerçek-zamanlı (sunucu) + yerel gönderim mesajlarının hep AYNI format ve
+ * zaman diliminde olması → thread sıralaması (createdAt.localeCompare) tutarlı,
+ * gösterilen saat cihaz saatiyle uyumlu, gün ayracı (Bugün) yerel güne göre doğru.
+ */
+export function msgStamp(iso?: string): string {
+  const d = iso ? new Date(iso) : new Date();
+  if (Number.isNaN(d.getTime())) return (iso ?? "").slice(0, 19).replace("T", " ");
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}:${p(d.getSeconds())}`;
+}
+
+/** Yerel bugünün tarihi "YYYY-MM-DD" (mesaj gün ayracı için; UTC değil). */
+export function localToday(): string {
+  const d = new Date();
+  const p = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
+}

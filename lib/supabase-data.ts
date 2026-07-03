@@ -1,4 +1,5 @@
 ﻿import { supabase } from "@/lib/supabase";
+import { msgStamp } from "@/lib/format";
 import { displayText, repairTurkishText } from "@/lib/text";
 import type { Conversation, Favorite, Lead, Listing, Message, Notification, Order, Partnership, Report, Review, Sale, User } from "@/lib/types";
 
@@ -500,8 +501,8 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       partnerId: row.partner_id ?? undefined,
       participantIds: row.participant_ids ?? [],
       status: row.status,
-      lastMessageAt: row.last_message_at?.slice(0, 16).replace("T", " ") ?? row.created_at.slice(0, 16).replace("T", " "),
-      createdAt: row.created_at.slice(0, 16).replace("T", " ")
+      lastMessageAt: row.last_message_at ? msgStamp(row.last_message_at) : msgStamp(row.created_at),
+      createdAt: msgStamp(row.created_at)
     })),
     messages: (messagesResult.data ?? []).map((row) => ({
       id: row.id,
@@ -510,7 +511,7 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       senderId: row.sender_id,
       receiverId: row.receiver_id,
       body: row.body,
-      createdAt: row.created_at.slice(0, 16).replace("T", " "),
+      createdAt: msgStamp(row.created_at),
       read: row.read,
       attachmentUrl: row.attachment_url ?? undefined,
       attachmentType: row.attachment_type ?? undefined,

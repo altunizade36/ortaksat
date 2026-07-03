@@ -10,7 +10,7 @@ import { Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
 import { EmptyState, StatusPill } from "@/components/ui";
-import { money } from "@/lib/format";
+import { localToday, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadMessageAttachment } from "@/lib/live-service";
 import { useTypingIndicator } from "@/lib/use-typing";
@@ -45,7 +45,7 @@ function msgDay(createdAt: string) {
   return createdAt.slice(0, 10);
 }
 function dayHeader(day: string) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   if (day === today) return "Bugün";
   const d = new Date(day);
   if (Number.isNaN(d.getTime())) return day;
@@ -83,6 +83,8 @@ function MessagesScreenInner() {
   const [archivedIds, setArchivedIds] = useState<string[]>([]);
   const [showArchived, setShowArchived] = useState(false);
   const deskScrollRef = useRef<ScrollView>(null);
+  // Yukarı kaydırıldıysa gelen mesaj/görsel zorla aşağı çekmesin (dibe yakınken in).
+  const deskNearBottomRef = useRef(true);
 
   // Bir ilandan/sohbet bağlantısından gelen konuşmayı seçili aç.
   useEffect(() => {
@@ -96,6 +98,12 @@ function MessagesScreenInner() {
   useEffect(() => {
     if (activeId) markConversationRead(activeId);
   }, [activeId, messages.length, markConversationRead]);
+
+  // Konuşma değişince (masaüstü 3-panel) dibe inmeye izin ver + aşağı kaydır.
+  useEffect(() => {
+    deskNearBottomRef.current = true;
+    deskScrollRef.current?.scrollToEnd({ animated: false });
+  }, [activeId]);
   const myConversations = conversations
     .filter((conversation) => conversation.participantIds.includes(currentUser.id))
     .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
@@ -330,7 +338,7 @@ function MessagesScreenInner() {
                   <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>%{respRate} yanıt</Text>
                 </View>
 
-                <ScrollView ref={deskScrollRef} onContentSizeChange={() => deskScrollRef.current?.scrollToEnd({ animated: false })} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-start", padding: 22 }}>
+                <ScrollView ref={deskScrollRef} scrollEventThrottle={16} onScroll={(e) => { const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent; deskNearBottomRef.current = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120; }} onContentSizeChange={() => { if (deskNearBottomRef.current) deskScrollRef.current?.scrollToEnd({ animated: false }); }} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-start", padding: 22 }}>
                   {activeMessages.length === 0 ? <EmptyState title="Henüz mesaj yok" body="İlk mesajı yaz ve konuşmayı başlat." /> : null}
                   {activeMessages.map((m, i) => {
                     const mine = m.senderId === currentUser.id;
@@ -354,10 +362,10 @@ function MessagesScreenInner() {
                           ) : null}
                           <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "64%", overflow: "hidden", paddingHorizontal: m.attachmentType === "image" ? 4 : 13, paddingVertical: m.attachmentType === "image" ? 4 : 9 }}>
                             {m.attachmentType === "image" && m.attachmentUrl ? (
-                              <Link href={m.attachmentUrl as never} asChild><Pressable><SafeRemoteImage uri={m.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, width: 240 }} /></Pressable></Link>
+                              <Pressable accessibilityRole="imagebutton" accessibilityLabel="Görseli büyüt" onPress={() => m.attachmentUrl && void Linking.openURL(m.attachmentUrl)}><SafeRemoteImage uri={m.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, width: 240 }} /></Pressable>
                             ) : null}
                             {m.attachmentType === "file" && m.attachmentUrl ? (
-                              <Link href={m.attachmentUrl as never} asChild><Pressable style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} /><Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? "Dosya"}</Text></Pressable></Link>
+                              <Pressable accessibilityRole="button" accessibilityLabel={`Dosyayı aç: ${m.attachmentName ?? "Dosya"}`} onPress={() => m.attachmentUrl && void Linking.openURL(m.attachmentUrl)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} /><Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? "Dosya"}</Text></Pressable>
                             ) : null}
                             {m.body ? <Text style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 19, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingTop: m.attachmentType === "image" ? 5 : 0 }}>{m.body}</Text> : null}
                             {lastOfGroup ? (
@@ -654,45 +662,6 @@ function saleStatusText(status: string, t: (key: string) => string) {
   return t("salesTracking");
 }
 
-function InboxFilterChip({ active, icon, label, onPress }: { active?: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void }) {
-  const { language } = useLanguage();
-
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        alignItems: "center",
-        backgroundColor: active ? colors.primary : colors.surface,
-        borderColor: active ? colors.primary : colors.line,
-        borderRadius: 999,
-        borderWidth: 1,
-        flex: 1,
-        flexDirection: "row",
-        gap: 7,
-        justifyContent: "center",
-        minHeight: 40,
-        opacity: pressed ? 0.72 : 1,
-        paddingHorizontal: 10
-      })}
-    >
-      <MaterialCommunityIcons name={icon} size={16} color={active ? "#FFFFFF" : colors.primary} />
-      <Text adjustsFontSizeToFit minimumFontScale={0.84} numberOfLines={1} style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "900" }}>
-        {translateCopy(label, language)}
-      </Text>
-    </Pressable>
-  );
-}
-
-function DeskInboxStat({ icon, label, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: number }) {
-  return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-      <MaterialCommunityIcons name={icon} size={17} color={colors.primary} />
-      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{value}</Text>
-      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{label}</Text>
-    </View>
-  );
-}
-
 function DeskInfoRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "space-between" }}>
@@ -723,38 +692,6 @@ function DeskActionRow({ icon, title, sub, onPress, href }: { icon: keyof typeof
     return <Link href={href} asChild><Pressable style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>{inner}</Pressable></Link>;
   }
   return <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>{inner}</Pressable>;
-}
-
-function MessageTask({ icon, label, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string }) {
-  const { language } = useLanguage();
-
-  return (
-    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 8, flex: 1, gap: 4, minHeight: 64, padding: 8 }}>
-      <MaterialCommunityIcons name={icon} size={18} color={colors.primary} />
-      <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} style={{ color: colors.ink, fontSize: 16, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-        {value}
-      </Text>
-      <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} style={{ color: colors.muted, fontSize: 10, fontWeight: "800" }}>
-        {translateCopy(label, language)}
-      </Text>
-    </View>
-  );
-}
-
-function InboxStat({ icon, label, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string }) {
-  const { language } = useLanguage();
-
-  return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flex: 1, gap: 5, padding: 10 }}>
-      <MaterialCommunityIcons name={icon} size={20} color={colors.primary} />
-      <Text ellipsizeMode="tail" numberOfLines={1} selectable style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>
-        {translateCopy(label, language)}
-      </Text>
-      <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 18, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-        {value}
-      </Text>
-    </View>
-  );
 }
 
 export default function MessagesScreen() {

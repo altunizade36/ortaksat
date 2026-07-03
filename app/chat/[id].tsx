@@ -9,7 +9,7 @@ import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState, PrimaryButton } from "@/components/ui";
-import { money } from "@/lib/format";
+import { localToday, money } from "@/lib/format";
 import { uploadMessageAttachment } from "@/lib/live-service";
 import { useTypingIndicator } from "@/lib/use-typing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -35,6 +35,9 @@ function ChatScreenInner() {
   const [body, setBody] = useState("");
   const [attaching, setAttaching] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
+  // Kullanıcı geçmişi okumak için yukarı kaydırdıysa, gelen mesaj/görsel yüklenmesi
+  // onu zorla aşağı çekmesin. Yalnızca dibe yakınken otomatik aşağı in.
+  const nearBottomRef = useRef(true);
   const conversation = findConversation(id);
   const { otherTyping, notifyTyping } = useTypingIndicator(conversation?.id, currentUser.id);
 
@@ -157,7 +160,16 @@ function ChatScreenInner() {
         )}
       </View>
 
-      <ScrollView ref={scrollRef} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, justifyContent: conversationMessages.length === 0 ? "center" : "flex-start", padding: 12, paddingBottom: 16 }}>
+      <ScrollView
+        ref={scrollRef}
+        scrollEventThrottle={16}
+        onScroll={(e) => {
+          const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
+          nearBottomRef.current = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120;
+        }}
+        onContentSizeChange={() => { if (nearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false }); }}
+        contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, justifyContent: conversationMessages.length === 0 ? "center" : "flex-start", padding: 12, paddingBottom: 16 }}
+      >
         {conversationMessages.length === 0 ? (
           <EmptyState title={language === "en" ? "No messages yet" : "Henüz mesaj yok"} body={language === "en" ? "Write the first message and start the conversation." : "İlk mesajı yaz ve konuşmayı başlat."} />
         ) : null}
@@ -270,7 +282,7 @@ function chatMsgDay(createdAt: string) {
   return createdAt.slice(0, 10);
 }
 function chatDayHeader(day: string, language: "tr" | "en") {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = localToday();
   if (day === today) return language === "en" ? "Today" : "Bugün";
   const d = new Date(day);
   if (Number.isNaN(d.getTime())) return day;
