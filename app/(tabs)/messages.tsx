@@ -460,47 +460,36 @@ function MessagesScreenInner() {
     );
   }
 
+  const mobileFilters: Array<{ key: InboxFilter; label: string; count: number }> = [
+    { key: "all", label: t("all"), count: myConversations.length },
+    { key: "unread", label: t("unread"), count: unreadMessages.length },
+    { key: "action", label: t("followUp"), count: actionCount }
+  ];
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, maxWidth: 960, marginHorizontal: "auto", padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96, width: "100%" }}>
-      <View style={{ gap: 4 }}>
-        <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>
-          {t("salesMessages")}
-        </Text>
-        <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>
-          {t("salesMessagesBody")}
-        </Text>
+    <View style={{ backgroundColor: colors.background, flex: 1 }}>
+      {/* Temiz üst başlık: arama + filtre (WhatsApp/Sahibinden mesaj tarzı) */}
+      <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, gap: 10, paddingBottom: 10, paddingHorizontal: 12, paddingTop: 12 }}>
+        <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14 }}>
+          <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
+          <TextInput value={query} onChangeText={setQuery} placeholder={t("searchMessagesPlaceholder")} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 14.5, minHeight: 44, paddingVertical: 8 }} />
+          {query ? <Pressable onPress={() => setQuery("")} hitSlop={10}><MaterialCommunityIcons name="close-circle" size={19} color={colors.muted} /></Pressable> : null}
+        </View>
+        <View style={{ flexDirection: "row", gap: 7 }}>
+          {mobileFilters.map((f) => {
+            const on = filter === f.key;
+            return (
+              <Pressable key={f.key} onPress={() => setFilter(f.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 7 }}>
+                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{f.label}</Text>
+                {f.count > 0 ? <View style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.24)" : colors.primary, borderRadius: 999, justifyContent: "center", minWidth: 17, paddingHorizontal: 4 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{f.count}</Text></View> : null}
+              </Pressable>
+            );
+          })}
+        </View>
       </View>
 
-      <View style={{ backgroundColor: colors.primarySoft, borderColor: "rgba(0,135,111,0.18)", borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 8, padding: 10 }}>
-        <MessageTask icon="email-alert-outline" label={t("unread")} value={`${unreadMessages.length}`} />
-        <MessageTask icon="alert-circle-outline" label={t("followUp")} value={`${actionCount}`} />
-        <MessageTask icon="message-text-outline" label={t("conversation")} value={`${myConversations.length}`} />
-      </View>
-
-      <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 50, paddingHorizontal: 12 }}>
-        <MaterialCommunityIcons name="magnify" size={21} color={colors.primary} />
-        <TextInput
-          value={query}
-          onChangeText={setQuery}
-          placeholder={t("searchMessagesPlaceholder")}
-          placeholderTextColor={colors.muted}
-          style={{ color: colors.ink, flex: 1, fontSize: 15, minHeight: 48, paddingVertical: 8 }}
-        />
-        {query ? (
-          <Pressable onPress={() => setQuery("")} hitSlop={10}>
-            <MaterialCommunityIcons name="close-circle" size={19} color={colors.muted} />
-          </Pressable>
-        ) : null}
-      </View>
-
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <InboxFilterChip active={filter === "all"} icon="inbox-outline" label={t("all")} onPress={() => setFilter("all")} />
-        <InboxFilterChip active={filter === "unread"} icon="email-alert-outline" label={t("unread")} onPress={() => setFilter("unread")} />
-        <InboxFilterChip active={filter === "action"} icon="alert-circle-outline" label={t("followUp")} onPress={() => setFilter("action")} />
-      </View>
-
-      {myConversations.length === 0 ? <EmptyState title={t("noConversation")} body={t("noConversationBody")} /> : null}
-      {myConversations.length > 0 && visibleConversations.length === 0 ? <EmptyState title={t("noResults")} body={t("searchOrFilterAgain")} /> : null}
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
+      {myConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noConversation")} body={t("noConversationBody")} /></View> : null}
+      {myConversations.length > 0 && visibleConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noResults")} body={t("searchOrFilterAgain")} /></View> : null}
 
       {visibleConversations.map((conversation) => {
         const listing = findListing(conversation.listingId);
@@ -509,57 +498,54 @@ function MessagesScreenInner() {
         const conversationMessages = messages.filter((item) => item.conversationId === conversation.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
         const lastMessage = conversationMessages[0];
         const unreadCount = conversationMessages.filter((item) => item.receiverId === currentUser.id && !item.read).length;
-        const context = buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t });
 
+        const isPartner = Boolean(conversation.partnerId);
         return (
           <Link key={conversation.id} href={{ pathname: "/chat/[id]", params: { id: conversation.id } }} asChild>
-            <Pressable
-              style={({ pressed }) => ({
-                backgroundColor: colors.surface,
-                borderColor: unreadCount ? colors.primary : colors.line,
-                borderRadius: 8,
-                borderWidth: 1,
-                gap: 12,
-                opacity: pressed ? 0.78 : 1,
-                padding: 12
-              })}
-            >
-              <View style={{ flexDirection: "row", gap: 10 }}>
-                {listing ? <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 8, height: 58, width: 58 }} /> : (
-                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 58, justifyContent: "center", width: 58 }}>
-                    <MaterialCommunityIcons name="message-text-outline" size={24} color={colors.primary} />
+            <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 12 })}>
+              <View>
+                {listing ? (
+                  <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 12, height: 56, width: 56 }} />
+                ) : (
+                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 56, justifyContent: "center", width: 56 }}>
+                    <MaterialCommunityIcons name="account" size={26} color={colors.primaryDark} />
                   </View>
                 )}
-                <View style={{ flex: 1, gap: 5 }}>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                    <Text selectable numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>
-                      {otherUser?.name ?? t("user")}
-                    </Text>
-                    {unreadCount > 0 ? <StatusPill label={`${unreadCount} ${t("newCount")}`} tone="warning" /> : null}
+                {isPartner ? (
+                  <View style={{ alignItems: "center", backgroundColor: colors.primary, borderColor: colors.surface, borderRadius: 999, borderWidth: 2, bottom: -3, height: 22, justifyContent: "center", position: "absolute", right: -3, width: 22 }}>
+                    <MaterialCommunityIcons name="handshake" size={11} color="#FFFFFF" />
                   </View>
-                  <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>
-                    {listing?.title ?? t("listingConversation")}
-                  </Text>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                    <StatusPill label={`${t("status")}: ${context.status}`} tone={context.needsAction ? "warning" : "info"} />
-                    <StatusPill label={context.channel} tone="info" />
-                  </View>
-                </View>
+                ) : null}
               </View>
 
-              <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 5, padding: 10 }}>
-                <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "900" }}>
-                  {t("source")}: {context.source}
-                </Text>
-                <Text selectable numberOfLines={2} style={{ color: lastMessage?.senderId === currentUser.id ? colors.muted : colors.ink, fontSize: 13, fontWeight: unreadCount ? "900" : "700", lineHeight: 18 }}>
-                  {lastMessage ? `${lastMessage.senderId === currentUser.id ? t("youPrefix") : ""}${messagePreview(lastMessage)}` : t("conversationStarted")}
-                </Text>
+              <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{otherUser?.name ?? t("user")}</Text>
+                  <Text style={{ color: unreadCount ? colors.primary : colors.subtle, fontSize: 11, fontWeight: unreadCount ? "900" : "700" }}>{lastMessage ? msgTime(lastMessage.createdAt) || shortDate(lastMessage.createdAt) : ""}</Text>
+                </View>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                  <Text numberOfLines={1} style={{ color: unreadCount ? colors.ink : colors.muted, flex: 1, fontSize: 13, fontWeight: unreadCount ? "800" : "500" }}>
+                    {lastMessage ? `${lastMessage.senderId === currentUser.id ? t("youPrefix") : ""}${messagePreview(lastMessage)}` : t("conversationStarted")}
+                  </Text>
+                  {unreadCount > 0 ? (
+                    <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 20, justifyContent: "center", minWidth: 20, paddingHorizontal: 6 }}>
+                      <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "900" }}>{unreadCount > 9 ? "9+" : unreadCount}</Text>
+                    </View>
+                  ) : null}
+                </View>
+                {listing ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                    <MaterialCommunityIcons name="tag-outline" size={12} color={colors.subtle} />
+                    <Text numberOfLines={1} style={{ color: colors.subtle, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{displayText(listing.title)}</Text>
+                  </View>
+                ) : null}
               </View>
             </Pressable>
           </Link>
         );
       })}
-    </ScrollView>
+      </ScrollView>
+    </View>
   );
 }
 
