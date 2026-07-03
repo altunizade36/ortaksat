@@ -11,10 +11,19 @@ const BASE = "https://ortaksat.com";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "..", "public", "sitemap.xml");
 
+// Üst kategori landing sayfaları (SEO hub'ları) — slug'lar category-tree sl() ile birebir.
+const CATEGORY_SLUGS = [
+  "emlak", "vasita", "yedek-parca-aksesuar-ve-tuning", "ikinci-el-ve-sifir-alisveris",
+  "is-makineleri-ve-sanayi", "ustalar-ve-hizmetler", "ozel-ders-ve-egitim", "is-ilanlari",
+  "yardimci-arayanlar", "hayvanlar-alemi", "arayanlar-talep-ilanlari",
+  "dijital-urunler-ve-hizmetler", "yapi-market-ve-bahce", "muzik-enstrumanlari", "saglik-ve-medikal"
+];
+
 const STATIC = [
   ["/", "daily", "1.0"],
   ["/explore", "hourly", "0.9"],
   ["/kategoriler", "weekly", "0.8"],
+  ...CATEGORY_SLUGS.map((s) => [`/kategori/${s}`, "daily", "0.75"]),
   ["/nasil-calisir", "monthly", "0.6"],
   ["/hakkimizda", "monthly", "0.5"],
   ["/sss", "monthly", "0.5"],
