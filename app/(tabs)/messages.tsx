@@ -1,11 +1,11 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
-import { Link, useLocalSearchParams } from "expo-router";
+import { Link, useLocalSearchParams, type Href } from "expo-router";
 
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
@@ -78,6 +78,10 @@ function MessagesScreenInner() {
   const [activeId, setActiveId] = useState<string | null>(params.c ?? null);
   const [draft, setDraft] = useState("");
   const [attaching, setAttaching] = useState(false);
+  const [starred, setStarred] = useState<Record<string, boolean>>({});
+  const [following, setFollowing] = useState<Record<string, boolean>>({});
+  const [archivedIds, setArchivedIds] = useState<string[]>([]);
+  const [showArchived, setShowArchived] = useState(false);
   const deskScrollRef = useRef<ScrollView>(null);
 
   // Bir ilandan/sohbet bağlantısından gelen konuşmayı seçili aç.
@@ -107,6 +111,7 @@ function MessagesScreenInner() {
   const tokens = searchKey(query).split(" ").filter(Boolean);
 
   const visibleConversations = myConversations.filter((conversation) => {
+    if (archivedIds.includes(conversation.id) !== showArchived) return false;
     const context = buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t });
     const listing = findListing(conversation.listingId);
     const otherId = conversation.participantIds.find((id) => id !== currentUser.id);
@@ -185,6 +190,11 @@ function MessagesScreenInner() {
         sendDraft();
       }
     };
+    const toggleArchive = (cid: string) => setArchivedIds((ids) => (ids.includes(cid) ? ids.filter((x) => x !== cid) : [...ids, cid]));
+    const insertPriceOffer = () => {
+      const base = activeListing ? money(activeListing.price) : "";
+      setDraft((d) => (d.trim() ? d : `Fiyat teklifim: ${base ? base.replace(/[0-9.,]+/, "___") : "₺___"} — uygun olur mu?`));
+    };
 
     const filters: Array<{ key: InboxFilter; label: string; count: number }> = [
       { key: "all", label: "Tümü", count: myConversations.length },
@@ -197,27 +207,42 @@ function MessagesScreenInner() {
     const activePhotoCount = activeListing ? (activeListing.adAssets?.length ?? 0) + 1 : 0;
     const activeListingNo = activeListing ? activeListing.id.replace(/[^0-9]/g, "").slice(-10) || activeListing.id : "";
 
+    const respRate = activeOther?.responseRate ?? 0;
+    const respText = respRate >= 80 ? "Bu satıcı mesajlara genellikle hızlı yanıt verir." : respRate >= 50 ? "Bu satıcı mesajlara çoğunlukla yanıt verir." : "Yanıtlar biraz gecikebilir.";
+    const statCards = [
+      { icon: "email-outline" as const, tint: colors.primarySoft, color: colors.primaryDark, value: unreadMessages.length, label: "Okunmamış", sub: "Yeni mesajınız var" },
+      { icon: "clock-outline" as const, tint: colors.goldSoft, color: colors.gold, value: actionCount, label: "Yanıt bekleyen", sub: "Yanıt bekleyen mesajlar" },
+      { icon: "message-text-outline" as const, tint: colors.infoSoft, color: colors.info, value: myConversations.filter((c) => !c.partnerId).length, label: "Satış konuşması", sub: "Aktif görüşmeler" },
+      { icon: "handshake-outline" as const, tint: colors.primarySoft, color: colors.primaryDark, value: myConversations.filter((c) => c.partnerId).length, label: "Aktif ortak satış", sub: "Devam eden ortaklıklar" }
+    ];
     return (
-      <View style={{ backgroundColor: colors.background, flex: 1, gap: 12, paddingHorizontal: 20, paddingVertical: 16 }}>
-        <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 12, marginHorizontal: "auto", maxWidth: 1200, width: "100%" }}>
-          <View style={{ flex: 1, gap: 3 }}>
-            <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>Mesajlar</Text>
-            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>Alıcı, satıcı ve ortaklarınla tüm görüşmeleri tek ekrandan yönet.</Text>
-          </View>
-          <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 14, paddingHorizontal: 14, paddingVertical: 8 }}>
-            <DeskInboxStat icon="email-alert-outline" label="Okunmamış" value={unreadMessages.length} />
-            <View style={{ backgroundColor: colors.line, height: 26, width: 1 }} />
-            <DeskInboxStat icon="alert-circle-outline" label="Yanıt bekleyen" value={actionCount} />
-            <View style={{ backgroundColor: colors.line, height: 26, width: 1 }} />
-            <DeskInboxStat icon="message-text-outline" label="Satış konuşması" value={myConversations.filter((c) => !c.partnerId).length} />
-          </View>
+      <View style={{ backgroundColor: colors.background, flex: 1, gap: 14, paddingHorizontal: 20, paddingVertical: 16 }}>
+        {/* Üst: 4 istatistik kartı */}
+        <View style={{ flexDirection: "row", gap: 12, marginHorizontal: "auto", maxWidth: 1280, width: "100%" }}>
+          {statCards.map((s) => (
+            <View key={s.label} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flex: 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 13 }}>
+              <View style={{ alignItems: "center", backgroundColor: s.tint, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
+                <MaterialCommunityIcons name={s.icon} size={22} color={s.color} />
+              </View>
+              <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                <View style={{ alignItems: "baseline", flexDirection: "row", gap: 6 }}>
+                  <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{s.value}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{s.label}</Text>
+                </View>
+                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{s.sub}</Text>
+              </View>
+            </View>
+          ))}
         </View>
 
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: "row", marginHorizontal: "auto", maxWidth: 1200, minHeight: 0, overflow: "hidden", width: "100%" }}>
-          {/* Column 1: conversation list */}
-          <View style={{ backgroundColor: colors.surface, borderRightColor: colors.line, borderRightWidth: 1, maxWidth: 320, minWidth: 280, width: 300 }}>
-            <View style={{ gap: 9, padding: 12 }}>
-              <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
+        {/* 3 panel */}
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flex: 1, flexDirection: "row", marginHorizontal: "auto", maxWidth: 1280, minHeight: 0, overflow: "hidden", width: "100%" }}>
+          {/* SOL: liste */}
+          <View style={{ borderRightColor: colors.line, borderRightWidth: 1, width: 320 }}>
+            <View style={{ gap: 10, padding: 16 }}>
+              <Text style={{ color: colors.ink, fontSize: 21, fontWeight: "900" }}>Mesajlar</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>Alıcı, satıcı ve ortak satış görüşmelerini tek yerden yönet.</Text>
+              <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14 }}>
                 <MaterialCommunityIcons name="magnify" size={18} color={colors.muted} />
                 <TextInput value={query} onChangeText={setQuery} placeholder="Görüşmelerde ara" placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 40, paddingVertical: 6 }} />
               </View>
@@ -234,11 +259,9 @@ function MessagesScreenInner() {
               </View>
             </View>
             <View style={{ backgroundColor: colors.line, height: 1 }} />
-            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 12 }}>
+            <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ paddingBottom: 8 }}>
               {visibleConversations.length === 0 ? (
-                <View style={{ padding: 16 }}>
-                  <EmptyState title={t("noConversation")} body={t("noConversationBody")} />
-                </View>
+                <View style={{ padding: 16 }}><EmptyState title={showArchived ? "Arşiv boş" : t("noConversation")} body={showArchived ? "Arşivlenen görüşme yok." : t("noConversationBody")} /></View>
               ) : null}
               {visibleConversations.map((conversation) => {
                 const listing = findListing(conversation.listingId);
@@ -249,24 +272,20 @@ function MessagesScreenInner() {
                 const unread = convMessages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
                 const on = activeConversation?.id === conversation.id;
                 return (
-                  <Pressable key={conversation.id} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 10, paddingHorizontal: 13, paddingVertical: 11 })}>
+                  <Pressable key={conversation.id} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 12 })}>
                     {listing ? (
-                      <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 9, height: 50, width: 50 }} />
+                      <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 48, width: 48 }} />
                     ) : (
-                      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 9, height: 50, justifyContent: "center", width: 50 }}>
-                        <MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} />
-                      </View>
+                      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 48, justifyContent: "center", width: 48 }}><MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} /></View>
                     )}
-                    <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                    <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{listing ? displayText(listing.title) : t("listingConversation")}</Text>
+                        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{listing ? displayText(listing.title) : t("listingConversation")}</Text>
                         <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{last ? msgTime(last.createdAt) || shortDate(last.createdAt) : ""}</Text>
                       </View>
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{otherUser?.name ?? t("user")}</Text>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                        <Text numberOfLines={1} style={{ color: unread ? colors.ink : colors.muted, flex: 1, fontSize: 12, fontWeight: unread ? "800" : "500" }}>
-                          {last ? `${last.senderId === currentUser.id ? "Sen: " : ""}${messagePreview(last)}` : t("conversationStarted")}
-                        </Text>
+                        <Text numberOfLines={1} style={{ color: unread ? colors.ink : colors.muted, flex: 1, fontSize: 12, fontWeight: unread ? "800" : "500" }}>{last ? `${last.senderId === currentUser.id ? "Sen: " : ""}${messagePreview(last)}` : t("conversationStarted")}</Text>
                         {unread ? <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{unread}</Text></View> : null}
                       </View>
                     </View>
@@ -274,34 +293,45 @@ function MessagesScreenInner() {
                 );
               })}
             </ScrollView>
+            <Pressable onPress={() => setShowArchived((v) => !v)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 })}>
+              <MaterialCommunityIcons name={showArchived ? "inbox-arrow-down-outline" : "archive-outline"} size={17} color={colors.muted} />
+              <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{showArchived ? "Gelen kutusuna dön" : "Arşivlenen konuşmaları göster"}</Text>
+            </Pressable>
           </View>
 
-          {/* Column 2: active thread */}
+          {/* ORTA: sohbet */}
           <View style={{ backgroundColor: colors.background, flex: 1, minWidth: 0 }}>
             {activeConversation && activeContext ? (
               <>
                 <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 18, paddingVertical: 11 }}>
-                  {activeListing ? <SafeRemoteImage uri={activeListing.image} contentFit="cover" style={{ borderRadius: 9, height: 44, width: 44 }} /> : null}
+                  {activeListing ? <SafeRemoteImage uri={activeListing.image} contentFit="cover" style={{ borderRadius: 10, height: 44, width: 44 }} /> : null}
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{activeListing ? displayText(activeListing.title) : t("listingConversation")}</Text>
                     {otherTyping ? (
                       <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 12, fontWeight: "800" }}>yazıyor…</Text>
                     ) : (
-                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
-                        {activeListing ? `${money(activeListing.price)}` : ""}{activeListingNo ? `  ·  #${activeListingNo}` : ""}{activeOther ? `  ·  ${activeOther.name}` : ""}
-                      </Text>
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{activeListing ? money(activeListing.price) : ""}{activeOther ? `  ·  ${activeOther.name}` : ""}</Text>
                     )}
                   </View>
                   <View style={{ alignItems: "center", backgroundColor: activeIsPartner ? colors.primarySoft : colors.surfaceAlt, borderColor: activeIsPartner ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
                     <MaterialCommunityIcons name={activeIsPartner ? "handshake-outline" : "tag-outline"} size={13} color={activeIsPartner ? colors.primaryDark : colors.muted} />
                     <Text style={{ color: activeIsPartner ? colors.primaryDark : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{activeIsPartner ? "Ortak satış" : "Satış konuşması"}</Text>
                   </View>
+                  {activeOther?.phone ? (
+                    <Pressable accessibilityLabel="Ara" onPress={() => void Linking.openURL(`tel:${activeOther.phone.replace(/[^0-9+]/g, "")}`)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="phone-outline" size={16} color={colors.muted} /></Pressable>
+                  ) : null}
+                  <Pressable accessibilityLabel="Önemli işaretle" onPress={() => setStarred((s) => ({ ...s, [activeConversation.id]: !s[activeConversation.id] }))} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name={starred[activeConversation.id] ? "star" : "star-outline"} size={16} color={starred[activeConversation.id] ? colors.gold : colors.muted} /></Pressable>
+                  <Pressable accessibilityLabel="Arşivle" onPress={() => toggleArchive(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="archive-outline" size={16} color={colors.muted} /></Pressable>
+                </View>
+
+                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 18, paddingVertical: 8 }}>
+                  <MaterialCommunityIcons name="lightning-bolt" size={14} color={colors.primaryDark} />
+                  <Text numberOfLines={1} style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "700" }}>{respText}</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>%{respRate} yanıt</Text>
                 </View>
 
                 <ScrollView ref={deskScrollRef} onContentSizeChange={() => deskScrollRef.current?.scrollToEnd({ animated: false })} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-end", padding: 22 }}>
-                  {activeMessages.length === 0 ? (
-                    <EmptyState title="Henüz mesaj yok" body="İlk mesajı yaz ve konuşmayı başlat." />
-                  ) : null}
+                  {activeMessages.length === 0 ? <EmptyState title="Henüz mesaj yok" body="İlk mesajı yaz ve konuşmayı başlat." /> : null}
                   {activeMessages.map((m, i) => {
                     const mine = m.senderId === currentUser.id;
                     const showDay = i === 0 || msgDay(m.createdAt) !== msgDay(activeMessages[i - 1].createdAt);
@@ -310,28 +340,24 @@ function MessagesScreenInner() {
                     const grouped = Boolean(prevM) && prevM.senderId === m.senderId && !showDay;
                     const lastOfGroup = !nextM || nextM.senderId !== m.senderId || msgDay(nextM.createdAt) !== msgDay(m.createdAt);
                     return (
-                      <View key={m.id} style={{ gap: 8, marginTop: i === 0 ? 0 : showDay ? 6 : grouped ? 2 : 10 }}>
+                      <View key={m.id} style={{ marginTop: i === 0 ? 0 : showDay ? 6 : grouped ? 2 : 10 }}>
                         {showDay ? (
-                          <View style={{ alignItems: "center", marginVertical: 4 }}>
-                            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 3 }}>
-                              <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{dayHeader(msgDay(m.createdAt))}</Text>
-                            </View>
+                          <View style={{ alignItems: "center", marginBottom: 8 }}>
+                            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{dayHeader(msgDay(m.createdAt))}</Text></View>
                           </View>
                         ) : null}
-                        <View style={{ alignItems: mine ? "flex-end" : "flex-start" }}>
-                          <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "68%", overflow: "hidden", paddingHorizontal: m.attachmentType === "image" ? 4 : 13, paddingVertical: m.attachmentType === "image" ? 4 : 9 }}>
+                        <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8, justifyContent: mine ? "flex-end" : "flex-start" }}>
+                          {!mine ? (
+                            lastOfGroup ? (
+                              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 28, justifyContent: "center", width: 28 }}><MaterialCommunityIcons name="account" size={16} color={colors.primaryDark} /></View>
+                            ) : <View style={{ width: 28 }} />
+                          ) : null}
+                          <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "64%", overflow: "hidden", paddingHorizontal: m.attachmentType === "image" ? 4 : 13, paddingVertical: m.attachmentType === "image" ? 4 : 9 }}>
                             {m.attachmentType === "image" && m.attachmentUrl ? (
-                              <Link href={m.attachmentUrl as never} asChild>
-                                <Pressable><SafeRemoteImage uri={m.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, width: 240 }} /></Pressable>
-                              </Link>
+                              <Link href={m.attachmentUrl as never} asChild><Pressable><SafeRemoteImage uri={m.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, width: 240 }} /></Pressable></Link>
                             ) : null}
                             {m.attachmentType === "file" && m.attachmentUrl ? (
-                              <Link href={m.attachmentUrl as never} asChild>
-                                <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}>
-                                  <MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} />
-                                  <Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? "Dosya"}</Text>
-                                </Pressable>
-                              </Link>
+                              <Link href={m.attachmentUrl as never} asChild><Pressable style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} /><Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? "Dosya"}</Text></Pressable></Link>
                             ) : null}
                             {m.body ? <Text style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 19, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingTop: m.attachmentType === "image" ? 5 : 0 }}>{m.body}</Text> : null}
                             {lastOfGroup ? (
@@ -350,21 +376,19 @@ function MessagesScreenInner() {
                 <View style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, gap: 9, paddingHorizontal: 14, paddingVertical: 11 }}>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     {DESK_QUICK_REPLIES.map((r) => (
-                      <Pressable key={r} onPress={() => setDraft(r)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 })}>
-                        <Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "700" }}>{r}</Text>
-                      </Pressable>
+                      <Pressable key={r} onPress={() => setDraft(r)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 })}><Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "700" }}>{r}</Text></Pressable>
                     ))}
                   </View>
-                  <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
-                    <TextInput value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline placeholder="Mesajınızı yazınız" placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ color: colors.ink, flex: 1, fontSize: 14, maxHeight: 110, minHeight: 46, paddingVertical: 12 }} />
-                    <Pressable accessibilityRole="button" accessibilityLabel="Görsel ekle" onPress={() => void attachImage()} disabled={attaching} hitSlop={8}>
-                      <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={19} color={attaching ? colors.primary : colors.muted} />
-                    </Pressable>
-                    <Pressable accessibilityRole="button" accessibilityLabel="Mesajı gönder" disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 10, height: 36, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 40 })}>
-                      <MaterialCommunityIcons name="send" size={17} color="#FFFFFF" />
-                    </Pressable>
+                  <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 10 }}>
+                    <Pressable accessibilityLabel="Görsel ekle" onPress={() => void attachImage()} disabled={attaching} hitSlop={8}><MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={19} color={attaching ? colors.primary : colors.muted} /></Pressable>
+                    <TextInput value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline placeholder="Mesajınızı yazınız…" placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ color: colors.ink, flex: 1, fontSize: 14, maxHeight: 110, minHeight: 46, paddingVertical: 12 }} />
+                    <Pressable accessibilityLabel="Fiyat teklifi" onPress={insertPriceOffer} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}><MaterialCommunityIcons name="tag-outline" size={14} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Fiyat teklifi</Text></Pressable>
+                    <Pressable accessibilityLabel="Mesajı gönder" disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 999, height: 40, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 44 })}><MaterialCommunityIcons name="send" size={18} color="#FFFFFF" /></Pressable>
                   </View>
-                  <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Kişisel verilerin paylaşılmasına dikkat edin. OrtakSat ödeme/kargo işlemez; taraflar kendi aralarında anlaşır.</Text>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
+                    <MaterialCommunityIcons name="lock-outline" size={12} color={colors.subtle} />
+                    <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Kişisel verilerin paylaşılmasına dikkat edin. OrtakSat ödeme/kargo işlemez; taraflar kendi aralarında anlaşır.</Text>
+                  </View>
                 </View>
               </>
             ) : (
@@ -374,88 +398,68 @@ function MessagesScreenInner() {
             )}
           </View>
 
-          {/* Column 3: listing + seller panel — orta genişlikte gizlenir (sohbete yer aç). */}
+          {/* SAĞ: İlan Detayları */}
           {activeConversation && activeContext && roomForContextPanel ? (
-            <ScrollView style={{ backgroundColor: colors.surface, borderLeftColor: colors.line, borderLeftWidth: 1, maxWidth: 320, minWidth: 280, width: 300 }} contentContainerStyle={{ gap: 14, padding: 16 }} showsVerticalScrollIndicator={false}>
-              {/* Seller header */}
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-                {activeOther?.avatar ? (
-                  <Image source={{ uri: activeOther.avatar }} contentFit="cover" style={{ borderRadius: 999, height: 40, width: 40 }} />
-                ) : (
-                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}>
-                    <MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} />
-                  </View>
-                )}
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14.5, fontWeight: "900" }}>{activeOther?.name ?? t("user")}</Text>
-                    {activeOther?.verifiedIdentity ? <MaterialCommunityIcons name="check-decagram" size={15} color={colors.success} /> : null}
-                  </View>
-                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{activeOther?.verifiedIdentity ? "Güvenilir Satıcı" : "Satıcı"}</Text>
-                </View>
-                {activeOtherId ? (
-                  <Link href={{ pathname: "/store/[id]", params: { id: activeOtherId } }} asChild>
-                    <Pressable style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderColor: colors.line, borderRadius: 9, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 })}>
-                      <Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "800" }}>Profili görüntüle</Text>
-                    </Pressable>
-                  </Link>
-                ) : null}
+            <ScrollView style={{ borderLeftColor: colors.line, borderLeftWidth: 1, width: 320 }} contentContainerStyle={{ gap: 14, padding: 16 }} showsVerticalScrollIndicator={false}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 15.5, fontWeight: "900" }}>İlan Detayları</Text>
+                {activeListing ? <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}><Text style={{ color: colors.success, fontSize: 10.5, fontWeight: "900" }}>Aktif ilan</Text></View> : null}
               </View>
 
               {activeListing ? (
                 <>
-                  <View style={{ borderRadius: 10, overflow: "hidden" }}>
+                  <View style={{ borderRadius: 12, overflow: "hidden" }}>
                     <SafeRemoteImage uri={activeListing.image} contentFit="cover" style={{ backgroundColor: colors.line, height: 150, width: "100%" }} />
-                    {activePhotoCount > 1 ? (
-                      <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, bottom: 8, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", right: 8 }}>
-                        <MaterialCommunityIcons name="camera" size={12} color="#FFFFFF" />
-                        <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "800" }}>{activePhotoCount}</Text>
-                      </View>
-                    ) : null}
+                    {activePhotoCount > 1 ? <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, bottom: 8, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", right: 8 }}><MaterialCommunityIcons name="camera" size={12} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "800" }}>{activePhotoCount}</Text></View> : null}
                   </View>
-
-                  <View style={{ gap: 6 }}>
-                    <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 14, fontWeight: "900", lineHeight: 18 }}>{displayText(activeListing.title)}</Text>
-                    <Text style={{ color: colors.primaryDark, fontSize: 19, fontWeight: "900" }}>{money(activeListing.price)}</Text>
-                    {activeListing.location ? (
-                      <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
-                        <MaterialCommunityIcons name="map-marker-outline" size={14} color={colors.muted} />
-                        <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "700" }}>{activeListing.location}</Text>
-                      </View>
-                    ) : null}
+                  <View style={{ gap: 5 }}>
+                    <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900", lineHeight: 19 }}>{displayText(activeListing.title)}</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 20, fontWeight: "900" }}>{money(activeListing.price)}</Text>
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}><MaterialCommunityIcons name="map-marker-outline" size={14} color={colors.muted} /><Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "700" }}>{activeListing.location}</Text></View>
                   </View>
-
-                  <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 10, gap: 7, padding: 12 }}>
+                  <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, gap: 7, padding: 12 }}>
                     <DeskInfoRow label="İlan No" value={activeListingNo || "-"} />
                     <DeskInfoRow label="İlan Tarihi" value={longDateTr(activeListing.createdAt)} />
                     <DeskInfoRow label="Kategori" value={displayText(activeListing.category)} />
-                    {activeListing.stockCount ? <DeskInfoRow label="Stok" value={`${activeListing.stockCount}`} /> : null}
-                    <DeskInfoRow label="Görüşme" value={activeContext.status} />
+                    <DeskInfoRow label="Stok" value={`${activeListing.stockCount} adet`} />
+                    <DeskInfoRow label="Görüşme tipi" value={activeIsPartner ? "Ortak satış" : "Satış"} />
                   </View>
 
-                  <View style={{ gap: 8 }}>
-                    <Link href={{ pathname: "/listing/[id]", params: { id: activeListing.id } }} asChild>
-                      <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingVertical: 11 })}>
-                        <MaterialCommunityIcons name="open-in-new" size={16} color="#FFFFFF" />
-                        <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>İlanı görüntüle</Text>
-                      </Pressable>
-                    </Link>
-                    <Link href="/partner" asChild>
-                      <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 11 })}>
-                        <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} />
-                        <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Ortaklık öner</Text>
-                      </Pressable>
-                    </Link>
-                    <Link href="/trust" asChild>
-                      <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 11 })}>
-                        <MaterialCommunityIcons name="flag-outline" size={16} color={colors.muted} />
-                        <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Şikayet et</Text>
-                      </Pressable>
-                    </Link>
+                  {/* Satıcı kartı */}
+                  <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                      {activeOther?.avatar && isImageAvatar(activeOther.avatar) ? (
+                        <Image source={{ uri: activeOther.avatar }} contentFit="cover" style={{ borderRadius: 999, height: 40, width: 40 }} />
+                      ) : (
+                        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}><MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} /></View>
+                      )}
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                          <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{activeOther?.name ?? t("user")}</Text>
+                          {activeOther?.verifiedIdentity ? <MaterialCommunityIcons name="check-decagram" size={15} color={colors.success} /> : null}
+                        </View>
+                        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>%{respRate} yanıt oranı</Text>
+                      </View>
+                    </View>
+                    <View style={{ flexDirection: "row", gap: 7 }}>
+                      {activeOtherId ? (
+                        <Link href={{ pathname: "/store/[id]", params: { id: activeOtherId } }} asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flex: 1, paddingVertical: 9 }}><Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "900" }}>Profili Gör</Text></Pressable></Link>
+                      ) : null}
+                      <Link href={{ pathname: "/listing/[id]", params: { id: activeListing.id } }} asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flex: 1, paddingVertical: 9 }}><Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "900" }}>İlanı Gör</Text></Pressable></Link>
+                      <Pressable onPress={() => setFollowing((s) => ({ ...s, [activeOtherId ?? ""]: !s[activeOtherId ?? ""] }))} style={{ alignItems: "center", backgroundColor: following[activeOtherId ?? ""] ? colors.primarySoft : colors.surface, borderColor: following[activeOtherId ?? ""] ? colors.primary : colors.line, borderRadius: 9, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 9 }}><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{following[activeOtherId ?? ""] ? "Takipte" : "+ Takip"}</Text></Pressable>
+                    </View>
+                  </View>
+
+                  {/* Aksiyonlar */}
+                  <View style={{ gap: 2 }}>
+                    <DeskActionRow icon="handshake-outline" title="Ortaklık öner" sub="Bu ilan için ortaklık teklifi gönder" onPress={() => setDraft("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?")} />
+                    <DeskActionRow icon="tag-outline" title="Fiyat teklifi gönder" sub="Composer'a teklif taslağı ekler" onPress={insertPriceOffer} />
+                    <DeskActionRow icon="archive-outline" title={archivedIds.includes(activeConversation.id) ? "Arşivden çıkar" : "Sohbeti arşivle"} sub="Görüşmeyi gelen kutusundan gizle" onPress={() => toggleArchive(activeConversation.id)} />
+                    <DeskActionRow icon="flag-outline" title="Şikayet et" sub="Bu ilanı veya kullanıcıyı bildir" href="/trust" />
                   </View>
                 </>
               ) : (
-                <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 10, gap: 6, padding: 14 }}>
+                <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, gap: 6, padding: 14 }}>
                   <MaterialCommunityIcons name="tag-off-outline" size={22} color={colors.muted} />
                   <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>İlan yayından kaldırıldı</Text>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>Bu görüşmenin ilanı artık yayında değil, ancak mesajlaşma geçmişin burada kalır.</Text>
@@ -694,6 +698,29 @@ function DeskInfoRow({ label, value }: { label: string; value: string }) {
       <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "800", textAlign: "right" }}>{value}</Text>
     </View>
   );
+}
+
+function isImageAvatar(value: string) {
+  return value.startsWith("http://") || value.startsWith("https://") || value.startsWith("file:");
+}
+
+function DeskActionRow({ icon, title, sub, onPress, href }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string; onPress?: () => void; href?: Href }) {
+  const inner = (
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 11, paddingVertical: 10 }}>
+      <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 9, height: 34, justifyContent: "center", width: 34 }}>
+        <MaterialCommunityIcons name={icon} size={17} color={colors.primaryDark} />
+      </View>
+      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{title}</Text>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{sub}</Text>
+      </View>
+      <MaterialCommunityIcons name="chevron-right" size={18} color={colors.subtle} />
+    </View>
+  );
+  if (href) {
+    return <Link href={href} asChild><Pressable style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>{inner}</Pressable></Link>;
+  }
+  return <Pressable onPress={onPress} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}>{inner}</Pressable>;
 }
 
 function MessageTask({ icon, label, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string }) {
