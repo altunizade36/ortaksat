@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { PrimaryButton } from "@/components/ui";
@@ -41,6 +41,32 @@ function parseLine(raw: string): ParsedRow | null {
   };
 }
 
+// Tırnak-duyarlı CSV satır ayrıştırıcı (virgül; "" ile kaçış).
+function parseCsvLine(line: string): string[] {
+  const out: string[] = [];
+  let cur = "";
+  let inQ = false;
+  for (let i = 0; i < line.length; i++) {
+    const c = line[i];
+    if (inQ) {
+      if (c === '"') {
+        if (line[i + 1] === '"') { cur += '"'; i++; } else inQ = false;
+      } else cur += c;
+    } else if (c === '"') inQ = true;
+    else if (c === ",") { out.push(cur); cur = ""; } else cur += c;
+  }
+  out.push(cur);
+  return out.map((s) => s.trim());
+}
+
+// CSV metnini iç "pipe" formatına çevirir; başlık satırı varsa atlar.
+function csvToPipe(csv: string): string {
+  const lines = csv.split(/\r?\n/).filter((l) => l.trim());
+  if (!lines.length) return "";
+  const startIdx = /ba[sş]l[iı]k|title|fiyat|price/i.test(lines[0]) ? 1 : 0;
+  return lines.slice(startIdx).map((l) => parseCsvLine(l).join(" | ")).join("\n");
+}
+
 const PLACEHOLDER_IMAGE = "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200";
 const SAMPLE = "Kablosuz Kulaklık Pro | 1.899 | 12 | Elektronik | https://...\nAkıllı Saat Seri 5 | 2.499 | 10 | Elektronik";
 
@@ -59,6 +85,22 @@ export function BulkListingModal({
 }) {
   const [text, setText] = useState("");
   const [done, setDone] = useState<number | null>(null);
+  const canUpload = Platform.OS === "web" && typeof document !== "undefined";
+
+  function pickCsv() {
+    if (!canUpload) return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".csv,text/csv,text/plain";
+    input.onchange = () => {
+      const file = input.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => setText(csvToPipe(String(reader.result ?? "")));
+      reader.readAsText(file, "utf-8");
+    };
+    input.click();
+  }
 
   const rows = useMemo(() => text.split("\n").map(parseLine).filter((r): r is ParsedRow => r !== null), [text]);
   const validRows = rows.filter((r) => r.valid);
@@ -99,9 +141,16 @@ export function BulkListingModal({
             ) : (
               <>
                 <View style={{ backgroundColor: colors.infoSoft, borderRadius: 10, gap: 4, padding: 12 }}>
-                  <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "900" }}>Her satır bir ilan. Alanları | ile ayır:</Text>
+                  <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "900" }}>Her satır bir ilan. Alanları | veya , (CSV) ile ayır:</Text>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>Başlık | Fiyat | Komisyon% | Kategori | GörselURL (opsiyonel)</Text>
                 </View>
+
+                {canUpload ? (
+                  <Pressable onPress={pickCsv} accessibilityRole="button" accessibilityLabel="CSV dosyası yükle" style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.primary, borderRadius: 11, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 }}>
+                    <MaterialCommunityIcons name="file-delimited-outline" size={18} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>CSV dosyası yükle (Excel'den dışa aktar)</Text>
+                  </Pressable>
+                ) : null}
 
                 <TextInput
                   value={text}
