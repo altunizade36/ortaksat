@@ -12,6 +12,7 @@ import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { REFERENCE_NOW, searchKey } from "@/lib/locale";
+import { scoreListing } from "@/lib/search";
 import { useSavedSearches } from "@/lib/saved-searches";
 import { LocationSelector } from "@/components/location-selector";
 import { districtsOfProvince, getDistrict, getProvince, locKey, provinces } from "@/lib/locations";
@@ -149,30 +150,35 @@ export default function ExploreScreen() {
   const activeListings = useMemo(() => {
     const provKey = provinceName ? locKey(provinceName) : "";
     const distKey = districtName ? locKey(districtName) : "";
-    const filtered = baseListings
-      .filter((listing) => {
-        if (city && listing.location !== city) return false;
-        if (provKey && !locKey(listing.location).includes(provKey)) return false;
-        if (distKey && !locKey(listing.location).includes(distKey)) return false;
-        if (minCommission > 0 && commissionAmount(listing) < minCommission) return false;
-        if (priceRange) {
-          const [mn, mx] = priceRange.split("-");
-          const min = Number(mn) || 0;
-          const max = mx ? Number(mx) : Infinity;
-          if (listing.price < min || listing.price > max) return false;
-        }
-        if (stockFilter === "in" && listing.stockCount <= 0) return false;
-        if (stockFilter === "low" && (listing.stockCount > 5 || listing.stockCount <= 0)) return false;
-        if (statusOpen && listing.partnershipMode !== "open") return false;
-        if (filter === "open" && listing.partnershipMode !== "open") return false;
-        if (filter === "hot" && listing.leadCount + listing.favoriteCount < 50) return false;
-        if (filter === "new" && !isNewListing(listing.createdAt)) return false;
-        if (tokens.length === 0) return true;
-        const owner = findUser(listing.ownerId);
-        const haystack = searchKey([listing.title, listing.category, listing.location, listing.description, listing.tags.join(" "), owner?.name].filter(Boolean).join(" "));
-        return tokens.every((token) => haystack.includes(token));
-      })
-      .sort((a, b) => (Number(Boolean(b.featured)) - Number(Boolean(a.featured))) || (filter === "commission" ? commissionAmount(b) - commissionAmount(a) : exploreScore(b, seed) - exploreScore(a, seed)));
+    const nonText = baseListings.filter((listing) => {
+      if (city && listing.location !== city) return false;
+      if (provKey && !locKey(listing.location).includes(provKey)) return false;
+      if (distKey && !locKey(listing.location).includes(distKey)) return false;
+      if (minCommission > 0 && commissionAmount(listing) < minCommission) return false;
+      if (priceRange) {
+        const [mn, mx] = priceRange.split("-");
+        const min = Number(mn) || 0;
+        const max = mx ? Number(mx) : Infinity;
+        if (listing.price < min || listing.price > max) return false;
+      }
+      if (stockFilter === "in" && listing.stockCount <= 0) return false;
+      if (stockFilter === "low" && (listing.stockCount > 5 || listing.stockCount <= 0)) return false;
+      if (statusOpen && listing.partnershipMode !== "open") return false;
+      if (filter === "open" && listing.partnershipMode !== "open") return false;
+      if (filter === "hot" && listing.leadCount + listing.favoriteCount < 50) return false;
+      if (filter === "new" && !isNewListing(listing.createdAt)) return false;
+      return true;
+    });
+
+    // Metin sorgusu varsa: fuzzy (yazım-hata toleranslı) skorla, ALAKA sırasına diz.
+    const filtered =
+      tokens.length > 0
+        ? nonText
+            .map((l) => ({ l, s: scoreListing(l, findUser(l.ownerId)?.name, tokens) }))
+            .filter((x) => x.s > 0)
+            .sort((a, b) => b.s - a.s || Number(Boolean(b.l.featured)) - Number(Boolean(a.l.featured)))
+            .map((x) => x.l)
+        : nonText.sort((a, b) => (Number(Boolean(b.featured)) - Number(Boolean(a.featured))) || (filter === "commission" ? commissionAmount(b) - commissionAmount(a) : exploreScore(b, seed) - exploreScore(a, seed)));
 
     if (filtered.length || tokens.length > 0 || filter !== "all" || hasPanelFilter) return filtered;
     return baseListings.slice().sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));

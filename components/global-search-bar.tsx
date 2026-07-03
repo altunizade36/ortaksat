@@ -8,7 +8,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { suggestCategories } from "@/lib/category-tree";
 import { moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { searchKey } from "@/lib/locale";
+import { searchAndRank } from "@/lib/search";
 import { displayText } from "@/lib/text";
 import { useStore } from "@/lib/use-store";
 
@@ -28,13 +28,8 @@ export function GlobalSearchBar() {
   const q = value.trim();
   const suggestions = useMemo(() => {
     if (q.length < 2) return { cats: [] as ReturnType<typeof suggestCategories>, products: [] as typeof listings };
-    const tokens = searchKey(q).split(" ").filter(Boolean);
-    const products = listings
-      .filter((l) => l.status === "active")
-      .map((l) => ({ l, key: searchKey(`${l.title} ${l.category} ${l.location}`) }))
-      .filter((x) => tokens.every((tk) => x.key.includes(tk)))
-      .slice(0, 6)
-      .map((x) => x.l);
+    // Yazım-hata toleranslı + alaka sıralı öneriler (fuzzy).
+    const products = searchAndRank(listings.filter((l) => l.status === "active"), q).slice(0, 6);
     return { cats: suggestCategories(q, 4), products };
   }, [q, listings]);
 
