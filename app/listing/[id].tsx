@@ -310,13 +310,6 @@ export default function ListingDetailScreen() {
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
   }
 
-  function handlePartnershipMessage() {
-    if (isDemo) return demoBlocked();
-    if (!owner) return;
-    const conversation = startConversation(currentListing.id, owner.id, `${currentListing.title} için ortaklık başvurumu ve satış detaylarını konuşmak istiyorum.`);
-    if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
-  }
-
   function handleCreateLead() {
     if (!partnership || partnership.status !== "active") return;
     if (!buyerName.trim() || !buyerPhone.trim()) {

@@ -737,57 +737,6 @@ function SellerPipeline({
   );
 }
 
-function SellerActionBand({
-  listing,
-  newLeadCount,
-  nextAction,
-  pendingPartners,
-  setFilter,
-  unpaidSaleCount,
-  updateListingStatus
-}: {
-  listing: Listing;
-  newLeadCount: number;
-  nextAction: { label: string; tone: "info" | "success" | "warning" };
-  pendingPartners: number;
-  setFilter: (filter: SellerFilter) => void;
-  unpaidSaleCount: number;
-  updateListingStatus: (listingId: string, status: Listing["status"]) => void;
-}) {
-  const { language } = useLanguage();
-  const primaryAction =
-    pendingPartners > 0
-      ? { icon: "account-plus-outline" as const, label: "Başvuruları Gör", onPress: () => setFilter("applications") }
-      : newLeadCount > 0
-        ? { icon: "phone-in-talk-outline" as const, label: "Talepleri Ara", onPress: () => setFilter("withLeads") }
-        : unpaidSaleCount > 0
-          ? { icon: "cash-check" as const, label: "Komisyon Öde", onPress: () => setFilter("payments") }
-          : listing.status === "active" && listing.stockCount <= 3
-            ? { icon: "package-variant-closed" as const, label: "Stok Güncelle", onPress: () => setFilter("lowStock") }
-            : listing.status !== "active"
-              ? { icon: "play-circle-outline" as const, label: "Aktifleştir", onPress: () => updateListingStatus(listing.id, "active") }
-              : { icon: "eye-outline" as const, label: "Detayı İncele", onPress: () => setFilter("all") };
-
-  return (
-    <View style={{ backgroundColor: nextAction.tone === "warning" ? colors.warningSoft : colors.primarySoft, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 9, padding: 10 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <MaterialCommunityIcons name={primaryAction.icon} size={20} color={nextAction.tone === "warning" ? colors.warning : colors.primaryDark} />
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>
-            {translateCopy("Sıradaki aksiyon", language)}: {translateCopy(nextAction.label, language)}
-          </Text>
-          <Text numberOfLines={1} selectable style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>
-            {pendingPartners} {translateCopy("başvuru", language)} · {newLeadCount} {translateCopy("yeni talep", language)} · {unpaidSaleCount} {translateCopy("ödeme", language)}
-          </Text>
-        </View>
-      </View>
-      <PrimaryButton tone={nextAction.tone === "warning" ? "soft" : "secondary"} icon={primaryAction.icon} onPress={primaryAction.onPress}>
-        {primaryAction.label}
-      </PrimaryButton>
-    </View>
-  );
-}
-
 function TaskRow({
   icon,
   label,
@@ -843,22 +792,6 @@ function OperationTile({
         {translateCopy(label, language)}
       </Text>
       <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 18, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-function InsightTile({ label, tone, value }: { label: string; tone: "warning" | "success" | "neutral"; value: string }) {
-  const { language } = useLanguage();
-  const color = tone === "success" ? colors.success : tone === "warning" ? colors.warning : colors.muted;
-
-  return (
-    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flex: 1, gap: 4, padding: 9 }}>
-      <Text ellipsizeMode="tail" numberOfLines={1} selectable style={{ color: colors.muted, fontSize: 10, fontWeight: "800" }}>
-        {translateCopy(label, language)}
-      </Text>
-      <Text adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1} selectable style={{ color, fontSize: 14, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
         {value}
       </Text>
     </View>

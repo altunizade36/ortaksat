@@ -667,11 +667,6 @@ function ReviewPrompt({
   );
 }
 
-function partnerClickEstimate(totalLeadCount: number, partnerCount: number, ownLeadCount: number) {
-  const sharedDemand = partnerCount > 0 ? Math.round((totalLeadCount * 18) / partnerCount) : ownLeadCount * 24;
-  return Math.max(ownLeadCount * 12, sharedDemand, 0);
-}
-
 function PartnerActionBand({
   active,
   leadCount,
