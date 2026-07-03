@@ -16,7 +16,11 @@ const CATEGORY_SLUGS = [
   "emlak", "vasita", "yedek-parca-aksesuar-ve-tuning", "ikinci-el-ve-sifir-alisveris",
   "is-makineleri-ve-sanayi", "ustalar-ve-hizmetler", "ozel-ders-ve-egitim", "is-ilanlari",
   "yardimci-arayanlar", "hayvanlar-alemi", "arayanlar-talep-ilanlari",
-  "dijital-urunler-ve-hizmetler", "yapi-market-ve-bahce", "muzik-enstrumanlari", "saglik-ve-medikal"
+  "dijital-urunler-ve-hizmetler", "yapi-market-ve-bahce", "muzik-enstrumanlari", "saglik-ve-medikal",
+  // Popüler retail alt-kategori landing sayfaları (yüksek arama hacmi)
+  "elektronik", "bilgisayar-ve-oyun", "ev-ve-yasam", "beyaz-esya", "mutfak", "kucuk-ev-aletleri",
+  "moda", "anne-ve-bebek", "kozmetik-ve-kisisel-bakim", "spor-ve-outdoor", "kitap-ve-hobi",
+  "supermarket-ve-gida", "ofis-ve-kirtasiye", "oyuncak", "bahce-ve-yasam", "evcil-hayvan-urunleri"
 ];
 
 const STATIC = [
