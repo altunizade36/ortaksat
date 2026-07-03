@@ -712,7 +712,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       const existing = conversations.find(
         (item) => item.listingId === listingId && item.participantIds.includes(currentUser.id) && item.participantIds.includes(receiverId)
       );
-      const now = new Date().toISOString().slice(0, 16).replace("T", " ");
+      const now = new Date().toISOString().slice(0, 19).replace("T", " ");
       const conversation: Conversation = existing ?? {
         id: newId("c", liveUser),
         listingId,
@@ -1383,7 +1383,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           senderId: currentUser.id,
           receiverId,
           body: trimmed,
-          createdAt: new Date().toISOString().slice(0, 16).replace("T", " "),
+          // Saniye hassasiyeti — aynı dakikadaki mesajların sırası korunur.
+          createdAt: new Date().toISOString().slice(0, 19).replace("T", " "),
           read: false,
           attachmentUrl: attachment?.url,
           attachmentType: attachment?.type,

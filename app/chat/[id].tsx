@@ -53,10 +53,12 @@ function ChatScreenInner() {
   const listing = conversation ? findListing(conversation.listingId) : undefined;
   const otherId = conversation?.participantIds.find((item) => item !== currentUser.id);
   const otherUser = otherId ? findUser(otherId) : undefined;
-  const conversationMessages = useMemo(
-    () => messages.filter((item) => item.conversationId === id).sort((a, b) => a.createdAt.localeCompare(b.createdAt)),
-    [id, messages]
-  );
+  const conversationMessages = useMemo(() => {
+    const idx = new Map(messages.map((m, i) => [m.id, i]));
+    return messages
+      .filter((item) => item.conversationId === id)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || ((idx.get(a.id) ?? 0) - (idx.get(b.id) ?? 0)));
+  }, [id, messages]);
 
   if (isWideWeb) {
     return (
@@ -91,7 +93,7 @@ function ChatScreenInner() {
     if (!body.trim()) return;
     sendConversationMessage(currentConversation.id, body.trim());
     setBody("");
-    requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
+    // onContentSizeChange sona kaydırır; kaymalı çift-scroll jank'i olmasın.
   }
 
   async function attachImage() {
@@ -105,7 +107,6 @@ function ChatScreenInner() {
       const url = await uploadMessageAttachment(result.assets[0].uri, currentUser.id);
       sendConversationMessage(currentConversation.id, body.trim(), { url, type: "image" });
       setBody("");
-      requestAnimationFrame(() => scrollRef.current?.scrollToEnd({ animated: true }));
     } finally {
       setAttaching(false);
     }
@@ -154,7 +155,7 @@ function ChatScreenInner() {
         )}
       </View>
 
-      <ScrollView ref={scrollRef} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, gap: 6, justifyContent: conversationMessages.length === 0 ? "center" : "flex-start", padding: 12, paddingBottom: 16 }}>
+      <ScrollView ref={scrollRef} onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: false })} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, gap: 6, justifyContent: conversationMessages.length === 0 ? "center" : "flex-end", padding: 12, paddingBottom: 16 }}>
         {conversationMessages.length === 0 ? (
           <EmptyState title={language === "en" ? "No messages yet" : "Henüz mesaj yok"} body={language === "en" ? "Write the first message and start the conversation." : "İlk mesajı yaz ve konuşmayı başlat."} />
         ) : null}

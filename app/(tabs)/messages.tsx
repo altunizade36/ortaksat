@@ -142,8 +142,10 @@ function MessagesScreenInner() {
     const activeListing = activeConversation ? findListing(activeConversation.listingId) : undefined;
     const activeOtherId = activeConversation?.participantIds.find((id) => id !== currentUser.id);
     const activeOther = activeOtherId ? findUser(activeOtherId) : undefined;
+    // Eskiden yeniye sırala; aynı zaman damgasında ekleme sırasını koru (tie-break).
+    const msgIndex = new Map(messages.map((m, i) => [m.id, i]));
     const activeMessages = activeConversation
-      ? messages.filter((m) => m.conversationId === activeConversation.id).slice().sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+      ? messages.filter((m) => m.conversationId === activeConversation.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt) || ((msgIndex.get(a.id) ?? 0) - (msgIndex.get(b.id) ?? 0)))
       : [];
     const activeContext = activeConversation
       ? buildConversationContext({ conversation: activeConversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t })
@@ -157,7 +159,7 @@ function MessagesScreenInner() {
       if (!activeConversation || !draft.trim()) return;
       sendConversationMessage(activeConversation.id, draft.trim());
       setDraft("");
-      requestAnimationFrame(() => deskScrollRef.current?.scrollToEnd({ animated: true }));
+      // Snap: onContentSizeChange zaten anlık olarak sona kaydırır (çift/kaymalı jank yok).
     };
     const attachImage = async () => {
       if (!activeConversation || attaching) return;
@@ -170,7 +172,6 @@ function MessagesScreenInner() {
         const url = await uploadMessageAttachment(result.assets[0].uri, currentUser.id);
         sendConversationMessage(activeConversation.id, draft.trim(), { url, type: "image" });
         setDraft("");
-        requestAnimationFrame(() => deskScrollRef.current?.scrollToEnd({ animated: true }));
       } finally {
         setAttaching(false);
       }
@@ -296,7 +297,7 @@ function MessagesScreenInner() {
                   </View>
                 </View>
 
-                <ScrollView ref={deskScrollRef} onContentSizeChange={() => deskScrollRef.current?.scrollToEnd({ animated: false })} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ gap: 8, padding: 22 }}>
+                <ScrollView ref={deskScrollRef} onContentSizeChange={() => deskScrollRef.current?.scrollToEnd({ animated: false })} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, gap: 8, justifyContent: activeMessages.length === 0 ? "center" : "flex-end", padding: 22 }}>
                   {activeMessages.length === 0 ? (
                     <EmptyState title="Henüz mesaj yok" body="İlk mesajı yaz ve konuşmayı başlat." />
                   ) : null}
