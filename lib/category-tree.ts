@@ -1077,12 +1077,20 @@ export const categoryTree: CategoryNode[] = [
     node("İnşaat & Mühendislik", leaves(["İnşaat Mühendisi", "Mimar", "Makine Mühendisi", "Elektrik Mühendisi", "Usta & Kalfa", "Şantiye Şefi", "Teknik Ressam", "İş Güvenliği Uzmanı"], "isIlani"), "isIlani")
   ], "isIlani", IMG("1521737604893-d14cc237f11d")),
 
-  node("Yardımcı Arayanlar", leaves([
-    "Bebek Bakıcısı", "Çocuk Bakıcısı", "Yaşlı Bakıcısı", "Hasta Bakıcısı", "Ev Yardımcısı", "Temizlikçi", "Gündelik Yardımcı", "Bahçıvan", "Şoför", "Özel Ders Yardımcısı", "Evcil Hayvan Bakıcısı"
-  ], "yardimci"), "yardimci", IMG("1576091160550-2173dba999ef")),
+  node("Yardımcı Arayanlar", [
+    node("Çocuk & Bebek Bakımı", leaves(["Bebek Bakıcısı", "Çocuk Bakıcısı", "Yatılı Bakıcı", "Saatlik Bakıcı", "Kreş Öncesi Bakım"], "yardimci"), "yardimci"),
+    node("Yaşlı & Hasta Bakımı", leaves(["Yaşlı Bakıcısı", "Hasta Bakıcısı", "Refakatçi", "Yatılı Hasta Bakımı", "Engelli Bakımı"], "yardimci"), "yardimci"),
+    node("Ev İşleri & Temizlik", leaves(["Ev Yardımcısı", "Temizlikçi", "Gündelik Yardımcı", "Ütücü", "Yemek Yapan", "Yatılı Ev Yardımcısı"], "yardimci"), "yardimci"),
+    node("Dış Hizmetler", leaves(["Bahçıvan", "Şoför", "Özel Ders Yardımcısı", "Evcil Hayvan Bakıcısı", "Alışveriş Yardımcısı"], "yardimci"), "yardimci")
+  ], "yardimci", IMG("1576091160550-2173dba999ef")),
 
   node("Hayvanlar Alemi", [
-    node("Sahiplendirme", leaves(["Kedi", "Köpek", "Kuş", "Balık", "Kemirgen", "Sürüngen", "Diğer"], "hayvan"), "hayvan"),
+    node("Sahiplendirme", [
+      node("Kedi", leaves(["Tekir & Sokak Kedisi", "British Shorthair", "Scottish Fold", "Van Kedisi", "Ankara Kedisi", "Sphynx", "Maine Coon", "Persian (İran)", "Ragdoll", "Bengal", "Yavru Kedi", "Melez Kedi"], "hayvan"), "hayvan"),
+      node("Köpek", leaves(["Golden Retriever", "Labrador", "Alman Kurdu (Kurt)", "Pomeranian", "Chihuahua", "Poodle", "Rottweiler", "Kangal & Çoban", "Terrier", "Husky", "Bulldog", "Yavru Köpek", "Melez Köpek"], "hayvan"), "hayvan"),
+      node("Kuş", leaves(["Muhabbet Kuşu", "Kanarya", "Papağan", "Sultan Papağanı", "Cennet Papağanı", "Güvercin", "Bülbül & Ötücü", "Diğer Kuş"], "hayvan"), "hayvan"),
+      ...leaves(["Balık & Akvaryum", "Kemirgen (Hamster/Tavşan)", "Sürüngen", "Çiftlik & Kümes Hayvanı", "At & Binek", "Diğer"], "hayvan")
+    ], "hayvan"),
     leaf("Kayıp Hayvan İlanı", "hayvan"),
     leaf("Bulunan Hayvan İlanı", "hayvan"),
     node("Evcil Hayvan Ürünleri", leaves(["Mama & Yem", "Kafes & Aksesuar", "Akvaryum", "Pet Bakım Ürünleri", "Oyuncak"], "alisverisGenel"), "alisverisGenel"),
@@ -1105,13 +1113,22 @@ export const categoryTree: CategoryNode[] = [
     node("Yapı Malzemeleri", leaves(["Boya & Vernik", "Fayans & Seramik", "Parke & Laminat", "İzolasyon", "Çimento & Alçı", "Elektrik Malzemeleri", "Tesisat & Su", "Aydınlatma Malzemesi"], "alisverisGenel"), "alisverisGenel")
   ], "alisverisGenel", IMG("1581092160562-40aa08e78837")),
 
-  node("Müzik Enstrümanları", leaves([
-    "Akustik Gitar", "Elektro Gitar", "Bas Gitar", "Klasik Gitar", "Piyano", "Dijital Piyano & Org", "Keman", "Bateri & Davul", "Perküsyon", "Nefesli Çalgılar", "DJ Ekipmanı", "Stüdyo / Kayıt Ekipmanı", "Amfi & Efekt Pedalı", "Bağlama", "Ud & Kanun", "Ney & Kaval", "Mikrofon", "Enstrüman Aksesuarı"
-  ], "muzik"), "muzik", IMG("1511671782779-c97d3d27a1d4")),
+  node("Müzik Enstrümanları", [
+    node("Gitar & Telli Çalgılar", leaves(["Akustik Gitar", "Elektro Gitar", "Bas Gitar", "Klasik Gitar", "Ukulele", "Mandolin", "Enstrüman Teli & Aksesuarı"], "muzik"), "muzik"),
+    node("Yaylı & Halk Çalgıları", leaves(["Keman", "Viyola", "Çello", "Kontrbas", "Bağlama & Saz", "Ud", "Kanun", "Cümbüş", "Kabak Kemane"], "muzik"), "muzik"),
+    node("Tuşlu Çalgılar", leaves(["Akustik Piyano", "Dijital Piyano", "Org & Synthesizer", "Melodika", "Akordeon"], "muzik"), "muzik"),
+    node("Vurmalı Çalgılar", leaves(["Akustik Bateri", "Elektronik Bateri", "Darbuka & Def", "Cajon", "Perküsyon Seti", "Bendir & Davul"], "muzik"), "muzik"),
+    node("Nefesli Çalgılar", leaves(["Ney", "Kaval", "Flüt", "Klarnet", "Saksofon", "Trompet", "Mızıka"], "muzik"), "muzik"),
+    node("DJ & Stüdyo Ekipmanı", leaves(["DJ Setup & Controller", "Mikser", "Ses Kartı", "Stüdyo Monitörü", "Kayıt Mikrofonu", "Amfi & Kabin", "Efekt Pedalı", "Kulaklık & Aksesuar"], "muzik"), "muzik")
+  ], "muzik", IMG("1511671782779-c97d3d27a1d4")),
 
-  node("Sağlık & Medikal", leaves([
-    "Tekerlekli Sandalye", "Hasta Yatağı", "Tansiyon Aleti", "Şeker Ölçüm Cihazı", "Ortopedik Ürünler", "İşitme Cihazı", "Oksijen Konsantratörü", "Nebulizatör", "Medikal Sarf Malzeme", "Masaj & Terapi Cihazı", "Ateş Ölçer", "Pulse Oksimetre", "Engelli Ürünleri", "Fizik Tedavi Ekipmanı"
-  ], "medikal"), "medikal", IMG("1584982751601-97dcc096659c")),
+  node("Sağlık & Medikal", [
+    node("Hareket & Ortopedi", leaves(["Tekerlekli Sandalye", "Akülü Sandalye", "Walker & Yürüteç", "Baston & Koltuk Değneği", "Ortopedik Ürünler", "Korse & Bandaj", "Engelli Ürünleri"], "medikal"), "medikal"),
+    node("Hasta Bakım Ürünleri", leaves(["Hasta Yatağı", "Havalı Yatak", "Hasta Karyolası", "Medikal Sarf Malzeme", "Hasta Bezi & Altlık", "Serum Askısı"], "medikal"), "medikal"),
+    node("Ölçüm & Teşhis Cihazları", leaves(["Tansiyon Aleti", "Şeker Ölçüm Cihazı", "Ateş Ölçer", "Pulse Oksimetre", "Steteskop", "Vücut Analiz Tartısı"], "medikal"), "medikal"),
+    node("Solunum & İşitme", leaves(["Oksijen Konsantratörü", "Nebulizatör", "Aspiratör", "CPAP / Uyku Cihazı", "İşitme Cihazı"], "medikal"), "medikal"),
+    node("Terapi & Fizik Tedavi", leaves(["Masaj & Terapi Cihazı", "Fizik Tedavi Ekipmanı", "TENS Cihazı", "Sıcak-Soğuk Terapi", "Egzersiz & Rehabilitasyon"], "medikal"), "medikal")
+  ], "medikal", IMG("1584982751601-97dcc096659c")),
 
   node("Diğer", [leaf("Kategori öner", "alisverisGenel")], "alisverisGenel", IMG("1441986300917-64674bd600d8"))
 ];

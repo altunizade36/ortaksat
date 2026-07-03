@@ -237,6 +237,24 @@ const CATEGORY_ICONS: Record<string, IconName> = {
   "Yapı Market & Bahçe": "hammer-wrench",
   "Müzik Enstrümanları": "guitar-electric",
   "Sağlık & Medikal": "medical-bag",
+  // Müzik alt grupları
+  "Gitar & Telli Çalgılar": "guitar-acoustic",
+  "Yaylı & Halk Çalgıları": "violin",
+  "Tuşlu Çalgılar": "piano",
+  "Vurmalı Çalgılar": "music-note",
+  "Nefesli Çalgılar": "saxophone",
+  "DJ & Stüdyo Ekipmanı": "microphone-variant",
+  // Sağlık alt grupları
+  "Hareket & Ortopedi": "wheelchair",
+  "Hasta Bakım Ürünleri": "bed-outline",
+  "Ölçüm & Teşhis Cihazları": "heart-pulse",
+  "Solunum & İşitme": "lungs",
+  "Terapi & Fizik Tedavi": "meditation",
+  // Yardımcı Arayanlar alt grupları
+  "Çocuk & Bebek Bakımı": "baby-face-outline",
+  "Yaşlı & Hasta Bakımı": "account-heart-outline",
+  "Ev İşleri & Temizlik": "broom",
+  "Dış Hizmetler": "account-wrench-outline",
   "Diğer": "dots-horizontal-circle-outline",
   // Önemli alt kategoriler (kenar çubuğu / filtre / ilan-ver)
   "Elektronik": "cellphone-link",
