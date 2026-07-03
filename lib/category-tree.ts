@@ -1138,6 +1138,22 @@ export function topCategories(): CategoryNode[] {
   return categoryTree;
 }
 
+/** Bir kategori etiketinin (ör. bir ilanın category alanı) landing slug'ını bulur.
+ *  Ağaçta etikete göre DFS; bulunamazsa undefined (çağıran genel sayfaya düşer). */
+export function findCategorySlug(label: string): string | undefined {
+  const walk = (nodes: CategoryNode[]): string | undefined => {
+    for (const n of nodes) {
+      if (n.label === label) return n.slug;
+      if (n.children) {
+        const found = walk(n.children);
+        if (found) return found;
+      }
+    }
+    return undefined;
+  };
+  return walk(categoryTree);
+}
+
 /** Resolve the form schema for a category path (array of node keys, deepest last). */
 export function resolveFormKey(path: CategoryNode[]): string {
   for (let i = path.length - 1; i >= 0; i--) {

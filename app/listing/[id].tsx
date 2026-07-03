@@ -6,6 +6,7 @@ import Head from "expo-router/head";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
 
+import { findCategorySlug } from "@/lib/category-tree";
 import { Accordion } from "@/components/accordion";
 import { AgreementCard } from "@/components/agreement-card";
 import { colors } from "@/components/colors";
@@ -332,9 +333,17 @@ export default function ListingDetailScreen() {
       <WebContainer max={1200} padding={0} style={{ gap: 16 }}>
       {/* Breadcrumb: Ana Sayfa › Kategori › Ürün */}
       <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, marginHorizontal: isWideWeb ? 0 : 12 }}>
-        <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
+        <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel="Ana sayfa"><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
         <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-        <Link href="/kategoriler" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{currentListing.category}</Text></Pressable></Link>
+        {(() => {
+          const catSlug = findCategorySlug(currentListing.category);
+          const href = catSlug ? ({ pathname: "/kategori/[slug]", params: { slug: catSlug } } as unknown as Href) : ("/kategoriler" as Href);
+          return (
+            <Link href={href} asChild>
+              <Pressable accessibilityRole="link" accessibilityLabel={`${currentListing.category} kategorisi`}><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{currentListing.category}</Text></Pressable>
+            </Link>
+          );
+        })()}
         <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
         <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{currentListing.title}</Text>
       </View>
@@ -355,7 +364,7 @@ export default function ListingDetailScreen() {
         const mainImg = gallery[galleryIdx] ?? currentListing.image;
         return (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 18 : 0, borderWidth: isWideWeb ? 1 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
-            <Pressable onPress={() => setLightbox(true)} style={{ position: "relative" }}>
+            <Pressable accessibilityRole="imagebutton" accessibilityLabel="Görseli büyüt" onPress={() => setLightbox(true)} style={{ position: "relative" }}>
               <SafeRemoteImage uri={mainImg} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
               <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
                 <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
@@ -392,8 +401,16 @@ export default function ListingDetailScreen() {
           <Text selectable style={{ color: colors.ink, fontSize: 23, fontWeight: "900", lineHeight: 29 }}>{currentListing.title}</Text>
 
           <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <MaterialCommunityIcons name="star" size={15} color={colors.gold} />
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{owner?.rating ?? 0}</Text>
+            {owner?.rating ? (
+              <>
+                <MaterialCommunityIcons name="star" size={15} color={colors.gold} />
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{owner.rating.toFixed(1)}</Text>
+              </>
+            ) : (
+              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 2 }}>
+                <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>Yeni satıcı</Text>
+              </View>
+            )}
             <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}> · {owner?.successfulSales ?? 0} satış · {currentListing.location}</Text>
           </View>
 
@@ -738,285 +755,6 @@ function RelatedListingsSection({
   );
 }
 
-function ListingActionCard({
-  activeShareUrl,
-  contactMethod,
-  isOwner,
-  listing,
-  onContact,
-  onJoin,
-  onMessageSeller,
-  onShare,
-  partnershipStatus
-}: {
-  activeShareUrl?: string;
-  contactMethod: Listing["contactMethod"];
-  isOwner: boolean;
-  listing: Listing;
-  onContact: () => void;
-  onJoin: () => void;
-  onMessageSeller: () => void;
-  onShare: () => void;
-  partnershipStatus?: PartnershipStatus;
-}) {
-  const { language } = useLanguage();
-  const canApply = !partnershipStatus && listing.status === "active" && listing.stockCount > 0 && listing.partnershipMode !== "invite";
-  const partnerReady = partnershipStatus === "active";
-  const partnerButtonLabel = partnershipStatus === "pending" || !canApply ? "Satıcıyla konuş" : listing.partnershipMode === "open" ? "Hemen ortak ol" : "Ortaklık iste";
-
-  return (
-    <Card>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-        <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 42, justifyContent: "center", width: 42 }}>
-          <MaterialCommunityIcons name={isOwner ? "storefront-outline" : partnerReady ? "link-variant" : "gesture-tap-button"} size={22} color="#FFFFFF" />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>
-            {translateCopy(isOwner ? "Bu ilan senin mağazanda" : partnerReady ? "Ortak satış bağlantın hazır" : "Bu ürünle ne yapmak istiyorsun?", language)}
-          </Text>
-          <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 12, fontWeight: "800", lineHeight: 17 }}>
-            {translateCopy(isOwner ? "İlanı düzenle, stok ve komisyonu satıcı panelinden yönet." : partnerReady ? "Bağlantıyı paylaş, alıcı talebini kaydet ve komisyonu ortak panelinden takip et." : "Alıcıysan satıcıya yaz, ortak olmak istiyorsan başvurunu gönder.", language)}
-          </Text>
-        </View>
-      </View>
-
-      {isOwner ? (
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <View style={{ flex: 1 }}>
-            <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: listing.id } }} icon="pencil-outline">
-              İlanı düzenle
-            </PrimaryButton>
-          </View>
-          <View style={{ flex: 1 }}>
-            <PrimaryButton href="/(tabs)/seller" tone="secondary" icon="view-dashboard-outline">
-              Satıcı paneli
-            </PrimaryButton>
-          </View>
-        </View>
-      ) : partnerReady ? (
-        <View style={{ gap: 8 }}>
-          <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, padding: 10 }}>
-            <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>
-              {activeShareUrl}
-            </Text>
-          </View>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <View style={{ flex: 1 }}>
-              <PrimaryButton icon="share-variant-outline" onPress={onShare}>
-                Paylaş
-              </PrimaryButton>
-            </View>
-            <View style={{ flex: 1 }}>
-              <PrimaryButton tone="secondary" href="/(tabs)/partner" icon="chart-line">
-                Ortak paneli
-              </PrimaryButton>
-            </View>
-          </View>
-        </View>
-      ) : (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-            <PrimaryButton icon={contactMethod === "whatsapp" ? "whatsapp" : contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={onContact}>
-              {contactLabel(contactMethod)}
-            </PrimaryButton>
-          </View>
-          <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-            <PrimaryButton tone={canApply ? "soft" : "secondary"} icon={canApply ? "handshake-outline" : "message-text-outline"} onPress={canApply ? onJoin : onMessageSeller}>
-              {partnerButtonLabel}
-            </PrimaryButton>
-          </View>
-        </View>
-      )}
-    </Card>
-  );
-}
-
-function ListingDecisionCard({
-  commission,
-  listing,
-  ownerTrustScore,
-  partnershipStatus
-}: {
-  commission: number;
-  listing: Listing;
-  ownerTrustScore?: number;
-  partnershipStatus?: PartnershipStatus;
-}) {
-  const { language } = useLanguage();
-  const readyToPartner = listing.status === "active" && listing.stockCount > 0 && partnershipStatus !== "active";
-  const statusLabel = partnershipStatus === "active" ? "Bağlantı hazır" : partnershipStatus === "pending" ? "Onay bekliyor" : readyToPartner ? "Ortaklığa uygun" : "Kontrol gerekli";
-
-  return (
-    <Card>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 42, justifyContent: "center", width: 42 }}>
-          <MaterialCommunityIcons name="shield-star-outline" size={22} color={colors.primaryDark} />
-        </View>
-        <View style={{ flex: 1, minWidth: 0 }}>
-          <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>
-            {translateCopy("Satın alma ve ortaklık özeti", language)}
-          </Text>
-          <Text numberOfLines={2} selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "800", lineHeight: 17 }}>
-            {translateCopy("Ürün, stok, satıcı güveni ve komisyon şartlarını tek bakışta kontrol et.", language)}
-          </Text>
-        </View>
-        <StatusPill label={statusLabel} tone={partnershipStatus === "active" || readyToPartner ? "success" : "warning"} />
-      </View>
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <DecisionMetric icon="package-variant-closed" label="Stok" value={listing.stockCount > 0 ? `${listing.stockCount}` : "Yok"} tone={listing.stockCount > 0 ? "success" : "warning"} />
-        <DecisionMetric icon="shield-check-outline" label="Satıcı güveni" value={ownerTrustScore === undefined ? "-" : `%${ownerTrustScore}`} tone={(ownerTrustScore ?? 0) >= 70 ? "success" : "warning"} />
-      </View>
-      <View style={{ flexDirection: "row", gap: 8 }}>
-        <DecisionMetric icon="cash-plus" label="Ortak kazancı" value={moneyIn(commission, listing.currency)} tone="success" />
-        <DecisionMetric icon="calendar-clock" label="Vade" value={`${listing.commissionDueDays} gün`} tone="neutral" />
-      </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-        <StatusPill label={`${translateCopy("İade", language)} ${listing.returnWindowDays} ${translateCopy("gün", language)}`} tone="info" />
-        <StatusPill label={translateCopy(listing.contactMethod === "message" ? "Uygulama içi mesaj" : listing.contactMethod === "whatsapp" ? "WhatsApp iletişim" : "Telefon iletişim", language)} tone="info" />
-      </View>
-    </Card>
-  );
-}
-
-function DecisionMetric({ icon, label, tone, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone: "success" | "warning" | "neutral"; value: string }) {
-  const { language } = useLanguage();
-  const color = tone === "success" ? colors.success : tone === "warning" ? colors.warning : colors.primary;
-
-  return (
-    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flex: 1, gap: 6, padding: 10 }}>
-      <MaterialCommunityIcons name={icon} size={18} color={color} />
-      <Text numberOfLines={1} selectable style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>
-        {translateCopy(label, language)}
-      </Text>
-      <Text adjustsFontSizeToFit minimumFontScale={0.75} numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 16, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-        {translateCopy(value, language)}
-      </Text>
-    </View>
-  );
-}
-
-function PartnershipBox({
-  activeShareUrl,
-  applicationAudience,
-  applicationChannel,
-  applicationHandle,
-  applicationNote,
-  applicationReach,
-  copyText,
-  handleJoin,
-  handleShare,
-  listing,
-  mode,
-  openShareTarget,
-  onMessageSeller,
-  setApplicationAudience,
-  setApplicationChannel,
-  setApplicationHandle,
-  setApplicationNote,
-  setApplicationReach,
-  status
-}: {
-  activeShareUrl?: string;
-  applicationAudience: string;
-  applicationChannel: string;
-  applicationHandle: string;
-  applicationNote: string;
-  applicationReach: string;
-  copyText: (label: string, text: string) => void;
-  handleJoin: () => void;
-  handleShare: () => void;
-  listing: Listing;
-  mode: "open" | "invite" | "approval" | "blocked";
-  openShareTarget: (target: "whatsapp" | "telegram") => void;
-  onMessageSeller: () => void;
-  setApplicationAudience: (value: string) => void;
-  setApplicationChannel: (value: string) => void;
-  setApplicationHandle: (value: string) => void;
-  setApplicationNote: (value: string) => void;
-  setApplicationReach: (value: string) => void;
-  status?: PartnershipStatus;
-}) {
-  const { language } = useLanguage();
-  if (status === "active") {
-    const templates = listingShareTemplates(listing, activeShareUrl);
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(activeShareUrl ?? "")}`;
-
-    return (
-      <Card>
-        <StatusPill label="Ortaklığın aktif" tone="success" />
-        <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Satış araçların hazır", language)}</Text>
-        <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{activeShareUrl}</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-            <PrimaryButton icon="content-copy" tone="secondary" onPress={() => activeShareUrl && copyText("Satış bağlantısı", activeShareUrl)}>Bağlantıyı Kopyala</PrimaryButton>
-          </View>
-          <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-            <PrimaryButton icon="whatsapp" tone="soft" onPress={() => openShareTarget("whatsapp")}>WhatsApp</PrimaryButton>
-          </View>
-          <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-            <PrimaryButton icon="send-outline" tone="secondary" onPress={() => openShareTarget("telegram")}>Telegram</PrimaryButton>
-          </View>
-        </View>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-            <PrimaryButton tone="secondary" onPress={() => copyText("Instagram açıklaması", templates.instagram)}>Instagram Kopyala</PrimaryButton>
-          </View>
-          <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-            <PrimaryButton tone="secondary" onPress={() => copyText("TikTok açıklaması", templates.tiktok)}>TikTok Kopyala</PrimaryButton>
-          </View>
-          <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-            <PrimaryButton icon="share-variant-outline" onPress={handleShare}>Genel Paylaş</PrimaryButton>
-          </View>
-        </View>
-        <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 10, padding: 12 }}>
-          <Image source={{ uri: qrUrl }} contentFit="contain" style={{ backgroundColor: "#FFFFFF", borderRadius: 8, height: 148, width: 148 }} />
-          <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("QR kodu ekran görüntüsüyle paylaşabilirsin.", language)}</Text>
-        </View>
-        <View style={{ backgroundColor: colors.ink, borderRadius: 8, gap: 8, overflow: "hidden", padding: 12 }}>
-          <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ borderRadius: 8, height: 150, width: "100%" }} />
-          <Text selectable numberOfLines={2} style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900" }}>{listing.title}</Text>
-          <Text selectable style={{ color: "#DCE8E3", fontSize: 13, lineHeight: 18 }}>{translateCopy(templates.whatsapp, language)}</Text>
-          <PrimaryButton tone="soft" onPress={() => copyText("Ürün kartı metni", `${listing.title}\n${templates.whatsapp}\n${activeShareUrl}`)}>Ürün Kartı Metnini Kopyala</PrimaryButton>
-        </View>
-        {(listing.adAssets ?? []).length > 0 ? (
-          <View style={{ gap: 8 }}>
-            <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Hazır reklam görselleri", language)}</Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-              {(listing.adAssets ?? []).map((asset) => (
-                <SafeRemoteImage key={asset} uri={asset} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 8, height: 128, width: 96 }} />
-              ))}
-            </ScrollView>
-          </View>
-        ) : null}
-      </Card>
-    );
-  }
-
-  if (status === "pending") {
-    return (
-      <Card>
-        <StatusPill label="Başvuru bekliyor" tone="warning" />
-        <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{translateCopy("Satıcı kabul edince referans bağlantın aktif olacak.", language)}</Text>
-        <PrimaryButton tone="secondary" icon="message-text-outline" onPress={onMessageSeller}>Satıcıyla konuş</PrimaryButton>
-      </Card>
-    );
-  }
-
-  return (
-    <Card>
-      <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ortak satıcı ol", language)}</Text>
-      <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>
-        {translateCopy(mode === "open" ? "Bu ilan anında ortaklığa açık. Formu doldurunca bağlantın hemen oluşur." : "Satıcı başvurunu bu bilgilerle değerlendirir; onaylanınca bağlantın açılır.", language)}
-      </Text>
-      <Field label="Nerede paylaşacağım?" value={applicationChannel} onChangeText={setApplicationChannel} />
-      <Field label="Hedef kitlem kim?" value={applicationAudience} onChangeText={setApplicationAudience} multiline />
-      <Field label="Instagram / WhatsApp / TikTok kanalım" value={applicationHandle} onChangeText={setApplicationHandle} />
-      <Field label="Tahmini kaç kişiye ulaşırım?" value={applicationReach} onChangeText={setApplicationReach} />
-      <Field label="Satıcıya not" value={applicationNote} onChangeText={setApplicationNote} multiline />
-      <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{mode === "open" ? "Hemen Ortak Ol" : "Başvuru Gönder"}</PrimaryButton>
-    </Card>
-  );
-}
 
 function IconButton({ active, icon, label, onPress }: { active?: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void }) {
   const { language } = useLanguage();
