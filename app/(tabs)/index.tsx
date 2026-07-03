@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter, type Href } from "expo-router";
 import { useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -40,6 +40,11 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [gridWidth, setGridWidth] = useState(0);
   const [visibleCount, setVisibleCount] = useState(INITIAL_HOME_ITEMS);
+  // Vitrin çeşitliliği: her girişte/yenilemede ürünler farklı sırada gelsin
+  // (ama gezerken sabit — anlık karışma yok). SSG uyumu için seed mount SONRASI verilir
+  // (seed=0 iken deterministik momentum sırası → hydration mismatch yok).
+  const [shuffleSeed, setShuffleSeed] = useState(0);
+  useEffect(() => { setShuffleSeed(Math.floor(Math.random() * 1e9) + 1); }, []);
   // Son gezilen ilanlar (localStorage, istemci-only — SSG hydration güvenli).
   const [recentIds, setRecentIds] = useState<string[]>([]);
   useEffect(() => { setRecentIds(getRecent()); }, []);
@@ -79,8 +84,9 @@ export default function HomeScreen() {
 
   function refresh() {
     setRefreshing(true);
+    // Yenilemede vitrini de tazele: yeni seed → ürünler farklı sırada dizilir.
+    setShuffleSeed(Math.floor(Math.random() * 1e9) + 1);
     // Gerçek yeniden yükleme: katalog snapshot'ını Supabase'den tekrar çek.
-    // (Eski davranış sahte 420ms gecikme + sıralamayı karıştırmaktı.)
     Promise.resolve(refreshMarketplace()).finally(() => setRefreshing(false));
   }
 
@@ -107,10 +113,13 @@ export default function HomeScreen() {
         if (feat !== 0) return feat;
         if (sortMode === "commission") return commissionAmount(b.listing) - commissionAmount(a.listing);
         if (sortMode === "newest") return b.listing.createdAt.localeCompare(a.listing.createdAt);
+        // Öne çıkan (varsayılan): arama yokken oturum-seed'li deterministik karışım —
+        // her girişte farklı, oturum içinde sabit. seed=0 iken momentum sırası (SSG güvenli).
+        if (tokens.length === 0 && shuffleSeed) return shuffleRank(a.listing.id, shuffleSeed) - shuffleRank(b.listing.id, shuffleSeed);
         return momentumScore(b.listing) - momentumScore(a.listing);
       })
       .map((item) => item.listing);
-  }, [activeListings, filter, findUser, maxCommission, maxMomentum, query, sortMode]);
+  }, [activeListings, filter, findUser, maxCommission, maxMomentum, query, shuffleSeed, sortMode]);
   const visibleListings = filteredListings.slice(0, visibleCount);
 
   useEffect(() => {
@@ -126,10 +135,17 @@ export default function HomeScreen() {
     }
   }
 
+  // KENAR-tetiklemeli daha-fazla-yükle: her scroll karesinde değil, dibe her
+  // yaklaşımda BİR KEZ tetiklenir (setState fırtınası + takılma önlenir).
+  const loadMoreArmed = useRef(true);
   function loadMoreIfNeeded(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const distanceToBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
-    if (distanceToBottom < 600) showMore();
+    if (distanceToBottom > 900) loadMoreArmed.current = true; // dibe uzakken yeniden kur
+    if (distanceToBottom < 600 && loadMoreArmed.current && hasMoreToShow) {
+      loadMoreArmed.current = false;
+      showMore();
+    }
   }
 
   const hasMoreToShow = visibleListings.length < filteredListings.length || marketplaceHasMore;
@@ -320,6 +336,14 @@ export default function HomeScreen() {
 
 function momentumScore(listing: Listing) {
   return listing.leadCount * 2 + listing.partnerCount + listing.favoriteCount / 10;
+}
+
+// (id, seed) -> deterministik pseudo-random sıra anahtarı (FNV-1a benzeri).
+// Aynı seed'de sabit sıra; seed değişince (yeni giriş/yenileme) sıra tamamen değişir.
+function shuffleRank(id: string, seed: number) {
+  let h = (seed ^ 0x9e3779b9) >>> 0;
+  for (let i = 0; i < id.length; i++) h = Math.imul(h ^ id.charCodeAt(i), 16777619) >>> 0;
+  return h >>> 0;
 }
 
 function searchScore(listing: Listing, owner: User | undefined, tokens: string[]) {
@@ -556,21 +580,26 @@ function FilterChip({ active, icon, label, onPress }: { active?: boolean; icon: 
 
 // Mobil hero görsel kümesi — web ile tutarlı: tokalaşma (anlaşma) + sabit ürünler.
 const MHERO = (n: string) => `https://ortaksat.com/hero2/${n}.jpg`;
+// Ürün daireleri kutu İÇİNDE (0..84) konumlanır — negatif offset yok, böylece
+// kartın overflow:hidden'ı hiçbir şeyi kırpmaz. Tokalaşma ortada, ürünler köşelerde.
 const MHERO_FLOAT: Array<{ img: string; top: number; left: number }> = [
-  { img: "headphones", top: -6, left: -8 },
-  { img: "watch", top: 34, left: -14 },
-  { img: "plant", top: 74, left: 6 }
+  { img: "headphones", top: 0, left: 0 },
+  { img: "watch", top: 84, left: 0 },
+  { img: "plant", top: 84, left: 84 }
 ];
 
 function MobileHeroCluster() {
   return (
     <View style={{ height: 118, position: "relative", width: 118 }}>
-      <View style={{ backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 104, position: "absolute", right: 0, top: 7, width: 104 }} />
-      <View style={{ borderColor: "#FFFFFF", borderRadius: 14, borderWidth: 2.5, height: 88, overflow: "hidden", position: "absolute", right: 4, top: 15, width: 96 }}>
+      {/* Yumuşak halka (ortalanmış) */}
+      <View style={{ backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 98, left: 10, position: "absolute", top: 10, width: 98 }} />
+      {/* Tokalaşma/anlaşma görseli — ortalanmış kare çerçeve */}
+      <View style={{ borderColor: "#FFFFFF", borderRadius: 16, borderWidth: 2.5, height: 84, left: 17, overflow: "hidden", position: "absolute", top: 17, width: 84 }}>
         <SafeRemoteImage uri={MHERO("deal")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
       </View>
+      {/* Sabit ürünler — köşelerde, tümü kutu içinde (kırpılmaz) */}
       {MHERO_FLOAT.map((f) => (
-        <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 34, left: f.left, overflow: "hidden", position: "absolute", top: f.top, width: 34 }}>
+        <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderColor: colors.primarySoft, borderRadius: 999, borderWidth: 1.5, height: 34, left: f.left, overflow: "hidden", position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.18, shadowRadius: 4, top: f.top, width: 34 }}>
           <SafeRemoteImage uri={MHERO(f.img)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
         </View>
       ))}

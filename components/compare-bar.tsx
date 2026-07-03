@@ -17,19 +17,23 @@ export function CompareBar() {
   const isWideWeb = useIsWideWeb();
   const router = useRouter();
   const { ids, remove, clear } = useCompare();
-  const { listings } = useStore();
+  const { listings, findUser } = useStore();
   const [open, setOpen] = useState(false);
 
   const items = ids.map((id) => listings.find((l) => l.id === id)).filter((l): l is Listing => !!l);
   if (items.length === 0) return null;
 
-  const rows: Array<{ label: string; get: (l: Listing) => string }> = [
-    { label: "Fiyat", get: (l) => moneyIn(l.price, l.currency) },
-    { label: "Ortak kazancı", get: (l) => moneyIn(commissionAmount(l), l.currency) },
-    { label: "Komisyon", get: (l) => (l.commissionType === "rate" ? `%${l.commissionValue}` : moneyIn(l.commissionValue, l.currency)) },
+  // num + dir olan satırlarda en iyi değer vurgulanır (en düşük fiyat / en yüksek kazanç…).
+  const rows: Array<{ label: string; get: (l: Listing) => string; num?: (l: Listing) => number; dir?: "min" | "max" }> = [
+    { label: "Fiyat", get: (l) => moneyIn(l.price, l.currency), num: (l) => l.price, dir: "min" },
+    { label: "Ortak kazancı", get: (l) => moneyIn(commissionAmount(l), l.currency), num: (l) => commissionAmount(l), dir: "max" },
+    { label: "Komisyon", get: (l) => (l.commissionType === "rate" ? `%${l.commissionValue}` : moneyIn(l.commissionValue, l.currency)), num: (l) => (l.commissionType === "rate" ? l.commissionValue : commissionAmount(l)), dir: "max" },
+    { label: "Bonus", get: (l) => (l.bonusAmount ? `${moneyIn(l.bonusAmount, l.currency)}${l.bonusQuota ? ` · ${l.bonusQuota} adet` : ""}` : "—"), num: (l) => l.bonusAmount ?? 0, dir: "max" },
+    { label: "Satıcı puanı", get: (l) => { const o = findUser(l.ownerId); return o?.rating ? `${o.rating.toFixed(1)} ★` : "Yeni"; }, num: (l) => findUser(l.ownerId)?.rating ?? 0, dir: "max" },
+    { label: "Stok", get: (l) => `${l.stockCount} adet`, num: (l) => l.stockCount, dir: "max" },
+    { label: "İade süresi", get: (l) => (l.returnWindowDays > 0 ? `${l.returnWindowDays} gün` : "Yok") },
     { label: "Kategori", get: (l) => getCategoryShortLabel(l.category) },
     { label: "Konum", get: (l) => displayText(l.location) },
-    { label: "Stok", get: (l) => `${l.stockCount} adet` },
     { label: "Ortaklık", get: (l) => (l.partnershipMode === "open" ? "Anında" : l.partnershipMode === "approval" ? "Onaylı" : "Davetli") }
   ];
 
@@ -45,8 +49,8 @@ export function CompareBar() {
               </View>
             ))}
           </View>
-          <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>{items.length} ürün seçildi</Text>
-          <Pressable onPress={() => setOpen(true)} disabled={items.length < 2} style={{ alignItems: "center", backgroundColor: items.length < 2 ? "rgba(255,255,255,0.25)" : colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
+          <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>{items.length < 2 ? "1 ürün · 1 daha seç" : `${items.length} ürün seçildi`}</Text>
+          <Pressable onPress={() => setOpen(true)} disabled={items.length < 2} accessibilityRole="button" accessibilityState={{ disabled: items.length < 2 }} accessibilityLabel={items.length < 2 ? "Karşılaştırmak için en az 2 ürün seçin" : "Seçili ürünleri karşılaştır"} style={{ alignItems: "center", backgroundColor: items.length < 2 ? "rgba(255,255,255,0.25)" : colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
             <MaterialCommunityIcons name="compare-horizontal" size={16} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>Karşılaştır</Text>
           </Pressable>
@@ -77,26 +81,39 @@ export function CompareBar() {
                       <View key={l.id} style={{ gap: 6, paddingHorizontal: 8, width: 190 }}>
                         <View style={{ backgroundColor: colors.line, borderRadius: 12, height: 120, overflow: "hidden", width: "100%" }}>
                           <SafeRemoteImage uri={l.image} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-                          <Pressable onPress={() => remove(l.id)} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, height: 24, justifyContent: "center", position: "absolute", right: 6, top: 6, width: 24 }}>
+                          <Pressable onPress={() => remove(l.id)} accessibilityRole="button" accessibilityLabel="Karşılaştırmadan çıkar" style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, height: 24, justifyContent: "center", position: "absolute", right: 6, top: 6, width: 24 }}>
                             <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
                           </Pressable>
                         </View>
                         <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", lineHeight: 17, minHeight: 34 }}>{displayText(l.title)}</Text>
-                        <Pressable onPress={() => { setOpen(false); router.push(`/listing/${l.id}`); }} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, paddingVertical: 7 }}>
+                        <Pressable onPress={() => { setOpen(false); router.push(`/listing/${l.id}`); }} accessibilityRole="button" accessibilityLabel={`${displayText(l.title)} ilanını aç`} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, paddingVertical: 7 }}>
                           <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>İlanı Aç</Text>
                         </Pressable>
                       </View>
                     ))}
                   </View>
                   {/* Özellik satırları */}
-                  {rows.map((r, ri) => (
-                    <View key={r.label} style={{ backgroundColor: ri % 2 === 0 ? colors.surfaceAlt : "transparent", borderRadius: 8, flexDirection: "row", marginTop: 6 }}>
-                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", paddingHorizontal: 10, paddingVertical: 12, width: 128 }}>{r.label}</Text>
-                      {items.map((l) => (
-                        <Text key={l.id} numberOfLines={1} style={{ color: r.label === "Ortak kazancı" ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: r.label === "Fiyat" || r.label === "Ortak kazancı" ? "900" : "700", paddingHorizontal: 8, paddingVertical: 12, width: 190 }}>{r.get(l)}</Text>
-                      ))}
-                    </View>
-                  ))}
+                  {rows.map((r, ri) => {
+                    let best: number | null = null;
+                    if (r.num && r.dir && items.length > 1) {
+                      const vals = items.map(r.num);
+                      if (new Set(vals).size > 1) best = r.dir === "min" ? Math.min(...vals) : Math.max(...vals);
+                    }
+                    return (
+                      <View key={r.label} style={{ backgroundColor: ri % 2 === 0 ? colors.surfaceAlt : "transparent", borderRadius: 8, flexDirection: "row", marginTop: 6 }}>
+                        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", paddingHorizontal: 10, paddingVertical: 12, width: 128 }}>{r.label}</Text>
+                        {items.map((l) => {
+                          const isBest = best !== null && r.num!(l) === best;
+                          return (
+                            <View key={l.id} style={{ alignItems: "center", flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 12, width: 190 }}>
+                              <Text numberOfLines={1} style={{ color: isBest || r.label === "Ortak kazancı" ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: isBest || r.label === "Fiyat" || r.label === "Ortak kazancı" ? "900" : "700" }}>{r.get(l)}</Text>
+                              {isBest ? <MaterialCommunityIcons name="check-circle" size={13} color={colors.primary} /> : null}
+                            </View>
+                          );
+                        })}
+                      </View>
+                    );
+                  })}
                 </View>
               </ScrollView>
             </ScrollView>

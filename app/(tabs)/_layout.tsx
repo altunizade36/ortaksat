@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import type { ColorValue } from "react-native";
-import { Platform, View } from "react-native";
+import { View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppHeader } from "@/components/app-header";
@@ -101,7 +101,7 @@ export default function TabsLayout() {
           lineHeight: 12,
           marginTop: 2
         },
-        tabBarStyle: (isWideWeb || Platform.OS === "web") ? { display: "none" } : {
+        tabBarStyle: isWideWeb ? { display: "none" } : {
           backgroundColor: colors.surface,
           borderColor: "rgba(16,24,40,0.08)",
           borderRadius: 26,

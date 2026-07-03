@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -238,10 +238,14 @@ export default function ExploreScreen() {
     setTimeout(() => setRefreshing(false), 420);
   }
 
+  // KENAR-tetiklemeli: her scroll karesinde değil, dibe her yaklaşımda bir kez.
+  const exploreLoadArmed = useRef(true);
   function loadMoreIfNeeded(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
     const distanceToBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
-    if (distanceToBottom < 520) {
+    if (distanceToBottom > 820) exploreLoadArmed.current = true;
+    if (distanceToBottom < 520 && exploreLoadArmed.current) {
+      exploreLoadArmed.current = false;
       setVisibleCount((current) => {
         const next = Math.min(mediaItems.length, current + EXPLORE_PAGE_SIZE);
         // Yüklü medya bitmeye yakınsa sonraki sayfayı çek (arama -> sunucu araması,

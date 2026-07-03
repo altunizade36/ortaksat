@@ -7,6 +7,7 @@ import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { findCategorySlug } from "@/lib/category-tree";
+import { useCompare } from "@/lib/compare";
 import { Accordion } from "@/components/accordion";
 import { AgreementCard } from "@/components/agreement-card";
 import { colors } from "@/components/colors";
@@ -74,6 +75,7 @@ export default function ListingDetailScreen() {
     startConversation,
     toggleFavorite
   } = useStore();
+  const { has: hasInCompare, toggle: toggleCompare } = useCompare();
   const storeListing = findListing(id);
   const [remote, setRemote] = useState<{ listing: Listing; owner?: User } | null>(null);
   const [fetching, setFetching] = useState(false);
@@ -212,6 +214,7 @@ export default function ListingDetailScreen() {
   }
   const listingReviews = reviews.filter((item) => item.listingId === currentListing.id);
   const favorited = isFavorite(currentListing.id);
+  const inCompare = hasInCompare(currentListing.id);
   const commission = commissionAmount(currentListing);
   const reviewableSale = sales.find((sale) => sale.listingId === currentListing.id && canReviewSale(sale.id));
   const activeTemplates = listingShareTemplates(currentListing, activeShareUrl);
@@ -445,6 +448,7 @@ export default function ListingDetailScreen() {
             ) : null}
             <View style={{ flexDirection: "row", gap: 8, padding: 12 }}>
               <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label="Beğen" onPress={() => toggleFavorite(currentListing.id)} />
+              {!isDemo ? <IconButton active={inCompare} icon={inCompare ? "compare-remove" : "compare-horizontal"} label="Karşılaştır" onPress={() => toggleCompare(currentListing.id)} /> : null}
               <IconButton icon="share-variant-outline" label="Paylaş" onPress={() => void handleShare()} />
               {!isOwner ? <IconButton icon="flag-outline" label="Bildir" onPress={() => void handleReport()} /> : null}
             </View>
