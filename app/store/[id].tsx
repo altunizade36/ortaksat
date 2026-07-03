@@ -97,7 +97,7 @@ export default function StoreScreen() {
     const deskCardWidth = responsiveGrid({ available: Math.min(width, 1480) - 40 - 300 - 24, gap: 16, minCardWidth: 210, maxColumns: 3 }).cardWidth;
     const badges: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; on: boolean; tint: string; color: string }> = [
       { icon: "check-decagram", label: "Kimlik Doğrulandı", sub: "Resmi kimlik onaylı", on: seller.verifiedIdentity, tint: colors.successSoft, color: colors.success },
-      { icon: "phone-check", label: "Telefon Doğrulandı", sub: "SMS ile doğrulandı", on: seller.verifiedPhone, tint: colors.infoSoft, color: colors.info },
+      { icon: "phone-check", label: "Telefon Doğrulandı", sub: "Numara onaylı", on: seller.verifiedPhone, tint: colors.infoSoft, color: colors.info },
       { icon: "instagram", label: "Instagram Bağlı", sub: "Sosyal hesap onaylı", on: !!seller.verifiedInstagram, tint: colors.violetSoft, color: colors.violet },
       { icon: "star-circle", label: "Yüksek Puan", sub: "4.5+ değerlendirme", on: seller.rating >= 4.5, tint: colors.goldSoft, color: colors.gold },
       { icon: "trophy", label: "Çok Satan", sub: "50+ başarılı satış", on: seller.successfulSales >= 50, tint: colors.primarySoft, color: colors.primaryDark },
