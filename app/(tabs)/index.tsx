@@ -70,6 +70,7 @@ export default function HomeScreen() {
   const topListings = activeListings.slice().sort((a, b) => momentumScore(b) + refreshBoost(b, seed) - (momentumScore(a) + refreshBoost(a, seed))).slice(0, 5);
   const topEarn = useMemo(() => activeListings.filter((l) => commissionAmount(l) > 0).slice().sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [activeListings]);
   const recentListings = useMemo(() => recentIds.map((id) => listings.find((l) => l.id === id)).filter((l): l is Listing => Boolean(l) && l!.status === "active").slice(0, 10), [recentIds, listings]);
+  const newestListings = useMemo(() => [...activeListings].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 10), [activeListings]);
   const myActiveListings = activeListings.filter((listing) => listing.ownerId === currentUser.id).length;
   const openPartnerListings = activeListings.filter((listing) => listing.partnershipMode === "open").length;
   const cityCount = new Set(activeListings.map((listing) => listing.location)).size;
@@ -200,6 +201,31 @@ export default function HomeScreen() {
                 {recentListings.map((l) => (
                   <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={l.title} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
                     <SafeRemoteImage uri={l.image} style={{ height: 90, width: "100%" }} contentFit="cover" />
+                    <View style={{ gap: 3, padding: 8 }}>
+                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{l.title}</Text>
+                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(l.price)}</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {newestListings.length >= 4 ? (
+            <View style={{ gap: 8 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                <MaterialCommunityIcons name="new-box" size={17} color={colors.primaryDark} />
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>En Yeni İlanlar</Text>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
+                {newestListings.map((l) => (
+                  <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={l.title} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
+                    <View style={{ height: 90, width: "100%" }}>
+                      <SafeRemoteImage uri={l.image} style={{ height: 90, width: "100%" }} contentFit="cover" />
+                      <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 7, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 7 }}>
+                        <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>YENİ</Text>
+                      </View>
+                    </View>
                     <View style={{ gap: 3, padding: 8 }}>
                       <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{l.title}</Text>
                       <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(l.price)}</Text>
