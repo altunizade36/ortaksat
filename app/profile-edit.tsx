@@ -382,6 +382,51 @@ function ProfileEditScreenInner() {
         </Card>
 
         <PrimaryButton icon="content-save-outline" onPress={() => void submit()}>{saving ? "Kaydediliyor" : "Profili kaydet"}</PrimaryButton>
+
+        {/* Mobil paritesi: şifre/IBAN/bildirim/doğrulama/hesap web'de vardı, mobilde yoktu. */}
+        {isLiveAccount ? (
+          <Card>
+            <SectionTitle title="Hesap güvenliği" />
+            <DeskField icon="lock-outline" label="Yeni şifre" secure value={pwNew} onChangeText={setPwNew} placeholder="En az 8 karakter" />
+            <DeskField icon="lock-check-outline" label="Yeni şifre (tekrar)" secure value={pwNew2} onChangeText={setPwNew2} placeholder="Tekrar" />
+            <PrimaryButton icon="key-outline" tone="secondary" onPress={() => void changePassword()}>{pwSaving ? "Güncelleniyor" : "Şifreyi güncelle"}</PrimaryButton>
+          </Card>
+        ) : null}
+
+        <Card>
+          <SectionTitle title="Bildirim tercihleri" />
+          <ToggleRow label="E-posta bildirimleri" sub="Satış, komisyon ve talepler" on={notif.email} onPress={() => toggleNotif("email")} />
+          <ToggleRow label="Anlık bildirimler" sub="Tarayıcı ve uygulama" on={notif.push} onPress={() => toggleNotif("push")} />
+          <ToggleRow label="SMS bildirimleri" sub="Yalnızca önemli hareketler" on={notif.sms} onPress={() => toggleNotif("sms")} />
+          <ToggleRow label="WhatsApp bildirimleri" sub="Satış ve komisyon özetleri" on={notif.whatsapp} onPress={() => toggleNotif("whatsapp")} />
+          <ToggleRow label="Pazarlama & kampanyalar" sub="Fırsat ve duyurular" on={notif.marketing} onPress={() => toggleNotif("marketing")} />
+        </Card>
+
+        <Card>
+          <SectionTitle title="Mağaza & ödeme" />
+          <Field label="Mağaza adı" value={storeName} onChangeText={setStoreName} icon="storefront-outline" />
+          <DeskField icon="bank-outline" label="IBAN (komisyon tahsilatı için)" value={iban} onChangeText={setIban} placeholder="TR__ ____ ____ ____ ____ __" />
+          <ToggleRow label="Ortak başvurularını otomatik onayla" sub="Yeni ortaklar beklemeden başlar" on={storePrefs.autoApprove} onPress={() => toggleStore("autoApprove")} />
+          <ToggleRow label="Tatil modu" sub="İlanların geçici olarak pasife alınır" on={storePrefs.vacation} onPress={() => toggleStore("vacation")} />
+          <ToggleRow label="Telefonu ilanlarımda göster" sub="Alıcılar iletişim için numaranı görebilir" on={storePrefs.showPhone} onPress={() => toggleStore("showPhone")} />
+          <PrimaryButton icon="content-save-outline" tone="secondary" onPress={() => void saveStore()}>{storeSaving ? "Kaydediliyor" : "Mağaza & IBAN'ı kaydet"}</PrimaryButton>
+        </Card>
+
+        <Card>
+          <SectionTitle title="Doğrulama durumu" />
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            <StatusPill label={currentUser.verifiedPhone ? "Telefon ✓" : "Telefon —"} tone={currentUser.verifiedPhone ? "success" : "warning"} />
+            <StatusPill label={currentUser.verifiedIdentity ? "Kimlik ✓" : "Kimlik —"} tone={currentUser.verifiedIdentity ? "success" : "warning"} />
+            <StatusPill label={currentUser.verifiedInstagram ? "Instagram ✓" : "Instagram —"} tone={currentUser.verifiedInstagram ? "success" : "warning"} />
+          </View>
+          <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>Doğrulamalar güvenlik gereği ekibimizce, belge/bilgi kontrolüyle yapılır.</Text>
+          <PrimaryButton icon="shield-check-outline" tone="secondary" onPress={() => startVerification("Doğrulama talebi")}>Doğrulama talebi oluştur</PrimaryButton>
+        </Card>
+
+        <Card>
+          <SectionTitle title="Hesap" />
+          <PrimaryButton icon="account-cancel-outline" tone="danger" onPress={closeAccount}>Hesabı kapat</PrimaryButton>
+        </Card>
       </ScrollView>
     </KeyboardAvoidingView>
   );
