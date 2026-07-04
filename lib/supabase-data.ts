@@ -1,4 +1,5 @@
 ﻿import { supabase } from "@/lib/supabase";
+import { getDemoProductImageMeta } from "@/lib/demo-product-images";
 import { msgStamp } from "@/lib/format";
 import { displayText, repairTurkishText } from "@/lib/text";
 import type { CategorySuggestion, Conversation, Favorite, Lead, Listing, LocationSuggestion, Message, Notification, NotificationMeta, Order, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
@@ -54,6 +55,13 @@ type ProfileRow = {
   role?: User["role"] | null;
   status?: string | null;
 };
+
+// Herkese açık (anon dahil) profil okumalarında yalnızca gösterime uygun kolonlar
+// çekilir. `phone` ve `preferences` KASITEN dışarıda: anon role'de bu kolonlar
+// DB'de geri alınmıştır (bkz. migration 20260704120000_profiles_phone_privacy),
+// telefon yalnızca iletişim anında girişli kullanıcıya `fetchSellerPhone` ile verilir.
+const PUBLIC_PROFILE_COLUMNS =
+  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status" as const;
 
 export type MarketplaceSnapshot = {
   listings: Listing[];
@@ -119,10 +127,15 @@ function mapProfile(row: ProfileRow): User {
 }
 
 function mapListing(row: PublicListingCardRow): Listing {
+  const baseImage = row.image_url ?? "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200";
+  const title = displayText(row.title);
+  const category = displayText(row.category);
+  const demoImage = Boolean(row.demo) ? getDemoProductImageMeta({ title, category, image: baseImage }) : undefined;
+
   return {
     id: row.id,
     ownerId: row.owner_id,
-    title: displayText(row.title),
+    title,
     slug: row.slug,
     description: repairTurkishText(row.description),
     salesPitch: (row.sales_pitch ?? []).map(repairTurkishText),
@@ -136,9 +149,12 @@ function mapListing(row: PublicListingCardRow): Listing {
     commissionValue: toNumber(row.commission_value),
     bonusAmount: row.bonus_amount != null ? toNumber(row.bonus_amount) : undefined,
     bonusQuota: row.bonus_quota != null ? toNumber(row.bonus_quota) : undefined,
-    category: displayText(row.category),
+    category,
     location: displayText(row.location),
-    image: row.image_url ?? "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200",
+    image: demoImage?.imageUrl ?? baseImage,
+    imageUrl: demoImage?.imageUrl ?? baseImage,
+    imageAlt: demoImage?.imageAlt ?? `${title} ilan görseli`,
+    fallbackCategoryImage: demoImage?.fallbackCategoryImage,
     status: row.status,
     partnershipMode: row.partnership_mode,
     stockCount: row.stock_count ?? 0,
@@ -156,7 +172,6 @@ function mapListing(row: PublicListingCardRow): Listing {
     featured: Boolean(row.featured)
   };
 }
-
 // Tek bir ilanı id ile çeker (paylaşılan link herkeste açılsın diye). Aktif ilanlar
 // listing_public_cards (RLS-güvenli, public) üzerinden gelir; sahibi de getirilir.
 export async function fetchListingById(id: string): Promise<{ listing: Listing; owner?: User } | null> {
@@ -165,9 +180,21 @@ export async function fetchListingById(id: string): Promise<{ listing: Listing; 
   if (error || !data) return null;
   const listing = mapListing(data as PublicListingCardRow);
   let owner: User | undefined;
-  const prof = await supabase.from("profiles").select("*").eq("id", listing.ownerId).maybeSingle();
+  const prof = await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).eq("id", listing.ownerId).maybeSingle();
   if (prof.data) owner = mapProfile(prof.data as ProfileRow);
   return { listing, owner };
+}
+
+// Satıcı telefonunu YALNIZCA iletişim anında, ayrı ve dar bir sorguyla çeker.
+// `phone` kolonu anon role'de DB'de geri alındığı için giriş yapmamış ziyaretçi
+// boş ("") alır → uygulama uygulama-içi mesaja/girişe düşer. Girişli kullanıcı
+// gerçek numarayı alıp WhatsApp/tel bağlantısını kurar. Telefon hiçbir zaman
+// listeleme/feed yanıtında taşınmaz (kazıma yüzeyi kapalı).
+export async function fetchSellerPhone(ownerId: string): Promise<string> {
+  if (!supabase || !ownerId) return "";
+  const { data, error } = await supabase.from("profiles").select("phone").eq("id", ownerId).maybeSingle();
+  if (error || !data) return "";
+  return (data as { phone: string | null }).phone ?? "";
 }
 
 export type AuditEntry = { id: number; userId: string | null; action: string; entityType: string | null; entityId: string | null; createdAt: string };
@@ -311,7 +338,7 @@ export async function loadMarketplaceSnapshot(): Promise<MarketplaceSnapshot | n
       .eq("status", "active")
       .order("created_at", { ascending: false })
       .limit(90),
-    supabase.from("profiles").select("*").limit(200)
+    supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).limit(200)
   ]);
 
   if (listingsResult.error || profilesResult.error) {
@@ -355,7 +382,7 @@ export async function loadMarketplacePage(offset: number, limit: number): Promis
   if (listings.length === 0) return { listings: [], users: [] };
 
   const ownerIds = Array.from(new Set(listings.map((l) => l.ownerId)));
-  const { data: profileData } = await supabase.from("profiles").select("*").in("id", ownerIds);
+  const { data: profileData } = await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).in("id", ownerIds);
   const users = ((profileData ?? []) as ProfileRow[]).map(mapProfile);
   return { listings, users };
 }
@@ -401,7 +428,7 @@ export async function searchListings(params: {
   const listings = ((data ?? []) as PublicListingCardRow[]).map(mapListing);
   if (listings.length === 0) return { listings: [], users: [] };
   const ownerIds = Array.from(new Set(listings.map((l) => l.ownerId)));
-  const { data: profileData } = await supabase.from("profiles").select("*").in("id", ownerIds);
+  const { data: profileData } = await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).in("id", ownerIds);
   const users = ((profileData ?? []) as ProfileRow[]).map(mapProfile);
   return { listings, users };
 }

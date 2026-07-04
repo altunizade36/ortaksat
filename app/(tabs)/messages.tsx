@@ -10,9 +10,10 @@ import { Linking, Platform, Pressable, ScrollView, Text, TextInput, View } from 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
 import { EmptyState, StatusPill } from "@/components/ui";
-import { localToday, money } from "@/lib/format";
+import { commissionAmount, localToday, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadMessageAttachment } from "@/lib/live-service";
+import { fetchSellerPhone } from "@/lib/supabase-data";
 import { useTypingIndicator } from "@/lib/use-typing";
 import { useContentWidth, useIsWideWeb } from "@/lib/layout";
 import { searchKey, shortDate } from "@/lib/locale";
@@ -24,6 +25,7 @@ const DESK_QUICK_REPLIES = [
   "Merhaba, ilan hâlâ yayında mı?",
   "Fiyat güncel mi?",
   "Teslimat / görüşme için uygun musunuz?",
+  "Ödeme ve teslimat koşullarını mesajda netleştirelim.",
   "Ortak satış için detay konuşabilir miyiz?"
 ];
 
@@ -64,6 +66,35 @@ const sourceLabels: Record<Lead["source"], string> = {
   web: "Web form",
   phone: "Telefon"
 };
+
+const MESSAGE_RISK_WORDS = [
+  "iban",
+  "havale",
+  "eft",
+  "kapora",
+  "kaparo",
+  "whatsapp",
+  "telegram",
+  "papara",
+  "kripto",
+  "site disi",
+  "site dışı",
+  "western union",
+  "hesap numarasi",
+  "hesap numarası",
+  "kart bilgisi",
+  "dolandirici",
+  "dolandırıcı"
+];
+
+function scanMessageRisk(text: string) {
+  const key = searchKey(text);
+  const matches = MESSAGE_RISK_WORDS.filter((word) => key.includes(searchKey(word)));
+  return {
+    hasRisk: matches.length > 0,
+    matches: Array.from(new Set(matches)).slice(0, 3)
+  };
+}
 
 function MessagesScreenInner() {
   const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, notifications, partnerships, sales, sendConversationMessage } = useStore();
@@ -214,6 +245,12 @@ function MessagesScreenInner() {
     const activeIsPartner = Boolean(activeConversation?.partnerId);
     const activePhotoCount = activeListing ? (activeListing.adAssets?.length ?? 0) + 1 : 0;
     const activeListingNo = activeListing ? activeListing.id.replace(/[^0-9]/g, "").slice(-10) || activeListing.id : "";
+    const activeRisk = scanMessageRisk([...activeMessages.map((m) => m.body), draft].filter(Boolean).join(" "));
+    const draftRisk = scanMessageRisk(draft);
+    const estimatedCommission = activeListing ? commissionAmount(activeListing) : 0;
+    const safeDealDraft = activeListing
+      ? `Ödeme, teslimat ve komisyon koşullarını OrtakSat mesaj kaydında netleştirelim. İlan: ${displayText(activeListing.title)} - Fiyat: ${money(activeListing.price)}${estimatedCommission ? ` - Tahmini komisyon: ${money(estimatedCommission)}` : ""}.`
+      : "Ödeme, teslimat ve komisyon koşullarını OrtakSat mesaj kaydında netleştirelim.";
 
     const respRate = activeOther?.responseRate ?? 0;
     const respText = respRate >= 80 ? "Bu satıcı mesajlara genellikle hızlı yanıt verir." : respRate >= 50 ? "Bu satıcı mesajlara çoğunlukla yanıt verir." : "Yanıtlar biraz gecikebilir.";
@@ -325,8 +362,9 @@ function MessagesScreenInner() {
                     <MaterialCommunityIcons name={activeIsPartner ? "handshake-outline" : "tag-outline"} size={13} color={activeIsPartner ? colors.primaryDark : colors.muted} />
                     <Text style={{ color: activeIsPartner ? colors.primaryDark : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{activeIsPartner ? "Ortak satış" : "Satış konuşması"}</Text>
                   </View>
-                  {activeOther?.phone ? (
-                    <Pressable accessibilityLabel="Ara" onPress={() => void Linking.openURL(`tel:${activeOther.phone.replace(/[^0-9+]/g, "")}`)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="phone-outline" size={16} color={colors.muted} /></Pressable>
+                  {activeOther?.id ? (
+                    // Telefon feed'de taşınmaz; arama anında (girişli kullanıcı) çekilir.
+                    <Pressable accessibilityLabel="Ara" onPress={async () => { const p = activeOther.phone || (await fetchSellerPhone(activeOther.id)); const tel = p.replace(/[^0-9+]/g, ""); if (tel) void Linking.openURL(`tel:${tel}`); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="phone-outline" size={16} color={colors.muted} /></Pressable>
                   ) : null}
                   <Pressable accessibilityLabel="Önemli işaretle" onPress={() => setStarred((s) => ({ ...s, [activeConversation.id]: !s[activeConversation.id] }))} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name={starred[activeConversation.id] ? "star" : "star-outline"} size={16} color={starred[activeConversation.id] ? colors.gold : colors.muted} /></Pressable>
                   <Pressable accessibilityLabel="Arşivle" onPress={() => toggleArchive(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="archive-outline" size={16} color={colors.muted} /></Pressable>
@@ -337,6 +375,8 @@ function MessagesScreenInner() {
                   <Text numberOfLines={1} style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "700" }}>{respText}</Text>
                   <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>%{respRate} yanıt</Text>
                 </View>
+
+                <ConversationInsightBar context={activeContext} risk={activeRisk} listingPrice={activeListing ? money(activeListing.price) : undefined} commission={estimatedCommission ? money(estimatedCommission) : undefined} isPartner={activeIsPartner} />
 
                 <ScrollView ref={deskScrollRef} scrollEventThrottle={16} onScroll={(e) => { const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent; deskNearBottomRef.current = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120; }} onContentSizeChange={() => { if (deskNearBottomRef.current) deskScrollRef.current?.scrollToEnd({ animated: false }); }} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-start", padding: 22 }}>
                   {activeMessages.length === 0 ? <EmptyState title="Henüz mesaj yok" body="İlk mesajı yaz ve konuşmayı başlat." /> : null}
@@ -386,7 +426,14 @@ function MessagesScreenInner() {
                     {DESK_QUICK_REPLIES.map((r) => (
                       <Pressable key={r} onPress={() => setDraft(r)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 })}><Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "700" }}>{r}</Text></Pressable>
                     ))}
+                    <Pressable onPress={() => setDraft(safeDealDraft)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : colors.successSoft, borderColor: colors.success, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 })}><Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "800" }}>Güvenli işlem notu</Text></Pressable>
                   </View>
+                  {draftRisk.hasRisk ? (
+                    <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderColor: colors.warning, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 10, paddingVertical: 8 }}>
+                      <MaterialCommunityIcons name="shield-alert-outline" size={16} color={colors.warning} />
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>Bu mesajda hassas ödeme veya site dışı iletişim ifadesi var. Görüşmeyi kayıtlı mesaj içinde net tutun.</Text>
+                    </View>
+                  ) : null}
                   <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 10 }}>
                     <Pressable accessibilityLabel="Görsel ekle" onPress={() => void attachImage()} disabled={attaching} hitSlop={8}><MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={19} color={attaching ? colors.primary : colors.muted} /></Pressable>
                     <TextInput value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline placeholder="Mesajınızı yazınız…" placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ color: colors.ink, flex: 1, fontSize: 14, maxHeight: 110, minHeight: 46, paddingVertical: 12 }} />
@@ -432,7 +479,10 @@ function MessagesScreenInner() {
                     <DeskInfoRow label="Kategori" value={displayText(activeListing.category)} />
                     <DeskInfoRow label="Stok" value={`${activeListing.stockCount} adet`} />
                     <DeskInfoRow label="Görüşme tipi" value={activeIsPartner ? "Ortak satış" : "Satış"} />
+                    {estimatedCommission ? <DeskInfoRow label="Tahmini komisyon" value={money(estimatedCommission)} /> : null}
                   </View>
+
+                  <ConversationTrustCard context={activeContext} risk={activeRisk} responseRate={respRate} isPartner={activeIsPartner} />
 
                   {/* Satıcı kartı */}
                   <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
@@ -520,6 +570,7 @@ function MessagesScreenInner() {
         const conversationMessages = messages.filter((item) => item.conversationId === conversation.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
         const lastMessage = conversationMessages[0];
         const unreadCount = conversationMessages.filter((item) => item.receiverId === currentUser.id && !item.read).length;
+        const rowRisk = scanMessageRisk(conversationMessages.map((item) => item.body).join(" "));
 
         const isPartner = Boolean(conversation.partnerId);
         return (
@@ -559,6 +610,7 @@ function MessagesScreenInner() {
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                     <MaterialCommunityIcons name="tag-outline" size={12} color={colors.subtle} />
                     <Text numberOfLines={1} style={{ color: colors.subtle, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{displayText(listing.title)}</Text>
+                    {rowRisk.hasRisk ? <MaterialCommunityIcons name="shield-alert-outline" size={13} color={colors.warning} /> : null}
                   </View>
                 ) : null}
               </View>
@@ -667,6 +719,86 @@ function DeskInfoRow({ label, value }: { label: string; value: string }) {
     <View style={{ alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "space-between" }}>
       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{label}</Text>
       <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "800", textAlign: "right" }}>{value}</Text>
+    </View>
+  );
+}
+
+function ConversationInsightBar({
+  commission,
+  context,
+  isPartner,
+  listingPrice,
+  risk
+}: {
+  commission?: string;
+  context: { channel: string; source: string; status: string };
+  isPartner: boolean;
+  listingPrice?: string;
+  risk: { hasRisk: boolean; matches: string[] };
+}) {
+  return (
+    <View style={{ backgroundColor: risk.hasRisk ? colors.warningSoft : colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, gap: 8, paddingHorizontal: 18, paddingVertical: 10 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+        <MiniSignal icon={risk.hasRisk ? "shield-alert-outline" : "shield-check-outline"} label={risk.hasRisk ? "Kontrol gerekli" : "Kayıtlı görüşme"} tone={risk.hasRisk ? "warn" : "ok"} />
+        <MiniSignal icon={isPartner ? "handshake-outline" : "tag-outline"} label={isPartner ? "Ortak satış" : "Satış"} />
+        <MiniSignal icon="source-branch" label={context.source} />
+        <MiniSignal icon="clipboard-text-outline" label={context.status} />
+        {listingPrice ? <MiniSignal icon="cash" label={listingPrice} /> : null}
+        {commission ? <MiniSignal icon="percent-outline" label={`Komisyon ${commission}`} /> : null}
+      </View>
+      {risk.hasRisk ? (
+        <Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>
+          Hassas ifade algılandı: {risk.matches.join(", ")}. Ödeme, teslimat ve anlaşma şartlarını OrtakSat mesaj kaydında netleştirin.
+        </Text>
+      ) : null}
+    </View>
+  );
+}
+
+function ConversationTrustCard({
+  context,
+  isPartner,
+  responseRate,
+  risk
+}: {
+  context: { channel: string; needsAction: boolean; source: string; status: string };
+  isPartner: boolean;
+  responseRate: number;
+  risk: { hasRisk: boolean; matches: string[] };
+}) {
+  const rows = [
+    { icon: "message-lock-outline" as const, label: "Mesaj kaydı", value: "Platform içinde" },
+    { icon: "account-check-outline" as const, label: "Yanıt oranı", value: `%${responseRate}` },
+    { icon: isPartner ? ("handshake-outline" as const) : ("tag-outline" as const), label: "Görüşme tipi", value: isPartner ? "Ortak satış" : "Satış" },
+    { icon: "source-branch" as const, label: "Kaynak", value: context.channel },
+    { icon: risk.hasRisk ? ("shield-alert-outline" as const) : ("shield-check-outline" as const), label: "Güven kontrolü", value: risk.hasRisk ? risk.matches.join(", ") : "Risk sinyali yok" }
+  ];
+  return (
+    <View style={{ backgroundColor: risk.hasRisk ? colors.warningSoft : colors.successSoft, borderColor: risk.hasRisk ? colors.warning : colors.success, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <MaterialCommunityIcons name={risk.hasRisk ? "shield-alert-outline" : "shield-check-outline"} size={18} color={risk.hasRisk ? colors.warning : colors.success} />
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>Görüşme güveni</Text>
+      </View>
+      <View style={{ gap: 7 }}>
+        {rows.map((row) => (
+          <View key={row.label} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <MaterialCommunityIcons name={row.icon} size={14} color={colors.muted} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{row.label}</Text>
+            <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "900", textAlign: "right" }}>{row.value}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function MiniSignal({ icon, label, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone?: "ok" | "warn" }) {
+  const tint = tone === "warn" ? colors.warningSoft : tone === "ok" ? colors.successSoft : colors.surfaceAlt;
+  const color = tone === "warn" ? colors.warning : tone === "ok" ? colors.success : colors.muted;
+  return (
+    <View style={{ alignItems: "center", backgroundColor: tint, borderColor: tone ? color : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 28, paddingHorizontal: 9 }}>
+      <MaterialCommunityIcons name={icon} size={13} color={color} />
+      <Text numberOfLines={1} style={{ color: tone ? color : colors.ink, fontSize: 11.5, fontWeight: "800", maxWidth: 150 }}>{label}</Text>
     </View>
   );
 }

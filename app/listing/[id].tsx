@@ -25,7 +25,7 @@ import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
-import { fetchListingById } from "@/lib/supabase-data";
+import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
 import { insertReferralLead, logReferralClick, resolveReferralLink } from "@/lib/live-service";
 import { getRefAttribution, saveRefAttribution } from "@/lib/referral";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -306,12 +306,15 @@ export default function ListingDetailScreen() {
     if (!owner) return;
     // İletişimden önce (varsa) ortağa atıf-lead'i düş — kanal kaynağı iletişim yöntemine göre.
     attributeReferralLead(currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "web");
-    const waPhone = trPhoneIntl(owner.phone);
+    // Satıcı telefonu feed/detay yanıtında taşınmaz; iletişim anında (girişli
+    // kullanıcı) ayrı çekilir. Anon ziyaretçi boş alır → uygulama-içi mesaja düşer.
+    const sellerPhone = owner.phone || (await fetchSellerPhone(owner.id));
+    const waPhone = trPhoneIntl(sellerPhone);
     if (currentListing.contactMethod === "whatsapp") {
       // Numara uluslararası formata çevrilebiliyorsa WhatsApp'a git; değilse mesaja düş.
       if (waPhone) { await Linking.openURL(`https://wa.me/${waPhone}?text=${encodeURIComponent(`${currentListing.title} ilanı hakkında bilgi almak istiyorum.`)}`); return; }
     } else if (currentListing.contactMethod === "phone") {
-      const tel = owner.phone.replace(/[^0-9+]/g, "");
+      const tel = sellerPhone.replace(/[^0-9+]/g, "");
       if (tel) { await Linking.openURL(`tel:${tel}`); return; }
     }
     const fallbackMessage = `${currentListing.title} ilanı için bilgi almak istiyorum. Fiyat, stok ve teslimat detayları güncel mi?`;
