@@ -264,7 +264,10 @@ function AccountMenu() {
     [
       { icon: "shield-check-outline", label: "Güven Merkezi", href: "/trust" },
       { icon: "cog-outline", label: "Ayarlar", href: "/profile-edit" },
-      { icon: "shield-crown-outline", label: "Yönetim Paneli", href: "/admin" },
+      // "Yönetim Paneli" yalnızca staff'a; önceden HERKESE görünüyordu.
+      ...(currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin"
+        ? [{ icon: "shield-crown-outline", label: "Yönetim Paneli", href: "/admin" } as AccountItem]
+        : []),
       { icon: "file-document-outline", label: "Yasal & Destek", href: "/legal" }
     ]
   ];

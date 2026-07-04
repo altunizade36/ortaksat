@@ -7,6 +7,7 @@ import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getCategoryImage, listingCategories } from "@/lib/categories";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { subscribeNewsletterLive } from "@/lib/live-service";
 import { useStore } from "@/lib/use-store";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -302,7 +303,6 @@ export function WebFooter() {
     }
   ];
 
-  const socials: IconName[] = ["instagram", "whatsapp", "twitter", "youtube"];
   const trustBadges: Array<{ icon: IconName; label: string }> = [
     { icon: "shield-check", label: "Güvenli platform" },
     { icon: "account-check", label: "Doğrulanmış satıcılar" },
@@ -332,7 +332,7 @@ export function WebFooter() {
             {subscribed ? (
               <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 10, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 12 }}>
                 <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", flex: 1, fontSize: 13, fontWeight: "700" }}>Teşekkürler! Bülten yayına girince haber vereceğiz.</Text>
+                <Text style={{ color: "#FFFFFF", flex: 1, fontSize: 13, fontWeight: "700" }}>Teşekkürler! Bülten aboneliğin kaydedildi.</Text>
               </View>
             ) : (
               <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -343,18 +343,11 @@ export function WebFooter() {
                   placeholderTextColor="rgba(255,255,255,0.55)"
                   style={{ backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.25)", borderRadius: 10, borderWidth: 1, color: "#FFFFFF", flex: 1, fontSize: 14, fontWeight: "600", height: 44, paddingHorizontal: 14 }}
                 />
-                <Pressable disabled={!emailValid} onPress={() => setSubscribed(true)} style={{ alignItems: "center", backgroundColor: emailValid ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
+                <Pressable disabled={!emailValid} onPress={() => { const e = email; setSubscribed(true); void subscribeNewsletterLive(e); }} style={{ alignItems: "center", backgroundColor: emailValid ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
                   <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Abone Ol</Text>
                 </Pressable>
               </View>
             )}
-          </View>
-          <View style={{ flexDirection: "row", gap: 10, marginTop: 2 }}>
-            {socials.map((icon) => (
-              <View key={icon} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.22)", borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", width: 38 }}>
-                <MaterialCommunityIcons name={icon} size={19} color="#FFFFFF" />
-              </View>
-            ))}
           </View>
         </View>
         {columns.map((column) => (
