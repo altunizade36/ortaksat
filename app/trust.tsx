@@ -116,7 +116,7 @@ export default function TrustScreen() {
             <TrustMiniStat icon="store-check-outline" label="Satıcı Güven Skoru" value={`%${trust.seller.score}`} tag={scoreTag(trust.seller.score)} />
             <TrustMiniStat icon="account-check-outline" label="Ortak Güven Skoru" value={`%${trust.partner.score}`} tag={scoreTag(trust.partner.score)} />
             <TrustMiniStat icon="file-alert-outline" label="Açık Kayıtlar" value={`${openReports.length}`} sub="İnceleme aşamasında" />
-            <TrustMiniStat icon="check-decagram-outline" label="Çözülen Raporlar" value={`${resolvedCount}`} sub="Son 90 günde" />
+            <TrustMiniStat icon="check-decagram-outline" label="Çözülen Raporlar" value={`${resolvedCount}`} sub="Tüm zamanlar" />
           </View>
           <View style={{ borderLeftColor: colors.line, borderLeftWidth: 1, gap: 8, paddingLeft: 18 }}>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Doğrulama Rozetleri</Text>

@@ -20,12 +20,6 @@ const REQUEST_TYPES = [
 
 type HistoryRow = { id: string; type: string; created: string; updated: string; status: "Tamamlandı" | "İncelemede" | "Reddedildi" };
 
-const SAMPLE_HISTORY: HistoryRow[] = [
-  { id: "TR-2026-00156", type: "Veri Görüntüleme", created: "05 May 2026 10:15", updated: "12 May 2026 14:32", status: "Tamamlandı" },
-  { id: "TR-2026-00142", type: "İzinleri Geri Çekme", created: "20 Nis 2026 09:40", updated: "20 Nis 2026 11:06", status: "Tamamlandı" },
-  { id: "TR-2026-00118", type: "Veri Düzeltme", created: "08 Nis 2026 16:22", updated: "10 Nis 2026 13:47", status: "Reddedildi" }
-];
-
 const STATUS_TONE: Record<HistoryRow["status"], { tint: string; color: string }> = {
   "Tamamlandı": { tint: colors.successSoft, color: colors.success },
   "İncelemede": { tint: colors.warningSoft, color: colors.warning },
@@ -37,7 +31,9 @@ export default function KvkkScreen() {
   const { createSupportTicket, currentUser } = useStore();
   const [reqType, setReqType] = useState("Veri Görüntüleme");
   const [desc, setDesc] = useState("");
-  const [history, setHistory] = useState<HistoryRow[]>(SAMPLE_HISTORY);
+  // Geçmiş, kullanıcının bu oturumda oluşturduğu gerçek taleplerle dolar; sahte
+  // örnek kayıt gösterilmez (önceden uydurma "Reddedildi/Tamamlandı" satırları vardı).
+  const [history, setHistory] = useState<HistoryRow[]>([]);
 
   async function submit() {
     const ok = await createSupportTicket(`KVKK Talebi: ${reqType}`, desc || reqType);
@@ -87,9 +83,9 @@ export default function KvkkScreen() {
         <View style={{ flex: 1, gap: 16, minWidth: 0 }}>
           {/* Stat cards */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-            <KvkkStat icon="shield-check" tint={colors.successSoft} color={colors.success} value="Doğrulanmış" title="Doğrulama Durumu" sub={currentUser.verifiedIdentity ? "Kimlik doğrulaması tamamlandı" : "Doğrulama bekleniyor"} />
+            <KvkkStat icon="shield-check" tint={colors.successSoft} color={colors.success} value={currentUser.verifiedIdentity ? "Doğrulanmış" : "Bekliyor"} title="Doğrulama Durumu" sub={currentUser.verifiedIdentity ? "Kimlik doğrulaması tamamlandı" : "Kimlik henüz doğrulanmadı"} />
             <KvkkStat icon="file-document-outline" tint={colors.infoSoft} color={colors.info} value={`${history.filter((h) => h.status === "İncelemede").length}`} title="Açık Talep" sub="Aktif açık talebiniz" />
-            <KvkkStat icon="calendar-check-outline" tint={colors.violetSoft} color={colors.violet} value="12 May 2026" title="Son Yanıt Tarihi" sub="Veri görüntüleme talebi yanıtlandı" />
+            <KvkkStat icon="calendar-check-outline" tint={colors.violetSoft} color={colors.violet} value="≤ 30 gün" title="Yasal Yanıt Süresi" sub="Talepler bu süre içinde sonuçlanır" />
           </View>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>

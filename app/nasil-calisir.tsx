@@ -153,7 +153,7 @@ function HowItWorksStatic() {
         </View>
         <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
           <Text style={{ color: "#FFFFFF", fontSize: 22, fontWeight: "900" }}>Hemen başlayın, birlikte kazanmaya başlayın!</Text>
-          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "600" }}>İlan verin veya ortak satıcı olun, milyonlarca kullanıcıya ulaşın.</Text>
+          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "600" }}>İlan verin veya ortak satıcı olun; ortakların kitlesiyle ürününüzü yayın.</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <Link href="/create" asChild>

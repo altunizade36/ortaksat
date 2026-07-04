@@ -35,8 +35,12 @@ export function PartnerLeaderboard({
 
   const ranks = useMemo<Rank[]>(() => {
     const psToPartner = new Map(partnerships.map((p) => [p.id, p.partnerId]));
+    // Yalnızca gerçekten hak edilen komisyon "kazanç" sayılır; iptal/anlaşmazlık/
+    // iade-bekleyen/onay-bekleyen satışlar dahil edilmez (önceden hepsi sayılıyordu).
+    const EARNED = new Set<Sale["status"]>(["approved", "seller_paid", "paid"]);
     const agg = new Map<string, { sales: number; earned: number }>();
     for (const sale of sales) {
+      if (!EARNED.has(sale.status)) continue;
       const partnerId = psToPartner.get(sale.partnershipId);
       if (!partnerId) continue;
       const cur = agg.get(partnerId) ?? { sales: 0, earned: 0 };

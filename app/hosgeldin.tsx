@@ -48,7 +48,7 @@ const ROLES: RoleCard[] = [
     accent: colors.gold,
     title: "Ürün arıyorum (alıcı)",
     desc: "İlanları keşfet, satıcıyla iletişime geç, güvenle al.",
-    points: ["Binlerce ilan", "Doğrulanmış satıcılar", "Doğrudan iletişim"],
+    points: ["Komisyonlu ilanlar", "Doğrulanmış satıcılar", "Doğrudan iletişim"],
     cta: "Ürünleri Keşfet",
     href: "/explore"
   }

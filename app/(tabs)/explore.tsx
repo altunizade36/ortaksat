@@ -197,7 +197,9 @@ export default function ExploreScreen() {
     else if (sortMode === "new") sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return sorted;
   }, [activeListings, findUser, onlyVerified, sortMode]);
-  const dealListings = useMemo(() => activeListings.slice().sort((a, b) => a.stockCount - b.stockCount).slice(0, 3), [activeListings]);
+  // "Yeni eklenen" = en yeni ilanlar (gerçek). Önceden en-az-stoklu 3 ilan sahte
+  // "fırsat/geri sayım/son X stok" aciliyetiyle sunuluyordu — kaldırıldı.
+  const dealListings = useMemo(() => activeListings.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3), [activeListings]);
   const topCommissionListings = useMemo(() => activeListings.slice().sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 3), [activeListings]);
   const sidebarWidth = 320;
   const productArea = width - padding * 2 - sidebarWidth - 24;
@@ -280,7 +282,7 @@ export default function ExploreScreen() {
     const seoTitle = seoParts.length ? `${seoParts.join(" ")} ilanları — OrtakSat` : "İlanları Keşfet — OrtakSat";
     const seoDesc = seoParts.length
       ? `${seoParts.join(" ")} için ortak satış ilanları. Ürününü paylaş, satış yapabilecek ortaklarla eşleş.`
-      : "Binlerce ortak satış ilanını keşfet. Ürününü paylaş, komisyonu birlikte belirle.";
+      : "Ortak satış ilanlarını keşfet. Ürününü paylaş, komisyonu birlikte belirle.";
 
     return (
       <ScrollView
@@ -298,7 +300,7 @@ export default function ExploreScreen() {
         <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 26 }}>
           <View style={{ flex: 1.3, gap: 10, justifyContent: "center", minWidth: 0 }}>
             <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Keşfet, kazanmaya başla</Text>
-            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>Binlerce ürün arasından size en uygun fırsatlar burada</Text>
+            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>Komisyonlu ilanları keşfet, ortak ol, kazan</Text>
             <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 460 }}>Kategorilere göz at, filtreleyin ve komisyonlu ilanlarla kolayca ortak olun.</Text>
           </View>
           <View style={{ flex: 1, gap: 10, justifyContent: "center", minWidth: 0 }}>
@@ -477,15 +479,14 @@ export default function ExploreScreen() {
           <View style={{ gap: 16, width: sidebarWidth }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Bugünün fırsatları</Text>
-                <CountdownBadge />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Yeni eklenen ilanlar</Text>
               </View>
               {dealListings.map((listing) => (
-                <SidebarListing key={listing.id} listing={listing} owner={findUser(listing.ownerId)} showStock />
+                <SidebarListing key={listing.id} listing={listing} owner={findUser(listing.ownerId)} />
               ))}
-              <Link href="/explore" asChild>
+              <Link href="/" asChild>
                 <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Tüm fırsatları gör</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Tüm ilanları gör</Text>
                   <MaterialCommunityIcons name="arrow-right" size={16} color={colors.primaryDark} />
                 </Pressable>
               </Link>
@@ -506,10 +507,10 @@ export default function ExploreScreen() {
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Neden Ortaksat?</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
                 {[
-                  { icon: "shield-check" as const, value: "%100", label: "Güvenli İletişim" },
-                  { icon: "headset" as const, value: "7/24", label: "Canlı Destek" },
-                  { icon: "account-group" as const, value: "10.000+", label: "Aktif Satıcı" },
-                  { icon: "handshake" as const, value: "200.000+", label: "Başarılı Ortaklık" }
+                  { icon: "cash-remove" as const, value: "0 ₺", label: "İlan vermek ücretsiz" },
+                  { icon: "hand-coin" as const, value: "Komisyonla", label: "Satışta öde, önden değil" },
+                  { icon: "rocket-launch-outline" as const, value: "Sermayesiz", label: "Ortak olmak risksiz" },
+                  { icon: "shield-check" as const, value: "Güvenli", label: "Uygulama içi iletişim" }
                 ].map((item) => (
                   <View key={item.label} style={{ alignItems: "center", flexBasis: 120, flexGrow: 1, gap: 4 }}>
                     <MaterialCommunityIcons name={item.icon} size={22} color={colors.primary} />

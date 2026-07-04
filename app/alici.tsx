@@ -42,7 +42,7 @@ const faqLd = JSON.stringify({
 export default function BuyerLandingPage() {
   const isWideWeb = useIsWideWeb();
   const title = "Güvenle Al, Doğrudan Satıcıyla Anlaş | OrtakSat";
-  const desc = "OrtakSat'ta binlerce ilanı keşfet, doğrulanmış satıcılarla doğrudan iletişime geç, ürünü görerek al. Alıcıya ek ücret yok; komisyonu satıcı öder. Güvenli alışveriş rehberiyle korunarak alışveriş yap.";
+  const desc = "OrtakSat'ta ilanları keşfet, doğrulanmış satıcılarla doğrudan iletişime geç, ürünü görerek al. Alıcıya ek ücret yok; komisyonu satıcı öder. Güvenli alışveriş rehberiyle korunarak alışveriş yap.";
   const url = "https://ortaksat.com/alici";
 
   return (
@@ -67,7 +67,7 @@ export default function BuyerLandingPage() {
           </View>
           <Text style={{ color: "#FFFFFF", fontSize: isWideWeb ? 34 : 26, fontWeight: "900", lineHeight: isWideWeb ? 40 : 31 }}>Güvenle keşfet, doğrudan satıcıyla anlaş</Text>
           <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, fontWeight: "600", lineHeight: 23, maxWidth: 640 }}>
-            Binlerce ilanı keşfet, doğrulanmış satıcılarla iletişime geç, ürünü görerek al. OrtakSat aracıdır; ödeme ve teslimatı satıcıyla kendi aranızda yaparsınız — komisyonu satıcı öder, sana ek ücret çıkmaz.
+            İlanları keşfet, doğrulanmış satıcılarla iletişime geç, ürünü görerek al. OrtakSat aracıdır; ödeme ve teslimatı satıcıyla kendi aranızda yaparsınız — komisyonu satıcı öder, sana ek ücret çıkmaz.
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             <Link href="/explore" asChild>
@@ -131,7 +131,7 @@ export default function BuyerLandingPage() {
         <View style={{ alignItems: isWideWeb ? "center" : "stretch", backgroundColor: colors.primarySoft, borderRadius: 18, flexDirection: isWideWeb ? "row" : "column", gap: 16, padding: 22 }}>
           <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
             <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>Aradığın ürünü bul</Text>
-            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>Binlerce ilan, doğrulanmış satıcılar, doğrudan iletişim.</Text>
+            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>Doğrulanmış satıcılar, doğrudan iletişim, komisyonu satıcı öder.</Text>
           </View>
           <Link href="/explore" asChild>
             <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, paddingHorizontal: 24, paddingVertical: 13 }}>
