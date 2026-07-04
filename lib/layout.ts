@@ -21,7 +21,13 @@ export const WIDE_WEB_BREAKPOINT = 760;
  */
 export function useContentWidth() {
   const { width } = useWindowDimensions();
-  const [webWidth, setWebWidth] = useState<number | null>(null);
+  // ÖNEMLİ: web'de useWindowDimensions().width hidrasyondan sonra güvenilmez ve
+  // ilk client render'da büyük bir varsayılan dönebilir; bu da mobilde masaüstü
+  // düzeninin yanlışlıkla açılmasına (flaş) yol açardı. Bu yüzden webWidth'i ilk
+  // client render'ından itibaren gerçek window.innerWidth ile başlatıyoruz.
+  const [webWidth, setWebWidth] = useState<number | null>(
+    Platform.OS === "web" && typeof window !== "undefined" ? window.innerWidth : null
+  );
 
   useEffect(() => {
     if (Platform.OS !== "web" || typeof window === "undefined") return;
@@ -31,7 +37,8 @@ export function useContentWidth() {
     return () => window.removeEventListener("resize", update);
   }, []);
 
-  const effective = webWidth ?? width;
+  // Web'de daima gerçek pencere genişliğini kullan (useWindowDimensions'a düşme).
+  const effective = Platform.OS === "web" ? (webWidth ?? width) : width;
   return Math.min(effective, SHELL_MAX_WIDTH);
 }
 
