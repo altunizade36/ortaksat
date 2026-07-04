@@ -76,10 +76,21 @@ export default function StoreScreen() {
 
   function messageSeller() {
     if (!seller || isOwnStore) return;
+    if (currentUser.id === "anon") {
+      Alert.alert("Giriş gerekli", "Satıcıya mesaj göndermek için giriş yapmalısın.", [
+        { text: "Vazgeç", style: "cancel" },
+        { text: "Giriş yap", onPress: () => router.push("/auth") }
+      ]);
+      return;
+    }
     const firstListing = activeListings[0];
-    if (!firstListing) return;
+    if (!firstListing) {
+      Alert.alert("İletişim kurulamadı", "Bu satıcının şu an aktif ilanı yok. İlan yayınlandığında mesaj gönderebilirsin.");
+      return;
+    }
     const conversation = startConversation(firstListing.id, seller.id, `${seller.name} mağazasındaki ürünler için bilgi almak istiyorum.`);
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
+    else Alert.alert("İletişim kurulamadı", "Şu an konuşma başlatılamadı, lütfen tekrar dene.");
   }
 
   if (!seller) {

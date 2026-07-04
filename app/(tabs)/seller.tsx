@@ -219,10 +219,20 @@ export default function SellerScreen() {
   }
 
   function confirmRemoveListing(listingId: string) {
-    Alert.alert(t("removeListingQuestion"), t("removeListingQuestionBody"), [
-      { text: t("cancel"), style: "cancel" },
-      { text: translateCopy("Kaldır", language), style: "destructive", onPress: () => updateListingStatus(listingId, "rejected") }
-    ]);
+    // Eskiden tek seçenek "rejected" idi ve ilan panelden geri alınamayacak şekilde
+    // kayboluyordu (tuzak). Artık geri alınabilir "Pasife Al" seçeneği burada sunulur.
+    Alert.alert(
+      translateCopy("İlanı kaldır", language),
+      translateCopy(
+        "\"Pasife Al\": ilan geçici gizlenir, istediğinde tek tuşla tekrar yayınlarsın. \"Kalıcı Kaldır\": ilan listenden çıkar, geri alınması için destek gerekir.",
+        language
+      ),
+      [
+        { text: t("cancel"), style: "cancel" },
+        { text: translateCopy("Pasife Al", language), onPress: () => updateListingStatus(listingId, "paused") },
+        { text: translateCopy("Kalıcı Kaldır", language), style: "destructive", onPress: () => updateListingStatus(listingId, "rejected") }
+      ]
+    );
   }
 
   function openConversation(listingId: string, receiverId: string | undefined, body: string) {

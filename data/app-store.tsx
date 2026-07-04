@@ -569,7 +569,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
       )
       .on(
         "postgres_changes",
-        { event: "INSERT", schema: "public", table: "messages" },
+        // INSERT + UPDATE: yeni mesajı ekler, `read=true` güncellemesini yansıtır
+        // (böylece gönderenin "✓✓ okundu" göstergesi canlı güncellenir).
+        { event: "*", schema: "public", table: "messages" },
         (payload) => {
           const row = payload.new as Record<string, any> | null;
           if (!row || (row.sender_id !== authUser.id && row.receiver_id !== authUser.id)) return;
@@ -586,7 +588,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
             attachmentType: row.attachment_type ?? undefined,
             attachmentName: row.attachment_name ?? undefined
           };
-          setMessages((items) => (items.some((item) => item.id === message.id) ? items : [message, ...items]));
+          setMessages((items) => {
+            const idx = items.findIndex((item) => item.id === message.id);
+            if (idx >= 0) {
+              // UPDATE (ör. okundu bilgisi) — mevcut mesajı yerinde güncelle.
+              const next = items.slice();
+              next[idx] = message;
+              return next;
+            }
+            return [message, ...items];
+          });
           // Gerçek-zamanlı gelen mesaj, konuşmanın son-mesaj zamanını da güncellesin
           // (yoksa gelen kutusu sıralaması ve gösterilen saat bayat kalır).
           setConversations((items) => items.map((item) => (item.id === message.conversationId ? { ...item, lastMessageAt: message.createdAt } : item)));
