@@ -17,7 +17,7 @@ const CAT_COLOR: Record<BlogCategory, [string, string]> = {
   "E-Ticaret": [colors.accentSoft, colors.accent],
   "Girişimcilik": [colors.violetSoft, colors.violet],
   "Pazarlama": [colors.goldSoft, colors.gold],
-  "Başarı Hikayeleri": [colors.successSoft, colors.success]
+  "Vaka Analizleri": [colors.successSoft, colors.success]
 };
 
 export default function BlogPage() {

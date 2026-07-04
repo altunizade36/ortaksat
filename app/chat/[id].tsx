@@ -18,6 +18,30 @@ import { searchKey, shortDate } from "@/lib/locale";
 import type { Conversation, Lead, Message, Partnership, Sale, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
+const CHAT_RISK_WORDS = [
+  "iban",
+  "havale",
+  "eft",
+  "kapora",
+  "kaparo",
+  "whatsapp",
+  "telegram",
+  "papara",
+  "kripto",
+  "site disi",
+  "site dışı",
+  "western union",
+  "hesap numarasi",
+  "hesap numarası",
+  "kart bilgisi"
+];
+
+function scanChatRisk(text: string) {
+  const key = searchKey(text);
+  const matches = CHAT_RISK_WORDS.filter((word) => key.includes(searchKey(word)));
+  return { hasRisk: matches.length > 0, matches: Array.from(new Set(matches)).slice(0, 3) };
+}
+
 export default function ChatScreen() {
   const { isAuthenticated } = useStore();
   if (!isAuthenticated) {
@@ -93,6 +117,11 @@ function ChatScreenInner() {
     language
   });
   const quickReplies = buildQuickReplies(contextSeedForReplies(conversationMessages));
+  const conversationRisk = scanChatRisk([...conversationMessages.map((item) => item.body), body].filter(Boolean).join(" "));
+  const draftRisk = scanChatRisk(body);
+  const safeDealDraft = listing
+    ? `Ödeme ve teslimat koşullarını OrtakSat mesaj kaydında netleştirelim. İlan: ${listing.title} - Fiyat: ${money(listing.price)}.`
+    : "Ödeme ve teslimat koşullarını OrtakSat mesaj kaydında netleştirelim.";
 
   function send() {
     if (!body.trim()) return;
@@ -158,6 +187,12 @@ function ChatScreenInner() {
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy("İlan artık yayında değil, ancak mesaj geçmişin burada kalır.", language)}</Text>
           </View>
         )}
+        <View style={{ alignItems: "center", backgroundColor: conversationRisk.hasRisk ? colors.warningSoft : colors.successSoft, borderColor: conversationRisk.hasRisk ? colors.warning : colors.success, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, marginTop: 10, paddingHorizontal: 10, paddingVertical: 8 }}>
+          <MaterialCommunityIcons name={conversationRisk.hasRisk ? "shield-alert-outline" : "shield-check-outline"} size={16} color={conversationRisk.hasRisk ? colors.warning : colors.success} />
+          <Text numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "800", lineHeight: 16 }}>
+            {conversationRisk.hasRisk ? `Kontrol gerekli: ${conversationRisk.matches.join(", ")}. Anlaşmayı mesaj kaydında tutun.` : "Görüşme OrtakSat mesaj kaydında ilerliyor."}
+          </Text>
+        </View>
       </View>
 
       <ScrollView
@@ -243,7 +278,31 @@ function ChatScreenInner() {
                 </Text>
               </Pressable>
             ))}
+            <Pressable
+              onPress={() => setBody(safeDealDraft)}
+              style={({ pressed }) => ({
+                backgroundColor: colors.successSoft,
+                borderColor: colors.success,
+                borderRadius: 999,
+                borderWidth: 1,
+                justifyContent: "center",
+                minHeight: 36,
+                opacity: pressed ? 0.72 : 1,
+                paddingHorizontal: 12
+              })}
+            >
+              <Text numberOfLines={1} style={{ color: colors.success, fontSize: 12, fontWeight: "900" }}>
+                {translateCopy("Güvenli işlem notu", language)}
+              </Text>
+            </Pressable>
           </ScrollView>
+        </View>
+      ) : null}
+
+      {draftRisk.hasRisk ? (
+        <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderTopColor: colors.warning, borderTopWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
+          <MaterialCommunityIcons name="shield-alert-outline" size={16} color={colors.warning} />
+          <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>Hassas ödeme veya site dışı iletişim ifadesi algılandı. Şartları mesaj içinde netleştir.</Text>
         </View>
       ) : null}
 
@@ -403,4 +462,3 @@ function buildQuickReplies(seed: "stock" | "price" | "delivery" | "payment" | "g
   if (seed === "payment") return ["Komisyon kaydı panelde takip edilecek.", "Ödeme durumu güncellenince haber vereceğim.", "İade süresi bittikten sonra komisyon netleşir."];
   return ["Merhaba, nasıl yardımcı olabilirim?", "Ürünle ilgili detayları hemen paylaşayım.", "Talebi satıcı panelinde takip ediyorum."];
 }
-

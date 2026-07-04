@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Alert, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
@@ -89,6 +89,7 @@ function monthlyListingChart(listings: Array<{ createdAt: string }>): { data: nu
 
 function AdminScreenInner() {
   const isWideWeb = useIsWideWeb();
+  const { height: viewportHeight } = useWindowDimensions();
   const router = useRouter();
   const {
     listings, users, sales, partnerships, leads, conversations, messages, notifications,
@@ -163,34 +164,36 @@ function AdminScreenInner() {
     <View style={{ backgroundColor: colors.background, flex: 1, flexDirection: isWideWeb ? "row" : "column", minHeight: "100%" }}>
       {/* Sidebar */}
       {isWideWeb ? (
-        <View style={{ backgroundColor: "#0A5C44", gap: 4, paddingHorizontal: 12, paddingVertical: 18, width: 240 }}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 9, paddingHorizontal: 8, paddingVertical: 6 }}>
+        <View style={{ backgroundColor: "#0A5C44", height: viewportHeight, width: 260 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 9, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 14 }}>
             <MaterialCommunityIcons name="shield-crown" size={24} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "900" }}>OrtakSat <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 12 }}>Admin</Text></Text>
           </View>
-          <View style={{ height: 8 }} />
-          {NAV.map((n) => {
-            const on = section === n.key;
-            const badge = navBadge(n.key);
-            return (
-              <Pressable key={n.key} onPress={() => setSection(n.key)} style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.16)" : "transparent", borderRadius: 10, flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 10 }}>
-                <MaterialCommunityIcons name={n.icon} size={18} color={on ? "#FFFFFF" : "rgba(255,255,255,0.7)"} />
-                <Text style={{ color: on ? "#FFFFFF" : "rgba(255,255,255,0.8)", flex: 1, fontSize: 13.5, fontWeight: on ? "900" : "700" }}>{n.label}</Text>
-                {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{badge}</Text></View> : null}
+          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ gap: 5, paddingBottom: 14, paddingHorizontal: 12 }}>
+            {NAV.map((n) => {
+              const on = section === n.key;
+              const badge = navBadge(n.key);
+              return (
+                <Pressable key={n.key} onPress={() => setSection(n.key)} style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.16)" : "transparent", borderRadius: 10, flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 11 }}>
+                  <MaterialCommunityIcons name={n.icon} size={18} color={on ? "#FFFFFF" : "rgba(255,255,255,0.7)"} />
+                  <Text style={{ color: on ? "#FFFFFF" : "rgba(255,255,255,0.82)", flex: 1, fontSize: 13.5, fontWeight: on ? "900" : "700" }}>{n.label}</Text>
+                  {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{badge}</Text></View> : null}
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          <View style={{ borderTopColor: "rgba(255,255,255,0.12)", borderTopWidth: 1, gap: 4, paddingHorizontal: 12, paddingBottom: 14, paddingTop: 10 }}>
+            <Link href="/" asChild>
+              <Pressable style={{ alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 10 }}>
+                <MaterialCommunityIcons name="storefront-outline" size={18} color="rgba(255,255,255,0.72)" />
+                <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 13.5, fontWeight: "700" }}>Siteye dön</Text>
               </Pressable>
-            );
-          })}
-          <View style={{ flex: 1 }} />
-          <Link href="/" asChild>
-            <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 10 }}>
-              <MaterialCommunityIcons name="storefront-outline" size={18} color="rgba(255,255,255,0.7)" />
-              <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13.5, fontWeight: "700" }}>Siteye dön</Text>
+            </Link>
+            <Pressable onPress={() => { void signOut(); router.replace("/"); }} style={{ alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 10 }}>
+              <MaterialCommunityIcons name="logout" size={18} color="rgba(255,255,255,0.72)" />
+              <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 13.5, fontWeight: "700" }}>Çıkış Yap</Text>
             </Pressable>
-          </Link>
-          <Pressable onPress={() => { void signOut(); router.replace("/"); }} style={{ alignItems: "center", flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 10 }}>
-            <MaterialCommunityIcons name="logout" size={18} color="rgba(255,255,255,0.7)" />
-            <Text style={{ color: "rgba(255,255,255,0.8)", fontSize: 13.5, fontWeight: "700" }}>Çıkış Yap</Text>
-          </Pressable>
+          </View>
         </View>
       ) : (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: "#0A5C44", maxHeight: 56 }} contentContainerStyle={{ alignItems: "center", gap: 6, paddingHorizontal: 10 }}>
@@ -226,7 +229,7 @@ function AdminScreenInner() {
             usersN={liveUsers.length} listingsN={listings.length} salesN={sales.length} commission={totalCommission}
             activeN={activeListings.length} pendingN={pendingReview.length} reportsN={pendingReports} partnershipsN={pendingPartnerships} messagesN={messages.length}
             disputedN={disputedSalesN} unpaidCommission={unpaidCommission} pendingCat={pendingCat} pendingLoc={pendingLoc}
-            listings={listings} users={users} findUser={findUser} notifications={notifications} leads={leads} setSection={setSection}
+            listings={listings} users={users} sales={sales} partnerships={partnerships} reports={reports} findUser={findUser} notifications={notifications} leads={leads} setSection={setSection}
           />
         ) : null}
 
@@ -765,85 +768,171 @@ type DashProps = {
   activeN: number; pendingN: number; reportsN: number; partnershipsN: number; messagesN: number;
   disputedN: number; unpaidCommission: number; pendingCat: number; pendingLoc: number;
   listings: ReturnType<typeof useStore>["listings"]; users: ReturnType<typeof useStore>["users"]; findUser: ReturnType<typeof useStore>["findUser"];
+  sales: ReturnType<typeof useStore>["sales"]; partnerships: ReturnType<typeof useStore>["partnerships"]; reports: ReturnType<typeof useStore>["reports"];
   notifications: ReturnType<typeof useStore>["notifications"]; leads: ReturnType<typeof useStore>["leads"];
   setSection: (s: Section) => void;
 };
-function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, reportsN, partnershipsN, messagesN, disputedN, unpaidCommission, pendingCat, pendingLoc, listings, users, findUser, notifications, leads, setSection }: DashProps) {
+function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, reportsN, partnershipsN, messagesN, disputedN, unpaidCommission, pendingCat, pendingLoc, listings, users, sales, partnerships, reports, findUser, notifications, leads, setSection }: DashProps) {
   const recentUsers = users.slice().filter((u) => u.status !== "deleted").slice(-5).reverse();
+  const recentListings = sortByDate(listings, "createdAt").slice(0, 6);
   const chart = monthlyListingChart(listings);
+  const openWork = pendingN + reportsN + partnershipsN + disputedN + pendingCat + pendingLoc;
+  const publishRate = listingsN ? Math.round((activeN / listingsN) * 100) : 0;
+  const conversionRate = leads.length ? Math.round((salesN / leads.length) * 100) : 0;
+  const listingStatusData = listingStatusStats(listings);
+  const categoryData = topCategoryStats(listings, 7);
+  const saleStatusData = saleStatusStats(sales);
+  const funnelData = [
+    { label: "Yayındaki ilan", value: activeN, color: colors.primaryDark },
+    { label: "Ortaklık", value: partnerships.length, color: colors.violet },
+    { label: "Talep", value: leads.length, color: colors.info },
+    { label: "Satış kaydı", value: sales.length, color: colors.success }
+  ];
+  const resolvedReports = reports.filter((r) => r.status === "resolved" || r.status === "rejected").length;
+  const reportResolutionRate = reports.length ? Math.round((resolvedReports / reports.length) * 100) : 100;
+  const latestActivity = [
+    ...notifications.map((n) => ({ icon: "bell-outline" as const, tone: colors.primary, title: n.title, meta: n.createdAt })),
+    ...leads.map((l) => ({ icon: "account-arrow-right-outline" as const, tone: colors.info, title: `Yeni talep: ${l.buyerName || findUser(l.partnershipId)?.name || "Alıcı"}`, meta: l.createdAt })),
+    ...recentListings.map((l) => ({ icon: "file-document-outline" as const, tone: l.status === "pending_review" ? colors.warning : colors.success, title: l.title, meta: `${listingStatusLabel(l.status)} · ${l.createdAt}` }))
+  ].slice(0, 7);
+  const priorities = [
+    { label: "Onay bekleyen ilan", value: pendingN, icon: "clock-alert-outline" as const, tone: colors.warning, go: "listings" as Section, helper: "Yayına alınmayı bekliyor" },
+    { label: "Açık şikayet", value: reportsN, icon: "flag-outline" as const, tone: colors.accent, go: "complaints" as Section, helper: "Kullanıcı güveni için öncelikli" },
+    { label: "Ortaklık talebi", value: partnershipsN, icon: "handshake-outline" as const, tone: colors.violet, go: "partnerships" as Section, helper: "Satıcı onayı bekliyor" },
+    { label: "Öneri kuyruğu", value: pendingCat + pendingLoc, icon: "shape-plus" as const, tone: colors.info, go: pendingCat ? "categories" as Section : "locations" as Section, helper: "Kategori ve konum önerileri" }
+  ];
+
   return (
-    <View style={{ gap: 16 }}>
-      <View style={{ gap: 3 }}>
-        <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>Dashboard</Text>
-        <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>Hoş geldin, site genelindeki özet bilgilere buradan ulaşabilirsin.</Text>
+    <View style={{ gap: 18 }}>
+      <View style={{ backgroundColor: "#0A5C44", borderRadius: 18, overflow: "hidden" }}>
+        <View style={{ gap: 18, padding: 22 }}>
+          <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16, justifyContent: "space-between" }}>
+            <View style={{ flex: 1, gap: 6, minWidth: 260 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 28, fontWeight: "900", lineHeight: 34 }}>Yönetim Merkezi</Text>
+              <Text style={{ color: "rgba(255,255,255,0.78)", fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 680 }}>
+                İlan onayı, kullanıcı güvenliği, ortaklık talepleri ve gelir kayıtlarını tek ekrandan izle. Öncelikli işler aşağıda otomatik öne çıkarılır.
+              </Text>
+            </View>
+            <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.18)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 10 }}>
+              <MaterialCommunityIcons name={openWork ? "alert-circle-outline" : "check-decagram-outline"} size={20} color="#FFFFFF" />
+              <View>
+                <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900" }}>{openWork}</Text>
+                <Text style={{ color: "rgba(255,255,255,0.72)", fontSize: 11.5, fontWeight: "700" }}>açık iş</Text>
+              </View>
+            </View>
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+            <HeroMetric label="Yayın oranı" value={`%${publishRate}`} icon="chart-donut" />
+            <HeroMetric label="Toplam komisyon kaydı" value={money(commission)} icon="cash-multiple" />
+            <HeroMetric label="Talep/satış dönüşümü" value={`%${conversionRate}`} icon="trending-up" />
+            <HeroMetric label="Mesaj hacmi" value={`${messagesN}`} icon="forum-outline" />
+          </View>
+        </View>
       </View>
+
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+        {priorities.map((p) => <PriorityCard key={p.label} {...p} onPress={() => setSection(p.go)} />)}
+      </View>
+
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-        <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={`${usersN}`} title="Toplam Kullanıcı" onPress={() => setSection("users")} />
-        <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={`${listingsN}`} title="Toplam İlan" onPress={() => setSection("listings")} />
-        <Stat icon="check-decagram" tint={colors.successSoft} color={colors.success} value={`${activeN}`} title="Yayındaki İlan" onPress={() => setSection("listings")} />
-        <Stat icon="clock-alert-outline" tint={colors.warningSoft} color={colors.warning} value={`${pendingN}`} title="Onay Bekleyen İlan" onPress={() => setSection("listings")} />
-        <Stat icon="flag-outline" tint={colors.accentSoft} color={colors.accent} value={`${reportsN}`} title="Açık Şikayet" onPress={() => setSection("complaints")} />
-        <Stat icon="handshake-outline" tint={colors.violetSoft} color={colors.violet} value={`${partnershipsN}`} title="Bekleyen Ortaklık" onPress={() => setSection("partnerships")} />
-        <Stat icon="message-text" tint={colors.primarySoft} color={colors.primaryDark} value={`${messagesN}`} title="Toplam Mesaj" onPress={() => setSection("messages")} />
-        <Stat icon="cash-multiple" tint={colors.goldSoft} color={colors.gold} value={money(commission)} title="Komisyon (kayıt)" onPress={() => setSection("commissions")} />
-        <Stat icon="scale-balance" tint={colors.accentSoft} color={colors.accent} value={`${disputedN}`} title="Anlaşmazlık (komisyon)" onPress={() => setSection("commissions")} />
-        <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(unpaidCommission)} title="Tahsil edilmemiş komisyon" onPress={() => setSection("commissions")} />
-        <Stat icon="tag-plus-outline" tint={colors.violetSoft} color={colors.violet} value={`${pendingCat}`} title="Kategori önerisi" onPress={() => setSection("categories")} />
-        <Stat icon="map-marker-plus-outline" tint={colors.infoSoft} color={colors.info} value={`${pendingLoc}`} title="Konum önerisi" onPress={() => setSection("locations")} />
+        <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={`${usersN}`} title="Toplam Kullanıcı" helper={`${recentUsers.length} son kayıt gösteriliyor`} onPress={() => setSection("users")} />
+        <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={`${listingsN}`} title="Toplam İlan" helper={`${activeN} yayında`} onPress={() => setSection("listings")} />
+        <Stat icon="check-decagram" tint={colors.successSoft} color={colors.success} value={`${activeN}`} title="Yayındaki İlan" helper={`%${publishRate} yayın oranı`} onPress={() => setSection("listings")} />
+        <Stat icon="message-text" tint={colors.primarySoft} color={colors.primaryDark} value={`${messagesN}`} title="Toplam Mesaj" helper={`${leads.length} talep kaydı`} onPress={() => setSection("messages")} />
+        <Stat icon="cart-check" tint={colors.successSoft} color={colors.success} value={`${salesN}`} title="Satış Kaydı" helper={`%${conversionRate} talep dönüşümü`} onPress={() => setSection("commissions")} />
+        <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(unpaidCommission)} title="Bekleyen Komisyon" helper={`${disputedN} anlaşmazlık`} onPress={() => setSection("commissions")} />
       </View>
+
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-        <View style={{ flex: 2, gap: 16, minWidth: 280 }}>
-          <Panel title="Aylık İlan Grafiği" sub="Son 12 ay — gerçek veri"><BarChart data={chart.data} labels={chart.labels} /></Panel>
-          <Panel title="Son Eklenen İlanlar">
-            <Table head={["İLAN", "KATEGORİ", "FİYAT", "DURUM"]} cols={[2.2, 1.2, 1, 1]}>
-              {listings.slice(0, 6).map((l) => (
-                <Row key={l.id} cols={[2.2, 1.2, 1, 1]} cells={[
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
-                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
-                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{money(l.price)}</Text>,
-                  <View style={{ alignSelf: "flex-start", backgroundColor: l.status === "active" ? colors.successSoft : l.status === "rejected" ? colors.accentSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: l.status === "active" ? colors.success : l.status === "rejected" ? colors.accent : colors.muted, fontSize: 10.5, fontWeight: "900" }}>{l.status === "active" ? "Yayında" : l.status === "pending_review" ? "İncelemede" : l.status === "rejected" ? "Reddedildi" : l.status}</Text></View>
-                ]} />
-              ))}
-            </Table>
+        <View style={{ flex: 2, gap: 16, minWidth: 300 }}>
+          <Panel title="Aylık İlan Performansı" sub="Son 12 ay — gerçek ilan verisi">
+            <BarChart data={chart.data} labels={chart.labels} />
           </Panel>
-          <Panel title="Son Kayıt Olan Kullanıcılar">
-            <Table head={["KULLANICI", "ROL", "DURUM"]} cols={[2, 1, 1]}>
-              {recentUsers.map((u) => (
-                <Row key={u.id} cols={[2, 1, 1]} cells={[
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{u.name}</Text>,
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{u.role === "admin" || u.role === "super_admin" ? "Admin" : u.role === "moderator" ? "Mod" : "Üye"}</Text>,
-                  <View style={{ alignSelf: "flex-start", backgroundColor: u.status === "suspended" ? colors.accentSoft : colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: u.status === "suspended" ? colors.accent : colors.success, fontSize: 10, fontWeight: "900" }}>{u.status === "suspended" ? "Askıda" : "Aktif"}</Text></View>
-                ]} />
-              ))}
-            </Table>
+          <Panel title="Operasyon Sağlığı" sub="Günlük kontrol için kritik oranlar">
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+              <HealthCard label="Yayın oranı" value={`%${publishRate}`} detail={`${activeN}/${listingsN || 0} ilan yayında`} tone={publishRate >= 70 ? "success" : publishRate >= 40 ? "warning" : "accent"} />
+              <HealthCard label="Açık iş yükü" value={`${openWork}`} detail="İnceleme bekleyen toplam kayıt" tone={openWork === 0 ? "success" : openWork < 5 ? "warning" : "accent"} />
+              <HealthCard label="Şikayet çözümü" value={`%${reportResolutionRate}`} detail={`${resolvedReports}/${reports.length || 0} kayıt kapanmış`} tone={reportResolutionRate >= 85 ? "success" : reportResolutionRate >= 55 ? "warning" : "accent"} />
+              <HealthCard label="Komisyon riski" value={money(unpaidCommission)} detail={`${disputedN} anlaşmazlık var`} tone={disputedN ? "accent" : unpaidCommission ? "warning" : "success"} />
+            </View>
+          </Panel>
+          <Panel title="Gerçek Veri Grafikleri" sub="İlan durumu, kategori yoğunluğu ve satış hunisi mevcut kayıtlardan hesaplanır">
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+              <View style={{ flex: 1, minWidth: 240 }}>
+                <SegmentChart title="İlan Durumu" total={listings.length} data={listingStatusData} />
+              </View>
+              <View style={{ flex: 1, minWidth: 240 }}>
+                <HorizontalBars title="Kategori Dağılımı" data={categoryData} emptyLabel="Kategori verisi yok" />
+              </View>
+            </View>
+            <View style={{ marginTop: 12 }}>
+              <FunnelChart data={funnelData} />
+            </View>
+            <View style={{ marginTop: 12 }}>
+              <SegmentChart title="Komisyon/Satış Durumu" total={sales.length} data={saleStatusData} />
+            </View>
+          </Panel>
+          <Panel title="Son Eklenen İlanlar" sub="En yeni kayıtlar ve yayın durumları">
+            {recentListings.length === 0 ? <EmptyState title="İlan yok" body="Yeni ilanlar geldiğinde burada görünür." /> : (
+              <Table head={["İLAN", "KATEGORİ", "FİYAT", "DURUM"]} cols={[2.2, 1.2, 1, 1]}>
+                {recentListings.map((l) => (
+                  <Row key={l.id} cols={[2.2, 1.2, 1, 1]} cells={[
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
+                    <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{money(l.price)}</Text>,
+                    <StatusBadge label={listingStatusLabel(l.status)} tone={l.status === "active" ? "success" : l.status === "rejected" ? "accent" : l.status === "pending_review" ? "warning" : "neutral"} />
+                  ]} />
+                ))}
+              </Table>
+            )}
           </Panel>
         </View>
-        <View style={{ flex: 1, gap: 16, minWidth: 240 }}>
-          <Panel title="Son Aktiviteler">
-            {[...notifications.slice(0, 3).map((n) => ({ t: n.title, s: n.createdAt })), ...leads.slice(0, 2).map((l) => ({ t: `Yeni talep: ${findUser(l.partnershipId)?.name ?? l.buyerName ?? "Alıcı"}`, s: l.createdAt }))].slice(0, 5).map((a, i) => (
-              <View key={i} style={{ alignItems: "flex-start", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 11 }}>
-                <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: 8, marginTop: 5, width: 8 }} />
-                <View style={{ flex: 1 }}>
-                  <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{a.t}</Text>
-                  <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{a.s}</Text>
+        <View style={{ flex: 1, gap: 16, minWidth: 280 }}>
+          <Panel title="Son Aktiviteler" sub="Bildirim, talep ve ilan akışı">
+            {latestActivity.length === 0 ? <EmptyState title="Aktivite yok" body="Yeni bildirim veya talep geldiğinde burada görünür." /> : latestActivity.map((a, i) => (
+              <View key={`${a.title}-${i}`} style={{ alignItems: "flex-start", borderBottomColor: i === latestActivity.length - 1 ? "transparent" : colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 10 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 30, justifyContent: "center", width: 30 }}>
+                  <MaterialCommunityIcons name={a.icon} size={15} color={a.tone} />
+                </View>
+                <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+                  <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800", lineHeight: 17 }}>{a.title}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{a.meta}</Text>
                 </View>
               </View>
             ))}
           </Panel>
-          <Panel title="Kısayollar">
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <Panel title="Hızlı İşlemler" sub="Sık kullanılan yönetim ekranları">
+            <View style={{ gap: 8 }}>
               {[
-                { label: "İlan Yönetimi", icon: "file-document-edit-outline" as const, go: "listings" as Section },
-                { label: "Kullanıcılar", icon: "account-multiple-outline" as const, go: "users" as Section },
-                { label: "Önerileri İncele", icon: "shape-plus" as const, go: "categories" as Section },
-                { label: "Raporlar", icon: "chart-box-outline" as const, go: "reports" as Section }
+                { label: "İlan onay kuyruğu", body: `${pendingN} bekleyen`, icon: "playlist-check" as const, go: "listings" as Section },
+                { label: "Şikayetleri incele", body: `${reportsN} açık kayıt`, icon: "shield-alert-outline" as const, go: "complaints" as Section },
+                { label: "Ortaklık talepleri", body: `${partnershipsN} başvuru`, icon: "handshake-outline" as const, go: "partnerships" as Section },
+                { label: "Raporlar ve grafikler", body: "Performans ekranı", icon: "chart-box-outline" as const, go: "reports" as Section }
               ].map((k) => (
-                <Pressable key={k.label} onPress={() => setSection(k.go)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 12, gap: 6, justifyContent: "center", minWidth: 100, padding: 14 }}>
-                  <MaterialCommunityIcons name={k.icon} size={22} color={colors.primaryDark} />
-                  <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800", textAlign: "center" }}>{k.label}</Text>
+                <Pressable key={k.label} onPress={() => setSection(k.go)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, padding: 12 })}>
+                  <MaterialCommunityIcons name={k.icon} size={20} color={colors.primaryDark} />
+                  <View style={{ flex: 1, gap: 1 }}>
+                    <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{k.label}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{k.body}</Text>
+                  </View>
+                  <MaterialCommunityIcons name="chevron-right" size={16} color={colors.subtle} />
                 </Pressable>
               ))}
             </View>
+          </Panel>
+          <Panel title="Son Kayıt Olan Kullanıcılar" sub="Yeni hesaplar">
+            {recentUsers.length === 0 ? <EmptyState title="Kullanıcı yok" body="Yeni kullanıcılar burada listelenir." /> : recentUsers.map((u, i) => (
+              <View key={u.id} style={{ alignItems: "center", borderBottomColor: i === recentUsers.length - 1 ? "transparent" : colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 9 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 32, justifyContent: "center", width: 32 }}>
+                  <MaterialCommunityIcons name="account" size={17} color={colors.primaryDark} />
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{u.name}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{userRoleLabel(u.role)} · {u.listingCount ?? 0} ilan · ⭐ {u.rating}</Text>
+                </View>
+                <StatusBadge label={u.status === "suspended" ? "Askıda" : "Aktif"} tone={u.status === "suspended" ? "accent" : "success"} />
+              </View>
+            ))}
           </Panel>
         </View>
       </View>
@@ -851,19 +940,245 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
   );
 }
 
-function Stat({ icon, tint, color, value, title, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; onPress?: () => void }) {
+function Stat({ icon, tint, color, value, title, helper, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; helper?: string; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 190, flexGrow: 1, gap: 10, minWidth: 0, padding: 16 })}>
-      <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
-        <MaterialCommunityIcons name={icon} size={20} color={color} />
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 210, flexGrow: 1, gap: 12, minHeight: 132, minWidth: 0, padding: 16 })}>
+      <View style={{ alignItems: "flex-start", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
+        <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
+          <MaterialCommunityIcons name={icon} size={20} color={color} />
+        </View>
+        {onPress ? <MaterialCommunityIcons name="arrow-top-right" size={16} color={colors.subtle} /> : null}
       </View>
       <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{value}</Text>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{title}</Text>
-        {onPress ? <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} /> : null}
+      <View style={{ gap: 2 }}>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{title}</Text>
+        {helper ? <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{helper}</Text> : null}
       </View>
     </Pressable>
   );
+}
+
+function HeroMetric({ label, value, icon }: { label: string; value: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }) {
+  return (
+    <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.18)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, minWidth: 190, paddingHorizontal: 13, paddingVertical: 11 }}>
+      <MaterialCommunityIcons name={icon} size={19} color="#FFFFFF" />
+      <View style={{ flex: 1 }}>
+        <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{value}</Text>
+        <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.72)", fontSize: 11, fontWeight: "700" }}>{label}</Text>
+      </View>
+    </View>
+  );
+}
+
+function PriorityCard({ label, value, helper, icon, tone, onPress }: { label: string; value: number; helper: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; tone: string; onPress: () => void }) {
+  const empty = value === 0;
+  return (
+    <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed ? tone : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 260, flexGrow: 1, minWidth: 0, opacity: pressed ? 0.86 : 1, padding: 16 })}>
+      <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 12 }}>
+        <View style={{ alignItems: "center", backgroundColor: empty ? colors.successSoft : `${tone}22`, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
+          <MaterialCommunityIcons name={empty ? "check-circle-outline" : icon} size={21} color={empty ? colors.success : tone} />
+        </View>
+        <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <Text style={{ color: empty ? colors.success : tone, fontSize: 22, fontWeight: "900" }}>{value}</Text>
+            <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{label}</Text>
+          </View>
+          <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{empty ? "Şu an işlem beklemiyor" : helper}</Text>
+        </View>
+        <MaterialCommunityIcons name="chevron-right" size={17} color={colors.subtle} />
+      </View>
+    </Pressable>
+  );
+}
+
+function HealthCard({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: "success" | "warning" | "accent" }) {
+  const palette = tone === "success"
+    ? { bg: colors.successSoft, fg: colors.success, icon: "check-circle-outline" as const }
+    : tone === "warning"
+      ? { bg: colors.warningSoft, fg: colors.warning, icon: "alert-circle-outline" as const }
+      : { bg: colors.accentSoft, fg: colors.accent, icon: "alert-octagon-outline" as const };
+  return (
+    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 180, flexGrow: 1, gap: 9, minWidth: 0, padding: 13 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <View style={{ alignItems: "center", backgroundColor: palette.bg, borderRadius: 999, height: 28, justifyContent: "center", width: 28 }}>
+          <MaterialCommunityIcons name={palette.icon} size={15} color={palette.fg} />
+        </View>
+        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "900" }}>{label}</Text>
+      </View>
+      <Text style={{ color: palette.fg, fontSize: 20, fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{detail}</Text>
+    </View>
+  );
+}
+
+type ChartDatum = { label: string; value: number; color: string };
+
+function SegmentChart({ title, total, data }: { title: string; total: number; data: ChartDatum[] }) {
+  const visible = data.filter((d) => d.value > 0);
+  return (
+    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 14 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
+        <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{title}</Text>
+        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{total} kayıt</Text>
+      </View>
+      {visible.length === 0 ? (
+        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>Henüz veri yok.</Text>
+      ) : (
+        <>
+          <View style={{ borderRadius: 999, flexDirection: "row", height: 12, overflow: "hidden", width: "100%" }}>
+            {visible.map((d) => (
+              <View key={d.label} style={{ backgroundColor: d.color, flex: Math.max(d.value, 0.5) }} />
+            ))}
+          </View>
+          <View style={{ gap: 8 }}>
+            {visible.map((d) => {
+              const rate = total ? Math.round((d.value / total) * 100) : 0;
+              return (
+                <View key={d.label} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                  <View style={{ backgroundColor: d.color, borderRadius: 999, height: 8, width: 8 }} />
+                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700" }}>{d.label}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{d.value} · %{rate}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </>
+      )}
+    </View>
+  );
+}
+
+function HorizontalBars({ title, data, emptyLabel }: { title: string; data: ChartDatum[]; emptyLabel: string }) {
+  const max = Math.max(...data.map((d) => d.value), 1);
+  return (
+    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 14 }}>
+      <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{title}</Text>
+      {data.length === 0 ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{emptyLabel}</Text> : null}
+      <View style={{ gap: 10 }}>
+        {data.map((d) => (
+          <View key={d.label} style={{ gap: 5 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
+              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "800" }}>{d.label}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{d.value}</Text>
+            </View>
+            <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 8, overflow: "hidden" }}>
+              <View style={{ backgroundColor: d.color, borderRadius: 999, height: "100%", width: `${Math.max(6, Math.round((d.value / max) * 100))}%` }} />
+            </View>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+function FunnelChart({ data }: { data: ChartDatum[] }) {
+  const max = Math.max(...data.map((d) => d.value), 1);
+  return (
+    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 14 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <MaterialCommunityIcons name="filter-variant" size={17} color={colors.primaryDark} />
+        <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Ortak Satış Hunisi</Text>
+      </View>
+      <View style={{ gap: 9 }}>
+        {data.map((d, i) => {
+          const width = Math.max(12, Math.round((d.value / max) * 100));
+          const prev = i === 0 ? d.value : data[i - 1].value;
+          const rate = prev ? Math.round((d.value / prev) * 100) : 0;
+          return (
+            <View key={d.label} style={{ gap: 5 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
+                <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{d.label}</Text>
+                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{d.value}{i > 0 ? ` · önceki adıma göre %${rate}` : ""}</Text>
+              </View>
+              <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 12, overflow: "hidden" }}>
+                <View style={{ backgroundColor: d.color, borderRadius: 999, height: "100%", width: `${width}%` }} />
+              </View>
+            </View>
+          );
+        })}
+      </View>
+    </View>
+  );
+}
+
+function StatusBadge({ label, tone }: { label: string; tone: "success" | "warning" | "accent" | "neutral" }) {
+  const bg = tone === "success" ? colors.successSoft : tone === "warning" ? colors.warningSoft : tone === "accent" ? colors.accentSoft : colors.surfaceAlt;
+  const fg = tone === "success" ? colors.success : tone === "warning" ? colors.warning : tone === "accent" ? colors.accent : colors.muted;
+  return (
+    <View style={{ alignSelf: "flex-start", backgroundColor: bg, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+      <Text style={{ color: fg, fontSize: 10.5, fontWeight: "900" }}>{label}</Text>
+    </View>
+  );
+}
+
+function sortByDate<T extends Record<string, unknown>>(items: T[], key: keyof T) {
+  return items.slice().sort((a, b) => dateScore(b[key]) - dateScore(a[key]));
+}
+
+function dateScore(value: unknown) {
+  if (typeof value !== "string") return 0;
+  const parsed = new Date(value).getTime();
+  return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function listingStatusLabel(status: string) {
+  if (status === "active") return "Yayında";
+  if (status === "pending_review") return "İncelemede";
+  if (status === "rejected") return "Reddedildi";
+  if (status === "paused") return "Duraklatıldı";
+  if (status === "sold") return "Satıldı";
+  if (status === "expired") return "Süresi doldu";
+  return status;
+}
+
+function userRoleLabel(role?: UserRole) {
+  if (role === "super_admin") return "Süper Admin";
+  if (role === "admin") return "Admin";
+  if (role === "moderator") return "Moderatör";
+  if (role === "seller") return "Satıcı";
+  if (role === "partner") return "Ortak";
+  return "Üye";
+}
+
+function listingStatusStats(listings: ReturnType<typeof useStore>["listings"]): ChartDatum[] {
+  const colorsByStatus: Record<string, string> = {
+    active: colors.success,
+    pending_review: colors.warning,
+    rejected: colors.accent,
+    paused: colors.muted,
+    sold: colors.info,
+    expired: colors.violet,
+    draft: colors.subtle
+  };
+  return Object.entries(countBy(listings, (l) => l.status)).map(([status, value]) => ({
+    label: listingStatusLabel(status),
+    value,
+    color: colorsByStatus[status] ?? colors.primaryDark
+  }));
+}
+
+function saleStatusStats(sales: ReturnType<typeof useStore>["sales"]): ChartDatum[] {
+  return Object.entries(countBy(sales, (s) => s.status)).map(([status, value]) => ({
+    label: SALE_TONE[status as SaleStatus]?.label ?? status,
+    value,
+    color: SALE_TONE[status as SaleStatus]?.color ?? colors.primaryDark
+  }));
+}
+
+function topCategoryStats(listings: ReturnType<typeof useStore>["listings"], limit: number): ChartDatum[] {
+  const palette = [colors.primaryDark, colors.info, colors.violet, colors.gold, colors.success, colors.accent, colors.warning];
+  return Object.entries(countBy(listings, (l) => l.category || "Kategori yok"))
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, limit)
+    .map(([label, value], i) => ({ label, value, color: palette[i % palette.length] }));
+}
+
+function countBy<T>(items: T[], getKey: (item: T) => string) {
+  return items.reduce<Record<string, number>>((acc, item) => {
+    const key = getKey(item);
+    acc[key] = (acc[key] ?? 0) + 1;
+    return acc;
+  }, {});
 }
 
 function Panel({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
@@ -1141,15 +1456,31 @@ function AdminSearch({ value, onChange, placeholder }: { value: string; onChange
 
 function BarChart({ data, labels }: { data: number[]; labels?: string[] }) {
   const max = Math.max(...data, 1);
+  const total = data.reduce((sum, v) => sum + v, 0);
+  const avg = data.length ? Math.round(total / data.length) : 0;
   return (
-    <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 6, height: 172, paddingTop: 10 }}>
-      {data.map((v, i) => (
-        <View key={i} style={{ flex: 1, gap: 5, justifyContent: "flex-end" }}>
-          <Text style={{ color: colors.muted, fontSize: 9, fontWeight: "800", textAlign: "center" }}>{v > 0 ? v : ""}</Text>
-          <View style={{ backgroundColor: i === data.length - 1 ? colors.primary : colors.primarySoft, borderRadius: 6, height: Math.round((v / max) * 118) + 4, width: "100%" }} />
-          <Text style={{ color: colors.subtle, fontSize: 9, fontWeight: "700", textAlign: "center" }}>{labels ? labels[i] : i + 1}</Text>
+    <View style={{ gap: 12 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <MiniStat label="Toplam" value={`${total}`} />
+        <MiniStat label="Aylık ort." value={`${avg}`} />
+        <MiniStat label="Tepe ay" value={`${max}`} />
+      </View>
+      <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, padding: 12 }}>
+        <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 7, height: 176 }}>
+          {data.map((v, i) => {
+            const on = v === max && max > 0;
+            return (
+              <View key={i} style={{ flex: 1, gap: 6, justifyContent: "flex-end", minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 9.5, fontWeight: "900", textAlign: "center" }}>{v > 0 ? v : ""}</Text>
+                <View style={{ backgroundColor: colors.line, borderRadius: 999, justifyContent: "flex-end", minHeight: 118, overflow: "hidden", width: "100%" }}>
+                  <View style={{ backgroundColor: on ? colors.primary : colors.primarySoft, borderRadius: 999, height: `${Math.max(3, Math.round((v / max) * 100))}%`, width: "100%" }} />
+                </View>
+                <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 9, fontWeight: "800", textAlign: "center" }}>{labels ? labels[i] : i + 1}</Text>
+              </View>
+            );
+          })}
         </View>
-      ))}
+      </View>
     </View>
   );
 }
