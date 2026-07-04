@@ -898,7 +898,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
               legal_accepted_at: legalAcceptedAt,
               legal_version: LEGAL_CONSENT_VERSION
             },
-            emailRedirectTo: "ortaksat://auth"
+            // Web'de doğrulama linki tarayıcıya (siteye) dönmeli; native şemaya
+            // (ortaksat://) sabitlenirse mobil-web kullanıcısı e-postadaki linki
+            // tarayıcıda açamaz ve hesabını onaylayamaz.
+            emailRedirectTo:
+              typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth"
           }
         });
         setAuthError(error?.message);
@@ -928,7 +932,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
           return true;
         }
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLocaleLowerCase("tr-TR"), {
-          redirectTo: "ortaksat://auth"
+          // Web'de şifre sıfırlama linki siteye dönmeli (native şema tarayıcıda açılmaz).
+          redirectTo:
+            typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth"
         });
         setAuthError(error?.message);
         return !error;
