@@ -370,6 +370,8 @@ export default function ListingDetailScreen() {
   const ogTitle = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)} · Ortak ol, ${commissionText(currentListing)} kazan | OrtakSat`;
   const ogDesc = `${moneyIn(currentListing.price, currentListing.currency)} · ${commissionText(currentListing)}. Bu ürünü paylaş, satışta komisyon kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
   // JSON-LD Product şeması — Google zengin sonuç (fiyat, stok, kategori) için.
+  // aggregateRating YALNIZCA gerçek (demo değil) ve gerçekten yorumu olan ilanlara
+  // eklenir — sahte yıldız Google politikasını ve "sahte veri yasağı"nı ihlal eder.
   const productLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Product",
@@ -377,12 +379,22 @@ export default function ListingDetailScreen() {
     image: [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean).slice(0, 5),
     description: metaDesc,
     category: currentListing.category,
+    ...(!isDemo && owner && currentListing.reviewCount > 0 && owner.rating > 0
+      ? {
+          aggregateRating: {
+            "@type": "AggregateRating",
+            ratingValue: Number(owner.rating.toFixed(1)),
+            reviewCount: currentListing.reviewCount
+          }
+        }
+      : {}),
     offers: {
       "@type": "Offer",
       price: currentListing.price,
       priceCurrency: currentListing.currency ?? "TRY",
       availability: currentListing.stockCount > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      url: metaUrl
+      url: metaUrl,
+      ...(owner ? { seller: { "@type": "Person", name: owner.name } } : {})
     }
   });
 
