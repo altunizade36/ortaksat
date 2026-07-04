@@ -456,9 +456,10 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       .select("*")
       .or(`partner_id.eq.${userId}${ownedListingIds.length ? `,listing_id.in.(${ownedListingIds.join(",")})` : ""}`)
       .limit(500),
-    ownedListingIds.length
-      ? supabase.from("leads").select("*").in("listing_id", ownedListingIds).order("created_at", { ascending: false }).limit(500)
-      : supabase.from("leads").select("*").eq("id", "00000000-0000-0000-0000-000000000000"),
+    // Lead'ler RLS ile scope'lanır ("lead owners and partners read leads"): satıcı
+    // kendi ilanlarının, ortak ise getirdiği (partnership_id) lead'lerini görür.
+    // Filtresiz select union'ı döndürür — saf ortak da huni/talep geçmişini görür.
+    supabase.from("leads").select("*").order("created_at", { ascending: false }).limit(500),
     supabase.from("commissions").select("*").order("created_at", { ascending: false }).limit(500),
     ownedListingIds.length
       ? supabase.from("orders").select("*").in("listing_id", ownedListingIds).order("created_at", { ascending: false }).limit(500)

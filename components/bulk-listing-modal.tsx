@@ -102,6 +102,19 @@ export function BulkListingModal({
     input.click();
   }
 
+  // Excel/Sheets'te açılıp doldurulabilen örnek şablonu indirir (yalnız web).
+  function downloadTemplate() {
+    if (!canUpload) return;
+    const csv = "Başlık,Fiyat,Komisyon%,Kategori,GörselURL\nKablosuz Kulaklık Pro,1899,12,Elektronik,https://\nHakiki Deri Kadın Çanta,2499,15,Moda,https://\n";
+    const blob = new Blob(["﻿" + csv], { type: "text/csv;charset=utf-8" }); // BOM: Excel TR karakterleri
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "ortaksat-toplu-ilan-sablonu.csv";
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
   const rows = useMemo(() => text.split("\n").map(parseLine).filter((r): r is ParsedRow => r !== null), [text]);
   const validRows = rows.filter((r) => r.valid);
 
@@ -143,13 +156,20 @@ export function BulkListingModal({
                 <View style={{ backgroundColor: colors.infoSoft, borderRadius: 10, gap: 4, padding: 12 }}>
                   <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "900" }}>Her satır bir ilan. Alanları | veya , (CSV) ile ayır:</Text>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>Başlık | Fiyat | Komisyon% | Kategori | GörselURL (opsiyonel)</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800", marginTop: 2 }}>✨ Açıklama, satış metni ve Instagram/WhatsApp/TikTok paylaşım metinleri her ilan için otomatik oluşturulur — sonradan düzenleyebilirsin.</Text>
                 </View>
 
                 {canUpload ? (
-                  <Pressable onPress={pickCsv} accessibilityRole="button" accessibilityLabel="CSV dosyası yükle" style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.primary, borderRadius: 11, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 }}>
-                    <MaterialCommunityIcons name="file-delimited-outline" size={18} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>CSV dosyası yükle (Excel'den dışa aktar)</Text>
-                  </Pressable>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <Pressable onPress={pickCsv} accessibilityRole="button" accessibilityLabel="CSV dosyası yükle" style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.primary, borderRadius: 11, borderStyle: "dashed", borderWidth: 1.5, flex: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 }}>
+                      <MaterialCommunityIcons name="file-delimited-outline" size={18} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>CSV yükle</Text>
+                    </Pressable>
+                    <Pressable onPress={downloadTemplate} accessibilityRole="button" accessibilityLabel="Örnek CSV şablonu indir" style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingHorizontal: 14, paddingVertical: 13 }}>
+                      <MaterialCommunityIcons name="download-outline" size={18} color={colors.muted} />
+                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Şablon</Text>
+                    </Pressable>
+                  </View>
                 ) : null}
 
                 <TextInput

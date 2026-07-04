@@ -71,7 +71,7 @@ export async function answerQuestionLive(questionId: string, answer: string): Pr
 }
 
 /** Kullanicinin tercih (bildirim/magaza ayarlari) JSONB kolonunu gunceller. */
-export async function savePreferencesLive(userId: string, preferences: Record<string, boolean>): Promise<boolean> {
+export async function savePreferencesLive(userId: string, preferences: Record<string, boolean | string | number>): Promise<boolean> {
   if (!supabase) return false;
   const { error } = await supabase.from("profiles").update({ preferences }).eq("id", userId);
   if (error) { console.warn("Preferences update failed", error); return false; }

@@ -13,6 +13,7 @@ import { getFormSchema, MODELS_BY_BRAND, resolveFormKey, type CategoryNode, type
 import { CURRENCIES, moneyIn, type CurrencyCode } from "@/lib/format";
 import { formatLocation, getProvince } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
+import { autoFillListing } from "@/lib/listing-autofill";
 import { categoryRisk, moderateListingText, MODERATION_MESSAGES, scanTextLocal } from "@/lib/moderation";
 import { rateLimit } from "@/lib/rate-limit";
 import type { CommissionType, PartnershipMode } from "@/lib/types";
@@ -161,13 +162,25 @@ export function DesktopCreateFlow() {
         : pickedImages;
       const cover = uploadedImages[0] || coverImage;
 
+      // Shopify-tarzı otomatik doldurma: açıklama boşsa doldurulur, paylaşım
+      // metinleri (Instagram/WhatsApp/TikTok) her ilan için otomatik üretilir,
+      // argüman/etiket zayıfsa zenginleştirilir. Uydurma ürün özelliği yok —
+      // yalnızca başlık/kategori/fiyat/komisyondan düzenlenebilir taslak.
+      const auto = autoFillListing({
+        title: v.clean.title || leafLabel,
+        category: leafLabel || path[0]?.label || "Genel",
+        price,
+        commission: Number(commissionValue) || 0,
+        currency
+      });
+
       createListing({
         title: v.clean.title || leafLabel,
-        description: description ? v.clean.description : "Açıklama eklenmedi.",
-        salesPitch: detailLines.slice(0, 4).length ? detailLines.slice(0, 4) : ["Ürünün ana faydasını kısa ve net anlat."],
-        shareTemplates: { instagram: "", whatsapp: "", tiktok: "" },
+        description: description ? v.clean.description : auto.description,
+        salesPitch: detailLines.slice(0, 4).length ? detailLines.slice(0, 4) : auto.salesPitch,
+        shareTemplates: auto.shareTemplates,
         adAssets: uploadedImages.slice(1, 5),
-        tags: tags.length ? tags : ["ortak satış"],
+        tags: tags.length ? tags : auto.tags,
         price,
         currency,
         commissionType,

@@ -34,9 +34,9 @@ function ProfileEditScreenInner() {
   const isWideWeb = useIsWideWeb();
   const [section, setSection] = useState<SettingsSection>("personal");
   const [storeName, setStoreName] = useState(currentUser.name);
-  const [iban, setIban] = useState("");
-  const [notif, setNotif] = useState<Record<string, boolean>>({ email: prefs0.notif_email ?? true, sms: prefs0.notif_sms ?? false, push: prefs0.notif_push ?? true, whatsapp: prefs0.notif_whatsapp ?? true, marketing: prefs0.notif_marketing ?? false });
-  const [storePrefs, setStorePrefs] = useState<Record<string, boolean>>({ autoApprove: prefs0.store_autoApprove ?? false, vacation: prefs0.store_vacation ?? false, showPhone: prefs0.store_showPhone ?? true });
+  const [iban, setIban] = useState((prefs0.iban as string) ?? "");
+  const [notif, setNotif] = useState<Record<string, boolean>>({ email: prefs0.notif_email !== false, sms: prefs0.notif_sms === true, push: prefs0.notif_push !== false, whatsapp: prefs0.notif_whatsapp !== false, marketing: prefs0.notif_marketing === true });
+  const [storePrefs, setStorePrefs] = useState<Record<string, boolean>>({ autoApprove: prefs0.store_autoApprove === true, vacation: prefs0.store_vacation === true, showPhone: prefs0.store_showPhone !== false });
 
   function toggleNotif(key: string) {
     setNotif((s) => { const v = !s[key]; void savePreferences({ [`notif_${key}`]: v }); return { ...s, [key]: v }; });
@@ -64,6 +64,10 @@ function ProfileEditScreenInner() {
 
   async function saveStore() {
     setStoreSaving(true);
+    // IBAN profiles kolonunda tutulmaz; preferences JSON'a kalıcı yazılır (komisyon
+    // ödeme bilgisi). Önceden yalnız lokal state'teydi ve kaydedilmiyordu.
+    const ibanClean = iban.replace(/\s+/g, "").toLocaleUpperCase("tr-TR");
+    await savePreferences({ iban: ibanClean });
     const ok = await updateProfile({ name: storeName.trim() || name, phone, avatar, bio });
     setStoreSaving(false);
     Alert.alert(ok ? "Kaydedildi" : "Kaydedilemedi", ok ? "Mağaza bilgilerin güncellendi." : (authError ?? "Bir sorun oluştu."));

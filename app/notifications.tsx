@@ -78,7 +78,7 @@ function NotificationsScreenInner() {
   const [tab, setTab] = useState<"all" | "unread" | NotificationType>("all");
   const [readMap, setReadMap] = useState<Record<string, boolean>>({});
   const p0 = currentUser.preferences ?? {};
-  const [prefs, setPrefs] = useState<Record<string, boolean>>({ push: p0.notif_push ?? true, email: p0.notif_email ?? true, sms: p0.notif_sms ?? false, whatsapp: p0.notif_whatsapp ?? true });
+  const [prefs, setPrefs] = useState<Record<string, boolean>>({ push: p0.notif_push !== false, email: p0.notif_email !== false, sms: p0.notif_sms === true, whatsapp: p0.notif_whatsapp !== false });
   const togglePref = (key: string) => setPrefs((s) => { const v = !s[key]; void savePreferences({ [`notif_${key}`]: v }); return { ...s, [key]: v }; });
   // Tür bazında sustur — kalıcı tercih; susturulan tür listeden gizlenir.
   const [mutes, setMutes] = useState<Record<string, boolean>>(() => {

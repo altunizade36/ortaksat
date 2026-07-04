@@ -29,7 +29,7 @@ export type User = {
   responseRate: number;
   role?: UserRole;
   status?: "active" | "suspended" | "deleted";
-  preferences?: Record<string, boolean>;
+  preferences?: Record<string, boolean | string | number>;
 };
 
 export type Listing = {
@@ -64,6 +64,9 @@ export type Listing = {
   addressVisibility?: "city_only" | "district_only" | "neighborhood" | "full_address_private";
   locationNote?: string;
   image: string;
+  imageUrl?: string;
+  imageAlt?: string;
+  fallbackCategoryImage?: string;
   status: ListingStatus;
   partnershipMode: PartnershipMode;
   stockCount: number;

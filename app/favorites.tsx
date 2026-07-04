@@ -44,38 +44,31 @@ function FavoritesScreenInner() {
 
   if (isWideWeb) {
     const myFavs = favoriteListings.filter(Boolean) as Listing[];
-    const activeNotFav = listings.filter((l) => l.status === "active" && !myFavs.some((f) => f.id === l.id));
-    const base = (myFavs.length >= 8 ? myFavs : [...myFavs, ...activeNotFav]).slice(0, 12);
+    const base = myFavs; // yalnızca gerçek favoriler — sahte doldurma yok
     const savedCount = base.length;
     const highComm = base.filter((l) => l.commissionType === "rate" && l.commissionValue >= 15);
-    const priceDropCount = 3;
+    const openCount = base.filter((l) => l.partnershipMode === "open").length;
     const recent = base.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const filtered = favTab === "open" ? base.filter((l) => l.partnershipMode === "open")
       : favTab === "highcomm" ? highComm
       : favTab === "recent" ? recent
-      : favTab === "near" ? base.slice(0, 8)
       : base;
     const sidebarWidth = 300;
     const cardWidth = responsiveGrid({ available: Math.min(width, 1480) - 40 - sidebarWidth - 24, gap: 16, minCardWidth: 210, maxColumns: 4 }).cardWidth;
     const tabs: Array<{ key: typeof favTab; label: string; count: number }> = [
       { key: "all", label: "Tümü", count: savedCount },
-      { key: "open", label: "Ortak satışa açık", count: base.filter((l) => l.partnershipMode === "open").length },
+      { key: "open", label: "Ortak satışa açık", count: openCount },
       { key: "highcomm", label: "Yüksek komisyon (%15+)", count: highComm.length },
-      { key: "near", label: "Yakındakiler", count: 8 },
       { key: "recent", label: "Son eklenenler", count: savedCount }
     ];
-    const lists = [
-      { icon: "check-circle" as const, label: "Tüm Favoriler", count: savedCount, active: true },
-      { icon: "percent" as const, label: "Yüksek Komisyon Fırsatları", count: highComm.length },
-      { icon: "home-variant" as const, label: "Ev & Yaşam", count: base.filter((l) => l.category === "Ev & Yaşam").length || 6 },
-      { icon: "cellphone" as const, label: "Elektronik Ürünler", count: base.filter((l) => l.category === "Elektronik").length || 7 },
-      { icon: "hanger" as const, label: "Moda & Aksesuar", count: base.filter((l) => l.category === "Moda").length || 4 }
-    ];
-    const alarmItems = base.slice(0, 3).map((l, i) => ({ key: ["a", "b", "c"][i], listing: l }));
-    const savedSearches = [
-      { q: "iPhone 15", n: 12 },
-      { q: "Dyson V15", n: 5 },
-      { q: "Köşe koltuk", n: 8 }
+    // Favori kategorilerinden türetilen dinamik listeler (uydurma sayı yok).
+    const catCounts = new Map<string, number>();
+    base.forEach((l) => catCounts.set(l.category, (catCounts.get(l.category) ?? 0) + 1));
+    const topCats = Array.from(catCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 4);
+    const lists: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; count: number; active: boolean }> = [
+      { icon: "check-circle", label: "Tüm Favoriler", count: savedCount, active: true },
+      { icon: "percent", label: "Yüksek Komisyon Fırsatları", count: highComm.length, active: false },
+      ...topCats.map(([cat, n]) => ({ icon: "tag-outline" as const, label: cat, count: n, active: false }))
     ];
 
     return (
@@ -88,7 +81,7 @@ function FavoritesScreenInner() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
           <FavStat icon="heart" tint={colors.accentSoft} color={colors.accent} value={`${savedCount}`} title="Kaydedilen ilan" sub="Toplam favori" />
           <FavStat icon="percent" tint={colors.primarySoft} color={colors.primaryDark} value={`${highComm.length}`} title="Yüksek komisyon fırsatı" sub="%15 ve üzeri komisyon" />
-          <FavStat icon="bell-ring-outline" tint={colors.goldSoft} color={colors.gold} value={`${priceDropCount}`} title="Fiyat düşüşü" sub="Fiyat düşüşü olan ilanlar" />
+          <FavStat icon="handshake-outline" tint={colors.goldSoft} color={colors.gold} value={`${openCount}`} title="Ortak satışa açık" sub="Hemen ortak olabileceğin ilan" />
         </View>
 
         <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
@@ -152,43 +145,6 @@ function FavoritesScreenInner() {
                   </Pressable>
                 </View>
               ) : null}
-            </View>
-
-            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Fiyat alarmı</Text>
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text>
-              </View>
-              {alarmItems.map((a) => (
-                <View key={a.key} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-                  <View style={{ backgroundColor: colors.line, borderRadius: 8, height: 40, overflow: "hidden", width: 40 }}>
-                    <SafeRemoteImage uri={a.listing.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
-                  </View>
-                  <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{displayText(a.listing.title)}</Text>
-                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>Şu anki fiyat {money(a.listing.price)}</Text>
-                  </View>
-                  <Pressable onPress={() => setAlarms((s) => ({ ...s, [a.key]: !s[a.key] }))} style={{ alignItems: alarms[a.key] ? "flex-end" : "flex-start", backgroundColor: alarms[a.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
-                    <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
-                  </Pressable>
-                </View>
-              ))}
-            </View>
-
-            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 16 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Kaydedilen aramalar</Text>
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text>
-              </View>
-              {savedSearches.map((s) => (
-                <Link key={s.q} href={{ pathname: "/explore", params: { q: s.q } }} asChild>
-                  <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 10, opacity: pressed ? 0.8 : 1 })}>
-                    <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
-                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{s.q}</Text>
-                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>{s.n} yeni ilan</Text>
-                  </Pressable>
-                </Link>
-              ))}
             </View>
           </View>
         </View>

@@ -12,6 +12,7 @@ import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } fro
 import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { loadClickCounts } from "@/lib/live-service";
+import { autoFillListing, matchCategory } from "@/lib/listing-autofill";
 import { searchKey } from "@/lib/locale";
 import { matchesQuery } from "@/lib/search";
 import { displayText } from "@/lib/text";
@@ -86,18 +87,23 @@ export default function SellerScreen() {
   }, [focusId]);
 
   function handleBulkCreate(row: { title: string; price: number; commission: number; category: string; image: string }) {
+    // Shopify-tarzı otomatik doldurma: başlık+kategori+fiyat+komisyondan
+    // düzenlenebilir açıklama/argüman/etiket/paylaşım metni üretilir; serbest
+    // yazılan kategori bilinen kategoriye eşlenir.
+    const category = matchCategory(row.category) || row.category;
+    const auto = autoFillListing({ title: row.title, category, price: row.price, commission: row.commission });
     createListing({
       title: row.title,
-      description: "Açıklama düzenleme ekranından eklenebilir.",
-      salesPitch: ["Ürünün ana faydasını kısa ve net anlat."],
-      shareTemplates: { instagram: "", whatsapp: "", tiktok: "" },
+      description: auto.description,
+      salesPitch: auto.salesPitch,
+      shareTemplates: auto.shareTemplates,
       adAssets: [],
-      tags: ["ortak satış"],
+      tags: auto.tags,
       price: row.price,
       currency: "TRY",
       commissionType: "rate",
       commissionValue: row.commission,
-      category: row.category,
+      category,
       location: myListings[0]?.location || "Türkiye",
       image: row.image,
       stockCount: 1,
