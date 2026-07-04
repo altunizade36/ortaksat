@@ -75,13 +75,16 @@ export function getDemoFallbackCategoryImage(category?: string | null) {
 export function getDemoProductImageMeta(input: Pick<Listing, "title" | "category" | "image">) {
   const exact = IMAGE_BY_TITLE[input.title];
   const fallbackCategoryImage = CATEGORY_FALLBACKS[exact?.category ?? getDemoCategory(input.category)];
-  const imageUrl = exact ? `${DEMO_ROOT}/${exact.category}/${exact.file}` : input.image;
+  // Görsel HER ZAMAN ilanın kendi image_url'ünden (public/demo/<NNN>-<slug>.jpg)
+  // gelir. Önceden IMAGE_BY_TITLE'daki 15 ürün /demo-products/ yolundan geliyordu
+  // ve /demo/<NNN>.jpg'e konan güncel görseller gösterilmiyordu. IMAGE_BY_TITLE
+  // yalnızca alt-metin (erişilebilirlik) ve yükleme hatası fallback'i için kalır.
 
   return {
     title: input.title,
     category: input.category,
     subcategory: input.category,
-    imageUrl,
+    imageUrl: input.image,
     imageAlt: exact?.alt ?? `${input.title} örnek ilan görseli`,
     fallbackCategoryImage
   };
