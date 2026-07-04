@@ -409,6 +409,20 @@ export default function AuthScreen() {
             </>
           )}
 
+          {mode !== "reset" ? (
+            <>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                <View style={{ backgroundColor: colors.line, flex: 1, height: 1 }} />
+                <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>veya</Text>
+                <View style={{ backgroundColor: colors.line, flex: 1, height: 1 }} />
+              </View>
+              <Pressable onPress={loginWithGoogle} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 }}>
+                <MaterialCommunityIcons name="google" size={18} color="#DB4437" />
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Google ile devam et</Text>
+              </Pressable>
+            </>
+          ) : null}
+
           {authError ? (
             <Text selectable style={{ color: colors.accent, fontSize: 13, lineHeight: 19 }}>
               {authError}
