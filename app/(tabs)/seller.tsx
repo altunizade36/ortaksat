@@ -306,10 +306,10 @@ export default function SellerScreen() {
             <PrimaryButton tone={filter === "withLeads" ? "soft" : "secondary"} icon="phone-in-talk-outline" onPress={() => setFilter("withLeads")}>Talepleri Ara</PrimaryButton>
           </View>
           <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-            <PrimaryButton tone={filter === "payments" ? "soft" : "secondary"} icon="cash-check" onPress={() => setFilter("payments")}>Komisyon Öde</PrimaryButton>
+            <PrimaryButton tone={filter === "payments" ? "soft" : "secondary"} icon="cash-check" onPress={() => setFilter("payments")}>Ödeme Bekleyenler</PrimaryButton>
           </View>
           <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-            <PrimaryButton tone={filter === "lowStock" ? "soft" : "secondary"} icon="package-variant-closed" onPress={() => setFilter("lowStock")}>Stok Güncelle</PrimaryButton>
+            <PrimaryButton tone={filter === "lowStock" ? "soft" : "secondary"} icon="package-variant-closed" onPress={() => setFilter("lowStock")}>Az Stoklular</PrimaryButton>
           </View>
         </View>
       </Card>

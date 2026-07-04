@@ -792,7 +792,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
   const reportResolutionRate = reports.length ? Math.round((resolvedReports / reports.length) * 100) : 100;
   const latestActivity = [
     ...notifications.map((n) => ({ icon: "bell-outline" as const, tone: colors.primary, title: n.title, meta: n.createdAt })),
-    ...leads.map((l) => ({ icon: "account-arrow-right-outline" as const, tone: colors.info, title: `Yeni talep: ${l.buyerName || findUser(l.partnershipId)?.name || "Alıcı"}`, meta: l.createdAt })),
+    ...leads.map((l) => ({ icon: "account-arrow-right-outline" as const, tone: colors.info, title: `Yeni talep: ${l.buyerName || "Alıcı"}`, meta: l.createdAt })),
     ...recentListings.map((l) => ({ icon: "file-document-outline" as const, tone: l.status === "pending_review" ? colors.warning : colors.success, title: l.title, meta: `${listingStatusLabel(l.status)} · ${l.createdAt}` }))
   ].slice(0, 7);
   const priorities = [
