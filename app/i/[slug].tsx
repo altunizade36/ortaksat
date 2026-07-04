@@ -157,7 +157,7 @@ export default function ReferralLeadScreen() {
           <Field label={localize("Ad Soyad", "Full name")} value={buyerName} onChangeText={setBuyerName} />
           <Field label={localize("Telefon", "Phone")} value={buyerPhone} onChangeText={setBuyerPhone} keyboardType="phone-pad" />
           <Field label={localize("Not", "Note")} value={note} onChangeText={setNote} multiline />
-          <PrimaryButton disabled={sent || sending} onPress={() => void submit()} tone={sent ? "soft" : "primary"}>
+          <PrimaryButton onPress={() => void submit()} tone={sent ? "soft" : "primary"}>
             {sent ? localize("Talep Gönderildi", "Request Sent") : sending ? localize("Gönderiliyor…", "Sending…") : localize("Satıcıya Talep Gönder", "Send Request")}
           </PrimaryButton>
         </Card>
