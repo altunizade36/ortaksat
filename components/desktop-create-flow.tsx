@@ -42,9 +42,6 @@ export function DesktopCreateFlow() {
   const [bonusAmount, setBonusAmount] = useState("");
   const [bonusQuota, setBonusQuota] = useState("");
   const [partnershipMode, setPartnershipMode] = useState<PartnershipMode>("approval");
-  const [autoApprove, setAutoApprove] = useState(false);
-  const [maxPartners, setMaxPartners] = useState("");
-  const [trigger, setTrigger] = useState("Satış onaylanınca");
   const [partnerNote, setPartnerNote] = useState("");
   const [contactMethod, setContactMethod] = useState<"message" | "whatsapp" | "phone">("message");
   const [publishing, setPublishing] = useState(false);
@@ -421,17 +418,6 @@ export function DesktopCreateFlow() {
               </View>
             </View>
 
-            <ToggleRow label="Ortak başvurularını otomatik onayla" on={autoApprove} onPress={() => setAutoApprove((v) => !v)} />
-
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-              <View style={{ flex: 1, minWidth: 200 }}>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>Maksimum ortak satıcı (boş = sınırsız)</Text>
-                <TextInput value={maxPartners} onChangeText={setMaxPartners} keyboardType="numeric" placeholder="Sınırsız" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
-              </View>
-              <View style={{ flex: 1, minWidth: 200 }}>
-                <DSelect label="Komisyon ne zaman hak edilir?" value={trigger} options={["Alıcı talebi oluşunca", "Satış onaylanınca", "Ödeme alınınca", "Teslimat tamamlanınca"]} onChange={setTrigger} />
-              </View>
-            </View>
 
             <View style={{ gap: 6 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>İletişim tercihi</Text>
@@ -488,7 +474,6 @@ export function DesktopCreateFlow() {
                 <PreviewRow label="Konum" value={formatLocation(loc, "neighborhood") || "—"} />
                 <PreviewRow label="Görsel" value={`${images.length || "kategori görseli"} adet`} />
                 <PreviewRow label="Ortaklık" value={partnershipMode === "open" ? "Herkese açık" : partnershipMode === "approval" ? "Onaylı" : "Davetle"} />
-                <PreviewRow label="Komisyon hak edişi" value={trigger} />
                 {missingFields.length ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>Eksik zorunlu alan: {missingFields.map((f) => f.label).join(", ")}</Text> : <Text style={{ color: colors.success, fontSize: 12.5, fontWeight: "800" }}>✓ Tüm zorunlu alanlar dolu</Text>}
               </View>
             </View>

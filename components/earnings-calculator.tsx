@@ -12,7 +12,11 @@ export function EarningsCalculator({ listing, isDemo, onJoin }: { listing: Listi
   const [qty, setQty] = useState(5);
   if (per <= 0) return null;
   const hasBonus = Boolean(listing.bonusAmount && listing.bonusAmount > 0 && listing.bonusQuota && listing.bonusQuota > 0);
-  const bonus = hasBonus ? (listing.bonusAmount as number) : 0;
+  const quota = hasBonus ? (listing.bonusQuota as number) : 0;
+  // Bonus "ilk N satışa özel" olduğundan projeksiyona YALNIZCA satış adedi kotayı
+  // yakaladığında eklenir; önceden qty=1'de bile tam bonus eklenip kazanç şişiyordu.
+  const qualifiesBonus = hasBonus && qty >= quota;
+  const bonus = qualifiesBonus ? (listing.bonusAmount as number) : 0;
   const total = per * qty + bonus;
 
   return (
@@ -57,7 +61,7 @@ export function EarningsCalculator({ listing, isDemo, onJoin }: { listing: Listi
 
       <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 12, flexDirection: "row", gap: 10, padding: 14 }}>
         <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700" }}>{qty} satışta toplam kazancın{hasBonus ? " (bonus dahil)" : ""}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 12, fontWeight: "700" }}>{qty} satışta toplam kazancın{qualifiesBonus ? " (bonus dahil)" : hasBonus ? ` · ${quota}+ satışta bonus` : ""}</Text>
           <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{moneyIn(total, listing.currency)}</Text>
         </View>
         <MaterialCommunityIcons name="cash-multiple" size={30} color={colors.gold} />
