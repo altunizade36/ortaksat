@@ -115,12 +115,14 @@ export function BulkListingModal({
     URL.revokeObjectURL(url);
   }
 
+  const MAX_BULK = 50; // spam/hız-limiti koruması: tek seferde en fazla 50 ilan
   const rows = useMemo(() => text.split("\n").map(parseLine).filter((r): r is ParsedRow => r !== null), [text]);
   const validRows = rows.filter((r) => r.valid);
 
   function publish() {
-    validRows.forEach((r) => onCreate({ title: r.title, price: r.price, commission: r.commission, category: r.category, image: r.image ?? PLACEHOLDER_IMAGE }));
-    setDone(validRows.length);
+    const batch = validRows.slice(0, MAX_BULK);
+    batch.forEach((r) => onCreate({ title: r.title, price: r.price, commission: r.commission, category: r.category, image: r.image ?? PLACEHOLDER_IMAGE }));
+    setDone(batch.length);
     setText("");
   }
 

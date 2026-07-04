@@ -1064,7 +1064,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       async updateReportStatus(reportId, status) {
         const report = reports.find((item) => item.id === reportId);
         if (!report) return false;
-        if (!liveUser || (currentUser.role !== "admin" && currentUser.role !== "moderator")) return false;
+        if (!liveUser || !["admin", "moderator", "super_admin"].includes(currentUser.role ?? "")) return false;
         const ok = await updateReportStatusLive(report, status, currentUser.id);
         if (ok) {
           setReports((items) =>

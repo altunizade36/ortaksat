@@ -72,23 +72,10 @@ export default function ExploreFeedScreen() {
   }
 
   function becomePartner(listing: Listing) {
-    const partnership = joinListing(listing.id, {
-      audience: "Keşfet akışından gelen hedef kitle",
-      note: "Bu ürünü sosyal medya ve mesaj gruplarımda paylaşmak istiyorum.",
-      platformHandle: "Ortaksat keşfet akışı",
-      reachEstimate: 300,
-      shareChannel: "Keşfet, WhatsApp ve Instagram"
-    });
-
-    if (!partnership) {
-      Alert.alert("Ortaklık hazır", "Bu ilan için başvurun veya aktif ortaklığın zaten var.");
-      return;
-    }
-
-    Alert.alert(
-      partnership.status === "active" ? "Bağlantın hazır" : "Başvuru gönderildi",
-      partnership.status === "active" ? "Ortaklık aktif edildi. Bağlantını Ortak Satış panelinden paylaşabilirsin." : "Satıcı onaylayınca paylaşım bağlantın açılacak."
-    );
+    // Önceden burada sahte reachEstimate:300 + uydurma kitle/kanal ile başvuru
+    // gönderiliyordu; satıcı bunları ortağın gerçek erişimi sanıyordu. Artık gerçek
+    // başvuru formunun (kendi kitleni/erişimini girdiğin) olduğu ilan detayına gider.
+    router.push(`/listing/${listing.id}`);
   }
 
   function sendProductMessage(listing: Listing) {
@@ -109,9 +96,14 @@ export default function ExploreFeedScreen() {
   function submitComment(listing: Listing) {
     const text = commentDrafts[listing.id]?.trim();
     if (!text) return;
-    createReview(listing.id, 5, text);
+    // Önceden bu kutu HERKESE her ürüne sabit 5 yıldız review yazdırıyordu (satıcı
+    // puanını sahte şişiriyordu). Artık yorum/soru, satıcıya gerçek mesaj olarak gider.
+    if (currentUser.id === "anon") { router.push("/auth"); return; }
+    const owner = findUser(listing.ownerId);
+    if (!owner || owner.id === currentUser.id) { router.push(`/listing/${listing.id}`); return; }
+    const conversation = startConversation(listing.id, owner.id, text);
     setCommentDrafts((items) => ({ ...items, [listing.id]: "" }));
-    setOpenComments((items) => ({ ...items, [listing.id]: true }));
+    if (conversation) router.push(`/chat/${conversation.id}`);
   }
 
   return (

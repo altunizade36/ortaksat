@@ -13,6 +13,7 @@ import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { loadClickCounts } from "@/lib/live-service";
 import { autoFillListing, matchCategory } from "@/lib/listing-autofill";
+import { scanTextLocal } from "@/lib/moderation";
 import { searchKey } from "@/lib/locale";
 import { matchesQuery } from "@/lib/search";
 import { displayText } from "@/lib/text";
@@ -92,6 +93,11 @@ export default function SellerScreen() {
     // yazılan kategori bilinen kategoriye eşlenir.
     const category = matchCategory(row.category) || row.category;
     const auto = autoFillListing({ title: row.title, category, price: row.price, commission: row.commission });
+    // Toplu ekleme de içerik moderasyonundan geçer (önceden yasaklı kelimeler
+    // doğrudan yayınlanabiliyordu). Yasaklı = atla; şüpheli = admin onayına düşür.
+    const scan = scanTextLocal(`${row.title} ${auto.description}`);
+    if (scan.verdict === "block") return;
+    const statusOverride = scan.verdict === "review" ? ("pending_review" as const) : undefined;
     createListing({
       title: row.title,
       description: auto.description,
@@ -114,7 +120,7 @@ export default function SellerScreen() {
       deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; Ortaksat para tutmaz.",
       contactMethod: "message",
       partnershipMode: "approval"
-    });
+    }, statusOverride);
   }
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status !== "rejected");
   const myListingIds = new Set(myListings.map((listing) => listing.id));
