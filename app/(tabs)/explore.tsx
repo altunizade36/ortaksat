@@ -59,6 +59,7 @@ export default function ExploreScreen() {
   const [priceRange, setPriceRange] = useState("");
   const [stockFilter, setStockFilter] = useState("");
   const [statusOpen, setStatusOpen] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false); // mobilde filtre panelini aç/kapat
   const [sortMode, setSortMode] = useState<SortMode>("recommended");
   const [onlyVerified, setOnlyVerified] = useState(false);
   const [productVisible, setProductVisible] = useState(20);
@@ -537,7 +538,7 @@ export default function ExploreScreen() {
       style={{ backgroundColor: colors.surface }}
     >
       <View style={isWideWeb ? { flexDirection: "row", gap: 20, paddingHorizontal: padding, paddingTop: 6, alignItems: "flex-start" } : undefined}>
-      {isWideWeb ? (
+      {isWideWeb || showMobileFilters ? (
         <FilterPanel
           cities={cities}
           city={city}
@@ -547,7 +548,7 @@ export default function ExploreScreen() {
           statusOpen={statusOpen}
           onStatusOpen={setStatusOpen}
           onClear={() => { setCity(""); setMinCommission(0); setStatusOpen(false); }}
-          width={panelWidth}
+          width={isWideWeb ? panelWidth : Math.max(0, width - padding * 2)}
         />
       ) : null}
       <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
@@ -566,6 +567,14 @@ export default function ExploreScreen() {
               {mediaItems.length} {t("content")}
             </Text>
           </View>
+          {!isWideWeb ? (
+            // Mobilde şehir/komisyon/durum filtreleri artık erişilebilir (önceden panel hiç render edilmiyordu).
+            <Pressable onPress={() => setShowMobileFilters((v) => !v)} accessibilityRole="button" accessibilityLabel="Filtrele" style={{ alignItems: "center", backgroundColor: showMobileFilters ? colors.primary : colors.surface, borderColor: (city || minCommission > 0 || statusOpen) ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+              <MaterialCommunityIcons name="tune-variant" size={15} color={showMobileFilters ? "#FFFFFF" : colors.primaryDark} />
+              <Text style={{ color: showMobileFilters ? "#FFFFFF" : colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Filtre</Text>
+              {(city || minCommission > 0 || statusOpen) ? <View style={{ backgroundColor: showMobileFilters ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 7, width: 7 }} /> : null}
+            </Pressable>
+          ) : null}
         </View>
 
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
