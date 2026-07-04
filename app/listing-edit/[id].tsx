@@ -9,6 +9,8 @@ import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { listingCategories } from "@/lib/categories";
+import { CategoryPicker as TreeCategoryPicker } from "@/components/category-picker";
+import type { CategoryNode } from "@/lib/category-tree";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadListingImage } from "@/lib/live-service";
 import type { CommissionType, Listing, PartnershipMode } from "@/lib/types";
@@ -45,6 +47,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [commissionValue, setCommissionValue] = useState(`${listing.commissionValue}`);
   const [partnershipMode, setPartnershipMode] = useState<PartnershipMode>(listing.partnershipMode);
   const [category, setCategory] = useState(listing.category);
+  const [catPath, setCatPath] = useState<CategoryNode[]>([]);
   const [location, setLocation] = useState(listing.location);
   const [stockCount, setStockCount] = useState(`${listing.stockCount}`);
   const [minPartnerRating, setMinPartnerRating] = useState(`${listing.minPartnerRating}`);
@@ -214,7 +217,19 @@ function ListingEditForm({ listing }: { listing: Listing }) {
               <Field label="Stok" value={stockCount} onChangeText={setStockCount} keyboardType="numeric" />
             </View>
           </View>
-          <CategoryPicker value={category} onChange={setCategory} />
+          {/* Kategori: mevcut kategori korunur (ince yaprak). Önceki yerel picker
+              lib/categories.ts'in 19 kaba kategorisini kullandığı için eşleşmez ve
+              seçince kategoriyi bozuyordu. Artık create ile AYNI ağaç-tabanlı picker. */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Kategori</Text>
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Şu anki: {category || "—"}</Text>
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>Değiştirmek istersen aşağıdan yeni kategori seç (opsiyonel).</Text>
+            </View>
+            <TreeCategoryPicker value={catPath} onChange={(p) => { setCatPath(p); if (p.length) setCategory(p[p.length - 1].label); }} />
+          </View>
           <Field label="Konum" value={location} onChangeText={setLocation} />
         </Card>
 
