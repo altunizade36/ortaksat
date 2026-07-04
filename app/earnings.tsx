@@ -90,6 +90,12 @@ function EarningsScreenInner() {
       { key: "quarter", label: "Son 3 ay" },
       { key: "year", label: "Bu yıl" }
     ];
+    // Dönem seçici artık gerçekten işlem listesini filtreliyor (önceden yalnızca
+    // butonun vurgusunu değiştiriyordu, hiçbir veriyi süzmüyordu).
+    const periodStartMs = period === "month" ? new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+      : period === "quarter" ? new Date(now.getFullYear(), now.getMonth() - 2, 1).getTime()
+      : new Date(now.getFullYear(), 0, 1).getTime();
+    const periodTxns = txns.filter((t) => t.sortAt > 0 && t.sortAt >= periodStartMs);
     const stats: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; sub: string }> = [
       { icon: "cash-multiple", tint: colors.successSoft, color: colors.success, value: money(totalCommission), title: "Toplam kazanç", sub: "Tüm dönemler" },
       { icon: "check-decagram-outline", tint: colors.primarySoft, color: colors.primaryDark, value: money(paidCommission), title: "Tahsil edilen", sub: "Satıcıdan aldıkların" },
@@ -182,10 +188,10 @@ function EarningsScreenInner() {
                 <Text style={{ color: colors.muted, flex: 1.2, fontSize: 11.5, fontWeight: "800", textAlign: "right" }}>KOMİSYON</Text>
                 <Text style={{ color: colors.muted, flex: 1.3, fontSize: 11.5, fontWeight: "800", textAlign: "right" }}>DURUM</Text>
               </View>
-              {txns.length === 0 ? (
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 24, textAlign: "center" }}>Henüz komisyon hareketin yok. Ortak satış tamamlandıkça burada listelenecek.</Text>
+              {periodTxns.length === 0 ? (
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 24, textAlign: "center" }}>{txns.length === 0 ? "Henüz komisyon hareketin yok. Ortak satış tamamlandıkça burada listelenecek." : "Bu dönemde komisyon hareketin yok. Farklı bir dönem seç."}</Text>
               ) : null}
-              {txns.map((t, idx) => {
+              {periodTxns.map((t, idx) => {
                 const meta = STATUS_META[t.status];
                 return (
                   <View key={t.id} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", paddingHorizontal: 18, paddingVertical: 13 }}>
