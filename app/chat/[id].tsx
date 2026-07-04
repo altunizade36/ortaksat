@@ -307,7 +307,7 @@ function ChatScreenInner() {
       ) : null}
 
       <View style={{ alignItems: "flex-end", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, padding: 10 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Dosya ekle" disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Görsel ekle" disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
           <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} />
         </Pressable>
         <TextInput

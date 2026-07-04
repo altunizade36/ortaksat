@@ -22,6 +22,7 @@ export default function ReferralLeadScreen() {
   const [buyerPhone, setBuyerPhone] = useState("+90");
   const [note, setNote] = useState(localize("Bu ürün için bilgi almak istiyorum.", "I want more information about this product."));
   const [sent, setSent] = useState(false);
+  const [sending, setSending] = useState(false);
 
   const localListing = useMemo(() => listings.find((listing) => listing.slug === slug), [listings, slug]);
   const localPartnership = useMemo(
@@ -69,11 +70,13 @@ export default function ReferralLeadScreen() {
   }, [ref, slug]);
 
   async function submit() {
+    if (sent || sending) return; // çift-gönderim → mükerrer lead engellenir
     if (!buyerName.trim() || buyerPhone.replace(/\D/g, "").length < 10) {
       Alert.alert(localize("Eksik bilgi", "Missing information"), localize("Adını ve telefonunu yaz.", "Enter your name and phone."));
       return;
     }
 
+    setSending(true);
     const ok = remoteReferral
       ? await insertReferralLead({
           listingId: remoteReferral.listingId,
@@ -102,6 +105,7 @@ export default function ReferralLeadScreen() {
     } else {
       Alert.alert(localize("Talep gönderilemedi", "Request failed"), localize("Bağlantı pasif olabilir veya ilan yayından kalkmış olabilir.", "The link may be inactive."));
     }
+    setSending(false);
   }
 
   if (loading) {
@@ -153,8 +157,8 @@ export default function ReferralLeadScreen() {
           <Field label={localize("Ad Soyad", "Full name")} value={buyerName} onChangeText={setBuyerName} />
           <Field label={localize("Telefon", "Phone")} value={buyerPhone} onChangeText={setBuyerPhone} keyboardType="phone-pad" />
           <Field label={localize("Not", "Note")} value={note} onChangeText={setNote} multiline />
-          <PrimaryButton onPress={() => void submit()} tone={sent ? "soft" : "primary"}>
-            {sent ? localize("Talep Gönderildi", "Request Sent") : localize("Satıcıya Talep Gönder", "Send Request")}
+          <PrimaryButton disabled={sent || sending} onPress={() => void submit()} tone={sent ? "soft" : "primary"}>
+            {sent ? localize("Talep Gönderildi", "Request Sent") : sending ? localize("Gönderiliyor…", "Sending…") : localize("Satıcıya Talep Gönder", "Send Request")}
           </PrimaryButton>
         </Card>
       </ScrollView>

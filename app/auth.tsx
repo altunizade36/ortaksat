@@ -27,7 +27,6 @@ export default function AuthScreen() {
   const [acceptedLegal, setAcceptedLegal] = useState(false);
   const [loading, setLoading] = useState(false);
   const isWideWeb = useIsWideWeb();
-  const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
 
   const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
@@ -239,10 +238,10 @@ export default function AuthScreen() {
 
                 {mode === "login" ? (
                   <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-                    <Pressable onPress={() => setRemember((v) => !v)} style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                      <MaterialCommunityIcons name={remember ? "checkbox-marked" : "checkbox-blank-outline"} size={19} color={remember ? colors.primary : colors.muted} />
-                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Beni hatırla</Text>
-                    </Pressable>
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                      <MaterialCommunityIcons name="shield-check-outline" size={16} color={colors.muted} />
+                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Oturumun bu cihazda açık kalır</Text>
+                    </View>
                     <Pressable onPress={() => setMode("reset")}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Şifremi unuttunuz?</Text></Pressable>
                   </View>
                 ) : null}
