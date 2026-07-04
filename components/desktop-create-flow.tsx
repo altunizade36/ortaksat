@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { CategoryPicker } from "@/components/category-picker";
@@ -9,7 +9,7 @@ import { colors } from "@/components/colors";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { getFormSchema, MODELS_BY_BRAND, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
+import { deriveFieldsFromPath, getFormSchema, MODELS_BY_BRAND, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { CURRENCIES, moneyIn, type CurrencyCode } from "@/lib/format";
 import { formatLocation, getProvince } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
@@ -69,6 +69,30 @@ export function DesktopCreateFlow() {
 
   const setV = (k: string, v: string | boolean) => setValues((s) => ({ ...s, [k]: v }));
   const missingFields = useMemo(() => (schema ? schema.fields.filter((f) => f.required && !String(values[f.key] ?? "").trim()) : []), [schema, values]);
+
+  // Kategori seçiminden form alanlarını otomatik doldur: ağaçta seçilen marka/model/
+  // ilan-tipi ilgili alanlara taşınır, başlık önerilir. Böylece bir sonraki adımda
+  // form boş gelmez. Marka/model/ilan-tipi kategoriyle güncellenir; başlık yalnızca
+  // kullanıcı henüz yazmadıysa doldurulur (elle girdisinin üzerine yazılmaz).
+  const pathKey = path.map((p) => p.key).join("/");
+  useEffect(() => {
+    if (!schema) return;
+    const seed = deriveFieldsFromPath(path, schema);
+    if (!Object.keys(seed).length) return;
+    setValues((s) => {
+      const next = { ...s };
+      for (const [k, v] of Object.entries(seed)) {
+        if (k === "title") {
+          if (!String(next.title ?? "").trim()) next.title = v;
+        } else {
+          next[k] = v;
+        }
+      }
+      return next;
+    });
+    // path/formKey değişince yeniden türet
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formKey, pathKey]);
 
   async function pickFromGallery() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -249,6 +273,17 @@ export function DesktopCreateFlow() {
           <View style={{ gap: 16 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{schema.title}</Text>
             <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{leafLabel} için gerekli alanlar. * işaretliler zorunlu.</Text>
+            {/* Seçilen kategori yolu — kullanıcı ne seçtiğini görür + tek tıkla değiştirir. */}
+            {path.length ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, paddingHorizontal: 12, paddingVertical: 9 }}>
+                <MaterialCommunityIcons name="tag-multiple-outline" size={15} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{path.map((p) => p.label).join(" › ")}</Text>
+                <Pressable onPress={() => setStep(0)} accessibilityRole="button" accessibilityLabel="Kategoriyi değiştir" style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 4 }}>
+                  <MaterialCommunityIcons name="pencil-outline" size={13} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Değiştir</Text>
+                </Pressable>
+              </View>
+            ) : null}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
               {schema.fields.map((f) => {
                 // Model alanı: marka seçiliyse ve markanın modelleri biliniyorsa bağımlı select.

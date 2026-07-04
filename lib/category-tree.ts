@@ -1166,6 +1166,57 @@ export function getFormSchema(formKey: string): FormSchema {
   return formSchemas[formKey] ?? formSchemas.alisverisGenel;
 }
 
+// Kategori seçiminden (marka/model/ilan-tipi node'ları) form alanlarını türetir —
+// böylece ağaçta "BMW > 3.20i" seçince İlan Bilgileri formu boş gelmez, marka/model
+// otomatik dolar ve başlık önerilir (Sahibinden mantığı).
+const _ALL_BRANDS = new Set<string>(
+  [
+    ...CAR_BRANDS, ...MOTO_BRANDS, ...COMPUTER_BRANDS, ...TV_BRANDS,
+    ...WHITE_GOODS_BRANDS, ...COMMERCIAL_BRANDS, ...MARINE_ENGINE_BRANDS,
+    ...HEATING_BRANDS, ...AC_BRANDS
+  ].filter((b) => b && b !== "Diğer")
+);
+const _ALL_MODELS: Record<string, string[]> = {
+  ...MODELS_BY_BRAND, ...MOTO_MODELS, ...COMPUTER_MODELS, ...TV_MODELS, ...COMMERCIAL_MODELS
+};
+const _LISTING_TYPES = ["Satılık", "Kiralık", "Devren", "Günlük", "Kat Karşılığı"];
+
+export function deriveFieldsFromPath(path: CategoryNode[], schema: FormSchema): Record<string, string> {
+  const out: Record<string, string> = {};
+  if (!path.length) return out;
+  const labels = path.map((p) => p.label);
+  const keys = new Set(schema.fields.map((f) => f.key));
+
+  const brand = labels.find((l) => _ALL_BRANDS.has(l));
+  let model: string | undefined;
+  if (brand) {
+    const ms = _ALL_MODELS[brand];
+    model = labels.find((l) => l !== brand && l !== "Diğer Model" && (ms ? ms.includes(l) : false));
+  }
+  const listingRaw = labels.find((l) => _LISTING_TYPES.some((t) => l.includes(t)));
+
+  if (brand) {
+    if (keys.has("brand")) out.brand = brand;
+    if (keys.has("compatBrand")) out.compatBrand = brand;
+  }
+  if (model) {
+    if (keys.has("model")) out.model = model;
+    if (keys.has("compatModel")) out.compatModel = model;
+  }
+  if (listingRaw && keys.has("listingType")) {
+    const opts = schema.fields.find((f) => f.key === "listingType")?.options ?? [];
+    const match = opts.find((o) => listingRaw.includes(o)) ?? _LISTING_TYPES.find((t) => listingRaw.includes(t));
+    if (match) out.listingType = match;
+  }
+
+  // Başlık önerisi: marka + model + yaprak kategori (yalnızca boşsa uygulanır).
+  const leaf = labels[labels.length - 1];
+  const titleSeed = Array.from(new Set([brand, model, leaf].filter(Boolean))).join(" ").trim();
+  if (titleSeed.length >= 3) out.title = titleSeed.slice(0, 70);
+
+  return out;
+}
+
 export type SuggestHit = { path: CategoryNode[]; labels: string[]; formKey: string; image?: string };
 
 const TR_S: Record<string, string> = { "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u", "â": "a" };
