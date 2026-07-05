@@ -52,16 +52,37 @@ export async function apiSignUp(email: string, password: string, fullName: strin
 
 /** Test kullanıcısının e-postasını onaylar (OTP okumaya gerek kalmadan giriş yapılabilsin). */
 export async function confirmUser(email: string): Promise<void> {
+  // confirmed_at generated bir kolon (email_confirmed_at'ten türer) — sadece onu set et.
   await runSql(
-    `update auth.users set email_confirmed_at = now(), confirmed_at = now()
+    `update auth.users set email_confirmed_at = now()
      where email = '${esc(email.toLowerCase())}';`
   );
 }
 
-/** Onaylı bir test hesabı hazırlar (signup + confirm) ve profil satırının oluştuğunu bekler. */
-export async function createConfirmedUser(email: string, password: string, fullName: string): Promise<void> {
-  await apiSignUp(email, password, fullName);
-  await confirmUser(email);
+/** Onaylı test hesabını DOĞRUDAN SQL ile oluşturur — GoTrue signup/email hız
+ * sınırını (rapid test'te tetiklenen "Çok sık denendi") tamamen atlar. bcrypt
+ * (pgcrypto) parola GoTrue girişiyle uyumludur; on_auth_user_created trigger'ı
+ * profiles satırını otomatik açar. Token kolonları '' set edilir (NULL→string
+ * giriş bug'ını önler). */
+export async function createConfirmedUser(email: string, password: string, fullName: string): Promise<string> {
+  const e = esc(email.toLowerCase());
+  const rows = await runSql<Array<{ id: string }>>(`
+    insert into auth.users (
+      instance_id, id, aud, role, email, encrypted_password, email_confirmed_at,
+      raw_app_meta_data, raw_user_meta_data, created_at, updated_at,
+      confirmation_token, email_change, email_change_token_new, recovery_token
+    ) values (
+      '00000000-0000-0000-0000-000000000000', gen_random_uuid(), 'authenticated', 'authenticated',
+      '${e}', crypt('${esc(password)}', gen_salt('bf')), now(),
+      '{"provider":"email","providers":["email"]}'::jsonb,
+      '{"full_name":"${esc(fullName)}"}'::jsonb, now(), now(),
+      '', '', '', ''
+    )
+    returning id;
+  `);
+  const id = rows[0]?.id;
+  if (!id) throw new Error(`createConfirmedUser: kullanıcı oluşturulamadı (${email})`);
+  return id;
 }
 
 /** Bir e-postanın kullanıcı id'sini döndürür (yoksa null). */
@@ -91,6 +112,14 @@ export async function cleanupAllE2E(): Promise<{ users: number; listings: number
   const last = Array.isArray(del) ? (del[del.length - 1] as { users?: number; listings?: number }) : {};
   const row = (last || {}) as { users?: number; listings?: number };
   return { users: Number(row.users || 0), listings: Number(row.listings || 0) };
+}
+
+/** Auth hız-sınırı sayaçlarını sıfırlar (test tekrar edilebilir olsun).
+ * Güvenli: gerçek trafik yokken auth rate-limit satırları yalnızca testlerden gelir. */
+export async function resetAuthRateLimits(): Promise<void> {
+  await runSql(
+    `delete from rate_limits where action in ('signup','signin','password_reset');`
+  );
 }
 
 /** Benzersiz test e-postası üretir. */

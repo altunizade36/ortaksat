@@ -13,6 +13,8 @@ if (fs.existsSync(envPath)) {
 
 export default defineConfig({
   testDir: "./e2e",
+  globalSetup: "./e2e/global-setup.ts",
+  globalTeardown: "./e2e/global-teardown.ts",
   // Canlı siteye karşı çalışıyoruz; veri yarışını önlemek için sıralı.
   fullyParallel: false,
   workers: 1,
