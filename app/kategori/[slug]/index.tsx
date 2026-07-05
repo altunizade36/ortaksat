@@ -10,7 +10,7 @@ import { ListingCard } from "@/components/listing-card";
 import { EmptyState } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
-import { categoryTree as CATEGORY_TREE, type CategoryNode } from "@/lib/category-tree";
+import { categoryTree as CATEGORY_TREE, getFormSchema, resolveFormKey, type CategoryNode } from "@/lib/category-tree";
 import { getCategoryIcon } from "@/lib/categories";
 import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, findProvince } from "@/lib/cities";
 import { commissionAmount } from "@/lib/format";
@@ -71,18 +71,47 @@ export default function CategoryLandingScreen() {
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
   const [band, setBand] = useState<[number, number] | null>(null);
   const [onlyOpen, setOnlyOpen] = useState(false);
+  // Kategoriye özel özellik filtreleri (İlan tipi, Oda, İmar, Tapu…): şemadaki
+  // tekli-seçim (select) alanlar filtre çipi olur. Değerler OR'lanır.
+  const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
 
   const trail = useMemo(() => (slug ? findTrail(categoryTree, slug) : undefined), [categoryTree, slug]);
   const node = trail ? trail[trail.length - 1] : undefined;
   const ancestors = trail ? trail.slice(0, -1) : [];
 
+  // Seçili kategorinin form şemasından filtrelenebilir (select) alanları çıkar.
+  const filterFields = useMemo(() => {
+    if (!trail) return [];
+    const schema = getFormSchema(resolveFormKey(trail));
+    return schema.fields.filter((f) => f.type === "select" && (f.options?.length ?? 0) >= 2 && (f.options?.length ?? 0) <= 16 && !["seller"].includes(f.key));
+  }, [trail]);
+
+  function toggleAttr(key: string, val: string) {
+    setAttrFilters((s) => {
+      const cur = s[key] ?? [];
+      const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val];
+      const copy = { ...s };
+      if (next.length) copy[key] = next; else delete copy[key];
+      return copy;
+    });
+  }
+
   const items = useMemo(() => {
     if (!node) return [];
     const labels = new Set(descendantLabels(node));
+    const activeAttrKeys = Object.keys(attrFilters);
     const out = listings.filter((l) => {
       if (l.status !== "active" || !labels.has(l.category)) return false;
       if (band && (l.price < band[0] || l.price > band[1])) return false;
       if (onlyOpen && l.partnershipMode !== "open") return false;
+      // Özellik filtreleri: her aktif alan için ilanın attribute değeri seçilenlerden
+      // birini içermeli (dizi ise kesişim, tekil ise eşitlik). Değeri olmayan eler.
+      for (const key of activeAttrKeys) {
+        const want = attrFilters[key];
+        const have = l.attributes?.[key];
+        const ok = Array.isArray(have) ? have.some((v) => want.includes(String(v))) : want.includes(String(have ?? ""));
+        if (!ok) return false;
+      }
       return true;
     });
     out.sort((a, b) => {
@@ -93,9 +122,10 @@ export default function CategoryLandingScreen() {
       return Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || commissionAmount(b) - commissionAmount(a);
     });
     return out;
-  }, [listings, node, band, onlyOpen, sortMode]);
+  }, [listings, node, band, onlyOpen, sortMode, attrFilters]);
 
-  useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug]);
+  useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters]);
+  useEffect(() => { setAttrFilters({}); }, [slug]);
 
   const cardWidth = responsiveGrid({ available: Math.min(width, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
   const title = node ? `${node.label} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
@@ -205,6 +235,35 @@ export default function CategoryLandingScreen() {
               );
             })}
           </ScrollView>
+
+          {/* Kategoriye özel özellik filtreleri (emlak: İlan tipi, Oda, İmar, Tapu…) */}
+          {filterFields.length ? (
+            <Accordion title={`Detaylı filtreler${Object.keys(attrFilters).length ? ` · ${Object.values(attrFilters).reduce((a, v) => a + v.length, 0)} seçili` : ""}`} icon="tune-variant">
+              <View style={{ gap: 12 }}>
+                {filterFields.map((f) => (
+                  <View key={f.key} style={{ gap: 6 }}>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{f.label}</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                      {(f.options ?? []).map((opt) => {
+                        const on = (attrFilters[f.key] ?? []).includes(opt);
+                        return (
+                          <Pressable key={opt} onPress={() => toggleAttr(f.key, opt)} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 11, paddingVertical: 6 }}>
+                            {on ? <MaterialCommunityIcons name="check" size={12} color={colors.primaryDark} /> : null}
+                            <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: on ? "800" : "600" }}>{opt}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                ))}
+                {Object.keys(attrFilters).length ? (
+                  <Pressable onPress={() => setAttrFilters({})} style={{ alignSelf: "flex-start", borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 }}>
+                    <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>Filtreleri temizle</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </Accordion>
+          ) : null}
         </View>
 
         {items.length === 0 ? (
