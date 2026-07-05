@@ -1,3 +1,4 @@
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import Head from "expo-router/head";
 import { Fragment, type ReactNode } from "react";
@@ -22,13 +23,24 @@ export function ContentPageView({ slug, fallback }: { slug: string; fallback?: R
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
       <Head>
-        {page.seoTitle ? <title>{page.seoTitle}</title> : null}
+        <title>{page.seoTitle || `${page.title || slug} — OrtakSat`}</title>
         {page.seoDescription ? <meta name="description" content={page.seoDescription} /> : null}
-        {page.seoTitle ? <meta property="og:title" content={page.seoTitle} /> : null}
+        <meta property="og:title" content={page.seoTitle || `${page.title || slug} — OrtakSat`} />
         {page.seoDescription ? <meta property="og:description" content={page.seoDescription} /> : null}
       </Head>
       <View style={{ alignSelf: "center", gap: 14, maxWidth: 820, width: "100%" }}>
-        <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>{page.title || slug}</Text>
+        {/* Breadcrumb — kullanıcı her zaman ana sayfaya dönebilir. */}
+        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+          <Link href="/" asChild>
+            <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, opacity: pressed ? 0.7 : 1 })}>
+              <MaterialCommunityIcons name="home-outline" size={14} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Ana sayfa</Text>
+            </Pressable>
+          </Link>
+          <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
+          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{page.title || slug}</Text>
+        </View>
+        <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>{page.title || slug}</Text>
         {paras.map((p, i) => (
           <Text key={i} selectable style={{ color: colors.muted, fontSize: 15, fontWeight: "500", lineHeight: 24 }}>{p}</Text>
         ))}

@@ -81,6 +81,21 @@ export function AppHeader() {
           <View style={{ flex: 1, minWidth: 16 }} />
           <DesktopActions />
         </View>
+        {/* İkincil yatay gezinme çubuğu — masaüstünde ana bölümlere tek tıkla erişim
+            (önceden yalnızca mobilde hamburger menü vardı). */}
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 28, paddingVertical: 4, zIndex: 20 }}>
+          {navItems.map((item) => {
+            const active = item.match(pathname);
+            return (
+              <Link key={item.label} href={item.href} asChild>
+                <Pressable style={({ pressed }) => ({ alignItems: "center", borderBottomColor: active ? colors.primary : "transparent", borderBottomWidth: 2, flexDirection: "row", gap: 4, opacity: pressed ? 0.7 : 1, paddingHorizontal: 12, paddingVertical: 9 })}>
+                  <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 13.5, fontWeight: active ? "900" : "700" }}>{item.label}</Text>
+                  {item.caret ? <MaterialCommunityIcons name="chevron-down" size={15} color={colors.muted} /> : null}
+                </Pressable>
+              </Link>
+            );
+          })}
+        </View>
       </View>
     );
   }

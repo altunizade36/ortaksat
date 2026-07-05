@@ -38,6 +38,10 @@ export default function AuthScreen() {
   const [openDocKey, setOpenDocKey] = useState<keyof typeof LEGAL_DOCS | null>(null);
   const allAccepted = acceptedAll;
   const [loading, setLoading] = useState(false);
+  // Web'de Alert.alert çoğu tarayıcıda no-op olduğundan, boş-alan/doğrulama
+  // uyarılarını satır-içi (inline) de gösteririz. Böylece "boş bırakıp Giriş'e
+  // basınca tepki yok" sorunu ortadan kalkar.
+  const [formError, setFormError] = useState<string | null>(null);
   const isWideWeb = useIsWideWeb();
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
@@ -54,6 +58,13 @@ export default function AuthScreen() {
 
   async function sendResetCode() {
     if (loading) return;
+    setFormError(null);
+    if (!cleanEmail) {
+      const msg = language === "en" ? "Enter your email address." : "Lütfen e-posta adresini gir.";
+      setFormError(msg);
+      Alert.alert(language === "en" ? "Email required" : "E-posta gerekli", msg);
+      return;
+    }
     setLoading(true);
     const ok = await resetPasswordWithEmail(cleanEmail);
     setLoading(false);
@@ -90,6 +101,9 @@ export default function AuthScreen() {
 
   const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
 
+  // Sekme (giriş/kayıt/sıfırlama) değişince satır-içi doğrulama uyarısını temizle.
+  useEffect(() => { setFormError(null); }, [mode]);
+
   // Giriş başarılı olunca: yeni üye ilk kez /hosgeldin rehberine (rol seçimi),
   // önceden görmüşse doğrudan ana sayfaya. Herhangi bir hata olursa güvenle "/".
   useEffect(() => {
@@ -122,8 +136,13 @@ export default function AuthScreen() {
   }
 
   async function login() {
+    setFormError(null);
     if (!cleanEmail || password.length < 1) {
-      Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", language === "en" ? "Email and password are required." : "E-posta ve şifre gerekli.");
+      const msg = !cleanEmail
+        ? (language === "en" ? "Enter your email address." : "Lütfen e-posta adresini gir.")
+        : (language === "en" ? "Enter your password." : "Lütfen şifreni gir.");
+      setFormError(msg);
+      Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", msg);
       return;
     }
 
@@ -139,22 +158,31 @@ export default function AuthScreen() {
   }
 
   async function register() {
+    setFormError(null);
     if (!firstName.trim() || !lastName.trim() || !cleanEmail) {
-      Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", "Ad, soyad ve e-posta gerekli.");
+      const msg = "Ad, soyad ve e-posta gerekli.";
+      setFormError(msg);
+      Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", msg);
       return;
     }
     const strength = passwordStrength(password);
     if (!strength.ok) {
       const missing = strength.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", ");
+      const msg = `Şifre yeterince güçlü değil. Şu kuralları da karşıla: ${missing}.`;
+      setFormError(msg);
       Alert.alert("Şifre yeterince güçlü değil", `Şu kuralları da karşıla: ${missing}.`);
       return;
     }
     if (password !== confirmPassword) {
-      Alert.alert("Şifreler uyuşmuyor", "Şifre ve şifre tekrar alanları aynı olmalı.");
+      const msg = "Şifre ve şifre tekrar alanları aynı olmalı.";
+      setFormError(msg);
+      Alert.alert("Şifreler uyuşmuyor", msg);
       return;
     }
     if (!allAccepted) {
-      Alert.alert(language === "en" ? "Legal approval required" : "Yasal onay gerekli", language === "en" ? "You must accept KVKK, privacy, terms of use, and seller/partner rules." : "KVKK, gizlilik, kullanım şartları ve satıcı/ortak kurallarını kabul etmelisin.");
+      const msg = language === "en" ? "You must accept KVKK, privacy, terms of use, and seller/partner rules." : "KVKK, gizlilik, kullanım şartları ve satıcı/ortak kurallarını kabul etmelisin.";
+      setFormError(msg);
+      Alert.alert(language === "en" ? "Legal approval required" : "Yasal onay gerekli", msg);
       return;
     }
 
@@ -452,6 +480,7 @@ export default function AuthScreen() {
                   </View>
                 )}
 
+                {formError ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>{formError}</Text> : null}
                 {authError ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "600" }}>{authError}</Text> : null}
 
                 {mode !== "reset" ? (
@@ -602,6 +631,11 @@ export default function AuthScreen() {
             </>
           ) : null}
 
+          {formError ? (
+            <Text selectable style={{ color: colors.accent, fontSize: 13, fontWeight: "700", lineHeight: 19 }}>
+              {formError}
+            </Text>
+          ) : null}
           {authError ? (
             <Text selectable style={{ color: colors.accent, fontSize: 13, lineHeight: 19 }}>
               {authError}
