@@ -6,13 +6,13 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, Tex
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
+import { LegalLibrary } from "@/components/legal-library";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
-type LegalTab = "kvkk" | "terms" | "platform" | "guide" | "cookies" | "commission" | "prohibited" | "account";
 
 export default function LegalScreen() {
   const { language } = useLanguage();
@@ -29,7 +29,6 @@ export default function LegalScreen() {
   const [subject, setSubject] = useState("Destek talebi");
   const [message, setMessage] = useState("Merhaba, Ortaksat hesabım veya ilan sürecim hakkında destek istiyorum.");
   const [deleteReason, setDeleteReason] = useState("Hesabımı ve kişisel verilerimi silmek istiyorum.");
-  const [legalTab, setLegalTab] = useState<LegalTab>("kvkk");
   const [category, setCategory] = useState("Genel");
   const [priority, setPriority] = useState("Normal");
 
@@ -59,67 +58,6 @@ export default function LegalScreen() {
   }
 
   if (isWideWeb) {
-    const tabs: Array<{ key: LegalTab; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
-      { key: "kvkk", icon: "shield-lock-outline", label: "KVKK / Gizlilik" },
-      { key: "terms", icon: "file-document-outline", label: "Kullanım Şartları" },
-      { key: "platform", icon: "swap-horizontal", label: "Mesafeli / Platform" },
-      { key: "guide", icon: "shield-check-outline", label: "Güvenli Alışveriş" },
-      { key: "cookies", icon: "cookie-outline", label: "Çerez Politikası" },
-      { key: "commission", icon: "chart-timeline-variant", label: "Komisyon Kuralları" },
-      { key: "prohibited", icon: "cancel", label: "Yasaklı İçerikler" },
-      { key: "account", icon: "account-cog-outline", label: "Hesap İşlemleri" }
-    ];
-    const summaryCards: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; body: string }> = [
-      { icon: "shield-account", title: "KVKK Aydınlatma", body: "Kişisel verilerinizin toplanması, işlenmesi ve korunmasına ilişkin aydınlatma metni." },
-      { icon: "swap-horizontal", title: "Platform Aracı Hizmet Açıklaması", body: "Ortaksat'ın aracı rolü, yükümlülükleri ve hizmet kapsamı." },
-      { icon: "chart-timeline-variant", title: "Komisyon Takip Modeli", body: "Komisyon hesaplama mantığı, ödeme süreci ve takibi hakkında bilgi." },
-      { icon: "lock-check", title: "Gizlilik ve Veri Güvenliği", body: "Veri güvenliği önlemleri, üçüncü taraf paylaşımları ve saklama süreleri." },
-      { icon: "bullhorn-outline", title: "İlan ve Paylaşım Kuralları", body: "İlan oluşturma, içerik standartları ve yasaklı içerikler listesi." }
-    ];
-    const termsText = [
-      "Ortaksat, satıcılar ile ortak satıcıları (ve alıcıları) buluşturan bir aracı pazaryeri platformudur. Platform; ürünlerin sahibi, satıcısı, ödeme kuruluşu veya teslimat tarafı değildir.",
-      "Kullanıcılar paylaştıkları ilan, fiyat, stok ve ürün bilgilerinin doğruluğundan kendileri sorumludur. Yanıltıcı içerik tespit edildiğinde ilan ve hesap kısıtlanabilir.",
-      "Ortaklık ilişkisinde komisyon oranını ilanı açan satıcı belirler. Komisyon, satış gerçekleştiğinde geçerli olur ve taraflar arasında uygulama dışında ödenir.",
-      "Hesabını kullanan herkes 18 yaşından büyük olduğunu ve verdiği bilgilerin doğru olduğunu kabul eder. Kurallara aykırı kullanım hesabın askıya alınmasına yol açabilir."
-    ];
-    const commissionRules = [
-      "Komisyon oranı ürün başına yüzde (%) veya sabit (₺) olarak satıcı tarafından belirlenir.",
-      "Ortak, paylaşmadan önce kazanacağı komisyonu ilanda net olarak görür.",
-      "Komisyon yalnızca satış tamamlandığında ve satıcı onayladığında hak edilir.",
-      "Ortaksat para tutmaz veya transfer etmez; ödeme satıcı ile ortak arasında anlaşılan kanaldan yapılır.",
-      "İade penceresi içinde iade olursa komisyon kaydı beklemeye alınır; süreç panelden şeffaf izlenir."
-    ];
-    const platformText = [
-      "OrtakSat bir aracı pazaryeri/ilan ve iletişim platformudur. Mesafeli satış sözleşmesi anlamında SATICI taraf DEĞİLDİR; ürünün sahibi, satıcısı, ithalatçısı, ödeme kuruluşu veya kargo/teslimat tarafı değildir.",
-      "Mesafeli satış sözleşmesi, doğrudan ilanı açan satıcı ile alıcı arasında kurulur. Ürün bilgisi, fiyat, fatura, teslimat, cayma/iade ve garanti yükümlülükleri tamamen satıcıya aittir.",
-      "OrtakSat ödeme almaz, para tutmaz, komisyon kesmez, cüzdan/bakiye/emanet (escrow) sağlamaz ve otomatik para dağıtmaz. İlanlarda gösterilen fiyat ve komisyon yalnızca taraflar arası BİLGİ amaçlıdır.",
-      "Ödeme ve teslimat, tarafların kendi aralarında anlaştıkları yöntemle, kendi sorumluluklarında gerçekleşir. Doğabilecek anlaşmazlıklardan OrtakSat sorumlu tutulamaz; platform yalnızca ilan ve iletişim altyapısı sunar.",
-      "Tüketici, 6502 sayılı Kanun kapsamındaki haklarını doğrudan satıcıya karşı kullanır. Şüpheli/aykırı durumları Güven Merkezi üzerinden bildirebilirsiniz."
-    ];
-    const guideSafe = [
-      "Ödemeyi ürünü görmeden/teslim almadan yapmayın. Kapıda ödeme, elden teslim veya güvendiğiniz bir yöntemi tercih edin. OrtakSat ödeme almaz; para tamamen sizin aranızda el değiştirir.",
-      "Ön ödeme / kapora konusunda dikkatli olun. Satıcıyı tanımıyorsanız, ürünü görmeden büyük tutarlarda ön ödeme yapmayın. Acele ettiren, 'hemen kapora at' diyen kişilere şüpheyle yaklaşın.",
-      "Komisyonu YAZILI netleştirin. Ortak satıcıysanız; komisyon oranını, ne zaman ve nasıl ödeneceğini satıcıyla mesajlaşma üzerinden yazılı olarak anlaşın. Sözlü anlaşma ispatlanamaz.",
-      "İletişimi platform içinde tutun. Anlaşma, fiyat ve komisyon konuşmalarını OrtakSat mesajlaşmasında yapın; bir sorun olursa kayıt işinize yarar.",
-      "Doğrulanmış satıcıları ve puanları kontrol edin. Profil doğrulaması, güven puanı ve gerçek yorumlar; karşı tarafın güvenilirliği hakkında fikir verir.",
-      "Gerçek dışı fiyatlara dikkat. Piyasanın çok altında 'kaçırılmayacak fırsat' çoğu zaman dolandırıcılık işaretidir.",
-      "Kişisel/finansal bilgini paylaşma. Kart bilgisi, şifre, SMS kodu kimseyle paylaşılmaz. OrtakSat bunları asla istemez.",
-      "Şüpheli durumu bildir. Bir ilan ya da kullanıcı seni rahatsız ettiyse, ilandaki/profildeki 'Şikayet Et' ile Güven Merkezi'ne bildir."
-    ];
-    const cookieText = [
-      "OrtakSat, yalnızca hizmetin çalışması için gerekli temel çerez/depolama yöntemlerini kullanır: oturum (giriş) bilgisini saklamak ve dil/tercih ayarlarını hatırlamak.",
-      "Oturum bilgisi tarayıcınızın yerel deposunda (localStorage) güvenli biçimde tutulur; üçüncü taraflarla paylaşılmaz. Reklam/izleme amaçlı üçüncü taraf çerezleri kullanılmaz.",
-      "Tarayıcı ayarlarınızdan çerezleri/depolamayı temizleyebilirsiniz; ancak bu durumda oturumunuz kapanır ve bazı tercihler sıfırlanır.",
-      "İleride analitik veya pazarlama çerezleri eklenirse, bu metin güncellenir ve gerektiğinde açık rızanız istenir."
-    ];
-    const prohibited = [
-      "Sahte, taklit veya çalıntı ürünler",
-      "Yasa dışı, tehlikeli veya kısıtlı ürünler (silah, uyuşturucu vb.)",
-      "Yanıltıcı fiyat, sahte stok veya sahte kampanya",
-      "Spam, toplu istenmeyen paylaşım ve bot kullanımı",
-      "Marka/telif hakkı ihlali içeren içerikler",
-      "Dolandırıcılık veya kullanıcıyı platform dışına yönlendirme amaçlı içerik"
-    ];
     const faqs: Array<{ q: string; a: string }> = [
       { q: "OrtakSat komisyon oranları nasıl belirlenir?", a: "Komisyon oranını ilanı açan satıcı, ürün başına yüzde veya sabit tutar olarak kendisi belirler. Ortak, paylaşmadan önce kazancını ilanda görür." },
       { q: "Kişisel verilerim nasıl korunuyor?", a: "Verileriniz 6698 sayılı KVKK kapsamında işlenir ve korunur. Detaylar için KVKK Aydınlatma Metni'ni inceleyebilirsiniz." },
@@ -155,115 +93,13 @@ export default function LegalScreen() {
 
           <LegalDisclaimer title="Ortaksat aracı bir platformdur — ödeme/komisyon/kargo işlemez" />
 
-          {/* Tabs */}
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-            {tabs.map((tb) => {
-              const on = legalTab === tb.key;
-              return (
-                <Pressable key={tb.key} onPress={() => setLegalTab(tb.key)} style={{ alignItems: "center", borderBottomColor: on ? colors.primary : "transparent", borderBottomWidth: 2.5, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 11 }}>
-                  <MaterialCommunityIcons name={tb.icon} size={17} color={on ? colors.primaryDark : colors.muted} />
-                  <Text style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 13.5, fontWeight: "800" }}>{tb.label}</Text>
-                </Pressable>
-              );
-            })}
-          </View>
-          <View style={{ backgroundColor: colors.line, height: 1 }} />
+          {/* Gruplu hukuki belge kütüphanesi (tek kaynak: legal-content) */}
+          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Sözleşmeler ve Politikalar</Text>
+          <LegalLibrary />
 
           <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
             {/* Main content */}
             <View style={{ flex: 1, gap: 18, minWidth: 0 }}>
-              {/* Tab content */}
-              {legalTab === "kvkk" ? (
-                <View style={{ gap: 12 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Yasal metin özeti</Text>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-                    {summaryCards.map((c) => (
-                      <View key={c.title} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 220, flexGrow: 1, gap: 8, maxWidth: 360, minWidth: 0, padding: 16 }}>
-                        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
-                          <MaterialCommunityIcons name={c.icon} size={20} color={colors.primaryDark} />
-                        </View>
-                        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{c.title}</Text>
-                        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{c.body}</Text>
-                        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800", marginTop: 2 }}>Detayları İncele →</Text>
-                      </View>
-                    ))}
-                  </View>
-                </View>
-              ) : null}
-              {legalTab === "terms" ? (
-                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Kullanım Şartları</Text>
-                  {termsText.map((p, i) => <Text key={i} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{p}</Text>)}
-                </View>
-              ) : null}
-              {legalTab === "platform" ? (
-                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Mesafeli Satış / Platform Aracı Hizmet Açıklaması</Text>
-                  {platformText.map((p, i) => <Text key={i} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{p}</Text>)}
-                  <LegalDisclaimer />
-                </View>
-              ) : null}
-              {legalTab === "guide" ? (
-                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Güvenli Alışveriş Rehberi</Text>
-                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 20 }}>OrtakSat ödeme/kargo tarafı değildir. Alışverişini güvende tutmak için:</Text>
-                  {guideSafe.map((c) => (
-                    <View key={c} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
-                      <MaterialCommunityIcons name="shield-check" size={18} color={colors.success} style={{ marginTop: 1 }} />
-                      <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{c}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-              {legalTab === "cookies" ? (
-                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Çerez Politikası</Text>
-                  {cookieText.map((p, i) => <Text key={i} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{p}</Text>)}
-                </View>
-              ) : null}
-              {legalTab === "commission" ? (
-                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Komisyon Kuralları</Text>
-                  {commissionRules.map((c) => (
-                    <View key={c} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
-                      <MaterialCommunityIcons name="check-circle" size={18} color={colors.success} style={{ marginTop: 1 }} />
-                      <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{c}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-              {legalTab === "prohibited" ? (
-                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Yasaklı İçerikler</Text>
-                  {prohibited.map((p) => (
-                    <View key={p} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
-                      <MaterialCommunityIcons name="close-circle" size={18} color={colors.accent} style={{ marginTop: 1 }} />
-                      <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{p}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
-              {legalTab === "account" ? (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-                  <Link href="/kvkk" asChild>
-                    <Pressable style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 240, flexGrow: 1, gap: 8, padding: 18 }}>
-                      <MaterialCommunityIcons name="database-cog-outline" size={24} color={colors.primaryDark} />
-                      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>KVKK ve Veri Talepleri</Text>
-                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Veri görüntüleme, düzeltme, silme ve izin geri çekme taleplerini yönet.</Text>
-                      <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Talep oluştur →</Text>
-                    </Pressable>
-                  </Link>
-                  <Link href="/profile-edit" asChild>
-                    <Pressable style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 240, flexGrow: 1, gap: 8, padding: 18 }}>
-                      <MaterialCommunityIcons name="account-cog-outline" size={24} color={colors.primaryDark} />
-                      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Hesap Ayarları</Text>
-                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Profil, güvenlik, bildirim ve mağaza ayarlarını düzenle.</Text>
-                      <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Ayarlara git →</Text>
-                    </Pressable>
-                  </Link>
-                </View>
-              ) : null}
-
               {/* Support + data request row */}
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 320, flexGrow: 1, gap: 12, minWidth: 0, padding: 20 }}>
@@ -397,6 +233,11 @@ export default function LegalScreen() {
           <PrimaryButton onPress={() => void acceptAll()}>Metinleri Okudum ve Kabul Ediyorum</PrimaryButton>
         </Card>
 
+        <View style={{ gap: 10 }}>
+          <SectionTitle title="Sözleşmeler ve Politikalar" />
+          <LegalLibrary />
+        </View>
+
         <Card>
           <SectionTitle title="Destek talebi" />
           <Field label="Konu" value={subject} onChangeText={setSubject} />
@@ -454,21 +295,6 @@ function DeskSelect({ label, value, options, onSelect }: { label: string; value:
           </View>
         </>
       ) : null}
-    </View>
-  );
-}
-
-function LegalStat({ icon, label, value, sub }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; sub: string }) {
-  return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 11 }}>
-      <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 9, height: 36, justifyContent: "center", width: 36 }}>
-        <MaterialCommunityIcons name={icon} size={18} color={colors.primaryDark} />
-      </View>
-      <View style={{ flex: 1, minWidth: 0 }}>
-        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{label}</Text>
-        <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "600" }}>{sub}</Text>
-      </View>
-      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{value}</Text>
     </View>
   );
 }
