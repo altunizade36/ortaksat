@@ -414,6 +414,16 @@ const ARAC_DIS = ["LED Farlar", "Xenon Farlar", "Matrix / Adaptif Far", "Sis Far
 const ARAC_ETIKET = ["Sıfır", "Garantili", "Değişensiz", "Boyasız", "Tramersiz", "Faturalı", "Takasa Uygun", "Acil Satılık", "Klasik / Koleksiyon", "Engelli Kullanımına Uygun", "İlk Sahibinden"];
 const VASITA_ETIKET_FIELD: FieldDef = { key: "etiketler", label: "İlan etiketleri", type: "multiselect", options: ARAC_ETIKET };
 
+// ---- genel (emlak/vasıta dışı) ürün özellik & etiket listeleri -----------
+const GENEL_ETIKET = ["Sıfır", "Az Kullanılmış", "Garantili", "Faturalı", "Kutusunda", "Aksesuarları Tam", "Ücretsiz Kargo", "Pazarlık Payı Var", "Takasa Uygun", "Acil"];
+const GENEL_ETIKET_FIELD: FieldDef = { key: "etiketler", label: "İlan etiketleri", type: "multiselect", options: GENEL_ETIKET };
+const URUN_OZELLIK = ["Garantili", "Faturalı", "Kutusunda", "Aksesuarları Tam", "Şarj Aleti / Adaptör Dahil", "Kılıf / Kap Dahil", "Ekran Koruyucu", "Servis Bakımlı"];
+const URUN_OZELLIK_FIELD: FieldDef = { key: "urunOzellik", label: "Ürün özellikleri / dahil olanlar", type: "multiselect", options: URUN_OZELLIK };
+const MODA_SEZON: FieldDef = { key: "sezon", label: "Sezon", type: "select", options: ["İlkbahar / Yaz", "Sonbahar / Kış", "4 Mevsim"] };
+const MODA_DESEN: FieldDef = { key: "desen", label: "Desen", type: "select", options: ["Düz", "Çizgili", "Kareli", "Çiçekli", "Desenli", "Baskılı", "Ekose"] };
+const MODA_KESIM: FieldDef = { key: "kesim", label: "Kalıp / kesim", type: "select", options: ["Slim Fit", "Regular Fit", "Oversize", "Skinny", "Straight", "Bol Kesim"] };
+const MOBILYA_STIL: FieldDef = { key: "stil", label: "Stil", type: "select", options: ["Modern", "Klasik", "Country", "Avangard", "Vintage", "Endüstriyel", "Rustik", "Art Deco"] };
+
 // ---- form schemas (category-specific) ------------------------------------
 export const formSchemas: Record<string, FormSchema> = {
   konut: {
@@ -827,7 +837,7 @@ export const formSchemas: Record<string, FormSchema> = {
   elektronik: {
     key: "elektronik",
     title: "Elektronik ürün bilgileri",
-    fields: [F.title, F.markaSerbest, F.model, F.durum, F.depolama, F.ram, F.renkSelect, F.garanti, F.fatura, F.kutu, F.stok, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+    fields: [F.title, F.markaSerbest, F.model, F.durum, F.depolama, F.ram, F.renkSelect, F.garanti, F.fatura, F.kutu, URUN_OZELLIK_FIELD, F.stok, F.price, F.kargo, F.pazarlik, F.takas, GENEL_ETIKET_FIELD, F.desc]
   },
   bilgisayar: {
     key: "bilgisayar",
@@ -842,12 +852,12 @@ export const formSchemas: Record<string, FormSchema> = {
   beyazEsya: {
     key: "beyazEsya",
     title: "Beyaz eşya bilgileri",
-    fields: [F.title, { key: "brand", label: "Marka", type: "select", options: WHITE_GOODS_BRANDS }, F.model, F.durum, F.enerji, F.kapasite, F.renkSelect, F.garanti, F.fatura, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+    fields: [F.title, { key: "brand", label: "Marka", type: "select", options: WHITE_GOODS_BRANDS }, F.model, F.durum, F.enerji, F.kapasite, F.renkSelect, F.garanti, F.fatura, URUN_OZELLIK_FIELD, F.price, F.kargo, F.pazarlik, F.takas, GENEL_ETIKET_FIELD, F.desc]
   },
   moda: {
     key: "moda",
     title: "Giyim bilgileri",
-    fields: [F.title, F.markaSerbest, F.durum, F.beden, F.renkSelect, F.cinsiyet, F.materyal, F.stok, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+    fields: [F.title, F.markaSerbest, F.durum, F.beden, F.renkSelect, F.cinsiyet, MODA_SEZON, MODA_DESEN, MODA_KESIM, F.materyal, F.stok, F.price, F.kargo, F.pazarlik, F.takas, GENEL_ETIKET_FIELD, F.desc]
   },
   ayakkabi: {
     key: "ayakkabi",
@@ -857,7 +867,7 @@ export const formSchemas: Record<string, FormSchema> = {
   mobilya: {
     key: "mobilya",
     title: "Mobilya & ev bilgileri",
-    fields: [F.title, F.markaSerbest, F.durum, F.materyal, F.renkSelect, F.boyut, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+    fields: [F.title, F.markaSerbest, F.durum, MOBILYA_STIL, F.materyal, F.renkSelect, F.boyut, F.price, F.kargo, F.pazarlik, F.takas, GENEL_ETIKET_FIELD, F.desc]
   },
   bebek: {
     key: "bebek",
