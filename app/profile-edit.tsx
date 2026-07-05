@@ -38,12 +38,8 @@ function ProfileEditScreenInner() {
   const [section, setSection] = useState<SettingsSection>("personal");
   const [storeName, setStoreName] = useState(currentUser.name);
   const [iban, setIban] = useState((prefs0.iban as string) ?? "");
-  const [notif, setNotif] = useState<Record<string, boolean>>({ email: prefs0.notif_email !== false, sms: prefs0.notif_sms === true, push: prefs0.notif_push !== false, whatsapp: prefs0.notif_whatsapp !== false, marketing: prefs0.notif_marketing === true });
   const [storePrefs, setStorePrefs] = useState<Record<string, boolean>>({ autoApprove: prefs0.store_autoApprove === true, vacation: prefs0.store_vacation === true, showPhone: prefs0.store_showPhone !== false });
 
-  function toggleNotif(key: string) {
-    setNotif((s) => { const v = !s[key]; void savePreferences({ [`notif_${key}`]: v }); return { ...s, [key]: v }; });
-  }
   function toggleStore(key: string) {
     setStorePrefs((s) => { const v = !s[key]; void savePreferences({ [`store_${key}`]: v }); return { ...s, [key]: v }; });
   }
@@ -232,13 +228,6 @@ function ProfileEditScreenInner() {
     ];
     const doneCount = verifications.filter((v) => v.done).length;
     const completion = Math.round(((doneCount + (bio ? 1 : 0) + (avatar ? 1 : 0)) / 5) * 100);
-    const notifRows: Array<{ key: string; label: string; sub: string }> = [
-      { key: "email", label: "E-posta bildirimleri", sub: "Satış, komisyon ve talepler" },
-      { key: "push", label: "Anlık bildirimler", sub: "Tarayıcı ve uygulama" },
-      { key: "sms", label: "SMS bildirimleri", sub: "Yalnızca önemli hareketler" },
-      { key: "whatsapp", label: "WhatsApp bildirimleri", sub: "Satış ve komisyon özetleri" },
-      { key: "marketing", label: "Pazarlama & kampanyalar", sub: "Fırsat ve duyurular" }
-    ];
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>

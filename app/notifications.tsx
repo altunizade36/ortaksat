@@ -140,11 +140,14 @@ function NotificationsScreenInner() {
       myNotifications.filter((n) => !n.read).forEach((n) => markNotificationRead(n.id));
     };
 
-    const prefRows: Array<{ key: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string }> = [
-      { key: "push", icon: "bell-ring-outline", label: "Anlık bildirim", sub: "Tarayıcı & uygulama" },
-      { key: "email", icon: "email-outline", label: "E-posta", sub: "Hesabına bağlı e-posta" },
-      { key: "sms", icon: "message-badge-outline", label: "SMS", sub: "Önemli hareketler" },
-      { key: "whatsapp", icon: "whatsapp", label: "WhatsApp", sub: "Satış & komisyon" }
+    // Dürüst kanal durumu: yalnızca uygulama içi bildirim gerçek zamanlı çalışır.
+    // E-posta yalnızca hesap/güvenlik (doğrulama, şifre) için kullanılır; olay-bazlı
+    // e-posta/SMS/WhatsApp bildirimi henüz yok → "Yakında" olarak dürüstçe gösterilir.
+    const prefRows: Array<{ key: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; available: boolean }> = [
+      { key: "push", icon: "bell-ring-outline", label: "Uygulama içi bildirim", sub: "Talep, satış, mesaj, ortaklık — anlık", available: true },
+      { key: "email", icon: "email-outline", label: "E-posta bildirimleri", sub: "Olay-bazlı e-posta (yakında)", available: false },
+      { key: "sms", icon: "message-badge-outline", label: "SMS", sub: "Yakında", available: false },
+      { key: "whatsapp", icon: "whatsapp", label: "WhatsApp", sub: "Yakında", available: false }
     ];
 
     return (
@@ -257,7 +260,7 @@ function NotificationsScreenInner() {
                 </Link>
               </View>
               {prefRows.map((p) => (
-                <View key={p.key} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                <View key={p.key} style={{ alignItems: "center", flexDirection: "row", gap: 10, opacity: p.available ? 1 : 0.7 }}>
                   <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, height: 34, justifyContent: "center", width: 34 }}>
                     <MaterialCommunityIcons name={p.icon} size={18} color={colors.muted} />
                   </View>
@@ -265,9 +268,15 @@ function NotificationsScreenInner() {
                     <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{p.label}</Text>
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.sub}</Text>
                   </View>
-                  <Pressable onPress={() => togglePref(p.key)} style={{ alignItems: prefs[p.key] ? "flex-end" : "flex-start", backgroundColor: prefs[p.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
-                    <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
-                  </Pressable>
+                  {p.available ? (
+                    <Pressable onPress={() => togglePref(p.key)} style={{ alignItems: prefs[p.key] ? "flex-end" : "flex-start", backgroundColor: prefs[p.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+                      <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
+                    </Pressable>
+                  ) : (
+                    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 3 }}>
+                      <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "800" }}>Yakında</Text>
+                    </View>
+                  )}
                 </View>
               ))}
 

@@ -320,12 +320,12 @@ function ProfileScreenInner() {
 
       <Card>
         <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{t("accountSummary")}</Text>
-        <MenuRow icon="storefront-outline" label={t("myListings")} detail={`${activeListings.length} ${t("activeShort")} · ${pausedListings.length} ${t("pausedShort")}`} value={`${myListings.length}`} />
-        <MenuRow icon="handshake-outline" label={t("myPartnerships")} detail={`${activePartnerships.length} ${t("activeShort")} · ${pendingPartnerships.length} ${t("pending")}`} value={`${myPartnerships.length}`} />
+        <MenuRow icon="storefront-outline" label={t("myListings")} detail={`${activeListings.length} ${t("activeShort")} · ${pausedListings.length} ${t("pausedShort")}`} value={`${myListings.length}`} href="/(tabs)/seller" />
+        <MenuRow icon="handshake-outline" label={t("myPartnerships")} detail={`${activePartnerships.length} ${t("activeShort")} · ${pendingPartnerships.length} ${t("pending")}`} value={`${myPartnerships.length}`} href="/(tabs)/partner" />
         <MenuRow icon="star-outline" label={t("reviews")} detail={`${reviewsAboutMe.length} ${t("profileReviews")} · ${reviewsByMe.length} ${t("writtenByYou")}`} value={`${reviewsAboutMe.length + reviewsByMe.length}`} />
-        <MenuRow icon="bell-outline" label={t("notification")} detail={t("unreadNotification")} value={`${unreadNotifications.length}`} />
-        <MenuRow icon="chat-outline" label={t("conversation")} detail={t("buyerSellerPartnerMessages")} value={`${myConversations.length}`} />
-        <MenuRow icon="database-check-outline" label={t("dataInfrastructure")} detail={isLiveAccount ? t("liveProfileActive") : t("previewData")} value={isLiveAccount ? t("live") : t("preview")} />
+        <MenuRow icon="bell-outline" label={t("notification")} detail={t("unreadNotification")} value={`${unreadNotifications.length}`} href="/notifications" />
+        <MenuRow icon="chat-outline" label={t("conversation")} detail={t("buyerSellerPartnerMessages")} value={`${myConversations.length}`} href="/(tabs)/messages" />
+        <MenuRow icon="database-check-outline" label={t("dataInfrastructure")} detail={isLiveAccount ? t("liveProfileActive") : t("previewData")} value={isLiveAccount ? t("live") : t("preview")} href="/profile-edit" />
       </Card>
 
       <Card>
@@ -430,9 +430,9 @@ function ActionRow({ href, icon, label, tone, value }: { href: Href; icon: keyof
   );
 }
 
-function MenuRow({ detail, icon, label, value }: { detail: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string }) {
+function MenuRow({ detail, icon, label, value, href }: { detail: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; href?: Href }) {
   const { language } = useLanguage();
-  return (
+  const inner = (
     <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingTop: 11 }}>
       <MaterialCommunityIcons name={icon} size={20} color={colors.primary} />
       <View style={{ flex: 1, gap: 2 }}>
@@ -440,8 +440,11 @@ function MenuRow({ detail, icon, label, value }: { detail: string; icon: keyof t
         <Text numberOfLines={1} selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy(detail, language)}</Text>
       </View>
       <Text selectable style={{ color: colors.muted, fontSize: 13, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{value}</Text>
+      {href ? <MaterialCommunityIcons name="chevron-right" size={20} color={colors.subtle} /> : null}
     </View>
   );
+  if (!href) return inner;
+  return <Link href={href} asChild><Pressable>{inner}</Pressable></Link>;
 }
 
 function Shortcut({ href, icon, label }: { href: Href; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }) {
