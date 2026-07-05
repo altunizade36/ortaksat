@@ -66,10 +66,31 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
         ]
       },
       {
-        heading: "7. Değişiklik ve yürürlük",
+        heading: "7. Hesabın askıya alınması ve fesih",
         body: [
-          "Bu şartlar zaman zaman güncellenebilir; güncel sürüm bu sayfada yayınlanır. Önemli değişikliklerde kullanıcılar bilgilendirilir.",
-          "Uyuşmazlıklarda Türkiye Cumhuriyeti hukuku uygulanır."
+          "OrtakSat; bu şartlara, mevzuata veya genel ahlaka aykırı kullanım, dolandırıcılık şüphesi, sahte içerik, spam veya diğer kullanıcıların güvenliğini tehdit eden davranışlar halinde, önceden bildirimde bulunmaksızın ilanı kaldırma, hesabı askıya alma veya kapatma hakkını saklı tutar.",
+          "Kullanıcı, dilediği zaman hesabını kapatma talebinde bulunabilir. Hesap kapatıldığında, yasal saklama yükümlülükleri saklı kalmak kaydıyla verileriniz silinir veya anonim hale getirilir.",
+          "Askıya alma/fesih, tarafların o ana kadar doğmuş hak ve yükümlülüklerini ortadan kaldırmaz."
+        ]
+      },
+      {
+        heading: "8. Bildirimler ve iletişim",
+        body: [
+          "OrtakSat; hizmete ilişkin bildirimleri uygulama içi bildirim, e-posta veya platform üzerindeki duyurularla yapabilir. Kayıt sırasında verdiğiniz iletişim bilgilerinin güncel olmasından siz sorumlusunuz.",
+          "Kullanıcılar arası iletişimin platform içi mesajlaşmada tutulması önerilir; olası bir uyuşmazlıkta bu kayıtlar taraflara yardımcı olabilir."
+        ]
+      },
+      {
+        heading: "9. Mücbir sebep",
+        body: [
+          "Doğal afet, salgın, siber saldırı, altyapı/servis sağlayıcı kesintileri, mevzuat değişiklikleri gibi tarafların kontrolü dışındaki hallerde OrtakSat, hizmette oluşabilecek aksama veya kesintilerden sorumlu tutulamaz."
+        ]
+      },
+      {
+        heading: "10. Değişiklik, yürürlük ve uygulanacak hukuk",
+        body: [
+          "Bu şartlar zaman zaman güncellenebilir; güncel sürüm bu sayfada yayınlanır ve yayınlandığı anda yürürlüğe girer. Önemli değişikliklerde kullanıcılar makul yollarla bilgilendirilir.",
+          "Bu şartların uygulanmasında ve yorumlanmasında Türkiye Cumhuriyeti hukuku geçerlidir. Uyuşmazlıklarda, tüketici mevzuatındaki yetki kuralları saklı kalmak üzere ilgili yargı mercileri yetkilidir."
         ]
       }
     ]
@@ -126,6 +147,27 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
           "İşlemenin münhasıran otomatik sistemlerle analiz edilmesi sonucu aleyhinize bir sonucun ortaya çıkmasına itiraz etme ve zarara uğramanız halinde giderilmesini talep etme.",
           "Bu haklarınızı Yasal & Destek üzerinden bize ileterek kullanabilirsiniz; talebiniz en geç 30 gün içinde sonuçlandırılır."
         ]
+      },
+      {
+        heading: "7. Veri güvenliği tedbirleri",
+        body: [
+          "Kişisel verilerinize yetkisiz erişimi önlemek için erişim kontrolü, satır bazlı yetkilendirme (RLS), şifreli iletişim ve güncel altyapı gibi idari ve teknik tedbirler uygulanır.",
+          "Telefon numarası gibi hassas iletişim bilgileri, herkese açık listelemede gösterilmez; yalnızca ilgili iletişim/ortaklık akışında ve tercihlerinize göre paylaşılır.",
+          "OrtakSat hiçbir zaman sizden şifre, kart bilgisi veya SMS/e-posta doğrulama kodunuzu talep etmez."
+        ]
+      },
+      {
+        heading: "8. Otomatik kararlar ve profilleme",
+        body: [
+          "Güvenlik ve dolandırıcılığın önlenmesi amacıyla bazı sinyaller (ör. güven puanı, hız-limiti) otomatik olarak değerlendirilebilir. Bu değerlendirmeler nihai kararların tek başına dayanağı olacak şekilde aleyhinize sonuç doğuracaksa, itiraz hakkınız saklıdır."
+        ]
+      },
+      {
+        heading: "9. Başvuru usulü",
+        body: [
+          "KVKK md. 11 kapsamındaki taleplerinizi kimliğinizi tevsik edici bilgilerle Yasal & Destek sayfasındaki kanallardan iletebilirsiniz.",
+          "Başvurunuz talebin niteliğine göre en kısa sürede ve en geç 30 gün içinde ücretsiz olarak sonuçlandırılır; işlemin ayrıca bir maliyet gerektirmesi halinde Kurul'ca belirlenen tarifedeki ücret alınabilir."
+        ]
       }
     ]
   },
@@ -166,10 +208,30 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
         ]
       },
       {
-        heading: "5. Haklarınız ve iletişim",
+        heading: "5. Veri saklama süresi",
         body: [
-          "Verilerinize erişme, düzeltme ve silme haklarınızı KVKK bölümündeki şekilde kullanabilirsiniz.",
-          "Sorularınız için Yasal & Destek üzerinden bize ulaşın."
+          "Verileriniz, işleme amacının ve ilgili mevzuatın gerektirdiği süre boyunca saklanır. Süre sonunda veya hesabınızı kapattığınızda, yasal saklama yükümlülükleri saklı kalmak üzere silinir veya anonim hale getirilir.",
+          "İşlem/komisyon kayıtları gibi bazı veriler, olası uyuşmazlıklara karşı ve yasal yükümlülükler nedeniyle daha uzun süre tutulabilir."
+        ]
+      },
+      {
+        heading: "6. Üçüncü taraf hizmetler",
+        body: [
+          "Platform, barındırma ve veritabanı gibi altyapı hizmetlerini üçüncü taraf sağlayıcılardan alır; bu sağlayıcılar verilerinizi yalnızca hizmetin sunulması amacıyla işler.",
+          "Platform içindeki bazı bağlantılar üçüncü taraf sitelere yönlendirebilir; bu sitelerin gizlilik uygulamalarından OrtakSat sorumlu değildir."
+        ]
+      },
+      {
+        heading: "7. Çocukların gizliliği",
+        body: [
+          "Platform 18 yaş ve üzeri kullanıcılar içindir. 18 yaşından küçüklerden bilerek kişisel veri toplamayız; böyle bir durum tespit edilirse ilgili veriler silinir."
+        ]
+      },
+      {
+        heading: "8. Değişiklikler ve iletişim",
+        body: [
+          "Bu politika güncellenebilir; güncel sürüm bu sayfada yayınlanır. Önemli değişikliklerde sizi bilgilendiririz.",
+          "Verilerinize erişme, düzeltme ve silme haklarınızı KVKK bölümündeki şekilde kullanabilir, sorularınız için Yasal & Destek üzerinden bize ulaşabilirsiniz."
         ]
       }
     ]
@@ -236,8 +298,22 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
       {
         heading: "4. Tüketici hakları ve anlaşmazlık",
         body: [
-          "Tüketici, 6502 sayılı Kanun kapsamındaki haklarını doğrudan satıcıya karşı kullanır.",
-          "Taraflar arası anlaşmazlıklardan OrtakSat sorumlu tutulamaz; şüpheli/aykırı durumları Güven Merkezi üzerinden bildirebilirsiniz."
+          "Tüketici, 6502 sayılı Tüketicinin Korunması Hakkında Kanun kapsamındaki haklarını (ayıplı mal, cayma, iade vb.) doğrudan satıcıya karşı kullanır.",
+          "Taraflar arası anlaşmazlıklardan OrtakSat sorumlu tutulamaz; platform yalnızca ilan ve iletişim altyapısı sunar. Şüpheli/aykırı durumları Güven Merkezi üzerinden bildirebilirsiniz."
+        ]
+      },
+      {
+        heading: "5. Güvenli işlem önerileri",
+        body: [
+          "Ürünü görmeden/teslim almadan ödeme yapmamanız; tanımadığınız tarafa yüksek tutarlı ön ödeme/kapora göndermemeniz önerilir.",
+          "Komisyon oranını, ödeme zamanını ve yöntemini yazılı (platform içi mesaj) olarak netleştirmeniz, olası uyuşmazlıklarda sizi korur.",
+          "Piyasa değerinin çok altındaki 'kaçırılmayacak fırsat' ilanlarına ve sizi platform dışına yönlendiren taleplere şüpheyle yaklaşın."
+        ]
+      },
+      {
+        heading: "6. Vergi ve yasal yükümlülükler",
+        body: [
+          "Satış ve komisyon gelirlerine ilişkin vergi, fatura ve diğer yasal yükümlülükler ilgili tarafların (satıcı/ortak) kendi sorumluluğundadır. OrtakSat bu yükümlülüklerin tarafı veya sorumlusu değildir."
         ]
       }
     ]
@@ -274,10 +350,16 @@ export const LEGAL_DOCS: Record<string, LegalDoc> = {
         ]
       },
       {
-        heading: "4. İhlal ve yaptırım",
+        heading: "4. Vergi ve gelir sorumluluğu",
+        body: [
+          "Ortaklık/komisyon gelirlerine ilişkin vergi ve beyan yükümlülükleri, geliri elde eden tarafın kendi sorumluluğundadır. OrtakSat para tutmadığı ve ödeme kuruluşu olmadığı için bu yükümlülüklerin tarafı değildir."
+        ]
+      },
+      {
+        heading: "5. İhlal ve yaptırım",
         body: [
           "Kurallara aykırılık halinde ilan/ortaklık askıya alınabilir, hesap kısıtlanabilir.",
-          "Dolandırıcılık veya kötüye kullanım tespitinde hesap kalıcı olarak kapatılabilir ve yasal yollara başvurulabilir."
+          "Dolandırıcılık, sahte lead/tıklama üretimi veya kötüye kullanım tespitinde hesap kalıcı olarak kapatılabilir ve gerekli hallerde yasal yollara başvurulabilir."
         ]
       }
     ]
