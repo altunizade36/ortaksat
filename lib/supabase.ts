@@ -88,7 +88,11 @@ export const supabase = isSupabaseConfigured
         persistSession: hasBrowserStorage,
         // Web'de Google/OAuth dönüşünde URL'deki #access_token'ı işleyip oturumu
         // kurar. SSR (window yok) sırasında kapalı kalır.
-        detectSessionInUrl: hasBrowserStorage
+        detectSessionInUrl: hasBrowserStorage,
+        // Statik SPA'da Google girişi: PKCE akışı sunucudaki flow_state'e bağlı
+        // olduğundan zaman zaman "bad_oauth_state" hatası veriyordu. Implicit akış
+        // oturumu doğrudan URL hash'inde döndürür; flow_state'e bağımlılık yok.
+        flowType: "implicit"
       }
     })
   : null;
