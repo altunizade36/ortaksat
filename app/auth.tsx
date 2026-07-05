@@ -7,6 +7,8 @@ import { Link } from "expo-router";
 
 import { colors } from "@/components/colors";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
+import { LegalConsentModal } from "@/components/legal-consent-modal";
+import { CONSENT_DOCS, LEGAL_DOCS } from "@/lib/legal-content";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
@@ -24,7 +26,10 @@ export default function AuthScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [acceptedLegal, setAcceptedLegal] = useState(false);
+  // Her hukuki belge ayrı onaylanır (kutucuk, ilgili belge okunup onaylanınca dolar).
+  const [acceptedDocs, setAcceptedDocs] = useState<Record<string, boolean>>({});
+  const [openDocKey, setOpenDocKey] = useState<keyof typeof LEGAL_DOCS | null>(null);
+  const allAccepted = CONSENT_DOCS.every((d) => acceptedDocs[d.key]);
   const [loading, setLoading] = useState(false);
   const isWideWeb = useIsWideWeb();
   const [showPassword, setShowPassword] = useState(false);
@@ -71,7 +76,7 @@ export default function AuthScreen() {
 
   async function loginWithGoogle() {
     // Google ilk kullanımda hesap oluşturabildiği için yasal onay zorunlu.
-    if (!acceptedLegal) {
+    if (!allAccepted) {
       setMode("register");
       Alert.alert(
         language === "en" ? "Legal approval required" : "Yasal onay gerekli",
@@ -108,7 +113,7 @@ export default function AuthScreen() {
       Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", language === "en" ? "Full name, email, and a password of at least 6 characters are required." : "Ad soyad, e-posta ve en az 6 karakter şifre gerekli.");
       return;
     }
-    if (!acceptedLegal) {
+    if (!allAccepted) {
       Alert.alert(language === "en" ? "Legal approval required" : "Yasal onay gerekli", language === "en" ? "You must accept KVKK, privacy, terms of use, and seller/partner rules." : "KVKK, gizlilik, kullanım şartları ve satıcı/ortak kurallarını kabul etmelisin.");
       return;
     }
@@ -154,6 +159,34 @@ export default function AuthScreen() {
     );
     if (ok) setMode("login");
   }
+
+  // Ayrı hukuki onay kutucukları: her belge mavi link → modal açılır → sona kaydırınca
+  // "Onayla" aktifleşir → kutu işaretlenir. Web ve mobil dalların ikisi de kullanır.
+  const legalChecks = (
+    <View style={{ gap: 9 }}>
+      {CONSENT_DOCS.map((d) => {
+        const on = !!acceptedDocs[d.key];
+        return (
+          <Pressable key={d.key} onPress={() => setOpenDocKey(d.key)} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+            <MaterialCommunityIcons name={on ? "checkbox-marked" : "checkbox-blank-outline"} size={21} color={on ? colors.primary : colors.muted} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, lineHeight: 18 }}>
+              <Text style={{ color: colors.primaryDark, fontWeight: "800", textDecorationLine: "underline" }}>{d.label}</Text>
+              <Text>'ni okudum ve onaylıyorum.</Text>
+            </Text>
+          </Pressable>
+        );
+      })}
+      <Text style={{ color: colors.subtle, fontSize: 11.5, lineHeight: 16 }}>Kayıt olmak için tüm metinleri okuyup onaylaman gerekir. Bağlantıya dokun → oku → sona kaydır → onayla.</Text>
+    </View>
+  );
+  const legalModal = (
+    <LegalConsentModal
+      doc={openDocKey ? LEGAL_DOCS[openDocKey] : null}
+      visible={!!openDocKey}
+      onClose={() => setOpenDocKey(null)}
+      onApprove={() => { if (openDocKey) setAcceptedDocs((s) => ({ ...s, [openDocKey]: true })); setOpenDocKey(null); }}
+    />
+  );
 
   // Kayıt olup e-posta kodunu bekleyen kullanıcı: link/uygulama-değiştirme yok,
   // aynı ekranda 6 haneli kodu girer. (Supabase "Confirm signup" şablonu {{ .Token }} ile.)
@@ -304,12 +337,8 @@ export default function AuthScreen() {
                   </View>
                 ) : null}
 
-                {mode === "register" ? (
-                  <Pressable onPress={() => setAcceptedLegal((v) => !v)} style={{ alignItems: "flex-start", flexDirection: "row", gap: 9 }}>
-                    <MaterialCommunityIcons name={acceptedLegal ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"} size={20} color={acceptedLegal ? colors.primary : colors.muted} style={{ marginTop: 1 }} />
-                    <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 17 }}>KVKK aydınlatması, gizlilik politikası ve kullanım şartlarını okudum. Ortaksat'ın aracı bir ilan/iletişim platformu olduğunu; ödeme almadığını, para tutmadığını, komisyon kesmediğini, kargo/teslimat yapmadığını; tüm alışveriş, ödeme ve teslimatın taraflar arasında, kendi sorumluluklarında yapıldığını ve Ortaksat'ın bu işlemlerin tarafı olmadığını kabul ediyorum.</Text>
-                  </Pressable>
-                ) : null}
+                {mode === "register" ? legalChecks : null}
+                {legalModal}
 
                 {mode === "login" ? (
                   <Pressable onPress={login} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 14 }}>
@@ -434,26 +463,8 @@ export default function AuthScreen() {
           {mode !== "reset" ? <Field label="Şifre" value={password} onChangeText={setPassword} secureTextEntry placeholder="En az 6 karakter" /> : null}
           {mode === "reset" ? <Field label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="Bağlantıdan geldikten sonra yeni şifre" /> : null}
 
-          {mode === "register" ? (
-            <Pressable
-              onPress={() => setAcceptedLegal((value) => !value)}
-              style={({ pressed }) => ({
-                alignItems: "flex-start",
-                flexDirection: "row",
-                gap: 10,
-                opacity: pressed ? 0.72 : 1
-              })}
-            >
-              <MaterialCommunityIcons
-                name={acceptedLegal ? "checkbox-marked-circle" : "checkbox-blank-circle-outline"}
-                size={22}
-                color={acceptedLegal ? colors.primary : colors.muted}
-              />
-              <Text selectable style={{ color: colors.muted, flex: 1, fontSize: 12, lineHeight: 18 }}>
-                {language === "en" ? "I have read KVKK notice, privacy policy, terms of use, and seller/partner rules; I accept that Ortaksat is not a party to the sale, but an intermediary listing and tracking platform." : "KVKK aydınlatmasını, gizlilik politikasını, kullanım şartlarını ve satıcı/ortak kurallarını okudum; Ortaksat'ın satışın tarafı değil aracı ilan ve takip platformu olduğunu kabul ediyorum."}
-              </Text>
-            </Pressable>
-          ) : null}
+          {mode === "register" ? legalChecks : null}
+          {legalModal}
 
           {mode === "login" ? (
             <PrimaryButton onPress={login}>{loading ? "Giriş yapılıyor" : "E-posta ile giriş yap"}</PrimaryButton>
