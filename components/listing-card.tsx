@@ -45,6 +45,8 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
     if (out.length < 3 && a.buildingAge) out.push(`${a.buildingAge} yaş`);
     return out.slice(0, 3);
   })();
+  // İlan etiketleri (Acil / Fırsat / Yatırımlık…) — renkli vurgu rozetleri (spec 72).
+  const etiketler = Array.isArray(listing.attributes?.etiketler) ? (listing.attributes!.etiketler as string[]).slice(0, 2) : [];
 
   return (
     <View style={{ width }}>
@@ -102,8 +104,13 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
               <Text numberOfLines={2} selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "800", lineHeight: 19, minHeight: 38 }}>
                 {displayText(listing.title)}
               </Text>
-              {attrSpecs.length ? (
+              {attrSpecs.length || etiketler.length ? (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                  {etiketler.map((e) => (
+                    <View key={e} style={{ backgroundColor: colors.accentSoft, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                      <Text numberOfLines={1} style={{ color: colors.accent, fontSize: 10.5, fontWeight: "900" }}>{e}</Text>
+                    </View>
+                  ))}
                   {attrSpecs.map((s) => (
                     <View key={s} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 6, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2 }}>
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{s}</Text>

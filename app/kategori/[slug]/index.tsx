@@ -85,7 +85,15 @@ export default function CategoryLandingScreen() {
   const filterFields = useMemo(() => {
     if (!trail) return [];
     const schema = getFormSchema(resolveFormKey(trail));
-    return schema.fields.filter((f) => f.type === "select" && (f.options?.length ?? 0) >= 2 && (f.options?.length ?? 0) <= 16 && !["seller"].includes(f.key));
+    // Tekli-seçim (≤16 seçenek) + kısa çoklu-seçim (etiketler, enerji, oda tipleri…
+    // ≤24 seçenek) facet olur. Uzun listeler (iç/site özellikleri) filtreye taşınmaz.
+    return schema.fields.filter((f) => {
+      const n = f.options?.length ?? 0;
+      if (f.key === "seller") return false;
+      if (f.type === "select") return n >= 2 && n <= 16;
+      if (f.type === "multiselect") return n >= 2 && n <= 24;
+      return false;
+    });
   }, [trail]);
 
   const minM2 = m2Min.trim() ? Number(m2Min) : null;
