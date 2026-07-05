@@ -3,6 +3,7 @@ import { Link, useRouter } from "expo-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Alert, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
 
+import { AdminActivity } from "@/components/admin-activity";
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { EmptyState } from "@/components/ui";
@@ -227,12 +228,15 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "dashboard" ? (
+          <View style={{ gap: 18 }}>
+          <AdminActivity />
           <Dashboard
             usersN={liveUsers.length} listingsN={listings.length} salesN={sales.length} commission={totalCommission}
             activeN={activeListings.length} pendingN={pendingReview.length} reportsN={pendingReports} partnershipsN={pendingPartnerships} messagesN={messages.length}
             disputedN={disputedSalesN} unpaidCommission={unpaidCommission} pendingCat={pendingCat} pendingLoc={pendingLoc}
             listings={listings} users={users} sales={sales} partnerships={partnerships} reports={reports} findUser={findUser} notifications={notifications} leads={leads} setSection={setSection}
           />
+          </View>
         ) : null}
 
         {section === "users" ? (
