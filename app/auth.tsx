@@ -7,9 +7,9 @@ import { Link } from "expo-router";
 
 import { colors } from "@/components/colors";
 import { PasswordStrengthMeter } from "@/components/password-strength-meter";
-import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
+import { Card, PrimaryButton } from "@/components/ui";
 import { LegalConsentModal } from "@/components/legal-consent-modal";
-import { CONSENT_DOCS, LEGAL_DOCS } from "@/lib/legal-content";
+import { LEGAL_DOCS } from "@/lib/legal-content";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
@@ -33,11 +33,10 @@ export default function AuthScreen() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  // Her hukuki belge ayrı onaylanır (kutucuk, ilgili belge okunup onaylanınca dolar).
-  const [acceptedDocs, setAcceptedDocs] = useState<Record<string, boolean>>({});
+  // Sade onay: tek toplu kutu (metinler mavi altı-çizili link, 18 yaş dahil).
+  const [acceptedAll, setAcceptedAll] = useState(false);
   const [openDocKey, setOpenDocKey] = useState<keyof typeof LEGAL_DOCS | null>(null);
-  const [age18, setAge18] = useState(false);
-  const allAccepted = CONSENT_DOCS.every((d) => acceptedDocs[d.key]) && age18;
+  const allAccepted = acceptedAll;
   const [loading, setLoading] = useState(false);
   const isWideWeb = useIsWideWeb();
   const [showPassword, setShowPassword] = useState(false);
@@ -154,10 +153,6 @@ export default function AuthScreen() {
       Alert.alert("Şifreler uyuşmuyor", "Şifre ve şifre tekrar alanları aynı olmalı.");
       return;
     }
-    if (!age18) {
-      Alert.alert("Yaş onayı gerekli", "Hesap açmak için 18 yaşından büyük olduğunu onaylamalısın.");
-      return;
-    }
     if (!allAccepted) {
       Alert.alert(language === "en" ? "Legal approval required" : "Yasal onay gerekli", language === "en" ? "You must accept KVKK, privacy, terms of use, and seller/partner rules." : "KVKK, gizlilik, kullanım şartları ve satıcı/ortak kurallarını kabul etmelisin.");
       return;
@@ -207,23 +202,21 @@ export default function AuthScreen() {
     if (ok) setMode("login");
   }
 
-  // Ayrı hukuki onay kutucukları: her belge mavi link → modal açılır → sona kaydırınca
-  // "Onayla" aktifleşir → kutu işaretlenir. Web ve mobil dalların ikisi de kullanır.
+  // Mavi altı-çizili link stili (yasal metinler için) — tek yerde.
+  const linkStyle = { color: colors.primaryDark, fontWeight: "800" as const, textDecorationLine: "underline" as const };
+
+  // Sade TOPLU onay (sahibinden tarzı): tek kutu, metinler mavi altı-çizili link,
+  // 18 yaş dahil. Linke dokununca ilgili metin okuma için açılır.
   const legalChecks = (
-    <View style={{ gap: 9 }}>
-      {CONSENT_DOCS.map((d) => {
-        const on = !!acceptedDocs[d.key];
-        return (
-          <Pressable key={d.key} onPress={() => setOpenDocKey(d.key)} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
-            <MaterialCommunityIcons name={on ? "checkbox-marked" : "checkbox-blank-outline"} size={21} color={on ? colors.primary : colors.muted} />
-            <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, lineHeight: 18 }}>
-              <Text style={{ color: colors.primaryDark, fontWeight: "800", textDecorationLine: "underline" }}>{d.label}</Text>
-              <Text>'ni okudum ve onaylıyorum.</Text>
-            </Text>
-          </Pressable>
-        );
-      })}
-      <Text style={{ color: colors.subtle, fontSize: 11.5, lineHeight: 16 }}>Kayıt olmak için tüm metinleri okuyup onaylaman gerekir. Bağlantıya dokun → oku → sona kaydır → onayla.</Text>
+    <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 9 }}>
+      <Pressable onPress={() => setAcceptedAll((v) => !v)} hitSlop={6} accessibilityRole="checkbox" accessibilityState={{ checked: acceptedAll }} style={{ paddingTop: 1 }}>
+        <MaterialCommunityIcons name={acceptedAll ? "checkbox-marked" : "checkbox-blank-outline"} size={22} color={acceptedAll ? colors.primary : colors.muted} />
+      </Pressable>
+      <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, lineHeight: 19 }}>
+        <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>Kullanım Şartları</Text>,{" "}
+        <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>KVKK Aydınlatma Metni</Text> ve{" "}
+        <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>Gizlilik Politikası</Text>'nı okudum, kabul ediyorum ve 18 yaşından büyüğüm.
+      </Text>
     </View>
   );
   const legalModal = (
@@ -231,16 +224,19 @@ export default function AuthScreen() {
       doc={openDocKey ? LEGAL_DOCS[openDocKey] : null}
       visible={!!openDocKey}
       onClose={() => setOpenDocKey(null)}
-      onApprove={() => { if (openDocKey) setAcceptedDocs((s) => ({ ...s, [openDocKey]: true })); setOpenDocKey(null); }}
+      onApprove={() => { setAcceptedAll(true); setOpenDocKey(null); }}
     />
   );
 
-  // 18 yaş onayı (yasal metinlerden ayrı, zorunlu tekil kutucuk).
-  const ageCheck = (
-    <Pressable onPress={() => setAge18((v) => !v)} accessibilityRole="checkbox" accessibilityState={{ checked: age18 }} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
-      <MaterialCommunityIcons name={age18 ? "checkbox-marked" : "checkbox-blank-outline"} size={21} color={age18 ? colors.primary : colors.muted} />
-      <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, lineHeight: 18 }}>18 yaşından büyük olduğumu onaylıyorum.</Text>
-    </Pressable>
+  // Temiz alt sözleşme satırı (sahibinden'deki gibi): mavi altı-çizili linkler.
+  const legalFooter = (
+    <Text style={{ color: colors.subtle, fontSize: 11.5, lineHeight: 17, textAlign: "center" }}>
+      <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>Kullanım Şartları</Text>
+      {"   ·   "}
+      <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>KVKK Aydınlatma Metni</Text>
+      {"   ·   "}
+      <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>Gizlilik Politikası</Text>
+    </Text>
   );
 
   // Beni Hatırla (giriş): işaretli değilse tarayıcı kapanınca oturum silinir.
@@ -252,7 +248,6 @@ export default function AuthScreen() {
   );
 
   // Google butonunun altındaki zımni yasal onay bilgilendirmesi (global standart).
-  const linkStyle = { color: colors.primaryDark, fontWeight: "800" as const, textDecorationLine: "underline" as const };
   const googleNote = (
     <Text style={{ color: colors.subtle, fontSize: 11, lineHeight: 16, textAlign: "center" }}>
       Google ile devam ederek{" "}
@@ -427,7 +422,6 @@ export default function AuthScreen() {
                 ) : null}
 
                 {mode === "register" ? legalChecks : null}
-                {mode === "register" ? ageCheck : null}
                 {legalModal}
 
                 {mode === "login" ? (
@@ -535,18 +529,12 @@ export default function AuthScreen() {
           <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} />
           <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Ana sayfa</Text>
         </Pressable>
-        <Card>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatusPill label="E-posta altyapısı" tone="success" />
-            <StatusPill label="İlk sürüm" tone="info" />
+        <View style={{ alignItems: "center", gap: 8, paddingVertical: 8 }}>
+          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 14, height: 52, justifyContent: "center", width: 52 }}>
+            <MaterialCommunityIcons name="handshake" size={28} color={colors.primaryDark} />
           </View>
-          <Text selectable style={{ color: colors.ink, fontSize: 25, fontWeight: "900", lineHeight: 31 }}>
-            {language === "en" ? "Secure account sign-in" : "Güvenli hesap girişi"}
-          </Text>
-          <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
-            {language === "en" ? "For the MVP, registration, sign-in, email verification, and password reset run on secure email infrastructure. Phone verification is left for the next trust phase." : "Başlangıçta kayıt, giriş, e-posta doğrulama ve şifre sıfırlama güvenli e-posta altyapısıyla çalışır. Telefon doğrulama sonraki güven fazına bırakıldı."}
-          </Text>
-        </Card>
+          <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{mode === "login" ? "Giriş yap" : mode === "register" ? "Hesap aç" : "Şifre sıfırla"}</Text>
+        </View>
 
         <Card>
           <View style={{ flexDirection: "row", gap: 8 }}>
@@ -554,8 +542,6 @@ export default function AuthScreen() {
             <ModeButton active={mode === "register"} label="Kayıt" onPress={() => setMode("register")} />
             <ModeButton active={mode === "reset"} label="Şifre" onPress={() => setMode("reset")} />
           </View>
-
-          <SectionTitle title={mode === "login" ? "Hesabına gir" : mode === "register" ? "Yeni hesap aç" : "Şifre sıfırla"} />
 
           {mode === "register" ? (
             <View style={{ flexDirection: "row", gap: 10 }}>
@@ -582,7 +568,6 @@ export default function AuthScreen() {
 
           {mode === "login" ? <View style={{ alignItems: "flex-start" }}>{rememberCheck}</View> : null}
           {mode === "register" ? legalChecks : null}
-          {mode === "register" ? ageCheck : null}
           {legalModal}
 
           {mode === "login" ? (
@@ -624,23 +609,7 @@ export default function AuthScreen() {
           ) : null}
         </Card>
 
-        <Card>
-          <SectionTitle title="Hukuki çerçeve" />
-          <MiniRule icon="store-search" text={language === "en" ? "Ortaksat does not own products; it provides listing, partnership application, message, and commission tracking infrastructure." : "Ortaksat ürün sahibi değildir; ilan, ortaklık başvurusu, mesaj ve komisyon takip altyapısı sağlar."} />
-          <MiniRule icon="account-cash" text={language === "en" ? "Commission payment is handled outside the app between parties in the first version; the app keeps records and confirmations." : "Komisyon ödemesi ilk sürümde taraflar arasında uygulama dışında yapılır; uygulama kayıt ve teyit tutar."} />
-          <MiniRule icon="shield-alert" text={language === "en" ? "Misleading listings, fake products, spam sharing, and fraud reports enter moderation." : "Yanıltıcı ilan, sahte ürün, spam paylaşım ve dolandırıcılık şikayetleri moderasyon sürecine alınır."} />
-          <PrimaryButton href="/legal" tone="soft">Yasal ve destek merkezini aç</PrimaryButton>
-        </Card>
-
-        <Card>
-          <SectionTitle title="Geçerli oturum" />
-          <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "800" }}>
-            {currentUser.name}
-          </Text>
-          <Text selectable style={{ color: colors.muted, fontSize: 13 }}>
-            {currentUser.phone || (language === "en" ? "Email account / preview user" : "E-posta hesabı / ön izleme kullanıcısı")}
-          </Text>
-        </Card>
+        <View style={{ paddingHorizontal: 4, paddingTop: 4 }}>{legalFooter}</View>
       </ScrollView>
     </KeyboardAvoidingView>
   );
@@ -746,13 +715,3 @@ function ModeButton({ active, label, onPress }: { active: boolean; label: string
   );
 }
 
-function MiniRule({ icon, text }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; text: string }) {
-  return (
-    <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
-      <MaterialCommunityIcons name={icon} size={20} color={colors.primary} />
-      <Text selectable style={{ color: colors.muted, flex: 1, fontSize: 13, lineHeight: 19 }}>
-        {text}
-      </Text>
-    </View>
-  );
-}
