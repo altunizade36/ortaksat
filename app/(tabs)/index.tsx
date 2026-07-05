@@ -185,7 +185,7 @@ export default function HomeScreen() {
           {/* Kompakt yeşil hero (mobil) — web ile tutarlı: tokalaşma + ürün kümesi */}
           <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 16, flexDirection: "row", gap: 10, overflow: "hidden", padding: 16 }}>
             <View style={{ flex: 1, gap: 10, minWidth: 0 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 19, fontWeight: "900", lineHeight: 24 }}>Ortak alın, <Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text></Text>
+              <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 19, fontWeight: "900", lineHeight: 24 }}>Ortak alın, <Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text></Text>
               <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600", lineHeight: 16 }}>Ürününü ortaklar paylaşsın, satışta komisyon kazan.</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 <Link href="/create" asChild>

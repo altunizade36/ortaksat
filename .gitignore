@@ -44,3 +44,9 @@ demo-check-server.cjs
 demo-check.*.log
 dist-demo-check/
 gen-demo.ps1
+
+# E2E test (Playwright)
+.env.e2e
+test-results/
+playwright-report/
+e2e-artifacts/
