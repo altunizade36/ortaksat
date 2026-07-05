@@ -266,7 +266,8 @@ export async function insertListing(listing: Listing): Promise<boolean> {
     sales_pitch: listing.salesPitch,
     share_templates: listing.shareTemplates ?? null,
     ad_assets: listing.adAssets ?? [],
-    tags: listing.tags
+    tags: listing.tags,
+    attributes: listing.attributes ?? {}
   });
 
   if (error) {
@@ -655,7 +656,8 @@ export async function updateListingLive(listing: Listing) {
       sales_pitch: listing.salesPitch,
       share_templates: listing.shareTemplates ?? null,
       ad_assets: listing.adAssets ?? [],
-      tags: listing.tags
+      tags: listing.tags,
+      attributes: listing.attributes ?? {}
     })
     .eq("id", listing.id);
 

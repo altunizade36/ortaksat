@@ -14,6 +14,7 @@ type PublicListingCardRow = {
   share_templates?: Listing["shareTemplates"] | null;
   ad_assets?: string[] | null;
   tags: string[] | null;
+  attributes?: Record<string, string | number | boolean> | null;
   price: number | string;
   currency?: string | null;
   demo?: boolean | null;
@@ -142,6 +143,7 @@ function mapListing(row: PublicListingCardRow): Listing {
     shareTemplates: row.share_templates ?? undefined,
     adAssets: row.ad_assets ?? [],
     tags: (row.tags ?? []).map(repairTurkishText),
+    attributes: row.attributes ?? undefined,
     price: toNumber(row.price),
     currency: (row.currency as Listing["currency"]) ?? "TRY",
     demo: Boolean(row.demo),

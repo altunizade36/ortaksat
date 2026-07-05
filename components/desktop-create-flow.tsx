@@ -175,6 +175,20 @@ export function DesktopCreateFlow() {
         .map((f) => `${f.label}: ${values[f.key]}${f.suffix ? " " + f.suffix : ""}`);
       const boolLines = schema.fields.filter((f) => f.type === "bool" && values[f.key] === true).map((f) => `${f.label}: Evet`);
 
+      // Yapısal özellikler: form değerlerini (m², oda, imar, tapu…) filtrelenebilir
+      // biçimde sakla. title/description/price zaten üst-seviye kolonlarda tutulur.
+      const attributes: Record<string, string | number | boolean> = {};
+      for (const f of schema.fields) {
+        if (f.key === "title" || f.key === "description" || f.key === "price") continue;
+        const raw = values[f.key];
+        if (raw === undefined || raw === null || (typeof raw === "string" && !raw.trim())) continue;
+        if (typeof raw === "boolean") { if (raw) attributes[f.key] = true; continue; }
+        attributes[f.key] = f.type === "number" ? Number(raw) : String(raw);
+      }
+      // Kategori bağlamı da sakla (alt-kategori filtresi ve rozetler için).
+      if (leafLabel) attributes._leaf = leafLabel;
+      if (path[0]?.label) attributes._root = path[0].label;
+
       // Görselleri Supabase storage'a yükle (web'de otomatik ölçekleme+sıkıştırma).
       // En fazla 5; yerel URI'ler public URL'e döner, böylece herkes görebilir.
       const pickedImages = images.slice(0, 5);
@@ -209,6 +223,7 @@ export function DesktopCreateFlow() {
         bonusAmount: Number(bonusAmount) > 0 && Number(bonusQuota) > 0 ? Number(bonusAmount) : undefined,
         bonusQuota: Number(bonusAmount) > 0 && Number(bonusQuota) > 0 ? Number(bonusQuota) : undefined,
         partnershipMode,
+        attributes,
         category: leafLabel || path[0]?.label || "Genel",
         location: formatLocation(loc, visibility) || getProvince(loc.provinceId)?.name || "Türkiye",
         provinceId: loc.provinceId,

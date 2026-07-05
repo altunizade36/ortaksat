@@ -308,30 +308,41 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Konut bilgileri",
     fields: [
       F.title,
-      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren", "Günlük"] },
+      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Günlük Kiralık", "Devren", "Kat Karşılığı", "Projeden Satılık", "Takaslı"] },
       F.price,
       { key: "grossM2", label: "m² (brüt)", type: "number", required: true, suffix: "m²" },
       { key: "netM2", label: "m² (net)", type: "number", suffix: "m²" },
-      { key: "rooms", label: "Oda sayısı", type: "select", required: true, options: ["1+0", "1+1", "2+1", "3+1", "4+1", "5+1", "5+ üzeri"] },
-      { key: "buildingAge", label: "Bina yaşı", type: "select", options: ["0 (Sıfır)", "1-5", "6-10", "11-20", "21+"] },
+      { key: "rooms", label: "Oda sayısı", type: "select", required: true, options: ["Stüdyo", "1+0", "1+1", "2+1", "3+1", "4+1", "5+1", "6+1", "7+1", "8+1 ve üzeri"] },
+      { key: "salon", label: "Salon sayısı", type: "number" },
+      { key: "bathrooms", label: "Banyo sayısı", type: "number" },
+      { key: "wc", label: "WC sayısı", type: "number" },
+      { key: "buildingAge", label: "Bina yaşı", type: "select", options: ["0 (Sıfır)", "1-5", "6-10", "11-15", "16-20", "21-30", "31+"] },
       { key: "floor", label: "Bulunduğu kat", type: "text" },
       { key: "floorCount", label: "Kat sayısı", type: "number" },
-      { key: "heating", label: "Isıtma tipi", type: "select", options: ["Doğalgaz (Kombi)", "Merkezi", "Klima", "Soba", "Yerden ısıtma", "Yok"] },
-      { key: "bathrooms", label: "Banyo sayısı", type: "number" },
+      { key: "heating", label: "Isıtma tipi", type: "select", options: ["Yok", "Soba", "Doğalgaz Sobası", "Kat Kaloriferi", "Doğalgaz (Kombi)", "Merkezi", "Merkezi (Pay Ölçer)", "Yerden Isıtma", "Klima", "Güneş Enerjisi", "Jeotermal", "Şömine"] },
       { key: "balcony", label: "Balkon var mı?", type: "bool" },
+      { key: "terrace", label: "Teras var mı?", type: "bool" },
+      { key: "garden", label: "Bahçe var mı?", type: "bool" },
       { key: "furnished", label: "Eşyalı mı?", type: "bool" },
-      { key: "usage", label: "Kullanım durumu", type: "select", options: ["Boş", "Kiracılı", "Mülk sahibi"] },
+      { key: "usage", label: "Kullanım durumu", type: "select", options: ["Boş", "Kiracılı", "Mülk sahibi oturuyor"] },
       { key: "inSite", label: "Site içinde mi?", type: "bool" },
       { key: "siteName", label: "Site / proje adı", type: "text", placeholder: "ör. Bahçeşehir Konakları" },
       { key: "dues", label: "Aidat", type: "number", suffix: "₺" },
       { key: "deposit", label: "Depozito (kiralıkta)", type: "number", suffix: "₺" },
       { key: "facade", label: "Cephe / yön", type: "select", options: ["Kuzey", "Güney", "Doğu", "Batı", "Kuzeydoğu", "Kuzeybatı", "Güneydoğu", "Güneybatı"] },
-      { key: "view", label: "Manzara", type: "select", options: ["Deniz", "Doğa", "Şehir", "Göl", "Boğaz", "Yok"] },
+      { key: "view", label: "Manzara", type: "select", options: ["Deniz", "Doğa", "Şehir", "Göl", "Orman", "Boğaz", "Cadde", "Yok"] },
       { key: "parking", label: "Otopark", type: "select", options: ["Açık Otopark", "Kapalı Otopark", "Açık & Kapalı", "Yok"] },
       { key: "elevator", label: "Asansör var mı?", type: "bool" },
+      { key: "security", label: "Güvenlik var mı?", type: "bool" },
+      { key: "pool", label: "Havuz var mı?", type: "bool" },
+      { key: "gym", label: "Spor salonu var mı?", type: "bool" },
+      { key: "generator", label: "Jeneratör var mı?", type: "bool" },
+      { key: "disabledFriendly", label: "Engelliye uygun mu?", type: "bool" },
       { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
-      { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "İnşaat Firmasından", "Bankadan"] },
-      { key: "deed", label: "Tapu durumu", type: "select", options: ["Kat Mülkiyetli", "Kat İrtifaklı", "Hisseli", "Müstakil Tapulu", "Kooperatif Hisseli"] },
+      { key: "urbanTransform", label: "Kentsel dönüşüme uygun mu?", type: "bool" },
+      { key: "rentalIncome", label: "Aylık kira getirisi", type: "number", suffix: "₺" },
+      { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "İnşaat Firmasından", "Bankadan", "Yetkili Kurumdan"] },
+      { key: "deed", label: "Tapu durumu", type: "select", options: ["Kat Mülkiyetli", "Kat İrtifaklı", "Arsa Tapulu", "Hisseli Tapu", "Müstakil Tapu", "Kooperatif Hisseli", "Bilinmiyor"] },
       { key: "swapReal", label: "Takas / kat karşılığı olur mu?", type: "bool" },
       F.desc
     ]
@@ -1164,6 +1175,33 @@ export function resolveFormKey(path: CategoryNode[]): string {
 
 export function getFormSchema(formKey: string): FormSchema {
   return formSchemas[formKey] ?? formSchemas.alisverisGenel;
+}
+
+// Tüm şemalardaki alanların anahtar → { etiket, suffix } haritası. Yapısal ilan
+// özelliklerini (attributes jsonb) insan-okur biçimde göstermek için kullanılır.
+export const FIELD_LABELS: Record<string, { label: string; suffix?: string }> = (() => {
+  const map: Record<string, { label: string; suffix?: string }> = {};
+  for (const schema of Object.values(formSchemas)) {
+    for (const f of schema.fields) {
+      if (!map[f.key]) map[f.key] = { label: f.label, suffix: f.suffix };
+    }
+  }
+  return map;
+})();
+
+/** attributes jsonb'sini özellik tablosu için [{label, value}] listesine çevirir. */
+export function describeAttributes(attributes?: Record<string, string | number | boolean> | null): Array<{ label: string; value: string }> {
+  if (!attributes) return [];
+  const rows: Array<{ label: string; value: string }> = [];
+  for (const [key, val] of Object.entries(attributes)) {
+    if (key.startsWith("_")) continue; // _leaf/_root iç kullanım
+    if (val === undefined || val === null || val === "") continue;
+    if (["title", "description", "price", "listingType"].includes(key)) continue;
+    const def = FIELD_LABELS[key];
+    const value = typeof val === "boolean" ? (val ? "Evet" : "Hayır") : `${val}${def?.suffix ? " " + def.suffix : ""}`;
+    rows.push({ label: def?.label ?? key, value });
+  }
+  return rows;
 }
 
 // Kategori seçiminden (marka/model/ilan-tipi node'ları) form alanlarını türetir —

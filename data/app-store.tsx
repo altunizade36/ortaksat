@@ -125,6 +125,7 @@ type NewListingInput = Pick<
   | "deliveryNote"
   | "contactMethod"
   | "partnershipMode"
+  | "attributes"
 >;
 
 type PartnershipApplicationInput = {

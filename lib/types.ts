@@ -46,6 +46,9 @@ export type Listing = {
   };
   adAssets?: string[];
   tags: string[];
+  // Yapısal kategori özellikleri (emlak: m²/oda/imar/tapu…). Form alan anahtarıyla
+  // (grossM2, rooms, zoning…) saklanır; filtreleme ve özellik tablosunda kullanılır.
+  attributes?: Record<string, string | number | boolean>;
   price: number;
   currency?: "TRY" | "USD" | "EUR";
   demo?: boolean;

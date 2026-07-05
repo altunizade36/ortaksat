@@ -148,6 +148,9 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       commissionType,
       commissionValue: parsedCommission,
       partnershipMode,
+      // Yapısal özellikleri (m²/oda/imar…) koru — bu ekran serbest-metin düzenler,
+      // alan-bazlı düzenlemez; mevcut attributes silinmemeli.
+      attributes: listing.attributes,
       category: category.trim() || "Genel",
       location: location.trim() || "Türkiye",
       image: uploadedImage || listing.image,

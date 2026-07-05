@@ -6,7 +6,7 @@ import Head from "expo-router/head";
 import { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
 
-import { findCategorySlug } from "@/lib/category-tree";
+import { describeAttributes, findCategorySlug } from "@/lib/category-tree";
 import { useCompare } from "@/lib/compare";
 import { Accordion } from "@/components/accordion";
 import { AgreementCard } from "@/components/agreement-card";
@@ -707,7 +707,12 @@ export default function ListingDetailScreen() {
           </Accordion>
           <Accordion title="Ürün özellikleri" icon="format-list-bulleted">
             <SpecRow label="Kategori" value={currentListing.category} />
+            {currentListing.attributes?.listingType ? <SpecRow label="İlan tipi" value={String(currentListing.attributes.listingType)} /> : null}
             <SpecRow label="Konum" value={currentListing.location} />
+            {/* Yapısal kategori özellikleri (emlak: m²/oda/imar/tapu…) */}
+            {describeAttributes(currentListing.attributes).map((a) => (
+              <SpecRow key={a.label} label={a.label} value={a.value} />
+            ))}
             <SpecRow label="Stok" value={`${currentListing.stockCount} adet`} />
             <SpecRow label="Komisyon" value={currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : moneyIn(commission, currentListing.currency)} />
             <SpecRow label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında ortaklık" : "Satıcı onaylı"} />
