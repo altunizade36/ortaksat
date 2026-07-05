@@ -354,6 +354,58 @@ const AKILLI_EV = ["Apple HomeKit", "Google Home", "Amazon Alexa", "Samsung Smar
 const ILAN_ETIKET = ["Acil", "Yeni", "Fırsat", "Yatırımlık", "Masrafsız", "Pazarlık Payı Var", "Takasa Açık", "Krediye Uygun", "Deniz Manzaralı", "Şehir Merkezinde", "Metroya Yakın", "Sahile Yakın", "Site İçinde", "Eşyalı", "Lüks", "Sıfır", "Yapım Aşamasında", "Hemen Teslim", "İskanlı", "Tapusu Hazır", "Yüksek Kira Getirili"];
 const ETIKET_FIELD: FieldDef = { key: "etiketler", label: "İlan etiketleri", type: "multiselect", options: ILAN_ETIKET };
 
+// İş yeri ortak çekirdek alanları — hem genel işyeri hem alt-tip (restoran/fabrika/
+// ofis) formları paylaşır (etiketler + açıklama alt-formda ayrıca eklenir).
+const ISYERI_CORE: FieldDef[] = [
+  F.title,
+  { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"] },
+  F.price,
+  { key: "grossM2", label: "m² (brüt)", type: "number", required: true, suffix: "m²" },
+  { key: "netM2", label: "m² (net)", type: "number", suffix: "m²" },
+  { key: "rooms", label: "Bölüm / oda sayısı", type: "number" },
+  { key: "wc", label: "WC sayısı", type: "number" },
+  { key: "floor", label: "Bulunduğu kat", type: "text" },
+  { key: "floorCount", label: "Kat sayısı", type: "number" },
+  { key: "ceilingHeight", label: "Tavan yüksekliği", type: "text", suffix: "m" },
+  { key: "buildingAge", label: "Bina yaşı", type: "text" },
+  { key: "heating", label: "Isıtma", type: "select", options: ["Doğalgaz", "Merkezi", "Klima", "Yerden Isıtma", "Yok"] },
+  { key: "deposit", label: "Depozito (kiralıkta)", type: "number", suffix: "₺" },
+  { key: "dues", label: "Aidat", type: "number", suffix: "₺" },
+  { key: "devrenBedeli", label: "Devren bedeli", type: "number", suffix: "₺" },
+  { key: "rentalIncome", label: "Aylık kira getirisi", type: "number", suffix: "₺" },
+  { key: "usage", label: "İşletme durumu", type: "select", options: ["Boş", "Kiracılı", "Faal İşletme", "Sahibi Kullanıyor"] },
+  { key: "isletmeIcerik", label: "Devirde dahil olanlar", type: "multiselect", options: ISYERI_DURUM },
+  { key: "ruhsat", label: "Ruhsat / belgeler", type: "multiselect", options: ISYERI_RUHSAT },
+  { key: "isyeriOzellik", label: "İş yeri özellikleri", type: "multiselect", options: ISYERI_OZELLIK },
+  { key: "caddeUzeri", label: "Cadde üzeri mi?", type: "bool" },
+  { key: "avmIcinde", label: "AVM içinde mi?", type: "bool" },
+  { key: "sanayiSitesi", label: "Sanayi sitesinde mi?", type: "bool" },
+  { key: "aracGirisi", label: "Araç girişine uygun mu?", type: "bool" },
+  { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "Müteahhitten", "Bankadan"] },
+  { key: "deed", label: "Tapu durumu", type: "select", options: ["Kat Mülkiyetli", "Kat İrtifaklı", "Arsa Tapulu", "Hisseli Tapu", "Müstakil Tapu", "Bilinmiyor"] },
+  { key: "swapReal", label: "Takas olur mu?", type: "bool" }
+];
+const RESTORAN_EXTRA: FieldDef[] = [
+  { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m" },
+  { key: "masaSayisi", label: "Masa sayısı", type: "number" },
+  { key: "sandalyeSayisi", label: "Sandalye sayısı", type: "number" },
+  { key: "kapaliKapasite", label: "Kapalı alan kapasitesi", type: "number", suffix: "kişi" },
+  { key: "acikKapasite", label: "Açık alan kapasitesi", type: "number", suffix: "kişi" },
+  { key: "restoranOzellik", label: "Restoran özellikleri", type: "multiselect", options: ["Bahçe", "Teras", "Çocuk Alanı", "Vale", "Paket Servis", "Motor Kurye Alanı", "Bacası Var", "Endüstriyel Mutfak", "Soğuk Oda", "Fırın", "Izgara", "Pizza Fırını", "Hamurhane", "Alkollü Ruhsat", "Canlı Müzik Ruhsatı"] }
+];
+const FABRIKA_EXTRA: FieldDef[] = [
+  { key: "kapaliAlan", label: "Kapalı alan", type: "number", suffix: "m²" },
+  { key: "acikAlan", label: "Açık alan", type: "number", suffix: "m²" },
+  { key: "uretimHatti", label: "Üretim hattı sayısı", type: "number" },
+  { key: "elektrikGucu", label: "Elektrik gücü", type: "text", suffix: "kVA" },
+  { key: "fabrikaOzellik", label: "Fabrika teknik özellikleri", type: "multiselect", options: ["Trafo", "Vinç", "Tır Rampası", "Forklift Alanı", "Yükleme Rampası", "İdari Ofis", "Yemekhane", "Personel Soyunma", "Güvenlik Kulübesi", "Arıtma Tesisi", "Bacalı Üretim", "Gaz Hattı", "Basınçlı Hava Sistemi"] }
+];
+const OFIS_EXTRA: FieldDef[] = [
+  { key: "meetingRooms", label: "Toplantı odası sayısı", type: "number" },
+  { key: "managerRooms", label: "Yönetici odası sayısı", type: "number" },
+  { key: "ofisOzellik", label: "Ofis özellikleri", type: "multiselect", options: ["Açık Ofis", "Kapalı Ofis", "Server Odası", "Klima", "Fiber İnternet", "Kartlı Geçiş", "Resepsiyon", "Bekleme Alanı", "Mutfak", "WC", "Arşiv", "Balkon", "Teras", "Otopark", "Vale", "Concierge"] }
+];
+
 // ---- form schemas (category-specific) ------------------------------------
 export const formSchemas: Record<string, FormSchema> = {
   konut: {
@@ -412,38 +464,22 @@ export const formSchemas: Record<string, FormSchema> = {
   isyeri: {
     key: "isyeri",
     title: "İş yeri bilgileri",
-    fields: [
-      F.title,
-      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"] },
-      F.price,
-      { key: "grossM2", label: "m² (brüt)", type: "number", required: true, suffix: "m²" },
-      { key: "netM2", label: "m² (net)", type: "number", suffix: "m²" },
-      { key: "rooms", label: "Bölüm / oda sayısı", type: "number" },
-      { key: "wc", label: "WC sayısı", type: "number" },
-      { key: "floor", label: "Bulunduğu kat", type: "text" },
-      { key: "floorCount", label: "Kat sayısı", type: "number" },
-      { key: "ceilingHeight", label: "Tavan yüksekliği", type: "text", suffix: "m" },
-      { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m" },
-      { key: "buildingAge", label: "Bina yaşı", type: "text" },
-      { key: "heating", label: "Isıtma", type: "select", options: ["Doğalgaz", "Merkezi", "Klima", "Yerden Isıtma", "Yok"] },
-      { key: "deposit", label: "Depozito (kiralıkta)", type: "number", suffix: "₺" },
-      { key: "dues", label: "Aidat", type: "number", suffix: "₺" },
-      { key: "devrenBedeli", label: "Devren bedeli", type: "number", suffix: "₺" },
-      { key: "rentalIncome", label: "Aylık kira getirisi", type: "number", suffix: "₺" },
-      { key: "usage", label: "İşletme durumu", type: "select", options: ["Boş", "Kiracılı", "Faal İşletme", "Sahibi Kullanıyor"] },
-      { key: "isletmeIcerik", label: "Devirde dahil olanlar", type: "multiselect", options: ISYERI_DURUM },
-      { key: "ruhsat", label: "Ruhsat / belgeler", type: "multiselect", options: ISYERI_RUHSAT },
-      { key: "isyeriOzellik", label: "İş yeri özellikleri", type: "multiselect", options: ISYERI_OZELLIK },
-      { key: "caddeUzeri", label: "Cadde üzeri mi?", type: "bool" },
-      { key: "avmIcinde", label: "AVM içinde mi?", type: "bool" },
-      { key: "sanayiSitesi", label: "Sanayi sitesinde mi?", type: "bool" },
-      { key: "aracGirisi", label: "Araç girişine uygun mu?", type: "bool" },
-      { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "Müteahhitten", "Bankadan"] },
-      { key: "deed", label: "Tapu durumu", type: "select", options: ["Kat Mülkiyetli", "Kat İrtifaklı", "Arsa Tapulu", "Hisseli Tapu", "Müstakil Tapu", "Bilinmiyor"] },
-      { key: "swapReal", label: "Takas olur mu?", type: "bool" },
-      ETIKET_FIELD,
-      F.desc
-    ]
+    fields: [...ISYERI_CORE, { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m" }, ETIKET_FIELD, F.desc]
+  },
+  isyeriRestoran: {
+    key: "isyeriRestoran",
+    title: "Restoran / Cafe bilgileri",
+    fields: [...ISYERI_CORE, ...RESTORAN_EXTRA, ETIKET_FIELD, F.desc]
+  },
+  isyeriFabrika: {
+    key: "isyeriFabrika",
+    title: "Fabrika / üretim tesisi bilgileri",
+    fields: [...ISYERI_CORE, ...FABRIKA_EXTRA, ETIKET_FIELD, F.desc]
+  },
+  isyeriOfis: {
+    key: "isyeriOfis",
+    title: "Ofis / büro bilgileri",
+    fields: [...ISYERI_CORE, ...OFIS_EXTRA, ETIKET_FIELD, F.desc]
   },
   arsa: {
     key: "arsa",
@@ -976,11 +1012,11 @@ const konutBranch = (fk: string): CategoryNode[] => [
 ];
 const isyeriBranch = (fk: string): CategoryNode[] => [
   node("Dükkan & Mağaza", leaves(["Cadde Üzeri Dükkan", "Ana Cadde Dükkanı", "Köşe Dükkan", "Pasaj İçi Dükkan", "AVM Mağazası", "Site Altı Dükkan", "Depolu Dükkan", "Vitrinli Dükkan", "Market", "Ruhsatlı Dükkan"], fk), fk),
-  node("Ofis & Büro", leaves(["Plaza Ofisi", "Kat Ofisi", "Home Office", "Hazır Ofis", "Paylaşımlı Ofis", "Klinik Ofis", "Avukatlık Bürosu", "Muhasebe Bürosu", "Yönetim Ofisi"], fk), fk),
+  node("Ofis & Büro", leaves(["Plaza Ofisi", "Kat Ofisi", "Home Office", "Hazır Ofis", "Paylaşımlı Ofis", "Klinik Ofis", "Avukatlık Bürosu", "Muhasebe Bürosu", "Yönetim Ofisi"], "isyeriOfis"), "isyeriOfis"),
   node("Depo & Antrepo", leaves(["Lojistik Depo", "Soğuk Hava Deposu", "Antrepo", "Raf Sistemli Depo", "Tır Girişli Depo", "Sanayi Deposu", "E-Ticaret Deposu", "Gıda Deposu", "Kapalı Depo", "Açık Depo Alanı"], fk), fk),
-  node("Fabrika & Üretim", leaves(["Fabrika", "Üretim Tesisi", "OSB Fabrikası", "Depolu Fabrika", "Gıda Üretim Tesisi", "Tekstil Fabrikası", "Metal İşleme", "Plastik Üretim", "Mobilya Fabrikası", "Kimya Tesisi", "Paketleme Tesisi"], fk), fk),
-  node("Atölye & İmalathane", leaves(["Sanayi Atölyesi", "Küçük Sanayi Dükkanı", "Marangoz Atölyesi", "Tekstil Atölyesi", "Oto Tamir Atölyesi", "Kaynak Atölyesi", "Mobilya Atölyesi"], fk), fk),
-  node("Restoran & Cafe & Eğlence", leaves(["Restoran", "Cafe", "Lokanta", "Pastane", "Fırın", "Fast Food", "Bar", "Pub", "Gece Kulübü", "Nargile Cafe", "Kahvaltı Salonu", "Yemekhane", "Alkollü Ruhsatlı İşletme"], fk), fk),
+  node("Fabrika & Üretim", leaves(["Fabrika", "Üretim Tesisi", "OSB Fabrikası", "Depolu Fabrika", "Gıda Üretim Tesisi", "Tekstil Fabrikası", "Metal İşleme", "Plastik Üretim", "Mobilya Fabrikası", "Kimya Tesisi", "Paketleme Tesisi"], "isyeriFabrika"), "isyeriFabrika"),
+  node("Atölye & İmalathane", leaves(["Sanayi Atölyesi", "Küçük Sanayi Dükkanı", "Marangoz Atölyesi", "Tekstil Atölyesi", "Oto Tamir Atölyesi", "Kaynak Atölyesi", "Mobilya Atölyesi"], "isyeriFabrika"), "isyeriFabrika"),
+  node("Restoran & Cafe & Eğlence", leaves(["Restoran", "Cafe", "Lokanta", "Pastane", "Fırın", "Fast Food", "Bar", "Pub", "Gece Kulübü", "Nargile Cafe", "Kahvaltı Salonu", "Yemekhane", "Alkollü Ruhsatlı İşletme"], "isyeriRestoran"), "isyeriRestoran"),
   node("Sağlık & Güzellik", leaves(["Klinik", "Muayenehane", "Diş Kliniği", "Güzellik Merkezi", "Kuaför Salonu", "Berber", "Masaj Salonu", "SPA Merkezi", "Fizik Tedavi", "Veteriner Kliniği", "Eczane Yeri"], fk), fk),
   node("Eğitim & Kurs", leaves(["Kreş", "Anaokulu", "Kurs Merkezi", "Dershane", "Etüt Merkezi", "Dil Kursu", "Sürücü Kursu", "Spor Kursu", "Okul Binası"], fk), fk),
   node("Spor & Sosyal Tesis", leaves(["Spor Salonu", "Fitness Salonu", "Pilates Salonu", "Yoga Salonu", "Halı Saha", "Yüzme Havuzu Tesisi", "Düğün Salonu", "Organizasyon Salonu", "Oyun Salonu", "Çocuk Oyun Merkezi"], fk), fk),
