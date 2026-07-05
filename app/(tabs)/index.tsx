@@ -46,6 +46,8 @@ export default function HomeScreen() {
   // (seed=0 iken deterministik momentum sırası → hydration mismatch yok).
   const [shuffleSeed, setShuffleSeed] = useState(0);
   useEffect(() => { setShuffleSeed(Math.floor(Math.random() * 1e9) + 1); }, []);
+  const [mountedGate, setMountedGate] = useState(false);
+  useEffect(() => { setMountedGate(true); }, []);
   // Son gezilen ilanlar (localStorage, istemci-only — SSG hydration güvenli).
   const [recentIds, setRecentIds] = useState<string[]>([]);
   useEffect(() => { setRecentIds(getRecent()); }, []);
@@ -150,6 +152,13 @@ export default function HomeScreen() {
   }
 
   const hasMoreToShow = visibleListings.length < filteredListings.length || marketplaceHasMore;
+
+  // SSG hidrasyon uyuşmazlığını (#418) önler: sunucu + ilk istemci render'ı bu
+  // DETERMİNİSTİK SEO iskeletini gösterir (birebir eşleşir → temiz hidrasyon),
+  // mount sonrası gerçek ana sayfa (masaüstü/mobil düzen) render edilir.
+  if (isWeb && !mountedGate) {
+    return <HomeSeoSkeleton />;
+  }
 
   return (
     <ScrollView
@@ -348,6 +357,64 @@ export default function HomeScreen() {
         </>
       )}
     </ScrollView>
+  );
+}
+
+// Sunucu + ilk istemci paint'inde gösterilen DETERMİNİSTİK SEO iskeleti.
+// Store/rastgele/tarih/ikon-font İÇERMEZ → server===client → #418 yok. Gerçek h1,
+// açıklama, CTA ve kategori iç-bağlantıları taşır (SEO). Mount sonrası gizlenir.
+const SKELETON_CATS: Array<{ slug: string; label: string }> = [
+  { slug: "emlak", label: "Emlak" },
+  { slug: "vasita", label: "Vasıta" },
+  { slug: "elektronik", label: "Elektronik" },
+  { slug: "ev-yasam", label: "Ev & Yaşam" },
+  { slug: "moda", label: "Moda" },
+  { slug: "anne-bebek", label: "Anne & Bebek" },
+  { slug: "spor-outdoor", label: "Spor & Outdoor" },
+  { slug: "hobi-oyun", label: "Hobi & Oyun" }
+];
+
+function HomeSeoSkeleton() {
+  return (
+    <View style={{ backgroundColor: colors.background, flex: 1, paddingHorizontal: 20, paddingTop: 22 }}>
+      <Head>
+        <title>OrtakSat — Komisyonla Ortak Satış Platformu | İlan Ver, Ortak Ol Kazan</title>
+        <meta name="description" content="OrtakSat: ürününü ücretsiz listele, komisyonunu belirle; ortaklar referans linkiyle paylaşıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan." />
+        <link rel="canonical" href="https://ortaksat.com/" />
+      </Head>
+      <View style={{ alignSelf: "center", gap: 16, maxWidth: 900, width: "100%" }}>
+        <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 34, fontWeight: "900", lineHeight: 40 }}>
+          Ürününü ortak satışa aç, <Text style={{ color: colors.primary }}>satışta komisyon kazan.</Text>
+        </Text>
+        <Text style={{ color: colors.muted, fontSize: 16, fontWeight: "600", lineHeight: 24, maxWidth: 640 }}>
+          Ürününü ücretsiz listele, komisyonunu belirle; ortaklar referans linkiyle paylaşıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan. Emlak, vasıta, elektronik, ev & yaşam, moda ve daha fazlası tek platformda.
+        </Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+          <Link href="/create" asChild>
+            <Pressable style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 14 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>İlan Ver</Text>
+            </Pressable>
+          </Link>
+          <Link href="/partner" asChild>
+            <Pressable style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 24, paddingVertical: 14 }}>
+              <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>Ortak Satıcı Ol</Text>
+            </Pressable>
+          </Link>
+        </View>
+        <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 2 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 18, fontWeight: "900", marginTop: 6 }}>
+          Kategoriler
+        </Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          {SKELETON_CATS.map((c) => (
+            <Link key={c.slug} href={`/kategori/${c.slug}`} asChild>
+              <Pressable style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10 }}>
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{c.label}</Text>
+              </Pressable>
+            </Link>
+          ))}
+        </View>
+      </View>
+    </View>
   );
 }
 

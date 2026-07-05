@@ -273,7 +273,7 @@ export function HomeDesktop() {
         <View style={{ alignItems: "stretch", flexDirection: "row", gap: 16 }}>
           <View style={{ backgroundColor: colors.primary, borderRadius: 18, flex: 1, flexDirection: "row", minWidth: 0, overflow: "hidden", paddingHorizontal: 22, paddingVertical: 18 }}>
             <View style={{ flex: 1.4, gap: 10, justifyContent: "center", minWidth: 0 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 21, fontWeight: "900", lineHeight: 26 }}>
+              <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 21, fontWeight: "900", lineHeight: 26 }}>
                 Ortak alın, <Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text>
               </Text>
               <Text numberOfLines={2} style={{ color: "rgba(255,255,255,0.9)", fontSize: 12.5, fontWeight: "600", lineHeight: 17, maxWidth: 380 }}>
