@@ -58,7 +58,9 @@ function RootStack() {
         <Stack.Screen name="profile-edit" options={{ presentation: "modal", title: t("editProfile") }} />
         <Stack.Screen name="notifications" options={{ title: t("notifications") }} />
         <Stack.Screen name="favorites" options={{ title: t("favorites") }} />
-        <Stack.Screen name="chat/[id]" options={{ headerLargeTitle: false, title: t("chat") }} />
+        {/* Sohbet: pazaryeri başlığı (logo+arama) yerine sohbete özel kompakt
+            başlık kullanılır (ekran kendi başlığını çizer) — dikey alan israfı yok. */}
+        <Stack.Screen name="chat/[id]" options={{ headerShown: false, title: t("chat") }} />
         <Stack.Screen name="store/[id]" options={{ headerLargeTitle: false, title: t("sellerStore") }} />
         <Stack.Screen name="listing-edit/[id]" options={{ presentation: "modal", title: t("editListing") }} />
         <Stack.Screen name="listing/[id]" options={{ headerLargeTitle: false, title: t("listingDetail") }} />

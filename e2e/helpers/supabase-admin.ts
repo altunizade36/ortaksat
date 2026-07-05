@@ -114,6 +114,33 @@ export async function cleanupAllE2E(): Promise<{ users: number; listings: number
   return { users: Number(row.users || 0), listings: Number(row.listings || 0) };
 }
 
+/** Satıcı + alıcı + ilan + konuşma + birkaç mesajlı tam senaryo kurar (mesajlaşma UI testi için). */
+export async function seedConversation(sellerId: string, buyerId: string): Promise<{ listingId: string; conversationId: string }> {
+  const lr = await runSql<Array<{ id: string }>>(`
+    insert into listings (owner_id, title, slug, description, price, commission_type, commission_value, category, location, status, partnership_mode, currency)
+    values ('${sellerId}', 'E2E Mesaj Koltuk ${E2E_LISTING_TAG}', 'e2e-msg-${Date.now()}', 'E2E mesaj testi ürünü koltuk takımı temiz konforlu.', 8500, 'rate', 10, 'Ev & Yaşam', 'İstanbul', 'active', 'open', 'TRY')
+    returning id;`);
+  const listingId = lr[0].id;
+  const cr = await runSql<Array<{ id: string }>>(`
+    insert into conversations (id, listing_id, seller_id, buyer_id, participant_ids, status, last_message_at, created_at)
+    values (gen_random_uuid(), '${listingId}', '${sellerId}', '${buyerId}', ARRAY['${sellerId}','${buyerId}']::uuid[], 'open', now(), now())
+    returning id;`);
+  const conversationId = cr[0].id;
+  const lines = [
+    { s: buyerId, r: sellerId, b: "Merhaba, bu koltuk takımı hâlâ mevcut mu?" },
+    { s: sellerId, r: buyerId, b: "Merhaba! Evet, stokta mevcut. Size nasıl yardımcı olabilirim?" },
+    { s: buyerId, r: sellerId, b: "Fiyatta biraz esneklik var mı? Ayrıca teslimat nasıl oluyor?" },
+    { s: sellerId, r: buyerId, b: "Fiyat ilanda güncel. Teslimatı kargo veya elden ayarlayabiliriz." },
+    { s: buyerId, r: sellerId, b: "Harika, düşünüp size döneceğim. Teşekkürler!" }
+  ];
+  for (let i = 0; i < lines.length; i++) {
+    const m = lines[i];
+    await runSql(`insert into messages (id, listing_id, sender_id, receiver_id, body, read, conversation_id, created_at)
+      values (gen_random_uuid(), '${listingId}','${m.s}','${m.r}','${esc(m.b)}', ${i < lines.length - 1}, '${conversationId}', now() + interval '${i} second');`);
+  }
+  return { listingId, conversationId };
+}
+
 /** Auth hız-sınırı sayaçlarını sıfırlar (test tekrar edilebilir olsun).
  * Güvenli: gerçek trafik yokken auth rate-limit satırları yalnızca testlerden gelir. */
 export async function resetAuthRateLimits(): Promise<void> {
