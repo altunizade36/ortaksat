@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter, type Href } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
@@ -74,6 +74,8 @@ export default function CategoryLandingScreen() {
   // Kategoriye özel özellik filtreleri (İlan tipi, Oda, İmar, Tapu…): şemadaki
   // tekli-seçim (select) alanlar filtre çipi olur. Değerler OR'lanır.
   const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
+  const [m2Min, setM2Min] = useState("");
+  const [m2Max, setM2Max] = useState("");
 
   const trail = useMemo(() => (slug ? findTrail(categoryTree, slug) : undefined), [categoryTree, slug]);
   const node = trail ? trail[trail.length - 1] : undefined;
@@ -84,6 +86,13 @@ export default function CategoryLandingScreen() {
     if (!trail) return [];
     const schema = getFormSchema(resolveFormKey(trail));
     return schema.fields.filter((f) => f.type === "select" && (f.options?.length ?? 0) >= 2 && (f.options?.length ?? 0) <= 16 && !["seller"].includes(f.key));
+  }, [trail]);
+
+  const minM2 = m2Min.trim() ? Number(m2Min) : null;
+  const maxM2 = m2Max.trim() ? Number(m2Max) : null;
+  const hasM2 = useMemo(() => {
+    if (!trail) return false;
+    return getFormSchema(resolveFormKey(trail)).fields.some((f) => ["grossM2", "m2", "netM2", "totalGrossM2", "closedM2"].includes(f.key));
   }, [trail]);
 
   function toggleAttr(key: string, val: string) {
@@ -112,6 +121,14 @@ export default function CategoryLandingScreen() {
         const ok = Array.isArray(have) ? have.some((v) => want.includes(String(v))) : want.includes(String(have ?? ""));
         if (!ok) return false;
       }
+      // m² aralığı: ilanın en uygun m² değeri (brüt/net/toplam) min-max içinde olmalı.
+      if (minM2 !== null || maxM2 !== null) {
+        const a = l.attributes ?? {};
+        const m2 = Number(a.grossM2 ?? a.m2 ?? a.netM2 ?? a.totalGrossM2 ?? a.closedM2 ?? 0);
+        if (!m2) return false;
+        if (minM2 !== null && m2 < minM2) return false;
+        if (maxM2 !== null && m2 > maxM2) return false;
+      }
       return true;
     });
     out.sort((a, b) => {
@@ -122,10 +139,10 @@ export default function CategoryLandingScreen() {
       return Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || commissionAmount(b) - commissionAmount(a);
     });
     return out;
-  }, [listings, node, band, onlyOpen, sortMode, attrFilters]);
+  }, [listings, node, band, onlyOpen, sortMode, attrFilters, minM2, maxM2]);
 
-  useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters]);
-  useEffect(() => { setAttrFilters({}); }, [slug]);
+  useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, minM2, maxM2]);
+  useEffect(() => { setAttrFilters({}); setM2Min(""); setM2Max(""); }, [slug]);
 
   const cardWidth = responsiveGrid({ available: Math.min(width, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
   const title = node ? `${node.label} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
@@ -237,9 +254,19 @@ export default function CategoryLandingScreen() {
           </ScrollView>
 
           {/* Kategoriye özel özellik filtreleri (emlak: İlan tipi, Oda, İmar, Tapu…) */}
-          {filterFields.length ? (
-            <Accordion title={`Detaylı filtreler${Object.keys(attrFilters).length ? ` · ${Object.values(attrFilters).reduce((a, v) => a + v.length, 0)} seçili` : ""}`} icon="tune-variant">
+          {filterFields.length || hasM2 ? (
+            <Accordion title={`Detaylı filtreler${Object.keys(attrFilters).length || minM2 !== null || maxM2 !== null ? ` · ${Object.values(attrFilters).reduce((a, v) => a + v.length, 0) + (minM2 !== null || maxM2 !== null ? 1 : 0)} seçili` : ""}`} icon="tune-variant">
               <View style={{ gap: 12 }}>
+                {hasM2 ? (
+                  <View style={{ gap: 6 }}>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>m² aralığı</Text>
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                      <TextInput value={m2Min} onChangeText={setM2Min} keyboardType="numeric" placeholder="En az" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 12 }} />
+                      <Text style={{ color: colors.subtle, fontSize: 13 }}>—</Text>
+                      <TextInput value={m2Max} onChangeText={setM2Max} keyboardType="numeric" placeholder="En çok" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 12 }} />
+                    </View>
+                  </View>
+                ) : null}
                 {filterFields.map((f) => (
                   <View key={f.key} style={{ gap: 6 }}>
                     <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{f.label}</Text>
@@ -256,8 +283,8 @@ export default function CategoryLandingScreen() {
                     </View>
                   </View>
                 ))}
-                {Object.keys(attrFilters).length ? (
-                  <Pressable onPress={() => setAttrFilters({})} style={{ alignSelf: "flex-start", borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 }}>
+                {Object.keys(attrFilters).length || minM2 !== null || maxM2 !== null ? (
+                  <Pressable onPress={() => { setAttrFilters({}); setM2Min(""); setM2Max(""); }} style={{ alignSelf: "flex-start", borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 }}>
                     <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>Filtreleri temizle</Text>
                   </Pressable>
                 ) : null}
