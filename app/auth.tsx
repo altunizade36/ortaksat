@@ -421,16 +421,16 @@ export default function AuthScreen() {
               <View style={{ gap: 14 }}>
                 {mode === "register" ? (
                   <View style={{ flexDirection: "row", gap: 10 }}>
-                    <View style={{ flex: 1 }}><DeskAuthField icon="account-outline" label="Ad" value={firstName} onChangeText={setFirstName} placeholder="Ayşe" /></View>
-                    <View style={{ flex: 1 }}><DeskAuthField icon="account-outline" label="Soyad" value={lastName} onChangeText={setLastName} placeholder="Demir" /></View>
+                    <View style={{ flex: 1 }}><DeskAuthField icon="account-outline" label="Ad" value={firstName} onChangeText={setFirstName} placeholder="Ayşe" autoComplete="name" /></View>
+                    <View style={{ flex: 1 }}><DeskAuthField icon="account-outline" label="Soyad" value={lastName} onChangeText={setLastName} placeholder="Demir" autoComplete="name" /></View>
                   </View>
                 ) : null}
-                <DeskAuthField icon="email-outline" label="E-posta" value={email} onChangeText={setEmail} placeholder="ornek@eposta.com" />
-                {mode !== "reset" ? <DeskAuthField icon="lock-outline" label="Şifre" value={password} onChangeText={setPassword} placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} onSubmitEditing={mode === "login" ? login : undefined} /> : null}
+                <DeskAuthField icon="email-outline" label="E-posta" value={email} onChangeText={setEmail} placeholder="ornek@eposta.com" autoComplete="email" />
+                {mode !== "reset" ? <DeskAuthField icon="lock-outline" label="Şifre" value={password} onChangeText={setPassword} placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} onSubmitEditing={mode === "login" ? login : undefined} autoComplete={mode === "register" ? "password-new" : "password"} /> : null}
                 {mode === "register" ? <PasswordStrengthMeter password={password} /> : null}
                 {mode === "register" ? (
                   <View style={{ gap: 6 }}>
-                    <DeskAuthField icon="lock-check-outline" label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Şifreni tekrar gir" secure showPassword={showPassword} onSubmitEditing={register} />
+                    <DeskAuthField icon="lock-check-outline" label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Şifreni tekrar gir" secure showPassword={showPassword} onSubmitEditing={register} autoComplete="password-new" />
                     {!passwordsMatch ? <Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "700" }}>Şifreler uyuşmuyor.</Text> : null}
                   </View>
                 ) : null}
@@ -649,7 +649,11 @@ export default function AuthScreen() {
   );
 }
 
-function DeskAuthField({ icon, label, value, onChangeText, placeholder, secure, showToggle, showPassword, onToggle, onSubmitEditing }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; onChangeText: (v: string) => void; placeholder?: string; secure?: boolean; showToggle?: boolean; showPassword?: boolean; onToggle?: () => void; onSubmitEditing?: () => void }) {
+function DeskAuthField({ icon, label, value, onChangeText, placeholder, secure, showToggle, showPassword, onToggle, onSubmitEditing, autoComplete }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; onChangeText: (v: string) => void; placeholder?: string; secure?: boolean; showToggle?: boolean; showPassword?: boolean; onToggle?: () => void; onSubmitEditing?: () => void; autoComplete?: "email" | "name" | "password" | "password-new" | "off" }) {
+  const isEmail = icon === "email-outline";
+  // Şifre yöneticileri (password manager) ve autofill için doğru name/autoComplete.
+  const ac = autoComplete ?? (isEmail ? "email" : secure ? "password" : "off");
+  const nameAttr = isEmail ? "email" : ac === "password-new" ? "new-password" : secure ? "current-password" : "name";
   return (
     <View style={{ gap: 6 }}>
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
@@ -658,8 +662,13 @@ function DeskAuthField({ icon, label, value, onChangeText, placeholder, secure, 
         <TextInput
           value={value}
           onChangeText={onChangeText}
-          autoCapitalize={icon === "email-outline" ? "none" : "sentences"}
+          autoCapitalize={isEmail ? "none" : "sentences"}
           autoCorrect={false}
+          keyboardType={isEmail ? "email-address" : "default"}
+          autoComplete={ac}
+          textContentType={isEmail ? "emailAddress" : ac === "password-new" ? "newPassword" : secure ? "password" : "name"}
+          accessibilityLabel={label}
+          {...({ name: nameAttr, "aria-label": label, inputMode: isEmail ? "email" : undefined } as Record<string, unknown>)}
           secureTextEntry={secure && !showPassword}
           placeholder={placeholder}
           placeholderTextColor={colors.subtle}
@@ -712,6 +721,10 @@ function Field({
           keyboardType={keyboardType}
           autoCapitalize={keyboardType === "email-address" ? "none" : "words"}
           autoCorrect={keyboardType !== "email-address"}
+          autoComplete={keyboardType === "email-address" ? "email" : secureTextEntry ? "password" : "off"}
+          textContentType={keyboardType === "email-address" ? "emailAddress" : secureTextEntry ? "password" : "none"}
+          accessibilityLabel={translateCopy(label, language)}
+          {...({ name: keyboardType === "email-address" ? "email" : secureTextEntry ? "current-password" : "text", "aria-label": translateCopy(label, language), inputMode: keyboardType === "email-address" ? "email" : undefined } as Record<string, unknown>)}
           secureTextEntry={hidden}
           placeholder={placeholder ? translateCopy(placeholder, language) : undefined}
           placeholderTextColor={colors.muted}

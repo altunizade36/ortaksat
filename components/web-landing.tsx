@@ -341,6 +341,14 @@ export function WebFooter() {
                   onChangeText={setEmail}
                   placeholder="E-posta adresin"
                   placeholderTextColor="rgba(255,255,255,0.55)"
+                  accessibilityLabel="Bülten için e-posta adresin"
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  autoComplete="email"
+                  textContentType="emailAddress"
+                  {...({ name: "newsletter_email", "aria-label": "Bülten için e-posta adresin", inputMode: "email" } as Record<string, unknown>)}
+                  onSubmitEditing={() => { if (emailValid) { const e = email; setSubscribed(true); void subscribeNewsletterLive(e); } }}
+                  returnKeyType="go"
                   style={{ backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.25)", borderRadius: 10, borderWidth: 1, color: "#FFFFFF", flex: 1, fontSize: 14, fontWeight: "600", height: 44, paddingHorizontal: 14 }}
                 />
                 <Pressable disabled={!emailValid} onPress={() => { const e = email; setSubscribed(true); void subscribeNewsletterLive(e); }} style={{ alignItems: "center", backgroundColor: emailValid ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
