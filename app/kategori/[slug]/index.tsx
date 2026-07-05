@@ -74,8 +74,8 @@ export default function CategoryLandingScreen() {
   // Kategoriye özel özellik filtreleri (İlan tipi, Oda, İmar, Tapu…): şemadaki
   // tekli-seçim (select) alanlar filtre çipi olur. Değerler OR'lanır.
   const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
-  const [m2Min, setM2Min] = useState("");
-  const [m2Max, setM2Max] = useState("");
+  // Sayısal aralık filtreleri kategoriye göre: emlak → m², vasıta → km/yıl.
+  const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>({});
 
   const trail = useMemo(() => (slug ? findTrail(categoryTree, slug) : undefined), [categoryTree, slug]);
   const node = trail ? trail[trail.length - 1] : undefined;
@@ -96,12 +96,18 @@ export default function CategoryLandingScreen() {
     });
   }, [trail]);
 
-  const minM2 = m2Min.trim() ? Number(m2Min) : null;
-  const maxM2 = m2Max.trim() ? Number(m2Max) : null;
-  const hasM2 = useMemo(() => {
-    if (!trail) return false;
-    return getFormSchema(resolveFormKey(trail)).fields.some((f) => ["grossM2", "m2", "netM2", "totalGrossM2", "closedM2"].includes(f.key));
+  // Kategoride bulunan sayısal-aralık alanları (m² / km / yıl). Aynı etiket bir kez.
+  const NUM_FILTERS: Array<{ key: string; label: string; suffix?: string }> = [
+    { key: "grossM2", label: "m²" }, { key: "m2", label: "m²" }, { key: "km", label: "Kilometre", suffix: "km" }, { key: "year", label: "Yıl" }
+  ];
+  const numFields = useMemo(() => {
+    if (!trail) return [] as typeof NUM_FILTERS;
+    const keys = new Set(getFormSchema(resolveFormKey(trail)).fields.map((f) => f.key));
+    const seenLabel = new Set<string>();
+    return NUM_FILTERS.filter((f) => keys.has(f.key) && !seenLabel.has(f.label) && (seenLabel.add(f.label), true));
   }, [trail]);
+  const numActiveCount = numFields.filter((f) => (numRange[f.key]?.min ?? "").trim() || (numRange[f.key]?.max ?? "").trim()).length;
+  const setNum = (key: string, side: "min" | "max", v: string) => setNumRange((s) => ({ ...s, [key]: { min: s[key]?.min ?? "", max: s[key]?.max ?? "", [side]: v } }));
 
   function toggleAttr(key: string, val: string) {
     setAttrFilters((s) => {
@@ -129,13 +135,16 @@ export default function CategoryLandingScreen() {
         const ok = Array.isArray(have) ? have.some((v) => want.includes(String(v))) : want.includes(String(have ?? ""));
         if (!ok) return false;
       }
-      // m² aralığı: ilanın en uygun m² değeri (brüt/net/toplam) min-max içinde olmalı.
-      if (minM2 !== null || maxM2 !== null) {
-        const a = l.attributes ?? {};
-        const m2 = Number(a.grossM2 ?? a.m2 ?? a.netM2 ?? a.totalGrossM2 ?? a.closedM2 ?? 0);
-        if (!m2) return false;
-        if (minM2 !== null && m2 < minM2) return false;
-        if (maxM2 !== null && m2 > maxM2) return false;
+      // Sayısal aralık(lar): m² / km / yıl — ilanın değeri min-max içinde olmalı.
+      for (const nf of numFields) {
+        const r = numRange[nf.key];
+        const mn = r?.min?.trim() ? Number(r.min) : null;
+        const mx = r?.max?.trim() ? Number(r.max) : null;
+        if (mn === null && mx === null) continue;
+        const val = Number(l.attributes?.[nf.key] ?? (nf.key === "grossM2" ? l.attributes?.m2 : 0) ?? 0) || 0;
+        if (!val) return false;
+        if (mn !== null && val < mn) return false;
+        if (mx !== null && val > mx) return false;
       }
       return true;
     });
@@ -147,10 +156,10 @@ export default function CategoryLandingScreen() {
       return Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || commissionAmount(b) - commissionAmount(a);
     });
     return out;
-  }, [listings, node, band, onlyOpen, sortMode, attrFilters, minM2, maxM2]);
+  }, [listings, node, band, onlyOpen, sortMode, attrFilters, numRange, numFields]);
 
-  useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, minM2, maxM2]);
-  useEffect(() => { setAttrFilters({}); setM2Min(""); setM2Max(""); }, [slug]);
+  useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, numRange]);
+  useEffect(() => { setAttrFilters({}); setNumRange({}); }, [slug]);
 
   const cardWidth = responsiveGrid({ available: Math.min(width, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
   const title = node ? `${node.label} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
@@ -262,19 +271,19 @@ export default function CategoryLandingScreen() {
           </ScrollView>
 
           {/* Kategoriye özel özellik filtreleri (emlak: İlan tipi, Oda, İmar, Tapu…) */}
-          {filterFields.length || hasM2 ? (
-            <Accordion title={`Detaylı filtreler${Object.keys(attrFilters).length || minM2 !== null || maxM2 !== null ? ` · ${Object.values(attrFilters).reduce((a, v) => a + v.length, 0) + (minM2 !== null || maxM2 !== null ? 1 : 0)} seçili` : ""}`} icon="tune-variant">
+          {filterFields.length || numFields.length ? (
+            <Accordion title={`Detaylı filtreler${Object.keys(attrFilters).length || numActiveCount ? ` · ${Object.values(attrFilters).reduce((a, v) => a + v.length, 0) + numActiveCount} seçili` : ""}`} icon="tune-variant">
               <View style={{ gap: 12 }}>
-                {hasM2 ? (
-                  <View style={{ gap: 6 }}>
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>m² aralığı</Text>
+                {numFields.map((nf) => (
+                  <View key={nf.key} style={{ gap: 6 }}>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{nf.label} aralığı</Text>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                      <TextInput value={m2Min} onChangeText={setM2Min} keyboardType="numeric" placeholder="En az" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 12 }} />
+                      <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" placeholder="En az" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 12 }} />
                       <Text style={{ color: colors.subtle, fontSize: 13 }}>—</Text>
-                      <TextInput value={m2Max} onChangeText={setM2Max} keyboardType="numeric" placeholder="En çok" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 12 }} />
+                      <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" placeholder="En çok" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 12 }} />
                     </View>
                   </View>
-                ) : null}
+                ))}
                 {filterFields.map((f) => (
                   <View key={f.key} style={{ gap: 6 }}>
                     <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{f.label}</Text>
@@ -291,8 +300,8 @@ export default function CategoryLandingScreen() {
                     </View>
                   </View>
                 ))}
-                {Object.keys(attrFilters).length || minM2 !== null || maxM2 !== null ? (
-                  <Pressable onPress={() => { setAttrFilters({}); setM2Min(""); setM2Max(""); }} style={{ alignSelf: "flex-start", borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 }}>
+                {Object.keys(attrFilters).length || numActiveCount ? (
+                  <Pressable onPress={() => { setAttrFilters({}); setNumRange({}); }} style={{ alignSelf: "flex-start", borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 }}>
                     <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>Filtreleri temizle</Text>
                   </Pressable>
                 ) : null}

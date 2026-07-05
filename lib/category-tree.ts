@@ -406,6 +406,14 @@ const OFIS_EXTRA: FieldDef[] = [
   { key: "ofisOzellik", label: "Ofis özellikleri", type: "multiselect", options: ["Açık Ofis", "Kapalı Ofis", "Server Odası", "Klima", "Fiber İnternet", "Kartlı Geçiş", "Resepsiyon", "Bekleme Alanı", "Mutfak", "WC", "Arşiv", "Balkon", "Teras", "Otopark", "Vale", "Concierge"] }
 ];
 
+// ---- vasıta donanım listeleri (arabam.com/Sahibinden seviyesi) -----------
+const ARAC_GUVENLIK = ["ABS", "ESP / VSA", "ASR", "Sürücü Hava Yastığı", "Yolcu Hava Yastığı", "Yan Hava Yastığı", "Perde Hava Yastığı", "Dizel Partikül Filtresi", "Yokuş Kalkış Desteği", "Lastik Basınç Sensörü", "Çocuk Kilidi", "Isofix", "Alarm", "Immobilizer", "Merkezi Kilit", "Kör Nokta Uyarı", "Şerit Takip", "Çarpışma Önleme", "Gece Görüş", "Yaya Algılama"];
+const ARAC_KONFOR = ["Hız Sabitleyici", "Adaptif Hız Sabitleyici", "Geri Görüş Kamerası", "360° Kamera", "Park Sensörü (Arka)", "Park Sensörü (Ön)", "Otomatik Park", "Deri Koltuk", "Kumaş Koltuk", "Hafızalı Koltuklar", "Isıtmalı Koltuklar", "Soğutmalı Koltuklar", "Elektrikli Koltuklar", "Klima", "Dijital / Çift Bölgeli Klima", "Start/Stop", "Anahtarsız Giriş", "Sunroof", "Panoramik Cam Tavan", "Elektrikli Ön Camlar", "Elektrikli Arka Camlar", "Katlanır Aynalar", "Isıtmalı Direksiyon", "Ambiyans Aydınlatma", "Elektrikli Bagaj"];
+const ARAC_MULTIMEDYA = ["Navigasyon", "Apple CarPlay", "Android Auto", "Bluetooth", "USB / AUX", "Dokunmatik Ekran", "Dijital Gösterge", "Head-up Display", "Kablosuz Şarj", "Premium Ses Sistemi", "Arka Eğlence Sistemi"];
+const ARAC_DIS = ["LED Farlar", "Xenon Farlar", "Matrix / Adaptif Far", "Sis Farları", "Far Yıkama", "Alaşım Jant", "Hardtop", "Römork / Çeki Demiri", "Yağmur Sensörü", "Otomatik Katlanır Ayna", "Krom Paket"];
+const ARAC_ETIKET = ["Sıfır", "Garantili", "Değişensiz", "Boyasız", "Tramersiz", "Faturalı", "Takasa Uygun", "Acil Satılık", "Klasik / Koleksiyon", "Engelli Kullanımına Uygun", "İlk Sahibinden"];
+const VASITA_ETIKET_FIELD: FieldDef = { key: "etiketler", label: "İlan etiketleri", type: "multiselect", options: ARAC_ETIKET };
+
 // ---- form schemas (category-specific) ------------------------------------
 export const formSchemas: Record<string, FormSchema> = {
   konut: {
@@ -733,14 +741,22 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp" },
       { key: "engineCc", label: "Motor hacmi", type: "text", suffix: "cc" },
       { key: "color", label: "Renk", type: "select", options: CAR_COLORS },
-      { key: "traction", label: "Çekiş", type: "select", options: ["Önden Çekiş", "Arkadan İtiş", "4x4"] },
+      { key: "traction", label: "Çekiş", type: "select", options: ["Önden Çekiş", "Arkadan İtiş", "4x4 / AWD"] },
+      { key: "seats", label: "Koltuk sayısı", type: "select", options: ["2", "4", "5", "6", "7", "8", "8+"] },
       F.garanti,
-      { key: "damage", label: "Hasar kaydı", type: "select", options: ["Yok", "Var", "Ağır Hasar Kayıtlı"] },
-      { key: "paint", label: "Boya / değişen", type: "text", placeholder: "Örn. Tamamı orijinal" },
-      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden"] },
+      { key: "damage", label: "Ağır hasar kaydı", type: "select", options: ["Yok", "Var", "Ağır Hasar Kayıtlı"] },
+      { key: "tramer", label: "Tramer tutarı", type: "text", suffix: "₺", placeholder: "ör. 0 / 15.000" },
+      { key: "paint", label: "Boya / değişen özeti", type: "text", placeholder: "Örn. Tamamı orijinal / 2 parça boyalı" },
+      { key: "plate", label: "Plaka / uyruk", type: "select", options: ["Türkiye Plakalı", "Yabancı Plakalı", "Mavi Plaka (Ticari)"] },
+      { key: "safetyFeatures", label: "Güvenlik donanımı", type: "multiselect", options: ARAC_GUVENLIK },
+      { key: "comfortFeatures", label: "İç donanım & konfor", type: "multiselect", options: ARAC_KONFOR },
+      { key: "mediaFeatures", label: "Multimedya", type: "multiselect", options: ARAC_MULTIMEDYA },
+      { key: "exteriorFeatures", label: "Dış donanım", type: "multiselect", options: ARAC_DIS },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"] },
       F.price,
       F.takas,
       { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
+      VASITA_ETIKET_FIELD,
       F.desc
     ]
   },
@@ -749,10 +765,20 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Motosiklet bilgileri",
     fields: [
       F.title, { key: "brand", label: "Marka", type: "select", required: true, options: MOTO_BRANDS }, F.model,
+      { key: "motoType", label: "Motosiklet tipi", type: "select", options: ["Naked", "Sport", "Touring", "Chopper", "Cruiser", "Enduro / Cross", "Scooter", "Cub", "ATV", "Elektrikli", "Trike"] },
       { key: "year", label: "Yıl", type: "number", required: true },
       { key: "km", label: "Kilometre", type: "number", required: true, suffix: "km" },
-      { key: "engineCc", label: "Motor hacmi", type: "text", suffix: "cc" },
-      F.renk, F.garanti, F.price, F.takas, F.desc
+      { key: "engineCc", label: "Motor hacmi", type: "select", options: ["50 cc", "100 cc", "125 cc", "150 cc", "250 cc", "400 cc", "500 cc", "600 cc", "750 cc", "1000 cc", "1000 cc üzeri"] },
+      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"] },
+      { key: "cooling", label: "Soğutma", type: "select", options: ["Hava", "Sıvı", "Yağ"] },
+      { key: "license", label: "Ehliyet sınıfı", type: "select", options: ["A1", "A2", "A", "B (ATV)"] },
+      { key: "color", label: "Renk", type: "select", options: CAR_COLORS },
+      { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Değişen Var", "Hasar Kayıtlı"] },
+      { key: "motoFeatures", label: "Donanım", type: "multiselect", options: ["ABS", "Rölanti Kontrol", "Dijital Gösterge", "LED Far", "USB Şarj", "Yol Bilgisayarı", "Kayışlı", "Zincirli", "Şaftlı", "Sele Isıtma", "Rüzgar Siperi", "Yan Çanta", "Top Case", "Alarm"] },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"] },
+      F.garanti, F.price, F.takas,
+      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
+      VASITA_ETIKET_FIELD, F.desc
     ]
   },
   vasitaGenel: {
