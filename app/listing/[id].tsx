@@ -255,6 +255,11 @@ export default function ListingDetailScreen() {
     .sort((a, b) => b.s - a.s)
     .slice(0, 8)
     .map((x) => x.item);
+  // Yedek: farklı satıcıda benzer bulunamazsa (ör. tüm ilanlar tek satıcıda),
+  // aynı kategorideki diğer aktif ilanları göster (kendisi hariç).
+  const similarFinal = similarListings.length
+    ? similarListings
+    : listings.filter((item) => item.id !== currentListing.id && item.status === "active" && item.category === currentListing.category).slice(0, 8);
 
   function handleJoin() {
     if (isDemo) return demoBlocked();
@@ -763,7 +768,7 @@ export default function ListingDetailScreen() {
 
         <RelatedListingsSection
           cardWidth={relatedCardWidth}
-          listings={similarListings}
+          listings={similarFinal}
           ownersById={(ownerId) => findUser(ownerId)}
           title={translateCopy("Benzer ürünler", language)}
           emptyText={translateCopy("Bu kategoride başka aktif ürün yok.", language)}

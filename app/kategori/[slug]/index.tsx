@@ -122,9 +122,17 @@ export default function CategoryLandingScreen() {
   const items = useMemo(() => {
     if (!node) return [];
     const labels = new Set(descendantLabels(node));
+    // Esnek eşleşme: ilan kategorisi (ör. "Konut - Satılık") ağaç yaprak/düğüm
+    // etiketleriyle birebir tutmayabilir; normalize edip "içerir/içerilir" bakılır.
+    const nlabels = [...labels].map((s) => s.toLocaleLowerCase("tr-TR").trim()).filter((s) => s.length > 2);
+    const matchCat = (cat: string) => {
+      if (labels.has(cat)) return true;
+      const nc = cat.toLocaleLowerCase("tr-TR").trim();
+      return nlabels.some((nl) => nc === nl || nc.includes(nl) || nl.includes(nc));
+    };
     const activeAttrKeys = Object.keys(attrFilters);
     const out = listings.filter((l) => {
-      if (l.status !== "active" || !labels.has(l.category)) return false;
+      if (l.status !== "active" || !matchCat(l.category)) return false;
       if (band && (l.price < band[0] || l.price > band[1])) return false;
       if (onlyOpen && l.partnershipMode !== "open") return false;
       // Özellik filtreleri: her aktif alan için ilanın attribute değeri seçilenlerden

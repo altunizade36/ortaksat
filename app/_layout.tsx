@@ -1,3 +1,4 @@
+import Head from "expo-router/head";
 import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
@@ -34,6 +35,12 @@ function RootStack() {
   return (
     <View style={{ flex: 1 }}>
       <StatusBar style="dark" />
+      {/* Varsayılan <title>/description — sayfaların kendi Head'i (varsa) bunu ezer.
+          Böylece hiçbir sayfa BOŞ başlıkla kalmaz (statik export SEO). */}
+      <Head>
+        <title>OrtakSat — Ortak satış ve ilan platformu</title>
+        <meta name="description" content="OrtakSat: ürünlerini ortak sat, komisyon kazan. Emlak, vasıta, elektronik ve daha fazlası. Aracı platform — ödeme ve teslimat taraflar arasında gerçekleşir." />
+      </Head>
       <GlobalSeo />
       <Stack
         screenOptions={{

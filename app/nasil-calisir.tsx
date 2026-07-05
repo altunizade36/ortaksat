@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import Head from "expo-router/head";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { Accordion } from "@/components/accordion";
@@ -84,6 +85,7 @@ function HowItWorksStatic() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 24, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+      <Head><title>Nasıl Çalışır? — Ortak sat, komisyon kazan | OrtakSat</title><meta name="description" content="OrtakSat nasıl çalışır: ilan ver, ortak satışa aç, komisyonu belirle. Ortaklar ürününü tanıtır, satışta komisyon kazanır. Aracı platform — ödeme taraflar arasında." /></Head>
       {/* Hero */}
       <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: isWideWeb ? "row" : "column", gap: 24, paddingHorizontal: 32, paddingVertical: 32 }}>
         <View style={{ alignItems: "center", flex: 1, justifyContent: "center", minWidth: 0 }}>

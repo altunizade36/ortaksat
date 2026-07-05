@@ -13,7 +13,7 @@
     "quality": "npm run check:encoding && npm run typecheck && npm run doctor",
     "export:android": "expo export --platform android --output-dir dist-check-android",
     "sitemap": "node scripts/generate-sitemap.mjs",
-    "build:web": "node scripts/generate-sitemap.mjs && expo export --platform web --output-dir dist-web",
+    "build:web": "node scripts/generate-sitemap.mjs && expo export --platform web --output-dir dist-web && node scripts/post-export.mjs",
     "serve:web": "npx http-server dist-web -p 8099 -s",
     "doctor": "npx expo-doctor",
     "build:android:preview": "eas build -p android --profile preview",

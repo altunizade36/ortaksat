@@ -145,6 +145,26 @@ type SaleFromLeadInput = {
 const LEGAL_CONSENT_VERSION = "2026-06-11";
 const LEGAL_DOCUMENT_TYPES = ["privacy", "terms", "kvkk", "seller_rules"] as const;
 
+// Supabase/GoTrue İngilizce hata mesajlarını Türkçeye çevirir (site Türkçe).
+function translateAuthError(msg?: string | null): string | undefined {
+  if (!msg) return undefined;
+  const m = msg.toLowerCase();
+  if (m.includes("invalid login credentials")) return "E-posta veya şifre hatalı.";
+  if (m.includes("email not confirmed")) return "E-posta adresin henüz doğrulanmadı. Gelen kutundaki 6 haneli kodu gir.";
+  if (m.includes("already registered") || m.includes("already been registered")) return "Bu e-posta ile zaten bir hesap var. Giriş yapabilirsin.";
+  if (m.includes("password should be at least") || m.includes("password is too short")) return "Şifre çok kısa — en az 8 karakter olmalı.";
+  if (m.includes("weak password") || m.includes("password should contain")) return "Şifre yeterince güçlü değil (büyük/küçük harf, rakam, özel karakter).";
+  if (m.includes("unable to validate email") || m.includes("invalid format") || m.includes("email address") && m.includes("invalid")) return "Geçerli bir e-posta adresi gir.";
+  if (m.includes("for security purposes") || m.includes("rate limit") || m.includes("too many requests")) return "Çok sık denendi. Lütfen biraz sonra tekrar dene.";
+  if (m.includes("token has expired") || m.includes("otp_expired") || m.includes("invalid token") || m.includes("expired or is invalid")) return "Kod hatalı veya süresi dolmuş. Yeniden kod iste.";
+  if (m.includes("signups not allowed") || m.includes("signup is disabled")) return "Yeni kayıtlar şu anda geçici olarak kapalı.";
+  if (m.includes("user not found")) return "Bu e-posta ile kayıt bulunamadı.";
+  if (m.includes("email link is invalid") || m.includes("otp") && m.includes("invalid")) return "Doğrulama bağlantısı/kodu geçersiz. Yeniden dene.";
+  if (m.includes("network") || m.includes("failed to fetch")) return "Bağlantı sorunu. İnternetini kontrol edip tekrar dene.";
+  if (m.includes("provider") && m.includes("not enabled")) return "Bu giriş yöntemi henüz etkin değil.";
+  return msg; // bilinmeyen mesaj — olduğu gibi (nadiren İngilizce görünebilir)
+}
+
 // Google ile (ilk kez) girişte zımni yasal onayı kaydeder: buton altındaki
 // "Google ile devam ederek ... kabul etmiş olursun" bilgilendirmesiyle verilir.
 // localStorage kilidiyle kullanıcı başına yalnız bir kez çalışır (upsert zaten idempotent).
@@ -535,7 +555,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
     }
 
     supabase.auth.getSession().then(({ data, error }) => {
-      if (error) setAuthError(error.message);
+      if (error) setAuthError(translateAuthError(error.message));
       const user = data.session?.user;
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
@@ -876,7 +896,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           email: email.trim(),
           password
         });
-        setAuthError(error?.message);
+        setAuthError(translateAuthError(error?.message));
         if (data.user) {
           const profile = userFromAuth(data.user.id, data.user.phone, data.user.user_metadata?.full_name ?? data.user.email);
           await ensureProfile(profile);
@@ -945,7 +965,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
               typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth"
           }
         });
-        setAuthError(error?.message);
+        setAuthError(translateAuthError(error?.message));
         if (data.session?.user) {
           const profile = userFromAuth(data.session.user.id, data.session.user.phone, displayName);
           await ensureProfile(profile);
@@ -980,7 +1000,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           redirectTo:
             typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth"
         });
-        setAuthError(error?.message);
+        setAuthError(translateAuthError(error?.message));
         return !error;
       },
       async updatePasswordWithEmail(password) {
@@ -992,7 +1012,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           return true;
         }
         const { error } = await supabase.auth.updateUser({ password });
-        setAuthError(error?.message);
+        setAuthError(translateAuthError(error?.message));
         return !error;
       },
       // Şifremi unuttum — KOD ile (link/uygulama-değiştirme yok): e-postaya gelen
@@ -1043,7 +1063,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const token = code.replace(/\D/g, "");
         if (token.length < 6) { setAuthError("6 haneli kodu eksiksiz gir."); return false; }
         const { data, error } = await supabase.auth.verifyOtp({ email: cleanEmail, token, type: "signup" });
-        setAuthError(error?.message);
+        setAuthError(translateAuthError(error?.message));
         if (error || !data.session?.user) return false;
         const displayName = (data.session.user.user_metadata?.full_name as string) || cleanEmail;
         const profile = userFromAuth(data.session.user.id, data.session.user.phone, displayName);
@@ -1064,7 +1084,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           email: cleanEmail,
           options: { emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth" }
         });
-        setAuthError(error?.message);
+        setAuthError(translateAuthError(error?.message));
         return !error;
       },
       async signOut() {
@@ -1078,7 +1098,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         void logActivity("sign_out", { userId: authUser?.id, metadata: { scope: "global" } });
         const { error } = await supabase.auth.signOut({ scope: "global" });
         setAuthUser(null);
-        if (error) { setAuthError(error.message); return false; }
+        if (error) { setAuthError(translateAuthError(error.message)); return false; }
         return true;
       },
       async savePreferences(preferences) {
