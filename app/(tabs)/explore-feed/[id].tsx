@@ -3,12 +3,12 @@ import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Alert, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Alert, Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/components/colors";
-import { commissionAmount, money } from "@/lib/format";
+import { commissionAmount, money, productUrl, shareUrl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { Listing, Review } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -30,9 +30,10 @@ export default function ExploreFeedScreen() {
   const { language } = useLanguage();
   const scrollRef = useRef<ScrollView>(null);
   const {
-    createReview,
+    authError,
     currentUser,
     findUser,
+    isAuthenticated,
     isFavorite,
     joinListing,
     listings,
@@ -46,6 +47,24 @@ export default function ExploreFeedScreen() {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
+  // Klavye açılınca yorum kutusunu klavyenin üstüne kaldır (ekran bozulmasın).
+  const [kbInset, setKbInset] = useState(0);
+  useEffect(() => {
+    if (Platform.OS === "web") {
+      if (typeof window === "undefined" || !window.visualViewport) return;
+      const vv = window.visualViewport;
+      const onResize = () => {
+        const covered = window.innerHeight - vv.height - vv.offsetTop;
+        setKbInset(covered > 90 ? Math.round(covered) : 0);
+      };
+      vv.addEventListener("resize", onResize);
+      vv.addEventListener("scroll", onResize);
+      return () => { vv.removeEventListener("resize", onResize); vv.removeEventListener("scroll", onResize); };
+    }
+    const show = Keyboard.addListener("keyboardDidShow", (e) => setKbInset(e.endCoordinates?.height ?? 0));
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKbInset(0));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const feed = useMemo(() => {
     const active = listings.filter((listing) => listing.status === "active").sort((a, b) => feedScore(b, seed) - feedScore(a, seed));
@@ -72,10 +91,24 @@ export default function ExploreFeedScreen() {
   }
 
   function becomePartner(listing: Listing) {
-    // Önceden burada sahte reachEstimate:300 + uydurma kitle/kanal ile başvuru
-    // gönderiliyordu; satıcı bunları ortağın gerçek erişimi sanıyordu. Artık gerçek
-    // başvuru formunun (kendi kitleni/erişimini girdiğin) olduğu ilan detayına gider.
-    router.push(`/listing/${listing.id}`);
+    if (!isAuthenticated) { router.push("/auth"); return; }
+    const existing = partnerships.find((p) => p.listingId === listing.id && p.partnerId === currentUser.id);
+    if (existing) { router.push(`/listing/${listing.id}`); return; } // zaten ortak → detay/panel
+    if (listing.partnershipMode === "open") {
+      // Anında ortaklık: gerçekten ortak yap, paylaşım linki hazır olsun.
+      const created = joinListing(listing.id);
+      if (created) {
+        Alert.alert(
+          translateCopy("Ortak oldun! 🎉", language),
+          translateCopy("Paylaşım bağlantın hazır. Paylaş düğmesiyle linkini yay; senden gelen satışta komisyonu kazan.", language)
+        );
+      } else {
+        Alert.alert(translateCopy("Ortak olunamadı", language), authError ?? translateCopy("Bu ilana şu an ortak olunamıyor.", language));
+      }
+    } else {
+      // Onay gerektiren ilan: gerçek başvuru formu (kendi kitleni/erişimini girersin) ilan detayında.
+      router.push(`/listing/${listing.id}`);
+    }
   }
 
   function sendProductMessage(listing: Listing) {
@@ -89,8 +122,18 @@ export default function ExploreFeedScreen() {
   }
 
   async function shareListing(listing: Listing) {
-    const url = `https://ortaksat.com/i/${listing.slug}`;
-    await Share.share({ title: listing.title, message: `${listing.title}\n${money(listing.price)}\n${translateCopy("Kazanç", language)}: ${money(commissionAmount(listing))}\n${url}`, url });
+    // Aktif ortaksan referans (komisyon) linkini, değilsen temiz ürün linkini paylaş.
+    // Ürünün OLMAYAN /i/{slug} referans formunu ref'siz paylaşmak anlamsızdı — düzeltildi.
+    const mine = partnerships.find((p) => p.listingId === listing.id && p.partnerId === currentUser.id && p.status === "active");
+    const url = mine ? shareUrl(listing, mine.refCode) : productUrl(listing);
+    const message = mine
+      ? `${listing.title}\n${money(listing.price)}\n${url}`
+      : `${listing.title}\n${money(listing.price)}\n${translateCopy("OrtakSat'ta gör:", language)} ${url}`;
+    try {
+      await Share.share({ title: listing.title, message, url });
+    } catch {
+      // kullanıcı iptal etti / paylaşım desteklenmiyor
+    }
   }
 
   function submitComment(listing: Listing) {
@@ -181,7 +224,7 @@ export default function ExploreFeedScreen() {
               </Text>
             </View>
 
-            <View style={{ bottom: insets.bottom + 18, gap: 10, left: 14, position: "absolute", right: 78 }}>
+            <View style={{ bottom: insets.bottom + 18 + (commentsOpen ? kbInset : 0), gap: 10, left: 14, position: "absolute", right: 78 }}>
               <View style={{ gap: 5 }}>
                 <Text selectable numberOfLines={2} style={{ color: "#FFFFFF", fontSize: 23, fontWeight: "900", lineHeight: 28 }}>
                   {listing.title}
@@ -189,9 +232,20 @@ export default function ExploreFeedScreen() {
                 <Text selectable numberOfLines={commentsOpen ? 4 : 2} style={{ color: "#E6F8F4", fontSize: 13, fontWeight: "700", lineHeight: 19 }}>
                   {listing.description}
                 </Text>
-                <Text selectable numberOfLines={1} style={{ color: "#CFF8EC", fontSize: 12, fontWeight: "900" }}>
-                  {owner?.name ?? translateCopy("Satıcı", language)} {"·"} {owner?.rating ?? 0} {translateCopy("puan", language)} {"·"} {listing.location} {"·"} {translateCopy(listing.category, language)}
-                </Text>
+                <Pressable
+                  onPress={() => owner && router.push({ pathname: "/store/[id]", params: { id: owner.id } })}
+                  accessibilityRole="button"
+                  accessibilityLabel={translateCopy("Satıcı profilini gör", language)}
+                  style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1 })}
+                >
+                  <MaterialCommunityIcons name="storefront-outline" size={14} color="#CFF8EC" />
+                  <Text selectable numberOfLines={1} style={{ color: "#CFF8EC", flexShrink: 1, fontSize: 12, fontWeight: "900" }}>
+                    {owner?.name ?? translateCopy("Satıcı", language)}
+                    {owner && owner.rating > 0 ? ` · ${owner.rating.toFixed(1)} ${translateCopy("puan", language)}` : ` · ${translateCopy("Yeni satıcı", language)}`}
+                    {` · ${listing.location} · ${translateCopy(listing.category, language)}`}
+                  </Text>
+                  <MaterialCommunityIcons name="chevron-right" size={14} color="#CFF8EC" />
+                </Pressable>
               </View>
 
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
@@ -214,9 +268,12 @@ export default function ExploreFeedScreen() {
                     <TextInput
                       value={commentDrafts[listing.id] ?? ""}
                       onChangeText={(value) => setCommentDrafts((items) => ({ ...items, [listing.id]: value }))}
-                      placeholder={translateCopy("Yorum yaz", language)}
+                      autoFocus
+                      returnKeyType="send"
+                      onSubmitEditing={() => submitComment(listing)}
+                      placeholder={translateCopy("Satıcıya mesaj yaz", language)}
                       placeholderTextColor={colors.muted}
-                      style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700", minHeight: 38, paddingHorizontal: 10 }}
+                      style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700", minHeight: 40, paddingHorizontal: 12 }}
                     />
                     <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Yorumu gönder", language)} onPress={() => submitComment(listing)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, height: 38, justifyContent: "center", opacity: pressed ? 0.72 : 1, width: 42 })}>
                       <MaterialCommunityIcons name="send" size={18} color="#FFFFFF" />
@@ -262,9 +319,10 @@ export default function ExploreFeedScreen() {
             </View>
 
             <View style={{ bottom: insets.bottom + 132, gap: 15, position: "absolute", right: 14 }}>
-              <SideAction active={favorited} icon={favorited ? "heart" : "heart-outline"} label={`${listing.favoriteCount}`} a11y={favorited ? "Beğeniyi kaldır" : "Beğen"} onPress={() => toggleFavorite(listing.id)} />
-              <SideAction active={favorited} icon={favorited ? "bookmark" : "bookmark-outline"} label={favorited ? "Kayıtlı" : "Kaydet"} onPress={() => { if (!favorited) toggleFavorite(listing.id); }} />
-              <SideAction icon="comment-text-outline" label={`${reviews.filter((review) => review.listingId === listing.id).length}`} a11y="Yorumlar" onPress={() => setOpenComments((items) => ({ ...items, [listing.id]: !items[listing.id] }))} />
+              {/* Tek favori aksiyonu = KALP. Önceden kalp + ayrı 'Kaydet' vardı; ikisi de
+                  aynı favoriyi tetikleyip birbirini değiştiriyordu (kafa karıştırıcı). */}
+              <SideAction active={favorited} icon={favorited ? "heart" : "heart-outline"} label={favorited ? translateCopy("Favoride", language) : translateCopy("Favori", language)} a11y={favorited ? "Favoriden çıkar" : "Favorilere ekle"} onPress={() => { if (!isAuthenticated) { router.push("/auth"); return; } toggleFavorite(listing.id); }} />
+              <SideAction icon="comment-text-outline" label={`${reviews.filter((review) => review.listingId === listing.id).length}`} a11y="Yorum yaz" onPress={() => setOpenComments((items) => ({ ...items, [listing.id]: !items[listing.id] }))} />
               <SideAction icon="message-text-outline" label="Mesaj" onPress={() => sendProductMessage(listing)} />
               <SideAction icon="share-variant" label="Paylaş" onPress={() => void shareListing(listing)} />
             </View>
