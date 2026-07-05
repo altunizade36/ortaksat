@@ -18,7 +18,7 @@ type AuthMode = "login" | "register" | "reset";
 export default function AuthScreen() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, currentUser, isAuthenticated, resetPasswordWithEmail, signInWithEmail, signInWithGoogle, signUpWithEmail, updatePasswordWithEmail } = useStore();
+  const { authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, signInWithEmail, signInWithGoogle, signUpWithEmail, updatePasswordWithEmail } = useStore();
   const [mode, setMode] = useState<AuthMode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -28,6 +28,27 @@ export default function AuthScreen() {
   const [loading, setLoading] = useState(false);
   const isWideWeb = useIsWideWeb();
   const [showPassword, setShowPassword] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifying, setVerifying] = useState(false);
+
+  async function submitVerifyCode() {
+    if (!pendingVerifyEmail || verifying) return;
+    setVerifying(true);
+    const ok = await verifyEmailCode(pendingVerifyEmail, verifyCode);
+    setVerifying(false);
+    if (ok) {
+      setVerifyCode("");
+      // Oturum açıldı; yukarıdaki effect /hosgeldin veya "/" yönlendirir.
+    } else {
+      Alert.alert("Kod doğrulanamadı", authError ?? "Kod hatalı veya süresi dolmuş olabilir. Tekrar dene ya da kodu yeniden gönder.");
+    }
+  }
+
+  async function resendCode() {
+    if (!pendingVerifyEmail) return;
+    const ok = await resendEmailCode(pendingVerifyEmail);
+    Alert.alert(ok ? "Kod gönderildi" : "Gönderilemedi", ok ? "Yeni doğrulama kodu e-postana gönderildi." : (authError ?? "Kod gönderilemedi, biraz sonra tekrar dene."));
+  }
 
   const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
 
@@ -95,12 +116,11 @@ export default function AuthScreen() {
     setLoading(true);
     const ok = await signUpWithEmail({ email: cleanEmail, password, name });
     setLoading(false);
-    if (ok) {
-      Alert.alert(
-        language === "en" ? "Registration received" : "Kayıt alındı",
-        language === "en" ? "If Supabase email verification is enabled, confirm the link in your inbox. If disabled, your account can be used immediately." : "Supabase e-posta doğrulama açıksa gelen kutundaki bağlantıyı onayla. Doğrulama kapalıysa hesabın hemen kullanılabilir."
-      );
-      setMode("login");
+    // Akış kendini yönetir: oturum açıldıysa (doğrulama kapalı) effect /hosgeldin'e
+    // yönlendirir; kod gerekiyorsa pendingVerifyEmail set olur ve kod ekranı gelir.
+    // Başarısızsa authError zaten formda gösterilir.
+    if (!ok && authError) {
+      Alert.alert(language === "en" ? "Registration failed" : "Kayıt yapılamadı", translateCopy(authError, language));
     }
   }
 
@@ -133,6 +153,44 @@ export default function AuthScreen() {
       ok ? (language === "en" ? "Your new password was saved. You can now sign in with email and the new password." : "Yeni şifren kaydedildi. Bundan sonra e-posta ve yeni şifrenle giriş yapabilirsin.") : authError ?? (language === "en" ? "Make sure you opened the reset link from the app." : "Sıfırlama bağlantısını uygulamadan açtığından emin ol.")
     );
     if (ok) setMode("login");
+  }
+
+  // Kayıt olup e-posta kodunu bekleyen kullanıcı: link/uygulama-değiştirme yok,
+  // aynı ekranda 6 haneli kodu girer. (Supabase "Confirm signup" şablonu {{ .Token }} ile.)
+  if (pendingVerifyEmail) {
+    return (
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, backgroundColor: colors.background }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20 }}>
+          <View style={{ alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, maxWidth: 420, padding: 24, width: "100%" }}>
+            <View style={{ alignItems: "center", gap: 8 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 14, height: 56, justifyContent: "center", width: 56 }}>
+                <MaterialCommunityIcons name="email-check-outline" size={30} color={colors.primaryDark} />
+              </View>
+              <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900", textAlign: "center" }}>E-postanı doğrula</Text>
+              <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 19, textAlign: "center" }}>
+                <Text style={{ fontWeight: "900", color: colors.ink }}>{pendingVerifyEmail}</Text> adresine 6 haneli bir kod gönderdik. Aşağıya gir; giriş otomatik açılır.
+              </Text>
+            </View>
+            <TextInput
+              value={verifyCode}
+              onChangeText={(v) => setVerifyCode(v.replace(/\D/g, "").slice(0, 6))}
+              keyboardType="number-pad"
+              placeholder="______"
+              placeholderTextColor={colors.subtle}
+              maxLength={6}
+              style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, fontSize: 26, fontWeight: "900", letterSpacing: 8, paddingVertical: 14, textAlign: "center" }}
+            />
+            {authError ? <Text style={{ color: colors.accent, fontSize: 12.5, textAlign: "center" }}>{authError}</Text> : null}
+            <PrimaryButton onPress={() => void submitVerifyCode()}>{verifying ? "Doğrulanıyor…" : "Doğrula ve giriş yap"}</PrimaryButton>
+            <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+              <Pressable onPress={() => void resendCode()}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Kodu tekrar gönder</Text></Pressable>
+              <Pressable onPress={() => { clearPendingVerify(); setMode("login"); }}><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text></Pressable>
+            </View>
+            <Text style={{ color: colors.subtle, fontSize: 11.5, lineHeight: 16, textAlign: "center" }}>Kod gelmediyse spam klasörünü kontrol et. Kodu şimdi girmeden de giriş yapıp daha sonra doğrulayabilirsin.</Text>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    );
   }
 
   if (isWideWeb) {

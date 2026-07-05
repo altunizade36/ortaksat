@@ -150,6 +150,8 @@ type AppStore = {
   authError?: string;
   currentUser: User;
   isAuthenticated: boolean;
+  pendingVerifyEmail: string | null;
+  clearPendingVerify: () => void;
   users: User[];
   listings: Listing[];
   marketplaceHasMore: boolean;
@@ -192,6 +194,8 @@ type AppStore = {
   resetPasswordWithEmail: (email: string) => Promise<boolean>;
   updatePasswordWithEmail: (password: string) => Promise<boolean>;
   signInWithGoogle: () => Promise<boolean>;
+  verifyEmailCode: (email: string, code: string) => Promise<boolean>;
+  resendEmailCode: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio">) => Promise<boolean>;
   savePreferences: (preferences: Record<string, boolean | string | number>) => Promise<boolean>;
@@ -345,6 +349,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
   // veriyle Supabase'den gelir. Yalnızca yerel önizlemede (Supabase yokken) demo veri.
   const [authUser, setAuthUser] = useState<User | null>(null);
   const [emailVerified, setEmailVerified] = useState(false);
+  // Kayıt olup henüz e-posta kodunu girmemiş kullanıcının e-postası (kod ekranı için).
+  const [pendingVerifyEmail, setPendingVerifyEmail] = useState<string | null>(null);
   const [users, setUsers] = useState<User[]>(isSupabaseConfigured ? [] : initialUsers);
   const [listings, setListings] = useState<Listing[]>(isSupabaseConfigured ? [] : initialListings);
   const [partnerships, setPartnerships] = useState(isSupabaseConfigured ? [] : initialPartnerships);
@@ -808,6 +814,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
       clearSyncError() { setSyncError(null); },
       currentUser,
       isAuthenticated,
+      pendingVerifyEmail,
+      clearPendingVerify() { setPendingVerifyEmail(null); },
       users,
       listings,
       partnerships,
@@ -924,6 +932,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setAuthUser(profile);
           setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
           void logActivity("sign_up", { userId: profile.id });
+        } else if (!error) {
+          // Oturum dönmedi = Supabase "Confirm signup" açık. Kullanıcıya e-posta
+          // KODU gitti; kod ekranına geçilir (link beklemek/uygulama değiştirmek yok).
+          setPendingVerifyEmail(cleanEmail);
         }
         return !error;
       },
@@ -984,6 +996,40 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
         setAuthError(undefined);
         return true;
+      },
+      // E-posta doğrulama KODU ile: kayıt sonrası kullanıcı e-postasına gelen 6 haneli
+      // kodu aynı ekranda girer; link/uygulama-değiştirme yok. Supabase native (harici
+      // SMS/e-posta şirketi gerekmez). Not: Supabase panelinde "Confirm signup" e-posta
+      // şablonunda {{ .Token }} bulunmalı ki kullanıcıya link değil KOD gitsin.
+      async verifyEmailCode(email, code) {
+        if (!supabase) { setAuthError("Kod doğrulama yalnızca canlı modda çalışır."); return false; }
+        const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
+        const token = code.replace(/\D/g, "");
+        if (token.length < 6) { setAuthError("6 haneli kodu eksiksiz gir."); return false; }
+        const { data, error } = await supabase.auth.verifyOtp({ email: cleanEmail, token, type: "signup" });
+        setAuthError(error?.message);
+        if (error || !data.session?.user) return false;
+        const displayName = (data.session.user.user_metadata?.full_name as string) || cleanEmail;
+        const profile = userFromAuth(data.session.user.id, data.session.user.phone, displayName);
+        await ensureProfile(profile);
+        setAuthUser(profile);
+        setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
+        setPendingVerifyEmail(null);
+        void logActivity("sign_up", { userId: profile.id });
+        return true;
+      },
+      async resendEmailCode(email) {
+        if (!supabase) return false;
+        const rl = await rateLimit("signup");
+        if (!rl.allowed) { setAuthError(rl.reason); return false; }
+        const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
+        const { error } = await supabase.auth.resend({
+          type: "signup",
+          email: cleanEmail,
+          options: { emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth" }
+        });
+        setAuthError(error?.message);
+        return !error;
       },
       async signOut() {
         if (supabase) await supabase.auth.signOut();
@@ -1746,7 +1792,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return favorites.some((item) => item.listingId === listingId && item.userId === currentUser.id);
       }
     };
-  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, messages, notifications, orders, partnerships, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
+  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, messages, notifications, orders, partnerships, pendingVerifyEmail, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
