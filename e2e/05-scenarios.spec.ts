@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { createConfirmedUser, uniqueEmail, runSql, apiSignIn, seedConversation } from "./helpers/supabase-admin";
+import { createConfirmedUser, uniqueEmail, runSql, apiSignIn, seedConversation, resetAuthRateLimits } from "./helpers/supabase-admin";
 
 /**
  * YAZMA akışı: profil düzenle, şifre değiştir, çıkış, mağaza sayfası, arama
@@ -8,6 +8,7 @@ import { createConfirmedUser, uniqueEmail, runSql, apiSignIn, seedConversation }
 const PW = "GucluSifre123!";
 
 async function login(page: Page, email: string) {
+  await resetAuthRateLimits(); // uzun ardışık koşuda signin hız-sınırına takılmasın
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1500);
   await page.getByPlaceholder(/eposta|@/i).first().fill(email);

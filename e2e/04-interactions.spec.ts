@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { createConfirmedUser, uniqueEmail, runSql, E2E_LISTING_TAG } from "./helpers/supabase-admin";
+import { createConfirmedUser, uniqueEmail, runSql, E2E_LISTING_TAG, resetAuthRateLimits } from "./helpers/supabase-admin";
 
 /**
  * YAZMA akışı: alıcı/ortak etkileşimleri — favori (Beğen), ortak olma (Hemen
@@ -21,6 +21,7 @@ async function seedSellerListing(): Promise<{ ownerId: string; listingId: string
 async function loginBuyer(page: Page): Promise<string> {
   const email = uniqueEmail("buyer");
   const buyerId = await createConfirmedUser(email, PW, "E2E Alici");
+  await resetAuthRateLimits();
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1500);
   await page.getByPlaceholder(/eposta|@/i).first().fill(email);

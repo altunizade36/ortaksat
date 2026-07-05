@@ -1,5 +1,5 @@
 import { test, expect, type Page } from "@playwright/test";
-import { createConfirmedUser, uniqueEmail, runSql, E2E_LISTING_TAG } from "./helpers/supabase-admin";
+import { createConfirmedUser, uniqueEmail, runSql, E2E_LISTING_TAG, resetAuthRateLimits } from "./helpers/supabase-admin";
 
 /**
  * YAZMA akışı: giriş + ilan verme. SQL ile onaylı hesap oluşturur (GoTrue hız
@@ -11,6 +11,7 @@ import { createConfirmedUser, uniqueEmail, runSql, E2E_LISTING_TAG } from "./hel
 const PASSWORD = "GucluSifre123!";
 
 async function loginViaUI(page: Page, email: string, password: string) {
+  await resetAuthRateLimits();
   await page.goto("/auth", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(1500);
   await page.getByPlaceholder(/eposta|e-posta|@/i).first().fill(email);
