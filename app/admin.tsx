@@ -9,6 +9,7 @@ import { EmptyState } from "@/components/ui";
 import { commissionAmount, money } from "@/lib/format";
 import { useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince } from "@/lib/locations";
+import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -107,7 +108,7 @@ function AdminScreenInner() {
   const [listingQuery, setListingQuery] = useState("");
   const [bcTitle, setBcTitle] = useState("");
   const [bcBody, setBcBody] = useState("");
-  const [listingFilter, setListingFilter] = useState<"all" | "pending" | "active" | "rejected" | "paused" | "featured">("all");
+  const [listingFilter, setListingFilter] = useState<"all" | "pending" | "active" | "rejected" | "paused" | "featured" | "risky">("all");
   const [userFilter, setUserFilter] = useState<"all" | "active" | "suspended" | "seller" | "staff">("all");
   const [msgFilter, setMsgFilter] = useState<"all" | "risky">("all");
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
@@ -125,7 +126,8 @@ function AdminScreenInner() {
   });
   const shownUsers = uq ? userFiltered.filter((u) => u.name.toLocaleLowerCase("tr-TR").includes(uq) || (u.role ?? "").includes(uq) || (u.status ?? "").includes(uq)) : userFiltered;
 
-  const listingFiltered = listingFilter === "all" ? listings : listingFilter === "featured" ? listings.filter((l) => l.featured) : listingFilter === "pending" ? listings.filter((l) => l.status === "pending_review") : listings.filter((l) => l.status === listingFilter);
+  const riskyListings = useMemo(() => listings.filter((l) => computeListingRisk(l, listings, findUser(l.ownerId)).level === "high"), [listings, findUser]);
+  const listingFiltered = listingFilter === "all" ? listings : listingFilter === "risky" ? riskyListings : listingFilter === "featured" ? listings.filter((l) => l.featured) : listingFilter === "pending" ? listings.filter((l) => l.status === "pending_review") : listings.filter((l) => l.status === listingFilter);
   const shownListings = lq ? listingFiltered.filter((l) => l.title.toLocaleLowerCase("tr-TR").includes(lq) || l.category.toLocaleLowerCase("tr-TR").includes(lq) || (findUser(l.ownerId)?.name ?? "").toLocaleLowerCase("tr-TR").includes(lq) || l.status.includes(lq)) : listingFiltered;
 
   function promptNotify(userId: string, name: string) {
@@ -388,12 +390,28 @@ function AdminScreenInner() {
               { key: "active", label: "Yayında", count: activeListings.length },
               { key: "paused", label: "Askıda", count: listings.filter((l) => l.status === "paused").length },
               { key: "rejected", label: "Reddedilen", count: listings.filter((l) => l.status === "rejected").length },
-              { key: "featured", label: "Öne çıkan", count: listings.filter((l) => l.featured).length }
+              { key: "featured", label: "Öne çıkan", count: listings.filter((l) => l.featured).length },
+              { key: "risky", label: "⚠ Riskli", count: riskyListings.length }
             ]} />
             <Table head={["İLAN", "KATEGORİ", "FİYAT", "SAHİP", "DURUM", "İŞLEM"]} cols={[2.2, 1.2, 1, 1.4, 1, 1.4]}>
-              {shownListings.map((l) => (
+              {shownListings.map((l) => {
+                const risk = computeListingRisk(l, listings, findUser(l.ownerId));
+                const riskColor = risk.level === "high" ? colors.accent : risk.level === "medium" ? colors.warning : colors.success;
+                const riskBg = risk.level === "high" ? colors.accentSoft : risk.level === "medium" ? colors.warningSoft : colors.successSoft;
+                return (
                 <Row key={l.id} cols={[2.2, 1.2, 1, 1.4, 1, 1.2]} cells={[
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
+                  <View style={{ gap: 3 }}>
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                      <Text numberOfLines={1} style={{ color: colors.ink, flexShrink: 1, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>
+                      <View style={{ alignItems: "center", backgroundColor: riskBg, borderRadius: 999, flexDirection: "row", gap: 2, paddingHorizontal: 6, paddingVertical: 1 }}>
+                        <MaterialCommunityIcons name={risk.level === "high" ? "alert-octagon" : risk.level === "medium" ? "alert" : "shield-check"} size={10} color={riskColor} />
+                        <Text style={{ color: riskColor, fontSize: 9.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{risk.score}</Text>
+                      </View>
+                    </View>
+                    {risk.flags.length && risk.level !== "low" ? (
+                      <Text numberOfLines={2} style={{ color: riskColor, fontSize: 10, fontWeight: "700", lineHeight: 13 }}>⚠ {risk.flags.slice(0, 3).join(" · ")}</Text>
+                    ) : null}
+                  </View>,
                   <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
                   <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{money(l.price)}</Text>,
                   <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{findUser(l.ownerId)?.name ?? "—"}</Text>,
@@ -405,7 +423,8 @@ function AdminScreenInner() {
                     <Pressable onPress={() => confirmAction(`"${l.title}" ilanı kalıcı olarak silinsin mi? Bu işlem geri alınamaz.`, () => deleteListing(l.id))}><Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "900" }}>Kalıcı Sil</Text></Pressable>
                   </View>
                 ]} />
-              ))}
+                );
+              })}
             </Table>
           </Panel>
           </View>
