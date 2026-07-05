@@ -50,6 +50,16 @@ export async function apiSignUp(email: string, password: string, fullName: strin
   if (!res.ok) throw new Error(`signup failed ${res.status}: ${(await res.text()).slice(0, 300)}`);
 }
 
+/** GoTrue password grant ile giriş dener; başarılıysa true. Şifre değişikliği doğrulaması için. */
+export async function apiSignIn(email: string, password: string): Promise<boolean> {
+  const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { apikey: ANON, "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email.toLowerCase(), password })
+  });
+  return res.ok;
+}
+
 /** Test kullanıcısının e-postasını onaylar (OTP okumaya gerek kalmadan giriş yapılabilsin). */
 export async function confirmUser(email: string): Promise<void> {
   // confirmed_at generated bir kolon (email_confirmed_at'ten türer) — sadece onu set et.

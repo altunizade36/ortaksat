@@ -43,10 +43,13 @@ function ProfileEditScreenInner() {
   function toggleStore(key: string) {
     setStorePrefs((s) => { const v = !s[key]; void savePreferences({ [`store_${key}`]: v }); return { ...s, [key]: v }; });
   }
-  // Şifre değiştir
+  // Şifre değiştir (mevcut şifre + yeni + tekrar). Güvenlik: Supabase mevcut
+  // şifreyi ister; ayrıca web'de Alert no-op olduğu için satır-içi mesaj gösteririz.
+  const [pwCurrent, setPwCurrent] = useState("");
   const [pwNew, setPwNew] = useState("");
   const [pwNew2, setPwNew2] = useState("");
   const [pwSaving, setPwSaving] = useState(false);
+  const [pwMsg, setPwMsg] = useState<{ tone: "ok" | "err"; text: string } | null>(null);
   const [storeSaving, setStoreSaving] = useState(false);
   // Güvenlik: giriş/oturum geçmişi + tüm cihazlardan çıkış
   const [loginHistory, setLoginHistory] = useState<LoginEvent[]>([]);
@@ -73,15 +76,19 @@ function ProfileEditScreenInner() {
   }
 
   async function changePassword() {
+    setPwMsg(null);
+    if (!pwCurrent) { const t = "Mevcut şifreni gir."; setPwMsg({ tone: "err", text: t }); Alert.alert("Mevcut şifre gerekli", t); return; }
     const s = passwordStrength(pwNew);
-    if (!s.ok) { const miss = s.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", "); Alert.alert("Şifre yeterince güçlü değil", `Ekle: ${miss}.`); return; }
-    if (pwNew !== pwNew2) { Alert.alert("Şifreler uyuşmuyor", "Yeni şifre ile tekrarı aynı olmalı."); return; }
-    if (!isLiveAccount) { Alert.alert("Ön izleme hesabı", "Şifre değişikliği yalnızca canlı hesaplarda geçerlidir."); return; }
+    if (!s.ok) { const miss = s.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", "); const t = `Yeni şifre yeterince güçlü değil. Ekle: ${miss}.`; setPwMsg({ tone: "err", text: t }); Alert.alert("Şifre yeterince güçlü değil", t); return; }
+    if (pwNew !== pwNew2) { const t = "Yeni şifre ile tekrarı aynı olmalı."; setPwMsg({ tone: "err", text: t }); Alert.alert("Şifreler uyuşmuyor", t); return; }
+    if (pwNew === pwCurrent) { const t = "Yeni şifre mevcut şifreden farklı olmalı."; setPwMsg({ tone: "err", text: t }); Alert.alert("Aynı şifre", t); return; }
+    if (!isLiveAccount) { const t = "Şifre değişikliği yalnızca canlı hesaplarda geçerlidir."; setPwMsg({ tone: "err", text: t }); Alert.alert("Ön izleme hesabı", t); return; }
     setPwSaving(true);
-    const res = await changePasswordLive(pwNew);
+    const res = await changePasswordLive(pwNew, pwCurrent);
     setPwSaving(false);
-    if (!res.ok) { Alert.alert("Güncellenemedi", res.error ?? "Şifre güncellenemedi."); return; }
-    setPwNew(""); setPwNew2("");
+    if (!res.ok) { const t = res.error ?? "Şifre güncellenemedi."; setPwMsg({ tone: "err", text: t }); Alert.alert("Güncellenemedi", t); return; }
+    setPwCurrent(""); setPwNew(""); setPwNew2("");
+    setPwMsg({ tone: "ok", text: "Şifren güncellendi. Bir sonraki girişte yeni şifreni kullan." });
     Alert.alert("Şifre güncellendi", "Yeni şifren kaydedildi. Bir sonraki girişte bunu kullan.");
   }
 
@@ -289,11 +296,13 @@ function ProfileEditScreenInner() {
               <View style={{ gap: 16 }}>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Şifre değiştir</Text>
+                  <DeskField label="Mevcut şifren" value={pwCurrent} onChangeText={setPwCurrent} icon="lock-outline" secure />
                   <View style={{ flexDirection: "row", gap: 14 }}>
                     <View style={{ flex: 1 }}><DeskField label="Yeni şifre (güçlü olmalı)" value={pwNew} onChangeText={setPwNew} icon="lock-reset" secure /></View>
                     <View style={{ flex: 1 }}><DeskField label="Yeni şifre (tekrar)" value={pwNew2} onChangeText={setPwNew2} icon="lock-check-outline" secure /></View>
                   </View>
                   <PasswordStrengthMeter password={pwNew} />
+                  {pwMsg ? <Text style={{ color: pwMsg.tone === "ok" ? colors.success : colors.accent, fontSize: 12.5, fontWeight: "800" }}>{pwMsg.text}</Text> : null}
                   <Pressable disabled={pwSaving} onPress={() => void changePassword()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, opacity: pwSaving ? 0.6 : 1, paddingHorizontal: 22, paddingVertical: 12 }}>
                     <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{pwSaving ? "Güncelleniyor…" : "Şifreyi güncelle"}</Text>
                   </Pressable>
@@ -454,9 +463,11 @@ function ProfileEditScreenInner() {
           <>
             <Card>
               <SectionTitle title="Hesap güvenliği" />
-              <DeskField icon="lock-outline" label="Yeni şifre (güçlü olmalı)" secure value={pwNew} onChangeText={setPwNew} placeholder="Büyük/küçük harf, rakam, özel karakter" />
+              <DeskField icon="lock-outline" label="Mevcut şifren" secure value={pwCurrent} onChangeText={setPwCurrent} placeholder="Şu anki şifren" />
+              <DeskField icon="lock-reset" label="Yeni şifre (güçlü olmalı)" secure value={pwNew} onChangeText={setPwNew} placeholder="Büyük/küçük harf, rakam, özel karakter" />
               <PasswordStrengthMeter password={pwNew} />
               <DeskField icon="lock-check-outline" label="Yeni şifre (tekrar)" secure value={pwNew2} onChangeText={setPwNew2} placeholder="Tekrar" />
+              {pwMsg ? <Text style={{ color: pwMsg.tone === "ok" ? colors.success : colors.accent, fontSize: 12.5, fontWeight: "800" }}>{pwMsg.text}</Text> : null}
               <PrimaryButton icon="key-outline" tone="secondary" onPress={() => void changePassword()}>{pwSaving ? "Güncelleniyor" : "Şifreyi güncelle"}</PrimaryButton>
             </Card>
             <LoginHistoryCard history={loginHistory} loading={historyLoading} isLive={isLiveAccount} onRefresh={() => void loadHistory()} onSignOutAll={() => void signOutEverywhere()} signingOutAll={signingOutAll} />

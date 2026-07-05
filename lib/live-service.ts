@@ -87,11 +87,45 @@ export async function subscribeNewsletterLive(email: string): Promise<{ ok: bool
 }
 
 /** Giris yapmis kullanicinin sifresini gunceller (Supabase Auth). */
-export async function changePasswordLive(newPassword: string): Promise<{ ok: boolean; error?: string }> {
+export async function changePasswordLive(newPassword: string, currentPassword?: string): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: "Canlı bağlantı yok." };
-  const { error } = await supabase.auth.updateUser({ password: newPassword });
-  if (error) return { ok: false, error: error.message };
-  return { ok: true };
+  // Supabase "secure password change" AÇIK: mevcut şifre GEREKLİ. supabase-js
+  // updateUser bunu iletmediği için GoTrue PUT /user'a current_password ile
+  // doğrudan istek atıyoruz (aktif oturumun token'ıyla).
+  const { data: { session } } = await supabase.auth.getSession();
+  if (!session?.access_token) return { ok: false, error: "Oturum bulunamadı. Lütfen tekrar giriş yap." };
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const anon = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !anon) {
+    // Yedek: eski akış (mevcut şifre gerektirmiyorsa çalışır).
+    const { error } = await supabase.auth.updateUser({ password: newPassword });
+    return error ? { ok: false, error: translatePwError(error.message) } : { ok: true };
+  }
+  try {
+    const res = await fetch(`${url}/auth/v1/user`, {
+      method: "PUT",
+      headers: { apikey: anon, Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+      body: JSON.stringify({ password: newPassword, current_password: currentPassword })
+    });
+    if (res.ok) {
+      // Yeni parola sonrası oturumu tazele (mevcut token geçerli kalır ama temiz olsun).
+      await supabase.auth.refreshSession().catch(() => undefined);
+      return { ok: true };
+    }
+    const body = (await res.json().catch(() => ({}))) as { msg?: string; error_code?: string; message?: string };
+    return { ok: false, error: translatePwError(body.error_code || body.msg || body.message || "") };
+  } catch {
+    return { ok: false, error: "Bağlantı hatası. Lütfen tekrar dene." };
+  }
+}
+
+function translatePwError(msg: string): string {
+  const m = msg.toLowerCase();
+  if (m.includes("current_password") || m.includes("current password")) return "Mevcut şifren hatalı.";
+  if (m.includes("should be different") || m.includes("different from the old")) return "Yeni şifre mevcut şifreden farklı olmalı.";
+  if (m.includes("weak") || m.includes("at least")) return "Yeni şifre yeterince güçlü değil.";
+  if (m.includes("reauth") || m.includes("nonce")) return "Güvenlik doğrulaması gerekli. Lütfen çıkış yapıp tekrar giriş yap.";
+  return msg || "Şifre güncellenemedi.";
 }
 
 /** Admin: birden cok kullaniciya ayni bildirimi ekler (duyuru). */
