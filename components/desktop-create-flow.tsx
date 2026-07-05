@@ -15,8 +15,9 @@ import { formatLocation, getProvince } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
 import { autoFillListing } from "@/lib/listing-autofill";
 import { categoryRisk, moderateListingText, MODERATION_MESSAGES, scanTextLocal } from "@/lib/moderation";
+import { computeListingRisk } from "@/lib/risk";
 import { rateLimit } from "@/lib/rate-limit";
-import type { CommissionType, PartnershipMode } from "@/lib/types";
+import type { CommissionType, Listing, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 
@@ -27,7 +28,7 @@ type Values = Record<string, string | boolean | string[]>;
 
 export function DesktopCreateFlow() {
   const router = useRouter();
-  const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser } = useStore();
+  const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, listings } = useStore();
   const [step, setStep] = useState(0);
   const [path, setPath] = useState<CategoryNode[]>([]);
   const [values, setValues] = useState<Values>({});
@@ -165,8 +166,8 @@ export function DesktopCreateFlow() {
         return;
       }
       const catVerdict = categoryRisk(path.map((p) => p.label).concat(leafLabel));
-      const verdict = kwVerdict === "review" || catVerdict === "review" ? "review" : "none";
-      const statusOverride = verdict === "review" ? ("pending_review" as const) : undefined;
+      let verdict = kwVerdict === "review" || catVerdict === "review" ? "review" : "none";
+      let statusOverride: "pending_review" | undefined = verdict === "review" ? "pending_review" : undefined;
 
       // "Diğer" seçildiyse kategori önerisi olarak admin incelemesine düşür.
       if (path[0]?.label === "Diğer") {
@@ -216,6 +217,17 @@ export function DesktopCreateFlow() {
         commission: Number(commissionValue) || 0,
         currency
       });
+
+      // Çok sinyalli risk-puanı (fiyat anomalisi, mükerrer, iletişim spam'i, gerçek
+      // dışı komisyon…): YÜKSEK risk otomatik admin incelemesine (pending_review) düşer.
+      const riskDraft = {
+        id: "draft", ownerId: currentUser?.id ?? "", title: v.clean.title || leafLabel,
+        description: description || auto.description, salesPitch: detailLines, price,
+        category: leafLabel || path[0]?.label || "Genel", commissionType, commissionValue: Number(commissionValue) || 0,
+        adAssets: uploadedImages.slice(1, 5), status: "active"
+      } as unknown as Listing;
+      const risk = computeListingRisk(riskDraft, listings, currentUser);
+      if (risk.level === "high" && !statusOverride) { verdict = "review"; statusOverride = "pending_review"; }
 
       createListing({
         title: v.clean.title || leafLabel,
