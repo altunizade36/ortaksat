@@ -92,7 +92,7 @@ function HowItWorksStatic() {
           <NetworkVisual />
         </View>
         <View style={{ alignItems: isWideWeb ? "center" : "flex-start", flex: 1.1, gap: 14, minWidth: 0 }}>
-          <Text style={{ color: colors.ink, fontSize: 32, fontWeight: "900", lineHeight: 38, textAlign: isWideWeb ? "center" : "left" }}>OrtakSat nasıl çalışır?</Text>
+          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 32, fontWeight: "900", lineHeight: 38, textAlign: isWideWeb ? "center" : "left" }}>OrtakSat nasıl çalışır?</Text>
           <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 23, maxWidth: 520, textAlign: isWideWeb ? "center" : "left" }}>OrtakSat, ürününüzü daha fazla kişiye ulaştırmanızı ve komisyonla birlikte kazanmanızı sağlayan güvenli bir ortak satış platformudur.</Text>
           <View style={{ flexDirection: "row", gap: 12 }}>
             <Link href="/create" asChild>

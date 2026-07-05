@@ -70,7 +70,7 @@ export function WebHero({
           <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Ortak satış platformu</Text>
         </View>
 
-        <Text style={{ color: colors.ink, fontSize: 38, fontWeight: "900", lineHeight: 44 }}>
+        <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 38, fontWeight: "900", lineHeight: 44 }}>
           Ürününü ortak satışa aç.{"\n"}
           <Text style={{ color: colors.primary }}>Satış yapabilecek kişilerle eşleş.</Text>
         </Text>

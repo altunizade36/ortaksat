@@ -513,7 +513,7 @@ export default function ListingDetailScreen() {
             <StatusPill label={currentListing.partnershipMode === "open" ? "Anında ortaklık" : "Satıcı onaylı"} tone={currentListing.partnershipMode === "open" ? "success" : "warning"} />
           </View>
 
-          <Text selectable style={{ color: colors.ink, fontSize: 23, fontWeight: "900", lineHeight: 29 }}>{currentListing.title}</Text>
+          <Text selectable accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 23, fontWeight: "900", lineHeight: 29 }}>{currentListing.title}</Text>
 
           <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             {owner?.rating ? (

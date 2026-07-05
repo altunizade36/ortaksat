@@ -91,7 +91,7 @@ export default function CategoriesPage() {
           <View style={{ alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
             <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Kategoriler</Text>
           </View>
-          <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>İlgilendiğin kategoriyi keşfet, kazancını artır.</Text>
+          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>İlgilendiğin kategoriyi keşfet, kazancını artır.</Text>
           <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 540 }}>Kategorilere göz at, ortak satışla kazanmaya başla.</Text>
           <View style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, maxWidth: 520, paddingLeft: 14, paddingRight: 6 }}>
             <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
