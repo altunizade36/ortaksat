@@ -96,6 +96,9 @@ export default function ListingDetailScreen() {
   const [reviewRating, setReviewRating] = useState(5);
   const [activeImage, setActiveImage] = useState(0);
   const [lightbox, setLightbox] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
+  const [reportReason, setReportReason] = useState("");
+  const [reportDetail, setReportDetail] = useState("");
   const [zoomed, setZoomed] = useState(false);
   const swipeStartX = useRef(0);
   // Ortak referans atfı: bu ilana hangi ortağın yönlendirdiği (varsa).
@@ -371,9 +374,12 @@ export default function ListingDetailScreen() {
     Alert.alert(translateCopy("Yorum eklendi", language), translateCopy("Puan ve yorum güven alanında görünecek.", language));
   }
 
-  async function handleReport() {
-    const ok = await reportListing(currentListing.id, "İlan güvenliği", `${currentListing.title} ilanı kullanıcı tarafından incelemeye gönderildi.`);
-    Alert.alert(translateCopy(ok ? "Bildirim alındı" : "Giriş gerekli", language), translateCopy(ok ? "Moderasyon ekibi bu ilanı inceleyecek." : "İlan bildirmek için e-posta ile giriş yapmalısın.", language));
+  async function submitReport() {
+    if (!reportReason) { Alert.alert("Sebep seç", "Lütfen bir şikayet nedeni seç."); return; }
+    const details = `${currentListing.title} — ${reportReason}${reportDetail.trim() ? ` · ${reportDetail.trim()}` : ""}`;
+    const ok = await reportListing(currentListing.id, reportReason, details);
+    setReportOpen(false); setReportReason(""); setReportDetail("");
+    Alert.alert(translateCopy(ok ? "Bildirim alındı" : "Giriş gerekli", language), translateCopy(ok ? "Moderasyon ekibi bu ilanı inceleyecek. Teşekkürler." : "İlan bildirmek için e-posta ile giriş yapmalısın.", language));
   }
 
   const metaDesc = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
@@ -487,7 +493,7 @@ export default function ListingDetailScreen() {
               <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label="Beğen" onPress={() => toggleFavorite(currentListing.id)} />
               {!isDemo ? <IconButton active={inCompare} icon={inCompare ? "compare-remove" : "compare-horizontal"} label="Karşılaştır" onPress={() => toggleCompare(currentListing.id)} /> : null}
               <IconButton icon="share-variant-outline" label="Paylaş" onPress={() => void handleShare()} />
-              {!isOwner ? <IconButton icon="flag-outline" label="Bildir" onPress={() => void handleReport()} /> : null}
+              {!isOwner ? <IconButton icon="flag-outline" label="Bildir" onPress={() => setReportOpen(true)} /> : null}
             </View>
           </View>
         );
@@ -795,6 +801,37 @@ export default function ListingDetailScreen() {
       </WebContainer>
 
       {/* Tam ekran görsel (lightbox) */}
+      {/* Şikayet nedeni seçici (spec 80) */}
+      <Modal visible={reportOpen} transparent animationType="fade" onRequestClose={() => setReportOpen(false)}>
+        <View style={{ backgroundColor: "rgba(16,24,40,0.55)", flex: 1, justifyContent: "center", padding: 20 }}>
+          <View style={{ alignSelf: "center", backgroundColor: colors.background, borderRadius: 18, gap: 14, maxWidth: 460, padding: 22, width: "100%" }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
+                <MaterialCommunityIcons name="flag-outline" size={22} color={colors.accent} />
+              </View>
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 17, fontWeight: "900" }}>İlanı bildir</Text>
+              <Pressable onPress={() => setReportOpen(false)} hitSlop={8}><MaterialCommunityIcons name="close" size={22} color={colors.muted} /></Pressable>
+            </View>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Bu ilanda bir sorun mu var? Nedenini seç; moderasyon ekibi inceler.</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {["Sahte İlan", "Yanlış Fiyat", "Yanlış Konum", "Spam", "Kopya İlan", "Hakaret", "Dolandırıcılık", "Telif İhlali", "Yasaklı İçerik"].map((r) => {
+                const on = reportReason === r;
+                return (
+                  <Pressable key={r} onPress={() => setReportReason(r)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 }}>
+                    <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: on ? "900" : "700" }}>{r}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <TextInput value={reportDetail} onChangeText={setReportDetail} placeholder="İstersen kısa bir açıklama ekle (opsiyonel)" placeholderTextColor={colors.subtle} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13, minHeight: 64, padding: 12, textAlignVertical: "top" }} />
+            <View style={{ flexDirection: "row", gap: 10, justifyContent: "flex-end" }}>
+              <Pressable onPress={() => setReportOpen(false)} style={{ borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text></Pressable>
+              <Pressable onPress={() => void submitReport()} style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Bildir</Text></Pressable>
+            </View>
+          </View>
+        </View>
+      </Modal>
+
       <Modal visible={lightbox} transparent animationType="fade" onRequestClose={() => { setLightbox(false); setZoomed(false); }}>
         <View style={{ backgroundColor: "rgba(0,0,0,0.92)", flex: 1, justifyContent: "center" }}>
           <Pressable accessibilityLabel="Kapat" onPress={() => { setLightbox(false); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 42, justifyContent: "center", position: "absolute", right: 18, top: 18, width: 42, zIndex: 5 }}>
