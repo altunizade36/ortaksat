@@ -19,24 +19,36 @@ type Section =
   | "dashboard" | "users" | "listings" | "partnerships" | "complaints" | "categories" | "locations"
   | "messages" | "commissions" | "stats" | "notifications" | "content" | "blog" | "seo" | "settings" | "reports";
 
-const NAV: Array<{ key: Section; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
-  { key: "dashboard", icon: "view-dashboard-outline", label: "Dashboard" },
-  { key: "users", icon: "account-group-outline", label: "Kullanıcılar" },
-  { key: "listings", icon: "file-document-outline", label: "İlanlar" },
-  { key: "partnerships", icon: "handshake-outline", label: "Ortak Satış Talepleri" },
-  { key: "complaints", icon: "flag-outline", label: "Şikayetler" },
-  { key: "categories", icon: "shape-outline", label: "Kategoriler" },
-  { key: "locations", icon: "map-marker-outline", label: "Konum Önerileri" },
-  { key: "messages", icon: "message-text-outline", label: "Mesajlar" },
-  { key: "commissions", icon: "cash-multiple", label: "Komisyon Kayıtları" },
-  { key: "stats", icon: "chart-line", label: "İstatistikler" },
-  { key: "notifications", icon: "bell-outline", label: "Bildirimler" },
-  { key: "content", icon: "file-edit-outline", label: "Site İçerikleri" },
-  { key: "blog", icon: "post-outline", label: "Blog Yönetimi" },
-  { key: "seo", icon: "magnify-scan", label: "SEO Yönetimi" },
-  { key: "settings", icon: "cog-outline", label: "Ayarlar" },
-  { key: "reports", icon: "chart-box-outline", label: "Raporlar" }
+type NavItem = { key: Section; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string };
+const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
+  { title: "Genel", items: [
+    { key: "dashboard", icon: "view-dashboard-outline", label: "Dashboard" },
+    { key: "stats", icon: "chart-line", label: "İstatistikler" },
+    { key: "reports", icon: "chart-box-outline", label: "Raporlar" }
+  ] },
+  { title: "Yönetim", items: [
+    { key: "users", icon: "account-group-outline", label: "Kullanıcılar" },
+    { key: "listings", icon: "file-document-outline", label: "İlanlar" },
+    { key: "partnerships", icon: "handshake-outline", label: "Ortak Satış Talepleri" },
+    { key: "commissions", icon: "cash-multiple", label: "Komisyon Kayıtları" }
+  ] },
+  { title: "Güven & İletişim", items: [
+    { key: "complaints", icon: "flag-outline", label: "Şikayetler" },
+    { key: "messages", icon: "message-text-outline", label: "Mesajlar" },
+    { key: "notifications", icon: "bell-outline", label: "Bildirimler" }
+  ] },
+  { title: "İçerik & Site", items: [
+    { key: "categories", icon: "shape-outline", label: "Kategoriler" },
+    { key: "locations", icon: "map-marker-outline", label: "Konum Önerileri" },
+    { key: "content", icon: "file-edit-outline", label: "Site İçerikleri" },
+    { key: "blog", icon: "post-outline", label: "Blog Yönetimi" },
+    { key: "seo", icon: "magnify-scan", label: "SEO Yönetimi" }
+  ] },
+  { title: "Sistem", items: [
+    { key: "settings", icon: "cog-outline", label: "Ayarlar" }
+  ] }
 ];
+const NAV: NavItem[] = NAV_GROUPS.flatMap((g) => g.items);
 
 // Güvenlik: mesajlarda geçince "riskli konuşma" işaretlenecek kelimeler.
 const RISK_WORDS = ["iban", "havale", "eft", "kapora", "kaparo", "site dışı", "whatsapp", "telegram", "dolandırıcı", "dolandiri", "sahte", "acil gönder", "papara", "western union", "hesap numaras", "kart numaras", "kripto", "bitcoin"];
@@ -147,7 +159,7 @@ function AdminScreenInner() {
     fetchAdminAudit().then(setAudit).catch(() => setAudit(null));
   }, []);
 
-  const isAdmin = currentUser.role === "admin" || currentUser.role === "moderator";
+  const isAdmin = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
   const activeListings = listings.filter((l) => l.status === "active");
   const pendingReview = listings.filter((l) => l.status === "pending_review");
   const totalCommission = sales.reduce((s, x) => s + x.commissionAmount, 0);
@@ -167,23 +179,45 @@ function AdminScreenInner() {
     <View style={{ backgroundColor: colors.background, flex: 1, flexDirection: isWideWeb ? "row" : "column", minHeight: "100%" }}>
       {/* Sidebar */}
       {isWideWeb ? (
-        <View style={{ backgroundColor: "#0A5C44", height: viewportHeight, width: 260 }}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 9, paddingHorizontal: 20, paddingTop: 22, paddingBottom: 14 }}>
-            <MaterialCommunityIcons name="shield-crown" size={24} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 17, fontWeight: "900" }}>OrtakSat <Text style={{ color: "rgba(255,255,255,0.65)", fontSize: 12 }}>Admin</Text></Text>
+        <View style={{ backgroundColor: "#0A5C44", height: viewportHeight, width: 264 }}>
+          <View style={{ borderBottomColor: "rgba(255,255,255,0.1)", borderBottomWidth: 1, gap: 12, paddingBottom: 14, paddingHorizontal: 18, paddingTop: 20 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+              <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
+                <MaterialCommunityIcons name="shield-crown" size={20} color="#FFFFFF" />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 15.5, fontWeight: "900" }}>OrtakSat</Text>
+                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.6)", fontSize: 11, fontWeight: "800", letterSpacing: 0.5 }}>YÖNETİM PANELİ</Text>
+              </View>
+            </View>
+            {/* Admin kimliği */}
+            <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 10, flexDirection: "row", gap: 9, paddingHorizontal: 10, paddingVertical: 8 }}>
+              <View style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 999, height: 28, justifyContent: "center", width: 28 }}>
+                <Text style={{ color: "#0A5C44", fontSize: 12, fontWeight: "900" }}>{(currentUser.name || "A").slice(0, 1).toLocaleUpperCase("tr-TR")}</Text>
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>{currentUser.name || "Yönetici"}</Text>
+                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.6)", fontSize: 10.5, fontWeight: "700", textTransform: "capitalize" }}>{currentUser.role === "super_admin" ? "Süper Admin" : currentUser.role === "moderator" ? "Moderatör" : "Admin"}</Text>
+              </View>
+            </View>
           </View>
-          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ gap: 5, paddingBottom: 14, paddingHorizontal: 12 }}>
-            {NAV.map((n) => {
-              const on = section === n.key;
-              const badge = navBadge(n.key);
-              return (
-                <Pressable key={n.key} onPress={() => setSection(n.key)} style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.16)" : "transparent", borderRadius: 10, flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 11 }}>
-                  <MaterialCommunityIcons name={n.icon} size={18} color={on ? "#FFFFFF" : "rgba(255,255,255,0.7)"} />
-                  <Text style={{ color: on ? "#FFFFFF" : "rgba(255,255,255,0.82)", flex: 1, fontSize: 13.5, fontWeight: on ? "900" : "700" }}>{n.label}</Text>
-                  {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{badge}</Text></View> : null}
-                </Pressable>
-              );
-            })}
+          <ScrollView showsVerticalScrollIndicator={false} style={{ flex: 1 }} contentContainerStyle={{ gap: 2, paddingBottom: 14, paddingHorizontal: 12, paddingTop: 10 }}>
+            {NAV_GROUPS.map((group) => (
+              <View key={group.title} style={{ gap: 2, marginBottom: 6 }}>
+                <Text style={{ color: "rgba(255,255,255,0.45)", fontSize: 10, fontWeight: "900", letterSpacing: 0.8, paddingHorizontal: 12, paddingVertical: 6 }}>{group.title.toLocaleUpperCase("tr-TR")}</Text>
+                {group.items.map((n) => {
+                  const on = section === n.key;
+                  const badge = navBadge(n.key);
+                  return (
+                    <Pressable key={n.key} onPress={() => setSection(n.key)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.18)" : pressed ? "rgba(255,255,255,0.08)" : "transparent", borderLeftColor: on ? "#FFFFFF" : "transparent", borderLeftWidth: 3, borderRadius: 9, flexDirection: "row", gap: 11, paddingHorizontal: 11, paddingVertical: 9.5 })}>
+                      <MaterialCommunityIcons name={n.icon} size={18} color={on ? "#FFFFFF" : "rgba(255,255,255,0.66)"} />
+                      <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : "rgba(255,255,255,0.8)", flex: 1, fontSize: 13, fontWeight: on ? "900" : "700" }}>{n.label}</Text>
+                      {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{badge}</Text></View> : null}
+                    </Pressable>
+                  );
+                })}
+              </View>
+            ))}
           </ScrollView>
           <View style={{ borderTopColor: "rgba(255,255,255,0.12)", borderTopWidth: 1, gap: 4, paddingHorizontal: 12, paddingBottom: 14, paddingTop: 10 }}>
             <Link href="/" asChild>
@@ -970,7 +1004,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
 
 function Stat({ icon, tint, color, value, title, helper, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; helper?: string; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 210, flexGrow: 1, gap: 12, minHeight: 132, minWidth: 0, padding: 16 })}>
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 166, flexGrow: 1, gap: 9, maxWidth: 300, minHeight: 106, minWidth: 0, padding: 15 })}>
       <View style={{ alignItems: "flex-start", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
         <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
           <MaterialCommunityIcons name={icon} size={20} color={color} />
@@ -1486,27 +1520,51 @@ function BarChart({ data, labels }: { data: number[]; labels?: string[] }) {
   const max = Math.max(...data, 1);
   const total = data.reduce((sum, v) => sum + v, 0);
   const avg = data.length ? Math.round(total / data.length) : 0;
+  const PLOT = 150; // grafik yüksekliği (px)
+  const gridVals = [max, Math.round(max * 0.5), 0];
   return (
-    <View style={{ gap: 12 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+    <View style={{ gap: 14 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <MiniStat label="Toplam" value={`${total}`} />
         <MiniStat label="Aylık ort." value={`${avg}`} />
         <MiniStat label="Tepe ay" value={`${max}`} />
       </View>
-      <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, padding: 12 }}>
-        <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 7, height: 176 }}>
-          {data.map((v, i) => {
-            const on = v === max && max > 0;
-            return (
-              <View key={i} style={{ flex: 1, gap: 6, justifyContent: "flex-end", minWidth: 0 }}>
-                <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 9.5, fontWeight: "900", textAlign: "center" }}>{v > 0 ? v : ""}</Text>
-                <View style={{ backgroundColor: colors.line, borderRadius: 999, justifyContent: "flex-end", minHeight: 118, overflow: "hidden", width: "100%" }}>
-                  <View style={{ backgroundColor: on ? colors.primary : colors.primarySoft, borderRadius: 999, height: `${Math.max(3, Math.round((v / max) * 100))}%`, width: "100%" }} />
-                </View>
-                <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 9, fontWeight: "800", textAlign: "center" }}>{labels ? labels[i] : i + 1}</Text>
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, padding: 16 }}>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          {/* Y ekseni etiketleri */}
+          <View style={{ height: PLOT, justifyContent: "space-between", paddingBottom: 2 }}>
+            {gridVals.map((g, gi) => (
+              <Text key={gi} style={{ color: colors.subtle, fontSize: 9.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>{g}</Text>
+            ))}
+          </View>
+          {/* Grafik alanı: ızgara çizgileri + çubuklar */}
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <View style={{ height: PLOT, position: "relative" }}>
+              {/* yatay ızgara çizgileri */}
+              {[0, 0.5, 1].map((f, fi) => (
+                <View key={fi} style={{ backgroundColor: colors.line, height: 1, left: 0, position: "absolute", right: 0, top: f * (PLOT - 1), opacity: 0.6 }} />
+              ))}
+              {/* çubuklar (tabana oturur, üstü yuvarlak) */}
+              <View style={{ alignItems: "flex-end", bottom: 0, flexDirection: "row", gap: 6, left: 0, position: "absolute", right: 0 }}>
+                {data.map((v, i) => {
+                  const on = v === max && max > 0;
+                  const h = v > 0 ? Math.max(4, Math.round((v / max) * PLOT)) : 0;
+                  return (
+                    <View key={i} style={{ alignItems: "center", flex: 1, gap: 3, justifyContent: "flex-end", minWidth: 0 }}>
+                      {v > 0 ? <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 9.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{v}</Text> : null}
+                      <View style={{ backgroundColor: on ? colors.primary : colors.primarySoft, borderTopLeftRadius: 5, borderTopRightRadius: 5, height: h, width: "100%" }} />
+                    </View>
+                  );
+                })}
               </View>
-            );
-          })}
+            </View>
+            {/* X ekseni etiketleri */}
+            <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
+              {data.map((v, i) => (
+                <Text key={i} numberOfLines={1} style={{ color: v === max && max > 0 ? colors.primaryDark : colors.subtle, flex: 1, fontSize: 9.5, fontWeight: "800", textAlign: "center" }}>{labels ? labels[i] : i + 1}</Text>
+              ))}
+            </View>
+          </View>
         </View>
       </View>
     </View>
