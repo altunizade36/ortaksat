@@ -144,6 +144,22 @@ type SaleFromLeadInput = {
 const LEGAL_CONSENT_VERSION = "2026-06-11";
 const LEGAL_DOCUMENT_TYPES = ["privacy", "terms", "kvkk", "seller_rules"] as const;
 
+// Google ile (ilk kez) girişte zımni yasal onayı kaydeder: buton altındaki
+// "Google ile devam ederek ... kabul etmiş olursun" bilgilendirmesiyle verilir.
+// localStorage kilidiyle kullanıcı başına yalnız bir kez çalışır (upsert zaten idempotent).
+async function recordGoogleConsentOnce(userId: string) {
+  try {
+    if (typeof window !== "undefined") {
+      const key = `ortaksat.legal.${userId}`;
+      if (window.localStorage.getItem(key) === "1") return;
+      window.localStorage.setItem(key, "1");
+    }
+    await Promise.all(LEGAL_DOCUMENT_TYPES.map((documentType) => recordLegalConsentLive(userId, documentType)));
+  } catch {
+    /* yasal kayıt kritik akışı bozmamalı */
+  }
+}
+
 type AppStore = {
   backendMode: "mock" | "supabase";
   authReady: boolean;
@@ -522,6 +538,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       const user = data.session?.user;
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
+        if (user.app_metadata?.provider === "google") void recordGoogleConsentOnce(user.id);
         void loadProfile(user.id, user.phone, user.user_metadata?.full_name);
       } else if (mounted) {
         setAuthUser(null);
@@ -534,6 +551,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       const user = session?.user;
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
+        if (user.app_metadata?.provider === "google") void recordGoogleConsentOnce(user.id);
         void loadProfile(user.id, user.phone, user.user_metadata?.full_name);
       } else {
         setAuthUser(null);

@@ -110,15 +110,9 @@ export default function AuthScreen() {
   }, [isAuthenticated, currentUser, router, safeRedirect]);
 
   async function loginWithGoogle() {
-    // Google ilk kullanımda hesap oluşturabildiği için yasal onay zorunlu.
-    if (!allAccepted) {
-      setMode("register");
-      Alert.alert(
-        language === "en" ? "Legal approval required" : "Yasal onay gerekli",
-        language === "en" ? "Please tick the box to accept KVKK, privacy and terms before continuing with Google." : "Google ile devam etmeden önce KVKK, gizlilik ve kullanım şartlarını kabul kutucuğunu işaretle."
-      );
-      return;
-    }
+    // Global standart: tıkla → Google → biter. Yasal onay, butonun altındaki
+    // "Google ile devam ederek ... kabul etmiş olursun" bilgilendirmesiyle zımnen
+    // verilir; ilk girişte onay kaydı otomatik atılır (recordGoogleConsentOnce).
     setLoading(true);
     const ok = await signInWithGoogle();
     setLoading(false);
@@ -255,6 +249,17 @@ export default function AuthScreen() {
       <MaterialCommunityIcons name={rememberMe ? "checkbox-marked" : "checkbox-blank-outline"} size={19} color={rememberMe ? colors.primary : colors.muted} />
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Beni hatırla</Text>
     </Pressable>
+  );
+
+  // Google butonunun altındaki zımni yasal onay bilgilendirmesi (global standart).
+  const linkStyle = { color: colors.primaryDark, fontWeight: "800" as const, textDecorationLine: "underline" as const };
+  const googleNote = (
+    <Text style={{ color: colors.subtle, fontSize: 11, lineHeight: 16, textAlign: "center" }}>
+      Google ile devam ederek{" "}
+      <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>Kullanım Şartları</Text>,{" "}
+      <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>KVKK Aydınlatma Metni</Text> ve{" "}
+      <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>Gizlilik Politikası</Text>'nı kabul etmiş olursun.
+    </Text>
   );
 
   // Kayıt olup e-posta kodunu bekleyen kullanıcı: link/uygulama-değiştirme yok,
@@ -466,6 +471,7 @@ export default function AuthScreen() {
                       <MaterialCommunityIcons name="google" size={17} color="#DB4437" />
                       <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>Google ile devam et</Text>
                     </Pressable>
+                    {googleNote}
                   </>
                 ) : null}
 
@@ -607,6 +613,7 @@ export default function AuthScreen() {
                 <MaterialCommunityIcons name="google" size={18} color="#DB4437" />
                 <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Google ile devam et</Text>
               </Pressable>
+              {googleNote}
             </>
           ) : null}
 
