@@ -881,7 +881,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           return false;
         }
         if (!supabase) {
-          const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
+          const cleanEmail = email.trim().toLowerCase();
           const acct = mockAccounts[cleanEmail];
           if (!acct || acct.password !== password) {
             setAuthError("E-posta veya şifre hatalı. (Önizleme modunda önce kayıt olun.)");
@@ -922,7 +922,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           return false;
         }
         if (!supabase) {
-          const cleanEmail = input.email.trim().toLocaleLowerCase("tr-TR");
+          const cleanEmail = input.email.trim().toLowerCase();
           const displayName = input.name.trim() || cleanEmail;
           if (mockAccounts[cleanEmail]) {
             setAuthError("Bu e-posta ile zaten kayıt var. Giriş yapabilirsin.");
@@ -945,7 +945,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setAuthError(undefined);
           return true;
         }
-        const cleanEmail = input.email.trim().toLocaleLowerCase("tr-TR");
+        const cleanEmail = input.email.trim().toLowerCase();
         const displayName = input.name.trim() || cleanEmail;
         const legalAcceptedAt = new Date().toISOString();
         const { data, error } = await supabase.auth.signUp({
@@ -995,7 +995,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setAuthError(undefined);
           return true;
         }
-        const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLocaleLowerCase("tr-TR"), {
+        const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
           // Web'de şifre sıfırlama linki siteye dönmeli (native şema tarayıcıda açılmaz).
           redirectTo:
             typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth"
@@ -1021,7 +1021,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       async resetPasswordWithCode(email, code, newPassword) {
         if (!supabase) { setAuthError("Kod ile sıfırlama yalnızca canlı modda çalışır."); return false; }
         if (newPassword.length < 6) { setAuthError("Yeni şifre en az 6 karakter olmalı."); return false; }
-        const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
+        const cleanEmail = email.trim().toLowerCase();
         const token = code.replace(/\D/g, "");
         if (token.length < 6) { setAuthError("6 haneli kodu eksiksiz gir."); return false; }
         const { error: vErr } = await supabase.auth.verifyOtp({ email: cleanEmail, token, type: "recovery" });
@@ -1059,7 +1059,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       // şablonunda {{ .Token }} bulunmalı ki kullanıcıya link değil KOD gitsin.
       async verifyEmailCode(email, code) {
         if (!supabase) { setAuthError("Kod doğrulama yalnızca canlı modda çalışır."); return false; }
-        const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
+        const cleanEmail = email.trim().toLowerCase();
         const token = code.replace(/\D/g, "");
         if (token.length < 6) { setAuthError("6 haneli kodu eksiksiz gir."); return false; }
         const { data, error } = await supabase.auth.verifyOtp({ email: cleanEmail, token, type: "signup" });
@@ -1078,7 +1078,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (!supabase) return false;
         const rl = await rateLimit("signup");
         if (!rl.allowed) { setAuthError(rl.reason); return false; }
-        const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
+        const cleanEmail = email.trim().toLowerCase();
         const { error } = await supabase.auth.resend({
           type: "signup",
           email: cleanEmail,

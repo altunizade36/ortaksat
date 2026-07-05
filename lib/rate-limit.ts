@@ -52,11 +52,18 @@ export async function rateLimit(action: Action): Promise<RateLimitResult> {
   if (supabase) {
     try {
       const { max, windowSeconds } = POLICY[action];
-      const { data, error } = await supabase.rpc("check_rate_limit", {
+      // Sunucu sayacı ASLA akışı kilitlememeli: RPC 4 sn içinde dönmezse fail-open.
+      // (Aksi halde askıya alınan bir istek "Kayıt açılıyor…" gibi butonu sonsuza
+      //  kadar yükleniyor bırakabilir.)
+      const rpc = supabase.rpc("check_rate_limit", {
         p_action: action,
         p_max_count: max,
         p_window_seconds: windowSeconds
       });
+      const timeout = new Promise<{ data: unknown; error: unknown }>((resolve) =>
+        setTimeout(() => resolve({ data: null, error: { message: "rate_limit_timeout" } }), 4000)
+      );
+      const { data, error } = (await Promise.race([rpc, timeout])) as { data: unknown; error: unknown };
       if (!error && data === false) {
         return { allowed: false, reason: BLOCK_MESSAGE };
       }

@@ -58,7 +58,10 @@ export function sanitizePhone(input: string): string {
   return cleaned.startsWith("+") ? "+" + cleaned.slice(1).replace(/\+/g, "") : cleaned.replace(/\+/g, "");
 }
 
-/** E-posta: küçük harf (TR-güvenli) + boşluk temizliği. */
+/** E-posta: küçük harf + boşluk temizliği.
+ * ÖNEMLİ: E-postalar ASCII'dir; Türkçe locale ile küçültme (toLocaleLowerCase("tr-TR"))
+ * büyük "I" harfini "ı" (noktasız) yapar ve "IVAN@x.com" gibi geçerli adresleri bozar.
+ * Bu yüzden dil-bağımsız (invariant) toLowerCase kullanılır. */
 export function sanitizeEmail(input: string): string {
-  return stripControl(input ?? "").trim().toLocaleLowerCase("tr-TR");
+  return stripControl(input ?? "").trim().toLowerCase();
 }

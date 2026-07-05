@@ -66,30 +66,48 @@ export default function AuthScreen() {
       return;
     }
     setLoading(true);
-    const ok = await resetPasswordWithEmail(cleanEmail);
-    setLoading(false);
-    if (ok) { setResetSent(true); Alert.alert("Kod gönderildi", "E-postana 6 haneli şifre sıfırlama kodu gönderdik. Kodu ve yeni şifreni aşağıya gir."); }
-    else Alert.alert("Gönderilemedi", authError ?? "Geçerli bir e-posta gir ve tekrar dene.");
+    try {
+      const ok = await resetPasswordWithEmail(cleanEmail);
+      if (ok) { setResetSent(true); Alert.alert("Kod gönderildi", "E-postana 6 haneli şifre sıfırlama kodu gönderdik. Kodu ve yeni şifreni aşağıya gir."); }
+      else { const m = authError ?? "Geçerli bir e-posta gir ve tekrar dene."; setFormError(m); Alert.alert("Gönderilemedi", m); }
+    } catch {
+      const m = "Bağlantı hatası. Lütfen tekrar dene.";
+      setFormError(m); Alert.alert("Gönderilemedi", m);
+    } finally {
+      setLoading(false);
+    }
   }
   async function doResetWithCode() {
     if (loading) return;
+    setFormError(null);
     setLoading(true);
-    const ok = await resetPasswordWithCode(cleanEmail, resetCode, newPassword);
-    setLoading(false);
-    if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); Alert.alert("Şifren güncellendi", "Yeni şifrenle giriş yapabilirsin."); }
-    else Alert.alert("Güncellenemedi", authError ?? "Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa.");
+    try {
+      const ok = await resetPasswordWithCode(cleanEmail, resetCode, newPassword);
+      if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); Alert.alert("Şifren güncellendi", "Yeni şifrenle giriş yapabilirsin."); }
+      else { const m = authError ?? "Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa."; setFormError(m); Alert.alert("Güncellenemedi", m); }
+    } catch {
+      const m = "Bağlantı hatası. Lütfen tekrar dene.";
+      setFormError(m); Alert.alert("Güncellenemedi", m);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function submitVerifyCode() {
     if (!pendingVerifyEmail || verifying) return;
     setVerifying(true);
-    const ok = await verifyEmailCode(pendingVerifyEmail, verifyCode);
-    setVerifying(false);
-    if (ok) {
-      setVerifyCode("");
-      // Oturum açıldı; yukarıdaki effect /hosgeldin veya "/" yönlendirir.
-    } else {
-      Alert.alert("Kod doğrulanamadı", authError ?? "Kod hatalı veya süresi dolmuş olabilir. Tekrar dene ya da kodu yeniden gönder.");
+    try {
+      const ok = await verifyEmailCode(pendingVerifyEmail, verifyCode);
+      if (ok) {
+        setVerifyCode("");
+        // Oturum açıldı; yukarıdaki effect /hosgeldin veya "/" yönlendirir.
+      } else {
+        Alert.alert("Kod doğrulanamadı", authError ?? "Kod hatalı veya süresi dolmuş olabilir. Tekrar dene ya da kodu yeniden gönder.");
+      }
+    } catch {
+      Alert.alert("Kod doğrulanamadı", "Bağlantı hatası. Lütfen tekrar dene.");
+    } finally {
+      setVerifying(false);
     }
   }
 
@@ -99,7 +117,7 @@ export default function AuthScreen() {
     Alert.alert(ok ? "Kod gönderildi" : "Gönderilemedi", ok ? "Yeni doğrulama kodu e-postana gönderildi." : (authError ?? "Kod gönderilemedi, biraz sonra tekrar dene."));
   }
 
-  const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
+  const cleanEmail = email.trim().toLowerCase();
 
   // Sekme (giriş/kayıt/sıfırlama) değişince satır-içi doğrulama uyarısını temizle.
   useEffect(() => { setFormError(null); }, [mode]);
@@ -127,11 +145,17 @@ export default function AuthScreen() {
     // "Google ile devam ederek ... kabul etmiş olursun" bilgilendirmesiyle zımnen
     // verilir; ilk girişte onay kaydı otomatik atılır (recordGoogleConsentOnce).
     setLoading(true);
-    const ok = await signInWithGoogle();
-    setLoading(false);
-    // Başarılıysa tarayıcı Google'a yönlenir (geri dönüş otomatik). Başarısızsa hata authError'da.
-    if (!ok && authError) {
-      Alert.alert(language === "en" ? "Could not continue with Google" : "Google ile giriş yapılamadı", translateCopy(authError, language));
+    try {
+      const ok = await signInWithGoogle();
+      // Başarılıysa tarayıcı Google'a yönlenir (geri dönüş otomatik). Başarısızsa hata authError'da.
+      if (!ok && authError) {
+        Alert.alert(language === "en" ? "Could not continue with Google" : "Google ile giriş yapılamadı", translateCopy(authError, language));
+      }
+    } catch {
+      const m = "Google ile bağlantı kurulamadı. Lütfen tekrar dene.";
+      setFormError(m); Alert.alert("Google ile giriş yapılamadı", m);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -149,11 +173,18 @@ export default function AuthScreen() {
     // "Beni Hatırla" — girişten ÖNCE depoyu ayarla ki oturum doğru yere yazılsın.
     setRememberSession(rememberMe);
     setLoading(true);
-    const ok = await signInWithEmail(cleanEmail, password);
-    setLoading(false);
-    // Başarılıysa yukarıdaki effect ana sayfaya yönlendirir. Hata varsa göster.
-    if (!ok && authError) {
-      Alert.alert(language === "en" ? "Could not sign in" : "Giriş yapılamadı", translateCopy(authError, language));
+    try {
+      const ok = await signInWithEmail(cleanEmail, password);
+      // Başarılıysa yukarıdaki effect ana sayfaya yönlendirir. Hata varsa göster.
+      if (!ok) {
+        const m = authError ?? (language === "en" ? "Could not sign in. Please try again." : "Giriş yapılamadı. Lütfen tekrar dene.");
+        setFormError(m); Alert.alert(language === "en" ? "Could not sign in" : "Giriş yapılamadı", translateCopy(m, language));
+      }
+    } catch {
+      const m = language === "en" ? "Connection error. Please try again." : "Bağlantı hatası. Lütfen tekrar dene.";
+      setFormError(m); Alert.alert(language === "en" ? "Could not sign in" : "Giriş yapılamadı", m);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -189,13 +220,20 @@ export default function AuthScreen() {
     // Yeni kayıtta oturum kalıcı olsun (kullanıcı yeni geldi).
     setRememberSession(true);
     setLoading(true);
-    const ok = await signUpWithEmail({ email: cleanEmail, password, name: fullName });
-    setLoading(false);
-    // Akış kendini yönetir: oturum açıldıysa (doğrulama kapalı) effect /hosgeldin'e
-    // yönlendirir; kod gerekiyorsa pendingVerifyEmail set olur ve kod ekranı gelir.
-    // Başarısızsa authError zaten formda gösterilir.
-    if (!ok && authError) {
-      Alert.alert(language === "en" ? "Registration failed" : "Kayıt yapılamadı", translateCopy(authError, language));
+    try {
+      const ok = await signUpWithEmail({ email: cleanEmail, password, name: fullName });
+      // Akış kendini yönetir: oturum açıldıysa (doğrulama kapalı) effect /hosgeldin'e
+      // yönlendirir; kod gerekiyorsa pendingVerifyEmail set olur ve kod ekranı gelir.
+      // Başarısızsa authError formda gösterilir; hiçbir mesaj yoksa da net bir uyarı ver.
+      if (!ok) {
+        const m = authError ?? (language === "en" ? "Registration failed. Please try again." : "Kayıt yapılamadı. Lütfen tekrar dene.");
+        setFormError(m); Alert.alert(language === "en" ? "Registration failed" : "Kayıt yapılamadı", translateCopy(m, language));
+      }
+    } catch {
+      const m = language === "en" ? "Connection error. Please try again." : "Bağlantı hatası. Lütfen tekrar dene.";
+      setFormError(m); Alert.alert(language === "en" ? "Registration failed" : "Kayıt yapılamadı", m);
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -237,7 +275,7 @@ export default function AuthScreen() {
   // 18 yaş dahil. Linke dokununca ilgili metin okuma için açılır.
   const legalChecks = (
     <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 9 }}>
-      <Pressable onPress={() => setAcceptedAll((v) => !v)} hitSlop={6} accessibilityRole="checkbox" accessibilityState={{ checked: acceptedAll }} style={{ paddingTop: 1 }}>
+      <Pressable onPress={() => setAcceptedAll((v) => !v)} hitSlop={6} accessibilityRole="checkbox" accessibilityLabel="Yasal metinleri kabul ediyorum" accessibilityState={{ checked: acceptedAll }} {...({ role: "checkbox", "aria-checked": acceptedAll, "aria-label": "Yasal metinleri kabul ediyorum" } as Record<string, unknown>)} style={{ paddingTop: 1 }}>
         <MaterialCommunityIcons name={acceptedAll ? "checkbox-marked" : "checkbox-blank-outline"} size={22} color={acceptedAll ? colors.primary : colors.muted} />
       </Pressable>
       <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, lineHeight: 19 }}>
@@ -269,7 +307,7 @@ export default function AuthScreen() {
 
   // Beni Hatırla (giriş): işaretli değilse tarayıcı kapanınca oturum silinir.
   const rememberCheck = (
-    <Pressable onPress={() => setRememberMe((v) => !v)} accessibilityRole="checkbox" accessibilityState={{ checked: rememberMe }} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+    <Pressable onPress={() => setRememberMe((v) => !v)} accessibilityRole="checkbox" accessibilityLabel="Beni hatırla" accessibilityState={{ checked: rememberMe }} {...({ role: "checkbox", "aria-checked": rememberMe, "aria-label": "Beni hatırla" } as Record<string, unknown>)} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
       <MaterialCommunityIcons name={rememberMe ? "checkbox-marked" : "checkbox-blank-outline"} size={19} color={rememberMe ? colors.primary : colors.muted} />
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Beni hatırla</Text>
     </Pressable>
@@ -305,6 +343,12 @@ export default function AuthScreen() {
               value={verifyCode}
               onChangeText={(v) => setVerifyCode(v.replace(/\D/g, "").slice(0, 6))}
               keyboardType="number-pad"
+              autoComplete="sms-otp"
+              textContentType="oneTimeCode"
+              accessibilityLabel="E-postana gelen 6 haneli doğrulama kodu"
+              {...({ inputMode: "numeric", autoComplete: "one-time-code", "aria-label": "6 haneli doğrulama kodu", pattern: "[0-9]*" } as Record<string, unknown>)}
+              onSubmitEditing={submitVerifyCode}
+              returnKeyType="go"
               placeholder="______"
               placeholderTextColor={colors.subtle}
               maxLength={6}
@@ -427,7 +471,7 @@ export default function AuthScreen() {
                 ) : null}
                 <DeskAuthField icon="email-outline" label="E-posta" value={email} onChangeText={setEmail} placeholder="ornek@eposta.com" autoComplete="email" />
                 {mode !== "reset" ? <DeskAuthField icon="lock-outline" label="Şifre" value={password} onChangeText={setPassword} placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} onSubmitEditing={mode === "login" ? login : undefined} autoComplete={mode === "register" ? "password-new" : "password"} /> : null}
-                {mode === "register" ? <PasswordStrengthMeter password={password} /> : null}
+                {mode === "register" && password.length > 0 ? <PasswordStrengthMeter password={password} /> : null}
                 {mode === "register" ? (
                   <View style={{ gap: 6 }}>
                     <DeskAuthField icon="lock-check-outline" label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Şifreni tekrar gir" secure showPassword={showPassword} onSubmitEditing={register} autoComplete="password-new" />
@@ -579,18 +623,18 @@ export default function AuthScreen() {
             </View>
           ) : null}
           <Field label="E-posta" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="ornek@eposta.com" />
-          {mode !== "reset" ? <Field label="Şifre" value={password} onChangeText={setPassword} secureTextEntry placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} toggleSecure secureVisible={showPassword} onToggleSecure={() => setShowPassword((v) => !v)} onSubmitEditing={mode === "login" ? login : undefined} /> : null}
-          {mode === "register" ? <PasswordStrengthMeter password={password} /> : null}
+          {mode !== "reset" ? <Field label="Şifre" value={password} onChangeText={setPassword} secureTextEntry placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} toggleSecure secureVisible={showPassword} onToggleSecure={() => setShowPassword((v) => !v)} onSubmitEditing={mode === "login" ? login : undefined} passwordAutoComplete={mode === "register" ? "new-password" : "current-password"} /> : null}
+          {mode === "register" && password.length > 0 ? <PasswordStrengthMeter password={password} /> : null}
           {mode === "register" ? (
             <>
-              <Field label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Şifreni tekrar gir" secureVisible={showPassword} />
+              <Field label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Şifreni tekrar gir" secureVisible={showPassword} passwordAutoComplete="new-password" />
               {!passwordsMatch ? <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>Şifreler uyuşmuyor.</Text> : null}
             </>
           ) : null}
           {mode === "reset" && resetSent ? (
             <>
-              <Field label="E-postana gelen 6 haneli kod" value={resetCode} onChangeText={(v) => setResetCode(v.replace(/\D/g, "").slice(0, 6))} placeholder="______" />
-              <Field label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="Güçlü bir şifre oluştur" toggleSecure secureVisible={showPassword} onToggleSecure={() => setShowPassword((v) => !v)} />
+              <Field label="E-postana gelen 6 haneli kod" value={resetCode} onChangeText={(v) => setResetCode(v.replace(/\D/g, "").slice(0, 6))} placeholder="______" code onSubmitEditing={doResetWithCode} />
+              <Field label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="Güçlü bir şifre oluştur" toggleSecure secureVisible={showPassword} onToggleSecure={() => setShowPassword((v) => !v)} passwordAutoComplete="new-password" />
               <PasswordStrengthMeter password={newPassword} />
             </>
           ) : null}
@@ -651,9 +695,10 @@ export default function AuthScreen() {
 
 function DeskAuthField({ icon, label, value, onChangeText, placeholder, secure, showToggle, showPassword, onToggle, onSubmitEditing, autoComplete }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; onChangeText: (v: string) => void; placeholder?: string; secure?: boolean; showToggle?: boolean; showPassword?: boolean; onToggle?: () => void; onSubmitEditing?: () => void; autoComplete?: "email" | "name" | "password" | "password-new" | "off" }) {
   const isEmail = icon === "email-outline";
+  const isCode = icon === "numeric"; // e-posta doğrulama / sıfırlama kodu alanı
   // Şifre yöneticileri (password manager) ve autofill için doğru name/autoComplete.
   const ac = autoComplete ?? (isEmail ? "email" : secure ? "password" : "off");
-  const nameAttr = isEmail ? "email" : ac === "password-new" ? "new-password" : secure ? "current-password" : "name";
+  const nameAttr = isCode ? "one-time-code" : isEmail ? "email" : ac === "password-new" ? "new-password" : secure ? "current-password" : "name";
   return (
     <View style={{ gap: 6 }}>
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
@@ -664,11 +709,12 @@ function DeskAuthField({ icon, label, value, onChangeText, placeholder, secure, 
           onChangeText={onChangeText}
           autoCapitalize={isEmail ? "none" : "sentences"}
           autoCorrect={false}
-          keyboardType={isEmail ? "email-address" : "default"}
-          autoComplete={ac}
-          textContentType={isEmail ? "emailAddress" : ac === "password-new" ? "newPassword" : secure ? "password" : "name"}
+          keyboardType={isEmail ? "email-address" : isCode ? "number-pad" : "default"}
+          autoComplete={isCode ? "sms-otp" : ac}
+          textContentType={isCode ? "oneTimeCode" : isEmail ? "emailAddress" : ac === "password-new" ? "newPassword" : secure ? "password" : "name"}
           accessibilityLabel={label}
-          {...({ name: nameAttr, "aria-label": label, inputMode: isEmail ? "email" : undefined } as Record<string, unknown>)}
+          maxLength={isCode ? 6 : undefined}
+          {...({ name: nameAttr, "aria-label": label, inputMode: isEmail ? "email" : isCode ? "numeric" : undefined, autoComplete: isCode ? "one-time-code" : undefined, pattern: isCode ? "[0-9]*" : undefined } as Record<string, unknown>)}
           secureTextEntry={secure && !showPassword}
           placeholder={placeholder}
           placeholderTextColor={colors.subtle}
@@ -694,7 +740,9 @@ function Field({
   toggleSecure,
   secureVisible,
   onToggleSecure,
-  onSubmitEditing
+  onSubmitEditing,
+  code,
+  passwordAutoComplete
 }: {
   label: string;
   value: string;
@@ -706,9 +754,13 @@ function Field({
   secureVisible?: boolean;
   onToggleSecure?: () => void;
   onSubmitEditing?: () => void;
+  code?: boolean;
+  passwordAutoComplete?: "current-password" | "new-password";
 }) {
   const { language } = useLanguage();
   const hidden = secureTextEntry && !secureVisible;
+  const isEmail = keyboardType === "email-address";
+  const pwAc = passwordAutoComplete ?? "current-password";
   return (
     <View style={{ gap: 6 }}>
       <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>
@@ -718,13 +770,14 @@ function Field({
         <TextInput
           value={value}
           onChangeText={onChangeText}
-          keyboardType={keyboardType}
-          autoCapitalize={keyboardType === "email-address" ? "none" : "words"}
-          autoCorrect={keyboardType !== "email-address"}
-          autoComplete={keyboardType === "email-address" ? "email" : secureTextEntry ? "password" : "off"}
-          textContentType={keyboardType === "email-address" ? "emailAddress" : secureTextEntry ? "password" : "none"}
+          keyboardType={code ? "number-pad" : keyboardType}
+          autoCapitalize={isEmail ? "none" : "words"}
+          autoCorrect={!isEmail && !code}
+          autoComplete={code ? "sms-otp" : isEmail ? "email" : secureTextEntry ? (pwAc === "new-password" ? "password-new" : "password") : "off"}
+          textContentType={code ? "oneTimeCode" : isEmail ? "emailAddress" : secureTextEntry ? (pwAc === "new-password" ? "newPassword" : "password") : "none"}
           accessibilityLabel={translateCopy(label, language)}
-          {...({ name: keyboardType === "email-address" ? "email" : secureTextEntry ? "current-password" : "text", "aria-label": translateCopy(label, language), inputMode: keyboardType === "email-address" ? "email" : undefined } as Record<string, unknown>)}
+          maxLength={code ? 6 : undefined}
+          {...({ name: code ? "one-time-code" : isEmail ? "email" : secureTextEntry ? pwAc : "text", "aria-label": translateCopy(label, language), inputMode: isEmail ? "email" : code ? "numeric" : undefined, autoComplete: code ? "one-time-code" : undefined, pattern: code ? "[0-9]*" : undefined } as Record<string, unknown>)}
           secureTextEntry={hidden}
           placeholder={placeholder ? translateCopy(placeholder, language) : undefined}
           placeholderTextColor={colors.muted}
