@@ -1512,13 +1512,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
           return;
         }
         const favoriteId = newId("f", liveUser);
-        setFavorites((items) => [{ id: favoriteId, listingId, userId: currentUser.id }, ...items]);
+        const savedPrice = listings.find((l) => l.id === listingId)?.price;
+        setFavorites((items) => [{ id: favoriteId, listingId, userId: currentUser.id, savedPrice }, ...items]);
         setListings((items) =>
           items.map((listing) =>
             listing.id === listingId ? { ...listing, favoriteCount: listing.favoriteCount + 1 } : listing
           )
         );
-        if (liveUser) void insertFavorite(listingId, currentUser.id, favoriteId);
+        if (liveUser) void insertFavorite(listingId, currentUser.id, favoriteId, savedPrice);
       },
       startConversation(listingId, receiverId, body) {
         return createOrReuseConversation(listingId, receiverId, body);

@@ -162,6 +162,8 @@ export type Favorite = {
   id: string;
   listingId: string;
   userId: string;
+  // Favoriye eklendiği andaki ilan fiyatı (fiyat düşüşü/artışı göstergesi için).
+  savedPrice?: number;
 };
 
 export type Conversation = {

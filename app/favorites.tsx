@@ -33,10 +33,20 @@ function FavoritesScreenInner() {
   const gap = 8;
   const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 3 }).cardWidth;
   const tokens = searchKey(query).split(" ").filter(Boolean);
-  const favoriteListings = favorites
-    .filter((favorite) => favorite.userId === currentUser.id)
+  const myFavs = favorites.filter((favorite) => favorite.userId === currentUser.id);
+  const favoriteListings = myFavs
     .map((favorite) => listings.find((listing) => listing.id === favorite.listingId))
     .filter(Boolean);
+  // Fiyat düşüşü/artışı göstergesi (spec 75): favoriye eklenen fiyat ile şu anki fiyat.
+  const savedPriceById = new Map(myFavs.map((f) => [f.listingId, f.savedPrice]));
+  const priceNoteFor = (listingId: string, currentPrice: number) => {
+    const saved = savedPriceById.get(listingId);
+    if (saved == null || saved <= 0 || saved === currentPrice) return undefined;
+    const pct = Math.round((Math.abs(currentPrice - saved) / saved) * 100);
+    if (pct < 1) return undefined;
+    return { text: `%${pct}`, down: currentPrice < saved };
+  };
+  const droppedCount = favoriteListings.filter((l) => l && (savedPriceById.get(l.id) ?? 0) > l.price).length;
   const visibleListings = favoriteListings.filter((listing) => {
     if (!listing || tokens.length === 0) return true;
     return matchesQuery(listing, undefined, tokens);
@@ -107,7 +117,7 @@ function FavoritesScreenInner() {
               <EmptyState title="Favori yok" body="Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin." />
             ) : (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-                {filtered.map((listing) => <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} />)}
+                {filtered.map((listing) => <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} />)}
               </View>
             )}
           </View>
@@ -190,9 +200,16 @@ function FavoritesScreenInner() {
       {favoriteListings.length === 0 ? <EmptyState title={language === "en" ? "No favorites" : "Favori yok"} body={language === "en" ? "Tap the heart on product details to add products to favorites." : "Ürün detayında kalp simgesine basarak ürünleri favorilerine ekleyebilirsin."} /> : null}
       {favoriteListings.length > 0 && visibleListings.length === 0 ? <EmptyState title="Sonuç yok" body={language === "en" ? "Change your search term to list your favorites again." : "Arama kelimesini değiştirerek favorilerini tekrar listeleyebilirsin."} /> : null}
 
+      {droppedCount > 0 ? (
+        <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 12, flexDirection: "row", gap: 8, marginBottom: 4, paddingHorizontal: 14, paddingVertical: 10 }}>
+          <MaterialCommunityIcons name="tag-heart" size={18} color={colors.success} />
+          <Text style={{ color: colors.success, flex: 1, fontSize: 13, fontWeight: "800" }}>Favorilerinden {droppedCount} ilanın fiyatı düştü — kaçırma!</Text>
+        </View>
+      ) : null}
+
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap }}>
         {visibleListings.map((listing) =>
-          listing ? <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} /> : null
+          listing ? <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} /> : null
         )}
       </View>
       <PrimaryButton href="/(tabs)/explore" tone="secondary">Keşfete dön</PrimaryButton>

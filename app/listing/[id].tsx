@@ -224,8 +224,11 @@ export default function ListingDetailScreen() {
     .filter((item) => item.ownerId === currentListing.ownerId && item.id !== currentListing.id && item.status === "active")
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 8);
-  // Benzerlik: aynı kategori (güçlü sinyal) + başlık/etiket terim örtüşmesi + popülerlik.
+  // Benzerlik: aynı kategori + başlık/etiket örtüşmesi + YAPISAL ÖZELLİKLER
+  // (fiyat yakınlığı, ilan tipi, oda, m², konum) + popülerlik. Emlakta güçlü eşleşme.
   const meTerms = new Set(tokenize(`${currentListing.title} ${currentListing.tags.join(" ")}`));
+  const meAttr = currentListing.attributes ?? {};
+  const meM2 = Number(meAttr.grossM2 ?? meAttr.m2 ?? meAttr.netM2 ?? meAttr.totalGrossM2 ?? 0) || 0;
   const similarListings = listings
     .filter((item) => item.ownerId !== currentListing.ownerId && item.status === "active" && item.id !== currentListing.id)
     .map((item) => {
@@ -233,8 +236,17 @@ export default function ListingDetailScreen() {
       let overlap = 0;
       for (const term of terms) if (meTerms.has(term)) overlap += 1;
       const sameCat = item.category === currentListing.category ? 2.5 : 0;
+      const a = item.attributes ?? {};
+      let attrScore = 0;
+      // Fiyat yakınlığı (±25%): güçlü sinyal.
+      if (currentListing.price > 0 && Math.abs(item.price - currentListing.price) / currentListing.price <= 0.25) attrScore += 2;
+      if (meAttr.listingType && a.listingType === meAttr.listingType) attrScore += 1.5;
+      if (meAttr.rooms && a.rooms === meAttr.rooms) attrScore += 1.5;
+      if (currentListing.provinceId && item.provinceId === currentListing.provinceId) attrScore += 1;
+      const itemM2 = Number(a.grossM2 ?? a.m2 ?? a.netM2 ?? a.totalGrossM2 ?? 0) || 0;
+      if (meM2 > 0 && itemM2 > 0 && Math.abs(itemM2 - meM2) / meM2 <= 0.3) attrScore += 1;
       const pop = (item.leadCount + item.partnerCount) * 0.002;
-      return { item, s: overlap * 1.5 + sameCat + pop };
+      return { item, s: overlap * 1.2 + sameCat + attrScore + pop };
     })
     .filter((x) => x.s > 0)
     .sort((a, b) => b.s - a.s)

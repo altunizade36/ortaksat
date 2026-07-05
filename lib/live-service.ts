@@ -680,9 +680,9 @@ export async function updateListingLive(listing: Listing) {
   return true;
 }
 
-export async function insertFavorite(listingId: string, userId: string, id: string) {
+export async function insertFavorite(listingId: string, userId: string, id: string, savedPrice?: number) {
   if (!supabase) return;
-  const { error } = await supabase.from("favorites").insert({ id, listing_id: listingId, user_id: userId });
+  const { error } = await supabase.from("favorites").insert({ id, listing_id: listingId, user_id: userId, saved_price: savedPrice ?? null });
   if (error) console.warn("Supabase favorite insert failed", error);
 }
 

@@ -15,7 +15,7 @@ import type { Listing, User } from "@/lib/types";
 
 type StatusTone = "success" | "accent" | "info" | "dark" | "gold";
 
-function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: User; width?: number }) {
+function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listing; owner?: User; width?: number; priceNote?: { text: string; down: boolean } }) {
   const { language, t } = useLanguage();
   const commission = commissionAmount(listing);
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
@@ -113,9 +113,17 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
               ) : null}
 
               <View style={{ gap: 5 }}>
-                <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 19, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-                  {moneyIn(listing.price, listing.currency)}
-                </Text>
+                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 19, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
+                    {moneyIn(listing.price, listing.currency)}
+                  </Text>
+                  {priceNote ? (
+                    <View style={{ alignItems: "center", backgroundColor: priceNote.down ? colors.successSoft : colors.warningSoft, borderRadius: 999, flexDirection: "row", gap: 2, paddingHorizontal: 7, paddingVertical: 2 }}>
+                      <MaterialCommunityIcons name={priceNote.down ? "arrow-down-bold" : "arrow-up-bold"} size={11} color={priceNote.down ? colors.success : colors.warning} />
+                      <Text style={{ color: priceNote.down ? colors.success : colors.warning, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{priceNote.text}</Text>
+                    </View>
+                  ) : null}
+                </View>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
                   <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
                     <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
