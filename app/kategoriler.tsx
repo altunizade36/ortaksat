@@ -12,6 +12,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter, WebTrustStrip } from "@/components/web-landing";
 import { getCategoryImage } from "@/lib/categories";
 import { type CategoryNode } from "@/lib/category-tree";
+import { useIsWideWeb } from "@/lib/layout";
 
 function descendantLabels(node: CategoryNode): string[] {
   const out = [node.label];
@@ -46,6 +47,7 @@ export default function CategoriesPage() {
   const { language } = useLanguage();
   const { listings, categoryTree } = useStore();
   const router = useRouter();
+  const isWideWeb = useIsWideWeb();
   const [query, setQuery] = useState("");
 
   const counts: Record<string, number> = {};
@@ -82,7 +84,7 @@ export default function CategoriesPage() {
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 20, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16, width: "100%" }} style={{ backgroundColor: colors.background }}>
       {/* Hero */}
-      <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, paddingHorizontal: 28, paddingVertical: 24 }}>
+      <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: isWideWeb ? "row" : "column", gap: isWideWeb ? 24 : 16, paddingHorizontal: isWideWeb ? 28 : 18, paddingVertical: isWideWeb ? 24 : 18 }}>
         <View style={{ flex: 1.5, gap: 12, justifyContent: "center", minWidth: 0 }}>
           <View style={{ alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
             <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Kategoriler</Text>
@@ -113,7 +115,7 @@ export default function CategoriesPage() {
             </Link>
           </View>
         </View>
-        <View style={{ gap: 12, justifyContent: "center", width: 260 }}>
+        <View style={{ gap: 12, justifyContent: "center", width: isWideWeb ? 260 : "100%" }}>
           {[
             { icon: "shape-outline" as const, value: `${tops.length}`, label: "Toplam kategori" },
             { icon: "tag-multiple-outline" as const, value: `${totalActive}`, label: "Aktif ilan" },
