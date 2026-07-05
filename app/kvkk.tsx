@@ -7,6 +7,7 @@ import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
 import { EmptyState } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
@@ -203,13 +204,14 @@ export default function KvkkScreen() {
               <MaterialCommunityIcons name="lifebuoy" size={19} color={colors.primaryDark} />
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Destek ve İletişim</Text>
             </View>
-            <KvkkContact icon="email-outline" label="KVKK Destek E-posta" value="kvkk@ortaksat.com" />
-            <KvkkContact icon="lifebuoy" label="Destek Merkezi" value="destek.ortaksat.com" />
-            <KvkkContact icon="whatsapp" label="WhatsApp Destek" value="+90 555 111 22 33" />
-            <Link href="/legal" asChild>
+            <KvkkContact icon="email-outline" label="KVKK & Destek E-posta" value={SUPPORT_EMAIL} />
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>
+              KVKK başvuruların, veri talepleri ve tüm iletişim bu e-posta üzerinden yürür. OrtakSat çağrı merkezi/telefon hattı işletmez.
+            </Text>
+            <Link href="/iletisim" asChild>
               <Pressable style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 11 }}>
-                <MaterialCommunityIcons name="lifebuoy" size={16} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Destek Merkezi'ne Git</Text>
+                <MaterialCommunityIcons name="email-outline" size={16} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>İletişim sayfasına git</Text>
               </Pressable>
             </Link>
           </View>

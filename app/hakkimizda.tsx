@@ -1,5 +1,6 @@
 import { ContentPageView } from "@/components/content-page-view";
 import { InfoPage } from "@/components/info-page";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 
 export default function AboutScreen() {
   return <ContentPageView slug="hakkimizda" fallback={<AboutScreenStatic />} />;
@@ -22,6 +23,10 @@ function AboutScreenStatic() {
         {
           heading: "Neden ortaksat?",
           body: "Tek bir ürünü yüzlerce ortağın ağına taşıyarak erişimini büyütürsün. Reklam bütçesi yerine sonuç bazlı komisyon ödersin: sadece satış olduğunda ödeme yaparsın."
+        },
+        {
+          heading: "İletişim",
+          body: `Şikayet, bilgi, yasal/KVKK başvurusu ve destek talepleri için bize e-posta ile ulaşabilirsin: ${SUPPORT_EMAIL}. OrtakSat bir aracı platformdur; çağrı merkezi/telefon hattı işletmez. Genellikle 1–3 iş günü içinde dönüş yapılır. Ayrıntılar için İletişim sayfasına bakabilirsin.`
         }
       ]}
     />

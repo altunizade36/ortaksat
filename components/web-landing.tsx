@@ -5,6 +5,7 @@ import { Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
+import { SUPPORT_EMAIL } from "@/lib/contact";
 import { getCategoryImage, listingCategories } from "@/lib/categories";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { subscribeNewsletterLive } from "@/lib/live-service";
@@ -280,7 +281,7 @@ export function WebFooter() {
         { label: "Yardım Merkezi", href: "/sss" },
         { label: "Güvenli Alışveriş", href: "/guvenli-alisveris" },
         { label: "Hakkımızda", href: "/hakkimizda" },
-        { label: "İletişim", href: "/legal" }
+        { label: "İletişim", href: "/iletisim" }
       ]
     },
     {
@@ -327,6 +328,12 @@ export function WebFooter() {
           <Text style={{ color: light, fontSize: 13, fontWeight: "600", lineHeight: 19, maxWidth: 380 }}>
             {t("appSlogan")}. İlanını aç, satış yapabilecek ortaklarla eşleş; komisyonu birlikte belirleyin.
           </Text>
+          <Link href="/iletisim" asChild>
+            <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 6, opacity: pressed ? 0.75 : 1 })}>
+              <MaterialCommunityIcons name="email-outline" size={14} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{SUPPORT_EMAIL}</Text>
+            </Pressable>
+          </Link>
           <View style={{ gap: 8, maxWidth: 380 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Bültene abone ol</Text>
             {subscribed ? (
