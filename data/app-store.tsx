@@ -198,6 +198,7 @@ type AppStore = {
   verifyEmailCode: (email: string, code: string) => Promise<boolean>;
   resendEmailCode: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
+  signOutAllDevices: () => Promise<boolean>;
   updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio">) => Promise<boolean>;
   savePreferences: (preferences: Record<string, boolean | string | number>) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, details?: string) => Promise<boolean>;
@@ -1050,6 +1051,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
       async signOut() {
         if (supabase) await supabase.auth.signOut();
         setAuthUser(null);
+      },
+      // Tüm cihazlardan çıkış: sunucudaki tüm refresh token'ları geçersiz kılar
+      // (scope: "global"). Bu cihazdaki oturum da kapanır.
+      async signOutAllDevices() {
+        if (!supabase) { setAuthUser(null); return true; }
+        void logActivity("sign_out", { userId: authUser?.id, metadata: { scope: "global" } });
+        const { error } = await supabase.auth.signOut({ scope: "global" });
+        setAuthUser(null);
+        if (error) { setAuthError(error.message); return false; }
+        return true;
       },
       async savePreferences(preferences) {
         const merged = { ...(currentUser.preferences ?? {}), ...preferences };

@@ -2,17 +2,20 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useCallback, useEffect, useState } from "react";
+import { Alert, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
+import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
-import { changePasswordLive, uploadProfileAvatar } from "@/lib/live-service";
+import { changePasswordLive, reauthenticateLive, uploadProfileAvatar } from "@/lib/live-service";
+import { actionLabel, fetchLoginHistory, type LoginEvent } from "@/lib/security-history";
 import { useStore } from "@/lib/use-store";
+import { passwordStrength } from "@/lib/validation";
 
 type SettingsSection = "personal" | "security" | "notifications" | "store" | "verification";
 
@@ -23,7 +26,7 @@ function isImageAvatar(value: string) {
 function ProfileEditScreenInner() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, backendMode, currentUser, updateProfile, savePreferences, requestAccountDeletion, signOut } = useStore();
+  const { authError, backendMode, currentUser, updateProfile, savePreferences, requestAccountDeletion, signOut, signOutAllDevices } = useStore();
   const prefs0 = currentUser.preferences ?? {};
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const [name, setName] = useState(currentUser.name);
@@ -49,9 +52,33 @@ function ProfileEditScreenInner() {
   const [pwNew2, setPwNew2] = useState("");
   const [pwSaving, setPwSaving] = useState(false);
   const [storeSaving, setStoreSaving] = useState(false);
+  // Güvenlik: giriş/oturum geçmişi + tüm cihazlardan çıkış
+  const [loginHistory, setLoginHistory] = useState<LoginEvent[]>([]);
+  const [historyLoading, setHistoryLoading] = useState(false);
+  const [signingOutAll, setSigningOutAll] = useState(false);
+
+  const loadHistory = useCallback(async () => {
+    if (!isLiveAccount) return;
+    setHistoryLoading(true);
+    const rows = await fetchLoginHistory(currentUser.id);
+    setLoginHistory(rows);
+    setHistoryLoading(false);
+  }, [isLiveAccount, currentUser.id]);
+
+  useEffect(() => { void loadHistory(); }, [loadHistory]);
+
+  async function signOutEverywhere() {
+    if (signingOutAll) return;
+    setSigningOutAll(true);
+    const ok = await signOutAllDevices();
+    setSigningOutAll(false);
+    if (ok) { Alert.alert("Tüm cihazlardan çıkıldı", "Tüm oturumların kapatıldı. Tekrar giriş yapman gerekir."); router.replace("/auth"); }
+    else Alert.alert("İşlem tamamlanamadı", "Oturumlar kapatılamadı, tekrar dene.");
+  }
 
   async function changePassword() {
-    if (pwNew.length < 8) { Alert.alert("Zayıf şifre", "Yeni şifre en az 8 karakter olmalı."); return; }
+    const s = passwordStrength(pwNew);
+    if (!s.ok) { const miss = s.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", "); Alert.alert("Şifre yeterince güçlü değil", `Ekle: ${miss}.`); return; }
     if (pwNew !== pwNew2) { Alert.alert("Şifreler uyuşmuyor", "Yeni şifre ile tekrarı aynı olmalı."); return; }
     if (!isLiveAccount) { Alert.alert("Ön izleme hesabı", "Şifre değişikliği yalnızca canlı hesaplarda geçerlidir."); return; }
     setPwSaving(true);
@@ -84,25 +111,44 @@ function ProfileEditScreenInner() {
     );
   }
 
+  // Hesap silme: şifre doğrulaması + 30 gün geri alma bilgisi (soft-delete).
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deletePw, setDeletePw] = useState("");
+  const [deleteReason, setDeleteReason] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
   function closeAccount() {
-    Alert.alert(
-      "Hesabı kapat",
-      "Hesap kapatma talebi KVKK kapsamında işlenir; onaylanınca ilanların ve komisyon geçmişin kalıcı olarak silinir. Talebi şimdi oluşturalım mı?",
-      [
-        { text: "Vazgeç", style: "cancel" },
-        {
-          text: "Talep oluştur",
-          style: "destructive",
-          onPress: () => {
-            void (async () => {
-              const ok = await requestAccountDeletion("Kullanıcı ayarlar ekranından hesap kapatma talebi oluşturdu.");
-              Alert.alert(ok ? "Talebin alındı" : "Oluşturulamadı", ok ? "Hesap kapatma talebin kaydedildi. Ekibimiz işleme alacak; detay için Yasal & Destek sayfasını takip et." : (authError ?? "Talep oluşturulamadı, lütfen tekrar dene."));
-              if (ok) router.push("/kvkk");
-            })();
-          }
-        }
-      ]
-    );
+    if (!isLiveAccount) {
+      Alert.alert("Ön izleme hesabı", "Hesap silme yalnızca canlı hesaplarda geçerlidir.");
+      return;
+    }
+    setDeletePw("");
+    setDeleteReason("");
+    setDeleteOpen(true);
+  }
+
+  async function confirmDeleteAccount() {
+    if (deleting) return;
+    if (deletePw.length < 1) { Alert.alert("Şifre gerekli", "Devam etmek için şifreni gir."); return; }
+    setDeleting(true);
+    const verified = await reauthenticateLive(deletePw);
+    if (!verified) {
+      setDeleting(false);
+      Alert.alert("Şifre doğrulanamadı", "Girdiğin şifre hatalı. Hesap silme işlemi güvenlik için iptal edildi.");
+      return;
+    }
+    const ok = await requestAccountDeletion(deleteReason.trim() || "Kullanıcı ayarlar ekranından hesap silme talebi oluşturdu.");
+    setDeleting(false);
+    setDeleteOpen(false);
+    if (ok) {
+      Alert.alert(
+        "Hesap silme talebin alındı",
+        "Hesabın 30 gün boyunca askıya alınır; bu süre içinde giriş yaparsan talebini iptal edip hesabını geri alabilirsin. 30 gün sonunda hesabın ve ilişkili verilerin kalıcı olarak silinir.",
+        [{ text: "Anladım", onPress: () => void signOut() }]
+      );
+    } else {
+      Alert.alert("Oluşturulamadı", authError ?? "Talep oluşturulamadı, lütfen tekrar dene.");
+    }
   }
 
   async function pickAvatar() {
@@ -142,6 +188,35 @@ function ProfileEditScreenInner() {
     router.back();
   }
 
+  // Hesap silme onay modalı (şifre doğrulaması + 30 gün geri alma) — her iki düzende ortak.
+  const deleteModal = (
+    <Modal visible={deleteOpen} transparent animationType="fade" onRequestClose={() => setDeleteOpen(false)}>
+      <View style={{ backgroundColor: "rgba(0,0,0,0.55)", flex: 1, justifyContent: "center", padding: 20 }}>
+        <View style={{ alignSelf: "center", backgroundColor: colors.background, borderRadius: 18, gap: 14, maxWidth: 440, padding: 22, width: "100%" }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+            <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
+              <MaterialCommunityIcons name="account-alert-outline" size={24} color={colors.accent} />
+            </View>
+            <Text style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>Hesabını sil</Text>
+          </View>
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>
+            Hesabın <Text style={{ color: colors.ink, fontWeight: "900" }}>30 gün</Text> boyunca askıya alınır. Bu süre içinde tekrar giriş yaparsan talebini iptal edip hesabını geri alabilirsin. 30 günün sonunda hesabın, ilanların ve ilişkili verilerin kalıcı olarak silinir.
+          </Text>
+          <DeskField icon="lock-outline" label="Devam etmek için şifreni gir" secure value={deletePw} onChangeText={setDeletePw} placeholder="Şifren" />
+          <DeskField icon="comment-outline" label="Sebep (opsiyonel)" value={deleteReason} onChangeText={setDeleteReason} placeholder="Ayrılma sebebini yazabilirsin" />
+          <View style={{ flexDirection: "row", gap: 10, justifyContent: "flex-end" }}>
+            <Pressable onPress={() => setDeleteOpen(false)} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 11 }}>
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text>
+            </Pressable>
+            <Pressable onPress={() => void confirmDeleteAccount()} disabled={deleting} style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, opacity: deleting ? 0.6 : 1, paddingHorizontal: 18, paddingVertical: 11 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{deleting ? "İşleniyor…" : "Hesabımı sil"}</Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
+  );
+
   if (isWideWeb) {
     const navItems: Array<{ key: SettingsSection; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string }> = [
       { key: "personal", icon: "account-outline", label: "Kişisel Bilgiler", sub: "Ad, telefon, foto, bio" },
@@ -167,6 +242,7 @@ function ProfileEditScreenInner() {
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+        {deleteModal}
         <View style={{ gap: 4 }}>
           <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Ayarlar</Text>
           <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Hesabını, güvenlik ve bildirim tercihlerini buradan yönet.</Text>
@@ -225,9 +301,10 @@ function ProfileEditScreenInner() {
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Şifre değiştir</Text>
                   <View style={{ flexDirection: "row", gap: 14 }}>
-                    <View style={{ flex: 1 }}><DeskField label="Yeni şifre (en az 8 karakter)" value={pwNew} onChangeText={setPwNew} icon="lock-reset" secure /></View>
+                    <View style={{ flex: 1 }}><DeskField label="Yeni şifre (güçlü olmalı)" value={pwNew} onChangeText={setPwNew} icon="lock-reset" secure /></View>
                     <View style={{ flex: 1 }}><DeskField label="Yeni şifre (tekrar)" value={pwNew2} onChangeText={setPwNew2} icon="lock-check-outline" secure /></View>
                   </View>
+                  <PasswordStrengthMeter password={pwNew} />
                   <Pressable disabled={pwSaving} onPress={() => void changePassword()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, opacity: pwSaving ? 0.6 : 1, paddingHorizontal: 22, paddingVertical: 12 }}>
                     <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{pwSaving ? "Güncelleniyor…" : "Şifreyi güncelle"}</Text>
                   </Pressable>
@@ -245,6 +322,7 @@ function ProfileEditScreenInner() {
                     <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>Bu cihazdan çıkış yap</Text>
                   </Pressable>
                 </View>
+                <LoginHistoryCard history={loginHistory} loading={historyLoading} isLive={isLiveAccount} onRefresh={() => void loadHistory()} onSignOutAll={() => void signOutEverywhere()} signingOutAll={signingOutAll} />
               </View>
             ) : null}
 
@@ -343,6 +421,7 @@ function ProfileEditScreenInner() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+      {deleteModal}
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16, paddingBottom: 110 }}>
         <Card>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
@@ -383,12 +462,16 @@ function ProfileEditScreenInner() {
 
         {/* Mobil paritesi: şifre/IBAN/bildirim/doğrulama/hesap web'de vardı, mobilde yoktu. */}
         {isLiveAccount ? (
-          <Card>
-            <SectionTitle title="Hesap güvenliği" />
-            <DeskField icon="lock-outline" label="Yeni şifre" secure value={pwNew} onChangeText={setPwNew} placeholder="En az 8 karakter" />
-            <DeskField icon="lock-check-outline" label="Yeni şifre (tekrar)" secure value={pwNew2} onChangeText={setPwNew2} placeholder="Tekrar" />
-            <PrimaryButton icon="key-outline" tone="secondary" onPress={() => void changePassword()}>{pwSaving ? "Güncelleniyor" : "Şifreyi güncelle"}</PrimaryButton>
-          </Card>
+          <>
+            <Card>
+              <SectionTitle title="Hesap güvenliği" />
+              <DeskField icon="lock-outline" label="Yeni şifre (güçlü olmalı)" secure value={pwNew} onChangeText={setPwNew} placeholder="Büyük/küçük harf, rakam, özel karakter" />
+              <PasswordStrengthMeter password={pwNew} />
+              <DeskField icon="lock-check-outline" label="Yeni şifre (tekrar)" secure value={pwNew2} onChangeText={setPwNew2} placeholder="Tekrar" />
+              <PrimaryButton icon="key-outline" tone="secondary" onPress={() => void changePassword()}>{pwSaving ? "Güncelleniyor" : "Şifreyi güncelle"}</PrimaryButton>
+            </Card>
+            <LoginHistoryCard history={loginHistory} loading={historyLoading} isLive={isLiveAccount} onRefresh={() => void loadHistory()} onSignOutAll={() => void signOutEverywhere()} signingOutAll={signingOutAll} />
+          </>
         ) : null}
 
         <Card>
@@ -421,6 +504,51 @@ function ProfileEditScreenInner() {
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>
+  );
+}
+
+function formatWhen(iso: string): string {
+  try {
+    return new Date(iso).toLocaleString("tr-TR", { day: "2-digit", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" });
+  } catch {
+    return iso;
+  }
+}
+
+/** Giriş/oturum geçmişi + tüm cihazlardan çıkış kartı (masaüstü ve mobil ortak). */
+function LoginHistoryCard({ history, loading, isLive, onRefresh, onSignOutAll, signingOutAll }: { history: LoginEvent[]; loading: boolean; isLive: boolean; onRefresh: () => void; onSignOutAll: () => void; signingOutAll: boolean }) {
+  return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <MaterialCommunityIcons name="history" size={20} color={colors.primary} />
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Son giriş etkinliği</Text>
+        <Pressable onPress={onRefresh} hitSlop={8} accessibilityLabel="Yenile"><MaterialCommunityIcons name="refresh" size={18} color={colors.muted} /></Pressable>
+      </View>
+      {!isLive ? (
+        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Giriş geçmişi yalnızca canlı hesaplarda görüntülenir.</Text>
+      ) : loading ? (
+        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Yükleniyor…</Text>
+      ) : history.length === 0 ? (
+        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Henüz kayıtlı giriş etkinliği yok.</Text>
+      ) : (
+        <View style={{ gap: 8 }}>
+          {history.map((e) => (
+            <View key={e.id} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 12, paddingVertical: 10 }}>
+              <MaterialCommunityIcons name={e.os === "iOS" || e.os === "Android" ? "cellphone" : "monitor"} size={18} color={colors.muted} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{actionLabel(e.action)} · {e.browser}</Text>
+                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{e.os} · {formatWhen(e.when)}</Text>
+              </View>
+              {e.isCurrent ? <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}><Text style={{ color: colors.success, fontSize: 10.5, fontWeight: "900" }}>BU CİHAZ</Text></View> : null}
+            </View>
+          ))}
+        </View>
+      )}
+      <Pressable onPress={onSignOutAll} disabled={signingOutAll || !isLive} style={{ alignItems: "center", alignSelf: "flex-start", borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, opacity: signingOutAll || !isLive ? 0.6 : 1, paddingHorizontal: 18, paddingVertical: 10 }}>
+        <MaterialCommunityIcons name="logout-variant" size={16} color={colors.accent} />
+        <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>{signingOutAll ? "Çıkılıyor…" : "Tüm cihazlardan çıkış yap"}</Text>
+      </Pressable>
+    </View>
   );
 }
 

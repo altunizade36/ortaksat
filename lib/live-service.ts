@@ -860,6 +860,23 @@ export async function createSupportTicketLive(input: { userId: string; subject: 
   return true;
 }
 
+/**
+ * Hassas işlem öncesi yeniden kimlik doğrulama: mevcut oturumun e-postası ile
+ * girilen şifreyi doğrular. Hesap silme gibi geri alınması zor işlemlerde kullanılır.
+ */
+export async function reauthenticateLive(password: string): Promise<boolean> {
+  if (!supabase || !password) return false;
+  try {
+    const { data } = await supabase.auth.getUser();
+    const email = data?.user?.email;
+    if (!email) return false;
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    return !error;
+  } catch {
+    return false;
+  }
+}
+
 export async function requestAccountDeletionLive(input: { userId: string; reason: string }) {
   if (!supabase || !uuidPattern.test(input.userId)) return false;
 
