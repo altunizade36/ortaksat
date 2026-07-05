@@ -675,7 +675,12 @@ function AdminScreenInner() {
           <SeoManager settings={seoSettings} onSave={saveSeoSetting} />
         ) : null}
 
-        {section === "settings" ? (
+        {section === "settings" && !canManageUsers ? (
+          <Panel title="Ayarlar" sub="Yalnızca admin">
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>Site duyurusu ve platform ayarları yalnızca admin hesaplarına açıktır (sen moderatörsün). Bu değişiklikler moderatör rolüyle uygulanmaz.</Text>
+          </Panel>
+        ) : null}
+        {section === "settings" && canManageUsers ? (
           <View style={{ gap: 16 }}>
           <Panel title="Site Duyurusu" sub="Tüm sayfaların üstünde çıkan duyuru banner'ı">
             <View style={{ gap: 10 }}>
