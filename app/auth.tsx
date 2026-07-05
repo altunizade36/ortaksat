@@ -20,7 +20,7 @@ type AuthMode = "login" | "register" | "reset";
 export default function AuthScreen() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, signInWithEmail, signInWithGoogle, signUpWithEmail, updatePasswordWithEmail } = useStore();
+  const { authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signUpWithEmail, updatePasswordWithEmail } = useStore();
   const [mode, setMode] = useState<AuthMode>("login");
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
@@ -35,6 +35,26 @@ export default function AuthScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [verifyCode, setVerifyCode] = useState("");
   const [verifying, setVerifying] = useState(false);
+  // Şifremi unuttum akışı: önce e-postaya kod gönder, sonra kod + yeni şifre.
+  const [resetSent, setResetSent] = useState(false);
+  const [resetCode, setResetCode] = useState("");
+
+  async function sendResetCode() {
+    if (loading) return;
+    setLoading(true);
+    const ok = await resetPasswordWithEmail(cleanEmail);
+    setLoading(false);
+    if (ok) { setResetSent(true); Alert.alert("Kod gönderildi", "E-postana 6 haneli şifre sıfırlama kodu gönderdik. Kodu ve yeni şifreni aşağıya gir."); }
+    else Alert.alert("Gönderilemedi", authError ?? "Geçerli bir e-posta gir ve tekrar dene.");
+  }
+  async function doResetWithCode() {
+    if (loading) return;
+    setLoading(true);
+    const ok = await resetPasswordWithCode(cleanEmail, resetCode, newPassword);
+    setLoading(false);
+    if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); Alert.alert("Şifren güncellendi", "Yeni şifrenle giriş yapabilirsin."); }
+    else Alert.alert("Güncellenemedi", authError ?? "Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa.");
+  }
 
   async function submitVerifyCode() {
     if (!pendingVerifyEmail || verifying) return;
@@ -325,7 +345,12 @@ export default function AuthScreen() {
                 {mode === "register" ? <DeskAuthField icon="account-outline" label="Ad Soyad" value={name} onChangeText={setName} placeholder="Örn. Ayşe Demir" /> : null}
                 <DeskAuthField icon="email-outline" label="E-posta" value={email} onChangeText={setEmail} placeholder="ornek@eposta.com" />
                 {mode !== "reset" ? <DeskAuthField icon="lock-outline" label="Şifre" value={password} onChangeText={setPassword} placeholder="En az 6 karakter" secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} /> : null}
-                {mode === "reset" ? <DeskAuthField icon="lock-reset" label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} placeholder="Bağlantıdan geldikten sonra yeni şifre" secure /> : null}
+                {mode === "reset" && resetSent ? (
+                  <>
+                    <DeskAuthField icon="numeric" label="E-postana gelen 6 haneli kod" value={resetCode} onChangeText={(v) => setResetCode(v.replace(/\D/g, "").slice(0, 6))} placeholder="______" />
+                    <DeskAuthField icon="lock-reset" label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} placeholder="En az 6 karakter" secure />
+                  </>
+                ) : null}
 
                 {mode === "login" ? (
                   <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
@@ -351,12 +376,20 @@ export default function AuthScreen() {
                   </Pressable>
                 ) : (
                   <View style={{ gap: 10 }}>
-                    <Pressable onPress={resetPassword} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, justifyContent: "center", paddingVertical: 14 }}>
-                      <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? "Gönderiliyor…" : "Sıfırlama e-postası gönder"}</Text>
-                    </Pressable>
-                    <Pressable onPress={updatePassword} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, justifyContent: "center", paddingVertical: 13 }}>
-                      <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "800" }}>Bağlantıdan geldim, yeni şifreyi kaydet</Text>
-                    </Pressable>
+                    {!resetSent ? (
+                      <Pressable onPress={sendResetCode} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, justifyContent: "center", paddingVertical: 14 }}>
+                        <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? "Gönderiliyor…" : "Sıfırlama kodu gönder"}</Text>
+                      </Pressable>
+                    ) : (
+                      <>
+                        <Pressable onPress={doResetWithCode} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, justifyContent: "center", paddingVertical: 14 }}>
+                          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? "Güncelleniyor…" : "Kodu doğrula ve şifreyi güncelle"}</Text>
+                        </Pressable>
+                        <Pressable onPress={sendResetCode} style={{ alignItems: "center", justifyContent: "center", paddingVertical: 8 }}>
+                          <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Kodu tekrar gönder</Text>
+                        </Pressable>
+                      </>
+                    )}
                   </View>
                 )}
 
@@ -461,7 +494,12 @@ export default function AuthScreen() {
           {mode === "register" ? <Field label="Ad Soyad" value={name} onChangeText={setName} placeholder="Örn. Ayşe Demir" /> : null}
           <Field label="E-posta" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="ornek@eposta.com" />
           {mode !== "reset" ? <Field label="Şifre" value={password} onChangeText={setPassword} secureTextEntry placeholder="En az 6 karakter" /> : null}
-          {mode === "reset" ? <Field label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="Bağlantıdan geldikten sonra yeni şifre" /> : null}
+          {mode === "reset" && resetSent ? (
+            <>
+              <Field label="E-postana gelen 6 haneli kod" value={resetCode} onChangeText={(v) => setResetCode(v.replace(/\D/g, "").slice(0, 6))} placeholder="______" />
+              <Field label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="En az 6 karakter" />
+            </>
+          ) : null}
 
           {mode === "register" ? legalChecks : null}
           {legalModal}
@@ -472,8 +510,14 @@ export default function AuthScreen() {
             <PrimaryButton onPress={register}>{loading ? "Kayıt açılıyor" : "Kayıt ol"}</PrimaryButton>
           ) : (
             <>
-              <PrimaryButton onPress={resetPassword}>{loading ? "Gönderiliyor" : "Şifre sıfırlama e-postası gönder"}</PrimaryButton>
-              <PrimaryButton tone="secondary" onPress={updatePassword}>{loading ? "Kaydediliyor" : "Bağlantıdan geldim, yeni şifreyi kaydet"}</PrimaryButton>
+              {!resetSent ? (
+                <PrimaryButton onPress={sendResetCode}>{loading ? "Gönderiliyor" : "Sıfırlama kodu gönder"}</PrimaryButton>
+              ) : (
+                <>
+                  <PrimaryButton onPress={doResetWithCode}>{loading ? "Güncelleniyor" : "Kodu doğrula ve şifreyi güncelle"}</PrimaryButton>
+                  <PrimaryButton tone="secondary" onPress={sendResetCode}>Kodu tekrar gönder</PrimaryButton>
+                </>
+              )}
             </>
           )}
 

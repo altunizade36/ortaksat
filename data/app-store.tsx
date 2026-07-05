@@ -193,6 +193,7 @@ type AppStore = {
   signUpWithEmail: (input: { email: string; password: string; name: string }) => Promise<boolean>;
   resetPasswordWithEmail: (email: string) => Promise<boolean>;
   updatePasswordWithEmail: (password: string) => Promise<boolean>;
+  resetPasswordWithCode: (email: string, code: string, newPassword: string) => Promise<boolean>;
   signInWithGoogle: () => Promise<boolean>;
   verifyEmailCode: (email: string, code: string) => Promise<boolean>;
   resendEmailCode: (email: string) => Promise<boolean>;
@@ -973,6 +974,21 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const { error } = await supabase.auth.updateUser({ password });
         setAuthError(error?.message);
         return !error;
+      },
+      // Şifremi unuttum — KOD ile (link/uygulama-değiştirme yok): e-postaya gelen
+      // kurtarma kodu + yeni şifre aynı ekranda girilir. (Supabase "Reset password"
+      // şablonunda {{ .Token }} bulunmalı ki link değil KOD gitsin.)
+      async resetPasswordWithCode(email, code, newPassword) {
+        if (!supabase) { setAuthError("Kod ile sıfırlama yalnızca canlı modda çalışır."); return false; }
+        if (newPassword.length < 6) { setAuthError("Yeni şifre en az 6 karakter olmalı."); return false; }
+        const cleanEmail = email.trim().toLocaleLowerCase("tr-TR");
+        const token = code.replace(/\D/g, "");
+        if (token.length < 6) { setAuthError("6 haneli kodu eksiksiz gir."); return false; }
+        const { error: vErr } = await supabase.auth.verifyOtp({ email: cleanEmail, token, type: "recovery" });
+        if (vErr) { setAuthError(vErr.message); return false; }
+        const { error: uErr } = await supabase.auth.updateUser({ password: newPassword });
+        setAuthError(uErr?.message);
+        return !uErr;
       },
       async signInWithGoogle() {
         if (!supabase) {
