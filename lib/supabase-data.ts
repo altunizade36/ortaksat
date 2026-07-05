@@ -14,7 +14,7 @@ type PublicListingCardRow = {
   share_templates?: Listing["shareTemplates"] | null;
   ad_assets?: string[] | null;
   tags: string[] | null;
-  attributes?: Record<string, string | number | boolean> | null;
+  attributes?: Record<string, string | number | boolean | string[]> | null;
   price: number | string;
   currency?: string | null;
   demo?: boolean | null;

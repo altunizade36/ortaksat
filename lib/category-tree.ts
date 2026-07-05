@@ -13,7 +13,7 @@ function sl(value: string) {
     .replace(/^-+|-+$/g, "");
 }
 
-export type FieldType = "text" | "textarea" | "number" | "select" | "bool" | "tags";
+export type FieldType = "text" | "textarea" | "number" | "select" | "bool" | "tags" | "multiselect";
 export type FieldDef = {
   key: string;
   label: string;
@@ -301,6 +301,18 @@ const F = {
   boyut: { key: "dimensions", label: "Ölçüler (En×Boy×Yükseklik)", type: "text", placeholder: "ör. 200×90×85 cm" } as FieldDef
 };
 
+// ---- emlak zengin özellik listeleri (çoklu seçim) ------------------------
+// Profesyonel emlak portalı seviyesi; forma "İç Özellikler / Site Özellikleri /
+// Manzara / Cephe / Ulaşım / Çevre / Enerji / Yapı Güvenliği" grupları olarak gelir.
+const KONUT_IC_OZELLIK = ["Ankastre Fırın", "Ankastre Ocak", "Davlumbaz", "Bulaşık Makinesi", "Çamaşır Makinesi", "Kurutma Makinesi", "Buzdolabı", "Mikrodalga", "Klima", "VRF Klima", "Fiber İnternet", "Akıllı Ev Sistemi", "Akıllı Kilit", "Görüntülü Diafon", "Alarm Sistemi", "Yangın Alarmı", "Duman Dedektörü", "Kamera Sistemi", "Elektrikli Panjur", "Otomatik Perde", "Giyinme Odası", "Kiler", "Çamaşır Odası", "Ebeveyn Banyosu", "Jakuzi", "Sauna", "Şömine", "Amerikan Mutfak", "Ankastre Mutfak", "Ada Mutfak", "Granit Tezgah", "Laminat Parke", "Masif Parke", "Seramik Zemin", "Çelik Kapı", "Spot Aydınlatma", "LED Aydınlatma", "Kartonpiyer", "Asma Tavan", "Yerden Isıtma", "Isı Pompası", "Güneş Enerjisi", "Beyaz Eşyalı", "Perde Dahil", "Avize Dahil", "Yeni Boyanmış"];
+const KONUT_SITE_OZELLIK = ["Açık Otopark", "Kapalı Otopark", "Misafir Otoparkı", "Elektrikli Araç Şarjı", "Asansör", "Yük Asansörü", "Jeneratör", "Su Deposu", "Hidrofor", "7/24 Güvenlik", "Güvenlik Kamerası", "Kartlı Giriş", "Parmak İzi Giriş", "Kapıcı", "Resepsiyon", "Concierge", "Çocuk Parkı", "Kreş", "Basketbol Sahası", "Futbol Sahası", "Tenis Kortu", "Fitness Salonu", "Pilates/Yoga", "Açık Havuz", "Kapalı Havuz", "Çocuk Havuzu", "Sauna", "Hamam", "Spa", "Kafeterya", "Market", "Kuaför", "Yürüyüş Parkuru", "Bisiklet Yolu", "Peyzaj Alanı", "Süs Havuzu", "Kamelya", "Barbekü Alanı", "Ortak Bahçe", "Hobi Bahçesi", "Evcil Hayvan Alanı", "Yangın Merdiveni", "Acil Toplanma Alanı"];
+const MANZARA_OPTS = ["Deniz", "Boğaz", "Göl", "Nehir", "Baraj", "Orman", "Dağ", "Doğa", "Park", "Bahçe", "Havuz", "Şehir", "Cadde", "Meydan", "Marina", "Kale", "Tarihi Yapı", "Vadi", "Tarla", "Bağ", "Zeytinlik", "Yok"];
+const CEPHE_OPTS = ["Kuzey", "Güney", "Doğu", "Batı", "Kuzeydoğu", "Kuzeybatı", "Güneydoğu", "Güneybatı"];
+const ULASIM_OPTS = ["Metro", "Metrobüs", "Marmaray", "Tramvay", "Banliyö", "Otobüs", "Minibüs", "Dolmuş", "Taksi Durağı", "Havalimanı", "Otoyol", "TEM", "E-5", "Köprü", "İskele", "Marina", "Teleferik"];
+const CEVRE_OPTS = ["AVM", "Market", "Süpermarket", "Fırın", "Pazar", "Eczane", "Hastane", "Sağlık Ocağı", "Veteriner", "Anaokulu", "İlkokul", "Ortaokul", "Lise", "Üniversite", "Cami", "Park", "Spor Salonu", "Kütüphane", "Belediye", "Banka", "ATM", "Polis Merkezi", "İtfaiye", "Postane"];
+const ENERJI_SINIF = ["A+++", "A++", "A+", "A", "B", "C", "D", "E", "F", "G", "Belirtilmemiş"];
+const YAPI_GUVENLIK = ["Deprem Yönetmeliğine Uygun", "Zemin Etüdü Yapıldı", "Fore Kazık", "Radye Temel", "Perde Beton", "Çelik Konstrüksiyon", "Güçlendirme Yapıldı", "Yapı Denetimli", "İskan Alınmış", "Yapı Kullanma İzin Belgesi Var", "Kentsel Dönüşüme Uygun", "Riskli Yapı Değil"];
+
 // ---- form schemas (category-specific) ------------------------------------
 export const formSchemas: Record<string, FormSchema> = {
   konut: {
@@ -329,8 +341,8 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "siteName", label: "Site / proje adı", type: "text", placeholder: "ör. Bahçeşehir Konakları" },
       { key: "dues", label: "Aidat", type: "number", suffix: "₺" },
       { key: "deposit", label: "Depozito (kiralıkta)", type: "number", suffix: "₺" },
-      { key: "facade", label: "Cephe / yön", type: "select", options: ["Kuzey", "Güney", "Doğu", "Batı", "Kuzeydoğu", "Kuzeybatı", "Güneydoğu", "Güneybatı"] },
-      { key: "view", label: "Manzara", type: "select", options: ["Deniz", "Doğa", "Şehir", "Göl", "Orman", "Boğaz", "Cadde", "Yok"] },
+      { key: "facade", label: "Cephe / yön", type: "multiselect", options: CEPHE_OPTS },
+      { key: "view", label: "Manzara", type: "multiselect", options: MANZARA_OPTS },
       { key: "parking", label: "Otopark", type: "select", options: ["Açık Otopark", "Kapalı Otopark", "Açık & Kapalı", "Yok"] },
       { key: "elevator", label: "Asansör var mı?", type: "bool" },
       { key: "security", label: "Güvenlik var mı?", type: "bool" },
@@ -342,8 +354,14 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "urbanTransform", label: "Kentsel dönüşüme uygun mu?", type: "bool" },
       { key: "rentalIncome", label: "Aylık kira getirisi", type: "number", suffix: "₺" },
       { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "İnşaat Firmasından", "Bankadan", "Yetkili Kurumdan"] },
-      { key: "deed", label: "Tapu durumu", type: "select", options: ["Kat Mülkiyetli", "Kat İrtifaklı", "Arsa Tapulu", "Hisseli Tapu", "Müstakil Tapu", "Kooperatif Hisseli", "Bilinmiyor"] },
+      { key: "deed", label: "Tapu durumu", type: "select", options: ["Kat Mülkiyetli", "Kat İrtifaklı", "Arsa Tapulu", "Hisseli Tapu", "Müstakil Tapu", "Kooperatif Hisseli", "İntifa Hakkı", "İpotekli", "Bilinmiyor"] },
       { key: "swapReal", label: "Takas / kat karşılığı olur mu?", type: "bool" },
+      { key: "energyClass", label: "Enerji sınıfı", type: "select", options: ENERJI_SINIF },
+      { key: "interiorFeatures", label: "İç özellikler", type: "multiselect", options: KONUT_IC_OZELLIK },
+      { key: "siteFeatures", label: "Site & sosyal özellikler", type: "multiselect", options: KONUT_SITE_OZELLIK },
+      { key: "buildingSafety", label: "Deprem & yapı güvenliği", type: "multiselect", options: YAPI_GUVENLIK },
+      { key: "transport", label: "Ulaşıma yakınlık", type: "multiselect", options: ULASIM_OPTS },
+      { key: "environment", label: "Çevrede olanlar", type: "multiselect", options: CEVRE_OPTS },
       F.desc
     ]
   },
@@ -1190,15 +1208,20 @@ export const FIELD_LABELS: Record<string, { label: string; suffix?: string }> = 
 })();
 
 /** attributes jsonb'sini özellik tablosu için [{label, value}] listesine çevirir. */
-export function describeAttributes(attributes?: Record<string, string | number | boolean> | null): Array<{ label: string; value: string }> {
+export function describeAttributes(attributes?: Record<string, string | number | boolean | string[]> | null): Array<{ label: string; value: string }> {
   if (!attributes) return [];
   const rows: Array<{ label: string; value: string }> = [];
   for (const [key, val] of Object.entries(attributes)) {
     if (key.startsWith("_")) continue; // _leaf/_root iç kullanım
     if (val === undefined || val === null || val === "") continue;
+    if (Array.isArray(val) && val.length === 0) continue;
     if (["title", "description", "price", "listingType"].includes(key)) continue;
     const def = FIELD_LABELS[key];
-    const value = typeof val === "boolean" ? (val ? "Evet" : "Hayır") : `${val}${def?.suffix ? " " + def.suffix : ""}`;
+    const value = Array.isArray(val)
+      ? val.join(", ")
+      : typeof val === "boolean"
+        ? (val ? "Evet" : "Hayır")
+        : `${val}${def?.suffix ? " " + def.suffix : ""}`;
     rows.push({ label: def?.label ?? key, value });
   }
   return rows;

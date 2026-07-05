@@ -23,7 +23,7 @@ import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon & Ortak Satış", "Önizleme & Yayınla"];
 const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
 
-type Values = Record<string, string | boolean>;
+type Values = Record<string, string | boolean | string[]>;
 
 export function DesktopCreateFlow() {
   const router = useRouter();
@@ -64,8 +64,13 @@ export function DesktopCreateFlow() {
     return null;
   }, [values.title, values.description, path]);
 
-  const setV = (k: string, v: string | boolean) => setValues((s) => ({ ...s, [k]: v }));
-  const missingFields = useMemo(() => (schema ? schema.fields.filter((f) => f.required && !String(values[f.key] ?? "").trim()) : []), [schema, values]);
+  const setV = (k: string, v: string | boolean | string[]) => setValues((s) => ({ ...s, [k]: v }));
+  const missingFields = useMemo(() => (schema ? schema.fields.filter((f) => {
+    if (!f.required) return false;
+    const val = values[f.key];
+    if (Array.isArray(val)) return val.length === 0;
+    return !String(val ?? "").trim();
+  }) : []), [schema, values]);
 
   // Kategori seçiminden form alanlarını otomatik doldur: ağaçta seçilen marka/model/
   // ilan-tipi ilgili alanlara taşınır, başlık önerilir. Böylece bir sonraki adımda
@@ -177,11 +182,12 @@ export function DesktopCreateFlow() {
 
       // Yapısal özellikler: form değerlerini (m², oda, imar, tapu…) filtrelenebilir
       // biçimde sakla. title/description/price zaten üst-seviye kolonlarda tutulur.
-      const attributes: Record<string, string | number | boolean> = {};
+      const attributes: Record<string, string | number | boolean | string[]> = {};
       for (const f of schema.fields) {
         if (f.key === "title" || f.key === "description" || f.key === "price") continue;
         const raw = values[f.key];
         if (raw === undefined || raw === null || (typeof raw === "string" && !raw.trim())) continue;
+        if (Array.isArray(raw)) { if (raw.length) attributes[f.key] = raw; continue; }
         if (typeof raw === "boolean") { if (raw) attributes[f.key] = true; continue; }
         attributes[f.key] = f.type === "number" ? Number(raw) : String(raw);
       }
@@ -558,18 +564,31 @@ export function DesktopCreateFlow() {
   );
 }
 
-function DField({ field, value, onChange }: { field: FieldDef; value: string | boolean | undefined; onChange: (v: string | boolean) => void }) {
-  const wide = field.type === "textarea";
+function DField({ field, value, onChange }: { field: FieldDef; value: string | boolean | string[] | undefined; onChange: (v: string | boolean | string[]) => void }) {
+  const wide = field.type === "textarea" || field.type === "multiselect";
   // Başlık/açıklama için karakter standardı (Sahibinden benzeri) + canlı sayaç.
   const charLimit = field.key === "title" ? LIMITS.title : field.key === "description" ? LIMITS.description : null;
   const charLen = charLimit ? String(value ?? "").length : 0;
+  const selected = Array.isArray(value) ? value : [];
   return (
     <View style={{ flexBasis: wide ? "100%" : 230, flexGrow: 1, gap: 6, minWidth: 0 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}</Text>
+        <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} seçili` : ""}</Text>
         {charLimit ? <Text style={{ color: charLen > charLimit.max || (charLen > 0 && charLen < charLimit.min) ? colors.accent : colors.subtle, fontSize: 11, fontWeight: "700" }}>{charLen}/{charLimit.max}</Text> : null}
       </View>
-      {field.type === "bool" ? (
+      {field.type === "multiselect" ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          {(field.options ?? []).map((opt) => {
+            const on = selected.includes(opt);
+            return (
+              <Pressable key={opt} onPress={() => onChange(on ? selected.filter((x) => x !== opt) : [...selected, opt])} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 11, paddingVertical: 7 }}>
+                {on ? <MaterialCommunityIcons name="check" size={13} color={colors.primaryDark} /> : null}
+                <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: on ? "800" : "600" }}>{opt}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : field.type === "bool" ? (
         <Pressable onPress={() => onChange(!(value === true))} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
           <View style={{ alignItems: value === true ? "flex-end" : "flex-start", backgroundColor: value === true ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} /></View>
           <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{value === true ? "Evet" : "Hayır"}</Text>
