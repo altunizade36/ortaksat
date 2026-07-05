@@ -1,5 +1,5 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Link } from "expo-router";
+import { Link, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
@@ -16,6 +16,8 @@ import { useStore } from "@/lib/use-store";
 
 export default function LegalScreen() {
   const { language } = useLanguage();
+  const legalParams = useLocalSearchParams<{ doc?: string }>();
+  const initialDoc = typeof legalParams.doc === "string" ? legalParams.doc : undefined;
   const {
     authError,
     backendMode,
@@ -95,7 +97,7 @@ export default function LegalScreen() {
 
           {/* Gruplu hukuki belge kütüphanesi (tek kaynak: legal-content) */}
           <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Sözleşmeler ve Politikalar</Text>
-          <LegalLibrary />
+          <LegalLibrary initialKey={initialDoc} />
 
           <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
             {/* Main content */}
@@ -235,7 +237,7 @@ export default function LegalScreen() {
 
         <View style={{ gap: 10 }}>
           <SectionTitle title="Sözleşmeler ve Politikalar" />
-          <LegalLibrary />
+          <LegalLibrary initialKey={initialDoc} />
         </View>
 
         <Card>

@@ -287,7 +287,7 @@ export function WebFooter() {
       heading: "Hesabım",
       links: [
         { label: "Hesabım", href: "/profile" },
-        { label: "Ortak Sözleşmem", href: "/legal" },
+        { label: "Ortak Sözleşmem", href: "/legal?doc=ortak" },
         { label: "Komisyonlarım", href: "/partner" },
         { label: "Favorilerim", href: "/favorites" }
       ]
@@ -295,10 +295,10 @@ export function WebFooter() {
     {
       heading: "Yasal",
       links: [
-        { label: "Kullanım Şartları", href: "/legal" },
-        { label: "Gizlilik Politikası", href: "/legal" },
-        { label: "KVKK", href: "/legal" },
-        { label: "Çerez Politikası", href: "/legal" }
+        { label: "Kullanım Şartları", href: "/legal?doc=kullanim" },
+        { label: "Gizlilik Politikası", href: "/legal?doc=gizlilik" },
+        { label: "KVKK", href: "/legal?doc=kvkk" },
+        { label: "Çerez Politikası", href: "/legal?doc=cerez" }
       ]
     }
   ];

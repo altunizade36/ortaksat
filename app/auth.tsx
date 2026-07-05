@@ -398,11 +398,11 @@ export default function AuthScreen() {
                   </View>
                 ) : null}
                 <DeskAuthField icon="email-outline" label="E-posta" value={email} onChangeText={setEmail} placeholder="ornek@eposta.com" />
-                {mode !== "reset" ? <DeskAuthField icon="lock-outline" label="Şifre" value={password} onChangeText={setPassword} placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} /> : null}
+                {mode !== "reset" ? <DeskAuthField icon="lock-outline" label="Şifre" value={password} onChangeText={setPassword} placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} onSubmitEditing={mode === "login" ? login : undefined} /> : null}
                 {mode === "register" ? <PasswordStrengthMeter password={password} /> : null}
                 {mode === "register" ? (
                   <View style={{ gap: 6 }}>
-                    <DeskAuthField icon="lock-check-outline" label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Şifreni tekrar gir" secure showPassword={showPassword} />
+                    <DeskAuthField icon="lock-check-outline" label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Şifreni tekrar gir" secure showPassword={showPassword} onSubmitEditing={register} />
                     {!passwordsMatch ? <Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "700" }}>Şifreler uyuşmuyor.</Text> : null}
                   </View>
                 ) : null}
@@ -550,7 +550,7 @@ export default function AuthScreen() {
             </View>
           ) : null}
           <Field label="E-posta" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="ornek@eposta.com" />
-          {mode !== "reset" ? <Field label="Şifre" value={password} onChangeText={setPassword} secureTextEntry placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} toggleSecure secureVisible={showPassword} onToggleSecure={() => setShowPassword((v) => !v)} /> : null}
+          {mode !== "reset" ? <Field label="Şifre" value={password} onChangeText={setPassword} secureTextEntry placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} toggleSecure secureVisible={showPassword} onToggleSecure={() => setShowPassword((v) => !v)} onSubmitEditing={mode === "login" ? login : undefined} /> : null}
           {mode === "register" ? <PasswordStrengthMeter password={password} /> : null}
           {mode === "register" ? (
             <>
@@ -615,7 +615,7 @@ export default function AuthScreen() {
   );
 }
 
-function DeskAuthField({ icon, label, value, onChangeText, placeholder, secure, showToggle, showPassword, onToggle }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; onChangeText: (v: string) => void; placeholder?: string; secure?: boolean; showToggle?: boolean; showPassword?: boolean; onToggle?: () => void }) {
+function DeskAuthField({ icon, label, value, onChangeText, placeholder, secure, showToggle, showPassword, onToggle, onSubmitEditing }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; onChangeText: (v: string) => void; placeholder?: string; secure?: boolean; showToggle?: boolean; showPassword?: boolean; onToggle?: () => void; onSubmitEditing?: () => void }) {
   return (
     <View style={{ gap: 6 }}>
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
@@ -629,6 +629,8 @@ function DeskAuthField({ icon, label, value, onChangeText, placeholder, secure, 
           secureTextEntry={secure && !showPassword}
           placeholder={placeholder}
           placeholderTextColor={colors.subtle}
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType={onSubmitEditing ? "go" : "next"}
           style={{ color: colors.ink, flex: 1, fontSize: 14, minHeight: 48, paddingVertical: 10 }}
         />
         {showToggle ? (
@@ -648,7 +650,8 @@ function Field({
   secureTextEntry,
   toggleSecure,
   secureVisible,
-  onToggleSecure
+  onToggleSecure,
+  onSubmitEditing
 }: {
   label: string;
   value: string;
@@ -659,6 +662,7 @@ function Field({
   toggleSecure?: boolean;
   secureVisible?: boolean;
   onToggleSecure?: () => void;
+  onSubmitEditing?: () => void;
 }) {
   const { language } = useLanguage();
   const hidden = secureTextEntry && !secureVisible;
@@ -677,7 +681,8 @@ function Field({
           secureTextEntry={hidden}
           placeholder={placeholder ? translateCopy(placeholder, language) : undefined}
           placeholderTextColor={colors.muted}
-          returnKeyType="done"
+          onSubmitEditing={onSubmitEditing}
+          returnKeyType={onSubmitEditing ? "go" : "done"}
           style={{ color: colors.ink, flex: 1, fontSize: 16, minHeight: 50, padding: 14 }}
         />
         {toggleSecure ? (
