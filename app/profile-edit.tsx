@@ -249,13 +249,13 @@ function ProfileEditScreenInner() {
             ) : null}
 
             {section === "notifications" ? (
-              <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
-                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Bildirim Tercihleri</Text>
-                {notifRows.map((r, i) => (
-                  <View key={r.key} style={{ borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, paddingTop: i === 0 ? 0 : 14 }}>
-                    <ToggleRow label={r.label} sub={r.sub} on={notif[r.key]} onPress={() => toggleNotif(r.key)} />
-                  </View>
-                ))}
+              <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
+                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Bildirimler</Text>
+                <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
+                  <MaterialCommunityIcons name="bell-ring-outline" size={20} color={colors.primary} style={{ marginTop: 1 }} />
+                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>Talep, satış, komisyon, ortaklık ve mesaj gibi <Text style={{ fontWeight: "900" }}>önemli hareketler uygulama içinde anlık bildirim</Text> olarak sana gösterilir — Bildirimler sekmesinden takip edebilirsin.</Text>
+                </View>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>E-posta/SMS bildirim kanalları ileride eklendiğinde buradan yönetebileceksin.</Text>
               </View>
             ) : null}
 
@@ -273,13 +273,6 @@ function ProfileEditScreenInner() {
                     <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{storeSaving ? "Kaydediliyor…" : "Mağaza ayarlarını kaydet"}</Text>
                   </Pressable>
                 </View>
-                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
-                  <ToggleRow label="Ortak başvurularını otomatik onayla" sub="Yeni ortak satıcılar onay beklemeden başlasın" on={storePrefs.autoApprove} onPress={() => toggleStore("autoApprove")} />
-                  <View style={{ backgroundColor: colors.line, height: 1 }} />
-                  <ToggleRow label="Telefon numaramı ilanlarda göster" sub="Alıcılar doğrudan arayabilsin" on={storePrefs.showPhone} onPress={() => toggleStore("showPhone")} />
-                  <View style={{ backgroundColor: colors.line, height: 1 }} />
-                  <ToggleRow label="Tatil modu" sub="İlanların geçici olarak pasife alınır" on={storePrefs.vacation} onPress={() => toggleStore("vacation")} />
-                </View>
               </View>
             ) : null}
 
@@ -295,13 +288,18 @@ function ProfileEditScreenInner() {
                       <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{v.label}</Text>
                       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{v.done ? "Onaylandı" : "Henüz doğrulanmadı"}</Text>
                     </View>
-                    {v.done ? (
-                      <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ color: colors.success, fontSize: 12, fontWeight: "800" }}>Onaylı</Text></View>
-                    ) : (
-                      <Pressable onPress={() => startVerification(v.label)} style={{ backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9 }}><Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>Doğrula</Text></Pressable>
-                    )}
+                    <View style={{ backgroundColor: v.done ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
+                      <Text style={{ color: v.done ? colors.success : colors.muted, fontSize: 12, fontWeight: "800" }}>{v.done ? "Onaylı" : "Bekliyor"}</Text>
+                    </View>
                   </View>
                 ))}
+                <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, marginTop: 6, padding: 12 }}>
+                  <MaterialCommunityIcons name="information-outline" size={17} color={colors.info} style={{ marginTop: 1 }} />
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>Doğrulamalar güvenlik gereği ekibimizce, belge/bilgi kontrolüyle yapılır. Aşağıdan talep oluşturabilirsin.</Text>
+                </View>
+                <Pressable onPress={() => startVerification("Doğrulama talebi")} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, marginTop: 8, paddingHorizontal: 20, paddingVertical: 11 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Doğrulama talebi oluştur</Text>
+                </Pressable>
               </View>
             ) : null}
           </View>
@@ -394,21 +392,15 @@ function ProfileEditScreenInner() {
         ) : null}
 
         <Card>
-          <SectionTitle title="Bildirim tercihleri" />
-          <ToggleRow label="E-posta bildirimleri" sub="Satış, komisyon ve talepler" on={notif.email} onPress={() => toggleNotif("email")} />
-          <ToggleRow label="Anlık bildirimler" sub="Tarayıcı ve uygulama" on={notif.push} onPress={() => toggleNotif("push")} />
-          <ToggleRow label="SMS bildirimleri" sub="Yalnızca önemli hareketler" on={notif.sms} onPress={() => toggleNotif("sms")} />
-          <ToggleRow label="WhatsApp bildirimleri" sub="Satış ve komisyon özetleri" on={notif.whatsapp} onPress={() => toggleNotif("whatsapp")} />
-          <ToggleRow label="Pazarlama & kampanyalar" sub="Fırsat ve duyurular" on={notif.marketing} onPress={() => toggleNotif("marketing")} />
+          <SectionTitle title="Bildirimler" />
+          <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>Talep, satış, komisyon, ortaklık ve mesaj gibi <Text style={{ fontWeight: "900" }}>önemli hareketler uygulama içinde anlık bildirim</Text> olarak gösterilir; Bildirimler sekmesinden takip edebilirsin.</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>E-posta/SMS bildirim kanalları ileride eklendiğinde buradan yönetebileceksin.</Text>
         </Card>
 
         <Card>
           <SectionTitle title="Mağaza & ödeme" />
           <Field label="Mağaza adı" value={storeName} onChangeText={setStoreName} icon="storefront-outline" />
           <DeskField icon="bank-outline" label="IBAN (komisyon tahsilatı için)" value={iban} onChangeText={setIban} placeholder="TR__ ____ ____ ____ ____ __" />
-          <ToggleRow label="Ortak başvurularını otomatik onayla" sub="Yeni ortaklar beklemeden başlar" on={storePrefs.autoApprove} onPress={() => toggleStore("autoApprove")} />
-          <ToggleRow label="Tatil modu" sub="İlanların geçici olarak pasife alınır" on={storePrefs.vacation} onPress={() => toggleStore("vacation")} />
-          <ToggleRow label="Telefonu ilanlarımda göster" sub="Alıcılar iletişim için numaranı görebilir" on={storePrefs.showPhone} onPress={() => toggleStore("showPhone")} />
           <PrimaryButton icon="content-save-outline" tone="secondary" onPress={() => void saveStore()}>{storeSaving ? "Kaydediliyor" : "Mağaza & IBAN'ı kaydet"}</PrimaryButton>
         </Card>
 
