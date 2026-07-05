@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useRef, useState } from "react";
-import { Modal, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Text, View } from "react-native";
+import { LayoutChangeEvent, Modal, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import type { LegalDoc } from "@/lib/legal-content";
@@ -21,31 +21,35 @@ export function LegalConsentModal({
   onApprove: () => void;
 }) {
   const [reachedEnd, setReachedEnd] = useState(false);
-  const scrolledRef = useRef(false);
+  const viewH = useRef(0); // ScrollView görünür yüksekliği
+  const contentH = useRef(0); // içeriğin toplam yüksekliği
 
+  // İçerik görünür alana sığıyorsa kaydırmaya gerek yoktur → onayı aç (sihirli sayı yok).
+  function maybeFits() {
+    if (viewH.current > 0 && contentH.current > 0 && contentH.current <= viewH.current + 8) setReachedEnd(true);
+  }
   function onScroll(e: NativeSyntheticEvent<NativeScrollEvent>) {
     const { contentOffset, layoutMeasurement, contentSize } = e.nativeEvent;
-    scrolledRef.current = true;
-    // Sona (≈40px tolerans) gelince onay açılır. Kısa metinlerde de bir miktar
-    // kaydırma yeterli olur; içerik ekrandan kısaysa zaten baştan sona görünür.
-    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 40) setReachedEnd(true);
+    viewH.current = layoutMeasurement.height;
+    contentH.current = contentSize.height;
+    // Sona (≈24px tolerans) gelince onay açılır.
+    if (contentOffset.y + layoutMeasurement.height >= contentSize.height - 24) setReachedEnd(true);
   }
-
-  function onContentSizeChange(_w: number, h: number) {
-    // İçerik pencereye sığıyorsa (kaydırma gerekmiyorsa) onayı doğrudan aç.
-    if (!scrolledRef.current && h > 0 && h < 520) setReachedEnd(true);
-  }
+  function onLayout(e: LayoutChangeEvent) { viewH.current = e.nativeEvent.layout.height; maybeFits(); }
+  function onContentSizeChange(_w: number, h: number) { contentH.current = h; maybeFits(); }
 
   function handleClose() {
     setReachedEnd(false);
-    scrolledRef.current = false;
+    viewH.current = 0;
+    contentH.current = 0;
     onClose();
   }
 
   function handleApprove() {
     onApprove();
     setReachedEnd(false);
-    scrolledRef.current = false;
+    viewH.current = 0;
+    contentH.current = 0;
   }
 
   if (!doc) return null;
@@ -66,7 +70,9 @@ export function LegalConsentModal({
           </View>
 
           <ScrollView
+            style={{ flex: 1 }}
             onScroll={onScroll}
+            onLayout={onLayout}
             onContentSizeChange={onContentSizeChange}
             scrollEventThrottle={64}
             contentContainerStyle={{ gap: 14, padding: 18, paddingBottom: 28 }}
