@@ -6,6 +6,7 @@ import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { commissionAmount, moneyIn } from "@/lib/format";
+import { FIELD_LABELS } from "@/lib/category-tree";
 import { useCompare } from "@/lib/compare";
 import { getCategoryShortLabel } from "@/lib/categories";
 import { useIsWideWeb } from "@/lib/layout";
@@ -24,18 +25,45 @@ export function CompareBar() {
   if (items.length === 0) return null;
 
   // num + dir olan satırlarda en iyi değer vurgulanır (en düşük fiyat / en yüksek kazanç…).
-  const rows: Array<{ label: string; get: (l: Listing) => string; num?: (l: Listing) => number; dir?: "min" | "max" }> = [
+  type Row = { label: string; get: (l: Listing) => string; num?: (l: Listing) => number; dir?: "min" | "max"; multiline?: boolean };
+  const rows: Row[] = [
     { label: "Fiyat", get: (l) => moneyIn(l.price, l.currency), num: (l) => l.price, dir: "min" },
     { label: "Ortak kazancı", get: (l) => moneyIn(commissionAmount(l), l.currency), num: (l) => commissionAmount(l), dir: "max" },
     { label: "Komisyon", get: (l) => (l.commissionType === "rate" ? `%${l.commissionValue}` : moneyIn(l.commissionValue, l.currency)), num: (l) => (l.commissionType === "rate" ? l.commissionValue : commissionAmount(l)), dir: "max" },
     { label: "Bonus", get: (l) => (l.bonusAmount ? `${moneyIn(l.bonusAmount, l.currency)}${l.bonusQuota ? ` · ${l.bonusQuota} adet` : ""}` : "—"), num: (l) => l.bonusAmount ?? 0, dir: "max" },
     { label: "Satıcı puanı", get: (l) => { const o = findUser(l.ownerId); return o?.rating ? `${o.rating.toFixed(1)} ★` : "Yeni"; }, num: (l) => findUser(l.ownerId)?.rating ?? 0, dir: "max" },
-    { label: "Stok", get: (l) => `${l.stockCount} adet`, num: (l) => l.stockCount, dir: "max" },
-    { label: "İade süresi", get: (l) => (l.returnWindowDays > 0 ? `${l.returnWindowDays} gün` : "Yok") },
     { label: "Kategori", get: (l) => getCategoryShortLabel(l.category) },
     { label: "Konum", get: (l) => displayText(l.location) },
     { label: "Ortaklık", get: (l) => (l.partnershipMode === "open" ? "Anında" : l.partnershipMode === "approval" ? "Onaylı" : "Davetli") }
   ];
+
+  // Yapısal kategori özelliklerini (emlak: m²/oda/kat/ısıtma/aidat…) da karşılaştır
+  // (spec 76). İlanlarda bulunan tüm attribute anahtarlarının birleşimi satır olur.
+  const NUMERIC_ATTR: Record<string, "min" | "max"> = { grossM2: "max", netM2: "max", m2: "max", rooms: "max", dues: "min", deposit: "min", rentalIncome: "max", bathrooms: "max", floorCount: "max" };
+  const attrKeys: string[] = [];
+  for (const l of items) {
+    for (const k of Object.keys(l.attributes ?? {})) {
+      if (k.startsWith("_") || k === "listingType" || attrKeys.includes(k)) continue;
+      attrKeys.push(k);
+    }
+  }
+  const fmt = (v: string | number | boolean | string[] | undefined, suffix?: string) => {
+    if (v === undefined || v === null || v === "" || (Array.isArray(v) && !v.length)) return "—";
+    if (Array.isArray(v)) return v.join(", ");
+    if (typeof v === "boolean") return v ? "Evet" : "Hayır";
+    return `${v}${suffix ? " " + suffix : ""}`;
+  };
+  const attrRows: Row[] = attrKeys.map((k) => {
+    const def = FIELD_LABELS[k];
+    const dir = NUMERIC_ATTR[k];
+    return {
+      label: def?.label ?? k,
+      get: (l: Listing) => fmt(l.attributes?.[k], def?.suffix),
+      multiline: true,
+      ...(dir ? { num: (l: Listing) => Number(l.attributes?.[k] ?? 0) || 0, dir } : {})
+    };
+  });
+  const allRows = [...rows, ...attrRows];
 
   return (
     <>
@@ -92,8 +120,8 @@ export function CompareBar() {
                       </View>
                     ))}
                   </View>
-                  {/* Özellik satırları */}
-                  {rows.map((r, ri) => {
+                  {/* Özellik satırları (genel + yapısal kategori özellikleri) */}
+                  {allRows.map((r, ri) => {
                     let best: number | null = null;
                     if (r.num && r.dir && items.length > 1) {
                       const vals = items.map(r.num);
@@ -105,8 +133,8 @@ export function CompareBar() {
                         {items.map((l) => {
                           const isBest = best !== null && r.num!(l) === best;
                           return (
-                            <View key={l.id} style={{ alignItems: "center", flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 12, width: 190 }}>
-                              <Text numberOfLines={1} style={{ color: isBest || r.label === "Ortak kazancı" ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: isBest || r.label === "Fiyat" || r.label === "Ortak kazancı" ? "900" : "700" }}>{r.get(l)}</Text>
+                            <View key={l.id} style={{ alignItems: "flex-start", flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 12, width: 190 }}>
+                              <Text numberOfLines={r.multiline ? 5 : 1} style={{ color: isBest || r.label === "Ortak kazancı" ? colors.primaryDark : colors.ink, flex: 1, fontSize: r.multiline ? 12 : 13, fontWeight: isBest || r.label === "Fiyat" || r.label === "Ortak kazancı" ? "900" : "700", lineHeight: r.multiline ? 16 : undefined }}>{r.get(l)}</Text>
                               {isBest ? <MaterialCommunityIcons name="check-circle" size={13} color={colors.primary} /> : null}
                             </View>
                           );
