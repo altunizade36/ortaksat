@@ -328,6 +328,32 @@ const ISYERI_RUHSAT = ["İşyeri Açma Ruhsatı", "Gıda Ruhsatı", "Turizm Belg
 const ISYERI_DURUM = ["Boş", "Kiracılı", "Faal İşletme", "Devren", "Franchise", "Marka Hakları Dahil", "Personel Dahil", "Makineler Dahil", "Stok Dahil", "Ruhsat Dahil"];
 const ISYERI_OZELLIK = ["Asansör", "Yük Asansörü", "Vinç Sistemi", "Jeneratör", "Trafo", "Yangın Sistemi", "Kamera Sistemi", "Alarm", "Fiber İnternet", "Tır Girişi", "Forklift Girişi", "Yükleme Rampası", "Soyunma Odası", "Personel Alanı", "Mutfak", "WC", "Depo Alanı", "Endüstriyel Mutfak", "Vitrin", "Otopark", "Kartlı Geçiş", "Resepsiyon"];
 
+// ---- proje satış modülü (spec 48–60) -------------------------------------
+const PROJE_TIPI = ["Konut Projesi", "Daire Projesi", "Residence Projesi", "Villa Projesi", "Müstakil Ev Projesi", "Karma Yaşam Projesi", "Sosyal Konut Projesi", "Tiny House Projesi", "Bungalov Projesi", "Ticari Proje", "Ofis Projesi", "Plaza Projesi", "İş Merkezi", "AVM Projesi", "Sanayi Sitesi", "Lojistik Merkezi", "Depo Projesi", "Konut + AVM", "Konut + Ofis", "Konut + Otel", "Yaşam Merkezi", "Akıllı Şehir Projesi"];
+const PROJE_SOSYAL = ["Açık Havuz", "Kapalı Havuz", "Çocuk Havuzu", "Fitness", "Sauna", "Spa", "Hamam", "Buhar Odası", "Yoga Salonu", "Pilates", "Basketbol", "Futbol", "Tenis", "Voleybol", "Squash", "Koşu Parkuru", "Bisiklet Yolu", "Yürüyüş Alanı", "Çocuk Parkı", "Kreş", "Anaokulu", "Kütüphane", "Sinema", "Oyun Salonu", "Hobi Odası", "Misafir Odası", "Toplantı Salonu", "Çok Amaçlı Salon", "Barbekü", "Piknik Alanı", "Gölet", "Peyzaj Alanı", "Süs Havuzu", "Evcil Hayvan Parkı"];
+const PROJE_GUVENLIK = ["7/24 Güvenlik", "Kamera", "Plaka Tanıma", "Kartlı Giriş", "Parmak İzi", "Yüz Tanıma", "Site Duvarı", "Güvenlik Noktası", "Yangın Alarmı", "Sprinkler", "Acil Çıkış"];
+const PROJE_ENERJI = ["Güneş Paneli", "Yağmur Suyu Toplama", "Gri Su Sistemi", "Isı Pompası", "Elektrikli Araç Şarjı", "Akıllı Sayaç", "Akıllı Ev", "Merkezi Klima", "VRF"];
+const ODEME_SECENEK = ["Peşin", "Taksit", "Firma Finansmanı", "Banka Kredisi", "Katılım Finansmanı", "Döviz", "Altın", "Kripto", "Senet", "Araç Takası", "Arsa Takası"];
+const PROJE_KAMPANYA = ["Lansman İndirimi", "Peşin İndirimi", "Faizsiz Taksit", "Mobilya Hediyesi", "Beyaz Eşya Hediyesi", "Tapu Masrafı Dahil", "Aidat Hediyesi", "Araç Hediyesi", "Tatil Hediyesi", "Çekiliş Kampanyası"];
+
+// ---- devremülk (spec 61–62) ----------------------------------------------
+const DEVREMULK_KONAKLAMA = ["Otel Odası", "Apart Daire", "Villa", "Residence", "Bungalov", "Tiny House", "Dağ Evi"];
+const DEVREMULK_SEKIL = ["Haftalık", "10 Günlük", "15 Günlük", "Aylık", "Sezonluk", "Yıllık"];
+const DEVREMULK_TESIS = ["Açık Havuz", "Kapalı Havuz", "Termal Havuz", "Aqua Park", "Sauna", "Hamam", "Spa", "Fitness", "Çocuk Kulübü", "Restoran", "Kafe", "Market", "Mini Club", "Tenis Kortu", "Basketbol", "Futbol", "Animasyon", "Canlı Müzik", "Plaj", "İskele"];
+
+// ---- turistik tesis (spec 63) --------------------------------------------
+const TURISTIK_TUR = ["Otel", "Butik Otel", "Apart Otel", "Motel", "Pansiyon", "Hostel", "Kamp Alanı", "Glamping", "Karavan Parkı", "Dağ Oteli", "Yayla Tesisi", "Termal Tesis", "Tatil Köyü", "Bungalov Tesisi", "Marina Tesisi"];
+const TURISTIK_ALAN = ["Açık Havuz", "Kapalı Havuz", "Çocuk Havuzu", "Spa", "Hamam", "Sauna", "Fitness", "Restoran", "A La Carte", "Lobby Bar", "Havuz Bar", "Beach Bar", "Toplantı Salonu", "Kongre Salonu", "Düğün Salonu", "Çocuk Parkı", "Oyun Salonu", "Mini Club", "Disco", "Açık Otopark", "Kapalı Otopark"];
+const TURISTIK_ODA = ["Standart Oda", "Deluxe Oda", "Family Room", "Suit", "King Suit", "Presidential Suit", "Engelli Odası"];
+
+// ---- lüks konut & akıllı ev (spec 64–65) ---------------------------------
+const LUKS_OZELLIK = ["Akıllı Ev Sistemi", "Parmak İzi Giriş", "Yüz Tanıma", "Özel Asansör", "Özel Garaj", "Şarap Mahzeni", "Sinema Salonu", "Oyun Odası", "Bilardo Salonu", "Kütüphane", "Hobi Atölyesi", "Spa", "Hamam", "Sauna", "Buhar Odası", "Masaj Odası", "Kapalı Havuz", "Sonsuzluk Havuzu", "Isıtmalı Havuz", "Helikopter Pisti", "Tekne İskelesi", "Özel Plaj", "Misafir Evi", "Personel Lojmanı", "Panik Odası", "Çelik Kasa Odası"];
+const AKILLI_EV = ["Apple HomeKit", "Google Home", "Amazon Alexa", "Samsung SmartThings", "KNX", "Zigbee", "Z-Wave", "Matter", "Akıllı Aydınlatma", "Akıllı Klima", "Akıllı Isıtma", "Akıllı Perde", "Akıllı Panjur", "Akıllı Kilit", "Akıllı Garaj", "Akıllı Sulama", "Enerji Takibi", "Su Kaçağı Sensörü", "Gaz Kaçağı Sensörü", "Duman Sensörü"];
+
+// ---- ilan etiketleri (spec 72, çoklu) — tüm emlak formlarında ortak -------
+const ILAN_ETIKET = ["Acil", "Yeni", "Fırsat", "Yatırımlık", "Masrafsız", "Pazarlık Payı Var", "Takasa Açık", "Krediye Uygun", "Deniz Manzaralı", "Şehir Merkezinde", "Metroya Yakın", "Sahile Yakın", "Site İçinde", "Eşyalı", "Lüks", "Sıfır", "Yapım Aşamasında", "Hemen Teslim", "İskanlı", "Tapusu Hazır", "Yüksek Kira Getirili"];
+const ETIKET_FIELD: FieldDef = { key: "etiketler", label: "İlan etiketleri", type: "multiselect", options: ILAN_ETIKET };
+
 // ---- form schemas (category-specific) ------------------------------------
 export const formSchemas: Record<string, FormSchema> = {
   konut: {
@@ -377,6 +403,9 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "buildingSafety", label: "Deprem & yapı güvenliği", type: "multiselect", options: YAPI_GUVENLIK },
       { key: "transport", label: "Ulaşıma yakınlık", type: "multiselect", options: ULASIM_OPTS },
       { key: "environment", label: "Çevrede olanlar", type: "multiselect", options: CEVRE_OPTS },
+      { key: "smartHome", label: "Akıllı ev sistemleri", type: "multiselect", options: AKILLI_EV },
+      { key: "luxuryFeatures", label: "Lüks özellikler", type: "multiselect", options: LUKS_OZELLIK },
+      ETIKET_FIELD,
       F.desc
     ]
   },
@@ -412,6 +441,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "Müteahhitten", "Bankadan"] },
       { key: "deed", label: "Tapu durumu", type: "select", options: ["Kat Mülkiyetli", "Kat İrtifaklı", "Arsa Tapulu", "Hisseli Tapu", "Müstakil Tapu", "Bilinmiyor"] },
       { key: "swapReal", label: "Takas olur mu?", type: "bool" },
+      ETIKET_FIELD,
       F.desc
     ]
   },
@@ -451,6 +481,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
       { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "Müteahhitten", "Bankadan", "İcradan", "Belediyeden", "TOKİ'den"] },
       F.takas,
+      ETIKET_FIELD,
       F.desc
     ]
   },
@@ -474,7 +505,9 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "elevator", label: "Asansör var mı?", type: "bool" },
       { key: "earthquake", label: "Deprem yönetmeliğine uygun mu?", type: "bool" },
       { key: "urbanTransform", label: "Kentsel dönüşüme uygun mu?", type: "bool" },
-      { key: "deed", label: "Tapu durumu", type: "text" },
+      { key: "buildingSafety", label: "Deprem & yapı güvenliği", type: "multiselect", options: YAPI_GUVENLIK },
+      { key: "deed", label: "Tapu durumu", type: "select", options: ["Kat Mülkiyetli", "Kat İrtifaklı", "Arsa Tapulu", "Hisseli Tapu", "Müstakil Tapu", "Bilinmiyor"] },
+      ETIKET_FIELD,
       F.desc
     ]
   },
@@ -484,21 +517,32 @@ export const formSchemas: Record<string, FormSchema> = {
     fields: [
       F.title,
       { key: "projectName", label: "Proje adı", type: "text", required: true },
+      { key: "projectType", label: "Proje tipi", type: "select", required: true, options: PROJE_TIPI },
       { key: "company", label: "Firma adı", type: "text", required: true },
-      { key: "projectStatus", label: "Proje durumu", type: "select", required: true, options: ["Ön Satışta", "Lansmanda", "İnşaat Devam Ediyor", "Hemen Teslim", "Teslim Edildi"] },
+      { key: "projectStatus", label: "Proje durumu", type: "select", required: true, options: ["Ön Talep", "Satışta", "Lansmanda", "İnşaat Devam Ediyor", "Teslime Hazır", "Tamamlandı"] },
+      { key: "constructionPct", label: "İnşaat seviyesi", type: "text", suffix: "%" },
+      { key: "startDate", label: "Proje başlangıç tarihi", type: "text", placeholder: "ör. 2025 Q3" },
       { key: "deliveryDate", label: "Teslim tarihi", type: "text", placeholder: "ör. 2027 Q2" },
       { key: "priceMin", label: "Fiyat (min)", type: "number", suffix: "₺" },
       { key: "priceMax", label: "Fiyat (max)", type: "number", suffix: "₺" },
+      { key: "totalLandM2", label: "Toplam arsa alanı", type: "number", suffix: "m²" },
       { key: "totalUnits", label: "Toplam konut sayısı", type: "number" },
+      { key: "commercialUnits", label: "Ticari ünite sayısı", type: "number" },
       { key: "blockCount", label: "Blok sayısı", type: "number" },
-      { key: "unitTypes", label: "Daire tipleri", type: "text", placeholder: "ör. 1+1, 2+1, 3+1" },
+      { key: "floorCount", label: "Kat sayısı", type: "text" },
+      { key: "unitTypes", label: "Daire tipleri", type: "text", placeholder: "ör. 1+1, 2+1, 3+1, dubleks" },
       { key: "m2Range", label: "m² aralığı", type: "text", placeholder: "ör. 65-180 m²" },
       { key: "downPayment", label: "Peşinat oranı", type: "text", suffix: "%" },
-      { key: "installment", label: "Taksit imkanı var mı?", type: "bool" },
+      { key: "amenities", label: "Sosyal donatılar", type: "multiselect", options: PROJE_SOSYAL },
+      { key: "security", label: "Güvenlik sistemleri", type: "multiselect", options: PROJE_GUVENLIK },
+      { key: "energy", label: "Enerji & altyapı", type: "multiselect", options: PROJE_ENERJI },
+      { key: "payment", label: "Ödeme seçenekleri", type: "multiselect", options: ODEME_SECENEK },
+      { key: "campaign", label: "Kampanyalar", type: "multiselect", options: PROJE_KAMPANYA },
       { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
-      { key: "amenities", label: "Sosyal donatılar", type: "text", placeholder: "havuz, spor, güvenlik, otopark…" },
+      { key: "iskanStatus", label: "İskan durumu", type: "select", options: ["İskan Alındı", "İskan Sürecinde", "Kat İrtifaklı"] },
       { key: "salesPhone", label: "Satış ofisi telefonu", type: "text" },
       { key: "website", label: "Web sitesi", type: "text" },
+      ETIKET_FIELD,
       F.desc
     ]
   },
@@ -509,19 +553,25 @@ export const formSchemas: Record<string, FormSchema> = {
       F.title,
       { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"] },
       F.price,
-      { key: "facilityType", label: "Tesis tipi", type: "text", placeholder: "ör. otel, butik otel, pansiyon" },
+      { key: "facilityKind", label: "Tesis türü", type: "select", required: true, options: TURISTIK_TUR },
       { key: "roomCount", label: "Oda sayısı", type: "number" },
       { key: "bedCapacity", label: "Yatak kapasitesi", type: "number" },
+      { key: "suiteCount", label: "Suit sayısı", type: "number" },
       { key: "starCount", label: "Yıldız sayısı", type: "select", options: ["1", "2", "3", "4", "5", "Butik", "Sertifikasız"] },
+      { key: "roomTypes", label: "Oda tipleri", type: "multiselect", options: TURISTIK_ODA },
+      { key: "facilityAreas", label: "Tesis alanları", type: "multiselect", options: TURISTIK_ALAN },
       { key: "tourismCert", label: "Turizm belgesi var mı?", type: "bool" },
       { key: "businessLicense", label: "İşletme ruhsatı var mı?", type: "bool" },
       { key: "alcoholLicense", label: "Alkollü ruhsat var mı?", type: "bool" },
-      { key: "amenities", label: "Özellikler", type: "text", placeholder: "havuz, spa, restoran, hamam…" },
+      { key: "closedM2", label: "Kapalı alan", type: "number", suffix: "m²" },
+      { key: "openM2", label: "Açık alan", type: "number", suffix: "m²" },
       { key: "seaDistance", label: "Denize mesafe", type: "text" },
       { key: "occupancyRate", label: "Doluluk oranı", type: "text", suffix: "%" },
       { key: "yearlyRevenue", label: "Yıllık ciro", type: "number", suffix: "₺" },
+      { key: "staffLodging", label: "Personel lojmanı var mı?", type: "bool" },
       { key: "brandTransfer", label: "Marka / işletme devri var mı?", type: "bool" },
       { key: "equipmentIncluded", label: "Ekipman dahil mi?", type: "bool" },
+      ETIKET_FIELD,
       F.desc
     ]
   },
@@ -533,14 +583,21 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"] },
       F.price,
       { key: "facilityName", label: "Tesis adı", type: "text" },
-      { key: "usagePeriod", label: "Kullanım dönemi", type: "select", options: ["Yaz", "Kış", "Bahar", "Sonbahar", "Tüm Yıl"] },
+      { key: "accommodation", label: "Konaklama türü", type: "select", options: DEVREMULK_KONAKLAMA },
+      { key: "usageForm", label: "Kullanım şekli", type: "select", options: DEVREMULK_SEKIL },
+      { key: "usagePeriod", label: "Kullanım dönemi", type: "select", options: ["Yaz", "Kış", "Bahar", "Sonbahar", "Yılbaşı", "Bayram", "Tüm Yıl"] },
       { key: "weekNo", label: "Hafta numarası", type: "text" },
-      { key: "usageType", label: "Kullanım hakkı türü", type: "select", options: ["Ömür Boyu", "Süreli", "Yıllık"] },
+      { key: "usageType", label: "Kullanım hakkı türü", type: "select", options: ["Tapulu", "Tapusuz (Sözleşmeli)", "Ömür Boyu", "Süreli", "Yıllık"] },
       { key: "capacity", label: "Kişi kapasitesi", type: "number" },
+      { key: "rooms", label: "Oda sayısı", type: "text" },
+      { key: "startDate", label: "Kullanım hakkı başlangıç", type: "text" },
+      { key: "endDate", label: "Kullanım hakkı bitiş", type: "text" },
       { key: "dues", label: "Yıllık aidat", type: "number", suffix: "₺" },
-      { key: "deed", label: "Tapu / sözleşme durumu", type: "text" },
-      { key: "amenities", label: "Tesis özellikleri", type: "text", placeholder: "havuz, termal, spa, restoran…" },
+      { key: "transferFee", label: "Devir ücreti / masrafı", type: "number", suffix: "₺" },
+      { key: "amenities", label: "Tesis özellikleri", type: "multiselect", options: DEVREMULK_TESIS },
+      { key: "rentable", label: "Kiraya verilebilir mi?", type: "bool" },
       { key: "swapRight", label: "Takas hakkı var mı?", type: "bool" },
+      ETIKET_FIELD,
       F.desc
     ]
   },
