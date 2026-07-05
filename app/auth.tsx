@@ -1,11 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Link } from "expo-router";
 
 import { colors } from "@/components/colors";
+import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { LegalConsentModal } from "@/components/legal-consent-modal";
 import { CONSENT_DOCS, LEGAL_DOCS } from "@/lib/legal-content";
@@ -13,31 +14,44 @@ import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { hasSeenWelcome, markWelcomeSeen } from "@/lib/onboarding";
+import { setRememberSession } from "@/lib/supabase";
 import { useStore } from "@/lib/use-store";
+import { passwordStrength } from "@/lib/validation";
 
 type AuthMode = "login" | "register" | "reset";
 
 export default function AuthScreen() {
   const { language } = useLanguage();
   const router = useRouter();
+  const params = useLocalSearchParams<{ redirect?: string; mode?: string }>();
   const { authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signUpWithEmail, updatePasswordWithEmail } = useStore();
-  const [mode, setMode] = useState<AuthMode>("login");
-  const [name, setName] = useState("");
+  const [mode, setMode] = useState<AuthMode>(params.mode === "register" ? "register" : "login");
+  // Kayıt: Ad ve Soyad ayrı alanlar (e-ticaret standardı); birleştirilip saklanır.
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
   const [newPassword, setNewPassword] = useState("");
   // Her hukuki belge ayrı onaylanır (kutucuk, ilgili belge okunup onaylanınca dolar).
   const [acceptedDocs, setAcceptedDocs] = useState<Record<string, boolean>>({});
   const [openDocKey, setOpenDocKey] = useState<keyof typeof LEGAL_DOCS | null>(null);
-  const allAccepted = CONSENT_DOCS.every((d) => acceptedDocs[d.key]);
+  const [age18, setAge18] = useState(false);
+  const allAccepted = CONSENT_DOCS.every((d) => acceptedDocs[d.key]) && age18;
   const [loading, setLoading] = useState(false);
   const isWideWeb = useIsWideWeb();
   const [showPassword, setShowPassword] = useState(false);
+  const [rememberMe, setRememberMe] = useState(true);
   const [verifyCode, setVerifyCode] = useState("");
   const [verifying, setVerifying] = useState(false);
   // Şifremi unuttum akışı: önce e-postaya kod gönder, sonra kod + yeni şifre.
   const [resetSent, setResetSent] = useState(false);
   const [resetCode, setResetCode] = useState("");
+  const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+  const passwordsMatch = confirmPassword.length === 0 || password === confirmPassword;
+
+  // Güvenli iç yönlendirme hedefi (yalnız uygulama-içi "/..." yolları; açık yönlendirme engeli).
+  const safeRedirect = typeof params.redirect === "string" && params.redirect.startsWith("/") && !params.redirect.startsWith("//") ? params.redirect : null;
 
   async function sendResetCode() {
     if (loading) return;
@@ -89,10 +103,11 @@ export default function AuthScreen() {
         return;
       }
     } catch {
-      // yut — aşağıda ana sayfaya düşer
+      // yut — aşağıda geri dönülür
     }
-    router.replace("/");
-  }, [isAuthenticated, currentUser, router]);
+    // Giriş öncesi kullanıcının gitmek istediği sayfaya (son ziyaret) geri dön.
+    router.replace((safeRedirect ?? "/") as never);
+  }, [isAuthenticated, currentUser, router, safeRedirect]);
 
   async function loginWithGoogle() {
     // Google ilk kullanımda hesap oluşturabildiği için yasal onay zorunlu.
@@ -114,11 +129,13 @@ export default function AuthScreen() {
   }
 
   async function login() {
-    if (!cleanEmail || password.length < 6) {
-      Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", language === "en" ? "Email and a password of at least 6 characters are required." : "E-posta ve en az 6 karakter şifre gerekli.");
+    if (!cleanEmail || password.length < 1) {
+      Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", language === "en" ? "Email and password are required." : "E-posta ve şifre gerekli.");
       return;
     }
 
+    // "Beni Hatırla" — girişten ÖNCE depoyu ayarla ki oturum doğru yere yazılsın.
+    setRememberSession(rememberMe);
     setLoading(true);
     const ok = await signInWithEmail(cleanEmail, password);
     setLoading(false);
@@ -129,8 +146,22 @@ export default function AuthScreen() {
   }
 
   async function register() {
-    if (!name.trim() || !cleanEmail || password.length < 6) {
-      Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", language === "en" ? "Full name, email, and a password of at least 6 characters are required." : "Ad soyad, e-posta ve en az 6 karakter şifre gerekli.");
+    if (!firstName.trim() || !lastName.trim() || !cleanEmail) {
+      Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", "Ad, soyad ve e-posta gerekli.");
+      return;
+    }
+    const strength = passwordStrength(password);
+    if (!strength.ok) {
+      const missing = strength.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", ");
+      Alert.alert("Şifre yeterince güçlü değil", `Şu kuralları da karşıla: ${missing}.`);
+      return;
+    }
+    if (password !== confirmPassword) {
+      Alert.alert("Şifreler uyuşmuyor", "Şifre ve şifre tekrar alanları aynı olmalı.");
+      return;
+    }
+    if (!age18) {
+      Alert.alert("Yaş onayı gerekli", "Hesap açmak için 18 yaşından büyük olduğunu onaylamalısın.");
       return;
     }
     if (!allAccepted) {
@@ -138,8 +169,10 @@ export default function AuthScreen() {
       return;
     }
 
+    // Yeni kayıtta oturum kalıcı olsun (kullanıcı yeni geldi).
+    setRememberSession(true);
     setLoading(true);
-    const ok = await signUpWithEmail({ email: cleanEmail, password, name });
+    const ok = await signUpWithEmail({ email: cleanEmail, password, name: fullName });
     setLoading(false);
     // Akış kendini yönetir: oturum açıldıysa (doğrulama kapalı) effect /hosgeldin'e
     // yönlendirir; kod gerekiyorsa pendingVerifyEmail set olur ve kod ekranı gelir.
@@ -206,6 +239,22 @@ export default function AuthScreen() {
       onClose={() => setOpenDocKey(null)}
       onApprove={() => { if (openDocKey) setAcceptedDocs((s) => ({ ...s, [openDocKey]: true })); setOpenDocKey(null); }}
     />
+  );
+
+  // 18 yaş onayı (yasal metinlerden ayrı, zorunlu tekil kutucuk).
+  const ageCheck = (
+    <Pressable onPress={() => setAge18((v) => !v)} accessibilityRole="checkbox" accessibilityState={{ checked: age18 }} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+      <MaterialCommunityIcons name={age18 ? "checkbox-marked" : "checkbox-blank-outline"} size={21} color={age18 ? colors.primary : colors.muted} />
+      <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, lineHeight: 18 }}>18 yaşından büyük olduğumu onaylıyorum.</Text>
+    </Pressable>
+  );
+
+  // Beni Hatırla (giriş): işaretli değilse tarayıcı kapanınca oturum silinir.
+  const rememberCheck = (
+    <Pressable onPress={() => setRememberMe((v) => !v)} accessibilityRole="checkbox" accessibilityState={{ checked: rememberMe }} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+      <MaterialCommunityIcons name={rememberMe ? "checkbox-marked" : "checkbox-blank-outline"} size={19} color={rememberMe ? colors.primary : colors.muted} />
+      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Beni hatırla</Text>
+    </Pressable>
   );
 
   // Kayıt olup e-posta kodunu bekleyen kullanıcı: link/uygulama-değiştirme yok,
@@ -342,27 +391,38 @@ export default function AuthScreen() {
               </View>
 
               <View style={{ gap: 14 }}>
-                {mode === "register" ? <DeskAuthField icon="account-outline" label="Ad Soyad" value={name} onChangeText={setName} placeholder="Örn. Ayşe Demir" /> : null}
+                {mode === "register" ? (
+                  <View style={{ flexDirection: "row", gap: 10 }}>
+                    <View style={{ flex: 1 }}><DeskAuthField icon="account-outline" label="Ad" value={firstName} onChangeText={setFirstName} placeholder="Ayşe" /></View>
+                    <View style={{ flex: 1 }}><DeskAuthField icon="account-outline" label="Soyad" value={lastName} onChangeText={setLastName} placeholder="Demir" /></View>
+                  </View>
+                ) : null}
                 <DeskAuthField icon="email-outline" label="E-posta" value={email} onChangeText={setEmail} placeholder="ornek@eposta.com" />
-                {mode !== "reset" ? <DeskAuthField icon="lock-outline" label="Şifre" value={password} onChangeText={setPassword} placeholder="En az 6 karakter" secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} /> : null}
+                {mode !== "reset" ? <DeskAuthField icon="lock-outline" label="Şifre" value={password} onChangeText={setPassword} placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} /> : null}
+                {mode === "register" ? <PasswordStrengthMeter password={password} /> : null}
+                {mode === "register" ? (
+                  <View style={{ gap: 6 }}>
+                    <DeskAuthField icon="lock-check-outline" label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Şifreni tekrar gir" secure showPassword={showPassword} />
+                    {!passwordsMatch ? <Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "700" }}>Şifreler uyuşmuyor.</Text> : null}
+                  </View>
+                ) : null}
                 {mode === "reset" && resetSent ? (
                   <>
                     <DeskAuthField icon="numeric" label="E-postana gelen 6 haneli kod" value={resetCode} onChangeText={(v) => setResetCode(v.replace(/\D/g, "").slice(0, 6))} placeholder="______" />
-                    <DeskAuthField icon="lock-reset" label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} placeholder="En az 6 karakter" secure />
+                    <DeskAuthField icon="lock-reset" label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} placeholder="Güçlü bir şifre oluştur" secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} />
+                    <PasswordStrengthMeter password={newPassword} />
                   </>
                 ) : null}
 
                 {mode === "login" ? (
                   <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-                    <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                      <MaterialCommunityIcons name="shield-check-outline" size={16} color={colors.muted} />
-                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Oturumun bu cihazda açık kalır</Text>
-                    </View>
+                    {rememberCheck}
                     <Pressable onPress={() => setMode("reset")}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Şifremi unuttunuz?</Text></Pressable>
                   </View>
                 ) : null}
 
                 {mode === "register" ? legalChecks : null}
+                {mode === "register" ? ageCheck : null}
                 {legalModal}
 
                 {mode === "login" ? (
@@ -491,17 +551,32 @@ export default function AuthScreen() {
 
           <SectionTitle title={mode === "login" ? "Hesabına gir" : mode === "register" ? "Yeni hesap aç" : "Şifre sıfırla"} />
 
-          {mode === "register" ? <Field label="Ad Soyad" value={name} onChangeText={setName} placeholder="Örn. Ayşe Demir" /> : null}
+          {mode === "register" ? (
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              <View style={{ flex: 1 }}><Field label="Ad" value={firstName} onChangeText={setFirstName} placeholder="Ayşe" /></View>
+              <View style={{ flex: 1 }}><Field label="Soyad" value={lastName} onChangeText={setLastName} placeholder="Demir" /></View>
+            </View>
+          ) : null}
           <Field label="E-posta" value={email} onChangeText={setEmail} keyboardType="email-address" placeholder="ornek@eposta.com" />
-          {mode !== "reset" ? <Field label="Şifre" value={password} onChangeText={setPassword} secureTextEntry placeholder="En az 6 karakter" /> : null}
+          {mode !== "reset" ? <Field label="Şifre" value={password} onChangeText={setPassword} secureTextEntry placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} toggleSecure secureVisible={showPassword} onToggleSecure={() => setShowPassword((v) => !v)} /> : null}
+          {mode === "register" ? <PasswordStrengthMeter password={password} /> : null}
+          {mode === "register" ? (
+            <>
+              <Field label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Şifreni tekrar gir" secureVisible={showPassword} />
+              {!passwordsMatch ? <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>Şifreler uyuşmuyor.</Text> : null}
+            </>
+          ) : null}
           {mode === "reset" && resetSent ? (
             <>
               <Field label="E-postana gelen 6 haneli kod" value={resetCode} onChangeText={(v) => setResetCode(v.replace(/\D/g, "").slice(0, 6))} placeholder="______" />
-              <Field label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="En az 6 karakter" />
+              <Field label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} secureTextEntry placeholder="Güçlü bir şifre oluştur" toggleSecure secureVisible={showPassword} onToggleSecure={() => setShowPassword((v) => !v)} />
+              <PasswordStrengthMeter password={newPassword} />
             </>
           ) : null}
 
+          {mode === "login" ? <View style={{ alignItems: "flex-start" }}>{rememberCheck}</View> : null}
           {mode === "register" ? legalChecks : null}
+          {mode === "register" ? ageCheck : null}
           {legalModal}
 
           {mode === "login" ? (
@@ -594,7 +669,10 @@ function Field({
   onChangeText,
   placeholder,
   keyboardType = "default",
-  secureTextEntry
+  secureTextEntry,
+  toggleSecure,
+  secureVisible,
+  onToggleSecure
 }: {
   label: string;
   value: string;
@@ -602,34 +680,36 @@ function Field({
   placeholder?: string;
   keyboardType?: "default" | "email-address";
   secureTextEntry?: boolean;
+  toggleSecure?: boolean;
+  secureVisible?: boolean;
+  onToggleSecure?: () => void;
 }) {
   const { language } = useLanguage();
+  const hidden = secureTextEntry && !secureVisible;
   return (
     <View style={{ gap: 6 }}>
       <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>
         {translateCopy(label, language)}
       </Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        keyboardType={keyboardType}
-        autoCapitalize={keyboardType === "email-address" ? "none" : "words"}
-        autoCorrect={keyboardType !== "email-address"}
-        secureTextEntry={secureTextEntry}
-        placeholder={placeholder ? translateCopy(placeholder, language) : undefined}
-        placeholderTextColor={colors.muted}
-        returnKeyType="done"
-        style={{
-          backgroundColor: "#FAFBFC",
-          borderColor: colors.line,
-          borderRadius: 12,
-          borderWidth: 1,
-          color: colors.ink,
-          fontSize: 16,
-          minHeight: 50,
-          padding: 14
-        }}
-      />
+      <View style={{ alignItems: "center", backgroundColor: "#FAFBFC", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row" }}>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          keyboardType={keyboardType}
+          autoCapitalize={keyboardType === "email-address" ? "none" : "words"}
+          autoCorrect={keyboardType !== "email-address"}
+          secureTextEntry={hidden}
+          placeholder={placeholder ? translateCopy(placeholder, language) : undefined}
+          placeholderTextColor={colors.muted}
+          returnKeyType="done"
+          style={{ color: colors.ink, flex: 1, fontSize: 16, minHeight: 50, padding: 14 }}
+        />
+        {toggleSecure ? (
+          <Pressable onPress={onToggleSecure} hitSlop={10} accessibilityRole="button" accessibilityLabel={secureVisible ? "Şifreyi gizle" : "Şifreyi göster"} style={{ paddingHorizontal: 14 }}>
+            <MaterialCommunityIcons name={secureVisible ? "eye-off-outline" : "eye-outline"} size={20} color={colors.muted} />
+          </Pressable>
+        ) : null}
+      </View>
     </View>
   );
 }

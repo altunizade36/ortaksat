@@ -83,16 +83,55 @@ export function validateListing(input: {
   return { ok: errors.length === 0, errors, clean: { title, description, price: Number.isFinite(price) ? price : 0 } };
 }
 
+/**
+ * Şifre gücü — hem kayıt doğrulaması (zorunlu kurallar) hem de canlı gösterge
+ * (UI'daki bar) tek kaynaktan beslenir. E-ticaret standardı: 8+ karakter,
+ * büyük harf, küçük harf, rakam, özel karakter.
+ */
+export type PasswordCheck = { key: "length" | "lower" | "upper" | "digit" | "special"; label: string; ok: boolean };
+export type PasswordStrength = {
+  checks: PasswordCheck[];
+  passed: number; // 0-5
+  score: number; // 0-4 (görsel bar seviyesi)
+  label: string; // "Çok zayıf" … "Çok güçlü"
+  ok: boolean; // tüm zorunlu kuralları geçti mi
+};
+
+const SPECIAL_RE = /[^A-Za-z0-9]/;
+
+export function passwordStrength(password: string): PasswordStrength {
+  const pw = password ?? "";
+  const checks: PasswordCheck[] = [
+    { key: "length", label: "En az 8 karakter", ok: pw.length >= LIMITS.password.min && pw.length <= LIMITS.password.max },
+    { key: "lower", label: "Küçük harf (a-z)", ok: /[a-zçğıöşü]/.test(pw) },
+    { key: "upper", label: "Büyük harf (A-Z)", ok: /[A-ZÇĞİÖŞÜ]/.test(pw) },
+    { key: "digit", label: "Rakam (0-9)", ok: /\d/.test(pw) },
+    { key: "special", label: "Özel karakter (!@#…)", ok: SPECIAL_RE.test(pw) }
+  ];
+  const passed = checks.filter((c) => c.ok).length;
+  // 5 kuralın hepsi zorunlu; bar seviyesi 0-4.
+  const score = pw.length === 0 ? 0 : Math.min(4, Math.max(0, passed - 1));
+  const label = ["Çok zayıf", "Zayıf", "Orta", "Güçlü", "Çok güçlü"][score];
+  return { checks, passed, score, label, ok: checks.every((c) => c.ok) };
+}
+
 /** Kayıt doğrulaması. */
 export function validateSignUp(input: { name: string; email: string; password: string }): ValidationResult {
   const errors: FieldError[] = [];
   const ne = lenError("name", sanitizeLine(input.name, LIMITS.name.max), LIMITS.name.min, LIMITS.name.max, "Ad Soyad");
   if (ne) errors.push(ne);
   if (!isValidEmail(input.email)) errors.push({ field: "email", message: "Geçerli bir e-posta girin." });
-  if ((input.password ?? "").length < LIMITS.password.min) {
+  const pw = input.password ?? "";
+  if (pw.length < LIMITS.password.min) {
     errors.push({ field: "password", message: `Şifre en az ${LIMITS.password.min} karakter olmalı.` });
-  } else if (input.password.length > LIMITS.password.max) {
+  } else if (pw.length > LIMITS.password.max) {
     errors.push({ field: "password", message: `Şifre en fazla ${LIMITS.password.max} karakter olabilir.` });
+  } else {
+    const s = passwordStrength(pw);
+    if (!s.ok) {
+      const missing = s.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", ");
+      errors.push({ field: "password", message: `Şifre yeterince güçlü değil. Ekle: ${missing}.` });
+    }
   }
   return { ok: errors.length === 0, errors };
 }
