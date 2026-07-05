@@ -5,12 +5,13 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
+import { AttributeFields } from "@/components/attribute-fields";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { listingCategories } from "@/lib/categories";
 import { CategoryPicker as TreeCategoryPicker } from "@/components/category-picker";
-import type { CategoryNode } from "@/lib/category-tree";
+import { getFormSchema, resolveFormKey, type CategoryNode } from "@/lib/category-tree";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadListingImage } from "@/lib/live-service";
 import type { CommissionType, Listing, PartnershipMode } from "@/lib/types";
@@ -64,6 +65,17 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [partnerRules, setPartnerRules] = useState(listing.partnerRules.join("\n"));
   const [contactMethod, setContactMethod] = useState<ContactMethod>(listing.contactMethod);
   const [saving, setSaving] = useState(false);
+  // Yapısal kategori özellikleri (emlak: m²/oda/imar…) düzenlenebilir.
+  const [attrValues, setAttrValues] = useState<Record<string, string | boolean | string[]>>(() => {
+    const a = listing.attributes ?? {};
+    const out: Record<string, string | boolean | string[]> = {};
+    for (const [k, v] of Object.entries(a)) { if (!k.startsWith("_")) out[k] = typeof v === "number" ? String(v) : v; }
+    return out;
+  });
+  // Form şeması: kategori yeniden seçildiyse ondan, değilse ilanın kayıtlı _formKey'inden.
+  const formKey = catPath.length ? resolveFormKey(catPath) : ((listing.attributes?._formKey as string) || "");
+  const attrSchema = formKey ? getFormSchema(formKey) : null;
+  const setAttr = (k: string, v: string | boolean | string[]) => setAttrValues((s) => ({ ...s, [k]: v }));
 
   async function pickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -107,6 +119,26 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     const parsedRules = partnerRules.split("\n").map((item) => item.trim()).filter(Boolean);
     const parsedTags = tags.split(",").map((item) => item.trim()).filter(Boolean);
     const parsedAdAssets = adAssets.slice(0, 4);
+
+    // Yapısal özellikleri düzenleyiciden yeniden kur (create ile aynı mantık);
+    // şema yoksa mevcut değerleri koru. _leaf/_root/_formKey meta bilgisi saklanır.
+    const builtAttrs: Record<string, string | number | boolean | string[]> = {};
+    if (attrSchema) {
+      for (const f of attrSchema.fields) {
+        if (f.key === "title" || f.key === "description" || f.key === "price") continue;
+        const raw = attrValues[f.key];
+        if (raw === undefined || raw === null || (typeof raw === "string" && !raw.trim())) continue;
+        if (Array.isArray(raw)) { if (raw.length) builtAttrs[f.key] = raw; continue; }
+        if (typeof raw === "boolean") { if (raw) builtAttrs[f.key] = true; continue; }
+        builtAttrs[f.key] = f.type === "number" ? Number(raw) : String(raw);
+      }
+    } else {
+      for (const [k, v] of Object.entries(attrValues)) if (v !== "" && !(Array.isArray(v) && !v.length)) builtAttrs[k] = v;
+    }
+    const meta = listing.attributes ?? {};
+    if (meta._leaf) builtAttrs._leaf = meta._leaf as string;
+    if (meta._root) builtAttrs._root = meta._root as string;
+    if (formKey) builtAttrs._formKey = formKey;
     const shareTemplates = buildShareTemplates({
       title,
       price: parsedPrice,
@@ -148,9 +180,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       commissionType,
       commissionValue: parsedCommission,
       partnershipMode,
-      // Yapısal özellikleri (m²/oda/imar…) koru — bu ekran serbest-metin düzenler,
-      // alan-bazlı düzenlemez; mevcut attributes silinmemeli.
-      attributes: listing.attributes,
+      attributes: builtAttrs,
       category: category.trim() || "Genel",
       location: location.trim() || "Türkiye",
       image: uploadedImage || listing.image,
@@ -235,6 +265,14 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           </View>
           <Field label="Konum" value={location} onChangeText={setLocation} />
         </Card>
+
+        {attrSchema ? (
+          <Card>
+            <SectionTitle title={`Özellikler — ${attrSchema.title}`} action="Emlak / kategori detayları" />
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Bu kategorinin yapısal özellikleri (m², oda, imar, tapu, donatılar…). Doldurdukça ilan detayında ve filtrelerde görünür.</Text>
+            <AttributeFields fields={attrSchema.fields} values={attrValues} onChange={setAttr} />
+          </Card>
+        ) : null}
 
         <Card>
           <SectionTitle title="Ortaklık ve komisyon" />

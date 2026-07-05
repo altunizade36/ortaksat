@@ -33,6 +33,18 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
   const inCompare = has(listing.id);
   const imageUri = listing.imageUrl ?? listing.image;
   const imageAlt = listing.imageAlt ?? `${displayText(listing.title)} ilan görseli`;
+  // Emlak/kategori kartında en önemli 3 yapısal özellik rozeti (oda · m² · ilan tipi).
+  const attrSpecs = (() => {
+    const a = listing.attributes;
+    if (!a) return [] as string[];
+    const out: string[] = [];
+    if (a.rooms) out.push(String(a.rooms));
+    const m2 = a.grossM2 ?? a.m2 ?? a.totalGrossM2 ?? a.netM2 ?? a.closedM2;
+    if (m2) out.push(`${m2} m²`);
+    if (a.listingType) out.push(String(a.listingType));
+    if (out.length < 3 && a.buildingAge) out.push(`${a.buildingAge} yaş`);
+    return out.slice(0, 3);
+  })();
 
   return (
     <View style={{ width }}>
@@ -90,6 +102,15 @@ function ListingCardBase({ listing, owner, width }: { listing: Listing; owner?: 
               <Text numberOfLines={2} selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "800", lineHeight: 19, minHeight: 38 }}>
                 {displayText(listing.title)}
               </Text>
+              {attrSpecs.length ? (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                  {attrSpecs.map((s) => (
+                    <View key={s} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 6, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2 }}>
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{s}</Text>
+                    </View>
+                  ))}
+                </View>
+              ) : null}
 
               <View style={{ gap: 5 }}>
                 <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 19, fontVariant: ["tabular-nums"], fontWeight: "900" }}>

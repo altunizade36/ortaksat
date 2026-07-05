@@ -191,9 +191,11 @@ export function DesktopCreateFlow() {
         if (typeof raw === "boolean") { if (raw) attributes[f.key] = true; continue; }
         attributes[f.key] = f.type === "number" ? Number(raw) : String(raw);
       }
-      // Kategori bağlamı da sakla (alt-kategori filtresi ve rozetler için).
+      // Kategori bağlamı da sakla (alt-kategori filtresi, rozetler ve DÜZENLEME
+      // ekranının form şemasını çözebilmesi için).
       if (leafLabel) attributes._leaf = leafLabel;
       if (path[0]?.label) attributes._root = path[0].label;
+      attributes._formKey = schema.key;
 
       // Görselleri Supabase storage'a yükle (web'de otomatik ölçekleme+sıkıştırma).
       // En fazla 5; yerel URI'ler public URL'e döner, böylece herkes görebilir.
