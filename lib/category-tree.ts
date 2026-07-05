@@ -313,6 +313,21 @@ const CEVRE_OPTS = ["AVM", "Market", "Süpermarket", "Fırın", "Pazar", "Eczane
 const ENERJI_SINIF = ["A+++", "A++", "A+", "A", "B", "C", "D", "E", "F", "G", "Belirtilmemiş"];
 const YAPI_GUVENLIK = ["Deprem Yönetmeliğine Uygun", "Zemin Etüdü Yapıldı", "Fore Kazık", "Radye Temel", "Perde Beton", "Çelik Konstrüksiyon", "Güçlendirme Yapıldı", "Yapı Denetimli", "İskan Alınmış", "Yapı Kullanma İzin Belgesi Var", "Kentsel Dönüşüme Uygun", "Riskli Yapı Değil"];
 
+// ---- arsa/arazi zengin listeleri (spec 26–34) ----------------------------
+const IMAR_TURU = ["Konut", "Ticaret", "Ticaret + Konut", "Sanayi", "Küçük Sanayi", "Depolama", "Akaryakıt", "Eğitim", "Sağlık", "Spor", "Turizm", "Otel", "Villa", "Tarım", "Hayvancılık", "Enerji", "Karma Kullanım"];
+const ARSA_ALTYAPI = ["Elektrik", "Trafo Yakın", "Sanayi Elektriği", "Şehir Suyu", "Artezyen", "Kuyu", "Sulama Kanalı", "Doğalgaz (Kapıda)", "Doğalgaz (Sokakta)", "Kanalizasyon", "Fosseptik", "Fiber", "Telefon Hattı"];
+const YOL_DURUMU = ["Asfalt", "Beton", "Stabilize", "Toprak Yol", "Kadastro Yolu", "Yol Açılacak", "Yol Yok"];
+const PARSEL_SEKIL = ["Dikdörtgen", "Kare", "Üçgen", "Yamuk", "Düzensiz"];
+const EGIM_DURUMU = ["Düz", "Hafif Eğimli", "Eğimli", "Çok Eğimli"];
+const ARSA_DOGAL = ["Deniz Manzarası", "Göl Manzarası", "Orman Manzarası", "Dağ Manzarası", "Şehir Manzarası", "Vadi", "Nehir", "Dere", "Şelale", "Meyve Bahçesi", "Zeytinlik", "Fındıklık", "Cevizlik", "Bağ", "Lavanta Bahçesi"];
+const ARSA_TARIM = ["Sulanabilir", "Kuru Tarım", "Organik Tarım", "Seraya Uygun", "Hayvancılığa Uygun", "Meyveciliğe Uygun", "Bağcılığa Uygun", "Arıcılığa Uygun", "Balık Çiftliğine Uygun", "GES Uygun", "RES Uygun"];
+const ARSA_TAPU = ["Müstakil Tapulu", "Hisseli Tapu", "Tahsisli", "Kooperatif", "İntifa Hakkı", "Elbirliği Mülkiyeti", "Paylı Mülkiyet", "İpotekli", "Hacizli", "Şerhli", "Temiz Tapu"];
+
+// ---- işyeri zengin listeleri (spec 38–47) --------------------------------
+const ISYERI_RUHSAT = ["İşyeri Açma Ruhsatı", "Gıda Ruhsatı", "Turizm Belgesi", "Sağlık Bakanlığı Ruhsatı", "Tarım Bakanlığı Ruhsatı", "Üretim İzni", "İmalat Ruhsatı", "Sanayi Sicili", "ISO Belgesi", "CE Belgesi", "TSE Belgesi", "Yangın Raporu", "İtfaiye Uygunluk", "ÇED Belgesi"];
+const ISYERI_DURUM = ["Boş", "Kiracılı", "Faal İşletme", "Devren", "Franchise", "Marka Hakları Dahil", "Personel Dahil", "Makineler Dahil", "Stok Dahil", "Ruhsat Dahil"];
+const ISYERI_OZELLIK = ["Asansör", "Yük Asansörü", "Vinç Sistemi", "Jeneratör", "Trafo", "Yangın Sistemi", "Kamera Sistemi", "Alarm", "Fiber İnternet", "Tır Girişi", "Forklift Girişi", "Yükleme Rampası", "Soyunma Odası", "Personel Alanı", "Mutfak", "WC", "Depo Alanı", "Endüstriyel Mutfak", "Vitrin", "Otopark", "Kartlı Geçiş", "Resepsiyon"];
+
 // ---- form schemas (category-specific) ------------------------------------
 export const formSchemas: Record<string, FormSchema> = {
   konut: {
@@ -375,14 +390,27 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "grossM2", label: "m² (brüt)", type: "number", required: true, suffix: "m²" },
       { key: "netM2", label: "m² (net)", type: "number", suffix: "m²" },
       { key: "rooms", label: "Bölüm / oda sayısı", type: "number" },
+      { key: "wc", label: "WC sayısı", type: "number" },
       { key: "floor", label: "Bulunduğu kat", type: "text" },
+      { key: "floorCount", label: "Kat sayısı", type: "number" },
+      { key: "ceilingHeight", label: "Tavan yüksekliği", type: "text", suffix: "m" },
+      { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m" },
       { key: "buildingAge", label: "Bina yaşı", type: "text" },
       { key: "heating", label: "Isıtma", type: "select", options: ["Doğalgaz", "Merkezi", "Klima", "Yerden Isıtma", "Yok"] },
       { key: "deposit", label: "Depozito (kiralıkta)", type: "number", suffix: "₺" },
       { key: "dues", label: "Aidat", type: "number", suffix: "₺" },
-      { key: "usage", label: "Kullanım durumu", type: "select", options: ["Boş", "Kiracılı", "Sahibi Kullanıyor"] },
-      { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden"] },
-      { key: "deed", label: "Tapu durumu", type: "text" },
+      { key: "devrenBedeli", label: "Devren bedeli", type: "number", suffix: "₺" },
+      { key: "rentalIncome", label: "Aylık kira getirisi", type: "number", suffix: "₺" },
+      { key: "usage", label: "İşletme durumu", type: "select", options: ["Boş", "Kiracılı", "Faal İşletme", "Sahibi Kullanıyor"] },
+      { key: "isletmeIcerik", label: "Devirde dahil olanlar", type: "multiselect", options: ISYERI_DURUM },
+      { key: "ruhsat", label: "Ruhsat / belgeler", type: "multiselect", options: ISYERI_RUHSAT },
+      { key: "isyeriOzellik", label: "İş yeri özellikleri", type: "multiselect", options: ISYERI_OZELLIK },
+      { key: "caddeUzeri", label: "Cadde üzeri mi?", type: "bool" },
+      { key: "avmIcinde", label: "AVM içinde mi?", type: "bool" },
+      { key: "sanayiSitesi", label: "Sanayi sitesinde mi?", type: "bool" },
+      { key: "aracGirisi", label: "Araç girişine uygun mu?", type: "bool" },
+      { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "Müteahhitten", "Bankadan"] },
+      { key: "deed", label: "Tapu durumu", type: "select", options: ["Kat Mülkiyetli", "Kat İrtifaklı", "Arsa Tapulu", "Hisseli Tapu", "Müstakil Tapu", "Bilinmiyor"] },
       { key: "swapReal", label: "Takas olur mu?", type: "bool" },
       F.desc
     ]
@@ -395,13 +423,33 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Kat Karşılığı"] },
       F.price,
       { key: "m2", label: "m²", type: "number", required: true, suffix: "m²" },
-      { key: "zoning", label: "İmar durumu", type: "select", options: ["Konut İmarlı", "Ticari İmarlı", "Sanayi İmarlı", "Turizm İmarlı", "Villa İmarlı", "Tarla", "Bağ-Bahçe", "Zeytinlik", "İmarsız"] },
+      { key: "zoning", label: "İmar durumu", type: "select", options: ["İmarlı", "İmarsız", "Kısmi İmarlı", "Uygulama İmar Planlı", "Nazım İmar Planlı", "Kentsel Dönüşüm Alanı", "Koruma Alanı", "Sit Alanı", "Tarım Alanı", "Orman Alanı", "Mera", "Kıyı Bandı", "Turizm Alanı", "Organize Sanayi Bölgesi", "Serbest Bölge", "Plansız"] },
+      { key: "imarTuru", label: "İmar türü", type: "select", options: IMAR_TURU },
+      { key: "hisseOrani", label: "Satılık hisse oranı", type: "text", placeholder: "ör. 1/2, tam" },
+      { key: "taks", label: "TAKS", type: "text", placeholder: "ör. 0.30" },
       { key: "kaks", label: "KAKS (Emsal)", type: "text", placeholder: "ör. 1.50" },
       { key: "gabari", label: "Gabari (yükseklik)", type: "text", placeholder: "ör. 12.50 m / Serbest" },
-      { key: "adaParsel", label: "Ada / Parsel no", type: "text" },
-      { key: "roadStatus", label: "Yola cephe", type: "select", options: ["Var (Asfalt)", "Var (Stabilize)", "Yok", "İki Yola Cepheli"] },
-      { key: "deed", label: "Tapu durumu", type: "select", options: ["Müstakil Tapulu", "Hisseli", "Tahsis", "Kat İrtifaklı"] },
-      { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden"] },
+      { key: "maxKat", label: "Maksimum kat", type: "text" },
+      { key: "yapiNizami", label: "Yapı nizamı", type: "select", options: ["Ayrık", "Bitişik", "Blok"] },
+      { key: "ada", label: "Ada", type: "text" },
+      { key: "parsel", label: "Parsel", type: "text" },
+      { key: "pafta", label: "Pafta", type: "text" },
+      { key: "parselSekli", label: "Parsel şekli", type: "select", options: PARSEL_SEKIL },
+      { key: "egim", label: "Eğim durumu", type: "select", options: EGIM_DURUMU },
+      { key: "roadStatus", label: "Yol durumu", type: "select", options: YOL_DURUMU },
+      { key: "kosePartsel", label: "Köşe parsel mi?", type: "bool" },
+      { key: "ifraz", label: "İfraz edilebilir mi?", type: "bool" },
+      { key: "tevhit", label: "Tevhit edilebilir mi?", type: "bool" },
+      { key: "zeminEtut", label: "Zemin etüdü yapıldı mı?", type: "bool" },
+      { key: "altyapi", label: "Altyapı", type: "multiselect", options: ARSA_ALTYAPI },
+      { key: "dogalOzellik", label: "Doğal özellikler / manzara", type: "multiselect", options: ARSA_DOGAL },
+      { key: "tarimOzellik", label: "Tarımsal uygunluk", type: "multiselect", options: ARSA_TARIM },
+      { key: "denizMesafe", label: "Denize mesafe", type: "text", placeholder: "ör. 500 m" },
+      { key: "merkezMesafe", label: "Merkeze mesafe", type: "text", placeholder: "ör. 3 km" },
+      { key: "anaYolMesafe", label: "Ana yola mesafe", type: "text" },
+      { key: "deed", label: "Tapu durumu", type: "select", options: ARSA_TAPU },
+      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
+      { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "Müteahhitten", "Bankadan", "İcradan", "Belediyeden", "TOKİ'den"] },
       F.takas,
       F.desc
     ]
