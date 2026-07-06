@@ -24,7 +24,7 @@ export default defineConfig({
   reporter: [["list"], ["html", { outputFolder: "playwright-report", open: "never" }]],
   outputDir: "e2e-artifacts",
   use: {
-    baseURL: process.env.E2E_BASE_URL || "https://ortaksat.com",
+    baseURL: process.env.E2E_BASE_URL || "https://www.ortaksat.com",
     trace: "on",
     screenshot: "on",
     video: "on",
