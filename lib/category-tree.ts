@@ -72,6 +72,10 @@ export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vest
 export const HEATING_BRANDS = ["Baymak", "DemirDöküm", "Vaillant", "Buderus", "Bosch", "ECA", "Airfel", "Viessmann", "Warmhaus", "Diğer"];
 export const AC_BRANDS = ["Arçelik", "Vestel", "Samsung", "LG", "Bosch", "Daikin", "Mitsubishi", "Toshiba", "Baymak", "Gree", "Midea", "Beko", "Diğer"];
 const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "Lacivert", "Yeşil", "Kahverengi", "Bej", "Turuncu", "Diğer"];
+// Cep telefonu markaları (telefon şeması brand seçenekleriyle BİREBİR aynı olmalı ki
+// kategori yolundan seçilen marka forma otomatik dolsun). MODELS_BY_BRAND'de modeli
+// olanlar (iPhone/Samsung/Xiaomi/Huawei/Oppo/Realme) marka→model ağacı olur.
+export const PHONE_BRANDS = ["iPhone", "Samsung", "Xiaomi", "Huawei", "Oppo", "Realme", "Vivo", "Tecno", "Honor", "OnePlus", "General Mobile", "Reeder", "Poco", "Infinix", "Google", "Sony", "Nokia", "Casper", "TCL", "Alcatel", "Diğer"];
 
 // Marka -> model haritası (bağımlı model seçimi için). Marka seçilince model bu
 // listeden gelir; markası burada yoksa model serbest metin olarak girilir.
@@ -818,9 +822,9 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Cep telefonu bilgileri",
     fields: [
       F.title,
-      { key: "brand", label: "Marka", type: "select", required: true, options: ["iPhone", "Samsung", "Xiaomi", "Huawei", "Oppo", "Realme", "Vivo", "Tecno", "General Mobile", "Diğer"] },
+      { key: "brand", label: "Marka", type: "select", required: true, options: PHONE_BRANDS },
       { key: "model", label: "Model", type: "text", required: true },
-      { key: "storage", label: "Depolama", type: "select", required: true, options: ["64 GB", "128 GB", "256 GB", "512 GB", "1 TB"] },
+      { key: "storage", label: "Depolama", type: "select", required: true, options: ["16 GB", "32 GB", "64 GB", "128 GB", "256 GB", "512 GB", "1 TB"] },
       { key: "ram", label: "RAM", type: "text" },
       F.renk,
       F.garanti, F.fatura,
@@ -1159,14 +1163,19 @@ export const categoryTree: CategoryNode[] = [
       node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Hoverboard", "Elektrikli Kaykay", "Segway", "Scooter Yedek Parça"], "elektronik"), "elektronik"),
       ...leaves(["Projeksiyon", "Yazıcı & Tarayıcı", "Network & Modem", "Elektronik Aksesuar"], "elektronik")
     ], "alisverisGenel"),
-    node("Telefon & Aksesuar", leaves(["Cep Telefonu", "Kılıf", "Şarj & Kablo", "Powerbank", "Ekran Koruyucu", "Kulaklık"], "alisverisGenel"), "alisverisGenel"),
+    node("Telefon & Aksesuar", [
+      node("Cep Telefonu", brandModelNodes(PHONE_BRANDS, MODELS_BY_BRAND, "telefon"), "telefon"),
+      leaf("Tuşlu Telefon", "telefon"),
+      leaf("Akıllı Saat & Bileklik", "elektronik"),
+      ...leaves(["Kılıf & Kapak", "Ekran Koruyucu", "Şarj Aleti & Kablo", "Powerbank", "Kulaklık", "Telefon Tutucu & Stand", "Hafıza Kartı", "Telefon Yedek Parça"], "alisverisGenel")
+    ], "telefon"),
     node("Bilgisayar & Oyun", [
       node("Dizüstü Bilgisayar", brandModelNodes(COMPUTER_BRANDS, COMPUTER_MODELS, "bilgisayar"), "bilgisayar"),
       node("Masaüstü Bilgisayar", leaves(["Hazır Sistem", "Toplama Sistem", "All-in-One", "Mini PC", "İş İstasyonu"], "bilgisayar"), "bilgisayar"),
-      node("Bilgisayar Bileşenleri", leaves(["Ekran Kartı", "İşlemci", "Anakart", "RAM", "SSD & HDD", "Güç Kaynağı", "Kasa", "CPU Soğutucu", "Ekran Kartı Yükseltici"], "alisverisGenel"), "alisverisGenel"),
-      node("Çevre Birimleri", leaves(["Monitör", "Klavye", "Mouse", "Kulaklık", "Webcam", "Mikrofon", "Yazıcı & Tarayıcı", "Modem & Network", "Harici Disk", "USB Bellek"], "alisverisGenel"), "alisverisGenel"),
-      node("Oyun & Konsol", leaves(["PlayStation 5", "PlayStation 4", "Xbox Series X/S", "Xbox One", "Nintendo Switch", "Konsol Oyunları", "Oyun Kolu", "VR Gözlük", "Oyuncu Koltuğu"], "alisverisGenel"), "alisverisGenel"),
-      leaf("Yazılım & Lisans", "alisverisGenel")
+      node("Bilgisayar Bileşenleri", leaves(["Ekran Kartı", "İşlemci", "Anakart", "RAM", "SSD & HDD", "Güç Kaynağı", "Kasa", "CPU Soğutucu", "Ekran Kartı Yükseltici"], "elektronik"), "elektronik"),
+      node("Çevre Birimleri", leaves(["Monitör", "Klavye", "Mouse", "Kulaklık", "Webcam", "Mikrofon", "Yazıcı & Tarayıcı", "Modem & Network", "Harici Disk", "USB Bellek"], "elektronik"), "elektronik"),
+      node("Oyun & Konsol", leaves(["PlayStation 5", "PlayStation 4", "Xbox Series X/S", "Xbox One", "Nintendo Switch", "Konsol Oyunları", "Oyun Kolu", "VR Gözlük", "Oyuncu Koltuğu"], "elektronik"), "elektronik"),
+      leaf("Yazılım & Lisans", "dijitalHizmet")
     ], "alisverisGenel"),
     node("Ev & Yaşam", [
       node("Mobilya", leaves(["Koltuk Takımı", "Köşe Koltuk", "Kanepe", "Berjer", "Masa", "Sandalye", "Yatak", "Baza", "Gardırop", "Kitaplık", "TV Ünitesi", "Çalışma Masası", "Bebek Mobilyası"], "mobilya"), "mobilya"),
@@ -1411,7 +1420,7 @@ const _ALL_BRANDS = new Set<string>(
   [
     ...CAR_BRANDS, ...MOTO_BRANDS, ...COMPUTER_BRANDS, ...TV_BRANDS,
     ...WHITE_GOODS_BRANDS, ...COMMERCIAL_BRANDS, ...MARINE_ENGINE_BRANDS,
-    ...HEATING_BRANDS, ...AC_BRANDS
+    ...HEATING_BRANDS, ...AC_BRANDS, ...PHONE_BRANDS
   ].filter((b) => b && b !== "Diğer")
 );
 const _ALL_MODELS: Record<string, string[]> = {
