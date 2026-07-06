@@ -343,7 +343,7 @@ export default function ExploreScreen() {
               onPress={() => router.setParams({ q: category.label })}
               style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 14, paddingVertical: 9 }}
             >
-              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{category.shortLabel}</Text>
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy(category.shortLabel, language)}</Text>
               <MaterialCommunityIcons name="chevron-down" size={15} color={colors.muted} />
             </Pressable>
           ))}

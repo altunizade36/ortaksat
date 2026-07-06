@@ -155,19 +155,19 @@ export function HomeDesktop() {
                     style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 14, paddingVertical: 10 }}
                   >
                     <MaterialCommunityIcons name={getCategoryIcon(n.label)} size={17} color={on ? colors.primaryDark : colors.muted} />
-                    <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 13, fontWeight: on ? "900" : "600" }}>{n.label}</Text>
+                    <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 13, fontWeight: on ? "900" : "600" }}>{translateCopy(n.label, language)}</Text>
                     {children.length ? <MaterialCommunityIcons name={expanded ? "chevron-down" : "chevron-right"} size={16} color={colors.subtle} /> : null}
                   </Pressable>
                   {expanded && children.length ? (
                     <View style={{ backgroundColor: colors.surfaceAlt, paddingVertical: 4 }}>
                       <Pressable onPress={() => setSelectedNode(n)} style={{ paddingHorizontal: 16, paddingLeft: 44, paddingVertical: 8 }}>
-                        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Tümü", language)} · {n.label}</Text>
+                        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Tümü", language)} · {translateCopy(n.label, language)}</Text>
                       </Pressable>
                       {children.map((ch) => {
                         const con = selectedNode?.key === ch.key;
                         return (
                           <Pressable key={ch.key} onPress={() => setSelectedNode(con ? n : ch)} style={{ paddingHorizontal: 16, paddingLeft: 44, paddingVertical: 8 }}>
-                            <Text numberOfLines={1} style={{ color: con ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: con ? "800" : "600" }}>{ch.label}</Text>
+                            <Text numberOfLines={1} style={{ color: con ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: con ? "800" : "600" }}>{translateCopy(ch.label, language)}</Text>
                           </Pressable>
                         );
                       })}
@@ -389,9 +389,9 @@ export function HomeDesktop() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
             {popular.map((n) => (
               <Link key={n.key} href={{ pathname: "/kategori/[slug]", params: { slug: n.key } } as unknown as Href} asChild>
-                <Pressable accessibilityRole="link" accessibilityLabel={`${n.label} kategorisi`} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 9 }}>
+                <Pressable accessibilityRole="link" accessibilityLabel={`${translateCopy(n.label, language)} kategorisi`} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 9 }}>
                   <MaterialCommunityIcons name={getCategoryIcon(n.label)} size={16} color={colors.primary} />
-                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{n.label}</Text>
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
                 </Pressable>
               </Link>
             ))}
@@ -402,7 +402,7 @@ export function HomeDesktop() {
         <View style={{ gap: 10 }}>
           <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10 }}>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{selectedNode ? selectedNode.label : translateCopy("Öne Çıkan İlanlar", language)}</Text>
+              <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{selectedNode ? translateCopy(selectedNode.label, language) : translateCopy("Öne Çıkan İlanlar", language)}</Text>
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{filtered.length} {translateCopy("ilan listeleniyor", language)}</Text>
             </View>
             <Link href="/explore" asChild>

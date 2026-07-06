@@ -127,11 +127,11 @@ export default function CityCategoryScreen() {
           {ancestors.map((a) => (
             <View key={a.key} style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
               <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-              <Link href={catHref(a.slug)} asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{a.label}</Text></Pressable></Link>
+              <Link href={catHref(a.slug)} asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(a.label, language)}</Text></Pressable></Link>
             </View>
           ))}
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-          <Link href={catHref(node.slug)} asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{node.label}</Text></Pressable></Link>
+          <Link href={catHref(node.slug)} asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(node.label, language)}</Text></Pressable></Link>
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
           <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{cityName}</Text>
         </View>

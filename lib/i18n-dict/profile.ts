@@ -266,7 +266,7 @@ export const profileDict: Record<string, string> = {
   "Toplam favori": "Total favorites",
   "Yüksek komisyon fırsatı": "High commission opportunity",
   "%15 ve üzeri komisyon": "15% and above commission",
-  "Hemen ortak olabileceğin ilan": "Listings you can partner with right away",
+  "Hemen ortak olabileceğin ilan": "Listings you ca partner with right away",
   "Sıralama: En yeni": "Sort: Newest",
   "Favori yok": "No favorites",
   "Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin.": "Tap the heart icon on product details to add to your favorites.",

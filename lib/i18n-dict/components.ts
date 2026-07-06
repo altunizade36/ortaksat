@@ -44,7 +44,7 @@ export const componentsDict: Record<string, string> = {
   "ilanını aç": "open listing",
   "İlanı Aç": "Open Listing",
   "Fiyat": "Price",
-  "Ortak kazancı": "Affiliate earnings",
+  "Ortak kazancı": "Partner earnings",
   "Komisyon": "Commission",
   "Bonus": "Bonus",
   "Satıcı puanı": "Seller rating",
@@ -52,10 +52,10 @@ export const componentsDict: Record<string, string> = {
   "Ortaklık": "Partnership",
 
   // partner-leaderboard.tsx
-  "En Çok Kazandıran Ortaklar": "Top Earning Affiliates",
+  "En Çok Kazandıran Ortaklar": "Top Earning Partners",
   "Başka satıcıların ürünlerini satarak / alıcı getirerek en çok komisyon kazandıran ortaklar.":
-    "Affiliates who earn the most commission by selling other sellers' products / bringing in buyers.",
-  "ortak profilini aç": "open affiliate profile",
+    "Partners who earn the most commission by selling other sellers' products / bringing in buyers.",
+  "ortak profilini aç": "open partner profile",
   " (sen)": " (you)",
   "satış": "sales",
   "kazanç": "earned",
@@ -65,13 +65,13 @@ export const componentsDict: Record<string, string> = {
   "Ana Sayfa": "Home",
   "Keşfet": "Explore",
   "İlan Ver": "Post Listing",
-  "Ortak Satış": "Affiliate Sales",
+  "Ortak Satış": "Partner Sales",
   "Kategoriler": "Categories",
   "Nasıl Çalışır?": "How It Works?",
   "Blog": "Blog",
   "Kategori": "Category",
   "Hesabın askıya alındı. İlan verme, mesajlaşma ve ortaklık işlemleri geçici olarak kapalı. Destek için Yasal & Destek sayfasına bakabilirsin.":
-    "Your account has been suspended. Posting listings, messaging and affiliate operations are temporarily disabled. For support, see the Legal & Support page.",
+    "Your account has been suspended. Posting listings, messaging and partner operations are temporarily disabled. For support, see the Legal & Support page.",
   "Bakım modu AÇIK — ziyaretçilere bakım uyarısı gösteriliyor.": "Maintenance mode ON — a maintenance notice is shown to visitors.",
   "Sitemiz kısa süreli bakımda. Bazı işlemler geçici olarak sınırlı olabilir.":
     "Our site is under brief maintenance. Some operations may be temporarily limited.",
@@ -85,7 +85,7 @@ export const componentsDict: Record<string, string> = {
   "Giriş yapmadın": "Not signed in",
   "Profilim": "My profile",
   "İlanlarım": "My listings",
-  "Ortak Satışlarım": "My affiliate sales",
+  "Ortak Satışlarım": "My partner sales",
   "Kazançlarım": "My earnings",
   "Mesajlarım": "My messages",
   "Güven Merkezi": "Trust Center",

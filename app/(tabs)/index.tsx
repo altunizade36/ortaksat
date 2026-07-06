@@ -409,7 +409,7 @@ function HomeSeoSkeleton() {
           {SKELETON_CATS.map((c) => (
             <Link key={c.slug} href={`/kategori/${c.slug}`} asChild>
               <Pressable style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 10 }}>
-                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{c.label}</Text>
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy(c.label, language)}</Text>
               </Pressable>
             </Link>
           ))}

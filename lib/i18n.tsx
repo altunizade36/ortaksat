@@ -2,11 +2,14 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getLocales } from "expo-localization";
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
 
+import { setActiveLanguage } from "@/lib/locale";
+
 // Sayfa-grubu çeviri sözlükleri (paralel i18n çalışmasıyla üretildi). Her biri
 // kendi dosyasında; burada tek trToEnCopy'ye birleştirilir. Çakışmada SON gelen
 // kazanır — bu yüzden temel sözlük (baseTrToEn) en başta, gruplar sonra.
 import { accountDict } from "@/lib/i18n-dict/account";
 import { catalogDict } from "@/lib/i18n-dict/catalog";
+import { categoriesDict } from "@/lib/i18n-dict/categories";
 import { componentsDict } from "@/lib/i18n-dict/components";
 import { components2Dict } from "@/lib/i18n-dict/components2";
 import { extraDict } from "@/lib/i18n-dict/extra";
@@ -472,18 +475,21 @@ export function LanguageProvider({ children }: PropsWithChildren) {
     // İngilizce görür.
     AsyncStorage.getItem(STORAGE_KEY).then((value) => {
       if (!mounted) return;
-      if (value === "tr" || value === "en") setLanguageState(value);
-      else setLanguageState(detectDeviceLanguage());
+      const next = value === "tr" || value === "en" ? value : detectDeviceLanguage();
+      setActiveLanguage(next);
+      setLanguageState(next);
     }).catch(() => {
-      if (mounted) setLanguageState(detectDeviceLanguage());
+      if (mounted) { const d = detectDeviceLanguage(); setActiveLanguage(d); setLanguageState(d); }
     });
     return () => {
       mounted = false;
     };
   }, []);
 
-  // Web: <html lang> ve dir'i seçili dile göre güncelle (erişilebilirlik + SEO).
+  // Web: <html lang>'i seçili dile göre güncelle + locale yardımcılarını (tarih/sayı)
+  // aynı dile senkronla (erişilebilirlik + SEO + tutarlı biçimlendirme).
   useEffect(() => {
+    setActiveLanguage(language);
     if (typeof document !== "undefined") {
       document.documentElement.lang = language;
     }
@@ -492,11 +498,13 @@ export function LanguageProvider({ children }: PropsWithChildren) {
   const value = useMemo<LanguageContextValue>(() => ({
     language,
     async setLanguage(nextLanguage) {
+      setActiveLanguage(nextLanguage);
       setLanguageState(nextLanguage);
       await AsyncStorage.setItem(STORAGE_KEY, nextLanguage);
     },
     async useDeviceLanguage() {
       const nextLanguage = detectDeviceLanguage();
+      setActiveLanguage(nextLanguage);
       setLanguageState(nextLanguage);
       await AsyncStorage.removeItem(STORAGE_KEY);
     },
@@ -1236,6 +1244,7 @@ const trToEnCopy: Record<string, string> = {
   ...socialDict,
   ...componentsDict,
   ...components2Dict,
+  ...categoriesDict,
   ...accountDict,
   ...profileDict,
   ...marketingDict,

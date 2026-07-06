@@ -18,6 +18,14 @@ export const deviceLocale = pickDeviceLocale();
 export const deviceLanguage = deviceLocale.split("-")[0] as "tr" | "en";
 export const defaultCurrency = "TRY";
 
+// Uygulamanın SEÇİLİ dili (header toggle / oto-algılama). LanguageProvider bunu
+// setActiveLanguage ile günceller; localize/shortDate/compactNumber bunu okur ki
+// cihaz dili TR olsa bile toggle EN'e alınınca tarih/sayı/metin İngilizce olsun.
+let activeLanguage: "tr" | "en" = deviceLanguage;
+export function setActiveLanguage(lang: "tr" | "en") {
+  activeLanguage = lang;
+}
+
 /**
  * Fixed "now" reference for deterministic relative-time rendering (e.g. the
  * "Yeni" badge). Using a literal date — not Date.now() — guarantees the static
@@ -26,7 +34,7 @@ export const defaultCurrency = "TRY";
 export const REFERENCE_NOW = Date.parse("2026-06-30T00:00:00Z");
 
 export function localize(tr: string, en: string) {
-  return deviceLanguage === "en" ? en : tr;
+  return activeLanguage === "en" ? en : tr;
 }
 
 export function lower(value: string) {
@@ -52,16 +60,19 @@ export function compactNumber(value: number) {
   const n = Math.round(value);
   if (Math.abs(n) >= 1000) {
     const k = n / 1000;
-    const text = Number.isInteger(k) ? String(k) : k.toFixed(1).replace(".", ",");
-    return `${text} B`;
+    const en = activeLanguage === "en";
+    const text = Number.isInteger(k) ? String(k) : k.toFixed(1).replace(".", en ? "." : ",");
+    return `${text} ${en ? "K" : "B"}`;
   }
   return String(n);
 }
 
 const SHORT_MONTHS_TR = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+const SHORT_MONTHS_EN = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 export function shortDate(value: string | Date) {
   const date = typeof value === "string" ? new Date(value) : value;
   if (Number.isNaN(date.getTime())) return typeof value === "string" ? value : "";
-  return `${String(date.getDate()).padStart(2, "0")} ${SHORT_MONTHS_TR[date.getMonth()]}`;
+  const months = activeLanguage === "en" ? SHORT_MONTHS_EN : SHORT_MONTHS_TR;
+  return `${String(date.getDate()).padStart(2, "0")} ${months[date.getMonth()]}`;
 }

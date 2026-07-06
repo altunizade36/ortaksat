@@ -222,11 +222,11 @@ export default function CategoryLandingScreen() {
           {ancestors.map((a) => (
             <View key={a.key} style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
               <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-              <Link href={catHref(a.slug)} asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{a.label}</Text></Pressable></Link>
+              <Link href={catHref(a.slug)} asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(a.label, language)}</Text></Pressable></Link>
             </View>
           ))}
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-          <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{node.label}</Text>
+          <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(node.label, language)}</Text>
         </View>
 
         {/* Başlık */}
@@ -235,7 +235,7 @@ export default function CategoryLandingScreen() {
             <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={26} color={colors.primaryDark} />
           </View>
           <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
-            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{node.label} ilanları</Text>
+            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{translateCopy(node.label, language)} ilanları</Text>
             <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{items.length} ortak satış ilanı · komisyonlu ürünleri keşfet</Text>
           </View>
         </View>
@@ -246,7 +246,7 @@ export default function CategoryLandingScreen() {
             {node.children.map((c) => (
               <Link key={c.key} href={{ pathname: "/kategori/[slug]", params: { slug: c.slug } } as unknown as Href} asChild>
                 <Pressable style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{c.label}</Text>
+                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(c.label, language)}</Text>
                 </Pressable>
               </Link>
             ))}
