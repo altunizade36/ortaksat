@@ -734,9 +734,41 @@ export async function insertReview(review: Review) {
     reviewer_id: review.reviewerId,
     rating: review.rating,
     comment: review.comment,
-    type: review.type ?? "product"
+    type: review.type ?? "product",
+    // Karşılıklı satış puanlaması: hangi satış + kim puanlandı — çift-yorum
+    // engeli ve alınan-puan/güven hesabı yeniden yüklemeden sonra da çalışsın.
+    sale_id: review.saleId ?? null,
+    reviewed_user_id: review.reviewedUserId ?? null
   });
   if (error) console.warn("Supabase review insert failed", error);
+}
+
+// Bir kullanıcı HAKKINDA yazılmış (aldığı) yorumları getir — mağaza/profil
+// sayfasında ziyaretçilere gösterilir. reviews SELECT politikası herkese açık.
+export async function fetchReviewsForUser(userId: string): Promise<Review[]> {
+  if (!supabase || !userId) return [];
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*")
+    .eq("reviewed_user_id", userId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) {
+    console.warn("Supabase fetch user reviews failed", error);
+    return [];
+  }
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    listingId: row.listing_id,
+    saleId: row.sale_id ?? undefined,
+    reviewerId: row.reviewer_id,
+    reviewedUserId: row.reviewed_user_id ?? undefined,
+    rating: row.rating,
+    comment: row.comment,
+    type: row.type ?? "product",
+    createdAt: (row.created_at ?? "").slice(0, 10)
+  }));
 }
 
 export async function insertConversation(conversation: Conversation) {

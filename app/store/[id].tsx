@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -14,7 +14,9 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
+import { fetchReviewsForUser } from "@/lib/live-service";
 import { calculateUserTrustScores } from "@/lib/trust-score";
+import type { Review } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 type StoreFilter = "active" | "all" | "partner";
@@ -69,6 +71,22 @@ export default function StoreScreen() {
   const gridGap = 10;
   const cardWidth = responsiveGrid({ available: width - 24, gap: gridGap, minCardWidth: 176 }).cardWidth;
 
+  // Bu kullanıcı HAKKINDA yazılmış yorumları canlıdan getir (global store yalnız
+  // giriş yapan kullanıcının YAZDIĞI yorumları tutuyor). Böylece ziyaretçi de
+  // satıcının aldığı gerçek değerlendirmeleri görür.
+  const [fetchedReviews, setFetchedReviews] = useState<Review[]>([]);
+  useEffect(() => {
+    let alive = true;
+    if (id) void fetchReviewsForUser(id).then((r) => { if (alive) setFetchedReviews(r); });
+    return () => { alive = false; };
+  }, [id]);
+  const reviewsAboutSeller = useMemo(() => {
+    const map = new Map<string, Review>();
+    for (const r of reviews) if (r.reviewedUserId === id) map.set(r.id, r);
+    for (const r of fetchedReviews) map.set(r.id, r);
+    return Array.from(map.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  }, [reviews, fetchedReviews, id]);
+
   function refresh() {
     setRefreshing(true);
     setTimeout(() => setRefreshing(false), 420);
@@ -102,7 +120,6 @@ export default function StoreScreen() {
   }
 
   if (isWideWeb) {
-    const reviewsAboutSeller = reviews.filter((r) => r.reviewedUserId === seller.id).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     const sellerPartnerships = partnerships.filter((p) => activeListings.some((l) => l.id === p.listingId));
     const featured = activeListings.slice(0, 3);
     const deskCardWidth = responsiveGrid({ available: Math.min(width, 1480) - 40 - 300 - 24, gap: 16, minCardWidth: 210, maxColumns: 3 }).cardWidth;
