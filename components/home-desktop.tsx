@@ -132,7 +132,7 @@ export function HomeDesktop() {
   const SORTS: Array<[typeof sortMode, string]> = [["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"], ["commission", "Kazanç"]];
 
   return (
-    <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
+    <View style={{ alignItems: "flex-start", alignSelf: "center", flexDirection: "row", gap: 20, maxWidth: 1280, width: "100%" }}>
       {/* SOL: kategori + filtre paneli */}
       <View style={{ gap: 14, width: 248 }}>
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden" }}>
