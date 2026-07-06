@@ -78,6 +78,14 @@ export async function savePreferencesLive(userId: string, preferences: Record<st
   return true;
 }
 
+/** Kullanicinin e-posta bildirim tercihini gunceller (KVKK: kolay opt-out). */
+export async function saveEmailNotificationsLive(userId: string, enabled: boolean): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.from("profiles").update({ email_notifications: enabled }).eq("id", userId);
+  if (error) { console.warn("Email notifications update failed", error); return false; }
+  return true;
+}
+
 /** E-bulten abonesi ekler (herkes; RLS public insert). */
 export async function subscribeNewsletterLive(email: string): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: "Canlı bağlantı yok." };

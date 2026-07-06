@@ -43,6 +43,7 @@ import {
   updateReportStatusLive,
   updateProfileLive,
   savePreferencesLive,
+  saveEmailNotificationsLive,
   recordLegalConsentLive,
   requestAccountDeletionLive,
   deleteListingLive,
@@ -238,6 +239,7 @@ type AppStore = {
   signOutAllDevices: () => Promise<boolean>;
   updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio">) => Promise<boolean>;
   savePreferences: (preferences: Record<string, boolean | string | number>) => Promise<boolean>;
+  setEmailNotifications: (enabled: boolean) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, details?: string) => Promise<boolean>;
   reportUser: (reportedUserId: string, reason: string, details?: string) => Promise<boolean>;
   updateReportStatus: (reportId: string, status: Report["status"]) => Promise<boolean>;
@@ -526,6 +528,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
               responseRate: data.response_rate ?? 0,
               role: data.role ?? "user",
               status: (data.status as User["status"]) ?? "active",
+              emailNotifications: data.email_notifications ?? true,
               preferences: (data.preferences ?? {}) as Record<string, boolean>
             }
           : fallback;
@@ -1106,6 +1109,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const updatedUser: User = { ...currentUser, preferences: merged };
         const ok = liveUser ? await savePreferencesLive(currentUser.id, merged) : true;
         if (!ok) { setAuthError("Tercihler kaydedilemedi."); return false; }
+        setUsers((items) => [updatedUser, ...items.filter((item) => item.id !== updatedUser.id)]);
+        if (authUser?.id === updatedUser.id) setAuthUser(updatedUser);
+        return true;
+      },
+      async setEmailNotifications(enabled) {
+        const updatedUser: User = { ...currentUser, emailNotifications: enabled };
+        const ok = liveUser ? await saveEmailNotificationsLive(currentUser.id, enabled) : true;
+        if (!ok) { setAuthError("E-posta bildirim tercihi kaydedilemedi."); return false; }
         setUsers((items) => [updatedUser, ...items.filter((item) => item.id !== updatedUser.id)]);
         if (authUser?.id === updatedUser.id) setAuthUser(updatedUser);
         return true;

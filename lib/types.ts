@@ -29,6 +29,7 @@ export type User = {
   responseRate: number;
   role?: UserRole;
   status?: "active" | "suspended" | "deleted";
+  emailNotifications?: boolean;
   preferences?: Record<string, boolean | string | number>;
 };
 

@@ -56,7 +56,7 @@ export default function NotificationsScreen() {
 
 function NotificationsScreenInner() {
   const { language } = useLanguage();
-  const { currentUser, listings, markNotificationRead, notifications, partnerships, savePreferences } = useStore();
+  const { currentUser, listings, markNotificationRead, notifications, partnerships, savePreferences, setEmailNotifications } = useStore();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
 
@@ -78,8 +78,15 @@ function NotificationsScreenInner() {
   const [tab, setTab] = useState<"all" | "unread" | NotificationType>("all");
   const [readMap, setReadMap] = useState<Record<string, boolean>>({});
   const p0 = currentUser.preferences ?? {};
-  const [prefs, setPrefs] = useState<Record<string, boolean>>({ push: p0.notif_push !== false, email: p0.notif_email !== false, sms: p0.notif_sms === true, whatsapp: p0.notif_whatsapp !== false });
-  const togglePref = (key: string) => setPrefs((s) => { const v = !s[key]; void savePreferences({ [`notif_${key}`]: v }); return { ...s, [key]: v }; });
+  const [prefs, setPrefs] = useState<Record<string, boolean>>({ push: p0.notif_push !== false, email: currentUser.emailNotifications !== false, sms: p0.notif_sms === true, whatsapp: p0.notif_whatsapp !== false });
+  // "email" gerçek bir sunucu tercihidir (profiles.email_notifications → e-posta
+  // tetikleyicisi onu okur); diğerleri JSONB preferences'ta tutulur.
+  const togglePref = (key: string) => setPrefs((s) => {
+    const v = !s[key];
+    if (key === "email") void setEmailNotifications(v);
+    else void savePreferences({ [`notif_${key}`]: v });
+    return { ...s, [key]: v };
+  });
   // Tür bazında sustur — kalıcı tercih; susturulan tür listeden gizlenir.
   const [mutes, setMutes] = useState<Record<string, boolean>>(() => {
     const m: Record<string, boolean> = {};
@@ -145,7 +152,7 @@ function NotificationsScreenInner() {
     // e-posta/SMS/WhatsApp bildirimi henüz yok → "Yakında" olarak dürüstçe gösterilir.
     const prefRows: Array<{ key: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; available: boolean }> = [
       { key: "push", icon: "bell-ring-outline", label: "Uygulama içi bildirim", sub: "Talep, satış, mesaj, ortaklık — anlık", available: true },
-      { key: "email", icon: "email-outline", label: "E-posta bildirimleri", sub: "Olay-bazlı e-posta (yakında)", available: false },
+      { key: "email", icon: "email-outline", label: "E-posta bildirimleri", sub: "Talep, satış, mesaj ve ortaklık olaylarında e-posta", available: true },
       { key: "sms", icon: "message-badge-outline", label: "SMS", sub: "Yakında", available: false },
       { key: "whatsapp", icon: "whatsapp", label: "WhatsApp", sub: "Yakında", available: false }
     ];
