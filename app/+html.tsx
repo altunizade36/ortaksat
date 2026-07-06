@@ -127,6 +127,7 @@ const orgJsonLd = JSON.stringify({
     {
       "@type": "Organization",
       name: "OrtakSat",
+      alternateName: ["Ortaksat", "ortak sat", "Ortak Sat", "ortaksat.com"],
       url: "https://ortaksat.com",
       logo: "https://ortaksat.com/apple-touch-icon.png",
       description: "Ortak satış pazaryeri: ilanını aç, ortakların referans linkiyle paylaşsın, satışta komisyon kazan."
@@ -134,7 +135,9 @@ const orgJsonLd = JSON.stringify({
     {
       "@type": "WebSite",
       name: "OrtakSat",
+      alternateName: ["Ortaksat", "ortak sat"],
       url: "https://ortaksat.com",
+      inLanguage: "tr-TR",
       potentialAction: {
         "@type": "SearchAction",
         target: { "@type": "EntryPoint", urlTemplate: "https://ortaksat.com/explore?q={search_term_string}" },
