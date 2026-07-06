@@ -60,6 +60,37 @@ export async function apiSignIn(email: string, password: string): Promise<boolea
   return res.ok;
 }
 
+/** GoTrue password grant ile giriş yapıp access_token döner (RLS altında REST çağrısı için). */
+export async function apiSignInToken(email: string, password: string): Promise<string | null> {
+  const res = await fetch(`${SUPA_URL}/auth/v1/token?grant_type=password`, {
+    method: "POST",
+    headers: { apikey: ANON, "Content-Type": "application/json" },
+    body: JSON.stringify({ email: email.toLowerCase(), password })
+  });
+  if (!res.ok) return null;
+  const json = (await res.json()) as { access_token?: string };
+  return json.access_token ?? null;
+}
+
+/** Giriş yapmış kullanıcı olarak (RLS uygulanır) PostgREST'e satır ekler — insertReview'ın izlediği yol. */
+export async function restInsertAsUser(token: string, table: string, row: Record<string, unknown>): Promise<{ ok: boolean; status: number; body: string }> {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${table}`, {
+    method: "POST",
+    headers: { apikey: ANON, Authorization: `Bearer ${token}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify(row)
+  });
+  return { ok: res.ok, status: res.status, body: res.ok ? "" : (await res.text()).slice(0, 300) };
+}
+
+/** Bir test ilanı (e2e etiketli, temizlikte hedeflenir) oluşturur ve id'sini döner. */
+export async function seedListing(sellerId: string, title = "E2E Yorum Ürünü"): Promise<string> {
+  const rows = await runSql<Array<{ id: string }>>(`
+    insert into listings (owner_id, title, slug, description, price, commission_type, commission_value, category, location, status, partnership_mode, currency)
+    values ('${sellerId}', '${esc(title)} ${E2E_LISTING_TAG}', 'e2e-rev-${Date.now()}', 'E2E yorum akışı testi için ürün açıklaması yeterince uzun.', 3200, 'rate', 12, 'Elektronik', 'İstanbul', 'active', 'open', 'TRY')
+    returning id;`);
+  return rows[0].id;
+}
+
 /** Test kullanıcısının e-postasını onaylar (OTP okumaya gerek kalmadan giriş yapılabilsin). */
 export async function confirmUser(email: string): Promise<void> {
   // confirmed_at generated bir kolon (email_confirmed_at'ten türer) — sadece onu set et.
