@@ -64,7 +64,8 @@ function ProfileScreenInner() {
     ];
 
     return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+        <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         {/* Welcome banner */}
         <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, flexDirection: "row", gap: 16, overflow: "hidden", padding: 22 }}>
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 66, justifyContent: "center", overflow: "hidden", width: 66 }}>
@@ -190,6 +191,7 @@ function ProfileScreenInner() {
             </View>
           </View>
         </View>
+        </View>
 
         <WebFooter />
       </ScrollView>
@@ -198,7 +200,7 @@ function ProfileScreenInner() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
-      <WebContainer max={1180} padding={0} style={{ gap: 12 }}>
+      <WebContainer max={1280} padding={0} style={{ gap: 12 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 62, justifyContent: "center", overflow: "hidden", width: 62 }}>

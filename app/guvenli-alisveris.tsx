@@ -66,7 +66,7 @@ export default function SafeShoppingGuidePage() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd }} />
       </Head>
 
-      <WebContainer max={1180} padding={16} style={{ gap: 18, paddingTop: 18 }}>
+      <WebContainer max={1280} padding={16} style={{ gap: 18, paddingTop: 18 }}>
         {/* Hero */}
         <View style={{ gap: 8 }}>
           <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 6 }}>

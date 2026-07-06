@@ -28,7 +28,7 @@ export default function CreateListingScreen() {
         style={{ backgroundColor: colors.background }}
         contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 48, paddingHorizontal: isWideWeb ? 20 : 12, paddingTop: 16 }}
       >
-        <View style={{ alignSelf: "center", maxWidth: 1240, width: "100%" }}>
+        <View style={{ alignSelf: "center", maxWidth: 1280, width: "100%" }}>
           <DesktopCreateFlow />
         </View>
       </ScrollView>

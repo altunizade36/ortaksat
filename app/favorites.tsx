@@ -82,7 +82,8 @@ function FavoritesScreenInner() {
     ];
 
     return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+        <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ gap: 4 }}>
           <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Favorilerim</Text>
           <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Beğendiğin ürünleri burada bulabilir, fırsatları kaçırmadan kazanmaya başlayabilirsin.</Text>
@@ -157,6 +158,7 @@ function FavoritesScreenInner() {
               ) : null}
             </View>
           </View>
+        </View>
         </View>
 
         <WebFooter />

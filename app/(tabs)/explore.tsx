@@ -129,7 +129,9 @@ export default function ExploreScreen() {
   const gap = isWideWeb ? 14 : 8;
   const padding = isWideWeb ? 20 : 12;
   const panelWidth = 260;
-  const gridArea = isWideWeb ? width - padding * 2 - panelWidth - 20 : width - padding * 2;
+  // İçerik standart 1280 genişlikte ortalanır; grid hesabı da bu genişliğe göre.
+  const contentW = Math.min(width, 1280);
+  const gridArea = isWideWeb ? contentW - padding * 2 - panelWidth - 20 : contentW - padding * 2;
   const grid = responsiveGrid({ available: gridArea, gap, minCardWidth: isWideWeb ? 190 : 160 });
   const columns = grid.columns;
   const tileSize = grid.cardWidth;
@@ -290,13 +292,14 @@ export default function ExploreScreen() {
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 60, paddingHorizontal: padding, paddingTop: 16 }}
+        contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 60 }}
         style={{ backgroundColor: colors.background }}
       >
         <Head>
           <title>{seoTitle}</title>
           <meta name="description" content={seoDesc} />
         </Head>
+        <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: padding, paddingTop: 16, width: "100%" }}>
         {/* Banner */}
         <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 26 }}>
           <View style={{ flex: 1.3, gap: 10, justifyContent: "center", minWidth: 0 }}>
@@ -522,6 +525,7 @@ export default function ExploreScreen() {
               </View>
             </View>
           </View>
+        </View>
         </View>
       </ScrollView>
     );

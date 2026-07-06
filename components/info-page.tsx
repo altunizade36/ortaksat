@@ -39,7 +39,7 @@ export function InfoPage({
         <meta property="og:title" content={metaTitle} />
         <meta property="og:description" content={metaDesc} />
       </Head>
-      <WebContainer max={1180} padding={16} style={{ gap: 18 }}>
+      <WebContainer max={1280} padding={16} style={{ gap: 18 }}>
         {/* Breadcrumb — kullanıcı her zaman ana sayfaya dönebilir. */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
           <Link href="/" asChild>

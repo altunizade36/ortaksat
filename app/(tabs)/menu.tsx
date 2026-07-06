@@ -72,7 +72,7 @@ export default function MenuScreen() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: "#FFFFFF", gap: 8, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 108 }}>
-      <WebContainer max={1180} padding={0} style={{ gap: 8 }}>
+      <WebContainer max={1280} padding={0} style={{ gap: 8 }}>
       <View style={{ gap: 8, marginBottom: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>
           {translateCopy("Kategoriler ve Ortak Satış", language)}

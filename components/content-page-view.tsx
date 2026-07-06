@@ -28,7 +28,7 @@ export function ContentPageView({ slug, fallback }: { slug: string; fallback?: R
         <meta property="og:title" content={page.seoTitle || `${page.title || slug} — OrtakSat`} />
         {page.seoDescription ? <meta property="og:description" content={page.seoDescription} /> : null}
       </Head>
-      <View style={{ alignSelf: "center", gap: 14, maxWidth: 1180, width: "100%" }}>
+      <View style={{ alignSelf: "center", gap: 14, maxWidth: 1280, width: "100%" }}>
         {/* Breadcrumb — kullanıcı her zaman ana sayfaya dönebilir. */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
           <Link href="/" asChild>

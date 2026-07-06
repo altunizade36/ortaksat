@@ -237,8 +237,9 @@ function ProfileEditScreenInner() {
     const completion = Math.round(((doneCount + (bio ? 1 : 0) + (avatar ? 1 : 0)) / 5) * 100);
 
     return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
         {deleteModal}
+        <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ gap: 4 }}>
           <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Ayarlar</Text>
           <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Hesabını, güvenlik ve bildirim tercihlerini buradan yönet.</Text>
@@ -410,6 +411,7 @@ function ProfileEditScreenInner() {
               </Pressable>
             </View>
           </View>
+        </View>
         </View>
 
         <WebFooter />

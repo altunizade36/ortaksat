@@ -11,10 +11,14 @@ import { useIsWideWeb } from "@/lib/layout";
  *
  * Use a wider `max` for grids/feeds and a narrower one for forms/reading.
  */
+/** Site geneli standart içerik genişliği (Sahibinden benzeri): tüm sayfalar aynı
+ * genişlikte, ortalı, eşit kenar boşluğu. Tek yerden değişir. */
+export const PAGE_MAX_WIDTH = 1280;
+
 export function WebContainer({
   children,
-  max = 1200,
-  padding = 24,
+  max = PAGE_MAX_WIDTH,
+  padding = 20,
   style
 }: PropsWithChildren<{ max?: number; padding?: number; style?: ViewStyle }>) {
   const isWideWeb = useIsWideWeb();

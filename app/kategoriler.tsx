@@ -83,8 +83,9 @@ export default function CategoriesPage() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 20, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16, width: "100%" }} style={{ backgroundColor: colors.background }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
       <Head><title>Tüm Kategoriler — Emlak, Vasıta, Elektronik | OrtakSat</title><meta name="description" content="OrtakSat'ta tüm kategoriler: emlak, vasıta, elektronik, moda, ev & yaşam ve daha fazlası. Ürününü ortak sat, komisyon kazan." /></Head>
+      <View style={{ alignSelf: "center", gap: 20, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
       {/* Hero */}
       <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: isWideWeb ? "row" : "column", gap: isWideWeb ? 24 : 16, paddingHorizontal: isWideWeb ? 28 : 18, paddingVertical: isWideWeb ? 24 : 18 }}>
         <View style={{ flex: 1.5, gap: 12, justifyContent: "center", minWidth: 0 }}>
@@ -189,6 +190,7 @@ export default function CategoriesPage() {
             </View>
           </Pressable>
         </Link>
+      </View>
       </View>
 
       <WebTrustStrip />
