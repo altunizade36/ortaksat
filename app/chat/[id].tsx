@@ -291,49 +291,6 @@ function ChatScreenInner() {
         })}
       </ScrollView>
 
-      {quickReplies.length > 0 ? (
-        <View style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, paddingHorizontal: 10, paddingTop: 8 }}>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 10 }}>
-            {quickReplies.map((reply) => (
-              <Pressable
-                key={reply}
-                onPress={() => setBody(reply)}
-                style={({ pressed }) => ({
-                  backgroundColor: colors.surfaceAlt,
-                  borderColor: colors.line,
-                  borderRadius: 999,
-                  borderWidth: 1,
-                  justifyContent: "center",
-                  minHeight: 36,
-                  opacity: pressed ? 0.72 : 1,
-                  paddingHorizontal: 12
-                })}
-              >
-                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "900" }}>
-                  {translateCopy(reply, language)}
-                </Text>
-              </Pressable>
-            ))}
-            <Pressable
-              onPress={() => setBody(safeDealDraft)}
-              style={({ pressed }) => ({
-                backgroundColor: colors.successSoft,
-                borderColor: colors.success,
-                borderRadius: 999,
-                borderWidth: 1,
-                justifyContent: "center",
-                minHeight: 36,
-                opacity: pressed ? 0.72 : 1,
-                paddingHorizontal: 12
-              })}
-            >
-              <Text numberOfLines={1} style={{ color: colors.success, fontSize: 12, fontWeight: "900" }}>
-                {translateCopy("Güvenli işlem notu", language)}
-              </Text>
-            </Pressable>
-          </ScrollView>
-        </View>
-      ) : null}
 
       {draftRisk.hasRisk ? (
         <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderTopColor: colors.warning, borderTopWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
@@ -342,15 +299,15 @@ function ChatScreenInner() {
         </View>
       ) : null}
 
-      <View style={{ alignItems: "flex-end", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, padding: 10 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Görsel ekle" disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
+      <View style={{ alignItems: "flex-end", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, paddingBottom: insets.bottom > 0 ? insets.bottom : 10, paddingHorizontal: 10, paddingTop: 10 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Görsel ekle" disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
           <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} />
         </Pressable>
         <TextInput
           value={body}
           onChangeText={(t) => { setBody(t); notifyTyping(); }}
           multiline
-          placeholder={translateCopy("Mesaj yaz", language)}
+          placeholder={translateCopy("Mesaj yaz…", language)}
           placeholderTextColor={colors.muted}
           onKeyPress={(e) => {
             const ev = e.nativeEvent as { key?: string; shiftKey?: boolean };
@@ -359,9 +316,9 @@ function ChatScreenInner() {
               send();
             }
           }}
-          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, maxHeight: 110, minHeight: 44, paddingHorizontal: 12, paddingVertical: 10 }}
+          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 22, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14.5, maxHeight: 120, minHeight: 44, paddingHorizontal: 16, paddingVertical: 11 }}
         />
-        <Pressable accessibilityRole="button" accessibilityLabel="Gönder" disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 8, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
+        <Pressable accessibilityRole="button" accessibilityLabel="Gönder" disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
           <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
         </Pressable>
       </View>

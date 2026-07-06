@@ -370,14 +370,6 @@ function MessagesScreenInner() {
                   <Pressable accessibilityLabel="Arşivle" onPress={() => toggleArchive(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="archive-outline" size={16} color={colors.muted} /></Pressable>
                 </View>
 
-                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 18, paddingVertical: 8 }}>
-                  <MaterialCommunityIcons name="lightning-bolt" size={14} color={colors.primaryDark} />
-                  <Text numberOfLines={1} style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "700" }}>{respText}</Text>
-                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>%{respRate} yanıt</Text>
-                </View>
-
-                <ConversationInsightBar context={activeContext} risk={activeRisk} listingPrice={activeListing ? money(activeListing.price) : undefined} commission={estimatedCommission ? money(estimatedCommission) : undefined} isPartner={activeIsPartner} />
-
                 <ScrollView ref={deskScrollRef} scrollEventThrottle={16} onScroll={(e) => { const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent; deskNearBottomRef.current = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120; }} onContentSizeChange={() => { if (deskNearBottomRef.current) deskScrollRef.current?.scrollToEnd({ animated: false }); }} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-start", padding: 22 }}>
                   {activeMessages.length === 0 ? <EmptyState title="Henüz mesaj yok" body="İlk mesajı yaz ve konuşmayı başlat." /> : null}
                   {activeMessages.map((m, i) => {
@@ -421,28 +413,23 @@ function MessagesScreenInner() {
                   })}
                 </ScrollView>
 
-                <View style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, gap: 9, paddingHorizontal: 14, paddingVertical: 11 }}>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                    {DESK_QUICK_REPLIES.map((r) => (
-                      <Pressable key={r} onPress={() => setDraft(r)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 })}><Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "700" }}>{r}</Text></Pressable>
-                    ))}
-                    <Pressable onPress={() => setDraft(safeDealDraft)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : colors.successSoft, borderColor: colors.success, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 })}><Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "800" }}>Güvenli işlem notu</Text></Pressable>
-                  </View>
+                {/* Temiz composer (WhatsApp/Sahibinden tarzı): ekle · yaz · gönder.
+                    Hazır cevaplar ve etiket satırları kaldırıldı — mesaj alanı ferah. */}
+                <View style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingHorizontal: 16, paddingVertical: 12 }}>
                   {draftRisk.hasRisk ? (
                     <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderColor: colors.warning, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 10, paddingVertical: 8 }}>
                       <MaterialCommunityIcons name="shield-alert-outline" size={16} color={colors.warning} />
                       <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>Bu mesajda hassas ödeme veya site dışı iletişim ifadesi var. Görüşmeyi kayıtlı mesaj içinde net tutun.</Text>
                     </View>
                   ) : null}
-                  <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 10 }}>
-                    <Pressable accessibilityLabel="Görsel ekle" onPress={() => void attachImage()} disabled={attaching} hitSlop={8}><MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={19} color={attaching ? colors.primary : colors.muted} /></Pressable>
-                    <TextInput value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline placeholder="Mesajınızı yazınız…" placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ color: colors.ink, flex: 1, fontSize: 14, maxHeight: 110, minHeight: 46, paddingVertical: 12 }} />
-                    <Pressable accessibilityLabel="Fiyat teklifi" onPress={insertPriceOffer} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}><MaterialCommunityIcons name="tag-outline" size={14} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Fiyat teklifi</Text></Pressable>
-                    <Pressable accessibilityLabel="Mesajı gönder" disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 999, height: 40, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 44 })}><MaterialCommunityIcons name="send" size={18} color="#FFFFFF" /></Pressable>
+                  <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
+                    <Pressable accessibilityLabel="Görsel ekle" onPress={() => void attachImage()} disabled={attaching} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}><MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} /></Pressable>
+                    <TextInput value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline placeholder="Mesaj yaz…" placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 22, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, maxHeight: 120, minHeight: 44, paddingHorizontal: 16, paddingVertical: 12 }} />
+                    <Pressable accessibilityLabel="Mesajı gönder" disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 44 })}><MaterialCommunityIcons name="send" size={19} color="#FFFFFF" /></Pressable>
                   </View>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
                     <MaterialCommunityIcons name="lock-outline" size={12} color={colors.subtle} />
-                    <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Kişisel verilerin paylaşılmasına dikkat edin. OrtakSat ödeme/kargo işlemez; taraflar kendi aralarında anlaşır.</Text>
+                    <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>OrtakSat ödeme/kargo işlemez; taraflar kendi aralarında anlaşır. Kişisel veri paylaşımına dikkat.</Text>
                   </View>
                 </View>
               </>
