@@ -82,6 +82,23 @@ export async function restInsertAsUser(token: string, table: string, row: Record
   return { ok: res.ok, status: res.status, body: res.ok ? "" : (await res.text()).slice(0, 300) };
 }
 
+/** Gerçek bir satış zinciri kurar: partnership + order + commission. commission
+ * id'sini (= review.sale_id) döner. Karşılıklı yorum artık gerçek satış ister. */
+export async function seedSale(sellerId: string, partnerId: string, listingId: string): Promise<string> {
+  const ref = `e2e${Date.now().toString(36)}${Math.floor(Math.random() * 1e4)}`;
+  const pr = await runSql<Array<{ id: string }>>(
+    `insert into partnerships (id, listing_id, partner_id, ref_code, status) values (gen_random_uuid(), '${listingId}','${partnerId}','${ref}','active') returning id;`
+  );
+  const partnershipId = pr[0].id;
+  const or = await runSql<Array<{ id: string }>>(
+    `insert into orders (id, listing_id, seller_id, partnership_id, amount, status) values (gen_random_uuid(), '${listingId}','${sellerId}','${partnershipId}', 3200, 'confirmed') returning id;`
+  );
+  const cr = await runSql<Array<{ id: string }>>(
+    `insert into commissions (id, order_id, listing_id, partnership_id, amount, sale_amount, status) values (gen_random_uuid(), '${or[0].id}','${listingId}','${partnershipId}', 384, 3200, 'approved') returning id;`
+  );
+  return cr[0].id;
+}
+
 /** Bir test ilanı (e2e etiketli, temizlikte hedeflenir) oluşturur ve id'sini döner. */
 export async function seedListing(sellerId: string, title = "E2E Yorum Ürünü"): Promise<string> {
   const rows = await runSql<Array<{ id: string }>>(`
