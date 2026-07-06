@@ -125,7 +125,7 @@ export default function StoreScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
         {/* Cover */}
         <View style={{ backgroundColor: colors.primaryDark, height: 150 }} />
-        <View style={{ marginTop: -64, paddingHorizontal: 20 }}>
+        <View style={{ alignSelf: "center", marginTop: -64, maxWidth: 1280, paddingHorizontal: 20, width: "100%" }}>
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, padding: 20 }}>
             <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 18 }}>
               <View style={{ borderColor: colors.surface, borderRadius: 20, borderWidth: 4, marginTop: -54 }}>

@@ -51,7 +51,8 @@ export default function BlogPage() {
   const recent = ALL_POSTS.slice().reverse().slice(0, 5);
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+      <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
         <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
         <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
@@ -188,6 +189,7 @@ export default function BlogPage() {
             </SideCard>
           </View>
         ) : null}
+      </View>
       </View>
 
       <WebFooter />

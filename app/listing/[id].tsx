@@ -444,7 +444,7 @@ export default function ListingDetailScreen() {
         <meta name="twitter:image:alt" content={currentListing.imageAlt || currentListing.title} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productLd }} />
       </Head>
-      <WebContainer max={1200} padding={0} style={{ gap: 16 }}>
+      <WebContainer max={1280} padding={0} style={{ gap: 16 }}>
       {/* Breadcrumb: Ana Sayfa › Kategori › Ürün */}
       <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, marginHorizontal: isWideWeb ? 0 : 12 }}>
         <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel="Ana sayfa"><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>

@@ -87,7 +87,8 @@ export default function TrustScreen() {
     const rows = allRows.filter((r) => filter === "open" ? (r.status === "open" || r.status === "reviewing") : filter === "resolved" ? (r.status === "resolved" || r.status === "rejected") : true);
 
     return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+        <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 52, justifyContent: "center", width: 52 }}>
             <MaterialCommunityIcons name="shield-check" size={28} color={colors.primary} />
@@ -255,6 +256,7 @@ export default function TrustScreen() {
               </Link>
             </View>
           </View>
+        </View>
         </View>
 
         <WebFooter />

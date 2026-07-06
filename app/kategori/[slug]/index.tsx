@@ -211,7 +211,7 @@ export default function CategoryLandingScreen() {
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd }} />
       </Head>
 
-      <WebContainer max={1240} padding={12} style={{ gap: 14 }}>
+      <WebContainer max={1280} padding={12} style={{ gap: 14 }}>
         {/* Breadcrumb — tam ata zinciri (her üst kategori tıklanabilir) */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
           <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>

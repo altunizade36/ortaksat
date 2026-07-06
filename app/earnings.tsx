@@ -104,7 +104,8 @@ function EarningsScreenInner() {
     ];
 
     return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+        <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 12 }}>
           <View style={{ flex: 1, gap: 4 }}>
             <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Kazançlarım</Text>
@@ -248,6 +249,7 @@ function EarningsScreenInner() {
               ))}
             </View>
           </View>
+        </View>
         </View>
 
         <WebFooter />
