@@ -6,6 +6,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, Tex
 import { Link } from "expo-router";
 
 import { colors } from "@/components/colors";
+import { Seo } from "@/components/seo";
 import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 import { Card, PrimaryButton } from "@/components/ui";
 import { LegalConsentModal } from "@/components/legal-consent-modal";
@@ -323,11 +324,22 @@ export default function AuthScreen() {
     </Text>
   );
 
+  // Giriş/kayıt ekranı arama sonuçlarında çıkmasın (ince içerik + kişisel akış).
+  const seoHead = (
+    <Seo
+      title="Giriş yap veya ücretsiz üye ol | OrtakSat"
+      description="OrtakSat hesabına giriş yap ya da saniyeler içinde ücretsiz üye ol; ilan ver, ortak ol, kazanmaya başla."
+      path="/auth"
+      noindex
+    />
+  );
+
   // Kayıt olup e-posta kodunu bekleyen kullanıcı: link/uygulama-değiştirme yok,
   // aynı ekranda 6 haneli kodu girer. (Supabase "Confirm signup" şablonu {{ .Token }} ile.)
   if (pendingVerifyEmail) {
     return (
       <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1, backgroundColor: colors.background }}>
+        {seoHead}
         <ScrollView contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20 }}>
           <View style={{ alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, maxWidth: 420, padding: 24, width: "100%" }}>
             <View style={{ alignItems: "center", gap: 8 }}>
@@ -389,6 +401,7 @@ export default function AuthScreen() {
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+        {seoHead}
         <View style={{ gap: 16, marginHorizontal: "auto", maxWidth: 1100, paddingHorizontal: 20, paddingTop: 24, width: "100%" }}>
           {/* Dedicated auth top bar (site nav gizli) */}
           <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
@@ -597,6 +610,7 @@ export default function AuthScreen() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+      {seoHead}
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, maxWidth: 720, marginHorizontal: "auto", padding: 16, paddingBottom: 90, width: "100%" }}>
         <Pressable onPress={() => { if (router.canGoBack()) router.back(); else router.replace("/"); }} style={{ alignItems: "center", alignSelf: "flex-start", borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
           <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} />

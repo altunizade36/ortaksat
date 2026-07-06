@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
+import Head from "expo-router/head";
 import { useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
@@ -52,6 +53,14 @@ export default function BlogPage() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+      <Head>
+        <title>Blog — Ortak satış, komisyon ve pazarlama rehberi | OrtakSat</title>
+        <meta name="description" content="OrtakSat blog: ortak satış, komisyon, referans pazarlama, ilan optimizasyonu ve güvenli alışveriş üzerine rehberler. Satıcı ve ortaklar için pratik ipuçları." />
+        <link rel="canonical" href="https://ortaksat.com/blog" />
+        <meta property="og:title" content="OrtakSat Blog — Ortak satış rehberleri" />
+        <meta property="og:description" content="Ortak satış, komisyon ve referans pazarlama üzerine pratik rehberler." />
+        <meta property="og:url" content="https://ortaksat.com/blog" />
+      </Head>
       <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
         <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>

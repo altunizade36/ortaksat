@@ -5,6 +5,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, Tex
 
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
+import { Seo } from "@/components/seo";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LegalLibrary } from "@/components/legal-library";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
@@ -207,6 +208,7 @@ export default function LegalScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, maxWidth: 860, marginHorizontal: "auto", padding: 16, paddingBottom: 90, width: "100%" }}>
+        <Seo title="Yasal & Destek — Sözleşmeler, KVKK, gizlilik | OrtakSat" description="OrtakSat yasal belgeleri: kullanım şartları, aracılık sözleşmesi, KVKK aydınlatma, gizlilik ve çerez politikası, yasaklı ürünler. Tümü tek sayfada." path="/legal" />
         <Card>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             <StatusPill label="KVKK / Gizlilik" tone="success" />

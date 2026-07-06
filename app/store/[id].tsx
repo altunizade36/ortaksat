@@ -5,6 +5,7 @@ import { useMemo, useState } from "react";
 import { Alert, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
+import { Seo } from "@/components/seo";
 import { ListingCard } from "@/components/listing-card";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
@@ -123,6 +124,7 @@ export default function StoreScreen() {
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+        <Seo title={`${seller?.name ?? "Satıcı"} — Mağaza ve ilanları | OrtakSat`} description={`${seller?.name ?? "Bu satıcının"} OrtakSat mağazası: ${activeListings.length} aktif ilan. Ürünleri incele, ortak ol veya doğrudan satıcıyla iletişime geç.`} path={id ? `/store/${id}` : undefined} image={seller?.avatar?.startsWith("http") ? seller.avatar : undefined} />
         {/* Cover */}
         <View style={{ backgroundColor: colors.primaryDark, height: 150 }} />
         <View style={{ alignSelf: "center", marginTop: -64, maxWidth: 1280, paddingHorizontal: 20, width: "100%" }}>

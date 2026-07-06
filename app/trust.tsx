@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Alert, Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { Seo } from "@/components/seo";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -88,6 +89,7 @@ export default function TrustScreen() {
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+        <Seo title="Güven Merkezi — Doğrulama, şeffaflık ve şikayet | OrtakSat" description="OrtakSat Güven Merkezi: satıcı/ortak doğrulama, güven puanı, şikayet yönetimi ve şeffaf süreçlerle güvenli bir ortak satış ortamı." path="/trust" />
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 52, justifyContent: "center", width: 52 }}>

@@ -3,6 +3,8 @@
 // (generic Vercel 404 yerine) gösterilsin.
 import fs from "fs";
 
+import { patchSeo } from "./seo-static.mjs";
+
 const dir = "dist-web";
 const src = `${dir}/+not-found.html`;
 const dst = `${dir}/404.html`;
@@ -17,3 +19,12 @@ try {
 } catch (e) {
   console.warn("post-export: 404.html kopyalanamadı:", e.message);
 }
+
+// Statik rotaların <title>/description/canonical/OG etiketlerini benzersizle —
+// expo-router/head statik export'ta yazmadığı için crawler'lar tek başlık görüyordu.
+try {
+  patchSeo();
+} catch (e) {
+  console.warn("post-export: SEO meta yazılamadı:", e.message);
+}
+// 404.html varsayılan başlıkta kalmasın (patchSeo'dan sonra kopyalanmadıysa da).

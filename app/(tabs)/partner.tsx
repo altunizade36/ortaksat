@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Alert, Linking, Platform, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { Seo } from "@/components/seo";
 import { DisputeModal } from "@/components/dispute-modal";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { MiniBarChart } from "@/components/mini-bar-chart";
@@ -191,6 +192,7 @@ export default function PartnerScreen() {
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 40, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
+        <Seo title="Ortak Satış — Ürün paylaş, satışta komisyon kazan | OrtakSat" description="Beğendiğin ürünlere ortak ol, referans linkini paylaş; satış gerçekleşince komisyonu kazan. Sıfır sermaye, ücretsiz başvuru. OrtakSat ortak satış platformu." path="/partner" />
         {/* Hero */}
         <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 24 }}>
           <View style={{ flex: 1.5, gap: 12, justifyContent: "center", minWidth: 0 }}>

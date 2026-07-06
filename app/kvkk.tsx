@@ -5,6 +5,7 @@ import { Alert, Pressable, ScrollView, Text, TextInput, View } from "react-nativ
 
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
+import { Seo } from "@/components/seo";
 import { EmptyState } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { SUPPORT_EMAIL } from "@/lib/contact";
@@ -231,6 +232,7 @@ export default function KvkkScreen() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 14, paddingBottom: 96 }}>
+      <Seo title="KVKK ve Veri Talepleri — Kişisel veri hakların | OrtakSat" description="KVKK kapsamında kişisel verilerine ilişkin erişim, düzeltme, silme taleplerini oluştur ve takip et. Başvuru: destek@ortaksat.com." path="/kvkk" />
       <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>KVKK ve Veri Talepleri</Text>
       <Text style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>Kişisel verilerinle ilgili talep oluştur ve geçmişini takip et.</Text>
       <View style={{ gap: 8 }}>
