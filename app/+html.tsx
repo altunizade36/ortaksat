@@ -66,13 +66,22 @@ export default function Root({ children }: PropsWithChildren) {
         <script defer src="/_vercel/insights/script.js" />
         <script defer src="/_vercel/speed-insights/script.js" />
 
-        {/* Crisp web typography */}
+        {/* İlk veri çağrısı gecikmesin: Supabase kaynağına erken bağlan. */}
+        <link rel="preconnect" href="https://akyzzdwbzgsnhdircuce.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://akyzzdwbzgsnhdircuce.supabase.co" />
+
+        {/* Crisp web typography — render'ı bloklamadan yükle (FCP hızlanır).
+            Sistem yazı tipiyle çizilir, Inter gelince yumuşakça geçer (display=swap).
+            Stylesheet'i inline script async ekler; JS yoksa <noscript> devreye girer. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <link
-          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap"
-          rel="stylesheet"
-        />
+        <script dangerouslySetInnerHTML={{ __html: fontLoader }} />
+        <noscript>
+          <link
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap"
+            rel="stylesheet"
+          />
+        </noscript>
 
         {/* Yapısal veri: kuruluş + site araması (Google sitelinks arama kutusu) */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: orgJsonLd }} />
@@ -104,6 +113,13 @@ const bootScript =
   "function ready(){requestAnimationFrame(function(){requestAnimationFrame(done);});}" +
   "if(document.readyState==='complete'){ready();}else{window.addEventListener('load',ready);}" +
   "setTimeout(done,6000);})();";
+
+// Inter'i render-bloklamadan yükle: <link media="print"> ekle, yüklenince media='all'.
+const fontLoader =
+  "(function(){var l=document.createElement('link');" +
+  "l.rel='stylesheet';l.media='print';" +
+  "l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap';" +
+  "l.onload=function(){l.media='all';};document.head.appendChild(l);})();";
 
 const orgJsonLd = JSON.stringify({
   "@context": "https://schema.org",
