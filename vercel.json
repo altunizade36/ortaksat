@@ -7,9 +7,15 @@
   "trailingSlash": false,
   "redirects": [
     {
-      "source": "/:path*",
+      "source": "/",
       "has": [{ "type": "host", "value": "www.ortaksat.com" }],
-      "destination": "https://ortaksat.com/:path*",
+      "destination": "https://ortaksat.com/",
+      "permanent": false
+    },
+    {
+      "source": "/:path+",
+      "has": [{ "type": "host", "value": "www.ortaksat.com" }],
+      "destination": "https://ortaksat.com/:path+",
       "permanent": false
     }
   ],
