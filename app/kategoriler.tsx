@@ -136,54 +136,22 @@ export default function CategoriesPage() {
         </View>
       </View>
 
-      {/* Popüler + Yüksek kazançlı */}
-      <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
-        <View style={{ flex: 1.7, gap: 14, minWidth: 0 }}>
-          <SectionHead title="Popüler kategoriler" subtitle="En çok ilgi gören kategorilere göz at." />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-            {popular.map(({ cat, count, image }, i) => (
-              <Link key={cat.key} href={categoryHref(cat.key)} asChild>
-                <Pressable dataSet={{ card: "listing" }} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 120, flexGrow: 1, gap: 8, maxWidth: 180, padding: 12 }}>
-                  <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 72, justifyContent: "center", overflow: "hidden", width: "100%" }}>
-                    <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
-                  </View>
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy(cat.label, language)}</Text>
-                  <Text numberOfLines={1} style={{ color: count > 0 ? colors.muted : colors.primaryDark, fontSize: 11, fontWeight: "700" }}>{count > 0 ? `${groupTr(count)} ilan` : "İlan ekle →"}</Text>
-                </Pressable>
-              </Link>
-            ))}
-          </View>
-        </View>
-
-        <View style={{ backgroundColor: colors.primarySoft, borderRadius: 16, flex: 1, gap: 14, minWidth: 0, padding: 16 }}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-            <View style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 8, height: 32, justifyContent: "center", width: 32 }}>
-              <MaterialCommunityIcons name="lightbulb-on-outline" size={18} color={colors.primaryDark} />
-            </View>
-            <View style={{ flex: 1, gap: 1 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Ortak satış nasıl çalışır?</Text>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>Üç adımda ilan ver, eşleş, anlaş.</Text>
-            </View>
-          </View>
-          <View style={{ gap: 10 }}>
-            {steps.map((s, i) => (
-              <View key={s.title} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 11, padding: 12 }}>
-                <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 10, height: 38, justifyContent: "center", width: 38 }}>
-                  <MaterialCommunityIcons name={s.icon} size={19} color={colors.primaryDark} />
+      {/* Popüler kategoriler — tam genişlik (sağdaki "nasıl çalışır" kartı
+          kaldırıldı; hem gereksiz tekrar hem mobilde bozulmaya yol açıyordu). */}
+      <View style={{ gap: 14 }}>
+        <SectionHead title="Popüler kategoriler" subtitle="En çok ilgi gören kategorilere göz at." />
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+          {popular.map(({ cat, count, image }, i) => (
+            <Link key={cat.key} href={categoryHref(cat.key)} asChild>
+              <Pressable dataSet={{ card: "listing" }} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 130, flexGrow: 1, gap: 8, maxWidth: 200, padding: 12 }}>
+                <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 84, justifyContent: "center", overflow: "hidden", width: "100%" }}>
+                  <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                 </View>
-                <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{i + 1}. {s.title}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{s.body}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
-          <Link href="/create" asChild>
-            <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 11 }}>
-              <MaterialCommunityIcons name="plus-circle-outline" size={17} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ücretsiz ilan ver</Text>
-            </Pressable>
-          </Link>
+                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy(cat.label, language)}</Text>
+                <Text numberOfLines={1} style={{ color: count > 0 ? colors.muted : colors.primaryDark, fontSize: 11, fontWeight: "700" }}>{count > 0 ? `${groupTr(count)} ilan` : "İlan ekle →"}</Text>
+              </Pressable>
+            </Link>
+          ))}
         </View>
       </View>
 

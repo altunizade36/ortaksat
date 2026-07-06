@@ -198,7 +198,7 @@ function ProfileScreenInner() {
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
-      <WebContainer max={1000} padding={0} style={{ gap: 12 }}>
+      <WebContainer max={1180} padding={0} style={{ gap: 12 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 62, justifyContent: "center", overflow: "hidden", width: 62 }}>
