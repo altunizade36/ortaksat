@@ -21,14 +21,6 @@ import { displayText } from "@/lib/text";
 import type { Conversation, Lead, Message, Partnership } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
-const DESK_QUICK_REPLIES = [
-  "Merhaba, ilan hâlâ yayında mı?",
-  "Fiyat güncel mi?",
-  "Teslimat / görüşme için uygun musunuz?",
-  "Ödeme ve teslimat koşullarını mesajda netleştirelim.",
-  "Ortak satış için detay konuşabilir miyiz?"
-];
-
 type InboxFilter = "all" | "unread" | "action" | "sales" | "partner";
 
 // Mesaj zaman damgasi "YYYY-MM-DD HH:MM" formatinda; sadece saati goster.
@@ -253,7 +245,6 @@ function MessagesScreenInner() {
       : "Ödeme, teslimat ve komisyon koşullarını OrtakSat mesaj kaydında netleştirelim.";
 
     const respRate = activeOther?.responseRate ?? 0;
-    const respText = respRate >= 80 ? "Bu satıcı mesajlara genellikle hızlı yanıt verir." : respRate >= 50 ? "Bu satıcı mesajlara çoğunlukla yanıt verir." : "Yanıtlar biraz gecikebilir.";
     const statCards = [
       { icon: "email-outline" as const, tint: colors.primarySoft, color: colors.primaryDark, value: unreadMessages.length, label: translateCopy("Okunmamış", language), sub: translateCopy("Yeni mesajınız var", language) },
       { icon: "clock-outline" as const, tint: colors.goldSoft, color: colors.gold, value: actionCount, label: translateCopy("Yanıt bekleyen", language), sub: translateCopy("Yanıt bekleyen mesajlar", language) },
@@ -706,38 +697,6 @@ function DeskInfoRow({ label, value }: { label: string; value: string }) {
     <View style={{ alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "space-between" }}>
       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{label}</Text>
       <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "800", textAlign: "right" }}>{value}</Text>
-    </View>
-  );
-}
-
-function ConversationInsightBar({
-  commission,
-  context,
-  isPartner,
-  listingPrice,
-  risk
-}: {
-  commission?: string;
-  context: { channel: string; source: string; status: string };
-  isPartner: boolean;
-  listingPrice?: string;
-  risk: { hasRisk: boolean; matches: string[] };
-}) {
-  return (
-    <View style={{ backgroundColor: risk.hasRisk ? colors.warningSoft : colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, gap: 8, paddingHorizontal: 18, paddingVertical: 10 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
-        <MiniSignal icon={risk.hasRisk ? "shield-alert-outline" : "shield-check-outline"} label={risk.hasRisk ? "Kontrol gerekli" : "Kayıtlı görüşme"} tone={risk.hasRisk ? "warn" : "ok"} />
-        <MiniSignal icon={isPartner ? "handshake-outline" : "tag-outline"} label={isPartner ? "Ortak satış" : "Satış"} />
-        <MiniSignal icon="source-branch" label={context.source} />
-        <MiniSignal icon="clipboard-text-outline" label={context.status} />
-        {listingPrice ? <MiniSignal icon="cash" label={listingPrice} /> : null}
-        {commission ? <MiniSignal icon="percent-outline" label={`Komisyon ${commission}`} /> : null}
-      </View>
-      {risk.hasRisk ? (
-        <Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>
-          Hassas ifade algılandı: {risk.matches.join(", ")}. Ödeme, teslimat ve anlaşma şartlarını OrtakSat mesaj kaydında netleştirin.
-        </Text>
-      ) : null}
     </View>
   );
 }

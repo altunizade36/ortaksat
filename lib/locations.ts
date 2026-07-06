@@ -58,11 +58,6 @@ export function formatLocation(input: { provinceId?: number | null; districtId?:
   return parts.join(" / ");
 }
 
-/** Short label for cards: İl / İlçe only. */
-export function shortLocation(input: { provinceId?: number | null; districtId?: number | null }): string {
-  return formatLocation(input, "district_only");
-}
-
 /** Resolve a free-text legacy location string (e.g. "İstanbul") to a province id, for back-compat with mock listings. */
 export function resolveProvinceByName(name?: string | null): Province | undefined {
   if (!name) return undefined;
