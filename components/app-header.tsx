@@ -81,18 +81,34 @@ export function AppHeader() {
           <View style={{ flex: 1, minWidth: 16 }} />
           <DesktopActions />
         </View>
-        {/* İkincil yatay gezinme çubuğu — masaüstünde ana bölümlere tek tıkla erişim
-            (önceden yalnızca mobilde hamburger menü vardı). */}
-        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 28, paddingVertical: 4, zIndex: 20 }}>
+        {/* İkincil yatay gezinme çubuğu — masaüstünde ana bölümlere tek tıkla erişim.
+            Her öğe SABİT yükseklikte (44) ve içeriği ortalı; böylece caret'li
+            "Kategoriler" dahil hepsi aynı hizada durur, eşit aralıklı. */}
+        <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 22, zIndex: 20 }}>
           {navItems.map((item) => {
             const active = item.match(pathname);
+            // Düz Pressable + router.push: Link asChild sarmalayınca Pressable'ın
+            // padding'i düşüyordu (öğeler yapışıyordu). Bu yol eşit aralığı garanti eder.
             return (
-              <Link key={item.label} href={item.href} asChild>
-                <Pressable style={({ pressed }) => ({ alignItems: "center", borderBottomColor: active ? colors.primary : "transparent", borderBottomWidth: 2, flexDirection: "row", gap: 4, opacity: pressed ? 0.7 : 1, paddingHorizontal: 12, paddingVertical: 9 })}>
-                  <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 13.5, fontWeight: active ? "900" : "700" }}>{item.label}</Text>
-                  {item.caret ? <MaterialCommunityIcons name="chevron-down" size={15} color={colors.muted} /> : null}
-                </Pressable>
-              </Link>
+              <Pressable
+                key={item.label}
+                accessibilityRole="link"
+                onPress={() => router.push(item.href as never)}
+                style={({ pressed }) => ({
+                  alignItems: "center",
+                  borderBottomColor: active ? colors.primary : "transparent",
+                  borderBottomWidth: 2,
+                  flexDirection: "row",
+                  gap: 4,
+                  height: 46,
+                  justifyContent: "center",
+                  opacity: pressed ? 0.7 : 1,
+                  paddingHorizontal: 16
+                })}
+              >
+                <Text numberOfLines={1} style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 14, fontWeight: active ? "900" : "700", lineHeight: 18 }}>{item.label}</Text>
+                {item.caret ? <MaterialCommunityIcons name="chevron-down" size={16} color={active ? colors.primaryDark : colors.muted} style={{ marginTop: 1 }} /> : null}
+              </Pressable>
             );
           })}
         </View>
