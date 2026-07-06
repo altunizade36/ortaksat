@@ -60,12 +60,12 @@ export function commissionAmount(listing: Listing) {
 }
 
 export function shareUrl(listing: Listing, refCode: string) {
-  return `https://ortaksat.com/i/${listing.slug}?ref=${refCode}`;
+  return `https://www.ortaksat.com/i/${listing.slug}?ref=${refCode}`;
 }
 
 // Düz ürün paylaşımı: herkesin açabileceği ürün detay sayfası (referans formu değil).
 export function productUrl(listing: Listing) {
-  return `https://ortaksat.com/listing/${listing.id}`;
+  return `https://www.ortaksat.com/listing/${listing.id}`;
 }
 
 /** TR cep telefonunu WhatsApp/wa.me için uluslararası haneye çevirir ("0555…" -> "90555…"). Geçersizse "". */
@@ -77,7 +77,7 @@ export function trPhoneIntl(phone: string | undefined | null): string {
 }
 
 export function listingShareTemplates(listing: Listing, url?: string) {
-  const link = url ?? `https://ortaksat.com/listing/${listing.id}`;
+  const link = url ?? `https://www.ortaksat.com/listing/${listing.id}`;
   const commission = commissionText(listing);
   const firstPitch = listing.salesPitch[0] ?? listing.description;
 

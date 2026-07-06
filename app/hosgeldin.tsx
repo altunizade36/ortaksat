@@ -67,7 +67,7 @@ export default function WelcomePage() {
       <Head>
         <title>{translateCopy("Hoş geldin — Nasıl başlamak istersin? | OrtakSat", language)}</title>
         <meta name="description" content={translateCopy("OrtakSat'a hoş geldin. Satıcı olarak ürününü komisyonla sattır, ortak olarak sosyal medyadan komisyon kazan, ya da ürünleri keşfet.", language)} />
-        <link rel="canonical" href="https://ortaksat.com/hosgeldin" />
+        <link rel="canonical" href="https://www.ortaksat.com/hosgeldin" />
         <meta name="robots" content="noindex, follow" />
       </Head>
 

@@ -47,7 +47,7 @@ export default function InfluencerLandingPage() {
   const { language } = useLanguage();
   const title = translateCopy("Sosyal Medyadan Para Kazan — Influencer Ortak Programı | OrtakSat", language);
   const desc = translateCopy("Instagram, TikTok veya WhatsApp hesabınla para kazan. Sıfır sermaye, stok yok, para yatırma yok — ürün seç, referans linkini paylaş, satışta komisyon kazan. Ücretsiz başla.", language);
-  const url = "https://ortaksat.com/influencer-kazanc";
+  const url = "https://www.ortaksat.com/influencer-kazanc";
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 24 }} style={{ backgroundColor: colors.background }}>

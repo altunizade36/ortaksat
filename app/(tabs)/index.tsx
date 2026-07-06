@@ -171,18 +171,18 @@ export default function HomeScreen() {
       <Head>
         <title>OrtakSat — Komisyonla Ortak Satış Platformu | İlan Ver, Ortak Ol Kazan</title>
         <meta name="description" content="OrtakSat: ürününü ücretsiz listele, komisyonunu belirle; ortaklar referans linkiyle paylaşıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan. Emlak, telefon, bilgisayar, giyim, ev ve daha fazlası." />
-        <link rel="canonical" href="https://ortaksat.com/" />
+        <link rel="canonical" href="https://www.ortaksat.com/" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="OrtakSat" />
         <meta property="og:locale" content="tr_TR" />
         <meta property="og:title" content="OrtakSat — Komisyonla Ortak Satış Platformu" />
         <meta property="og:description" content="Ürününü ücretsiz listele, komisyonunu belirle; ortaklar senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan." />
-        <meta property="og:url" content="https://ortaksat.com/" />
-        <meta property="og:image" content="https://ortaksat.com/og-cover.png" />
+        <meta property="og:url" content="https://www.ortaksat.com/" />
+        <meta property="og:image" content="https://www.ortaksat.com/og-cover.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="OrtakSat — Komisyonla Ortak Satış Platformu" />
         <meta name="twitter:description" content="Ürününü ücretsiz listele; ortaklar senin için satsın. Sıfır sermaye ile ortak ol, kazan." />
-        <meta name="twitter:image" content="https://ortaksat.com/og-cover.png" />
+        <meta name="twitter:image" content="https://www.ortaksat.com/og-cover.png" />
       </Head>
       {isWideWeb ? (
         <>
@@ -381,7 +381,7 @@ function HomeSeoSkeleton() {
       <Head>
         <title>OrtakSat — Komisyonla Ortak Satış Platformu | İlan Ver, Ortak Ol Kazan</title>
         <meta name="description" content="OrtakSat: ürününü ücretsiz listele, komisyonunu belirle; ortaklar referans linkiyle paylaşıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan." />
-        <link rel="canonical" href="https://ortaksat.com/" />
+        <link rel="canonical" href="https://www.ortaksat.com/" />
       </Head>
       <View style={{ alignSelf: "center", gap: 16, maxWidth: 900, width: "100%" }}>
         <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 34, fontWeight: "900", lineHeight: 40 }}>
@@ -664,7 +664,7 @@ function FilterChip({ active, icon, label, onPress }: { active?: boolean; icon: 
 }
 
 // Mobil hero görsel kümesi — web ile tutarlı: tokalaşma (anlaşma) + sabit ürünler.
-const MHERO = (n: string) => `https://ortaksat.com/hero2/${n}.jpg`;
+const MHERO = (n: string) => `https://www.ortaksat.com/hero2/${n}.jpg`;
 // Ürün daireleri kutu İÇİNDE (0..84) konumlanır — negatif offset yok, böylece
 // kartın overflow:hidden'ı hiçbir şeyi kırpmaz. Tokalaşma ortada, ürünler köşelerde.
 const MHERO_FLOAT: Array<{ img: string; top: number; left: number }> = [

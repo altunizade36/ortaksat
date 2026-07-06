@@ -8,7 +8,7 @@ export function Seo({
   title,
   description,
   path,
-  image = "https://ortaksat.com/og-cover.png",
+  image = "https://www.ortaksat.com/og-cover.png",
   noindex
 }: {
   title: string;
@@ -17,7 +17,7 @@ export function Seo({
   image?: string;
   noindex?: boolean;
 }) {
-  const url = path ? `https://ortaksat.com${path}` : undefined;
+  const url = path ? `https://www.ortaksat.com${path}` : undefined;
   return (
     <Head>
       <title>{title}</title>

@@ -72,7 +72,7 @@ export default function EarningsCalculatorPage() {
 
   const title = translateCopy("Ortak Kazanç Hesaplayıcı — Sosyal medyadan ne kadar kazanırsın? | OrtakSat", language);
   const desc = translateCopy("OrtakSat ortak kazanç hesaplayıcı: takipçi sayını, aylık paylaşımını ve komisyonu gir, sıfır sermaye ile aylık tahmini kazancını gör. Stok yok, para yatırma yok — link paylaş, satışta komisyon kazan.", language);
-  const url = "https://ortaksat.com/ortak-kazanc";
+  const url = "https://www.ortaksat.com/ortak-kazanc";
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 24 }} style={{ backgroundColor: colors.background }}>

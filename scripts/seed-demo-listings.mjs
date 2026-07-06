@@ -219,8 +219,8 @@ function slugify(s) {
 import fs from "node:fs";
 import path from "node:path";
 
-const BASE_URL = "https://ortaksat.com/demo"; // repo public/demo/ -> canlıda bu adres
-const DEMO_PRODUCTS_BASE_URL = "https://ortaksat.com/demo-products"; // curated category assets in public/demo-products/
+const BASE_URL = "https://www.ortaksat.com/demo"; // repo public/demo/ -> canlıda bu adres
+const DEMO_PRODUCTS_BASE_URL = "https://www.ortaksat.com/demo-products"; // curated category assets in public/demo-products/
 const OUT_DIR = path.join(process.cwd(), "public", "demo");
 const DEMO_PRODUCT_IMAGE_BY_FILE = {
   "092-xbox-series-x.jpg": "games/xbox-series-x.jpg",

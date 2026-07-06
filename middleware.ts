@@ -36,8 +36,8 @@ export default async function middleware(request: Request): Promise<Response | u
     const title = esc(`${l.title} — OrtakSat`);
     const price = Number(l.price || 0).toLocaleString("tr-TR");
     const desc = esc(`₺${price}. ${(l.description || "").replace(/\s+/g, " ")}`.slice(0, 180));
-    const image = esc(l.image_url || "https://ortaksat.com/og-cover.png");
-    const pageUrl = esc(`https://ortaksat.com/listing/${id}`);
+    const image = esc(l.image_url || "https://www.ortaksat.com/og-cover.png");
+    const pageUrl = esc(`https://www.ortaksat.com/listing/${id}`);
 
     const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8" />
 <title>${title}</title>

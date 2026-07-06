@@ -35,12 +35,12 @@ export default function Root({ children }: PropsWithChildren) {
           content="İlanını aç, ortakların paylaşsın, satışta komisyon kazan. Tek platformda ortak satış."
         />
         <meta property="og:locale" content="tr_TR" />
-        <meta property="og:url" content="https://ortaksat.com" />
-        <meta property="og:image" content="https://ortaksat.com/og-cover.png" />
+        <meta property="og:url" content="https://www.ortaksat.com" />
+        <meta property="og:image" content="https://www.ortaksat.com/og-cover.png" />
         <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:title" content="ortaksat — Ortak satışla kazan" />
         <meta name="twitter:description" content="İlanını aç, ortakların paylaşsın, satışta komisyon kazan." />
-        <meta name="twitter:image" content="https://ortaksat.com/og-cover.png" />
+        <meta name="twitter:image" content="https://www.ortaksat.com/og-cover.png" />
 
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
@@ -128,19 +128,19 @@ const orgJsonLd = JSON.stringify({
       "@type": "Organization",
       name: "OrtakSat",
       alternateName: ["Ortaksat", "ortak sat", "Ortak Sat", "ortaksat.com"],
-      url: "https://ortaksat.com",
-      logo: "https://ortaksat.com/apple-touch-icon.png",
+      url: "https://www.ortaksat.com",
+      logo: "https://www.ortaksat.com/apple-touch-icon.png",
       description: "Ortak satış pazaryeri: ilanını aç, ortakların referans linkiyle paylaşsın, satışta komisyon kazan."
     },
     {
       "@type": "WebSite",
       name: "OrtakSat",
       alternateName: ["Ortaksat", "ortak sat"],
-      url: "https://ortaksat.com",
+      url: "https://www.ortaksat.com",
       inLanguage: "tr-TR",
       potentialAction: {
         "@type": "SearchAction",
-        target: { "@type": "EntryPoint", urlTemplate: "https://ortaksat.com/explore?q={search_term_string}" },
+        target: { "@type": "EntryPoint", urlTemplate: "https://www.ortaksat.com/explore?q={search_term_string}" },
         "query-input": "required name=search_term_string"
       }
     }

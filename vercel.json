@@ -5,20 +5,6 @@
   "framework": null,
   "cleanUrls": true,
   "trailingSlash": false,
-  "redirects": [
-    {
-      "source": "/",
-      "has": [{ "type": "host", "value": "www.ortaksat.com" }],
-      "destination": "https://ortaksat.com/",
-      "permanent": false
-    },
-    {
-      "source": "/:path+",
-      "has": [{ "type": "host", "value": "www.ortaksat.com" }],
-      "destination": "https://ortaksat.com/:path+",
-      "permanent": false
-    }
-  ],
   "rewrites": [
     { "source": "/i/:slug", "destination": "/i/[slug]" },
     { "source": "/blog/:slug", "destination": "/blog/[slug]" },

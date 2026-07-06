@@ -28,7 +28,7 @@ function descendantLabels(node: CategoryNode, out: string[] = []): string[] {
 // Hero'da gerçek görseller (ikon değil). public/hero -> ortaksat.com/hero
 // Yeni klasör (hero2) — eski /hero/ dosyaları CDN/tarayıcıda önbelleğe takıldığı
 // için taze URL'ler kullanılır. Merkez "deal" = ayakta anlaşma/tokalaşma görseli.
-const HERO = (n: string) => `https://ortaksat.com/hero2/${n}.jpg`;
+const HERO = (n: string) => `https://www.ortaksat.com/hero2/${n}.jpg`;
 // SABİT tanıtım kümesi — merkez tokalaşma (anlaşma) fotoğrafı + çevresinde sabit
 // ürün görselleri. Bilerek statiktir; canlı ilanlardan çekilmez, değişmez.
 // Merkez karta göre SABİT piksel offset'leri (dx,dy) — ekran genişliğinden bağımsız,

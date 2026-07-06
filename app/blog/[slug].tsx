@@ -48,7 +48,7 @@ export default function BlogPostPage() {
 
   const metaTitle = `${post.title} | OrtakSat Blog`;
   const metaDesc = post.excerpt.replace(/\s+/g, " ").slice(0, 160);
-  const metaUrl = `https://ortaksat.com/blog/${post.slug}`;
+  const metaUrl = `https://www.ortaksat.com/blog/${post.slug}`;
   const articleLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "Article",
@@ -57,7 +57,7 @@ export default function BlogPostPage() {
     image: [post.image].filter(Boolean),
     articleSection: post.category,
     author: { "@type": "Organization", name: post.author },
-    publisher: { "@type": "Organization", name: "OrtakSat", logo: { "@type": "ImageObject", url: "https://ortaksat.com/apple-touch-icon.png" } },
+    publisher: { "@type": "Organization", name: "OrtakSat", logo: { "@type": "ImageObject", url: "https://www.ortaksat.com/apple-touch-icon.png" } },
     mainEntityOfPage: metaUrl
   });
 

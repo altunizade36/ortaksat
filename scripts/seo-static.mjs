@@ -16,7 +16,7 @@ import { fileURLToPath } from "node:url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(__dirname, "..", "dist-web");
-const BASE = "https://ortaksat.com";
+const BASE = "https://www.ortaksat.com";
 const OG_IMG = `${BASE}/og-cover.png`;
 
 // Her rota: dosya adı → { title, description, canonical, noindex?, jsonld? }

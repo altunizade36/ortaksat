@@ -53,7 +53,7 @@ export default function SafeShoppingGuidePage() {
   const { language } = useLanguage();
   const title = translateCopy("Güvenli Alışveriş Rehberi — Dolandırıcılıktan Korunma | OrtakSat", language);
   const desc = translateCopy("OrtakSat güvenli alışveriş rehberi: platform ödeme tutmaz, taraflar kendi aralarında anlaşır. Güvenli alım-satım adımları, dolandırıcılık kırmızı bayrakları ve şikayet etme yolları.", language);
-  const url = "https://ortaksat.com/guvenli-alisveris";
+  const url = "https://www.ortaksat.com/guvenli-alisveris";
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 24 }} style={{ backgroundColor: colors.background }}>

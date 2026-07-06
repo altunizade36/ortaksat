@@ -11,4 +11,4 @@ Disallow: /notifications
 Disallow: /chat/
 Disallow: /listing-edit/
 
-Sitemap: https://ortaksat.com/sitemap.xml
+Sitemap: https://www.ortaksat.com/sitemap.xml

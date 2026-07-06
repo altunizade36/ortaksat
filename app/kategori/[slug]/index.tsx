@@ -176,7 +176,7 @@ export default function CategoryLandingScreen() {
   const desc = node
     ? `${node.label} kategorisinde ${items.length} ortak satış ilanı. Komisyonlu ürünleri keşfet, ortak ol, kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`
     : "OrtakSat kategori sayfası.";
-  const url = `https://ortaksat.com/kategori/${slug}`;
+  const url = `https://www.ortaksat.com/kategori/${slug}`;
 
   if (!node) {
     return (

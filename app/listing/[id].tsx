@@ -388,7 +388,7 @@ export default function ListingDetailScreen() {
   }
 
   const metaDesc = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
-  const metaUrl = `https://ortaksat.com/listing/${currentListing.id}`;
+  const metaUrl = `https://www.ortaksat.com/listing/${currentListing.id}`;
   // Sosyal paylaşımda kazanç kancası — ortak linki paylaşınca önizlemede görünür.
   const ogTitle = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)} · Ortak ol, ${commissionText(currentListing)} kazan | OrtakSat`;
   const ogDesc = `${moneyIn(currentListing.price, currentListing.currency)} · ${commissionText(currentListing)}. Bu ürünü paylaş, satışta komisyon kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;

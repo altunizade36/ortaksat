@@ -45,7 +45,7 @@ export default function BuyerLandingPage() {
   const { language } = useLanguage();
   const title = translateCopy("Güvenle Al, Doğrudan Satıcıyla Anlaş | OrtakSat", language);
   const desc = translateCopy("OrtakSat'ta ilanları keşfet, doğrulanmış satıcılarla doğrudan iletişime geç, ürünü görerek al. Alıcıya ek ücret yok; komisyonu satıcı öder. Güvenli alışveriş rehberiyle korunarak alışveriş yap.", language);
-  const url = "https://ortaksat.com/alici";
+  const url = "https://www.ortaksat.com/alici";
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 24 }} style={{ backgroundColor: colors.background }}>

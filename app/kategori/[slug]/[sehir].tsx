@@ -102,7 +102,7 @@ export default function CityCategoryScreen() {
 
   const title = `${cityName}'da Komisyonla ${node.label} İlanları | OrtakSat`;
   const desc = `${cityName} için ${node.label} kategorisinde ${items.length} ortak satış ilanı. ${cityName}'da komisyonlu ${node.label.toLocaleLowerCase("tr-TR")} ürünlerini keşfet, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
-  const url = `https://ortaksat.com/kategori/${slug}/${wantedCity}`;
+  const url = `https://www.ortaksat.com/kategori/${slug}/${wantedCity}`;
   const otherCities = SEO_CITY_SLUGS.filter((c) => c !== wantedCity);
 
   return (

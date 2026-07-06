@@ -7,7 +7,7 @@ import { writeFileSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
 
-const BASE = "https://ortaksat.com";
+const BASE = "https://www.ortaksat.com";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "..", "public", "sitemap.xml");
 

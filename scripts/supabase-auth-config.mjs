@@ -8,8 +8,8 @@
 import process from "node:process";
 
 const REF = "akyzzdwbzgsnhdircuce";
-const SITE_URL = "https://ortaksat.com";
-const REDIRECTS = "https://ortaksat.com/**,https://ortaksat.vercel.app/**,ortaksat://**";
+const SITE_URL = "https://www.ortaksat.com";
+const REDIRECTS = "https://www.ortaksat.com/**,https://ortaksat.vercel.app/**,ortaksat://**";
 
 const TOKEN = process.env.SUPABASE_MGMT_TOKEN;
 const CID = process.env.GOOGLE_CLIENT_ID;

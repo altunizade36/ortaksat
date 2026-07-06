@@ -47,7 +47,7 @@ export default function SellerLandingPage() {
   const { language } = useLanguage();
   const title = translateCopy("Ürününü Komisyonla Sattır — Ücretsiz İlan Ver | OrtakSat", language);
   const desc = translateCopy("OrtakSat'ta ürününü ücretsiz listele, komisyonunu belirle; onlarca ortak senin için satsın. Aidat yok, önden maliyet yok — sadece satışta komisyon ödersin. Ücretsiz satış ordusuyla daha hızlı sat.", language);
-  const url = "https://ortaksat.com/satici-ol";
+  const url = "https://www.ortaksat.com/satici-ol";
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 24 }} style={{ backgroundColor: colors.background }}>

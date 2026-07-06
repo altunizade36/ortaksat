@@ -28,7 +28,7 @@ export default function CreateListingScreen() {
       <Head>
         <title>Ücretsiz İlan Ver — Ürününü ortak satışa aç | OrtakSat</title>
         <meta name="description" content="Ürününü ücretsiz listele, komisyonunu belirle; ortaklar senin için satsın. Kategoriye özel form, kolay adımlar. OrtakSat'ta ilan vermek ücretsiz." />
-        <link rel="canonical" href="https://ortaksat.com/create" />
+        <link rel="canonical" href="https://www.ortaksat.com/create" />
         <meta property="og:title" content="Ücretsiz İlan Ver | OrtakSat" />
         <meta property="og:description" content="Ürününü ücretsiz listele, komisyonunu belirle; ortaklar senin için satsın." />
       </Head>
