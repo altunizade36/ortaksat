@@ -450,17 +450,29 @@ export function LanguageProvider({ children }: PropsWithChildren) {
 
   useEffect(() => {
     let mounted = true;
-    // Yalnızca kullanıcı DAHA ÖNCE açıkça bir dil seçtiyse onu uygula. Kayıtlı
-    // tercih yoksa Türkçe kalır — böylece hem Türk kullanıcılar hem de arama
-    // motorları (İngilizce locale'li crawler dahil) siteyi Türkçe görür (SEO).
+    // Kayıtlı tercih varsa onu uygula. YOKSA cihaz/tarayıcı dilini otomatik
+    // algıla: İngilizce ise İngilizce'ye geç. Bu YALNIZCA mount SONRASI (client)
+    // çalışır — statik export HTML'i ve ilk render "tr" kalır, böylece arama
+    // motorları siteyi Türkçe indeksler (SEO); yabancı ziyaretçi ise anında
+    // İngilizce görür.
     AsyncStorage.getItem(STORAGE_KEY).then((value) => {
       if (!mounted) return;
       if (value === "tr" || value === "en") setLanguageState(value);
-    }).catch(() => undefined);
+      else setLanguageState(detectDeviceLanguage());
+    }).catch(() => {
+      if (mounted) setLanguageState(detectDeviceLanguage());
+    });
     return () => {
       mounted = false;
     };
   }, []);
+
+  // Web: <html lang> ve dir'i seçili dile göre güncelle (erişilebilirlik + SEO).
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = language;
+    }
+  }, [language]);
 
   const value = useMemo<LanguageContextValue>(() => ({
     language,
@@ -1173,7 +1185,31 @@ const trToEnCopy: Record<string, string> = {
   "Satıcı görüşmesi": "Seller conversation",
   "Ortak görüşmesi": "Partner conversation",
   "Alıcı görüşmesi": "Buyer conversation",
-  "Alıcı": "Buyer"
+  "Alıcı": "Buyer",
+  // --- Navigasyon + genel UI (i18n tam çeviri, 2026-07-06) ---
+  "Ana Sayfa": "Home",
+  "Ana sayfa": "Home",
+  "Keşfet": "Explore",
+  "İlan Ver": "Post a listing",
+  "Kategoriler": "Categories",
+  "Nasıl Çalışır?": "How it works",
+  "Nasıl çalışır?": "How it works",
+  "Nasıl çalışır": "How it works",
+  "Giriş yap": "Sign in",
+  "Giriş Yap": "Sign in",
+  "Üye ol": "Sign up",
+  "Çıkış yap": "Sign out",
+  "Profilim": "My profile",
+  "Ayarlar": "Settings",
+  "Mesajlar": "Messages",
+  "Devam et": "Continue",
+  "Vazgeç": "Cancel",
+  "Gönder": "Send",
+  "Daha fazla": "More",
+  "Tümünü gör": "See all",
+  "Yükleniyor...": "Loading...",
+  "Bir hata oluştu": "An error occurred",
+  "Tekrar dene": "Try again"
 };
 
 export function translateCopy(value: string, language: AppLanguage): string {
