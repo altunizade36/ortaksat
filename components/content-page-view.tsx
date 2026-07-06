@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { WebFooter } from "@/components/web-landing";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
 
 /**
@@ -15,6 +16,7 @@ import { useStore } from "@/lib/use-store";
  * halde tasarım korunur.
  */
 export function ContentPageView({ slug, fallback }: { slug: string; fallback?: ReactNode }) {
+  const { language } = useLanguage();
   const { contentPages } = useStore();
   const page = contentPages.find((p) => p.slug === slug && p.body.trim().length > 0);
   if (!page) return <Fragment>{fallback ?? <NotFound />}</Fragment>;
@@ -34,7 +36,7 @@ export function ContentPageView({ slug, fallback }: { slug: string; fallback?: R
           <Link href="/" asChild>
             <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, opacity: pressed ? 0.7 : 1 })}>
               <MaterialCommunityIcons name="home-outline" size={14} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Ana sayfa</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
             </Pressable>
           </Link>
           <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
@@ -51,14 +53,15 @@ export function ContentPageView({ slug, fallback }: { slug: string; fallback?: R
 }
 
 function NotFound() {
+  const { language } = useLanguage();
   return (
     <ScrollView contentContainerStyle={{ backgroundColor: colors.background, gap: 12, padding: 24 }} style={{ backgroundColor: colors.background }}>
       <View style={{ alignSelf: "center", gap: 12, maxWidth: 760, width: "100%" }}>
-        <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>Sayfa bulunamadı</Text>
-        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Bu sayfa henüz yayınlanmamış olabilir.</Text>
+        <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{translateCopy("Sayfa bulunamadı", language)}</Text>
+        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Bu sayfa henüz yayınlanmamış olabilir.", language)}</Text>
         <Link href="/" asChild>
           <Pressable style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ana sayfaya dön</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ana sayfaya dön", language)}</Text>
           </Pressable>
         </Link>
       </View>

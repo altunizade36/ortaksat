@@ -5,6 +5,7 @@ import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/components/colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -15,6 +16,7 @@ type NavItem = { label: string; href: Href; icon: IconName; badge?: number };
  * bölümlerine buradan erişilir — daha "web sitesi" gibi bir gezinme.
  */
 export function MobileNavMenu() {
+  const { language } = useLanguage();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { isAuthenticated, currentUser, messages, notifications, signOut } = useStore();
@@ -48,7 +50,7 @@ export function MobileNavMenu() {
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Menü"
+        accessibilityLabel={translateCopy("Menü", language)}
         hitSlop={10}
         onPress={() => setOpen(true)}
         style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}
@@ -66,9 +68,9 @@ export function MobileNavMenu() {
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900" }}>ortaksat</Text>
-                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isAuthenticated ? currentUser.name : "Ortak satışla kazan"}</Text>
+                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isAuthenticated ? currentUser.name : translateCopy("Ortak satışla kazan", language)}</Text>
               </View>
-              <Pressable accessibilityLabel="Kapat" hitSlop={10} onPress={() => setOpen(false)} style={{ alignItems: "center", height: 36, justifyContent: "center", width: 36 }}>
+              <Pressable accessibilityLabel={translateCopy("Kapat", language)} hitSlop={10} onPress={() => setOpen(false)} style={{ alignItems: "center", height: 36, justifyContent: "center", width: 36 }}>
                 <MaterialCommunityIcons name="close" size={24} color={colors.muted} />
               </Pressable>
             </View>
@@ -88,7 +90,7 @@ export function MobileNavMenu() {
           </View>
 
           {/* Sağ boşluğa dokununca kapat */}
-          <Pressable accessibilityLabel="Menüyü kapat" onPress={() => setOpen(false)} style={{ flex: 1 }} />
+          <Pressable accessibilityLabel={translateCopy("Menüyü kapat", language)} onPress={() => setOpen(false)} style={{ flex: 1 }} />
         </View>
       </Modal>
     </>
@@ -96,16 +98,17 @@ export function MobileNavMenu() {
 }
 
 function Row({ item, onPress, danger, accent }: { item: NavItem; onPress: () => void; danger?: boolean; accent?: boolean }) {
+  const { language } = useLanguage();
   const color = danger ? colors.accent : accent ? colors.primaryDark : colors.ink;
   return (
     <Pressable
       accessibilityRole="button"
-      accessibilityLabel={item.label}
+      accessibilityLabel={translateCopy(item.label, language)}
       onPress={onPress}
       style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 13, paddingHorizontal: 16, paddingVertical: 13 })}
     >
       <MaterialCommunityIcons name={item.icon} size={21} color={danger ? colors.accent : colors.primary} />
-      <Text style={{ color, flex: 1, fontSize: 14.5, fontWeight: "800" }}>{item.label}</Text>
+      <Text style={{ color, flex: 1, fontSize: 14.5, fontWeight: "800" }}>{translateCopy(item.label, language)}</Text>
       {item.badge && item.badge > 0 ? (
         <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, minWidth: 20, paddingHorizontal: 6, paddingVertical: 1 }}>
           <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "900" }}>{item.badge > 9 ? "9+" : item.badge}</Text>

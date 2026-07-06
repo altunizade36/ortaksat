@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View } from "react-native";
 import { colors } from "@/components/colors";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 
 export type InfoSection = { heading?: string; body: string };
 
@@ -29,6 +30,7 @@ export function InfoPage({
   seoTitle?: string;
   seoDescription?: string;
 }) {
+  const { language } = useLanguage();
   const metaTitle = seoTitle || `${title} — OrtakSat`;
   const metaDesc = seoDescription || intro || `${title} — OrtakSat ortak satış ve ilan platformu.`;
   return (
@@ -45,7 +47,7 @@ export function InfoPage({
           <Link href="/" asChild>
             <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, opacity: pressed ? 0.7 : 1 })}>
               <MaterialCommunityIcons name="home-outline" size={14} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Ana sayfa</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
             </Pressable>
           </Link>
           <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />

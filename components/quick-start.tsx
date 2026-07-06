@@ -3,6 +3,7 @@ import { Link, type Href } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 type Step = { icon: IconName; title: string; body: string };
@@ -31,8 +32,9 @@ const PARTNER: { steps: Step[]; ctaLabel: string; ctaHref: Href; ctaIcon: IconNa
 
 /** Yeni satıcı/ortağa modeli 3 adımda anlatan hızlı başlangıç kartı. */
 export function QuickStart({ role }: { role: "seller" | "partner" }) {
+  const { language } = useLanguage();
   const cfg = role === "seller" ? SELLER : PARTNER;
-  const title = role === "seller" ? "Ortak satışla nasıl kazanırsın?" : "Ortak olarak nasıl kazanırsın?";
+  const title = role === "seller" ? translateCopy("Ortak satışla nasıl kazanırsın?", language) : translateCopy("Ortak olarak nasıl kazanırsın?", language);
 
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 18 }}>
@@ -52,9 +54,9 @@ export function QuickStart({ role }: { role: "seller" | "partner" }) {
                 <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", width: 18 }}>
                   <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{i + 1}</Text>
                 </View>
-                <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{s.title}</Text>
+                <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy(s.title, language)}</Text>
               </View>
-              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 18 }}>{s.body}</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 18 }}>{translateCopy(s.body, language)}</Text>
             </View>
           </View>
         ))}
@@ -63,13 +65,13 @@ export function QuickStart({ role }: { role: "seller" | "partner" }) {
       <Link href={cfg.ctaHref} asChild>
         <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 }}>
           <MaterialCommunityIcons name={cfg.ctaIcon} size={18} color="#FFFFFF" />
-          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{cfg.ctaLabel}</Text>
+          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy(cfg.ctaLabel, language)}</Text>
         </Pressable>
       </Link>
 
       <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center" }}>
         <MaterialCommunityIcons name="shield-check-outline" size={14} color={colors.muted} />
-        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>Ortaksat aracıdır; ödeme ve teslimat taraflar arasındadır.</Text>
+        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Ortaksat aracıdır; ödeme ve teslimat taraflar arasındadır.", language)}</Text>
       </View>
     </View>
   );

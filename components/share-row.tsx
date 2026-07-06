@@ -4,11 +4,13 @@ import { useState } from "react";
 import { Linking, Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 /** Tek tık sosyal paylaşım: WhatsApp / Telegram / X / Kopyala. */
 export function ShareRow({ url, text, compact }: { url: string; text: string; compact?: boolean }) {
+  const { language } = useLanguage();
   const [copied, setCopied] = useState(false);
   const msg = `${text}\n${url}`;
   const targets: Array<{ key: string; label: string; icon: IconName; color: string; href: string }> = [
@@ -29,7 +31,7 @@ export function ShareRow({ url, text, compact }: { url: string; text: string; co
         <Pressable
           key={tg.key}
           accessibilityRole="button"
-          accessibilityLabel={`${tg.label} ile paylaş`}
+          accessibilityLabel={`${tg.label} ${translateCopy("ile paylaş", language)}`}
           onPress={() => void Linking.openURL(tg.href)}
           style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: compact ? 11 : 14, paddingVertical: compact ? 7 : 9 }}
         >
@@ -39,12 +41,12 @@ export function ShareRow({ url, text, compact }: { url: string; text: string; co
       ))}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Bağlantıyı kopyala"
+        accessibilityLabel={translateCopy("Bağlantıyı kopyala", language)}
         onPress={() => void copy()}
         style={{ alignItems: "center", backgroundColor: copied ? colors.primary : colors.surfaceAlt, borderColor: copied ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: compact ? 11 : 14, paddingVertical: compact ? 7 : 9 }}
       >
         <MaterialCommunityIcons name={copied ? "check" : "content-copy"} size={15} color={copied ? "#FFFFFF" : colors.primaryDark} />
-        <Text style={{ color: copied ? "#FFFFFF" : colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{copied ? "Kopyalandı" : "Kopyala"}</Text>
+        <Text style={{ color: copied ? "#FFFFFF" : colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{copied ? translateCopy("Kopyalandı", language) : translateCopy("Kopyala", language)}</Text>
       </Pressable>
     </View>
   );

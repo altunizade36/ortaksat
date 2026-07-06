@@ -4,6 +4,7 @@ import { Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import type { FieldDef } from "@/lib/category-tree";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 
 type AttrValue = string | boolean | string[];
 
@@ -24,12 +25,13 @@ export function AttributeFields({ fields, values, onChange }: { fields: FieldDef
 }
 
 function AField({ field, value, onChange }: { field: FieldDef; value: AttrValue | undefined; onChange: (v: AttrValue) => void }) {
+  const { language } = useLanguage();
   const wide = field.type === "textarea" || field.type === "multiselect";
   const selected = Array.isArray(value) ? value : [];
   return (
     <View style={{ flexBasis: wide ? "100%" : 220, flexGrow: 1, gap: 6, minWidth: 0 }}>
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>
-        {field.label}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} seçili` : ""}
+        {field.label}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} ${translateCopy("seçili", language)}` : ""}
       </Text>
       {field.type === "multiselect" ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
@@ -46,7 +48,7 @@ function AField({ field, value, onChange }: { field: FieldDef; value: AttrValue 
       ) : field.type === "bool" ? (
         <Pressable onPress={() => onChange(!(value === true))} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
           <View style={{ alignItems: value === true ? "flex-end" : "flex-start", backgroundColor: value === true ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} /></View>
-          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{value === true ? "Evet" : "Hayır"}</Text>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{value === true ? translateCopy("Evet", language) : translateCopy("Hayır", language)}</Text>
         </Pressable>
       ) : field.type === "select" ? (
         <ASelect value={String(value ?? "")} options={field.options ?? []} onChange={onChange} />
@@ -65,11 +67,12 @@ function AField({ field, value, onChange }: { field: FieldDef; value: AttrValue 
 }
 
 function ASelect({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
+  const { language } = useLanguage();
   const [open, setOpen] = useState(false);
   return (
     <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
       <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
-        <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || "Seçin"}</Text>
+        <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || translateCopy("Seçin", language)}</Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
       </Pressable>
       {open ? (
@@ -79,7 +82,7 @@ function ASelect({ value, options, onChange }: { value: string; options: string[
             <View>
               {value ? (
                 <Pressable onPress={() => { onChange(""); setOpen(false); }} style={{ paddingHorizontal: 12, paddingVertical: 9 }}>
-                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Temizle</Text>
+                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Temizle", language)}</Text>
                 </Pressable>
               ) : null}
               {options.map((o) => (

@@ -3,6 +3,7 @@ import { useRef, useState } from "react";
 import { LayoutChangeEvent, Modal, NativeScrollEvent, NativeSyntheticEvent, Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { LegalDoc } from "@/lib/legal-content";
 
 /**
@@ -20,6 +21,7 @@ export function LegalConsentModal({
   onClose: () => void;
   onApprove: () => void;
 }) {
+  const { language } = useLanguage();
   const [reachedEnd, setReachedEnd] = useState(false);
   const viewH = useRef(0); // ScrollView görünür yüksekliği
   const contentH = useRef(0); // içeriğin toplam yüksekliği
@@ -62,9 +64,9 @@ export function LegalConsentModal({
             <MaterialCommunityIcons name="file-document-outline" size={20} color={colors.primary} />
             <View style={{ flex: 1 }}>
               <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{doc.title}</Text>
-              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700" }}>Güncelleme: {doc.updated}</Text>
+              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Güncelleme", language)}: {doc.updated}</Text>
             </View>
-            <Pressable onPress={handleClose} hitSlop={10} accessibilityRole="button" accessibilityLabel="Kapat">
+            <Pressable onPress={handleClose} hitSlop={10} accessibilityRole="button" accessibilityLabel={translateCopy("Kapat", language)}>
               <MaterialCommunityIcons name="close" size={22} color={colors.muted} />
             </Pressable>
           </View>
@@ -88,7 +90,7 @@ export function LegalConsentModal({
             ))}
             <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingTop: 4 }}>
               <MaterialCommunityIcons name={reachedEnd ? "check-circle" : "arrow-down-circle-outline"} size={18} color={reachedEnd ? colors.primary : colors.subtle} />
-              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>{reachedEnd ? "Metnin sonuna ulaştın." : "Onaylamak için metni sonuna kadar kaydır."}</Text>
+              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>{reachedEnd ? translateCopy("Metnin sonuna ulaştın.", language) : translateCopy("Onaylamak için metni sonuna kadar kaydır.", language)}</Text>
             </View>
           </ScrollView>
 
@@ -99,7 +101,7 @@ export function LegalConsentModal({
               style={{ alignItems: "center", backgroundColor: reachedEnd ? colors.primary : colors.line, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 14 }}
             >
               <MaterialCommunityIcons name="check-bold" size={18} color={reachedEnd ? "#FFFFFF" : colors.muted} />
-              <Text style={{ color: reachedEnd ? "#FFFFFF" : colors.muted, fontSize: 14, fontWeight: "900" }}>Okudum, onaylıyorum</Text>
+              <Text style={{ color: reachedEnd ? "#FFFFFF" : colors.muted, fontSize: 14, fontWeight: "900" }}>{translateCopy("Okudum, onaylıyorum", language)}</Text>
             </Pressable>
           </View>
         </View>

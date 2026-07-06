@@ -3,6 +3,7 @@ import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 
 /**
  * Markalı hata ekranı. Hem expo-router ErrorBoundary fallback'i (render
@@ -22,6 +23,7 @@ export function ErrorScreen({
   onRetry?: () => void;
   retryLabel?: string;
 }) {
+  const { language } = useLanguage();
   return (
     <ScrollView
       contentContainerStyle={{ alignItems: "center", backgroundColor: colors.background, flexGrow: 1, justifyContent: "center", padding: 24 }}
@@ -31,8 +33,8 @@ export function ErrorScreen({
         <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 999, height: 64, justifyContent: "center", width: 64 }}>
           <MaterialCommunityIcons name="alert-circle-outline" size={32} color={colors.accent} />
         </View>
-        <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900", textAlign: "center" }}>{title}</Text>
-        <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, textAlign: "center" }}>{body}</Text>
+        <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900", textAlign: "center" }}>{translateCopy(title, language)}</Text>
+        <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, textAlign: "center" }}>{translateCopy(body, language)}</Text>
         {detail ? (
           <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600", textAlign: "center" }} numberOfLines={3}>
             {detail}
@@ -44,12 +46,12 @@ export function ErrorScreen({
             style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13, width: "100%" }}
           >
             <MaterialCommunityIcons name="refresh" size={18} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{retryLabel}</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy(retryLabel, language)}</Text>
           </Pressable>
         ) : null}
         <Link href="/" asChild>
           <Pressable style={{ alignItems: "center", paddingVertical: 4 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Ana sayfaya dön →</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Ana sayfaya dön →", language)}</Text>
           </Pressable>
         </Link>
       </View>

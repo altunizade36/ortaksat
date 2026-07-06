@@ -206,7 +206,7 @@ function NotificationsScreenInner() {
                       const meta = typeMeta[n.type] ?? { label: translateCopy("Bildirim", language), tint: colors.infoSoft, color: colors.info };
                       const hasLink = Boolean(n.metadata?.listingId);
                       return (
-                        <Pressable key={n.id} accessibilityRole="button" accessibilityLabel={hasLink ? `${n.title} — ilana git` : n.title} onPress={() => openDesk(n)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : read ? colors.surface : colors.primarySoft + "55", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 })}>
+                        <Pressable key={n.id} accessibilityRole="button" accessibilityLabel={hasLink ? `${n.title} — ${translateCopy("ilana git", language)}` : n.title} onPress={() => openDesk(n)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : read ? colors.surface : colors.primarySoft + "55", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 })}>
                           <View style={{ alignItems: "center", backgroundColor: meta.tint, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
                             <MaterialCommunityIcons name={typeIcons[n.type] ?? "bell-outline"} size={22} color={meta.color} />
                           </View>
@@ -297,7 +297,7 @@ function NotificationsScreenInner() {
                     <MaterialCommunityIcons name={typeIcons[tp]} size={18} color={mutes[tp] ? colors.subtle : typeMeta[tp].color} />
                   </View>
                   <Text style={{ color: mutes[tp] ? colors.muted : colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{translateCopy(typeMeta[tp].label, language)}</Text>
-                  <Pressable accessibilityRole="switch" accessibilityState={{ checked: !mutes[tp] }} accessibilityLabel={`${typeMeta[tp].label} bildirimleri`} onPress={() => toggleMute(tp)} style={{ alignItems: mutes[tp] ? "flex-start" : "flex-end", backgroundColor: mutes[tp] ? colors.line : colors.primary, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+                  <Pressable accessibilityRole="switch" accessibilityState={{ checked: !mutes[tp] }} accessibilityLabel={`${translateCopy(typeMeta[tp].label, language)} ${translateCopy("bildirimleri", language)}`} onPress={() => toggleMute(tp)} style={{ alignItems: mutes[tp] ? "flex-start" : "flex-end", backgroundColor: mutes[tp] ? colors.line : colors.primary, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
                     <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
                   </Pressable>
                 </View>
@@ -371,7 +371,7 @@ function NotificationsScreenInner() {
           if (href) router.push(href);
         };
         return (
-        <Pressable key={notification.id} accessibilityRole="button" accessibilityLabel={href ? `${notification.title} — aç` : notification.title} onPress={openMobile}>
+        <Pressable key={notification.id} accessibilityRole="button" accessibilityLabel={href ? `${notification.title} — ${translateCopy("aç", language)}` : notification.title} onPress={openMobile}>
         <Card>
           <View style={{ flexDirection: "row", gap: 11 }}>
             <View

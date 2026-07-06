@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Modal, Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 
 const REASONS = [
   "Komisyon henüz ödenmedi",
@@ -22,6 +23,7 @@ export function DisputeModal({
   onClose: () => void;
   onSubmit: (reason: string) => void;
 }) {
+  const { language } = useLanguage();
   const [picked, setPicked] = useState<string | null>(null);
   const [detail, setDetail] = useState("");
 
@@ -45,14 +47,14 @@ export function DisputeModal({
         <View style={{ alignSelf: "center", backgroundColor: colors.background, borderRadius: 18, gap: 14, maxWidth: 440, padding: 20, width: "100%" }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
             <MaterialCommunityIcons name="scale-balance" size={20} color={colors.warning} />
-            <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Anlaşmazlık bildir</Text>
-            <Pressable onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Kapat">
+            <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{translateCopy("Anlaşmazlık bildir", language)}</Text>
+            <Pressable onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel={translateCopy("Kapat", language)}>
               <MaterialCommunityIcons name="close" size={22} color={colors.muted} />
             </Pressable>
           </View>
 
           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>
-            Ortaksat para tutmaz; anlaşmazlık kaydı taraflar arasındaki durumu belgeler ve karşı tarafa bildirilir. Nedeni seç:
+            {translateCopy("Ortaksat para tutmaz; anlaşmazlık kaydı taraflar arasındaki durumu belgeler ve karşı tarafa bildirilir. Nedeni seç:", language)}
           </Text>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
@@ -60,7 +62,7 @@ export function DisputeModal({
               const on = picked === r;
               return (
                 <Pressable key={r} onPress={() => setPicked(r)} style={{ backgroundColor: on ? colors.warning : colors.surfaceAlt, borderColor: on ? colors.warning : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{r}</Text>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(r, language)}</Text>
                 </Pressable>
               );
             })}
@@ -70,21 +72,21 @@ export function DisputeModal({
             value={detail}
             onChangeText={setDetail}
             multiline
-            placeholder="Detay (opsiyonel) — ne olduğunu kısaca açıkla"
+            placeholder={translateCopy("Detay (opsiyonel) — ne olduğunu kısaca açıkla", language)}
             placeholderTextColor={colors.subtle}
             style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 76, padding: 12, textAlignVertical: "top" }}
           />
 
           <View style={{ flexDirection: "row", gap: 10 }}>
             <Pressable onPress={close} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 11, borderWidth: 1, flex: 1, paddingVertical: 12 }}>
-              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>Vazgeç</Text>
+              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text>
             </Pressable>
             <Pressable
               onPress={submit}
               disabled={!picked}
               style={{ alignItems: "center", backgroundColor: picked ? colors.warning : colors.line, borderRadius: 11, flex: 1, paddingVertical: 12 }}
             >
-              <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>Anlaşmazlık Aç</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Anlaşmazlık Aç", language)}</Text>
             </Pressable>
           </View>
         </View>

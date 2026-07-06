@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 
 /**
  * Tek merkezden yönetilen yasal koruma uyarısı. Ortaksat'ın aracı bir ilan/iletişim
@@ -34,11 +35,12 @@ export function LegalNote({ style }: { style?: object }) {
 
 /** Açık, maddeli koruma kutusu (ilan ver önizleme, ilan detay, yasal sayfa). */
 export function LegalDisclaimer({ title = "Önemli: Ortaksat ödeme/komisyon işlemez" }: { title?: string }) {
+  const { language } = useLanguage();
   return (
     <View style={{ backgroundColor: colors.infoSoft, borderColor: colors.info, borderRadius: 14, borderWidth: 1, gap: 8, padding: 16 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <MaterialCommunityIcons name="shield-alert-outline" size={20} color={colors.info} />
-        <Text style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{title}</Text>
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{translateCopy(title, language)}</Text>
       </View>
       {POINTS.map((p) => (
         <View key={p} style={{ alignItems: "flex-start", flexDirection: "row", gap: 8 }}>

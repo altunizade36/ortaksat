@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { passwordStrength } from "@/lib/validation";
 
 /**
@@ -10,12 +11,13 @@ import { passwordStrength } from "@/lib/validation";
  * Kaynak tek: lib/validation passwordStrength — kayıt doğrulaması ile birebir aynı.
  */
 export function PasswordStrengthMeter({ password }: { password: string }) {
+  const { language } = useLanguage();
   if (!password) return null;
   const s = passwordStrength(password);
   const barColor = [colors.accent, colors.accent, colors.gold, colors.success, colors.success][s.score];
 
   return (
-    <View style={{ gap: 8 }} accessibilityLabel={`Şifre gücü: ${s.label}`}>
+    <View style={{ gap: 8 }} accessibilityLabel={`${translateCopy("Şifre gücü", language)}: ${translateCopy(s.label, language)}`}>
       <View style={{ flexDirection: "row", gap: 5 }}>
         {[0, 1, 2, 3].map((i) => (
           <View
@@ -30,8 +32,8 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
         ))}
       </View>
       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-        <Text style={{ color: barColor, fontSize: 12, fontWeight: "800" }}>{s.label}</Text>
-        <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700" }}>{s.passed}/5 kural</Text>
+        <Text style={{ color: barColor, fontSize: 12, fontWeight: "800" }}>{translateCopy(s.label, language)}</Text>
+        <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700" }}>{s.passed}/5 {translateCopy("kural", language)}</Text>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
         {s.checks.map((c) => (
@@ -41,7 +43,7 @@ export function PasswordStrengthMeter({ password }: { password: string }) {
               size={13}
               color={c.ok ? colors.success : colors.subtle}
             />
-            <Text style={{ color: c.ok ? colors.ink : colors.subtle, fontSize: 11, fontWeight: "700" }}>{c.label}</Text>
+            <Text style={{ color: c.ok ? colors.ink : colors.subtle, fontSize: 11, fontWeight: "700" }}>{translateCopy(c.label, language)}</Text>
           </View>
         ))}
       </View>

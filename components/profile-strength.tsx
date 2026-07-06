@@ -3,6 +3,7 @@ import { Link, type Href } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { User } from "@/lib/types";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -17,6 +18,7 @@ function isImageAvatar(value: string) {
  * yalnız kullanıcının kendisinin tamamlayabileceği gerçek adımları teşvik eder.
  */
 export function ProfileStrength({ user, hasListing }: { user: User; hasListing: boolean }) {
+  const { language } = useLanguage();
   const items: Array<{ label: string; done: boolean; icon: IconName; href: Href; cta: string }> = [
     { label: "Profil fotoğrafı ekle", done: isImageAvatar(user.avatar), icon: "camera-outline", href: "/profile-edit", cta: "Ekle" },
     { label: "Kısa tanıtım yaz", done: !!user.bio, icon: "text-account", href: "/profile-edit", cta: "Yaz" },
@@ -32,7 +34,7 @@ export function ProfileStrength({ user, hasListing }: { user: User; hasListing: 
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 16 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <MaterialCommunityIcons name="shield-star-outline" size={19} color={colors.primaryDark} />
-        <Text style={{ color: colors.ink, flex: 1, fontSize: 15.5, fontWeight: "900" }}>Profil gücü</Text>
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 15.5, fontWeight: "900" }}>{translateCopy("Profil gücü", language)}</Text>
         <Text style={{ color: tone, fontSize: 16, fontWeight: "900" }}>%{pct}</Text>
       </View>
 
@@ -42,7 +44,7 @@ export function ProfileStrength({ user, hasListing }: { user: User; hasListing: 
 
       {pct < 100 ? (
         <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>
-          Güçlü profil daha çok güven kazandırır; ortaklar ve alıcılar seninle daha rahat çalışır.
+          {translateCopy("Güçlü profil daha çok güven kazandırır; ortaklar ve alıcılar seninle daha rahat çalışır.", language)}
         </Text>
       ) : null}
 
@@ -51,14 +53,14 @@ export function ProfileStrength({ user, hasListing }: { user: User; hasListing: 
           <View key={item.label} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
             <MaterialCommunityIcons name={item.done ? "check-circle" : item.icon} size={18} color={item.done ? colors.success : colors.muted} />
             <Text style={{ color: item.done ? colors.muted : colors.ink, flex: 1, fontSize: 13, fontWeight: item.done ? "600" : "800", textDecorationLine: item.done ? "line-through" : "none" }}>
-              {item.label}
+              {translateCopy(item.label, language)}
             </Text>
             {item.done ? (
-              <Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "800" }}>Tamam</Text>
+              <Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Tamam", language)}</Text>
             ) : (
               <Link href={item.href} asChild>
-                <Pressable accessibilityRole="button" accessibilityLabel={item.label} style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}>
-                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{item.cta}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={translateCopy(item.label, language)} style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}>
+                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{translateCopy(item.cta, language)}</Text>
                 </Pressable>
               </Link>
             )}

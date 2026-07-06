@@ -5,6 +5,7 @@ import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "r
 import { colors } from "@/components/colors";
 import { PrimaryButton } from "@/components/ui";
 import { moneyIn } from "@/lib/format";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { parseTrPrice } from "@/lib/validation";
 
 type ParsedRow = {
@@ -83,6 +84,7 @@ export function BulkListingModal({
   onClose: () => void;
   onCreate: (row: { title: string; price: number; commission: number; category: string; image: string }) => void;
 }) {
+  const { language } = useLanguage();
   const [text, setText] = useState("");
   const [done, setDone] = useState<number | null>(null);
   const canUpload = Platform.OS === "web" && typeof document !== "undefined";
@@ -137,8 +139,8 @@ export function BulkListingModal({
         <View style={{ backgroundColor: colors.background, borderTopLeftRadius: 20, borderTopRightRadius: 20, maxHeight: "92%", paddingBottom: 24 }}>
           <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 18, paddingVertical: 14 }}>
             <MaterialCommunityIcons name="table-arrow-up" size={20} color={colors.primary} />
-            <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Toplu ilan ekle</Text>
-            <Pressable onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel="Kapat">
+            <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{translateCopy("Toplu ilan ekle", language)}</Text>
+            <Pressable onPress={close} hitSlop={10} accessibilityRole="button" accessibilityLabel={translateCopy("Kapat", language)}>
               <MaterialCommunityIcons name="close" size={22} color={colors.muted} />
             </Pressable>
           </View>
@@ -147,29 +149,29 @@ export function BulkListingModal({
             {done !== null ? (
               <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 14, gap: 8, padding: 20 }}>
                 <MaterialCommunityIcons name="check-circle" size={40} color={colors.primary} />
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{done} ilan eklendi</Text>
-                <Text style={{ color: colors.muted, fontSize: 13, textAlign: "center" }}>İlanların listende görünür. Görsel eklemediklerine düzenleme ekranından fotoğraf ekleyebilirsin.</Text>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{done} {translateCopy("ilan eklendi", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, textAlign: "center" }}>{translateCopy("İlanların listende görünür. Görsel eklemediklerine düzenleme ekranından fotoğraf ekleyebilirsin.", language)}</Text>
                 <View style={{ width: "100%" }}>
-                  <PrimaryButton onPress={close}>Tamam</PrimaryButton>
+                  <PrimaryButton onPress={close}>{translateCopy("Tamam", language)}</PrimaryButton>
                 </View>
               </View>
             ) : (
               <>
                 <View style={{ backgroundColor: colors.infoSoft, borderRadius: 10, gap: 4, padding: 12 }}>
-                  <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "900" }}>Her satır bir ilan. Alanları | veya , (CSV) ile ayır:</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>Başlık | Fiyat | Komisyon% | Kategori | GörselURL (opsiyonel)</Text>
-                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800", marginTop: 2 }}>✨ Açıklama, satış metni ve Instagram/WhatsApp/TikTok paylaşım metinleri her ilan için otomatik oluşturulur — sonradan düzenleyebilirsin.</Text>
+                  <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Her satır bir ilan. Alanları | veya , (CSV) ile ayır:", language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy("Başlık | Fiyat | Komisyon% | Kategori | GörselURL (opsiyonel)", language)}</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800", marginTop: 2 }}>{translateCopy("✨ Açıklama, satış metni ve Instagram/WhatsApp/TikTok paylaşım metinleri her ilan için otomatik oluşturulur — sonradan düzenleyebilirsin.", language)}</Text>
                 </View>
 
                 {canUpload ? (
                   <View style={{ flexDirection: "row", gap: 8 }}>
-                    <Pressable onPress={pickCsv} accessibilityRole="button" accessibilityLabel="CSV dosyası yükle" style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.primary, borderRadius: 11, borderStyle: "dashed", borderWidth: 1.5, flex: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 }}>
+                    <Pressable onPress={pickCsv} accessibilityRole="button" accessibilityLabel={translateCopy("CSV dosyası yükle", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.primary, borderRadius: 11, borderStyle: "dashed", borderWidth: 1.5, flex: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 }}>
                       <MaterialCommunityIcons name="file-delimited-outline" size={18} color={colors.primaryDark} />
-                      <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>CSV yükle</Text>
+                      <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("CSV yükle", language)}</Text>
                     </Pressable>
-                    <Pressable onPress={downloadTemplate} accessibilityRole="button" accessibilityLabel="Örnek CSV şablonu indir" style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingHorizontal: 14, paddingVertical: 13 }}>
+                    <Pressable onPress={downloadTemplate} accessibilityRole="button" accessibilityLabel={translateCopy("Örnek CSV şablonu indir", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingHorizontal: 14, paddingVertical: 13 }}>
                       <MaterialCommunityIcons name="download-outline" size={18} color={colors.muted} />
-                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Şablon</Text>
+                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Şablon", language)}</Text>
                     </Pressable>
                   </View>
                 ) : null}
@@ -186,25 +188,25 @@ export function BulkListingModal({
                 {rows.length > 0 ? (
                   <View style={{ gap: 8 }}>
                     <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>
-                      Önizleme · {validRows.length} geçerli / {rows.length} satır
+                      {translateCopy("Önizleme", language)} · {validRows.length} {translateCopy("geçerli", language)} / {rows.length} {translateCopy("satır", language)}
                     </Text>
                     {rows.slice(0, 30).map((r, i) => (
                       <View key={i} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: r.valid ? colors.line : colors.warning, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 10, padding: 10 }}>
                         <MaterialCommunityIcons name={r.valid ? "check-circle" : "alert-circle-outline"} size={18} color={r.valid ? colors.primary : colors.warning} />
                         <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{r.title || "(başlık yok)"}</Text>
+                          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{r.title || translateCopy("(başlık yok)", language)}</Text>
                           <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>
-                            {r.valid ? `${moneyIn(r.price, "TRY")} · %${r.commission} komisyon · ${r.category}` : r.reason}
+                            {r.valid ? `${moneyIn(r.price, "TRY")} · %${r.commission} ${translateCopy("komisyon", language)} · ${r.category}` : translateCopy(r.reason ?? "", language)}
                           </Text>
                         </View>
                       </View>
                     ))}
-                    {rows.length > 30 ? <Text style={{ color: colors.subtle, fontSize: 12 }}>+{rows.length - 30} satır daha…</Text> : null}
+                    {rows.length > 30 ? <Text style={{ color: colors.subtle, fontSize: 12 }}>+{rows.length - 30} {translateCopy("satır daha…", language)}</Text> : null}
                   </View>
                 ) : null}
 
                 <PrimaryButton tone={validRows.length ? "primary" : "secondary"} onPress={validRows.length ? publish : undefined} icon="cloud-upload-outline">
-                  {validRows.length > 0 ? `${validRows.length} ilanı yayınla` : "Yayınlanacak geçerli satır yok"}
+                  {validRows.length > 0 ? `${validRows.length} ${translateCopy("ilanı yayınla", language)}` : translateCopy("Yayınlanacak geçerli satır yok", language)}
                 </PrimaryButton>
               </>
             )}

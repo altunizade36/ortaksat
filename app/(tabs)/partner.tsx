@@ -455,7 +455,7 @@ export default function PartnerScreen() {
       </Card>
 
       {mounted && myBroughtLeads.length > 0 ? (
-        <MiniBarChart data={leadSeries} title="Son 14 gün · getirdiğin talep" totalLabel={`${myBroughtLeads.length} talep`} />
+        <MiniBarChart data={leadSeries} title={translateCopy("Son 14 gün · getirdiğin talep", language)} totalLabel={`${myBroughtLeads.length} ${translateCopy("talep", language)}`} />
       ) : null}
 
       <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />

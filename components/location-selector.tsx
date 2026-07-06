@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { districtsOfProvince, locKey, provinces, searchDistricts, searchProvinces } from "@/lib/locations";
 import { fetchNeighborhoods, type Neighborhood } from "@/lib/location-service";
 
@@ -36,6 +37,7 @@ export function LocationSelector({
   showAddressLine?: boolean;
   mode?: Mode;
 }) {
+  const { language } = useLanguage();
   const districtList = useMemo(() => districtsOfProvince(value.provinceId), [value.provinceId]);
   const provinceLabel = provinces.find((p) => p.id === value.provinceId)?.name;
   const districtLabel = districtList.find((d) => d.id === value.districtId)?.name;
@@ -45,8 +47,8 @@ export function LocationSelector({
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
         <View style={{ flex: 1, minWidth: 180, zIndex: 30 }}>
           <ComboBox
-            label={`İl${required ? " *" : ""}`}
-            placeholder={mode === "filter" ? "Tüm iller" : "İl seçin"}
+            label={`${translateCopy("İl", language)}${required ? " *" : ""}`}
+            placeholder={mode === "filter" ? translateCopy("Tüm iller", language) : translateCopy("İl seçin", language)}
             valueLabel={provinceLabel}
             search={(q) => searchProvinces(q).map((p) => ({ id: p.id, label: p.name }))}
             onSelect={(id) => onChange({ provinceId: id, districtId: undefined, neighborhood: undefined, addressLine: value.addressLine })}
@@ -55,8 +57,8 @@ export function LocationSelector({
         </View>
         <View style={{ flex: 1, minWidth: 180, zIndex: 20 }}>
           <ComboBox
-            label={`İlçe${required ? " *" : ""}`}
-            placeholder={value.provinceId ? (mode === "filter" ? "Tüm ilçeler" : "İlçe seçin") : "Önce il seçin"}
+            label={`${translateCopy("İlçe", language)}${required ? " *" : ""}`}
+            placeholder={value.provinceId ? (mode === "filter" ? translateCopy("Tüm ilçeler", language) : translateCopy("İlçe seçin", language)) : translateCopy("Önce il seçin", language)}
             valueLabel={districtLabel}
             disabled={!value.provinceId}
             search={(q) => searchDistricts(value.provinceId, q).map((d) => ({ id: d.id, label: d.name }))}
@@ -66,7 +68,7 @@ export function LocationSelector({
         </View>
         {showNeighborhood ? (
           <View style={{ flex: 1, minWidth: 180, zIndex: 10 }}>
-            <FieldLabel text={`Mahalle / Köy${required ? " *" : ""}`} />
+            <FieldLabel text={`${translateCopy("Mahalle / Köy", language)}${required ? " *" : ""}`} />
             <NeighborhoodField districtId={value.districtId} value={value.neighborhood} onChange={(n) => onChange({ ...value, neighborhood: n })} />
           </View>
         ) : null}
@@ -74,12 +76,12 @@ export function LocationSelector({
 
       {showAddressLine ? (
         <View>
-          <FieldLabel text="Açık adres (opsiyonel)" />
+          <FieldLabel text={translateCopy("Açık adres (opsiyonel)", language)} />
           <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, paddingHorizontal: 12 }}>
             <TextInput
               value={value.addressLine ?? ""}
               onChangeText={(t) => onChange({ ...value, addressLine: t })}
-              placeholder="Cadde, sokak, no — yalnızca satış/talep onayından sonra paylaşılır"
+              placeholder={translateCopy("Cadde, sokak, no — yalnızca satış/talep onayından sonra paylaşılır", language)}
               placeholderTextColor={colors.subtle}
               multiline
               style={{ color: colors.ink, fontSize: 13.5, minHeight: 56, paddingVertical: 10, textAlignVertical: "top" }}
@@ -87,7 +89,7 @@ export function LocationSelector({
           </View>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 6, marginTop: 5 }}>
             <MaterialCommunityIcons name="shield-lock-outline" size={14} color={colors.success} />
-            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>Açık adres herkese gösterilmez. İlanda yalnızca il / ilçe / mahalle görünür.</Text>
+            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{translateCopy("Açık adres herkese gösterilmez. İlanda yalnızca il / ilçe / mahalle görünür.", language)}</Text>
           </View>
         </View>
       ) : null}
@@ -104,6 +106,7 @@ function FieldLabel({ text }: { text: string }) {
  * yoksa (veya "listede yok") serbest metin + öneri akışı. İlçe değişince sıfırlanır.
  */
 function NeighborhoodField({ districtId, value, onChange }: { districtId?: number; value?: string; onChange: (n: string) => void }) {
+  const { language } = useLanguage();
   const [list, setList] = useState<Neighborhood[]>([]);
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -127,11 +130,11 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
       <View>
         <View style={{ alignItems: "center", backgroundColor: districtId ? colors.surfaceAlt : colors.background, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, opacity: districtId ? 1 : 0.55, paddingHorizontal: 12 }}>
           <MaterialCommunityIcons name="map-marker-outline" size={18} color={colors.muted} />
-          <TextInput editable={!!districtId} value={value ?? ""} onChangeText={onChange} placeholder={districtId ? "Mahalle yazın" : "Önce ilçe seçin"} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 44, paddingVertical: 8 }} />
-          {hasData ? <Pressable accessibilityRole="button" accessibilityLabel="Listeden seç" onPress={() => { setManual(false); }} hitSlop={8}><MaterialCommunityIcons name="format-list-bulleted" size={17} color={colors.muted} /></Pressable> : null}
+          <TextInput editable={!!districtId} value={value ?? ""} onChangeText={onChange} placeholder={districtId ? translateCopy("Mahalle yazın", language) : translateCopy("Önce ilçe seçin", language)} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 44, paddingVertical: 8 }} />
+          {hasData ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Listeden seç", language)} onPress={() => { setManual(false); }} hitSlop={8}><MaterialCommunityIcons name="format-list-bulleted" size={17} color={colors.muted} /></Pressable> : null}
         </View>
         {districtId && (value?.trim().length ?? 0) > 1 ? (
-          <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", marginTop: 4 }}>Mahalleniz listede yoksa yazdığınız ad öneri olarak kaydedilir, ekibimiz inceler.</Text>
+          <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", marginTop: 4 }}>{translateCopy("Mahalleniz listede yoksa yazdığınız ad öneri olarak kaydedilir, ekibimiz inceler.", language)}</Text>
         ) : null}
       </View>
     );
@@ -142,14 +145,14 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
     <View style={{ gap: 4 }}>
       <Pressable onPress={() => { setOpen((o) => !o); setQuery(""); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
         <MaterialCommunityIcons name="map-marker-outline" size={18} color={value ? colors.primary : colors.muted} />
-        <Text numberOfLines={1} style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || "Mahalle seçin"}</Text>
+        <Text numberOfLines={1} style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || translateCopy("Mahalle seçin", language)}</Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
       </Pressable>
       {open ? (
         <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, maxHeight: 320, overflow: "hidden" }}>
           <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
             <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
-            <TextInput value={query} onChangeText={setQuery} autoFocus placeholder="Mahalle ara…" placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }} />
+            <TextInput value={query} onChangeText={setQuery} autoFocus placeholder={translateCopy("Mahalle ara…", language)} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }} />
           </View>
           <ScrollView style={{ maxHeight: 230 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
             {results.map((n) => (
@@ -160,7 +163,7 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
           </ScrollView>
           <Pressable onPress={() => { setManual(true); setOpen(false); }} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 11 }}>
             <MaterialCommunityIcons name="plus-circle-outline" size={16} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Mahallem listede yok</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Mahallem listede yok", language)}</Text>
           </Pressable>
         </View>
       ) : null}
@@ -185,6 +188,7 @@ function ComboBox({
   onSelect: (id: number) => void;
   onClear?: () => void;
 }) {
+  const { language } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const results = open ? search(query).slice(0, 40) : [];
@@ -201,7 +205,7 @@ function ComboBox({
           {valueLabel ?? placeholder}
         </Text>
         {valueLabel && onClear ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Temizle" onPress={() => { onClear(); setOpen(false); }} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable>
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Temizle", language)} onPress={() => { onClear(); setOpen(false); }} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable>
         ) : (
           <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
         )}
@@ -215,14 +219,14 @@ function ComboBox({
               value={query}
               onChangeText={setQuery}
               autoFocus
-              placeholder="Ara…"
+              placeholder={translateCopy("Ara…", language)}
               placeholderTextColor={colors.subtle}
               style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }}
             />
           </View>
           <ScrollView style={{ maxHeight: 270 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
             {results.length === 0 ? (
-              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 14 }}>Sonuç yok.</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 14 }}>{translateCopy("Sonuç yok.", language)}</Text>
             ) : null}
             {results.map((r) => (
               <Pressable key={r.id} onPress={() => { onSelect(r.id); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 11 })}>

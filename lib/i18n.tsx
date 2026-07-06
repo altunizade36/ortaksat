@@ -8,7 +8,10 @@ import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useSt
 import { accountDict } from "@/lib/i18n-dict/account";
 import { catalogDict } from "@/lib/i18n-dict/catalog";
 import { componentsDict } from "@/lib/i18n-dict/components";
+import { components2Dict } from "@/lib/i18n-dict/components2";
+import { extraDict } from "@/lib/i18n-dict/extra";
 import { exploreDict } from "@/lib/i18n-dict/explore";
+import { pass2Dict } from "@/lib/i18n-dict/pass2";
 import { homeDict } from "@/lib/i18n-dict/home";
 import { marketingDict } from "@/lib/i18n-dict/marketing";
 import { profileDict } from "@/lib/i18n-dict/profile";
@@ -1232,9 +1235,12 @@ const trToEnCopy: Record<string, string> = {
   ...catalogDict,
   ...socialDict,
   ...componentsDict,
+  ...components2Dict,
   ...accountDict,
   ...profileDict,
-  ...marketingDict
+  ...marketingDict,
+  ...pass2Dict,
+  ...extraDict
 };
 
 export function translateCopy(value: string, language: AppLanguage): string {
