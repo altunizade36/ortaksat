@@ -194,19 +194,19 @@ export default function HomeScreen() {
           {/* Kompakt yeşil hero (mobil) — web ile tutarlı: tokalaşma + ürün kümesi */}
           <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 16, flexDirection: "row", gap: 10, overflow: "hidden", padding: 16 }}>
             <View style={{ flex: 1, gap: 10, minWidth: 0 }}>
-              <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 19, fontWeight: "900", lineHeight: 24 }}>Ortak alın, <Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text></Text>
-              <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600", lineHeight: 16 }}>Ürününü ortaklar paylaşsın, satışta komisyon kazan.</Text>
+              <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 19, fontWeight: "900", lineHeight: 24 }}>{translateCopy("Ortak alın, ", language)}<Text style={{ color: colors.gold }}>{translateCopy("kazancınızı katlayın!", language)}</Text></Text>
+              <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Ürününü ortaklar paylaşsın, satışta komisyon kazan.", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 <Link href="/create" asChild>
                   <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}>
                     <MaterialCommunityIcons name="store-plus-outline" size={16} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>İlan Ver</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("İlan Ver", language)}</Text>
                   </Pressable>
                 </Link>
                 <Link href="/partner" asChild>
                   <Pressable style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
                     <MaterialCommunityIcons name="handshake-outline" size={16} color="#FFFFFF" />
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ortak Ol</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortak Ol", language)}</Text>
                   </Pressable>
                 </Link>
               </View>
@@ -218,14 +218,14 @@ export default function HomeScreen() {
           {/* En çok kazandıran fırsatlar (mobil şerit) */}
           {topEarn.length > 0 ? (
             <View style={{ gap: 8 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>En Çok Kazandıran Fırsatlar</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("En Çok Kazandıran Fırsatlar", language)}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
                 {topEarn.map((l) => (
                   <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
                     <View style={{ height: 90, width: "100%" }}>
                       <SafeRemoteImage uri={l.image} style={{ height: 90, width: "100%" }} contentFit="cover" />
                       <View style={{ backgroundColor: colors.gold, borderRadius: 6, left: 7, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 7 }}>
-                        <Text style={{ color: "#1A1400", fontSize: 9, fontWeight: "900" }}>Kazanç {money(commissionAmount(l))}</Text>
+                        <Text style={{ color: "#1A1400", fontSize: 9, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {money(commissionAmount(l))}</Text>
                       </View>
                     </View>
                     <View style={{ gap: 3, padding: 8 }}>
@@ -240,7 +240,7 @@ export default function HomeScreen() {
 
           {recentListings.length >= 3 ? (
             <View style={{ gap: 8 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Son Gezdiklerin</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Son Gezdiklerin", language)}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
                 {recentListings.map((l) => (
                   <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={l.title} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
@@ -259,7 +259,7 @@ export default function HomeScreen() {
             <View style={{ gap: 8 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                 <MaterialCommunityIcons name="new-box" size={17} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>En Yeni İlanlar</Text>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("En Yeni İlanlar", language)}</Text>
               </View>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
                 {newestListings.map((l) => (
@@ -267,7 +267,7 @@ export default function HomeScreen() {
                     <View style={{ height: 90, width: "100%" }}>
                       <SafeRemoteImage uri={l.image} style={{ height: 90, width: "100%" }} contentFit="cover" />
                       <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 7, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 7 }}>
-                        <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>YENİ</Text>
+                        <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{translateCopy("YENİ", language)}</Text>
                       </View>
                     </View>
                     <View style={{ gap: 3, padding: 8 }}>
@@ -347,10 +347,10 @@ export default function HomeScreen() {
           {hasMoreToShow ? (
             <Pressable onPress={showMore} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 26, paddingVertical: 13 })}>
               <MaterialCommunityIcons name="chevron-down" size={18} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Daha fazla ürün göster</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Daha fazla ürün göster", language)}</Text>
             </Pressable>
           ) : filteredListings.length > 0 ? (
-            <Text selectable style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>Tüm ürünleri gördün · {filteredListings.length} ürün</Text>
+            <Text selectable style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{translateCopy("Tüm ürünleri gördün", language)} · {filteredListings.length} {translateCopy("ürün", language)}</Text>
           ) : null}
 
           {isWeb ? <WebFooter /> : null}
@@ -375,6 +375,7 @@ const SKELETON_CATS: Array<{ slug: string; label: string }> = [
 ];
 
 function HomeSeoSkeleton() {
+  const { language } = useLanguage();
   return (
     <View style={{ backgroundColor: colors.background, flex: 1, paddingHorizontal: 20, paddingTop: 22 }}>
       <Head>
@@ -384,25 +385,25 @@ function HomeSeoSkeleton() {
       </Head>
       <View style={{ alignSelf: "center", gap: 16, maxWidth: 900, width: "100%" }}>
         <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 34, fontWeight: "900", lineHeight: 40 }}>
-          Ürününü ortak satışa aç, <Text style={{ color: colors.primary }}>satışta komisyon kazan.</Text>
+          {translateCopy("Ürününü ortak satışa aç, ", language)}<Text style={{ color: colors.primary }}>{translateCopy("satışta komisyon kazan.", language)}</Text>
         </Text>
         <Text style={{ color: colors.muted, fontSize: 16, fontWeight: "600", lineHeight: 24, maxWidth: 640 }}>
-          Ürününü ücretsiz listele, komisyonunu belirle; ortaklar referans linkiyle paylaşıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan. Emlak, vasıta, elektronik, ev & yaşam, moda ve daha fazlası tek platformda.
+          {translateCopy("Ürününü ücretsiz listele, komisyonunu belirle; ortaklar referans linkiyle paylaşıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan. Emlak, vasıta, elektronik, ev & yaşam, moda ve daha fazlası tek platformda.", language)}
         </Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
           <Link href="/create" asChild>
             <Pressable style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 14 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>İlan Ver</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{translateCopy("İlan Ver", language)}</Text>
             </Pressable>
           </Link>
           <Link href="/partner" asChild>
             <Pressable style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 24, paddingVertical: 14 }}>
-              <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>Ortak Satıcı Ol</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{translateCopy("Ortak Satıcı Ol", language)}</Text>
             </Pressable>
           </Link>
         </View>
         <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 2 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 18, fontWeight: "900", marginTop: 6 }}>
-          Kategoriler
+          {translateCopy("Kategoriler", language)}
         </Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
           {SKELETON_CATS.map((c) => (

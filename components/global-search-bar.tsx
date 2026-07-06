@@ -63,7 +63,7 @@ export function GlobalSearchBar() {
           style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "700", height: 40, paddingVertical: 0 }}
         />
         {value ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Temizle" onPress={() => { setValue(""); inputRef.current?.focus(); }} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Temizle", language)} onPress={() => { setValue(""); inputRef.current?.focus(); }} hitSlop={8}>
             <MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} />
           </Pressable>
         ) : null}
@@ -102,7 +102,7 @@ export function GlobalSearchBar() {
           ))}
           <Pressable onPress={() => submitSearch()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 })}>
             <MaterialCommunityIcons name="magnify" size={16} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>“{q}” için tüm sonuçlar</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>“{q}” {translateCopy("için tüm sonuçlar", language)}</Text>
           </Pressable>
         </View>
       ) : null}

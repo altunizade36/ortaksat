@@ -7,6 +7,7 @@ import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
 import { ContentPageView } from "@/components/content-page-view";
 import { WebTrustStrip, WebFooter } from "@/components/web-landing";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -82,29 +83,30 @@ export default function HowItWorksPage() {
 
 function HowItWorksStatic() {
   const isWideWeb = useIsWideWeb();
+  const { language } = useLanguage();
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 24, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
-      <Head><title>Nasıl Çalışır? — Ortak sat, komisyon kazan | OrtakSat</title><meta name="description" content="OrtakSat nasıl çalışır: ilan ver, ortak satışa aç, komisyonu belirle. Ortaklar ürününü tanıtır, satışta komisyon kazanır. Aracı platform — ödeme taraflar arasında." /></Head>
+      <Head><title>{translateCopy("Nasıl Çalışır? — Ortak sat, komisyon kazan | OrtakSat", language)}</title><meta name="description" content={translateCopy("OrtakSat nasıl çalışır: ilan ver, ortak satışa aç, komisyonu belirle. Ortaklar ürününü tanıtır, satışta komisyon kazanır. Aracı platform — ödeme taraflar arasında.", language)} /></Head>
       {/* Hero */}
       <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: isWideWeb ? "row" : "column", gap: 24, paddingHorizontal: 32, paddingVertical: 32 }}>
         <View style={{ alignItems: "center", flex: 1, justifyContent: "center", minWidth: 0 }}>
           <NetworkVisual />
         </View>
         <View style={{ alignItems: isWideWeb ? "center" : "flex-start", flex: 1.1, gap: 14, minWidth: 0 }}>
-          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 32, fontWeight: "900", lineHeight: 38, textAlign: isWideWeb ? "center" : "left" }}>OrtakSat nasıl çalışır?</Text>
-          <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 23, maxWidth: 520, textAlign: isWideWeb ? "center" : "left" }}>OrtakSat, ürününüzü daha fazla kişiye ulaştırmanızı ve komisyonla birlikte kazanmanızı sağlayan güvenli bir ortak satış platformudur.</Text>
+          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 32, fontWeight: "900", lineHeight: 38, textAlign: isWideWeb ? "center" : "left" }}>{translateCopy("OrtakSat nasıl çalışır?", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 23, maxWidth: 520, textAlign: isWideWeb ? "center" : "left" }}>{translateCopy("OrtakSat, ürününüzü daha fazla kişiye ulaştırmanızı ve komisyonla birlikte kazanmanızı sağlayan güvenli bir ortak satış platformudur.", language)}</Text>
           <View style={{ flexDirection: "row", gap: 12 }}>
             <Link href="/create" asChild>
               <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, paddingHorizontal: 24, paddingVertical: 13 }}>
                 <MaterialCommunityIcons name="store-plus-outline" size={18} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>İlan Ver</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{translateCopy("İlan Ver", language)}</Text>
               </Pressable>
             </Link>
             <Link href="/partner" asChild>
               <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, paddingHorizontal: 24, paddingVertical: 13 }}>
                 <MaterialCommunityIcons name="handshake-outline" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>Ortak Satıcı Ol</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{translateCopy("Ortak Satıcı Ol", language)}</Text>
               </Pressable>
             </Link>
           </View>
@@ -113,7 +115,7 @@ function HowItWorksStatic() {
 
       {/* Three roles */}
       <View style={{ gap: 16 }}>
-        <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900", textAlign: "center" }}>Üç rol, tek akış: Daha fazla satış, adil komisyon.</Text>
+        <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900", textAlign: "center" }}>{translateCopy("Üç rol, tek akış: Daha fazla satış, adil komisyon.", language)}</Text>
         <View style={{ alignItems: "stretch", flexDirection: isWideWeb ? "row" : "column", gap: isWideWeb ? 14 : 16 }}>
           {ROLES.map((role, index) => (
             <View key={role.title} style={{ alignItems: "center", flex: 1, flexDirection: isWideWeb ? "row" : "column", gap: isWideWeb ? 14 : 16, minWidth: 0 }}>
@@ -128,19 +130,19 @@ function HowItWorksStatic() {
 
       {/* FAQ */}
       <View style={{ gap: 12 }}>
-        <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Sık Sorulan Sorular</Text>
+        <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Sık Sorulan Sorular", language)}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
           {FAQ.map((item) => (
             <View key={item.q} style={{ flexBasis: 420, flexGrow: 1, maxWidth: 720 }}>
-              <Accordion title={item.q} icon="comment-question-outline">
-                <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{item.a}</Text>
+              <Accordion title={translateCopy(item.q, language)} icon="comment-question-outline">
+                <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{translateCopy(item.a, language)}</Text>
               </Accordion>
             </View>
           ))}
         </View>
         <Link href="/sss" asChild>
           <Pressable style={{ alignItems: "center", alignSelf: "center", flexDirection: "row", gap: 4, marginTop: 2 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>Tüm soruları gör</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{translateCopy("Tüm soruları gör", language)}</Text>
             <MaterialCommunityIcons name="arrow-right" size={18} color={colors.primaryDark} />
           </Pressable>
         </Link>
@@ -154,20 +156,20 @@ function HowItWorksStatic() {
           </View>
         </View>
         <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
-          <Text style={{ color: "#FFFFFF", fontSize: 22, fontWeight: "900" }}>Hemen başlayın, birlikte kazanmaya başlayın!</Text>
-          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "600" }}>İlan verin veya ortak satıcı olun; ortakların kitlesiyle ürününüzü yayın.</Text>
+          <Text style={{ color: "#FFFFFF", fontSize: 22, fontWeight: "900" }}>{translateCopy("Hemen başlayın, birlikte kazanmaya başlayın!", language)}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "600" }}>{translateCopy("İlan verin veya ortak satıcı olun; ortakların kitlesiyle ürününüzü yayın.", language)}</Text>
         </View>
         <View style={{ flexDirection: "row", gap: 12 }}>
           <Link href="/create" asChild>
             <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 12, flexDirection: "row", gap: 8, paddingHorizontal: 22, paddingVertical: 13 }}>
               <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>İlan Ver</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{translateCopy("İlan Ver", language)}</Text>
             </Pressable>
           </Link>
           <Link href="/partner" asChild>
             <Pressable style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, paddingHorizontal: 22, paddingVertical: 13 }}>
               <MaterialCommunityIcons name="account-multiple-plus-outline" size={18} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>Ortak Satıcı Ol</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{translateCopy("Ortak Satıcı Ol", language)}</Text>
             </Pressable>
           </Link>
         </View>
@@ -179,6 +181,7 @@ function HowItWorksStatic() {
 }
 
 function RoleColumn({ role, index }: { role: Role; index: number }) {
+  const { language } = useLanguage();
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flex: 1, gap: 14, minWidth: 0, padding: 20 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
@@ -186,8 +189,8 @@ function RoleColumn({ role, index }: { role: Role; index: number }) {
           <MaterialCommunityIcons name={role.icon} size={24} color={role.accent} />
         </View>
         <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-          <Text style={{ color: role.accent, fontSize: 17, fontWeight: "900" }}>{role.title}</Text>
-          <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{role.subtitle}</Text>
+          <Text style={{ color: role.accent, fontSize: 17, fontWeight: "900" }}>{translateCopy(role.title, language)}</Text>
+          <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy(role.subtitle, language)}</Text>
         </View>
       </View>
       <View style={{ gap: 12 }}>
@@ -199,16 +202,16 @@ function RoleColumn({ role, index }: { role: Role; index: number }) {
             <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                 <MaterialCommunityIcons name={step.icon} size={15} color={role.accent} />
-                <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{step.title}</Text>
+                <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy(step.title, language)}</Text>
               </View>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "500", lineHeight: 18 }}>{step.body}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "500", lineHeight: 18 }}>{translateCopy(step.body, language)}</Text>
             </View>
           </View>
         ))}
       </View>
       <View style={{ alignItems: "center", backgroundColor: role.tint, borderRadius: 12, flexDirection: "row", gap: 8, marginTop: "auto", paddingHorizontal: 12, paddingVertical: 10 }}>
         <MaterialCommunityIcons name={index === 1 ? "trending-up" : "shield-check"} size={16} color={role.accent} />
-        <Text style={{ color: role.accent, flex: 1, fontSize: 12, fontWeight: "800" }}>{role.footer}</Text>
+        <Text style={{ color: role.accent, flex: 1, fontSize: 12, fontWeight: "800" }}>{translateCopy(role.footer, language)}</Text>
       </View>
     </View>
   );

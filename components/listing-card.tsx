@@ -22,7 +22,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
   const isHighConversion = conversionScore >= 18;
   const isNew = isNewListing(listing.createdAt);
   const featured = Boolean(listing.featured);
-  const statusLabel = featured ? "★ Öne Çıkan" : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? t("newListing") : `${compactNumber(listing.partnerCount)} ${t("partners")}`;
+  const statusLabel = featured ? translateCopy("★ Öne Çıkan", language) : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? t("newListing") : `${compactNumber(listing.partnerCount)} ${t("partners")}`;
   const statusTone: StatusTone = featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
   const subcategory = inferListingSubcategory(listing);
   const isVerified = Boolean(owner?.verifiedPhone || owner?.verifiedIdentity);
@@ -32,7 +32,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
   const { has, toggle } = useCompare();
   const inCompare = has(listing.id);
   const imageUri = listing.imageUrl ?? listing.image;
-  const imageAlt = listing.imageAlt ?? `${displayText(listing.title)} ilan görseli`;
+  const imageAlt = listing.imageAlt ?? `${displayText(listing.title)} ${translateCopy("ilan görseli", language)}`;
   // Emlak/kategori kartında en önemli 3 yapısal özellik rozeti (oda · m² · ilan tipi).
   const attrSpecs = (() => {
     const a = listing.attributes;
@@ -42,7 +42,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
     const m2 = a.grossM2 ?? a.m2 ?? a.totalGrossM2 ?? a.netM2 ?? a.closedM2;
     if (m2) out.push(`${m2} m²`);
     if (a.listingType) out.push(String(a.listingType));
-    if (out.length < 3 && a.buildingAge) out.push(`${a.buildingAge} yaş`);
+    if (out.length < 3 && a.buildingAge) out.push(`${a.buildingAge} ${translateCopy("yaş", language)}`);
     return out.slice(0, 3);
   })();
   // İlan etiketleri (Acil / Fırsat / Yatırımlık…) — renkli vurgu rozetleri (spec 72).
@@ -81,7 +81,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
               {listing.demo ? (
                 <View style={{ alignItems: "center", backgroundColor: "#F5C518", flexDirection: "row", gap: 5, justifyContent: "center", left: 0, position: "absolute", right: 0, top: 0, paddingVertical: 3, zIndex: 3 }}>
                   <MaterialCommunityIcons name="eye-outline" size={12} color="#1A1A00" />
-                  <Text style={{ color: "#1A1A00", fontSize: 10.5, fontWeight: "900", letterSpacing: 0.5 }}>ÖRNEK İLAN · yalnızca gösterim</Text>
+                  <Text style={{ color: "#1A1A00", fontSize: 10.5, fontWeight: "900", letterSpacing: 0.5 }}>{translateCopy("ÖRNEK İLAN · yalnızca gösterim", language)}</Text>
                 </View>
               ) : null}
               <View style={{ position: "absolute", top: listing.demo ? 26 : 10, left: 10, right: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
@@ -159,7 +159,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
                 ) : (
                   <>
                     <MaterialCommunityIcons name="sprout-outline" size={13} color={colors.info} />
-                    <Text numberOfLines={1} style={{ color: colors.info, fontSize: 11.5, fontWeight: "800" }}>Yeni satıcı</Text>
+                    <Text numberOfLines={1} style={{ color: colors.info, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Yeni satıcı", language)}</Text>
                   </>
                 )}
                 {isVerified ? <MaterialCommunityIcons name="check-decagram" size={13} color={colors.primary} /> : null}
@@ -170,14 +170,14 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
                   <>
                     <MaterialCommunityIcons name="check-circle" size={13} color={colors.success} />
                     <Text numberOfLines={1} selectable style={{ color: colors.success, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "800" }}>
-                      {compactNumber(sellerSales)} satış
+                      {compactNumber(sellerSales)} {translateCopy("satış", language)}
                     </Text>
                   </>
                 ) : (
                   <>
                     <MaterialCommunityIcons name="account-group-outline" size={13} color={colors.subtle} />
                     <Text numberOfLines={1} selectable style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>
-                      {compactNumber(listing.partnerCount)} ortak
+                      {compactNumber(listing.partnerCount)} {translateCopy("ortak", language)}
                     </Text>
                   </>
                 )}
@@ -197,7 +197,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ selected: inCompare }}
-          accessibilityLabel={inCompare ? "Karşılaştırmadan çıkar" : "Karşılaştır"}
+          accessibilityLabel={inCompare ? translateCopy("Karşılaştırmadan çıkar", language) : translateCopy("Karşılaştır", language)}
           onPress={() => toggle(listing.id)}
           style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderColor: inCompare ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 30, justifyContent: "center", position: "absolute", right: 8, top: 8, width: 30, zIndex: 4 }}
         >

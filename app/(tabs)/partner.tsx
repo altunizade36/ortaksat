@@ -177,36 +177,36 @@ export default function PartnerScreen() {
     const activities = mySales.slice().sort((a, b) => (b.paidAt ?? b.approvedAt ?? b.id).localeCompare(a.paidAt ?? a.approvedAt ?? a.id)).slice(0, 4);
 
     const tabs: Array<{ key: typeof tab; label: string; count?: number }> = [
-      { key: "all", label: "Tüm fırsatlar" },
-      { key: "pending", label: "Başvurduğum ilanlar", count: pendingPartnerships.length },
-      { key: "active", label: "Aktif ortaklıklar", count: activePartnerships.length },
-      { key: "earning", label: "Kazançlarım" },
-      { key: "links", label: "Özel bağlantılar" }
+      { key: "all", label: translateCopy("Tüm fırsatlar", language) },
+      { key: "pending", label: translateCopy("Başvurduğum ilanlar", language), count: pendingPartnerships.length },
+      { key: "active", label: translateCopy("Aktif ortaklıklar", language), count: activePartnerships.length },
+      { key: "earning", label: translateCopy("Kazançlarım", language) },
+      { key: "links", label: translateCopy("Özel bağlantılar", language) }
     ];
     const stats = [
-      { icon: "handshake" as const, value: `${activePartnerships.length}`, label: "Aktif ortaklıklar", tint: [colors.primarySoft, colors.primaryDark] as [string, string] },
-      { icon: "cash-multiple" as const, value: money(totalEarn), label: "Kayıtlı komisyon", tint: [colors.goldSoft, colors.gold] as [string, string] },
-      { icon: "percent" as const, value: `%${avgCommissionPct}`.replace(".", ","), label: "Ortalama komisyon teklifi", tint: [colors.infoSoft, colors.info] as [string, string] },
-      { icon: "account-clock-outline" as const, value: `${pendingPartnerships.length}`, label: "Bekleyen başvurular", tint: [colors.violetSoft, colors.violet] as [string, string] }
+      { icon: "handshake" as const, value: `${activePartnerships.length}`, label: translateCopy("Aktif ortaklıklar", language), tint: [colors.primarySoft, colors.primaryDark] as [string, string] },
+      { icon: "cash-multiple" as const, value: money(totalEarn), label: translateCopy("Kayıtlı komisyon", language), tint: [colors.goldSoft, colors.gold] as [string, string] },
+      { icon: "percent" as const, value: `%${avgCommissionPct}`.replace(".", ","), label: translateCopy("Ortalama komisyon teklifi", language), tint: [colors.infoSoft, colors.info] as [string, string] },
+      { icon: "account-clock-outline" as const, value: `${pendingPartnerships.length}`, label: translateCopy("Bekleyen başvurular", language), tint: [colors.violetSoft, colors.violet] as [string, string] }
     ];
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 40, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
-        <Seo title="Ortak Satış — Ürün paylaş, satışta komisyon kazan | OrtakSat" description="Beğendiğin ürünlere ortak ol, referans linkini paylaş; satış gerçekleşince komisyonu kazan. Sıfır sermaye, ücretsiz başvuru. OrtakSat ortak satış platformu." path="/partner" />
+        <Seo title={translateCopy("Ortak Satış — Ürün paylaş, satışta komisyon kazan | OrtakSat", language)} description={translateCopy("Beğendiğin ürünlere ortak ol, referans linkini paylaş; satış gerçekleşince komisyonu kazan. Sıfır sermaye, ücretsiz başvuru. OrtakSat ortak satış platformu.", language)} path="/partner" />
         {/* Hero */}
         <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 24 }}>
           <View style={{ flex: 1.5, gap: 12, justifyContent: "center", minWidth: 0 }}>
             <View style={{ alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Ortak Satış</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Ortak Satış", language)}</Text>
             </View>
-            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>Ortak satış fırsatları</Text>
-            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 520 }}>Güvenilir satıcılarla eşleşin, ürünleri paylaşın; komisyonu satıcıyla belirleyin. Ödeme ve teslimat taraflar arasında yapılır.</Text>
+            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>{translateCopy("Ortak satış fırsatları", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 520 }}>{translateCopy("Güvenilir satıcılarla eşleşin, ürünleri paylaşın; komisyonu satıcıyla belirleyin. Ödeme ve teslimat taraflar arasında yapılır.", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, marginTop: 2 }}>
               {[
-                { icon: "shield-check" as const, label: "Anlaşma şartları kayıt altında" },
-                { icon: "lock-check-outline" as const, label: "Şeffaf ve güvenli" },
-                { icon: "account-check-outline" as const, label: "Doğrulanmış satıcılar" },
-                { icon: "gift-outline" as const, label: "Ücretsiz üyelik" }
+                { icon: "shield-check" as const, label: translateCopy("Anlaşma şartları kayıt altında", language) },
+                { icon: "lock-check-outline" as const, label: translateCopy("Şeffaf ve güvenli", language) },
+                { icon: "account-check-outline" as const, label: translateCopy("Doğrulanmış satıcılar", language) },
+                { icon: "gift-outline" as const, label: translateCopy("Ücretsiz üyelik", language) }
               ].map((item) => (
                 <View key={item.label} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                   <MaterialCommunityIcons name={item.icon} size={15} color={colors.primary} />
@@ -255,8 +255,8 @@ export default function PartnerScreen() {
             {tab === "all" ? (
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, padding: 16 }}>
                 <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between", marginBottom: 12 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Ortak satış fırsatları</Text>
-                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>{opportunities.length} ilan bulundu</Text>
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ortak satış fırsatları", language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>{opportunities.length} {translateCopy("ilan bulundu", language)}</Text>
                 </View>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14, position: "relative", zIndex: 50 }}>
                   <PanelDropdown label="Kategoriler" value={oppCategory} onSelect={(v) => setOppCategory(String(v))} options={[{ label: "Tümü", value: "" }, ...oppCategoryOptions.map((c) => ({ label: c, value: c }))]} />
@@ -267,17 +267,17 @@ export default function PartnerScreen() {
                   {(oppCategory || oppCommission || oppCity || oppStock || oppGuven) ? (
                     <Pressable onPress={() => { setOppCategory(""); setOppCommission(0); setOppCity(""); setOppStock(""); setOppGuven(""); }} style={{ alignItems: "center", flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 7 }}>
                       <MaterialCommunityIcons name="close" size={14} color={colors.accent} />
-                      <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>Temizle</Text>
+                      <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>{translateCopy("Temizle", language)}</Text>
                     </Pressable>
                   ) : null}
                 </View>
                 <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingBottom: 8 }}>
-                  <Text style={{ color: colors.muted, flex: 2.4, fontSize: 12, fontWeight: "800" }}>Ürün</Text>
-                  <Text style={{ color: colors.muted, flex: 1.4, fontSize: 12, fontWeight: "800" }}>Satıcı</Text>
-                  <Text style={{ color: colors.muted, flex: 0.9, fontSize: 12, fontWeight: "800" }}>Komisyon</Text>
-                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "800" }}>Konum</Text>
-                  <Text style={{ color: colors.muted, flex: 0.9, fontSize: 12, fontWeight: "800" }}>Kalan Stok</Text>
-                  <Text style={{ color: colors.muted, flex: 0.8, fontSize: 12, fontWeight: "800" }}>Güven</Text>
+                  <Text style={{ color: colors.muted, flex: 2.4, fontSize: 12, fontWeight: "800" }}>{translateCopy("Ürün", language)}</Text>
+                  <Text style={{ color: colors.muted, flex: 1.4, fontSize: 12, fontWeight: "800" }}>{translateCopy("Satıcı", language)}</Text>
+                  <Text style={{ color: colors.muted, flex: 0.9, fontSize: 12, fontWeight: "800" }}>{translateCopy("Komisyon", language)}</Text>
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum", language)}</Text>
+                  <Text style={{ color: colors.muted, flex: 0.9, fontSize: 12, fontWeight: "800" }}>{translateCopy("Kalan Stok", language)}</Text>
+                  <Text style={{ color: colors.muted, flex: 0.8, fontSize: 12, fontWeight: "800" }}>{translateCopy("Güven", language)}</Text>
                   <View style={{ width: 150 }} />
                 </View>
                 {opportunities.slice(0, oppVisible).map((listing) => (
@@ -288,13 +288,13 @@ export default function PartnerScreen() {
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
                 <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{tabs.find((x) => x.key === tab)?.label}</Text>
                 {tab === "links" ? (
-                  activePartnerships.length === 0 ? <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Aktif ortaklık bağlantın yok.</Text> :
+                  activePartnerships.length === 0 ? <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Aktif ortaklık bağlantın yok.", language)}</Text> :
                   activePartnerships.map((p) => {
                     const l = listings.find((x) => x.id === p.listingId);
                     return l ? <ShareRow key={p.id} title={l.title} url={shareUrl(l, p.refCode)} onCopy={() => void copyText("Bağlantı", shareUrl(l, p.refCode))} /> : null;
                   })
                 ) : (tab === "earning" ? mySales : tab === "active" ? activePartnerships : pendingPartnerships).length === 0 ? (
-                  <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Henüz kayıt yok.</Text>
+                  <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Henüz kayıt yok.", language)}</Text>
                 ) : (
                   (tab === "earning"
                     ? mySales.map((s) => {
@@ -303,7 +303,7 @@ export default function PartnerScreen() {
                         const canDispute = s.status !== "paid" && s.status !== "cancelled" && s.status !== "disputed";
                         return (
                           <View key={s.id} style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 10 }}>
-                            <OppMiniRow title={l?.title ?? "Ürün"} image={l?.image} right={money(s.commissionAmount)} sub={saleLabels[s.status]} />
+                            <OppMiniRow title={l?.title ?? translateCopy("Ürün", language)} image={l?.image} right={money(s.commissionAmount)} sub={saleLabels[s.status]} />
                             {s.status === "disputed" && s.payoutNote ? <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>{s.payoutNote}</Text> : null}
                             {canConfirm || canDispute ? (
                               <View style={{ flexDirection: "row", gap: 8 }}>
@@ -316,7 +316,7 @@ export default function PartnerScreen() {
                       })
                     : (tab === "active" ? activePartnerships : pendingPartnerships).map((p) => {
                         const l = listings.find((x) => x.id === p.listingId);
-                        return <OppMiniRow key={p.id} title={l?.title ?? "Ürün"} image={l?.image} right={l ? commissionText(l) : ""} sub={p.status === "active" ? "Aktif" : "Bekliyor"} />;
+                        return <OppMiniRow key={p.id} title={l?.title ?? translateCopy("Ürün", language)} image={l?.image} right={l ? commissionText(l) : ""} sub={p.status === "active" ? "Aktif" : "Bekliyor"} />;
                       }))
                 )}
               </View>
@@ -324,7 +324,7 @@ export default function PartnerScreen() {
             {tab === "all" && opportunities.length > oppVisible ? (
               <Pressable onPress={() => setOppVisible((v) => v + 8)} style={{ alignItems: "center", alignSelf: "center", marginTop: 14 }}>
                 <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 24, paddingVertical: 11 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Daha fazla göster</Text>
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Daha fazla göster", language)}</Text>
                   <MaterialCommunityIcons name="chevron-down" size={16} color={colors.muted} />
                 </View>
               </Pressable>
@@ -334,16 +334,16 @@ export default function PartnerScreen() {
           {/* Sidebar */}
           <View style={{ gap: 16, width: 320 }}>
             {mounted && myBroughtLeads.length > 0 ? (
-              <MiniBarChart data={leadSeries} title="Son 14 gün · getirdiğin talep" totalLabel={`${myBroughtLeads.length} talep`} />
+              <MiniBarChart data={leadSeries} title={translateCopy("Son 14 gün · getirdiğin talep", language)} totalLabel={`${myBroughtLeads.length} ${translateCopy("talep", language)}`} />
             ) : null}
             <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Paylaşım bağlantılarım</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Tüm paylaşım bağlantılarını gör" onPress={() => setTab("links")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text></Pressable>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Paylaşım bağlantılarım", language)}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Tüm paylaşım bağlantılarını gör", language)} onPress={() => setTab("links")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tümünü gör", language)}</Text></Pressable>
               </View>
               {activePartnerships.length === 0 ? (
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Ortak olduğunda paylaşım bağlantıların burada görünür.</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Ortak olduğunda paylaşım bağlantıların burada görünür.", language)}</Text>
               ) : (
                 activePartnerships.slice(0, 3).map((p) => {
                   const l = listings.find((x) => x.id === p.listingId);
@@ -352,20 +352,20 @@ export default function PartnerScreen() {
               )}
               {/* Paylaşım linkleri ortak olunca otomatik üretilir; buradan yeni ürüne ortak olunur. */}
               <Link href="/explore" asChild>
-                <Pressable accessibilityRole="link" accessibilityLabel="Ortak olacak ürün bul" style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("Ortak olacak ürün bul", language)} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                   <MaterialCommunityIcons name="store-search-outline" size={18} color={colors.primary} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Ortak olacak ürün bul</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Ortak olacak ürün bul", language)}</Text>
                 </Pressable>
               </Link>
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Son aktivitelerim</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel="Tüm kazanç hareketlerini gör" onPress={() => setTab("earning")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümünü gör</Text></Pressable>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Son aktivitelerim", language)}</Text>
+                <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Tüm kazanç hareketlerini gör", language)} onPress={() => setTab("earning")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tümünü gör", language)}</Text></Pressable>
               </View>
               {activities.length === 0 ? (
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Satış ve komisyon hareketlerin burada listelenir.</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Satış ve komisyon hareketlerin burada listelenir.", language)}</Text>
               ) : (
                 activities.map((s) => {
                   const l = listings.find((x) => x.id === s.listingId);
@@ -375,8 +375,8 @@ export default function PartnerScreen() {
                         <MaterialCommunityIcons name="cash-check" size={17} color={colors.primaryDark} />
                       </View>
                       <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{saleLabels[s.status]}</Text>
-                        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{l?.title ?? "Ürün"}</Text>
+                        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy(saleLabels[s.status], language)}</Text>
+                        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{l?.title ?? translateCopy("Ürün", language)}</Text>
                       </View>
                       <Text style={{ color: colors.success, fontSize: 13, fontWeight: "900" }}>+{money(s.commissionAmount)}</Text>
                     </View>
@@ -390,8 +390,8 @@ export default function PartnerScreen() {
         {/* Performance bar */}
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 24, paddingHorizontal: 20, paddingVertical: 16 }}>
           <View style={{ gap: 1 }}>
-            <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Performans özeti</Text>
-            <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Tüm zamanlar</Text>
+            <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Performans özeti", language)}</Text>
+            <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("Tüm zamanlar", language)}</Text>
           </View>
           <PerfMetric icon="cursor-default-click-outline" label="Link tıklama" value={`${totalClicks}`} />
           <PerfMetric icon="account-clock-outline" label="Talep" value={`${myLeadCount}`} />
@@ -401,7 +401,7 @@ export default function PartnerScreen() {
             {totalEarn > 0 ? (
               <>
                 <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>Tahsil edilen komisyon</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy("Tahsil edilen komisyon", language)}</Text>
                   <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "900" }}>{money(paid)} / {money(totalEarn)}</Text>
                 </View>
                 <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 8, overflow: "hidden" }}>
@@ -409,11 +409,11 @@ export default function PartnerScreen() {
                 </View>
               </>
             ) : (
-              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>Henüz kazanç verisi yok — ilk satışında burada görünecek.</Text>
+              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>{translateCopy("Henüz kazanç verisi yok — ilk satışında burada görünecek.", language)}</Text>
             )}
           </View>
           <Pressable onPress={() => setTab("earning")} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 16, paddingVertical: 10 })}>
-            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Kazanç Detayı</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Kazanç Detayı", language)}</Text>
           </Pressable>
         </View>
         <DisputeModal
@@ -463,7 +463,7 @@ export default function PartnerScreen() {
       {allOpportunities.length > 0 ? (
         <Card>
           <SectionTitle title="Ortak satış fırsatları" action={`${allOpportunities.length}`} />
-          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>Beğendiğin ürüne ortak ol, kendi kitlene sat, satış olunca komisyon kazan.</Text>
+          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Beğendiğin ürüne ortak ol, kendi kitlene sat, satış olunca komisyon kazan.", language)}</Text>
           {allOpportunities.slice(0, oppVisible).map((listing) => {
             const owner = findUser(listing.ownerId);
             const joined = joinedIds.has(listing.id);
@@ -476,14 +476,14 @@ export default function PartnerScreen() {
                   <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{displayText(listing.location)}{owner ? ` · ${displayText(owner.name)}` : ""}</Text>
                 </Pressable>
                 <Pressable onPress={() => onJoin(listing.id)} disabled={joined} style={({ pressed }) => ({ alignItems: "center", backgroundColor: joined ? colors.surfaceAlt : colors.primary, borderColor: joined ? colors.line : colors.primary, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 13, paddingVertical: 8 })}>
-                  <Text style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{joined ? "Ortak" : "Ortak ol"}</Text>
+                  <Text style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{joined ? translateCopy("Ortak", language) : translateCopy("Ortak ol", language)}</Text>
                 </Pressable>
               </View>
             );
           })}
           {allOpportunities.length > oppVisible ? (
             <Pressable onPress={() => setOppVisible((v) => v + 8)} style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderWidth: 1.5, marginTop: 4, paddingVertical: 11 }}>
-              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Daha fazla fırsat göster</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Daha fazla fırsat göster", language)}</Text>
             </Pressable>
           ) : null}
         </Card>
@@ -501,7 +501,7 @@ export default function PartnerScreen() {
             style={{ color: colors.ink, flex: 1, fontSize: 15, minHeight: 46, paddingVertical: 8 }}
           />
           {query ? (
-            <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Aramayı temizle">
+            <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityRole="button" accessibilityLabel={translateCopy("Aramayı temizle", language)}>
               <MaterialCommunityIcons name="close-circle" size={19} color={colors.muted} />
             </Pressable>
           ) : null}
@@ -764,16 +764,18 @@ function PanelFilterChip({ active, icon, label, onPress }: { active?: boolean; i
 }
 
 function GuvenBadge({ rating }: { rating: number }) {
+  const { language } = useLanguage();
   const level = rating >= 4.7 ? { label: "Yüksek", color: colors.success, bg: colors.successSoft } : rating >= 4.3 ? { label: "Orta", color: colors.gold, bg: colors.goldSoft } : { label: "Düşük", color: colors.muted, bg: colors.surfaceAlt };
   return (
     <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: level.bg, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
       <MaterialCommunityIcons name="shield-check" size={12} color={level.color} />
-      <Text style={{ color: level.color, fontSize: 11, fontWeight: "900" }}>{level.label}</Text>
+      <Text style={{ color: level.color, fontSize: 11, fontWeight: "900" }}>{translateCopy(level.label, language)}</Text>
     </View>
   );
 }
 
 function OppRow({ listing, owner, joined, onJoin, onDetail }: { listing: Listing; owner?: User; joined: boolean; onJoin: () => void; onDetail: () => void }) {
+  const { language } = useLanguage();
   return (
     <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingVertical: 12 }}>
       <View style={{ alignItems: "center", flex: 2.4, flexDirection: "row", gap: 10, minWidth: 0 }}>
@@ -787,24 +789,24 @@ function OppRow({ listing, owner, joined, onJoin, onDetail }: { listing: Listing
       </View>
       <View style={{ flex: 1.4, gap: 1, minWidth: 0 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{owner?.name ?? "Satıcı"}</Text>
+          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{owner?.name ?? translateCopy("Satıcı", language)}</Text>
           {owner?.verifiedPhone || owner?.verifiedIdentity ? <MaterialCommunityIcons name="check-decagram" size={12} color={colors.primary} /> : null}
         </View>
         <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>★ {owner?.rating ?? 0}</Text>
       </View>
       <View style={{ flex: 0.9 }}>
         <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{listing.commissionType === "rate" ? `%${listing.commissionValue}` : money(commissionAmount(listing))}</Text>
-        <Text style={{ color: colors.subtle, fontSize: 10, fontWeight: "700" }}>Kazanç {money(commissionAmount(listing))}</Text>
+        <Text style={{ color: colors.subtle, fontSize: 10, fontWeight: "700" }}>{translateCopy("Kazanç", language)} {money(commissionAmount(listing))}</Text>
       </View>
       <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700" }}>{displayText(listing.location)}</Text>
-      <Text style={{ color: colors.ink, flex: 0.9, fontSize: 12, fontWeight: "700" }}>{listing.stockCount} adet</Text>
+      <Text style={{ color: colors.ink, flex: 0.9, fontSize: 12, fontWeight: "700" }}>{listing.stockCount} {translateCopy("adet", language)}</Text>
       <View style={{ flex: 0.8 }}><GuvenBadge rating={owner?.rating ?? 0} /></View>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 6, width: 150 }}>
         <Pressable onPress={onJoin} style={({ pressed }) => ({ alignItems: "center", backgroundColor: joined ? colors.surfaceAlt : colors.primary, borderColor: joined ? colors.line : colors.primary, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 7 })}>
-          <Text style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{joined ? "Ortak" : "Ortak ol"}</Text>
+          <Text style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{joined ? translateCopy("Ortak", language) : translateCopy("Ortak ol", language)}</Text>
         </Pressable>
         <Pressable onPress={onDetail} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 10, paddingVertical: 7 })}>
-          <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>Detay</Text>
+          <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy("Detay", language)}</Text>
         </Pressable>
       </View>
     </View>
@@ -812,6 +814,7 @@ function OppRow({ listing, owner, joined, onJoin, onDetail }: { listing: Listing
 }
 
 function OppMiniRow({ title, image, right, sub }: { title: string; image?: string; right: string; sub: string }) {
+  const { language } = useLanguage();
   return (
     <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 10 }}>
       <View style={{ backgroundColor: colors.line, borderRadius: 10, height: 44, overflow: "hidden", width: 44 }}>
@@ -819,7 +822,7 @@ function OppMiniRow({ title, image, right, sub }: { title: string; image?: strin
       </View>
       <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(title)}</Text>
-        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{sub}</Text>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{translateCopy(sub, language)}</Text>
       </View>
       <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{right}</Text>
     </View>
@@ -827,6 +830,7 @@ function OppMiniRow({ title, image, right, sub }: { title: string; image?: strin
 }
 
 function ShareRow({ title, url, onCopy, compact }: { title: string; url: string; onCopy: () => void; compact?: boolean }) {
+  const { language } = useLanguage();
   return (
     <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
       <MaterialCommunityIcons name="link-variant" size={18} color={colors.primary} />
@@ -834,7 +838,7 @@ function ShareRow({ title, url, onCopy, compact }: { title: string; url: string;
         <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(title)}</Text>
         <Text numberOfLines={1} style={{ color: colors.muted, fontSize: compact ? 10 : 11, fontWeight: "600" }}>{url}</Text>
       </View>
-      <Pressable onPress={onCopy} hitSlop={8} accessibilityRole="button" accessibilityLabel="Bağlantıyı kopyala" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 32, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 32 })}>
+      <Pressable onPress={onCopy} hitSlop={8} accessibilityRole="button" accessibilityLabel={translateCopy("Bağlantıyı kopyala", language)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 32, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 32 })}>
         <MaterialCommunityIcons name="content-copy" size={15} color={colors.primaryDark} />
       </Pressable>
     </View>
@@ -842,6 +846,7 @@ function ShareRow({ title, url, onCopy, compact }: { title: string; url: string;
 }
 
 function PerfMetric({ icon, label, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string }) {
+  const { language } = useLanguage();
   return (
     <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
       <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 38, justifyContent: "center", width: 38 }}>
@@ -849,20 +854,21 @@ function PerfMetric({ icon, label, value }: { icon: keyof typeof MaterialCommuni
       </View>
       <View style={{ gap: 1 }}>
         <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{value}</Text>
-        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{label}</Text>
+        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{translateCopy(label, language)}</Text>
       </View>
     </View>
   );
 }
 
 function PanelDropdown({ label, value, options, onSelect }: { label: string; value: string | number; options: Array<{ label: string; value: string | number }>; onSelect: (v: string | number) => void }) {
+  const { language } = useLanguage();
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
   const active = value !== "" && value !== 0;
   return (
     <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
       <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
-        <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: active ? "900" : "700" }}>{active && selected ? selected.label : label}</Text>
+        <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: active ? "900" : "700" }}>{translateCopy(active && selected ? selected.label : label, language)}</Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={14} color={colors.muted} />
       </Pressable>
       {open ? (
@@ -875,7 +881,7 @@ function PanelDropdown({ label, value, options, onSelect }: { label: string; val
                 return (
                   <Pressable key={`${opt.value}`} onPress={() => { onSelect(opt.value); setOpen(false); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 9 })}>
                     <MaterialCommunityIcons name={isSel ? "check-circle" : "circle-outline"} size={15} color={isSel ? colors.primary : colors.subtle} />
-                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{opt.label}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{translateCopy(opt.label, language)}</Text>
                   </Pressable>
                 );
               })}

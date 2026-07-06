@@ -6,6 +6,7 @@ import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { money } from "@/lib/format";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { Partnership, Sale, User } from "@/lib/types";
 
 type Rank = { user: User; sales: number; earned: number };
@@ -32,6 +33,7 @@ export function PartnerLeaderboard({
   highlightUserId?: string;
 }) {
   const router = useRouter();
+  const { language } = useLanguage();
 
   const ranks = useMemo<Rank[]>(() => {
     const psToPartner = new Map(partnerships.map((p) => [p.id, p.partnerId]));
@@ -64,9 +66,9 @@ export function PartnerLeaderboard({
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 16 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <MaterialCommunityIcons name="trophy-variant" size={20} color={colors.gold} />
-        <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>En Çok Kazandıran Ortaklar</Text>
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{translateCopy("En Çok Kazandıran Ortaklar", language)}</Text>
       </View>
-      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>Başka satıcıların ürünlerini satarak / alıcı getirerek en çok komisyon kazandıran ortaklar.</Text>
+      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Başka satıcıların ürünlerini satarak / alıcı getirerek en çok komisyon kazandıran ortaklar.", language)}</Text>
 
       {ranks.map((r, i) => {
         const medal = MEDAL[i];
@@ -76,7 +78,7 @@ export function PartnerLeaderboard({
             key={r.user.id}
             onPress={() => router.push({ pathname: "/store/[id]", params: { id: r.user.id } })}
             accessibilityRole="button"
-            accessibilityLabel={`${r.user.name} ortak profilini aç`}
+            accessibilityLabel={`${r.user.name} ${translateCopy("ortak profilini aç", language)}`}
             style={{ alignItems: "center", backgroundColor: isMe ? colors.primarySoft : colors.surfaceAlt, borderColor: isMe ? colors.primary : "transparent", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 11, padding: 10 }}
           >
             <View style={{ alignItems: "center", justifyContent: "center", width: 26 }}>
@@ -90,12 +92,12 @@ export function PartnerLeaderboard({
               </View>
             )}
             <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{r.user.name}{isMe ? " (sen)" : ""}</Text>
-              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{r.sales} satış · ⭐ {r.user.rating}</Text>
+              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{r.user.name}{isMe ? translateCopy(" (sen)", language) : ""}</Text>
+              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{r.sales} {translateCopy("satış", language)} · ⭐ {r.user.rating}</Text>
             </View>
             <View style={{ alignItems: "flex-end", gap: 1 }}>
               <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{money(r.earned)}</Text>
-              <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>kazanç</Text>
+              <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{translateCopy("kazanç", language)}</Text>
             </View>
           </Pressable>
         );

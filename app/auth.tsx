@@ -69,11 +69,11 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       const ok = await resetPasswordWithEmail(cleanEmail);
-      if (ok) { setResetSent(true); Alert.alert("Kod gönderildi", "E-postana 6 haneli şifre sıfırlama kodu gönderdik. Kodu ve yeni şifreni aşağıya gir."); }
-      else { const m = authError ?? "Geçerli bir e-posta gir ve tekrar dene."; setFormError(m); Alert.alert("Gönderilemedi", m); }
+      if (ok) { setResetSent(true); Alert.alert(translateCopy("Kod gönderildi", language), translateCopy("E-postana 6 haneli şifre sıfırlama kodu gönderdik. Kodu ve yeni şifreni aşağıya gir.", language)); }
+      else { const m = authError ?? translateCopy("Geçerli bir e-posta gir ve tekrar dene.", language); setFormError(m); Alert.alert(translateCopy("Gönderilemedi", language), translateCopy(m, language)); }
     } catch {
-      const m = "Bağlantı hatası. Lütfen tekrar dene.";
-      setFormError(m); Alert.alert("Gönderilemedi", m);
+      const m = translateCopy("Bağlantı hatası. Lütfen tekrar dene.", language);
+      setFormError(m); Alert.alert(translateCopy("Gönderilemedi", language), m);
     } finally {
       setLoading(false);
     }
@@ -84,11 +84,11 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       const ok = await resetPasswordWithCode(cleanEmail, resetCode, newPassword);
-      if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); Alert.alert("Şifren güncellendi", "Yeni şifrenle giriş yapabilirsin."); }
-      else { const m = authError ?? "Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa."; setFormError(m); Alert.alert("Güncellenemedi", m); }
+      if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); Alert.alert(translateCopy("Şifren güncellendi", language), translateCopy("Yeni şifrenle giriş yapabilirsin.", language)); }
+      else { const m = authError ?? translateCopy("Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa.", language); setFormError(m); Alert.alert(translateCopy("Güncellenemedi", language), translateCopy(m, language)); }
     } catch {
-      const m = "Bağlantı hatası. Lütfen tekrar dene.";
-      setFormError(m); Alert.alert("Güncellenemedi", m);
+      const m = translateCopy("Bağlantı hatası. Lütfen tekrar dene.", language);
+      setFormError(m); Alert.alert(translateCopy("Güncellenemedi", language), m);
     } finally {
       setLoading(false);
     }
@@ -103,10 +103,10 @@ export default function AuthScreen() {
         setVerifyCode("");
         // Oturum açıldı; yukarıdaki effect /hosgeldin veya "/" yönlendirir.
       } else {
-        Alert.alert("Kod doğrulanamadı", authError ?? "Kod hatalı veya süresi dolmuş olabilir. Tekrar dene ya da kodu yeniden gönder.");
+        Alert.alert(translateCopy("Kod doğrulanamadı", language), translateCopy(authError ?? "Kod hatalı veya süresi dolmuş olabilir. Tekrar dene ya da kodu yeniden gönder.", language));
       }
     } catch {
-      Alert.alert("Kod doğrulanamadı", "Bağlantı hatası. Lütfen tekrar dene.");
+      Alert.alert(translateCopy("Kod doğrulanamadı", language), translateCopy("Bağlantı hatası. Lütfen tekrar dene.", language));
     } finally {
       setVerifying(false);
     }
@@ -115,7 +115,7 @@ export default function AuthScreen() {
   async function resendCode() {
     if (!pendingVerifyEmail) return;
     const ok = await resendEmailCode(pendingVerifyEmail);
-    Alert.alert(ok ? "Kod gönderildi" : "Gönderilemedi", ok ? "Yeni doğrulama kodu e-postana gönderildi." : (authError ?? "Kod gönderilemedi, biraz sonra tekrar dene."));
+    Alert.alert(translateCopy(ok ? "Kod gönderildi" : "Gönderilemedi", language), translateCopy(ok ? "Yeni doğrulama kodu e-postana gönderildi." : (authError ?? "Kod gönderilemedi, biraz sonra tekrar dene."), language));
   }
 
   const cleanEmail = email.trim().toLowerCase();
@@ -153,8 +153,8 @@ export default function AuthScreen() {
         Alert.alert(language === "en" ? "Could not continue with Google" : "Google ile giriş yapılamadı", translateCopy(authError, language));
       }
     } catch {
-      const m = "Google ile bağlantı kurulamadı. Lütfen tekrar dene.";
-      setFormError(m); Alert.alert("Google ile giriş yapılamadı", m);
+      const m = translateCopy("Google ile bağlantı kurulamadı. Lütfen tekrar dene.", language);
+      setFormError(m); Alert.alert(translateCopy("Google ile giriş yapılamadı", language), m);
     } finally {
       setLoading(false);
     }
@@ -192,7 +192,7 @@ export default function AuthScreen() {
   async function register() {
     setFormError(null);
     if (!firstName.trim() || !lastName.trim() || !cleanEmail) {
-      const msg = "Ad, soyad ve e-posta gerekli.";
+      const msg = translateCopy("Ad, soyad ve e-posta gerekli.", language);
       setFormError(msg);
       Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", msg);
       return;
@@ -202,13 +202,13 @@ export default function AuthScreen() {
       const missing = strength.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", ");
       const msg = `Şifre yeterince güçlü değil. Şu kuralları da karşıla: ${missing}.`;
       setFormError(msg);
-      Alert.alert("Şifre yeterince güçlü değil", `Şu kuralları da karşıla: ${missing}.`);
+      Alert.alert(translateCopy("Şifre yeterince güçlü değil", language), `Şu kuralları da karşıla: ${missing}.`);
       return;
     }
     if (password !== confirmPassword) {
-      const msg = "Şifre ve şifre tekrar alanları aynı olmalı.";
+      const msg = translateCopy("Şifre ve şifre tekrar alanları aynı olmalı.", language);
       setFormError(msg);
-      Alert.alert("Şifreler uyuşmuyor", msg);
+      Alert.alert(translateCopy("Şifreler uyuşmuyor", language), msg);
       return;
     }
     if (!allAccepted) {
@@ -276,13 +276,13 @@ export default function AuthScreen() {
   // 18 yaş dahil. Linke dokununca ilgili metin okuma için açılır.
   const legalChecks = (
     <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 9 }}>
-      <Pressable onPress={() => setAcceptedAll((v) => !v)} hitSlop={6} accessibilityRole="checkbox" accessibilityLabel="Yasal metinleri kabul ediyorum" accessibilityState={{ checked: acceptedAll }} {...({ role: "checkbox", "aria-checked": acceptedAll, "aria-label": "Yasal metinleri kabul ediyorum" } as Record<string, unknown>)} style={{ paddingTop: 1 }}>
+      <Pressable onPress={() => setAcceptedAll((v) => !v)} hitSlop={6} accessibilityRole="checkbox" accessibilityLabel={translateCopy("Yasal metinleri kabul ediyorum", language)} accessibilityState={{ checked: acceptedAll }} {...({ role: "checkbox", "aria-checked": acceptedAll, "aria-label": translateCopy("Yasal metinleri kabul ediyorum", language) } as Record<string, unknown>)} style={{ paddingTop: 1 }}>
         <MaterialCommunityIcons name={acceptedAll ? "checkbox-marked" : "checkbox-blank-outline"} size={22} color={acceptedAll ? colors.primary : colors.muted} />
       </Pressable>
       <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, lineHeight: 19 }}>
-        <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>Kullanım Şartları</Text>,{" "}
-        <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>KVKK Aydınlatma Metni</Text> ve{" "}
-        <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>Gizlilik Politikası</Text>'nı okudum, kabul ediyorum ve 18 yaşından büyüğüm.
+        <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>{translateCopy("Kullanım Şartları", language)}</Text>,{" "}
+        <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>{translateCopy("KVKK Aydınlatma Metni", language)}</Text> {translateCopy("ve", language)}{" "}
+        <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>{translateCopy("Gizlilik Politikası", language)}</Text>{translateCopy("'nı okudum, kabul ediyorum ve 18 yaşından büyüğüm.", language)}
       </Text>
     </View>
   );
@@ -298,37 +298,37 @@ export default function AuthScreen() {
   // Temiz alt sözleşme satırı (sahibinden'deki gibi): mavi altı-çizili linkler.
   const legalFooter = (
     <Text style={{ color: colors.subtle, fontSize: 11.5, lineHeight: 17, textAlign: "center" }}>
-      <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>Kullanım Şartları</Text>
+      <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>{translateCopy("Kullanım Şartları", language)}</Text>
       {"   ·   "}
-      <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>KVKK Aydınlatma Metni</Text>
+      <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>{translateCopy("KVKK Aydınlatma Metni", language)}</Text>
       {"   ·   "}
-      <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>Gizlilik Politikası</Text>
+      <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>{translateCopy("Gizlilik Politikası", language)}</Text>
     </Text>
   );
 
   // Beni Hatırla (giriş): işaretli değilse tarayıcı kapanınca oturum silinir.
   const rememberCheck = (
-    <Pressable onPress={() => setRememberMe((v) => !v)} accessibilityRole="checkbox" accessibilityLabel="Beni hatırla" accessibilityState={{ checked: rememberMe }} {...({ role: "checkbox", "aria-checked": rememberMe, "aria-label": "Beni hatırla" } as Record<string, unknown>)} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+    <Pressable onPress={() => setRememberMe((v) => !v)} accessibilityRole="checkbox" accessibilityLabel={translateCopy("Beni hatırla", language)} accessibilityState={{ checked: rememberMe }} {...({ role: "checkbox", "aria-checked": rememberMe, "aria-label": translateCopy("Beni hatırla", language) } as Record<string, unknown>)} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
       <MaterialCommunityIcons name={rememberMe ? "checkbox-marked" : "checkbox-blank-outline"} size={19} color={rememberMe ? colors.primary : colors.muted} />
-      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Beni hatırla</Text>
+      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Beni hatırla", language)}</Text>
     </Pressable>
   );
 
   // Google butonunun altındaki zımni yasal onay bilgilendirmesi (global standart).
   const googleNote = (
     <Text style={{ color: colors.subtle, fontSize: 11, lineHeight: 16, textAlign: "center" }}>
-      Google ile devam ederek{" "}
-      <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>Kullanım Şartları</Text>,{" "}
-      <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>KVKK Aydınlatma Metni</Text> ve{" "}
-      <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>Gizlilik Politikası</Text>'nı kabul etmiş olursun.
+      {translateCopy("Google ile devam ederek", language)}{" "}
+      <Text onPress={() => setOpenDocKey("kullanim")} style={linkStyle}>{translateCopy("Kullanım Şartları", language)}</Text>,{" "}
+      <Text onPress={() => setOpenDocKey("kvkk")} style={linkStyle}>{translateCopy("KVKK Aydınlatma Metni", language)}</Text> {translateCopy("ve", language)}{" "}
+      <Text onPress={() => setOpenDocKey("gizlilik")} style={linkStyle}>{translateCopy("Gizlilik Politikası", language)}</Text>{translateCopy("'nı kabul etmiş olursun.", language)}
     </Text>
   );
 
   // Giriş/kayıt ekranı arama sonuçlarında çıkmasın (ince içerik + kişisel akış).
   const seoHead = (
     <Seo
-      title="Giriş yap veya ücretsiz üye ol | OrtakSat"
-      description="OrtakSat hesabına giriş yap ya da saniyeler içinde ücretsiz üye ol; ilan ver, ortak ol, kazanmaya başla."
+      title={translateCopy("Giriş yap veya ücretsiz üye ol | OrtakSat", language)}
+      description={translateCopy("OrtakSat hesabına giriş yap ya da saniyeler içinde ücretsiz üye ol; ilan ver, ortak ol, kazanmaya başla.", language)}
       path="/auth"
       noindex
     />
@@ -346,9 +346,9 @@ export default function AuthScreen() {
               <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 14, height: 56, justifyContent: "center", width: 56 }}>
                 <MaterialCommunityIcons name="email-check-outline" size={30} color={colors.primaryDark} />
               </View>
-              <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900", textAlign: "center" }}>E-postanı doğrula</Text>
+              <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900", textAlign: "center" }}>{translateCopy("E-postanı doğrula", language)}</Text>
               <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 19, textAlign: "center" }}>
-                <Text style={{ fontWeight: "900", color: colors.ink }}>{pendingVerifyEmail}</Text> adresine 6 haneli bir kod gönderdik. Aşağıya gir; giriş otomatik açılır.
+                <Text style={{ fontWeight: "900", color: colors.ink }}>{pendingVerifyEmail}</Text>{translateCopy(" adresine 6 haneli bir kod gönderdik. Aşağıya gir; giriş otomatik açılır.", language)}
               </Text>
             </View>
             <TextInput
@@ -357,8 +357,8 @@ export default function AuthScreen() {
               keyboardType="number-pad"
               autoComplete="sms-otp"
               textContentType="oneTimeCode"
-              accessibilityLabel="E-postana gelen 6 haneli doğrulama kodu"
-              {...({ inputMode: "numeric", autoComplete: "one-time-code", "aria-label": "6 haneli doğrulama kodu", pattern: "[0-9]*" } as Record<string, unknown>)}
+              accessibilityLabel={translateCopy("E-postana gelen 6 haneli doğrulama kodu", language)}
+              {...({ inputMode: "numeric", autoComplete: "one-time-code", "aria-label": translateCopy("6 haneli doğrulama kodu", language), pattern: "[0-9]*" } as Record<string, unknown>)}
               onSubmitEditing={submitVerifyCode}
               returnKeyType="go"
               placeholder="______"
@@ -367,12 +367,12 @@ export default function AuthScreen() {
               style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, fontSize: 26, fontWeight: "900", letterSpacing: 8, paddingVertical: 14, textAlign: "center" }}
             />
             {authError ? <Text style={{ color: colors.accent, fontSize: 12.5, textAlign: "center" }}>{authError}</Text> : null}
-            <PrimaryButton onPress={() => void submitVerifyCode()}>{verifying ? "Doğrulanıyor…" : "Doğrula ve giriş yap"}</PrimaryButton>
+            <PrimaryButton onPress={() => void submitVerifyCode()}>{verifying ? translateCopy("Doğrulanıyor…", language) : translateCopy("Doğrula ve giriş yap", language)}</PrimaryButton>
             <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-              <Pressable onPress={() => void resendCode()}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Kodu tekrar gönder</Text></Pressable>
-              <Pressable onPress={() => { clearPendingVerify(); setMode("login"); }}><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text></Pressable>
+              <Pressable onPress={() => void resendCode()}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Kodu tekrar gönder", language)}</Text></Pressable>
+              <Pressable onPress={() => { clearPendingVerify(); setMode("login"); }}><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text></Pressable>
             </View>
-            <Text style={{ color: colors.subtle, fontSize: 11.5, lineHeight: 16, textAlign: "center" }}>Kod gelmediyse spam klasörünü kontrol et. Kodu şimdi girmeden de giriş yapıp daha sonra doğrulayabilirsin.</Text>
+            <Text style={{ color: colors.subtle, fontSize: 11.5, lineHeight: 16, textAlign: "center" }}>{translateCopy("Kod gelmediyse spam klasörünü kontrol et. Kodu şimdi girmeden de giriş yapıp daha sonra doğrulayabilirsin.", language)}</Text>
           </View>
         </ScrollView>
       </KeyboardAvoidingView>
@@ -381,22 +381,22 @@ export default function AuthScreen() {
 
   if (isWideWeb) {
     const tabs: Array<{ key: AuthMode; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
-      { key: "login", icon: "login", label: "Giriş Yap" },
-      { key: "register", icon: "account-plus-outline", label: "Kayıt Ol" },
-      { key: "reset", icon: "lock-reset", label: "Şifremi Unuttum" }
+      { key: "login", icon: "login", label: translateCopy("Giriş Yap", language) },
+      { key: "register", icon: "account-plus-outline", label: translateCopy("Kayıt Ol", language) },
+      { key: "reset", icon: "lock-reset", label: translateCopy("Şifremi Unuttum", language) }
     ];
     const security: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string; tint: string; color: string }> = [
-      { icon: "email-check-outline", title: "E-posta doğrulama", sub: "Hesabınızı doğrulayan güvenli e-posta doğrulama sistemi.", tint: colors.infoSoft, color: colors.info },
-      { icon: "shield-alert-outline", title: "Dolandırıcılık koruması", sub: "Şüpheli işlem tespiti ve yapay zekâ destekli koruma mekanizmaları.", tint: colors.successSoft, color: colors.success },
-      { icon: "lock-outline", title: "Güvenli oturum", sub: "Tüm oturumlarınız şifrelenir ve düzenli olarak izlenir.", tint: colors.violetSoft, color: colors.violet },
-      { icon: "history", title: "Oturum ve etkinlik takibi", sub: "Hesabınızdaki tüm hareketleri görüntüleyin ve kontrol edin.", tint: colors.goldSoft, color: colors.gold },
-      { icon: "headset", title: "Destek her zaman yanınızda", sub: "Sorularınız için 7/24 destek ekibimiz hizmetinizde.", tint: colors.accentSoft, color: colors.accent }
+      { icon: "email-check-outline", title: translateCopy("E-posta doğrulama", language), sub: translateCopy("Hesabınızı doğrulayan güvenli e-posta doğrulama sistemi.", language), tint: colors.infoSoft, color: colors.info },
+      { icon: "shield-alert-outline", title: translateCopy("Dolandırıcılık koruması", language), sub: translateCopy("Şüpheli işlem tespiti ve yapay zekâ destekli koruma mekanizmaları.", language), tint: colors.successSoft, color: colors.success },
+      { icon: "lock-outline", title: translateCopy("Güvenli oturum", language), sub: translateCopy("Tüm oturumlarınız şifrelenir ve düzenli olarak izlenir.", language), tint: colors.violetSoft, color: colors.violet },
+      { icon: "history", title: translateCopy("Oturum ve etkinlik takibi", language), sub: translateCopy("Hesabınızdaki tüm hareketleri görüntüleyin ve kontrol edin.", language), tint: colors.goldSoft, color: colors.gold },
+      { icon: "headset", title: translateCopy("Destek her zaman yanınızda", language), sub: translateCopy("Sorularınız için 7/24 destek ekibimiz hizmetinizde.", language), tint: colors.accentSoft, color: colors.accent }
     ];
     const strip: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
-      { icon: "lock-check", label: "256-Bit SSL ile korunur" },
-      { icon: "database-check", label: "Güvenli veri altyapısı" },
-      { icon: "shield-account", label: "KVKK uyumlu" },
-      { icon: "map-marker-check", label: "Türkiye'de barındırılır" }
+      { icon: "lock-check", label: translateCopy("256-Bit SSL ile korunur", language) },
+      { icon: "database-check", label: translateCopy("Güvenli veri altyapısı", language) },
+      { icon: "shield-account", label: translateCopy("KVKK uyumlu", language) },
+      { icon: "map-marker-check", label: translateCopy("Türkiye'de barındırılır", language) }
     ];
 
     return (
@@ -416,7 +416,7 @@ export default function AuthScreen() {
             <Link href="/" asChild>
               <Pressable style={{ alignItems: "center", borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
                 <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} />
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Ana sayfa</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
               </Pressable>
             </Link>
           </View>
@@ -427,14 +427,14 @@ export default function AuthScreen() {
                 <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
                   <MaterialCommunityIcons name="handshake" size={24} color="#FFFFFF" />
                 </View>
-                <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>OrtakSat'a hoş geldin</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{translateCopy("OrtakSat'a hoş geldin", language)}</Text>
               </View>
-              <Text style={{ color: "rgba(255,255,255,0.88)", fontSize: 14.5, fontWeight: "600", lineHeight: 21, maxWidth: 560 }}>Ücretsiz hesap aç; ilan ver, ortak satışla kazan, alıcılarla güvenle iletişim kur. Gezmek için giriş gerekmez — hesabını sadece işlem yaparken kullanırsın.</Text>
+              <Text style={{ color: "rgba(255,255,255,0.88)", fontSize: 14.5, fontWeight: "600", lineHeight: 21, maxWidth: 560 }}>{translateCopy("Ücretsiz hesap aç; ilan ver, ortak satışla kazan, alıcılarla güvenle iletişim kur. Gezmek için giriş gerekmez — hesabını sadece işlem yaparken kullanırsın.", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
                 {[
-                  { i: "check-decagram" as const, t: "Ücretsiz üyelik" },
-                  { i: "shield-lock" as const, t: "Güvenli giriş" },
-                  { i: "account-check" as const, t: "Doğrulanmış satıcılar" }
+                  { i: "check-decagram" as const, t: translateCopy("Ücretsiz üyelik", language) },
+                  { i: "shield-lock" as const, t: translateCopy("Güvenli giriş", language) },
+                  { i: "account-check" as const, t: translateCopy("Doğrulanmış satıcılar", language) }
                 ].map((b) => (
                   <View key={b.t} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
                     <MaterialCommunityIcons name={b.i} size={14} color="#FFFFFF" />
@@ -458,8 +458,8 @@ export default function AuthScreen() {
                   <MaterialCommunityIcons name="shield-account" size={26} color={colors.primaryDark} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Güvenli hesap erişimi</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>Hesabınıza güvenli bir şekilde giriş yapın. E-posta doğrulama, şifreleme ve gelişmiş koruma sistemlerimizle güvendesiniz.</Text>
+                  <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Güvenli hesap erişimi", language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Hesabınıza güvenli bir şekilde giriş yapın. E-posta doğrulama, şifreleme ve gelişmiş koruma sistemlerimizle güvendesiniz.", language)}</Text>
                 </View>
               </View>
 
@@ -478,23 +478,23 @@ export default function AuthScreen() {
               <View style={{ gap: 14 }}>
                 {mode === "register" ? (
                   <View style={{ flexDirection: "row", gap: 10 }}>
-                    <View style={{ flex: 1 }}><DeskAuthField icon="account-outline" label="Ad" value={firstName} onChangeText={setFirstName} placeholder="Ayşe" autoComplete="name" /></View>
-                    <View style={{ flex: 1 }}><DeskAuthField icon="account-outline" label="Soyad" value={lastName} onChangeText={setLastName} placeholder="Demir" autoComplete="name" /></View>
+                    <View style={{ flex: 1 }}><DeskAuthField icon="account-outline" label={translateCopy("Ad", language)} value={firstName} onChangeText={setFirstName} placeholder="Ayşe" autoComplete="name" /></View>
+                    <View style={{ flex: 1 }}><DeskAuthField icon="account-outline" label={translateCopy("Soyad", language)} value={lastName} onChangeText={setLastName} placeholder="Demir" autoComplete="name" /></View>
                   </View>
                 ) : null}
-                <DeskAuthField icon="email-outline" label="E-posta" value={email} onChangeText={setEmail} placeholder="ornek@eposta.com" autoComplete="email" />
-                {mode !== "reset" ? <DeskAuthField icon="lock-outline" label="Şifre" value={password} onChangeText={setPassword} placeholder={mode === "register" ? "Güçlü bir şifre oluştur" : "Şifreni gir"} secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} onSubmitEditing={mode === "login" ? login : undefined} autoComplete={mode === "register" ? "password-new" : "password"} /> : null}
+                <DeskAuthField icon="email-outline" label={translateCopy("E-posta", language)} value={email} onChangeText={setEmail} placeholder="ornek@eposta.com" autoComplete="email" />
+                {mode !== "reset" ? <DeskAuthField icon="lock-outline" label={translateCopy("Şifre", language)} value={password} onChangeText={setPassword} placeholder={mode === "register" ? translateCopy("Güçlü bir şifre oluştur", language) : translateCopy("Şifreni gir", language)} secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} onSubmitEditing={mode === "login" ? login : undefined} autoComplete={mode === "register" ? "password-new" : "password"} /> : null}
                 {mode === "register" && password.length > 0 ? <PasswordStrengthMeter password={password} /> : null}
                 {mode === "register" ? (
                   <View style={{ gap: 6 }}>
-                    <DeskAuthField icon="lock-check-outline" label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} placeholder="Şifreni tekrar gir" secure showPassword={showPassword} onSubmitEditing={register} autoComplete="password-new" />
-                    {!passwordsMatch ? <Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "700" }}>Şifreler uyuşmuyor.</Text> : null}
+                    <DeskAuthField icon="lock-check-outline" label={translateCopy("Şifre Tekrar", language)} value={confirmPassword} onChangeText={setConfirmPassword} placeholder={translateCopy("Şifreni tekrar gir", language)} secure showPassword={showPassword} onSubmitEditing={register} autoComplete="password-new" />
+                    {!passwordsMatch ? <Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Şifreler uyuşmuyor.", language)}</Text> : null}
                   </View>
                 ) : null}
                 {mode === "reset" && resetSent ? (
                   <>
-                    <DeskAuthField icon="numeric" label="E-postana gelen 6 haneli kod" value={resetCode} onChangeText={(v) => setResetCode(v.replace(/\D/g, "").slice(0, 6))} placeholder="______" />
-                    <DeskAuthField icon="lock-reset" label="Yeni şifre" value={newPassword} onChangeText={setNewPassword} placeholder="Güçlü bir şifre oluştur" secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} />
+                    <DeskAuthField icon="numeric" label={translateCopy("E-postana gelen 6 haneli kod", language)} value={resetCode} onChangeText={(v) => setResetCode(v.replace(/\D/g, "").slice(0, 6))} placeholder="______" />
+                    <DeskAuthField icon="lock-reset" label={translateCopy("Yeni şifre", language)} value={newPassword} onChangeText={setNewPassword} placeholder={translateCopy("Güçlü bir şifre oluştur", language)} secure showToggle showPassword={showPassword} onToggle={() => setShowPassword((v) => !v)} />
                     <PasswordStrengthMeter password={newPassword} />
                   </>
                 ) : null}
@@ -502,7 +502,7 @@ export default function AuthScreen() {
                 {mode === "login" ? (
                   <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
                     {rememberCheck}
-                    <Pressable onPress={() => setMode("reset")}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Şifremi unuttunuz?</Text></Pressable>
+                    <Pressable onPress={() => setMode("reset")}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Şifremi unuttunuz?", language)}</Text></Pressable>
                   </View>
                 ) : null}
 
@@ -512,25 +512,25 @@ export default function AuthScreen() {
                 {mode === "login" ? (
                   <Pressable onPress={login} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 14 }}>
                     <MaterialCommunityIcons name="lock-outline" size={17} color="#FFFFFF" />
-                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? "Giriş yapılıyor…" : "Giriş Yap"}</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? translateCopy("Giriş yapılıyor…", language) : translateCopy("Giriş Yap", language)}</Text>
                   </Pressable>
                 ) : mode === "register" ? (
                   <Pressable onPress={register} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, justifyContent: "center", paddingVertical: 14 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? "Kayıt açılıyor…" : "Kayıt Ol"}</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? translateCopy("Kayıt açılıyor…", language) : translateCopy("Kayıt Ol", language)}</Text>
                   </Pressable>
                 ) : (
                   <View style={{ gap: 10 }}>
                     {!resetSent ? (
                       <Pressable onPress={sendResetCode} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, justifyContent: "center", paddingVertical: 14 }}>
-                        <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? "Gönderiliyor…" : "Sıfırlama kodu gönder"}</Text>
+                        <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? translateCopy("Gönderiliyor…", language) : translateCopy("Sıfırlama kodu gönder", language)}</Text>
                       </Pressable>
                     ) : (
                       <>
                         <Pressable onPress={doResetWithCode} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, justifyContent: "center", paddingVertical: 14 }}>
-                          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? "Güncelleniyor…" : "Kodu doğrula ve şifreyi güncelle"}</Text>
+                          <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{loading ? translateCopy("Güncelleniyor…", language) : translateCopy("Kodu doğrula ve şifreyi güncelle", language)}</Text>
                         </Pressable>
                         <Pressable onPress={sendResetCode} style={{ alignItems: "center", justifyContent: "center", paddingVertical: 8 }}>
-                          <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Kodu tekrar gönder</Text>
+                          <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Kodu tekrar gönder", language)}</Text>
                         </Pressable>
                       </>
                     )}
@@ -544,26 +544,26 @@ export default function AuthScreen() {
                   <>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 12, marginVertical: 2 }}>
                       <View style={{ backgroundColor: colors.line, flex: 1, height: 1 }} />
-                      <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>veya</Text>
+                      <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>{translateCopy("veya", language)}</Text>
                       <View style={{ backgroundColor: colors.line, flex: 1, height: 1 }} />
                     </View>
                     <Pressable onPress={loginWithGoogle} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
                       <MaterialCommunityIcons name="google" size={17} color="#DB4437" />
-                      <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>Google ile devam et</Text>
+                      <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Google ile devam et", language)}</Text>
                     </Pressable>
                     {googleNote}
                   </>
                 ) : null}
 
                 <Pressable onPress={() => setMode(mode === "login" ? "register" : "login")} style={{ alignItems: "center", paddingTop: 4 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{mode === "login" ? "Hesabınız yok mu? " : "Zaten hesabınız var mı? "}<Text style={{ color: colors.primaryDark, fontWeight: "900" }}>{mode === "login" ? "Kayıt olun" : "Giriş yapın"}</Text></Text>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{mode === "login" ? translateCopy("Hesabınız yok mu? ", language) : translateCopy("Zaten hesabınız var mı? ", language)}<Text style={{ color: colors.primaryDark, fontWeight: "900" }}>{mode === "login" ? translateCopy("Kayıt olun", language) : translateCopy("Giriş yapın", language)}</Text></Text>
                 </Pressable>
               </View>
             </View>
 
             {/* Right: security panel */}
             <View style={{ flexBasis: 360, flexGrow: 1, gap: 14, minWidth: 0 }}>
-              <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Hesabınız güvende</Text>
+              <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Hesabınız güvende", language)}</Text>
               {security.map((s) => (
                 <View key={s.title} style={{ alignItems: "flex-start", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 16 }}>
                   <View style={{ alignItems: "center", backgroundColor: s.tint, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
@@ -578,8 +578,8 @@ export default function AuthScreen() {
               <View style={{ alignItems: "flex-start", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, padding: 16 }}>
                 <MaterialCommunityIcons name="check-decagram" size={22} color={colors.primaryDark} />
                 <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>OrtakSat ile güvenli alışverişin keyfini çıkarın.</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>Bilgileriniz bizim için değerlidir ve gizli tutulur.</Text>
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("OrtakSat ile güvenli alışverişin keyfini çıkarın.", language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Bilgileriniz bizim için değerlidir ve gizli tutulur.", language)}</Text>
                 </View>
               </View>
             </View>
@@ -597,8 +597,8 @@ export default function AuthScreen() {
             </View>
             <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingTop: 14 }}>
               <MaterialCommunityIcons name="bank-outline" size={20} color={colors.muted} />
-              <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>OrtakSat bir aracılık platformudur. Satıcı ile alıcıları bir araya getirir; ödemeleri tutmaz ve taraflar arasında gerçekleşen ürün/hizmet tesliminden veya komisyon ödemesinden sorumlu değildir.</Text>
-              <Link href="/legal" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Detaylar →</Text></Pressable></Link>
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("OrtakSat bir aracılık platformudur. Satıcı ile alıcıları bir araya getirir; ödemeleri tutmaz ve taraflar arasında gerçekleşen ürün/hizmet tesliminden veya komisyon ödemesinden sorumlu değildir.", language)}</Text>
+              <Link href="/legal" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Detaylar →", language)}</Text></Pressable></Link>
             </View>
           </View>
         </View>
@@ -614,13 +614,13 @@ export default function AuthScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, maxWidth: 720, marginHorizontal: "auto", padding: 16, paddingBottom: 90, width: "100%" }}>
         <Pressable onPress={() => { if (router.canGoBack()) router.back(); else router.replace("/"); }} style={{ alignItems: "center", alignSelf: "flex-start", borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
           <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} />
-          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Ana sayfa</Text>
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
         </Pressable>
         <View style={{ alignItems: "center", gap: 8, paddingVertical: 8 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 14, height: 52, justifyContent: "center", width: 52 }}>
             <MaterialCommunityIcons name="handshake" size={28} color={colors.primaryDark} />
           </View>
-          <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{mode === "login" ? "Giriş yap" : mode === "register" ? "Hesap aç" : "Şifre sıfırla"}</Text>
+          <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{mode === "login" ? translateCopy("Giriş yap", language) : mode === "register" ? translateCopy("Hesap aç", language) : translateCopy("Şifre sıfırla", language)}</Text>
         </View>
 
         <Card>
@@ -642,7 +642,7 @@ export default function AuthScreen() {
           {mode === "register" ? (
             <>
               <Field label="Şifre Tekrar" value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry placeholder="Şifreni tekrar gir" secureVisible={showPassword} passwordAutoComplete="new-password" />
-              {!passwordsMatch ? <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>Şifreler uyuşmuyor.</Text> : null}
+              {!passwordsMatch ? <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>{translateCopy("Şifreler uyuşmuyor.", language)}</Text> : null}
             </>
           ) : null}
           {mode === "reset" && resetSent ? (
@@ -678,12 +678,12 @@ export default function AuthScreen() {
             <>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
                 <View style={{ backgroundColor: colors.line, flex: 1, height: 1 }} />
-                <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>veya</Text>
+                <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>{translateCopy("veya", language)}</Text>
                 <View style={{ backgroundColor: colors.line, flex: 1, height: 1 }} />
               </View>
               <Pressable onPress={loginWithGoogle} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 }}>
                 <MaterialCommunityIcons name="google" size={18} color="#DB4437" />
-                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Google ile devam et</Text>
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Google ile devam et", language)}</Text>
               </Pressable>
               {googleNote}
             </>
@@ -800,7 +800,7 @@ function Field({
           style={{ color: colors.ink, flex: 1, fontSize: 16, minHeight: 50, padding: 14 }}
         />
         {toggleSecure ? (
-          <Pressable onPress={onToggleSecure} hitSlop={10} accessibilityRole="button" accessibilityLabel={secureVisible ? "Şifreyi gizle" : "Şifreyi göster"} style={{ paddingHorizontal: 14 }}>
+          <Pressable onPress={onToggleSecure} hitSlop={10} accessibilityRole="button" accessibilityLabel={secureVisible ? translateCopy("Şifreyi gizle", language) : translateCopy("Şifreyi göster", language)} style={{ paddingHorizontal: 14 }}>
             <MaterialCommunityIcons name={secureVisible ? "eye-off-outline" : "eye-outline"} size={20} color={colors.muted} />
           </Pressable>
         ) : null}

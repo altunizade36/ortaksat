@@ -66,18 +66,18 @@ function FavoritesScreenInner() {
     const sidebarWidth = 300;
     const cardWidth = responsiveGrid({ available: Math.min(width, 1480) - 40 - sidebarWidth - 24, gap: 16, minCardWidth: 210, maxColumns: 4 }).cardWidth;
     const tabs: Array<{ key: typeof favTab; label: string; count: number }> = [
-      { key: "all", label: "Tümü", count: savedCount },
-      { key: "open", label: "Ortak satışa açık", count: openCount },
-      { key: "highcomm", label: "Yüksek komisyon (%15+)", count: highComm.length },
-      { key: "recent", label: "Son eklenenler", count: savedCount }
+      { key: "all", label: translateCopy("Tümü", language), count: savedCount },
+      { key: "open", label: translateCopy("Ortak satışa açık", language), count: openCount },
+      { key: "highcomm", label: translateCopy("Yüksek komisyon (%15+)", language), count: highComm.length },
+      { key: "recent", label: translateCopy("Son eklenenler", language), count: savedCount }
     ];
     // Favori kategorilerinden türetilen dinamik listeler (uydurma sayı yok).
     const catCounts = new Map<string, number>();
     base.forEach((l) => catCounts.set(l.category, (catCounts.get(l.category) ?? 0) + 1));
     const topCats = Array.from(catCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 4);
     const lists: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; count: number; active: boolean }> = [
-      { icon: "check-circle", label: "Tüm Favoriler", count: savedCount, active: true },
-      { icon: "percent", label: "Yüksek Komisyon Fırsatları", count: highComm.length, active: false },
+      { icon: "check-circle", label: translateCopy("Tüm Favoriler", language), count: savedCount, active: true },
+      { icon: "percent", label: translateCopy("Yüksek Komisyon Fırsatları", language), count: highComm.length, active: false },
       ...topCats.map(([cat, n]) => ({ icon: "tag-outline" as const, label: cat, count: n, active: false }))
     ];
 
@@ -85,14 +85,14 @@ function FavoritesScreenInner() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ gap: 4 }}>
-          <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Favorilerim</Text>
-          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Beğendiğin ürünleri burada bulabilir, fırsatları kaçırmadan kazanmaya başlayabilirsin.</Text>
+          <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Favorilerim", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Beğendiğin ürünleri burada bulabilir, fırsatları kaçırmadan kazanmaya başlayabilirsin.", language)}</Text>
         </View>
 
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-          <FavStat icon="heart" tint={colors.accentSoft} color={colors.accent} value={`${savedCount}`} title="Kaydedilen ilan" sub="Toplam favori" />
-          <FavStat icon="percent" tint={colors.primarySoft} color={colors.primaryDark} value={`${highComm.length}`} title="Yüksek komisyon fırsatı" sub="%15 ve üzeri komisyon" />
-          <FavStat icon="handshake-outline" tint={colors.goldSoft} color={colors.gold} value={`${openCount}`} title="Ortak satışa açık" sub="Hemen ortak olabileceğin ilan" />
+          <FavStat icon="heart" tint={colors.accentSoft} color={colors.accent} value={`${savedCount}`} title={translateCopy("Kaydedilen ilan", language)} sub={translateCopy("Toplam favori", language)} />
+          <FavStat icon="percent" tint={colors.primarySoft} color={colors.primaryDark} value={`${highComm.length}`} title={translateCopy("Yüksek komisyon fırsatı", language)} sub={translateCopy("%15 ve üzeri komisyon", language)} />
+          <FavStat icon="handshake-outline" tint={colors.goldSoft} color={colors.gold} value={`${openCount}`} title={translateCopy("Ortak satışa açık", language)} sub={translateCopy("Hemen ortak olabileceğin ilan", language)} />
         </View>
 
         <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
@@ -109,13 +109,13 @@ function FavoritesScreenInner() {
               })}
               <View style={{ flex: 1 }} />
               <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>Sıralama: En yeni</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy("Sıralama: En yeni", language)}</Text>
                 <MaterialCommunityIcons name="chevron-down" size={14} color={colors.muted} />
               </View>
             </View>
 
             {filtered.length === 0 ? (
-              <EmptyState title="Favori yok" body="Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin." />
+              <EmptyState title={translateCopy("Favori yok", language)} body={translateCopy("Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin.", language)} />
             ) : (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
                 {filtered.map((listing) => <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} />)}
@@ -127,32 +127,32 @@ function FavoritesScreenInner() {
           <View style={{ gap: 16, width: sidebarWidth }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Favori listeleri</Text>
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tüm listeler</Text>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Favori listeleri", language)}</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm listeler", language)}</Text>
               </View>
               {lists.map((l) => (
                 <View key={l.label} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 7 }}>
                   <MaterialCommunityIcons name={l.icon} size={18} color={l.active ? colors.primary : colors.muted} />
                   <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: l.active ? "900" : "700" }}>{l.label}</Text>
-                  {l.active ? <MaterialCommunityIcons name="check-circle" size={16} color={colors.primary} /> : <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{l.count} ilan</Text>}
+                  {l.active ? <MaterialCommunityIcons name="check-circle" size={16} color={colors.primary} /> : <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{l.count} {translateCopy("ilan", language)}</Text>}
                 </View>
               ))}
               {extraLists.map((name) => (
                 <View key={name} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 7 }}>
                   <MaterialCommunityIcons name="playlist-star" size={18} color={colors.muted} />
                   <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{name}</Text>
-                  <Pressable accessibilityRole="button" accessibilityLabel="Listeyi kaldır" onPress={() => setExtraLists((s) => s.filter((x) => x !== name))} hitSlop={8}><MaterialCommunityIcons name="close" size={15} color={colors.subtle} /></Pressable>
+                  <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Listeyi kaldır", language)} onPress={() => setExtraLists((s) => s.filter((x) => x !== name))} hitSlop={8}><MaterialCommunityIcons name="close" size={15} color={colors.subtle} /></Pressable>
                 </View>
               ))}
               <Pressable onPress={() => setNewListOpen((v) => !v)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 6, opacity: pressed ? 0.7 : 1, paddingVertical: 10 })}>
                 <MaterialCommunityIcons name={newListOpen ? "close" : "plus"} size={16} color={colors.primary} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{newListOpen ? "Vazgeç" : "Yeni liste oluştur"}</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{newListOpen ? translateCopy("Vazgeç", language) : translateCopy("Yeni liste oluştur", language)}</Text>
               </Pressable>
               {newListOpen ? (
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-                  <TextInput value={newListName} onChangeText={setNewListName} placeholder="Liste adı" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, paddingHorizontal: 12, paddingVertical: 9 }} />
+                  <TextInput value={newListName} onChangeText={setNewListName} placeholder={translateCopy("Liste adı", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, paddingHorizontal: 12, paddingVertical: 9 }} />
                   <Pressable onPress={() => { if (newListName.trim()) { setExtraLists((s) => [...s, newListName.trim()]); setNewListName(""); setNewListOpen(false); } }} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, justifyContent: "center", paddingHorizontal: 14 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Ekle</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{translateCopy("Ekle", language)}</Text>
                   </Pressable>
                 </View>
               ) : null}
@@ -188,7 +188,7 @@ function FavoritesScreenInner() {
           style={{ color: colors.ink, flex: 1, fontSize: 15, minHeight: 48, paddingVertical: 8 }}
         />
         {query ? (
-          <Pressable accessibilityRole="button" accessibilityLabel="Aramayı temizle" onPress={() => setQuery("")} hitSlop={10}>
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Aramayı temizle", language)} onPress={() => setQuery("")} hitSlop={10}>
             <MaterialCommunityIcons name="close-circle" size={19} color={colors.muted} />
           </Pressable>
         ) : null}
@@ -200,12 +200,12 @@ function FavoritesScreenInner() {
       </View>
 
       {favoriteListings.length === 0 ? <EmptyState title={language === "en" ? "No favorites" : "Favori yok"} body={language === "en" ? "Tap the heart on product details to add products to favorites." : "Ürün detayında kalp simgesine basarak ürünleri favorilerine ekleyebilirsin."} /> : null}
-      {favoriteListings.length > 0 && visibleListings.length === 0 ? <EmptyState title="Sonuç yok" body={language === "en" ? "Change your search term to list your favorites again." : "Arama kelimesini değiştirerek favorilerini tekrar listeleyebilirsin."} /> : null}
+      {favoriteListings.length > 0 && visibleListings.length === 0 ? <EmptyState title={translateCopy("Sonuç yok", language)} body={language === "en" ? "Change your search term to list your favorites again." : "Arama kelimesini değiştirerek favorilerini tekrar listeleyebilirsin."} /> : null}
 
       {droppedCount > 0 ? (
         <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 12, flexDirection: "row", gap: 8, marginBottom: 4, paddingHorizontal: 14, paddingVertical: 10 }}>
           <MaterialCommunityIcons name="tag-heart" size={18} color={colors.success} />
-          <Text style={{ color: colors.success, flex: 1, fontSize: 13, fontWeight: "800" }}>Favorilerinden {droppedCount} ilanın fiyatı düştü — kaçırma!</Text>
+          <Text style={{ color: colors.success, flex: 1, fontSize: 13, fontWeight: "800" }}>{translateCopy("Favorilerinden", language)} {droppedCount} {translateCopy("ilanın fiyatı düştü — kaçırma!", language)}</Text>
         </View>
       ) : null}
 
@@ -214,7 +214,7 @@ function FavoritesScreenInner() {
           listing ? <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} /> : null
         )}
       </View>
-      <PrimaryButton href="/(tabs)/explore" tone="secondary">Keşfete dön</PrimaryButton>
+      <PrimaryButton href="/(tabs)/explore" tone="secondary">{translateCopy("Keşfete dön", language)}</PrimaryButton>
     </ScrollView>
   );
 }
@@ -236,7 +236,8 @@ function FavStat({ icon, tint, color, value, title, sub }: { icon: keyof typeof 
 
 
 export default function FavoritesScreen() {
+  const { language } = useLanguage();
   const auth = useStore();
-  if (!auth.isAuthenticated) return <AuthRequired title="Favorilerin için giriş yapın" />;
+  if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Favorilerin için giriş yapın", language)} />;
   return <FavoritesScreenInner />;
 }

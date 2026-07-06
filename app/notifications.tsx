@@ -47,9 +47,10 @@ const SAMPLE: DeskNotif[] = [
 ];
 
 export default function NotificationsScreen() {
+  const { language } = useLanguage();
   const { isAuthenticated } = useStore();
   if (!isAuthenticated) {
-    return <AuthRequired title="Bildirimlerin için giriş yap" body="Başvuru, satış ve mesaj bildirimlerin hesabına özeldir; görmek için giriş yapman gerekir." />;
+    return <AuthRequired title={translateCopy("Bildirimlerin için giriş yap", language)} body={translateCopy("Başvuru, satış ve mesaj bildirimlerin hesabına özeldir; görmek için giriş yapman gerekir.", language)} />;
   }
   return <NotificationsScreenInner />;
 }
@@ -118,13 +119,13 @@ function NotificationsScreenInner() {
     all.forEach((n) => { counts[n.type] += 1; });
 
     const tabs: Array<{ key: typeof tab; label: string; count: number }> = [
-      { key: "all", label: "Tümü", count: all.length },
-      { key: "unread", label: "Okunmamış", count: totalUnread },
-      { key: "application", label: "Başvurular", count: counts.application },
-      { key: "lead", label: "Talepler", count: counts.lead },
-      { key: "sale", label: "Satışlar", count: counts.sale },
-      { key: "payout", label: "Komisyon", count: counts.payout },
-      { key: "message", label: "Mesajlar", count: counts.message }
+      { key: "all", label: translateCopy("Tümü", language), count: all.length },
+      { key: "unread", label: translateCopy("Okunmamış", language), count: totalUnread },
+      { key: "application", label: translateCopy("Başvurular", language), count: counts.application },
+      { key: "lead", label: translateCopy("Talepler", language), count: counts.lead },
+      { key: "sale", label: translateCopy("Satışlar", language), count: counts.sale },
+      { key: "payout", label: translateCopy("Komisyon", language), count: counts.payout },
+      { key: "message", label: translateCopy("Mesajlar", language), count: counts.message }
     ];
 
     const filtered = all.filter((n) => tab === "all" ? true : tab === "unread" ? !isRead(n) : n.type === tab);
@@ -162,15 +163,15 @@ function NotificationsScreenInner() {
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 12 }}>
           <View style={{ flex: 1, gap: 4 }}>
-            <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Bildirimler</Text>
-            <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Başvuru, talep, satış ve komisyon hareketlerinin tümünü buradan takip et.</Text>
+            <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Bildirimler", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Başvuru, talep, satış ve komisyon hareketlerinin tümünü buradan takip et.", language)}</Text>
           </View>
           <Pressable onPress={markAll} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 9 })}>
             <MaterialCommunityIcons name="check-all" size={17} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Tümünü okundu işaretle</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Tümünü okundu işaretle", language)}</Text>
           </Pressable>
           <Link href="/profile-edit" asChild>
-            <Pressable accessibilityRole="button" accessibilityLabel="Ayarlar" style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, height: 38, justifyContent: "center", width: 40 })}>
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Ayarlar", language)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, height: 38, justifyContent: "center", width: 40 })}>
               <MaterialCommunityIcons name="cog-outline" size={19} color={colors.muted} />
             </Pressable>
           </Link>
@@ -191,18 +192,18 @@ function NotificationsScreenInner() {
         <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
           <View style={{ flex: 1, gap: 16, minWidth: 0 }}>
             {filtered.length === 0 ? (
-              <EmptyState title="Bildirim yok" body="Bu filtreye uygun bildirim bulunmuyor. Yeni hareketler burada görünecek." />
+              <EmptyState title={translateCopy("Bildirim yok", language)} body={translateCopy("Bu filtreye uygun bildirim bulunmuyor. Yeni hareketler burada görünecek.", language)} />
             ) : null}
             {groups.map((g) => {
               const items = filtered.filter((n) => n.group === g);
               if (items.length === 0) return null;
               return (
                 <View key={g} style={{ gap: 10 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "900", letterSpacing: 0.4, textTransform: "uppercase" }}>{g}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "900", letterSpacing: 0.4, textTransform: "uppercase" }}>{translateCopy(g, language)}</Text>
                   <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden" }}>
                     {items.map((n, idx) => {
                       const read = isRead(n);
-                      const meta = typeMeta[n.type] ?? { label: "Bildirim", tint: colors.infoSoft, color: colors.info };
+                      const meta = typeMeta[n.type] ?? { label: translateCopy("Bildirim", language), tint: colors.infoSoft, color: colors.info };
                       const hasLink = Boolean(n.metadata?.listingId);
                       return (
                         <Pressable key={n.id} accessibilityRole="button" accessibilityLabel={hasLink ? `${n.title} — ilana git` : n.title} onPress={() => openDesk(n)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : read ? colors.surface : colors.primarySoft + "55", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 })}>
@@ -212,15 +213,15 @@ function NotificationsScreenInner() {
                           <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
                             <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                               <View style={{ backgroundColor: meta.tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
-                                <Text style={{ color: meta.color, fontSize: 10.5, fontWeight: "900" }}>{meta.label}</Text>
+                                <Text style={{ color: meta.color, fontSize: 10.5, fontWeight: "900" }}>{translateCopy(meta.label, language)}</Text>
                               </View>
-                              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14.5, fontWeight: "900" }}>{n.title}</Text>
+                              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14.5, fontWeight: "900" }}>{translateCopy(n.title, language)}</Text>
                               {!read ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, height: 9, width: 9 }} /> : null}
                             </View>
-                            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{n.body}</Text>
+                            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{translateCopy(n.body, language)}</Text>
                             <View style={{ alignItems: "center", flexDirection: "row", gap: 10, marginTop: 2 }}>
                               <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{n.createdAt}</Text>
-                              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{hasLink ? "İlana git →" : read ? "Görüntülendi" : "Okundu işaretle"}</Text>
+                              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{hasLink ? translateCopy("İlana git →", language) : read ? translateCopy("Görüntülendi", language) : translateCopy("Okundu işaretle", language)}</Text>
                             </View>
                           </View>
                         </Pressable>
@@ -235,15 +236,15 @@ function NotificationsScreenInner() {
           {/* Sidebar */}
           <View style={{ gap: 16, width: 300 }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Özet</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Özet", language)}</Text>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
                 <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, flex: 1, paddingVertical: 12 }}>
                   <Text style={{ color: colors.accent, fontSize: 22, fontWeight: "900" }}>{totalUnread}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>Okunmamış</Text>
+                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Okunmamış", language)}</Text>
                 </View>
                 <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 12, flex: 1, paddingVertical: 12 }}>
                   <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{all.length}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>Toplam</Text>
+                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Toplam", language)}</Text>
                 </View>
               </View>
               {(Object.keys(typeMeta) as NotificationType[]).map((t) => {
@@ -253,7 +254,7 @@ function NotificationsScreenInner() {
                     <View style={{ alignItems: "center", backgroundColor: meta.tint, borderRadius: 8, height: 30, justifyContent: "center", width: 30 }}>
                       <MaterialCommunityIcons name={typeIcons[t]} size={16} color={meta.color} />
                     </View>
-                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{meta.label}</Text>
+                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{translateCopy(meta.label, language)}</Text>
                     <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{counts[t]}</Text>
                   </Pressable>
                 );
@@ -262,9 +263,9 @@ function NotificationsScreenInner() {
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Bildirim tercihleri</Text>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Bildirim tercihleri", language)}</Text>
                 <Link href="/profile-edit" asChild>
-                  <Pressable><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tümü</Text></Pressable>
+                  <Pressable><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tümü", language)}</Text></Pressable>
                 </Link>
               </View>
               {prefRows.map((p) => (
@@ -273,8 +274,8 @@ function NotificationsScreenInner() {
                     <MaterialCommunityIcons name={p.icon} size={18} color={colors.muted} />
                   </View>
                   <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{p.label}</Text>
-                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.sub}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy(p.label, language)}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy(p.sub, language)}</Text>
                   </View>
                   {p.available ? (
                     <Pressable onPress={() => togglePref(p.key)} style={{ alignItems: prefs[p.key] ? "flex-end" : "flex-start", backgroundColor: prefs[p.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
@@ -282,20 +283,20 @@ function NotificationsScreenInner() {
                     </Pressable>
                   ) : (
                     <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 3 }}>
-                      <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "800" }}>Yakında</Text>
+                      <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "800" }}>{translateCopy("Yakında", language)}</Text>
                     </View>
                   )}
                 </View>
               ))}
 
               <View style={{ backgroundColor: colors.line, height: 1, marginVertical: 4 }} />
-              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Bildirim türleri</Text>
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Bildirim türleri", language)}</Text>
               {(Object.keys(typeMeta) as NotificationType[]).map((tp) => (
                 <View key={tp} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
                   <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, height: 34, justifyContent: "center", width: 34 }}>
                     <MaterialCommunityIcons name={typeIcons[tp]} size={18} color={mutes[tp] ? colors.subtle : typeMeta[tp].color} />
                   </View>
-                  <Text style={{ color: mutes[tp] ? colors.muted : colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{typeMeta[tp].label}</Text>
+                  <Text style={{ color: mutes[tp] ? colors.muted : colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{translateCopy(typeMeta[tp].label, language)}</Text>
                   <Pressable accessibilityRole="switch" accessibilityState={{ checked: !mutes[tp] }} accessibilityLabel={`${typeMeta[tp].label} bildirimleri`} onPress={() => toggleMute(tp)} style={{ alignItems: mutes[tp] ? "flex-start" : "flex-end", backgroundColor: mutes[tp] ? colors.line : colors.primary, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
                     <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
                   </Pressable>
@@ -305,11 +306,11 @@ function NotificationsScreenInner() {
 
             <View style={{ backgroundColor: colors.primaryDark, borderRadius: 16, gap: 8, padding: 18 }}>
               <MaterialCommunityIcons name="handshake" size={26} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>Daha çok kazan</Text>
-              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Yüksek komisyonlu ilanları keşfet, paylaş ve her satıştan kazan.</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{translateCopy("Daha çok kazan", language)}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Yüksek komisyonlu ilanları keşfet, paylaş ve her satıştan kazan.", language)}</Text>
               <Link href="/partner" asChild>
                 <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, marginTop: 4, paddingVertical: 10 }}>
-                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Fırsatları gör</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Fırsatları gör", language)}</Text>
                 </Pressable>
               </Link>
             </View>
@@ -344,16 +345,16 @@ function NotificationsScreenInner() {
         </View>
       </Card>
 
-      <SectionTitle title="Son bildirimler" action={`${visibleNotifications.length}`} />
+      <SectionTitle title={translateCopy("Son bildirimler", language)} action={`${visibleNotifications.length}`} />
 
       {/* Tür bazında sustur */}
       <Card>
-        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900", marginBottom: 4 }}>Bildirim türleri</Text>
-        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", marginBottom: 6 }}>Kapattığın tür bildirim listende görünmez.</Text>
+        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900", marginBottom: 4 }}>{translateCopy("Bildirim türleri", language)}</Text>
+        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", marginBottom: 6 }}>{translateCopy("Kapattığın tür bildirim listende görünmez.", language)}</Text>
         {(Object.keys(typeMeta) as NotificationType[]).map((tp) => (
           <Pressable key={tp} onPress={() => toggleMute(tp)} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 8 }}>
             <MaterialCommunityIcons name={typeIcons[tp]} size={18} color={mutes[tp] ? colors.subtle : typeMeta[tp].color} />
-            <Text style={{ color: mutes[tp] ? colors.muted : colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{typeMeta[tp].label}</Text>
+            <Text style={{ color: mutes[tp] ? colors.muted : colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{translateCopy(typeMeta[tp].label, language)}</Text>
             <View style={{ alignItems: mutes[tp] ? "flex-start" : "flex-end", backgroundColor: mutes[tp] ? colors.line : colors.primary, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
               <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
             </View>
@@ -361,7 +362,7 @@ function NotificationsScreenInner() {
         ))}
       </Card>
 
-      {visibleNotifications.length === 0 ? <EmptyState title={mutedCount > 0 ? "Görünür bildirim yok" : "Bildirim yok"} body={mutedCount > 0 ? "Bazı türleri kapattın. Görmek için yukarıdan aç." : "Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek."} /> : null}
+      {visibleNotifications.length === 0 ? <EmptyState title={mutedCount > 0 ? translateCopy("Görünür bildirim yok", language) : translateCopy("Bildirim yok", language)} body={mutedCount > 0 ? translateCopy("Bazı türleri kapattın. Görmek için yukarıdan aç.", language) : translateCopy("Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek.", language)} /> : null}
 
       {visibleNotifications.map((notification) => {
         const href = hrefForMeta(notification.metadata);
@@ -390,7 +391,7 @@ function NotificationsScreenInner() {
                 <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900", lineHeight: 20 }}>
                   {translateCopy(notification.title, language)}
                 </Text>
-                {!notification.read ? <StatusPill label="Yeni" tone="warning" /> : null}
+                {!notification.read ? <StatusPill label={translateCopy("Yeni", language)} tone="warning" /> : null}
               </View>
               <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
                 {translateCopy(notification.body, language)}

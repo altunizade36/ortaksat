@@ -7,6 +7,7 @@ import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -43,8 +44,9 @@ const faqLd = JSON.stringify({
 
 export default function InfluencerLandingPage() {
   const isWideWeb = useIsWideWeb();
-  const title = "Sosyal Medyadan Para Kazan — Influencer Ortak Programı | OrtakSat";
-  const desc = "Instagram, TikTok veya WhatsApp hesabınla para kazan. Sıfır sermaye, stok yok, para yatırma yok — ürün seç, referans linkini paylaş, satışta komisyon kazan. Ücretsiz başla.";
+  const { language } = useLanguage();
+  const title = translateCopy("Sosyal Medyadan Para Kazan — Influencer Ortak Programı | OrtakSat", language);
+  const desc = translateCopy("Instagram, TikTok veya WhatsApp hesabınla para kazan. Sıfır sermaye, stok yok, para yatırma yok — ürün seç, referans linkini paylaş, satışta komisyon kazan. Ücretsiz başla.", language);
   const url = "https://ortaksat.com/influencer-kazanc";
 
   return (
@@ -65,23 +67,23 @@ export default function InfluencerLandingPage() {
         <View style={{ backgroundColor: colors.primaryDark, borderRadius: 20, gap: 14, padding: isWideWeb ? 34 : 22 }}>
           <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 6 }}>
             <MaterialCommunityIcons name="cash-multiple" size={15} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>Sıfır sermaye · stok yok · para yatırma yok</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy("Sıfır sermaye · stok yok · para yatırma yok", language)}</Text>
           </View>
-          <Text style={{ color: "#FFFFFF", fontSize: isWideWeb ? 34 : 26, fontWeight: "900", lineHeight: isWideWeb ? 40 : 31 }}>Sosyal medya hesabınla para kazan</Text>
+          <Text style={{ color: "#FFFFFF", fontSize: isWideWeb ? 34 : 26, fontWeight: "900", lineHeight: isWideWeb ? 40 : 31 }}>{translateCopy("Sosyal medya hesabınla para kazan", language)}</Text>
           <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, fontWeight: "600", lineHeight: 23, maxWidth: 640 }}>
-            Ürün seç, sana özel referans linkini paylaş; o linkten satış olursa komisyon senin. Depo, kargo, para yatırma yok — bugün başla.
+            {translateCopy("Ürün seç, sana özel referans linkini paylaş; o linkten satış olursa komisyon senin. Depo, kargo, para yatırma yok — bugün başla.", language)}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             <Link href="/partner" asChild>
               <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 12, flexDirection: "row", gap: 8, paddingHorizontal: 22, paddingVertical: 13 }}>
                 <MaterialCommunityIcons name="handshake-outline" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>Ortak Ol</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{translateCopy("Ortak Ol", language)}</Text>
               </Pressable>
             </Link>
             <Link href="/ortak-kazanc" asChild>
               <Pressable style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, paddingHorizontal: 22, paddingVertical: 13 }}>
                 <MaterialCommunityIcons name="calculator-variant-outline" size={18} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>Kazanç Hesapla</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{translateCopy("Kazanç Hesapla", language)}</Text>
               </Pressable>
             </Link>
           </View>
@@ -89,13 +91,13 @@ export default function InfluencerLandingPage() {
 
         {/* Avantajlar */}
         <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.ink, fontSize: 21, fontWeight: "900" }}>Neden OrtakSat ortağı olmalısın?</Text>
+          <Text style={{ color: colors.ink, fontSize: 21, fontWeight: "900" }}>{translateCopy("Neden OrtakSat ortağı olmalısın?", language)}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             {BENEFITS.map((c) => (
               <View key={c.t} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 320, flexGrow: 1, gap: 6, padding: 16 }}>
                 <MaterialCommunityIcons name={c.icon} size={22} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{c.t}</Text>
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>{c.b}</Text>
+                <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy(c.t, language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>{translateCopy(c.b, language)}</Text>
               </View>
             ))}
           </View>
@@ -103,13 +105,13 @@ export default function InfluencerLandingPage() {
 
         {/* Adımlar */}
         <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.ink, fontSize: 21, fontWeight: "900" }}>4 adımda kazanmaya başla</Text>
+          <Text style={{ color: colors.ink, fontSize: 21, fontWeight: "900" }}>{translateCopy("4 adımda kazanmaya başla", language)}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             {STEPS.map((s) => (
               <View key={s.t} style={{ backgroundColor: colors.primarySoft, borderRadius: 14, flexBasis: 230, flexGrow: 1, gap: 6, padding: 16 }}>
                 <MaterialCommunityIcons name={s.icon} size={22} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{s.t}</Text>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{s.b}</Text>
+                <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy(s.t, language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy(s.b, language)}</Text>
               </View>
             ))}
           </View>
@@ -117,12 +119,12 @@ export default function InfluencerLandingPage() {
 
         {/* SSS */}
         <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Sık sorulan sorular</Text>
+          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Sık sorulan sorular", language)}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             {FAQ.map((item) => (
               <View key={item.q} style={{ flexBasis: 440, flexGrow: 1, maxWidth: 720 }}>
-                <Accordion title={item.q} icon="comment-question-outline">
-                  <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{item.a}</Text>
+                <Accordion title={translateCopy(item.q, language)} icon="comment-question-outline">
+                  <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{translateCopy(item.a, language)}</Text>
                 </Accordion>
               </View>
             ))}
@@ -132,13 +134,13 @@ export default function InfluencerLandingPage() {
         {/* CTA */}
         <View style={{ alignItems: isWideWeb ? "center" : "stretch", backgroundColor: colors.primarySoft, borderRadius: 18, flexDirection: isWideWeb ? "row" : "column", gap: 16, padding: 22 }}>
           <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
-            <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>Bugün ilk linkini oluştur</Text>
-            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>Ücretsiz kayıt ol, ürün seç, paylaş, kazan.</Text>
+            <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>{translateCopy("Bugün ilk linkini oluştur", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{translateCopy("Ücretsiz kayıt ol, ürün seç, paylaş, kazan.", language)}</Text>
           </View>
           <Link href="/partner" asChild>
             <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, paddingHorizontal: 24, paddingVertical: 13 }}>
               <MaterialCommunityIcons name="handshake-outline" size={18} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>Ortak Ol</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{translateCopy("Ortak Ol", language)}</Text>
             </Pressable>
           </Link>
         </View>

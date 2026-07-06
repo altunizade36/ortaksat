@@ -3,6 +3,7 @@ import { Fragment } from "react";
 
 import { ContentPageView } from "@/components/content-page-view";
 import { InfoPage } from "@/components/info-page";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 
 const FAQ: Array<{ heading: string; body: string }> = [
   {
@@ -43,12 +44,16 @@ export default function FaqScreen() {
 }
 
 function FaqScreenStatic() {
+  const { language } = useLanguage();
   return (
     <Fragment>
       <Head>
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd }} />
       </Head>
-      <InfoPage title="Sıkça Sorulan Sorular" sections={FAQ} />
+      <InfoPage
+        title={translateCopy("Sıkça Sorulan Sorular", language)}
+        sections={FAQ.map((f) => ({ heading: translateCopy(f.heading, language), body: translateCopy(f.body, language) }))}
+      />
     </Fragment>
   );
 }

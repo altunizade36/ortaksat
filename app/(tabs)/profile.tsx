@@ -48,19 +48,19 @@ function ProfileScreenInner() {
 
   if (isWideWeb) {
     const verifications: Array<{ label: string; done: boolean }> = [
-      { label: "Telefon doğrulandı", done: currentUser.verifiedPhone },
-      { label: "Kimlik doğrulandı", done: currentUser.verifiedIdentity },
-      { label: "Instagram bağlandı", done: !!currentUser.verifiedInstagram }
+      { label: translateCopy("Telefon doğrulandı", language), done: currentUser.verifiedPhone },
+      { label: translateCopy("Kimlik doğrulandı", language), done: currentUser.verifiedIdentity },
+      { label: translateCopy("Instagram bağlandı", language), done: !!currentUser.verifiedInstagram }
     ];
     const doneCount = verifications.filter((v) => v.done).length;
     const completion = Math.round(((doneCount + (currentUser.bio ? 1 : 0) + (myListings.length ? 1 : 0)) / 5) * 100);
     const firstName = currentUser.name.split(" ")[0];
 
     const stats: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; sub: string }> = [
-      { icon: "cash-multiple", tint: colors.successSoft, color: colors.success, value: money(totalCommission), title: "Kayıtlı komisyon", sub: "Taraflar arası anlaşma" },
-      { icon: "clock-outline", tint: colors.goldSoft, color: colors.gold, value: money(pendingCommission), title: "Bekleyen komisyon", sub: "Onay sürecinde" },
-      { icon: "storefront-outline", tint: colors.primarySoft, color: colors.primaryDark, value: `${activeListings.length}`, title: "Aktif ilan", sub: `${myListings.length} toplam ilan` },
-      { icon: "handshake-outline", tint: colors.violetSoft, color: colors.violet, value: `${activePartnerships.length}`, title: "Aktif ortaklık", sub: `${pendingPartnerships.length} bekliyor` }
+      { icon: "cash-multiple", tint: colors.successSoft, color: colors.success, value: money(totalCommission), title: translateCopy("Kayıtlı komisyon", language), sub: translateCopy("Taraflar arası anlaşma", language) },
+      { icon: "clock-outline", tint: colors.goldSoft, color: colors.gold, value: money(pendingCommission), title: translateCopy("Bekleyen komisyon", language), sub: translateCopy("Onay sürecinde", language) },
+      { icon: "storefront-outline", tint: colors.primarySoft, color: colors.primaryDark, value: `${activeListings.length}`, title: translateCopy("Aktif ilan", language), sub: `${myListings.length} toplam ilan` },
+      { icon: "handshake-outline", tint: colors.violetSoft, color: colors.violet, value: `${activePartnerships.length}`, title: translateCopy("Aktif ortaklık", language), sub: `${pendingPartnerships.length} bekliyor` }
     ];
 
     return (
@@ -72,20 +72,20 @@ function ProfileScreenInner() {
             {isImageAvatar(currentUser.avatar) ? <Image source={{ uri: currentUser.avatar }} contentFit="cover" style={{ height: 66, width: 66 }} /> : <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{currentUser.avatar}</Text>}
           </View>
           <View style={{ flex: 1, gap: 6, justifyContent: "center", minWidth: 0 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>Merhaba, {firstName} 👋</Text>
-            <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13.5, fontWeight: "600" }}>Hesabının özetini, kazançlarını ve bugün dikkat etmen gereken işleri burada bulabilirsin.</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{translateCopy("Merhaba,", language)} {firstName} 👋</Text>
+            <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 13.5, fontWeight: "600" }}>{translateCopy("Hesabının özetini, kazançlarını ve bugün dikkat etmen gereken işleri burada bulabilirsin.", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 2 }}>
               <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <MaterialCommunityIcons name="star" size={13} color={colors.gold} />
-                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{currentUser.rating} puan</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{currentUser.rating} {translateCopy("puan", language)}</Text>
               </View>
               <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <MaterialCommunityIcons name="shield-check" size={13} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>%{trust.overall} güven</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>%{trust.overall} {translateCopy("güven", language)}</Text>
               </View>
               <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <MaterialCommunityIcons name="cart-check" size={13} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{compactNumber(currentUser.successfulSales)} satış</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{compactNumber(currentUser.successfulSales)} {translateCopy("satış", language)}</Text>
               </View>
             </View>
           </View>
@@ -93,13 +93,13 @@ function ProfileScreenInner() {
             <Link href="/profile-edit" asChild>
               <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 10 }}>
                 <MaterialCommunityIcons name="account-edit-outline" size={17} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Profili düzenle</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Profili düzenle", language)}</Text>
               </Pressable>
             </Link>
             <Link href="/create" asChild>
               <Pressable style={{ alignItems: "center", borderColor: "rgba(255,255,255,0.5)", borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 10 }}>
                 <MaterialCommunityIcons name="plus" size={17} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>İlan ver</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("İlan ver", language)}</Text>
               </Pressable>
             </Link>
           </View>
@@ -123,7 +123,7 @@ function ProfileScreenInner() {
           {/* Main column */}
           <View style={{ flex: 1, gap: 16, minWidth: 0 }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Bugün dikkat etmen gerekenler</Text>
+              <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Bugün dikkat etmen gerekenler", language)}</Text>
               <ActionRow href="/(tabs)/seller" icon="account-clock-outline" label="Ortak başvuruları" tone={pendingSellerApplications.length ? "warning" : "neutral"} value={`${pendingSellerApplications.length}`} />
               <ActionRow href="/(tabs)/partner" icon="handshake-outline" label="Bekleyen ortaklıklar" tone={pendingPartnerships.length ? "warning" : "neutral"} value={`${pendingPartnerships.length}`} />
               <ActionRow href="/messages" icon="message-badge-outline" label="Okunmamış mesaj" tone={unreadMessages.length ? "warning" : "neutral"} value={`${unreadMessages.length}`} />
@@ -131,7 +131,7 @@ function ProfileScreenInner() {
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900", marginBottom: 4 }}>Hesap özeti</Text>
+              <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900", marginBottom: 4 }}>{translateCopy("Hesap özeti", language)}</Text>
               <MenuRow icon="storefront-outline" label="İlanlarım" detail={`${activeListings.length} aktif · ${pausedListings.length} duraklatılmış`} value={`${myListings.length}`} />
               <MenuRow icon="handshake-outline" label="Ortaklıklarım" detail={`${activePartnerships.length} aktif · ${pendingPartnerships.length} bekliyor`} value={`${myPartnerships.length}`} />
               <MenuRow icon="star-outline" label="Değerlendirmeler" detail={`${reviewsAboutMe.length} hakkımda · ${reviewsByMe.length} yazdığım`} value={`${reviewsAboutMe.length + reviewsByMe.length}`} />
@@ -140,7 +140,7 @@ function ProfileScreenInner() {
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Hızlı işlemler</Text>
+              <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Hızlı işlemler", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                 <Shortcut href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} icon="store-search-outline" label="Mağazam" />
                 <Shortcut href="/(tabs)/seller" icon="storefront-outline" label="İlanlarım" />
@@ -155,37 +155,37 @@ function ProfileScreenInner() {
           {/* Sidebar */}
           <View style={{ gap: 16, width: 300 }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Profil gücü</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Profil gücü", language)}</Text>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
                 <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 56, justifyContent: "center", width: 56 }}>
                   <Text style={{ color: colors.primaryDark, fontSize: 17, fontWeight: "900" }}>%{completion}</Text>
                 </View>
-                <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Profilini tamamla, güven puanını ve satışlarını artır.</Text>
+                <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Profilini tamamla, güven puanını ve satışlarını artır.", language)}</Text>
               </View>
               <ProgressBar value={completion} />
               {verifications.map((v) => (
                 <View key={v.label} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
                   <MaterialCommunityIcons name={v.done ? "check-circle" : "circle-outline"} size={17} color={v.done ? colors.success : colors.subtle} />
                   <Text style={{ color: v.done ? colors.ink : colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{v.label}</Text>
-                  {!v.done ? <Link href="/profile-edit" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>Tamamla</Text></Pressable></Link> : null}
+                  {!v.done ? <Link href="/profile-edit" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Tamamla", language)}</Text></Pressable></Link> : null}
                 </View>
               ))}
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Güven puanların</Text>
-              <DeskTrustBar label="Satıcı güveni" value={trust.seller.score} />
-              <DeskTrustBar label="Ortak güveni" value={trust.partner.score} />
-              <DeskTrustBar label="Yanıt oranı" value={currentUser.responseRate} />
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Güven puanların", language)}</Text>
+              <DeskTrustBar label={translateCopy("Satıcı güveni", language)} value={trust.seller.score} />
+              <DeskTrustBar label={translateCopy("Ortak güveni", language)} value={trust.partner.score} />
+              <DeskTrustBar label={translateCopy("Yanıt oranı", language)} value={currentUser.responseRate} />
             </View>
 
             <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 16, borderWidth: 1, gap: 8, padding: 18 }}>
               <MaterialCommunityIcons name="store" size={24} color={colors.primaryDark} />
-              <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Mağazanı paylaş</Text>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Tüm ilanlarının bulunduğu mağaza sayfanı müşterilerinle paylaş.</Text>
+              <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Mağazanı paylaş", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Tüm ilanlarının bulunduğu mağaza sayfanı müşterilerinle paylaş.", language)}</Text>
               <Link href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} asChild>
                 <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, marginTop: 4, paddingVertical: 10 }}>
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Mağazama git</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Mağazama git", language)}</Text>
                 </Pressable>
               </Link>
             </View>
@@ -464,7 +464,8 @@ function Shortcut({ href, icon, label }: { href: Href; icon: keyof typeof Materi
 
 
 export default function ProfileScreen() {
+  const { language } = useLanguage();
   const auth = useStore();
-  if (!auth.isAuthenticated) return <AuthRequired title="Hesabım için giriş yapın" />;
+  if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Hesabım için giriş yapın", language)} />;
   return <ProfileScreenInner />;
 }

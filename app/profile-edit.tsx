@@ -71,25 +71,25 @@ function ProfileEditScreenInner() {
     setSigningOutAll(true);
     const ok = await signOutAllDevices();
     setSigningOutAll(false);
-    if (ok) { Alert.alert("Tüm cihazlardan çıkıldı", "Tüm oturumların kapatıldı. Tekrar giriş yapman gerekir."); router.replace("/auth"); }
-    else Alert.alert("İşlem tamamlanamadı", "Oturumlar kapatılamadı, tekrar dene.");
+    if (ok) { Alert.alert(translateCopy("Tüm cihazlardan çıkıldı", language), translateCopy("Tüm oturumların kapatıldı. Tekrar giriş yapman gerekir.", language)); router.replace("/auth"); }
+    else Alert.alert(translateCopy("İşlem tamamlanamadı", language), translateCopy("Oturumlar kapatılamadı, tekrar dene.", language));
   }
 
   async function changePassword() {
     setPwMsg(null);
-    if (!pwCurrent) { const t = "Mevcut şifreni gir."; setPwMsg({ tone: "err", text: t }); Alert.alert("Mevcut şifre gerekli", t); return; }
+    if (!pwCurrent) { const t = translateCopy("Mevcut şifreni gir.", language); setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Mevcut şifre gerekli", language), t); return; }
     const s = passwordStrength(pwNew);
-    if (!s.ok) { const miss = s.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", "); const t = `Yeni şifre yeterince güçlü değil. Ekle: ${miss}.`; setPwMsg({ tone: "err", text: t }); Alert.alert("Şifre yeterince güçlü değil", t); return; }
-    if (pwNew !== pwNew2) { const t = "Yeni şifre ile tekrarı aynı olmalı."; setPwMsg({ tone: "err", text: t }); Alert.alert("Şifreler uyuşmuyor", t); return; }
-    if (pwNew === pwCurrent) { const t = "Yeni şifre mevcut şifreden farklı olmalı."; setPwMsg({ tone: "err", text: t }); Alert.alert("Aynı şifre", t); return; }
-    if (!isLiveAccount) { const t = "Şifre değişikliği yalnızca canlı hesaplarda geçerlidir."; setPwMsg({ tone: "err", text: t }); Alert.alert("Ön izleme hesabı", t); return; }
+    if (!s.ok) { const miss = s.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", "); const t = `Yeni şifre yeterince güçlü değil. Ekle: ${miss}.`; setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Şifre yeterince güçlü değil", language), t); return; }
+    if (pwNew !== pwNew2) { const t = translateCopy("Yeni şifre ile tekrarı aynı olmalı.", language); setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Şifreler uyuşmuyor", language), t); return; }
+    if (pwNew === pwCurrent) { const t = translateCopy("Yeni şifre mevcut şifreden farklı olmalı.", language); setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Aynı şifre", language), t); return; }
+    if (!isLiveAccount) { const t = translateCopy("Şifre değişikliği yalnızca canlı hesaplarda geçerlidir.", language); setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Ön izleme hesabı", language), t); return; }
     setPwSaving(true);
     const res = await changePasswordLive(pwNew, pwCurrent);
     setPwSaving(false);
-    if (!res.ok) { const t = res.error ?? "Şifre güncellenemedi."; setPwMsg({ tone: "err", text: t }); Alert.alert("Güncellenemedi", t); return; }
+    if (!res.ok) { const t = res.error ?? translateCopy("Şifre güncellenemedi.", language); setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Güncellenemedi", language), t); return; }
     setPwCurrent(""); setPwNew(""); setPwNew2("");
-    setPwMsg({ tone: "ok", text: "Şifren güncellendi. Bir sonraki girişte yeni şifreni kullan." });
-    Alert.alert("Şifre güncellendi", "Yeni şifren kaydedildi. Bir sonraki girişte bunu kullan.");
+    setPwMsg({ tone: "ok", text: translateCopy("Şifren güncellendi. Bir sonraki girişte yeni şifreni kullan.", language) });
+    Alert.alert(translateCopy("Şifre güncellendi", language), translateCopy("Yeni şifren kaydedildi. Bir sonraki girişte bunu kullan.", language));
   }
 
   async function saveStore() {
@@ -100,16 +100,16 @@ function ProfileEditScreenInner() {
     await savePreferences({ iban: ibanClean });
     const ok = await updateProfile({ name: storeName.trim() || name, phone, avatar, bio });
     setStoreSaving(false);
-    Alert.alert(ok ? "Kaydedildi" : "Kaydedilemedi", ok ? "Mağaza bilgilerin güncellendi." : (authError ?? "Bir sorun oluştu."));
+    Alert.alert(ok ? translateCopy("Kaydedildi", language) : translateCopy("Kaydedilemedi", language), ok ? translateCopy("Mağaza bilgilerin güncellendi.", language) : (authError ?? translateCopy("Bir sorun oluştu.", language)));
   }
 
   function startVerification(label: string) {
     Alert.alert(
       label,
-      "Doğrulama işlemleri güvenlik nedeniyle ekibimiz tarafından, ilgili belge/bilgi kontrolüyle yapılır. Talebini Yasal & Destek üzerinden başlatabilirsin.",
+      translateCopy("Doğrulama işlemleri güvenlik nedeniyle ekibimiz tarafından, ilgili belge/bilgi kontrolüyle yapılır. Talebini Yasal & Destek üzerinden başlatabilirsin.", language),
       [
-        { text: "Kapat", style: "cancel" },
-        { text: "Destek talebi", onPress: () => router.push("/legal") }
+        { text: translateCopy("Kapat", language), style: "cancel" },
+        { text: translateCopy("Destek talebi", language), onPress: () => router.push("/legal") }
       ]
     );
   }
@@ -122,7 +122,7 @@ function ProfileEditScreenInner() {
 
   function closeAccount() {
     if (!isLiveAccount) {
-      Alert.alert("Ön izleme hesabı", "Hesap silme yalnızca canlı hesaplarda geçerlidir.");
+      Alert.alert(translateCopy("Ön izleme hesabı", language), translateCopy("Hesap silme yalnızca canlı hesaplarda geçerlidir.", language));
       return;
     }
     setDeletePw("");
@@ -132,12 +132,12 @@ function ProfileEditScreenInner() {
 
   async function confirmDeleteAccount() {
     if (deleting) return;
-    if (deletePw.length < 1) { Alert.alert("Şifre gerekli", "Devam etmek için şifreni gir."); return; }
+    if (deletePw.length < 1) { Alert.alert(translateCopy("Şifre gerekli", language), translateCopy("Devam etmek için şifreni gir.", language)); return; }
     setDeleting(true);
     const verified = await reauthenticateLive(deletePw);
     if (!verified) {
       setDeleting(false);
-      Alert.alert("Şifre doğrulanamadı", "Girdiğin şifre hatalı. Hesap silme işlemi güvenlik için iptal edildi.");
+      Alert.alert(translateCopy("Şifre doğrulanamadı", language), translateCopy("Girdiğin şifre hatalı. Hesap silme işlemi güvenlik için iptal edildi.", language));
       return;
     }
     const ok = await requestAccountDeletion(deleteReason.trim() || "Kullanıcı ayarlar ekranından hesap silme talebi oluşturdu.");
@@ -145,12 +145,12 @@ function ProfileEditScreenInner() {
     setDeleteOpen(false);
     if (ok) {
       Alert.alert(
-        "Hesap silme talebin alındı",
-        "Hesabın 30 gün boyunca askıya alınır; bu süre içinde giriş yaparsan talebini iptal edip hesabını geri alabilirsin. 30 gün sonunda hesabın ve ilişkili verilerin kalıcı olarak silinir.",
-        [{ text: "Anladım", onPress: () => void signOut() }]
+        translateCopy("Hesap silme talebin alındı", language),
+        translateCopy("Hesabın 30 gün boyunca askıya alınır; bu süre içinde giriş yaparsan talebini iptal edip hesabını geri alabilirsin. 30 gün sonunda hesabın ve ilişkili verilerin kalıcı olarak silinir.", language),
+        [{ text: translateCopy("Anladım", language), onPress: () => void signOut() }]
       );
     } else {
-      Alert.alert("Oluşturulamadı", authError ?? "Talep oluşturulamadı, lütfen tekrar dene.");
+      Alert.alert(translateCopy("Oluşturulamadı", language), authError ?? translateCopy("Talep oluşturulamadı, lütfen tekrar dene.", language));
     }
   }
 
@@ -200,19 +200,19 @@ function ProfileEditScreenInner() {
             <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
               <MaterialCommunityIcons name="account-alert-outline" size={24} color={colors.accent} />
             </View>
-            <Text style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>Hesabını sil</Text>
+            <Text style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>{translateCopy("Hesabını sil", language)}</Text>
           </View>
           <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>
-            Hesabın <Text style={{ color: colors.ink, fontWeight: "900" }}>30 gün</Text> boyunca askıya alınır. Bu süre içinde tekrar giriş yaparsan talebini iptal edip hesabını geri alabilirsin. 30 günün sonunda hesabın, ilanların ve ilişkili verilerin kalıcı olarak silinir.
+            {translateCopy("Hesabın", language)} <Text style={{ color: colors.ink, fontWeight: "900" }}>{translateCopy("30 gün", language)}</Text> {translateCopy("boyunca askıya alınır. Bu süre içinde tekrar giriş yaparsan talebini iptal edip hesabını geri alabilirsin. 30 günün sonunda hesabın, ilanların ve ilişkili verilerin kalıcı olarak silinir.", language)}
           </Text>
-          <DeskField icon="lock-outline" label="Devam etmek için şifreni gir" secure value={deletePw} onChangeText={setDeletePw} placeholder="Şifren" />
-          <DeskField icon="comment-outline" label="Sebep (opsiyonel)" value={deleteReason} onChangeText={setDeleteReason} placeholder="Ayrılma sebebini yazabilirsin" />
+          <DeskField icon="lock-outline" label={translateCopy("Devam etmek için şifreni gir", language)} secure value={deletePw} onChangeText={setDeletePw} placeholder={translateCopy("Şifren", language)} />
+          <DeskField icon="comment-outline" label={translateCopy("Sebep (opsiyonel)", language)} value={deleteReason} onChangeText={setDeleteReason} placeholder={translateCopy("Ayrılma sebebini yazabilirsin", language)} />
           <View style={{ flexDirection: "row", gap: 10, justifyContent: "flex-end" }}>
             <Pressable onPress={() => setDeleteOpen(false)} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 11 }}>
-              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text>
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text>
             </Pressable>
             <Pressable onPress={() => void confirmDeleteAccount()} disabled={deleting} style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, opacity: deleting ? 0.6 : 1, paddingHorizontal: 18, paddingVertical: 11 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{deleting ? "İşleniyor…" : "Hesabımı sil"}</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{deleting ? translateCopy("İşleniyor…", language) : translateCopy("Hesabımı sil", language)}</Text>
             </Pressable>
           </View>
         </View>
@@ -222,16 +222,16 @@ function ProfileEditScreenInner() {
 
   if (isWideWeb) {
     const navItems: Array<{ key: SettingsSection; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string }> = [
-      { key: "personal", icon: "account-outline", label: "Kişisel Bilgiler", sub: "Ad, telefon, foto, bio" },
-      { key: "security", icon: "lock-outline", label: "Hesap Güvenliği", sub: "Şifre ve oturumlar" },
-      { key: "notifications", icon: "bell-outline", label: "Bildirim Tercihleri", sub: "E-posta, SMS, anlık" },
-      { key: "store", icon: "storefront-outline", label: "Mağaza Ayarları", sub: "Ödeme ve ortaklık" },
-      { key: "verification", icon: "shield-check-outline", label: "Doğrulama Durumu", sub: "Kimlik ve hesap" }
+      { key: "personal", icon: "account-outline", label: translateCopy("Kişisel Bilgiler", language), sub: translateCopy("Ad, telefon, foto, bio", language) },
+      { key: "security", icon: "lock-outline", label: translateCopy("Hesap Güvenliği", language), sub: translateCopy("Şifre ve oturumlar", language) },
+      { key: "notifications", icon: "bell-outline", label: translateCopy("Bildirim Tercihleri", language), sub: translateCopy("E-posta, SMS, anlık", language) },
+      { key: "store", icon: "storefront-outline", label: translateCopy("Mağaza Ayarları", language), sub: translateCopy("Ödeme ve ortaklık", language) },
+      { key: "verification", icon: "shield-check-outline", label: translateCopy("Doğrulama Durumu", language), sub: translateCopy("Kimlik ve hesap", language) }
     ];
     const verifications = [
-      { label: "Telefon doğrulandı", done: currentUser.verifiedPhone },
-      { label: "Kimlik doğrulandı", done: currentUser.verifiedIdentity },
-      { label: "Instagram bağlandı", done: !!currentUser.verifiedInstagram }
+      { label: translateCopy("Telefon doğrulandı", language), done: currentUser.verifiedPhone },
+      { label: translateCopy("Kimlik doğrulandı", language), done: currentUser.verifiedIdentity },
+      { label: translateCopy("Instagram bağlandı", language), done: !!currentUser.verifiedInstagram }
     ];
     const doneCount = verifications.filter((v) => v.done).length;
     const completion = Math.round(((doneCount + (bio ? 1 : 0) + (avatar ? 1 : 0)) / 5) * 100);
@@ -241,8 +241,8 @@ function ProfileEditScreenInner() {
         {deleteModal}
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ gap: 4 }}>
-          <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Ayarlar</Text>
-          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Hesabını, güvenlik ve bildirim tercihlerini buradan yönet.</Text>
+          <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Ayarlar", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Hesabını, güvenlik ve bildirim tercihlerini buradan yönet.", language)}</Text>
         </View>
 
         <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
@@ -267,7 +267,7 @@ function ProfileEditScreenInner() {
           <View style={{ flex: 1, gap: 16, minWidth: 0 }}>
             {section === "personal" ? (
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 16, padding: 22 }}>
-                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Kişisel Bilgiler</Text>
+                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Kişisel Bilgiler", language)}</Text>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 16 }}>
                   <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 16, height: 80, justifyContent: "center", overflow: "hidden", width: 80 }}>
                     {isImageAvatar(avatar.trim()) ? <Image source={{ uri: avatar.trim() }} contentFit="cover" style={{ height: 80, width: 80 }} /> : <Text style={{ color: "#FFFFFF", fontSize: 26, fontWeight: "900" }}>{avatar.trim() || "OS"}</Text>}
@@ -275,20 +275,20 @@ function ProfileEditScreenInner() {
                   <View style={{ gap: 8 }}>
                     <Pressable onPress={() => void pickAvatar()} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 10 }}>
                       <MaterialCommunityIcons name="image-plus" size={17} color={colors.primaryDark} />
-                      <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Fotoğraf yükle</Text>
+                      <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Fotoğraf yükle", language)}</Text>
                     </Pressable>
-                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>JPG veya PNG, en fazla 5MB.</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("JPG veya PNG, en fazla 5MB.", language)}</Text>
                   </View>
                 </View>
                 <View style={{ flexDirection: "row", gap: 14 }}>
-                  <View style={{ flex: 1 }}><DeskField label="Ad soyad / mağaza adı" value={name} onChangeText={setName} icon="account-outline" /></View>
-                  <View style={{ flex: 1 }}><DeskField label="Telefon" value={phone} onChangeText={setPhone} icon="phone-outline" /></View>
+                  <View style={{ flex: 1 }}><DeskField label={translateCopy("Ad soyad / mağaza adı", language)} value={name} onChangeText={setName} icon="account-outline" /></View>
+                  <View style={{ flex: 1 }}><DeskField label={translateCopy("Telefon", language)} value={phone} onChangeText={setPhone} icon="phone-outline" /></View>
                 </View>
-                <DeskField label="Bio" value={bio} onChangeText={setBio} icon="text-account" multiline />
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>Rol, puan, yanıt oranı ve doğrulama durumu güvenlik nedeniyle elle değiştirilemez.</Text>
+                <DeskField label={translateCopy("Bio", language)} value={bio} onChangeText={setBio} icon="text-account" multiline />
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Rol, puan, yanıt oranı ve doğrulama durumu güvenlik nedeniyle elle değiştirilemez.", language)}</Text>
                 <Pressable disabled={saving} onPress={() => void submit()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 22, paddingVertical: 12 }}>
                   <MaterialCommunityIcons name="content-save-outline" size={17} color="#FFFFFF" />
-                  <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{saving ? "Kaydediliyor…" : "Değişiklikleri kaydet"}</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{saving ? translateCopy("Kaydediliyor…", language) : translateCopy("Değişiklikleri kaydet", language)}</Text>
                 </Pressable>
               </View>
             ) : null}
@@ -296,29 +296,29 @@ function ProfileEditScreenInner() {
             {section === "security" ? (
               <View style={{ gap: 16 }}>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Şifre değiştir</Text>
-                  <DeskField label="Mevcut şifren" value={pwCurrent} onChangeText={setPwCurrent} icon="lock-outline" secure />
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Şifre değiştir", language)}</Text>
+                  <DeskField label={translateCopy("Mevcut şifren", language)} value={pwCurrent} onChangeText={setPwCurrent} icon="lock-outline" secure />
                   <View style={{ flexDirection: "row", gap: 14 }}>
-                    <View style={{ flex: 1 }}><DeskField label="Yeni şifre (güçlü olmalı)" value={pwNew} onChangeText={setPwNew} icon="lock-reset" secure /></View>
-                    <View style={{ flex: 1 }}><DeskField label="Yeni şifre (tekrar)" value={pwNew2} onChangeText={setPwNew2} icon="lock-check-outline" secure /></View>
+                    <View style={{ flex: 1 }}><DeskField label={translateCopy("Yeni şifre (güçlü olmalı)", language)} value={pwNew} onChangeText={setPwNew} icon="lock-reset" secure /></View>
+                    <View style={{ flex: 1 }}><DeskField label={translateCopy("Yeni şifre (tekrar)", language)} value={pwNew2} onChangeText={setPwNew2} icon="lock-check-outline" secure /></View>
                   </View>
                   <PasswordStrengthMeter password={pwNew} />
                   {pwMsg ? <Text style={{ color: pwMsg.tone === "ok" ? colors.success : colors.accent, fontSize: 12.5, fontWeight: "800" }}>{pwMsg.text}</Text> : null}
                   <Pressable disabled={pwSaving} onPress={() => void changePassword()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, opacity: pwSaving ? 0.6 : 1, paddingHorizontal: 22, paddingVertical: 12 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{pwSaving ? "Güncelleniyor…" : "Şifreyi güncelle"}</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{pwSaving ? translateCopy("Güncelleniyor…", language) : translateCopy("Şifreyi güncelle", language)}</Text>
                   </Pressable>
                 </View>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
                   <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
                     <MaterialCommunityIcons name="shield-check-outline" size={20} color={colors.primary} style={{ marginTop: 1 }} />
                     <View style={{ flex: 1, minWidth: 0 }}>
-                      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Oturum güvenliği</Text>
-                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Şu an bu cihazda giriş yapılı. Güvenlik için ortak cihazlarda işin bitince “Çıkış Yap” ile oturumunu kapat. Şüpheli bir durumda şifreni hemen değiştir.</Text>
+                      <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Oturum güvenliği", language)}</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Şu an bu cihazda giriş yapılı. Güvenlik için ortak cihazlarda işin bitince “Çıkış Yap” ile oturumunu kapat. Şüpheli bir durumda şifreni hemen değiştir.", language)}</Text>
                     </View>
                   </View>
                   <Pressable onPress={() => void signOut()} style={{ alignItems: "center", alignSelf: "flex-start", borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 10 }}>
                     <MaterialCommunityIcons name="logout" size={16} color={colors.accent} />
-                    <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>Bu cihazdan çıkış yap</Text>
+                    <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>{translateCopy("Bu cihazdan çıkış yap", language)}</Text>
                   </Pressable>
                 </View>
                 <LoginHistoryCard history={loginHistory} loading={historyLoading} isLive={isLiveAccount} onRefresh={() => void loadHistory()} onSignOutAll={() => void signOutEverywhere()} signingOutAll={signingOutAll} />
@@ -327,27 +327,27 @@ function ProfileEditScreenInner() {
 
             {section === "notifications" ? (
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
-                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Bildirimler</Text>
+                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Bildirimler", language)}</Text>
                 <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
                   <MaterialCommunityIcons name="bell-ring-outline" size={20} color={colors.primary} style={{ marginTop: 1 }} />
-                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>Talep, satış, komisyon, ortaklık ve mesaj gibi <Text style={{ fontWeight: "900" }}>önemli hareketler uygulama içinde anlık bildirim</Text> olarak sana gösterilir — Bildirimler sekmesinden takip edebilirsin.</Text>
+                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{translateCopy("Talep, satış, komisyon, ortaklık ve mesaj gibi", language)} <Text style={{ fontWeight: "900" }}>{translateCopy("önemli hareketler uygulama içinde anlık bildirim", language)}</Text> {translateCopy("olarak sana gösterilir — Bildirimler sekmesinden takip edebilirsin.", language)}</Text>
                 </View>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>E-posta/SMS bildirim kanalları ileride eklendiğinde buradan yönetebileceksin.</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("E-posta/SMS bildirim kanalları ileride eklendiğinde buradan yönetebileceksin.", language)}</Text>
               </View>
             ) : null}
 
             {section === "store" ? (
               <View style={{ gap: 16 }}>
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Mağaza Bilgileri</Text>
-                  <DeskField label="Mağaza adı" value={storeName} onChangeText={setStoreName} icon="storefront-outline" />
-                  <DeskField label="IBAN / ödeme bilgisi (opsiyonel)" value={iban} onChangeText={setIban} icon="bank-outline" placeholder="TR__ ____ ____ ____ ____ __" />
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Mağaza Bilgileri", language)}</Text>
+                  <DeskField label={translateCopy("Mağaza adı", language)} value={storeName} onChangeText={setStoreName} icon="storefront-outline" />
+                  <DeskField label={translateCopy("IBAN / ödeme bilgisi (opsiyonel)", language)} value={iban} onChangeText={setIban} icon="bank-outline" placeholder="TR__ ____ ____ ____ ____ __" />
                   <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 12 }}>
                     <MaterialCommunityIcons name="information-outline" size={17} color={colors.info} style={{ marginTop: 1 }} />
-                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>Ortaksat ödeme almaz veya tutmaz. Bu bilgiyi yalnızca, ortakların komisyonlarını sana doğrudan öderken kullanabilmesi için isteğe bağlı paylaşırsın.</Text>
+                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Ortaksat ödeme almaz veya tutmaz. Bu bilgiyi yalnızca, ortakların komisyonlarını sana doğrudan öderken kullanabilmesi için isteğe bağlı paylaşırsın.", language)}</Text>
                   </View>
                   <Pressable disabled={storeSaving} onPress={() => void saveStore()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, opacity: storeSaving ? 0.6 : 1, paddingHorizontal: 22, paddingVertical: 12 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{storeSaving ? "Kaydediliyor…" : "Mağaza ayarlarını kaydet"}</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{storeSaving ? translateCopy("Kaydediliyor…", language) : translateCopy("Mağaza ayarlarını kaydet", language)}</Text>
                   </Pressable>
                 </View>
               </View>
@@ -355,7 +355,7 @@ function ProfileEditScreenInner() {
 
             {section === "verification" ? (
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 4, padding: 22 }}>
-                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900", marginBottom: 8 }}>Doğrulama Durumu</Text>
+                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900", marginBottom: 8 }}>{translateCopy("Doğrulama Durumu", language)}</Text>
                 {verifications.map((v, i) => (
                   <View key={v.label} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingVertical: 14 }}>
                     <View style={{ alignItems: "center", backgroundColor: v.done ? colors.successSoft : colors.surfaceAlt, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
@@ -363,19 +363,19 @@ function ProfileEditScreenInner() {
                     </View>
                     <View style={{ flex: 1, minWidth: 0 }}>
                       <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{v.label}</Text>
-                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{v.done ? "Onaylandı" : "Henüz doğrulanmadı"}</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{v.done ? translateCopy("Onaylandı", language) : translateCopy("Henüz doğrulanmadı", language)}</Text>
                     </View>
                     <View style={{ backgroundColor: v.done ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-                      <Text style={{ color: v.done ? colors.success : colors.muted, fontSize: 12, fontWeight: "800" }}>{v.done ? "Onaylı" : "Bekliyor"}</Text>
+                      <Text style={{ color: v.done ? colors.success : colors.muted, fontSize: 12, fontWeight: "800" }}>{v.done ? translateCopy("Onaylı", language) : translateCopy("Bekliyor", language)}</Text>
                     </View>
                   </View>
                 ))}
                 <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, marginTop: 6, padding: 12 }}>
                   <MaterialCommunityIcons name="information-outline" size={17} color={colors.info} style={{ marginTop: 1 }} />
-                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>Doğrulamalar güvenlik gereği ekibimizce, belge/bilgi kontrolüyle yapılır. Aşağıdan talep oluşturabilirsin.</Text>
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Doğrulamalar güvenlik gereği ekibimizce, belge/bilgi kontrolüyle yapılır. Aşağıdan talep oluşturabilirsin.", language)}</Text>
                 </View>
-                <Pressable onPress={() => startVerification("Doğrulama talebi")} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, marginTop: 8, paddingHorizontal: 20, paddingVertical: 11 }}>
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Doğrulama talebi oluştur</Text>
+                <Pressable onPress={() => startVerification(translateCopy("Doğrulama talebi", language))} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, marginTop: 8, paddingHorizontal: 20, paddingVertical: 11 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Doğrulama talebi oluştur", language)}</Text>
                 </Pressable>
               </View>
             ) : null}
@@ -384,12 +384,12 @@ function ProfileEditScreenInner() {
           {/* Right sidebar */}
           <View style={{ gap: 16, width: 280 }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Hesap gücü</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Hesap gücü", language)}</Text>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
                 <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 56, justifyContent: "center", width: 56 }}>
                   <Text style={{ color: colors.primaryDark, fontSize: 17, fontWeight: "900" }}>%{completion}</Text>
                 </View>
-                <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Eksik adımları tamamlayarak hesabını güçlendir.</Text>
+                <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Eksik adımları tamamlayarak hesabını güçlendir.", language)}</Text>
               </View>
               <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 8, overflow: "hidden" }}>
                 <View style={{ backgroundColor: completion >= 75 ? colors.success : colors.warning, borderRadius: 999, height: "100%", width: `${completion}%` }} />
@@ -404,10 +404,10 @@ function ProfileEditScreenInner() {
 
             <View style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 16, borderWidth: 1, gap: 8, padding: 18 }}>
               <MaterialCommunityIcons name="alert-octagon-outline" size={22} color={colors.accent} />
-              <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>Tehlikeli bölge</Text>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>Hesabını kapatırsan ilanların ve komisyon geçmişin kalıcı olarak silinir.</Text>
+              <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy("Tehlikeli bölge", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Hesabını kapatırsan ilanların ve komisyon geçmişin kalıcı olarak silinir.", language)}</Text>
               <Pressable onPress={closeAccount} style={{ alignItems: "center", borderColor: colors.accent, borderRadius: 10, borderWidth: 1, marginTop: 2, paddingVertical: 10 }}>
-                <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>Hesabı kapat</Text>
+                <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>{translateCopy("Hesabı kapat", language)}</Text>
               </Pressable>
             </View>
           </View>
@@ -439,16 +439,16 @@ function ProfileEditScreenInner() {
                 {translateCopy("Profil bilgileri", language)}
               </Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                <StatusPill label={isLiveAccount ? "Canlı hesap" : "Ön izleme"} tone={isLiveAccount ? "success" : "warning"} />
-                <StatusPill label={currentUser.verifiedPhone ? "Telefon doğrulandı" : "Telefon bekliyor"} tone={currentUser.verifiedPhone ? "success" : "warning"} />
+                <StatusPill label={isLiveAccount ? translateCopy("Canlı hesap", language) : translateCopy("Ön izleme", language)} tone={isLiveAccount ? "success" : "warning"} />
+                <StatusPill label={currentUser.verifiedPhone ? translateCopy("Telefon doğrulandı", language) : translateCopy("Telefon bekliyor", language)} tone={currentUser.verifiedPhone ? "success" : "warning"} />
               </View>
             </View>
           </View>
-          <PrimaryButton icon="image-plus" tone="secondary" onPress={() => void pickAvatar()}>Galeriden fotoğraf seç</PrimaryButton>
+          <PrimaryButton icon="image-plus" tone="secondary" onPress={() => void pickAvatar()}>{translateCopy("Galeriden fotoğraf seç", language)}</PrimaryButton>
         </Card>
 
         <Card>
-          <SectionTitle title="Genel profil" />
+          <SectionTitle title={translateCopy("Genel profil", language)} />
           <Field label="Ad soyad / mağaza adı" value={name} onChangeText={setName} icon="account-outline" />
           <Field label="Telefon" value={phone} onChangeText={setPhone} icon="phone-outline" keyboardType="phone-pad" />
           <Field label="Avatar kısa adı veya görsel adresi" value={avatar} onChangeText={setAvatar} icon="image-outline" />
@@ -458,51 +458,51 @@ function ProfileEditScreenInner() {
           </Text>
         </Card>
 
-        <PrimaryButton icon="content-save-outline" onPress={() => void submit()}>{saving ? "Kaydediliyor" : "Profili kaydet"}</PrimaryButton>
+        <PrimaryButton icon="content-save-outline" onPress={() => void submit()}>{saving ? translateCopy("Kaydediliyor", language) : translateCopy("Profili kaydet", language)}</PrimaryButton>
 
         {/* Mobil paritesi: şifre/IBAN/bildirim/doğrulama/hesap web'de vardı, mobilde yoktu. */}
         {isLiveAccount ? (
           <>
             <Card>
-              <SectionTitle title="Hesap güvenliği" />
-              <DeskField icon="lock-outline" label="Mevcut şifren" secure value={pwCurrent} onChangeText={setPwCurrent} placeholder="Şu anki şifren" />
-              <DeskField icon="lock-reset" label="Yeni şifre (güçlü olmalı)" secure value={pwNew} onChangeText={setPwNew} placeholder="Büyük/küçük harf, rakam, özel karakter" />
+              <SectionTitle title={translateCopy("Hesap güvenliği", language)} />
+              <DeskField icon="lock-outline" label={translateCopy("Mevcut şifren", language)} secure value={pwCurrent} onChangeText={setPwCurrent} placeholder={translateCopy("Şu anki şifren", language)} />
+              <DeskField icon="lock-reset" label={translateCopy("Yeni şifre (güçlü olmalı)", language)} secure value={pwNew} onChangeText={setPwNew} placeholder={translateCopy("Büyük/küçük harf, rakam, özel karakter", language)} />
               <PasswordStrengthMeter password={pwNew} />
-              <DeskField icon="lock-check-outline" label="Yeni şifre (tekrar)" secure value={pwNew2} onChangeText={setPwNew2} placeholder="Tekrar" />
+              <DeskField icon="lock-check-outline" label={translateCopy("Yeni şifre (tekrar)", language)} secure value={pwNew2} onChangeText={setPwNew2} placeholder={translateCopy("Tekrar", language)} />
               {pwMsg ? <Text style={{ color: pwMsg.tone === "ok" ? colors.success : colors.accent, fontSize: 12.5, fontWeight: "800" }}>{pwMsg.text}</Text> : null}
-              <PrimaryButton icon="key-outline" tone="secondary" onPress={() => void changePassword()}>{pwSaving ? "Güncelleniyor" : "Şifreyi güncelle"}</PrimaryButton>
+              <PrimaryButton icon="key-outline" tone="secondary" onPress={() => void changePassword()}>{pwSaving ? translateCopy("Güncelleniyor", language) : translateCopy("Şifreyi güncelle", language)}</PrimaryButton>
             </Card>
             <LoginHistoryCard history={loginHistory} loading={historyLoading} isLive={isLiveAccount} onRefresh={() => void loadHistory()} onSignOutAll={() => void signOutEverywhere()} signingOutAll={signingOutAll} />
           </>
         ) : null}
 
         <Card>
-          <SectionTitle title="Bildirimler" />
-          <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>Talep, satış, komisyon, ortaklık ve mesaj gibi <Text style={{ fontWeight: "900" }}>önemli hareketler uygulama içinde anlık bildirim</Text> olarak gösterilir; Bildirimler sekmesinden takip edebilirsin.</Text>
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>E-posta/SMS bildirim kanalları ileride eklendiğinde buradan yönetebileceksin.</Text>
+          <SectionTitle title={translateCopy("Bildirimler", language)} />
+          <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{translateCopy("Talep, satış, komisyon, ortaklık ve mesaj gibi", language)} <Text style={{ fontWeight: "900" }}>{translateCopy("önemli hareketler uygulama içinde anlık bildirim", language)}</Text> {translateCopy("olarak gösterilir; Bildirimler sekmesinden takip edebilirsin.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("E-posta/SMS bildirim kanalları ileride eklendiğinde buradan yönetebileceksin.", language)}</Text>
         </Card>
 
         <Card>
-          <SectionTitle title="Mağaza & ödeme" />
+          <SectionTitle title={translateCopy("Mağaza & ödeme", language)} />
           <Field label="Mağaza adı" value={storeName} onChangeText={setStoreName} icon="storefront-outline" />
-          <DeskField icon="bank-outline" label="IBAN (komisyon tahsilatı için)" value={iban} onChangeText={setIban} placeholder="TR__ ____ ____ ____ ____ __" />
-          <PrimaryButton icon="content-save-outline" tone="secondary" onPress={() => void saveStore()}>{storeSaving ? "Kaydediliyor" : "Mağaza & IBAN'ı kaydet"}</PrimaryButton>
+          <DeskField icon="bank-outline" label={translateCopy("IBAN (komisyon tahsilatı için)", language)} value={iban} onChangeText={setIban} placeholder="TR__ ____ ____ ____ ____ __" />
+          <PrimaryButton icon="content-save-outline" tone="secondary" onPress={() => void saveStore()}>{storeSaving ? translateCopy("Kaydediliyor", language) : translateCopy("Mağaza & IBAN'ı kaydet", language)}</PrimaryButton>
         </Card>
 
         <Card>
-          <SectionTitle title="Doğrulama durumu" />
+          <SectionTitle title={translateCopy("Doğrulama durumu", language)} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatusPill label={currentUser.verifiedPhone ? "Telefon ✓" : "Telefon —"} tone={currentUser.verifiedPhone ? "success" : "warning"} />
-            <StatusPill label={currentUser.verifiedIdentity ? "Kimlik ✓" : "Kimlik —"} tone={currentUser.verifiedIdentity ? "success" : "warning"} />
-            <StatusPill label={currentUser.verifiedInstagram ? "Instagram ✓" : "Instagram —"} tone={currentUser.verifiedInstagram ? "success" : "warning"} />
+            <StatusPill label={currentUser.verifiedPhone ? translateCopy("Telefon ✓", language) : translateCopy("Telefon —", language)} tone={currentUser.verifiedPhone ? "success" : "warning"} />
+            <StatusPill label={currentUser.verifiedIdentity ? translateCopy("Kimlik ✓", language) : translateCopy("Kimlik —", language)} tone={currentUser.verifiedIdentity ? "success" : "warning"} />
+            <StatusPill label={currentUser.verifiedInstagram ? translateCopy("Instagram ✓", language) : translateCopy("Instagram —", language)} tone={currentUser.verifiedInstagram ? "success" : "warning"} />
           </View>
-          <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>Doğrulamalar güvenlik gereği ekibimizce, belge/bilgi kontrolüyle yapılır.</Text>
-          <PrimaryButton icon="shield-check-outline" tone="secondary" onPress={() => startVerification("Doğrulama talebi")}>Doğrulama talebi oluştur</PrimaryButton>
+          <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>{translateCopy("Doğrulamalar güvenlik gereği ekibimizce, belge/bilgi kontrolüyle yapılır.", language)}</Text>
+          <PrimaryButton icon="shield-check-outline" tone="secondary" onPress={() => startVerification(translateCopy("Doğrulama talebi", language))}>{translateCopy("Doğrulama talebi oluştur", language)}</PrimaryButton>
         </Card>
 
         <Card>
-          <SectionTitle title="Hesap" />
-          <PrimaryButton icon="account-cancel-outline" tone="danger" onPress={closeAccount}>Hesabı kapat</PrimaryButton>
+          <SectionTitle title={translateCopy("Hesap", language)} />
+          <PrimaryButton icon="account-cancel-outline" tone="danger" onPress={closeAccount}>{translateCopy("Hesabı kapat", language)}</PrimaryButton>
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -519,19 +519,20 @@ function formatWhen(iso: string): string {
 
 /** Giriş/oturum geçmişi + tüm cihazlardan çıkış kartı (masaüstü ve mobil ortak). */
 function LoginHistoryCard({ history, loading, isLive, onRefresh, onSignOutAll, signingOutAll }: { history: LoginEvent[]; loading: boolean; isLive: boolean; onRefresh: () => void; onSignOutAll: () => void; signingOutAll: boolean }) {
+  const { language } = useLanguage();
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <MaterialCommunityIcons name="history" size={20} color={colors.primary} />
-        <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Son giriş etkinliği</Text>
-        <Pressable onPress={onRefresh} hitSlop={8} accessibilityLabel="Yenile"><MaterialCommunityIcons name="refresh" size={18} color={colors.muted} /></Pressable>
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{translateCopy("Son giriş etkinliği", language)}</Text>
+        <Pressable onPress={onRefresh} hitSlop={8} accessibilityLabel={translateCopy("Yenile", language)}><MaterialCommunityIcons name="refresh" size={18} color={colors.muted} /></Pressable>
       </View>
       {!isLive ? (
-        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Giriş geçmişi yalnızca canlı hesaplarda görüntülenir.</Text>
+        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Giriş geçmişi yalnızca canlı hesaplarda görüntülenir.", language)}</Text>
       ) : loading ? (
-        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Yükleniyor…</Text>
+        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Yükleniyor…", language)}</Text>
       ) : history.length === 0 ? (
-        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Henüz kayıtlı giriş etkinliği yok.</Text>
+        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Henüz kayıtlı giriş etkinliği yok.", language)}</Text>
       ) : (
         <View style={{ gap: 8 }}>
           {history.map((e) => (
@@ -541,14 +542,14 @@ function LoginHistoryCard({ history, loading, isLive, onRefresh, onSignOutAll, s
                 <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{actionLabel(e.action)} · {e.browser}</Text>
                 <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{e.os} · {formatWhen(e.when)}</Text>
               </View>
-              {e.isCurrent ? <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}><Text style={{ color: colors.success, fontSize: 10.5, fontWeight: "900" }}>BU CİHAZ</Text></View> : null}
+              {e.isCurrent ? <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}><Text style={{ color: colors.success, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("BU CİHAZ", language)}</Text></View> : null}
             </View>
           ))}
         </View>
       )}
       <Pressable onPress={onSignOutAll} disabled={signingOutAll || !isLive} style={{ alignItems: "center", alignSelf: "flex-start", borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, opacity: signingOutAll || !isLive ? 0.6 : 1, paddingHorizontal: 18, paddingVertical: 10 }}>
         <MaterialCommunityIcons name="logout-variant" size={16} color={colors.accent} />
-        <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>{signingOutAll ? "Çıkılıyor…" : "Tüm cihazlardan çıkış yap"}</Text>
+        <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>{signingOutAll ? translateCopy("Çıkılıyor…", language) : translateCopy("Tüm cihazlardan çıkış yap", language)}</Text>
       </Pressable>
     </View>
   );
@@ -625,7 +626,8 @@ function Field({
 }
 
 export default function ProfileEditScreen() {
+  const { language } = useLanguage();
   const auth = useStore();
-  if (!auth.isAuthenticated) return <AuthRequired title="Ayarlar için giriş yapın" />;
+  if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Ayarlar için giriş yapın", language)} />;
   return <ProfileEditScreenInner />;
 }

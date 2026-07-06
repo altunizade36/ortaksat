@@ -199,7 +199,7 @@ export default function ListingDetailScreen() {
     }
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ alignItems: "center", flexGrow: 1, justifyContent: "center", padding: 24 }}>
-        <EmptyState title="İlan bulunamadı" body="Bu ilan kaldırılmış, satılmış ya da bağlantı artık geçerli değil." />
+        <EmptyState title={translateCopy("İlan bulunamadı", language)} body={translateCopy("Bu ilan kaldırılmış, satılmış ya da bağlantı artık geçerli değil.", language)} />
       </ScrollView>
     );
   }
@@ -214,7 +214,7 @@ export default function ListingDetailScreen() {
   const isOwner = currentListing.ownerId === currentUser.id;
   const isDemo = Boolean(currentListing.demo);
   function demoBlocked() {
-    Alert.alert("Örnek ilan", "Bu bir örnek (vitrin) ilandır; yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık bu ilanda kapalıdır.");
+    Alert.alert(translateCopy("Örnek ilan", language), translateCopy("Bu bir örnek (vitrin) ilandır; yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık bu ilanda kapalıdır.", language));
   }
   const listingReviews = reviews.filter((item) => item.listingId === currentListing.id);
   const favorited = isFavorite(currentListing.id);
@@ -380,7 +380,7 @@ export default function ListingDetailScreen() {
   }
 
   async function submitReport() {
-    if (!reportReason) { Alert.alert("Sebep seç", "Lütfen bir şikayet nedeni seç."); return; }
+    if (!reportReason) { Alert.alert(translateCopy("Sebep seç", language), translateCopy("Lütfen bir şikayet nedeni seç.", language)); return; }
     const details = `${currentListing.title} — ${reportReason}${reportDetail.trim() ? ` · ${reportDetail.trim()}` : ""}`;
     const ok = await reportListing(currentListing.id, reportReason, details);
     setReportOpen(false); setReportReason(""); setReportDetail("");
@@ -447,14 +447,14 @@ export default function ListingDetailScreen() {
       <WebContainer max={1280} padding={0} style={{ gap: 16 }}>
       {/* Breadcrumb: Ana Sayfa › Kategori › Ürün */}
       <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, marginHorizontal: isWideWeb ? 0 : 12 }}>
-        <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel="Ana sayfa"><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
+        <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel={translateCopy("Ana sayfa", language)}><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Ana Sayfa", language)}</Text></Pressable></Link>
         <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
         {(() => {
           const catSlug = findCategorySlug(currentListing.category);
           const href = catSlug ? ({ pathname: "/kategori/[slug]", params: { slug: catSlug } } as unknown as Href) : ("/kategoriler" as Href);
           return (
             <Link href={href} asChild>
-              <Pressable accessibilityRole="link" accessibilityLabel={`${currentListing.category} kategorisi`}><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{currentListing.category}</Text></Pressable>
+              <Pressable accessibilityRole="link" accessibilityLabel={`${translateCopy(currentListing.category, language)} ${translateCopy("kategorisi", language)}`}><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(currentListing.category, language)}</Text></Pressable>
             </Link>
           );
         })()}
@@ -467,8 +467,8 @@ export default function ListingDetailScreen() {
             <MaterialCommunityIcons name="eye-outline" size={19} color="#1A1A00" />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Örnek (vitrin) ilan</Text>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>Bu ilan yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık kapalıdır.</Text>
+            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Örnek (vitrin) ilan", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Bu ilan yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık kapalıdır.", language)}</Text>
           </View>
         </View>
       ) : null}
@@ -478,11 +478,11 @@ export default function ListingDetailScreen() {
         const mainImg = gallery[galleryIdx] ?? currentListing.image;
         return (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 18 : 0, borderWidth: isWideWeb ? 1 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
-            <Pressable accessibilityRole="imagebutton" accessibilityLabel="Görseli büyüt" onPress={() => setLightbox(true)} style={{ position: "relative" }}>
+            <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => setLightbox(true)} style={{ position: "relative" }}>
               <SafeRemoteImage uri={mainImg} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
               <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
                 <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>Büyüt{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Büyüt", language)}{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
               </View>
             </Pressable>
             {gallery.length > 1 ? (
@@ -495,10 +495,10 @@ export default function ListingDetailScreen() {
               </View>
             ) : null}
             <View style={{ flexDirection: "row", gap: 8, padding: 12 }}>
-              <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label="Beğen" onPress={() => toggleFavorite(currentListing.id)} />
-              {!isDemo ? <IconButton active={inCompare} icon={inCompare ? "compare-remove" : "compare-horizontal"} label="Karşılaştır" onPress={() => toggleCompare(currentListing.id)} /> : null}
-              <IconButton icon="share-variant-outline" label="Paylaş" onPress={() => void handleShare()} />
-              {!isOwner ? <IconButton icon="flag-outline" label="Bildir" onPress={() => setReportOpen(true)} /> : null}
+              <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label={translateCopy("Beğen", language)} onPress={() => toggleFavorite(currentListing.id)} />
+              {!isDemo ? <IconButton active={inCompare} icon={inCompare ? "compare-remove" : "compare-horizontal"} label={translateCopy("Karşılaştır", language)} onPress={() => toggleCompare(currentListing.id)} /> : null}
+              <IconButton icon="share-variant-outline" label={translateCopy("Paylaş", language)} onPress={() => void handleShare()} />
+              {!isOwner ? <IconButton icon="flag-outline" label={translateCopy("Bildir", language)} onPress={() => setReportOpen(true)} /> : null}
             </View>
           </View>
         );
@@ -509,8 +509,8 @@ export default function ListingDetailScreen() {
         {/* Satın alma / ortak kutusu — e-ticaret tarzı tek, net karar alanı */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatusPill label={currentListing.category} />
-            <StatusPill label={currentListing.partnershipMode === "open" ? "Anında ortaklık" : "Satıcı onaylı"} tone={currentListing.partnershipMode === "open" ? "success" : "warning"} />
+            <StatusPill label={translateCopy(currentListing.category, language)} />
+            <StatusPill label={translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : "Satıcı onaylı", language)} tone={currentListing.partnershipMode === "open" ? "success" : "warning"} />
           </View>
 
           <Text selectable accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 23, fontWeight: "900", lineHeight: 29 }}>{currentListing.title}</Text>
@@ -523,16 +523,16 @@ export default function ListingDetailScreen() {
               </>
             ) : (
               <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 2 }}>
-                <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>Yeni satıcı</Text>
+                <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Yeni satıcı", language)}</Text>
               </View>
             )}
             {owner?.verifiedPhone || owner?.verifiedIdentity ? (
               <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 2 }}>
                 <MaterialCommunityIcons name="check-decagram" size={12} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>Doğrulanmış</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Doğrulanmış", language)}</Text>
               </View>
             ) : null}
-            <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{owner?.successfulSales ? ` · ${owner.successfulSales} satış` : ""} · {currentListing.location}</Text>
+            <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{owner?.successfulSales ? ` · ${owner.successfulSales} ${translateCopy("satış", language)}` : ""} · {currentListing.location}</Text>
           </View>
 
           <Text selectable style={{ color: colors.ink, fontSize: 28, fontWeight: "900" }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
@@ -541,45 +541,45 @@ export default function ListingDetailScreen() {
           <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 14, borderWidth: 1, gap: 4, padding: 13 }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
               <MaterialCommunityIcons name="cash-multiple" size={17} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "900", letterSpacing: 0.3 }}>ORTAK KAZANCI</Text>
+              <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "900", letterSpacing: 0.3 }}>{translateCopy("ORTAK KAZANCI", language)}</Text>
               <Text style={{ color: colors.primaryDark, fontSize: 20, fontWeight: "900" }}>{moneyIn(commission, currentListing.currency)}</Text>
             </View>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)} · Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy("Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.", language)}</Text>
           </View>
 
           {/* Anahtar bilgiler */}
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <Metric label="Stok" value={`${currentListing.stockCount} adet`} />
-            <Metric label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında" : "Onaylı"} />
+            <Metric label={translateCopy("Stok", language)} value={`${currentListing.stockCount} ${translateCopy("adet", language)}`} />
+            <Metric label={translateCopy("Ortaklık", language)} value={translateCopy(currentListing.partnershipMode === "open" ? "Anında" : "Onaylı", language)} />
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
-            <Metric label="İade" value={`${currentListing.returnWindowDays} gün`} />
-            <Metric label="Komisyon vadesi" value={`${currentListing.commissionDueDays} gün`} />
+            <Metric label={translateCopy("İade", language)} value={`${currentListing.returnWindowDays} ${translateCopy("gün", language)}`} />
+            <Metric label={translateCopy("Komisyon vadesi", language)} value={`${currentListing.commissionDueDays} ${translateCopy("gün", language)}`} />
           </View>
 
           {/* Durum-duyarlı ana aksiyon */}
           {isOwner ? (
             <View style={{ gap: 8 }}>
-              <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: currentListing.id } }} icon="pencil-outline">İlanı Düzenle</PrimaryButton>
-              <PrimaryButton href="/(tabs)/seller" tone="secondary" icon="storefront-outline">Satıcı panelinde yönet</PrimaryButton>
+              <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: currentListing.id } }} icon="pencil-outline">{translateCopy("İlanı Düzenle", language)}</PrimaryButton>
+              <PrimaryButton href="/(tabs)/seller" tone="secondary" icon="storefront-outline">{translateCopy("Satıcı panelinde yönet", language)}</PrimaryButton>
             </View>
           ) : isDemo ? (
             <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
               <MaterialCommunityIcons name="lock-outline" size={16} color={colors.muted} />
-              <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>Örnek ilan — ortaklık ve iletişim kapalıdır.</Text>
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Örnek ilan — ortaklık ve iletişim kapalıdır.", language)}</Text>
             </View>
           ) : partnership?.status === "active" ? (
             <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 9, padding: 12 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
                 <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>Ortaksın · paylaşım bağlantın hazır</Text>
+                <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · paylaşım bağlantın hazır", language)}</Text>
               </View>
               {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
             </View>
           ) : partnership?.status === "pending" ? (
             <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
               <MaterialCommunityIcons name="clock-outline" size={16} color={colors.warning} />
-              <Text style={{ color: colors.warning, flex: 1, fontSize: 12.5, fontWeight: "800" }}>Başvurun satıcı onayında.</Text>
+              <Text style={{ color: colors.warning, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Başvurun satıcı onayında.", language)}</Text>
             </View>
           ) : (
             <View style={{ gap: 10 }}>
@@ -588,16 +588,16 @@ export default function ListingDetailScreen() {
                 <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 11, padding: 12 }}>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
                     <MaterialCommunityIcons name="account-edit-outline" size={16} color={colors.primaryDark} />
-                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>Başvuru bilgilerin</Text>
-                    <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>Satıcı görecek</Text>
+                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Başvuru bilgilerin", language)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{translateCopy("Satıcı görecek", language)}</Text>
                   </View>
                   {/* Neden satmak istiyor (zorunlu) */}
                   <View style={{ gap: 5 }}>
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Neden bu ürünü satmak istiyorsun? *</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Neden bu ürünü satmak istiyorsun? *", language)}</Text>
                     <TextInput
                       value={applicationNote}
                       onChangeText={setApplicationNote}
-                      placeholder="Kısaca anlat: kime, nerede ve nasıl ulaştıracaksın?"
+                      placeholder={translateCopy("Kısaca anlat: kime, nerede ve nasıl ulaştıracaksın?", language)}
                       placeholderTextColor={colors.subtle}
                       multiline
                       style={{ backgroundColor: colors.surface, borderColor: applicationNote.trim() ? colors.line : colors.warning, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 64, padding: 10, textAlignVertical: "top" }}
@@ -605,13 +605,13 @@ export default function ListingDetailScreen() {
                   </View>
                   {/* Kanal seçimi */}
                   <View style={{ gap: 5 }}>
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Hangi kanalda paylaşacaksın?</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Hangi kanalda paylaşacaksın?", language)}</Text>
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                       {["WhatsApp", "Instagram", "TikTok", "Diğer"].map((ch) => {
                         const on = applicationChannel === ch;
                         return (
-                          <Pressable key={ch} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`Kanal: ${ch}`} onPress={() => setApplicationChannel(ch)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 7 }}>
-                            <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{ch}</Text>
+                          <Pressable key={ch} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${translateCopy("Kanal:", language)} ${ch}`} onPress={() => setApplicationChannel(ch)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 7 }}>
+                            <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(ch, language)}</Text>
                           </Pressable>
                         );
                       })}
@@ -620,23 +620,23 @@ export default function ListingDetailScreen() {
                   {/* Erişim + kullanıcı adı (yan yana) */}
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     <View style={{ flex: 1, gap: 5 }}>
-                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Tahmini erişim (kişi)</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tahmini erişim (kişi)", language)}</Text>
                       <TextInput
                         value={applicationReach}
                         onChangeText={(txt) => setApplicationReach(txt.replace(/[^0-9]/g, ""))}
                         keyboardType="number-pad"
-                        placeholder="ör. 500"
+                        placeholder={translateCopy("ör. 500", language)}
                         placeholderTextColor={colors.subtle}
                         style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
                       />
                     </View>
                     <View style={{ flex: 1.35, gap: 5 }}>
-                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Sosyal medya adın (ops.)</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Sosyal medya adın (ops.)", language)}</Text>
                       <TextInput
                         value={applicationHandle}
                         onChangeText={setApplicationHandle}
                         autoCapitalize="none"
-                        placeholder="@kullaniciadi"
+                        placeholder={translateCopy("@kullaniciadi", language)}
                         placeholderTextColor={colors.subtle}
                         style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
                       />
@@ -644,18 +644,18 @@ export default function ListingDetailScreen() {
                   </View>
                   {/* Kitle tanımı (opsiyonel) */}
                   <View style={{ gap: 5 }}>
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Tahmini kitle (opsiyonel)</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tahmini kitle (opsiyonel)", language)}</Text>
                     <TextInput
                       value={applicationAudience}
                       onChangeText={setApplicationAudience}
-                      placeholder="ör. genç anneler, üniversite çevresi…"
+                      placeholder={translateCopy("ör. genç anneler, üniversite çevresi…", language)}
                       placeholderTextColor={colors.subtle}
                       style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
                     />
                   </View>
                 </View>
               ) : null}
-              <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{currentListing.partnershipMode === "open" ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder"}</PrimaryButton>
+              <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{translateCopy(currentListing.partnershipMode === "open" ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder", language)}</PrimaryButton>
             </View>
           )}
 
@@ -663,7 +663,7 @@ export default function ListingDetailScreen() {
           {!isOwner && !isDemo ? (
             <View style={{ gap: 10 }}>
               <SafetyNote />
-              <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{contactLabel(currentListing.contactMethod)}</PrimaryButton>
+              <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
             </View>
           ) : null}
 
@@ -673,13 +673,13 @@ export default function ListingDetailScreen() {
               <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{(owner?.name ?? "S").slice(0, 1).toLocaleUpperCase("tr-TR")}</Text>
             </View>
             <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{owner?.name ?? "Satıcı"}</Text>
-              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>%{ownerTrust?.score ?? 0} güven · %{owner?.responseRate ?? 0} yanıt</Text>
+              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{owner?.name ?? translateCopy("Satıcı", language)}</Text>
+              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>%{ownerTrust?.score ?? 0} {translateCopy("güven", language)} · %{owner?.responseRate ?? 0} {translateCopy("yanıt", language)}</Text>
             </View>
             <Link href={{ pathname: "/store/[id]", params: { id: currentListing.ownerId } }} asChild>
-              <Pressable accessibilityRole="link" accessibilityLabel="Mağazayı aç" style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}>
+              <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("Mağazayı aç", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}>
                 <MaterialCommunityIcons name="store-search-outline" size={14} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Mağaza</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Mağaza", language)}</Text>
               </Pressable>
             </Link>
           </View>
@@ -693,7 +693,7 @@ export default function ListingDetailScreen() {
 
         {/* Ortak satış nasıl işler? — tek, konsolide süreç bölümü */}
         <Card>
-          <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Ortak satış nasıl işler?</Text>
+          <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ortak satış nasıl işler?", language)}</Text>
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 8, padding: 12 }}>
             <Bullet icon="handshake-outline" text={partnershipModeDescription(currentListing.partnershipMode)} tone="info" />
             <Bullet icon="link-variant" text="Onay sonrası sana özel paylaşım bağlantısı açılır; alıcı talebi doğru ortağa bağlanır." tone="info" />
@@ -701,7 +701,7 @@ export default function ListingDetailScreen() {
           </View>
           {currentListing.partnerRules.slice(0, 4).map((rule) => <Bullet key={rule} icon="shield-check-outline" text={rule} tone="success" />)}
           <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
-            Min. ortak puanı {currentListing.minPartnerRating}+ · Komisyon vadesi {currentListing.commissionDueDays} gün · İade {currentListing.returnWindowDays} gün
+            {translateCopy("Min. ortak puanı", language)} {currentListing.minPartnerRating}+ · {translateCopy("Komisyon vadesi", language)} {currentListing.commissionDueDays} {translateCopy("gün", language)} · {translateCopy("İade", language)} {currentListing.returnWindowDays} {translateCopy("gün", language)}
           </Text>
         </Card>
 
@@ -717,18 +717,18 @@ export default function ListingDetailScreen() {
             <ChoiceRow<LeadSource> value={leadSource} setValue={setLeadSource} options={["whatsapp", "instagram", "web", "phone"]} labels={sourceLabels} />
             <ChoiceRow<PurchaseIntent> value={purchaseIntent} setValue={setPurchaseIntent} options={["hot", "warm", "cold"]} labels={intentLabels} />
             <Field label="Not" value={leadNote} onChangeText={setLeadNote} multiline />
-            <PrimaryButton icon="account-plus-outline" onPress={handleCreateLead}>Talebi kaydet</PrimaryButton>
+            <PrimaryButton icon="account-plus-outline" onPress={handleCreateLead}>{translateCopy("Talebi kaydet", language)}</PrimaryButton>
           </Card>
         ) : null}
 
         <View style={{ gap: 10 }}>
-          <Accordion title="Ürün açıklaması" icon="text-box-outline" defaultOpen>
+          <Accordion title={translateCopy("Ürün açıklaması", language)} icon="text-box-outline" defaultOpen>
             <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{currentListing.description}</Text>
             {currentListing.salesPitch.slice(0, 4).map((line) => (
               <Bullet key={line} icon="check-circle-outline" text={line} tone="info" />
             ))}
           </Accordion>
-          <Accordion title="Ürün özellikleri" icon="format-list-bulleted">
+          <Accordion title={translateCopy("Ürün özellikleri", language)} icon="format-list-bulleted">
             <SpecRow label="Kategori" value={currentListing.category} />
             {currentListing.attributes?.listingType ? <SpecRow label="İlan tipi" value={String(currentListing.attributes.listingType)} /> : null}
             <SpecRow label="Konum" value={currentListing.location} />
@@ -736,18 +736,18 @@ export default function ListingDetailScreen() {
             {describeAttributes(currentListing.attributes).map((a) => (
               <SpecRow key={a.label} label={a.label} value={a.value} />
             ))}
-            <SpecRow label="Stok" value={`${currentListing.stockCount} adet`} />
+            <SpecRow label="Stok" value={`${currentListing.stockCount} ${translateCopy("adet", language)}`} />
             <SpecRow label="Komisyon" value={currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : moneyIn(commission, currentListing.currency)} />
             <SpecRow label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında ortaklık" : "Satıcı onaylı"} />
             <SpecRow label="İletişim" value={contactLabel(currentListing.contactMethod)} />
           </Accordion>
-          <Accordion title="Teslimat ve iade" icon="truck-outline">
+          <Accordion title={translateCopy("Teslimat ve iade", language)} icon="truck-outline">
             <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>
-              Teslimat ve ödeme, satıcı ile alıcı arasında {contactLabel(currentListing.contactMethod).toLocaleLowerCase("tr-TR")} üzerinden kararlaştırılır. İade ve değişim koşullarını satışı kapatmadan önce satıcıyla netleştir.
+              {translateCopy("Teslimat ve ödeme, satıcı ile alıcı arasında", language)} {translateCopy(contactLabel(currentListing.contactMethod), language).toLocaleLowerCase("en-US")}{translateCopy(" üzerinden kararlaştırılır. İade ve değişim koşullarını satışı kapatmadan önce satıcıyla netleştir.", language)}
             </Text>
             <LegalNote style={{ marginTop: 8 }} />
           </Accordion>
-          <Accordion title="Sıkça sorulan sorular" icon="comment-question-outline">
+          <Accordion title={translateCopy("Sıkça sorulan sorular", language)} icon="comment-question-outline">
             <SpecRow label="Komisyonu kim öder?" value="İlan sahibi, satış gerçekleştiğinde ortağa öder." />
             <SpecRow label="Ortak olmak ücretli mi?" value="Hayır, ortaklık ücretsizdir." />
             <SpecRow label="Süreç güvenli mi?" value="Komisyon şartı ve talepler sistemde kayıt altındadır." />
@@ -784,7 +784,7 @@ export default function ListingDetailScreen() {
               <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Satış sonrası yorum hakkın var", language)}</Text>
               <View style={{ flexDirection: "row", gap: 6 }}>{[5, 4, 3].map((rating) => (<Pressable key={rating} onPress={() => setReviewRating(rating)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: reviewRating === rating ? colors.primarySoft : colors.surface, borderColor: reviewRating === rating ? colors.primary : colors.line, borderRadius: 8, borderWidth: 1, flex: 1, minHeight: 38, justifyContent: "center", opacity: pressed ? 0.74 : 1 })}><Text selectable style={{ color: reviewRating === rating ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: "900" }}>{rating} {translateCopy("yıldız", language)}</Text></Pressable>))}</View>
               <Field label="Yorum" value={reviewComment} onChangeText={setReviewComment} multiline />
-              <PrimaryButton tone="secondary" icon="star-outline" onPress={handleSaleReview}>Yorumu kaydet</PrimaryButton>
+              <PrimaryButton tone="secondary" icon="star-outline" onPress={handleSaleReview}>{translateCopy("Yorumu kaydet", language)}</PrimaryButton>
             </View>
           ) : null}
           {listingReviews.length === 0 ? (
@@ -796,7 +796,7 @@ export default function ListingDetailScreen() {
             const reviewer = findUser(item.reviewerId);
             return (
               <View key={item.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 5, padding: 10 }}>
-                <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{reviewer?.name ?? "Kullanıcı"} · {item.rating}/5</Text>
+                <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{reviewer?.name ?? translateCopy("Kullanıcı", language)} · {item.rating}/5</Text>
                 <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{item.comment}</Text>
               </View>
             );
@@ -814,24 +814,24 @@ export default function ListingDetailScreen() {
               <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
                 <MaterialCommunityIcons name="flag-outline" size={22} color={colors.accent} />
               </View>
-              <Text style={{ color: colors.ink, flex: 1, fontSize: 17, fontWeight: "900" }}>İlanı bildir</Text>
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 17, fontWeight: "900" }}>{translateCopy("İlanı bildir", language)}</Text>
               <Pressable onPress={() => setReportOpen(false)} hitSlop={8}><MaterialCommunityIcons name="close" size={22} color={colors.muted} /></Pressable>
             </View>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Bu ilanda bir sorun mu var? Nedenini seç; moderasyon ekibi inceler.</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Bu ilanda bir sorun mu var? Nedenini seç; moderasyon ekibi inceler.", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {["Sahte İlan", "Yanlış Fiyat", "Yanlış Konum", "Spam", "Kopya İlan", "Hakaret", "Dolandırıcılık", "Telif İhlali", "Yasaklı İçerik"].map((r) => {
                 const on = reportReason === r;
                 return (
                   <Pressable key={r} onPress={() => setReportReason(r)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 8 }}>
-                    <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: on ? "900" : "700" }}>{r}</Text>
+                    <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: on ? "900" : "700" }}>{translateCopy(r, language)}</Text>
                   </Pressable>
                 );
               })}
             </View>
-            <TextInput value={reportDetail} onChangeText={setReportDetail} placeholder="İstersen kısa bir açıklama ekle (opsiyonel)" placeholderTextColor={colors.subtle} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13, minHeight: 64, padding: 12, textAlignVertical: "top" }} />
+            <TextInput value={reportDetail} onChangeText={setReportDetail} placeholder={translateCopy("İstersen kısa bir açıklama ekle (opsiyonel)", language)} placeholderTextColor={colors.subtle} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13, minHeight: 64, padding: 12, textAlignVertical: "top" }} />
             <View style={{ flexDirection: "row", gap: 10, justifyContent: "flex-end" }}>
-              <Pressable onPress={() => setReportOpen(false)} style={{ borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text></Pressable>
-              <Pressable onPress={() => void submitReport()} style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Bildir</Text></Pressable>
+              <Pressable onPress={() => setReportOpen(false)} style={{ borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text></Pressable>
+              <Pressable onPress={() => void submitReport()} style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bildir", language)}</Text></Pressable>
             </View>
           </View>
         </View>
@@ -839,13 +839,13 @@ export default function ListingDetailScreen() {
 
       <Modal visible={lightbox} transparent animationType="fade" onRequestClose={() => { setLightbox(false); setZoomed(false); }}>
         <View style={{ backgroundColor: "rgba(0,0,0,0.92)", flex: 1, justifyContent: "center" }}>
-          <Pressable accessibilityLabel="Kapat" onPress={() => { setLightbox(false); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 42, justifyContent: "center", position: "absolute", right: 18, top: 18, width: 42, zIndex: 5 }}>
+          <Pressable accessibilityLabel={translateCopy("Kapat", language)} onPress={() => { setLightbox(false); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 42, justifyContent: "center", position: "absolute", right: 18, top: 18, width: 42, zIndex: 5 }}>
             <MaterialCommunityIcons name="close" size={24} color="#FFFFFF" />
           </Pressable>
           <Pressable
             onPress={() => setZoomed((z) => !z)}
             accessibilityRole="imagebutton"
-            accessibilityLabel={zoomed ? "Uzaklaştır" : "Yakınlaştır"}
+            accessibilityLabel={zoomed ? translateCopy("Uzaklaştır", language) : translateCopy("Yakınlaştır", language)}
             onTouchStart={(e) => { swipeStartX.current = e.nativeEvent.pageX; }}
             onTouchEnd={(e) => {
               const dx = e.nativeEvent.pageX - swipeStartX.current;
@@ -863,15 +863,15 @@ export default function ListingDetailScreen() {
           </Pressable>
           <View style={{ alignItems: "center", bottom: 74, left: 0, position: "absolute", right: 0 }}>
             <View style={{ backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}>
-              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "700" }}>{zoomed ? "Uzaklaştırmak için dokun" : "Yakınlaştırmak için dokun · kaydırarak gez"}</Text>
+              <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11, fontWeight: "700" }}>{zoomed ? translateCopy("Uzaklaştırmak için dokun", language) : translateCopy("Yakınlaştırmak için dokun · kaydırarak gez", language)}</Text>
             </View>
           </View>
           {gallery.length > 1 ? (
             <>
-              <Pressable accessibilityLabel="Önceki görsel" onPress={() => { setActiveImage((galleryIdx - 1 + gallery.length) % gallery.length); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", left: 14, position: "absolute", top: "46%", width: 48 }}>
+              <Pressable accessibilityLabel={translateCopy("Önceki görsel", language)} onPress={() => { setActiveImage((galleryIdx - 1 + gallery.length) % gallery.length); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", left: 14, position: "absolute", top: "46%", width: 48 }}>
                 <MaterialCommunityIcons name="chevron-left" size={30} color="#FFFFFF" />
               </Pressable>
-              <Pressable accessibilityLabel="Sonraki görsel" onPress={() => { setActiveImage((galleryIdx + 1) % gallery.length); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", position: "absolute", right: 14, top: "46%", width: 48 }}>
+              <Pressable accessibilityLabel={translateCopy("Sonraki görsel", language)} onPress={() => { setActiveImage((galleryIdx + 1) % gallery.length); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", position: "absolute", right: 14, top: "46%", width: 48 }}>
                 <MaterialCommunityIcons name="chevron-right" size={30} color="#FFFFFF" />
               </Pressable>
               <View style={{ alignItems: "center", bottom: 26, flexDirection: "row", gap: 8, justifyContent: "center", left: 0, position: "absolute", right: 0 }}>
@@ -924,7 +924,7 @@ function PartnerSaleTimeline({ listing, partnershipStatus }: { listing: Listing;
       active: false,
       icon: "cash-check" as const,
       title: "Komisyon kapanışı",
-      body: `${listing.returnWindowDays} gün iade · ${listing.commissionDueDays} gün ödeme vadesi`
+      body: `${listing.returnWindowDays} ${translateCopy("gün iade", language)} · ${listing.commissionDueDays} ${translateCopy("gün ödeme vadesi", language)}`
     }
   ];
 

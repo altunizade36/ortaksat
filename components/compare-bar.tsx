@@ -9,6 +9,7 @@ import { commissionAmount, moneyIn } from "@/lib/format";
 import { FIELD_LABELS } from "@/lib/category-tree";
 import { useCompare } from "@/lib/compare";
 import { getCategoryShortLabel } from "@/lib/categories";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
@@ -16,6 +17,7 @@ import { useStore } from "@/lib/use-store";
 
 export function CompareBar() {
   const isWideWeb = useIsWideWeb();
+  const { language } = useLanguage();
   const router = useRouter();
   const { ids, remove, clear } = useCompare();
   const { listings, findUser } = useStore();
@@ -31,10 +33,10 @@ export function CompareBar() {
     { label: "Ortak kazancı", get: (l) => moneyIn(commissionAmount(l), l.currency), num: (l) => commissionAmount(l), dir: "max" },
     { label: "Komisyon", get: (l) => (l.commissionType === "rate" ? `%${l.commissionValue}` : moneyIn(l.commissionValue, l.currency)), num: (l) => (l.commissionType === "rate" ? l.commissionValue : commissionAmount(l)), dir: "max" },
     { label: "Bonus", get: (l) => (l.bonusAmount ? `${moneyIn(l.bonusAmount, l.currency)}${l.bonusQuota ? ` · ${l.bonusQuota} adet` : ""}` : "—"), num: (l) => l.bonusAmount ?? 0, dir: "max" },
-    { label: "Satıcı puanı", get: (l) => { const o = findUser(l.ownerId); return o?.rating ? `${o.rating.toFixed(1)} ★` : "Yeni"; }, num: (l) => findUser(l.ownerId)?.rating ?? 0, dir: "max" },
+    { label: "Satıcı puanı", get: (l) => { const o = findUser(l.ownerId); return o?.rating ? `${o.rating.toFixed(1)} ★` : translateCopy("Yeni", language); }, num: (l) => findUser(l.ownerId)?.rating ?? 0, dir: "max" },
     { label: "Kategori", get: (l) => getCategoryShortLabel(l.category) },
     { label: "Konum", get: (l) => displayText(l.location) },
-    { label: "Ortaklık", get: (l) => (l.partnershipMode === "open" ? "Anında" : l.partnershipMode === "approval" ? "Onaylı" : "Davetli") }
+    { label: "Ortaklık", get: (l) => (l.partnershipMode === "open" ? translateCopy("Anında", language) : l.partnershipMode === "approval" ? translateCopy("Onaylı", language) : translateCopy("Davetli", language)) }
   ];
 
   // Yapısal kategori özelliklerini (emlak: m²/oda/kat/ısıtma/aidat…) da karşılaştır
@@ -50,7 +52,7 @@ export function CompareBar() {
   const fmt = (v: string | number | boolean | string[] | undefined, suffix?: string) => {
     if (v === undefined || v === null || v === "" || (Array.isArray(v) && !v.length)) return "—";
     if (Array.isArray(v)) return v.join(", ");
-    if (typeof v === "boolean") return v ? "Evet" : "Hayır";
+    if (typeof v === "boolean") return v ? translateCopy("Evet", language) : translateCopy("Hayır", language);
     return `${v}${suffix ? " " + suffix : ""}`;
   };
   const attrRows: Row[] = attrKeys.map((k) => {
@@ -77,12 +79,12 @@ export function CompareBar() {
               </View>
             ))}
           </View>
-          <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>{items.length < 2 ? "1 ürün · 1 daha seç" : `${items.length} ürün seçildi`}</Text>
-          <Pressable onPress={() => setOpen(true)} disabled={items.length < 2} accessibilityRole="button" accessibilityState={{ disabled: items.length < 2 }} accessibilityLabel={items.length < 2 ? "Karşılaştırmak için en az 2 ürün seçin" : "Seçili ürünleri karşılaştır"} style={{ alignItems: "center", backgroundColor: items.length < 2 ? "rgba(255,255,255,0.25)" : colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
+          <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>{items.length < 2 ? translateCopy("1 ürün · 1 daha seç", language) : `${items.length} ${translateCopy("ürün seçildi", language)}`}</Text>
+          <Pressable onPress={() => setOpen(true)} disabled={items.length < 2} accessibilityRole="button" accessibilityState={{ disabled: items.length < 2 }} accessibilityLabel={items.length < 2 ? translateCopy("Karşılaştırmak için en az 2 ürün seçin", language) : translateCopy("Seçili ürünleri karşılaştır", language)} style={{ alignItems: "center", backgroundColor: items.length < 2 ? "rgba(255,255,255,0.25)" : colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
             <MaterialCommunityIcons name="compare-horizontal" size={16} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>Karşılaştır</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Karşılaştır", language)}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Karşılaştırmayı temizle" onPress={clear} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Karşılaştırmayı temizle", language)} onPress={clear} hitSlop={8}>
             <MaterialCommunityIcons name="close" size={18} color="rgba(255,255,255,0.75)" />
           </Pressable>
         </View>
@@ -94,8 +96,8 @@ export function CompareBar() {
           <View style={{ backgroundColor: colors.surface, borderRadius: 18, maxHeight: "90%", maxWidth: 980, overflow: "hidden", width: "100%" }}>
             <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 20, paddingVertical: 15 }}>
               <MaterialCommunityIcons name="compare-horizontal" size={20} color={colors.primaryDark} />
-              <Text style={{ color: colors.ink, flex: 1, fontSize: 17, fontWeight: "900" }}>Ürün Karşılaştırma</Text>
-              <Pressable onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel="Kapat" style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 17, fontWeight: "900" }}>{translateCopy("Ürün Karşılaştırma", language)}</Text>
+              <Pressable onPress={() => setOpen(false)} accessibilityRole="button" accessibilityLabel={translateCopy("Kapat", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
                 <MaterialCommunityIcons name="close" size={18} color={colors.muted} />
               </Pressable>
             </View>
@@ -109,13 +111,13 @@ export function CompareBar() {
                       <View key={l.id} style={{ gap: 6, paddingHorizontal: 8, width: 190 }}>
                         <View style={{ backgroundColor: colors.line, borderRadius: 12, height: 120, overflow: "hidden", width: "100%" }}>
                           <SafeRemoteImage uri={l.image} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-                          <Pressable onPress={() => remove(l.id)} accessibilityRole="button" accessibilityLabel="Karşılaştırmadan çıkar" style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, height: 24, justifyContent: "center", position: "absolute", right: 6, top: 6, width: 24 }}>
+                          <Pressable onPress={() => remove(l.id)} accessibilityRole="button" accessibilityLabel={translateCopy("Karşılaştırmadan çıkar", language)} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, height: 24, justifyContent: "center", position: "absolute", right: 6, top: 6, width: 24 }}>
                             <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
                           </Pressable>
                         </View>
                         <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", lineHeight: 17, minHeight: 34 }}>{displayText(l.title)}</Text>
-                        <Pressable onPress={() => { setOpen(false); router.push(`/listing/${l.id}`); }} accessibilityRole="button" accessibilityLabel={`${displayText(l.title)} ilanını aç`} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, paddingVertical: 7 }}>
-                          <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>İlanı Aç</Text>
+                        <Pressable onPress={() => { setOpen(false); router.push(`/listing/${l.id}`); }} accessibilityRole="button" accessibilityLabel={`${displayText(l.title)} ${translateCopy("ilanını aç", language)}`} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, paddingVertical: 7 }}>
+                          <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("İlanı Aç", language)}</Text>
                         </Pressable>
                       </View>
                     ))}
@@ -129,7 +131,7 @@ export function CompareBar() {
                     }
                     return (
                       <View key={r.label} style={{ backgroundColor: ri % 2 === 0 ? colors.surfaceAlt : "transparent", borderRadius: 8, flexDirection: "row", marginTop: 6 }}>
-                        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", paddingHorizontal: 10, paddingVertical: 12, width: 128 }}>{r.label}</Text>
+                        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", paddingHorizontal: 10, paddingVertical: 12, width: 128 }}>{translateCopy(r.label, language)}</Text>
                         {items.map((l) => {
                           const isBest = best !== null && r.num!(l) === best;
                           return (

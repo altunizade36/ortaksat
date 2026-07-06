@@ -7,6 +7,7 @@ import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -49,8 +50,9 @@ const faqLd = JSON.stringify({
 
 export default function SafeShoppingGuidePage() {
   const isWideWeb = useIsWideWeb();
-  const title = "Güvenli Alışveriş Rehberi — Dolandırıcılıktan Korunma | OrtakSat";
-  const desc = "OrtakSat güvenli alışveriş rehberi: platform ödeme tutmaz, taraflar kendi aralarında anlaşır. Güvenli alım-satım adımları, dolandırıcılık kırmızı bayrakları ve şikayet etme yolları.";
+  const { language } = useLanguage();
+  const title = translateCopy("Güvenli Alışveriş Rehberi — Dolandırıcılıktan Korunma | OrtakSat", language);
+  const desc = translateCopy("OrtakSat güvenli alışveriş rehberi: platform ödeme tutmaz, taraflar kendi aralarında anlaşır. Güvenli alım-satım adımları, dolandırıcılık kırmızı bayrakları ve şikayet etme yolları.", language);
   const url = "https://ortaksat.com/guvenli-alisveris";
 
   return (
@@ -71,11 +73,11 @@ export default function SafeShoppingGuidePage() {
         <View style={{ gap: 8 }}>
           <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 6 }}>
             <MaterialCommunityIcons name="shield-check" size={15} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Güven Merkezi</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Güven Merkezi", language)}</Text>
           </View>
-          <Text style={{ color: colors.ink, fontSize: isWideWeb ? 30 : 25, fontWeight: "900", lineHeight: isWideWeb ? 36 : 30 }}>Güvenli Alışveriş Rehberi</Text>
+          <Text style={{ color: colors.ink, fontSize: isWideWeb ? 30 : 25, fontWeight: "900", lineHeight: isWideWeb ? 36 : 30 }}>{translateCopy("Güvenli Alışveriş Rehberi", language)}</Text>
           <Text style={{ color: colors.muted, fontSize: 14.5, fontWeight: "600", lineHeight: 22, maxWidth: 680 }}>
-            Birkaç basit adımla alım-satımını güvende tut. Dolandırıcılığın çoğu, ürünü görmeden ödeme yapmaktan ve platform dışına çıkmaktan kaynaklanır.
+            {translateCopy("Birkaç basit adımla alım-satımını güvende tut. Dolandırıcılığın çoğu, ürünü görmeden ödeme yapmaktan ve platform dışına çıkmaktan kaynaklanır.", language)}
           </Text>
         </View>
 
@@ -83,16 +85,16 @@ export default function SafeShoppingGuidePage() {
         <View style={{ backgroundColor: colors.warningSoft, borderColor: colors.warning, borderRadius: 16, borderWidth: 1, flexDirection: "row", gap: 12, padding: 18 }}>
           <MaterialCommunityIcons name="alert-decagram" size={26} color={colors.warning} />
           <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
-            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>OrtakSat ödeme almaz, para tutmaz</Text>
+            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("OrtakSat ödeme almaz, para tutmaz", language)}</Text>
             <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>
-              OrtakSat yalnızca satıcı, ortak ve alıcıyı buluşturur. Ödeme, teslimat ve komisyon şartlarını taraflar kendi aralarında belirler — platform bu sürecin tarafı değildir ve garanti vermez. Bu yüzden ödemeyi ve teslimatı güvenli yürütmek senin elinde. Aşağıdaki adımlar bunun için.
+              {translateCopy("OrtakSat yalnızca satıcı, ortak ve alıcıyı buluşturur. Ödeme, teslimat ve komisyon şartlarını taraflar kendi aralarında belirler — platform bu sürecin tarafı değildir ve garanti vermez. Bu yüzden ödemeyi ve teslimatı güvenli yürütmek senin elinde. Aşağıdaki adımlar bunun için.", language)}
             </Text>
           </View>
         </View>
 
         {/* Alıcı adımları */}
         <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Alıcı için 5 güvenli adım</Text>
+          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Alıcı için 5 güvenli adım", language)}</Text>
           <View style={{ gap: 10 }}>
             {BUYER_STEPS.map((s, i) => (
               <View key={s.t} style={{ alignItems: "flex-start", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 16 }}>
@@ -102,9 +104,9 @@ export default function SafeShoppingGuidePage() {
                 <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
                     <MaterialCommunityIcons name={s.icon} size={17} color={colors.primaryDark} />
-                    <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{s.t}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy(s.t, language)}</Text>
                   </View>
-                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>{s.b}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>{translateCopy(s.b, language)}</Text>
                 </View>
               </View>
             ))}
@@ -115,14 +117,14 @@ export default function SafeShoppingGuidePage() {
         <View style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <MaterialCommunityIcons name="flag-variant" size={20} color={colors.accent} />
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Dolandırıcılık kırmızı bayrakları</Text>
+            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Dolandırıcılık kırmızı bayrakları", language)}</Text>
           </View>
-          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Bunlardan biriyle karşılaşırsan dur, ödeme yapma ve bildir:</Text>
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Bunlardan biriyle karşılaşırsan dur, ödeme yapma ve bildir:", language)}</Text>
           <View style={{ gap: 8 }}>
             {RED_FLAGS.map((r) => (
               <View key={r} style={{ alignItems: "flex-start", flexDirection: "row", gap: 8 }}>
                 <MaterialCommunityIcons name="close-circle" size={16} color={colors.accent} style={{ marginTop: 1 }} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700", lineHeight: 19 }}>{r}</Text>
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700", lineHeight: 19 }}>{translateCopy(r, language)}</Text>
               </View>
             ))}
           </View>
@@ -130,13 +132,13 @@ export default function SafeShoppingGuidePage() {
 
         {/* Satıcı ipuçları */}
         <View style={{ gap: 12 }}>
-          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Satıcı için güvenlik</Text>
+          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Satıcı için güvenlik", language)}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             {SELLER_TIPS.map((s) => (
               <View key={s.t} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 280, flexGrow: 1, gap: 6, padding: 16 }}>
                 <MaterialCommunityIcons name={s.icon} size={22} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{s.t}</Text>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{s.b}</Text>
+                <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy(s.t, language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy(s.b, language)}</Text>
               </View>
             ))}
           </View>
@@ -146,22 +148,22 @@ export default function SafeShoppingGuidePage() {
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <MaterialCommunityIcons name="flag-outline" size={20} color={colors.primaryDark} />
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Şüpheli durumu bildir</Text>
+            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Şüpheli durumu bildir", language)}</Text>
           </View>
           <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>
-            İlan sayfasındaki <Text style={{ color: colors.ink, fontWeight: "900" }}>"Bildir"</Text> düğmesiyle ya da kullanıcının profilinden şikayet oluşturabilirsin. Kayıt moderasyon ekibine düşer. Maddi kayıp veya suç şüphesinde 155 (Polis) / 156 (Jandarma) hattına başvur ve kanıtlarını sakla.
+            {translateCopy("İlan sayfasındaki", language)} <Text style={{ color: colors.ink, fontWeight: "900" }}>"{translateCopy("Bildir", language)}"</Text> {translateCopy("düğmesiyle ya da kullanıcının profilinden şikayet oluşturabilirsin. Kayıt moderasyon ekibine düşer. Maddi kayıp veya suç şüphesinde 155 (Polis) / 156 (Jandarma) hattına başvur ve kanıtlarını sakla.", language)}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <Link href="/explore" asChild>
               <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}>
                 <MaterialCommunityIcons name="magnify" size={16} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>İlanları Keşfet</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("İlanları Keşfet", language)}</Text>
               </Pressable>
             </Link>
             <Link href="/trust" asChild>
               <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}>
                 <MaterialCommunityIcons name="shield-check-outline" size={16} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Güven Merkezim</Text>
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Güven Merkezim", language)}</Text>
               </Pressable>
             </Link>
           </View>
@@ -169,12 +171,12 @@ export default function SafeShoppingGuidePage() {
 
         {/* SSS */}
         <View style={{ gap: 10 }}>
-          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Sık sorulan sorular</Text>
+          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Sık sorulan sorular", language)}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             {FAQ.map((item) => (
               <View key={item.q} style={{ flexBasis: 440, flexGrow: 1, maxWidth: 760 }}>
-                <Accordion title={item.q} icon="comment-question-outline">
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{item.a}</Text>
+                <Accordion title={translateCopy(item.q, language)} icon="comment-question-outline">
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{translateCopy(item.a, language)}</Text>
                 </Accordion>
               </View>
             ))}

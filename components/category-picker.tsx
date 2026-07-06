@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getFormSchema, resolveFormKey, suggestCategories, type CategoryNode } from "@/lib/category-tree";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
@@ -16,6 +17,7 @@ import { useStore } from "@/lib/use-store";
  */
 export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onChange: (path: CategoryNode[]) => void }) {
   const { categoryTree } = useStore();
+  const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const [trail, setTrail] = useState<CategoryNode[]>(value ?? []);
   const [query, setQuery] = useState("");
@@ -45,7 +47,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
       <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 9, paddingHorizontal: 12, paddingVertical: 9 }}>
         <MaterialCommunityIcons name="shield-check-outline" size={17} color={colors.primaryDark} />
         <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16 }}>
-          OrtakSat ödeme, kargo veya komisyon işlemez. Taraflar kendi aralarında anlaşır; platform yalnızca ilan ve eşleşme altyapısı sağlar.
+          {translateCopy("OrtakSat ödeme, kargo veya komisyon işlemez. Taraflar kendi aralarında anlaşır; platform yalnızca ilan ve eşleşme altyapısı sağlar.", language)}
         </Text>
       </View>
       {/* Search + suggestions */}
@@ -55,7 +57,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder="Ne satıyorsun? iPhone, koltuk, araba, arsa…"
+            placeholder={translateCopy("Ne satıyorsun? iPhone, koltuk, araba, arsa…", language)}
             placeholderTextColor={colors.subtle}
             style={{ color: colors.ink, flex: 1, fontSize: 14.5, minHeight: 50, paddingVertical: 10 }}
           />
@@ -92,7 +94,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
           {finalized ? (
             <Pressable onPress={() => onChange([])} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 4, marginLeft: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
               <MaterialCommunityIcons name="pencil-outline" size={13} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>Değiştir</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
             </Pressable>
           ) : null}
         </View>
@@ -103,7 +105,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
           {/* Pane 1: top categories — mobilde bir üst kategori seçilince gizlenir (dar ekranda alt kategoriye odak). */}
           {isWideWeb || !top ? (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 230, flexGrow: 1, maxWidth: isWideWeb ? 280 : undefined, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
-            <Text style={{ backgroundColor: colors.surfaceAlt, color: colors.muted, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.4, paddingHorizontal: 14, paddingVertical: 9, textTransform: "uppercase" }}>Ana Kategori</Text>
+            <Text style={{ backgroundColor: colors.surfaceAlt, color: colors.muted, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.4, paddingHorizontal: 14, paddingVertical: 9, textTransform: "uppercase" }}>{translateCopy("Ana Kategori", language)}</Text>
             <ScrollView style={{ maxHeight: isWideWeb ? 420 : 320 }}>
               {categoryTree.map((n) => {
                 const on = top?.key === n.key;
@@ -123,22 +125,22 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 230, flexGrow: 1.4, minWidth: 0, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
             <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 9 }}>
               {!isWideWeb && top ? (
-                <Pressable accessibilityRole="button" accessibilityLabel="Üst kategoriye dön" onPress={() => setTrail([])} hitSlop={8}>
+                <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Üst kategoriye dön", language)} onPress={() => setTrail([])} hitSlop={8}>
                   <MaterialCommunityIcons name="chevron-left" size={18} color={colors.primaryDark} />
                 </Pressable>
               ) : null}
               <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.4, textTransform: "uppercase" }}>
-                {current ? `${current.label} — Alt Kategori` : "Önce ana kategori seçin"}
+                {current ? `${current.label} — ${translateCopy("Alt Kategori", language)}` : translateCopy("Önce ana kategori seçin", language)}
               </Text>
             </View>
             <ScrollView style={{ maxHeight: isWideWeb ? 420 : 360 }}>
               {!current ? (
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 16 }}>Soldan bir ana kategori seçerek başlayın ya da yukarıdan arayın.</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 16 }}>{translateCopy("Soldan bir ana kategori seçerek başlayın ya da yukarıdan arayın.", language)}</Text>
               ) : midItems.length === 0 ? (
                 <View style={{ gap: 10, padding: 16 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "700" }}>Bu bir son kategori. Seçerek devam edebilirsin.</Text>
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "700" }}>{translateCopy("Bu bir son kategori. Seçerek devam edebilirsin.", language)}</Text>
                   <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 11 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>“{current.label}” ile devam et</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>“{current.label}” {translateCopy("ile devam et", language)}</Text>
                   </Pressable>
                 </View>
               ) : (
@@ -154,22 +156,22 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
 
           {/* Pane 3: summary */}
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 220, flexGrow: 1, gap: 10, maxWidth: isWideWeb ? 300 : undefined, padding: 16, width: isWideWeb ? undefined : "100%" }}>
-            <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>Seçim özeti</Text>
+            <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy("Seçim özeti", language)}</Text>
             {previewPath.length ? (
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{previewPath.map((p) => p.label).join(" › ")}</Text>
             ) : (
-              <Text style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>Henüz kategori seçilmedi.</Text>
+              <Text style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Henüz kategori seçilmedi.", language)}</Text>
             )}
             {trail.length >= 2 ? (
               <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 11 }}>
                 <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Bu kategoriyi seç</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bu kategoriyi seç", language)}</Text>
               </Pressable>
             ) : null}
             {requiredLabels.length ? (
               <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 4, marginTop: 2, padding: 11 }}>
-                <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>Bu kategori için gerekenler:</Text>
-                <Text numberOfLines={4} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{requiredLabels.join(", ")}, fotoğraf, fiyat, konum, komisyon.</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Bu kategori için gerekenler:", language)}</Text>
+                <Text numberOfLines={4} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{requiredLabels.join(", ")}{translateCopy(", fotoğraf, fiyat, konum, komisyon.", language)}</Text>
               </View>
             ) : null}
           </View>
@@ -178,8 +180,8 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
         <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 14 }}>
           <MaterialCommunityIcons name="check-decagram" size={24} color={colors.primaryDark} />
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Kategori seçildi</Text>
-            <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Bu kategori için form aşağıda buna göre hazırlandı: {requiredLabels.slice(0, 4).join(", ")}…</Text>
+            <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Kategori seçildi", language)}</Text>
+            <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Bu kategori için form aşağıda buna göre hazırlandı:", language)} {requiredLabels.slice(0, 4).join(", ")}…</Text>
           </View>
         </View>
       )}

@@ -90,16 +90,16 @@ export default function CategoriesPage() {
       <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: isWideWeb ? "row" : "column", gap: isWideWeb ? 24 : 16, paddingHorizontal: isWideWeb ? 28 : 18, paddingVertical: isWideWeb ? 24 : 18 }}>
         <View style={{ flex: 1.5, gap: 12, justifyContent: "center", minWidth: 0 }}>
           <View style={{ alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Kategoriler</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Kategoriler", language)}</Text>
           </View>
-          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>İlgilendiğin kategoriyi keşfet, kazancını artır.</Text>
-          <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 540 }}>Kategorilere göz at, ortak satışla kazanmaya başla.</Text>
+          <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>{translateCopy("İlgilendiğin kategoriyi keşfet, kazancını artır.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 540 }}>{translateCopy("Kategorilere göz at, ortak satışla kazanmaya başla.", language)}</Text>
           <View style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, maxWidth: 520, paddingLeft: 14, paddingRight: 6 }}>
             <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
-            <TextInput value={query} onChangeText={setQuery} onSubmitEditing={search} placeholder="Kategori veya ürün ara..." placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600", height: 46 }} />
+            <TextInput value={query} onChangeText={setQuery} onSubmitEditing={search} placeholder={translateCopy("Kategori veya ürün ara...", language)} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600", height: 46 }} />
             <Pressable onPress={search} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flexDirection: "row", gap: 5, height: 36, paddingHorizontal: 16 }}>
               <MaterialCommunityIcons name="magnify" size={16} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ara</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ara", language)}</Text>
             </Pressable>
           </View>
           <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -112,7 +112,7 @@ export default function CategoriesPage() {
             ))}
             <Link href="/explore" asChild>
               <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 3, paddingHorizontal: 6, paddingVertical: 7 }}>
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Tümünü Gör</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Tümünü Gör", language)}</Text>
                 <MaterialCommunityIcons name="chevron-right" size={15} color={colors.primaryDark} />
               </Pressable>
             </Link>
@@ -120,9 +120,9 @@ export default function CategoriesPage() {
         </View>
         <View style={{ gap: 12, justifyContent: "center", width: isWideWeb ? 260 : "100%" }}>
           {[
-            { icon: "shape-outline" as const, value: `${tops.length}`, label: "Toplam kategori" },
-            { icon: "tag-multiple-outline" as const, value: `${totalActive}`, label: "Aktif ilan" },
-            { icon: "gift-outline" as const, value: "Ücretsiz", label: "İlan & başvuru" }
+            { icon: "shape-outline" as const, value: `${tops.length}`, label: translateCopy("Toplam kategori", language) },
+            { icon: "tag-multiple-outline" as const, value: `${totalActive}`, label: translateCopy("Aktif ilan", language) },
+            { icon: "gift-outline" as const, value: translateCopy("Ücretsiz", language), label: translateCopy("İlan & başvuru", language) }
           ].map((s) => (
             <View key={s.label} style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 14, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 }}>
               <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
@@ -140,7 +140,7 @@ export default function CategoriesPage() {
       {/* Popüler kategoriler — tam genişlik (sağdaki "nasıl çalışır" kartı
           kaldırıldı; hem gereksiz tekrar hem mobilde bozulmaya yol açıyordu). */}
       <View style={{ gap: 14 }}>
-        <SectionHead title="Popüler kategoriler" subtitle="En çok ilgi gören kategorilere göz at." />
+        <SectionHead title={translateCopy("Popüler kategoriler", language)} subtitle={translateCopy("En çok ilgi gören kategorilere göz at.", language)} />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
           {popular.map(({ cat, count, image }, i) => (
             <Link key={cat.key} href={categoryHref(cat.key)} asChild>
@@ -149,7 +149,7 @@ export default function CategoriesPage() {
                   <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                 </View>
                 <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy(cat.label, language)}</Text>
-                <Text numberOfLines={1} style={{ color: count > 0 ? colors.muted : colors.primaryDark, fontSize: 11, fontWeight: "700" }}>{count > 0 ? `${groupTr(count)} ilan` : "İlan ekle →"}</Text>
+                <Text numberOfLines={1} style={{ color: count > 0 ? colors.muted : colors.primaryDark, fontSize: 11, fontWeight: "700" }}>{count > 0 ? `${groupTr(count)} ilan` : translateCopy("İlan ekle →", language)}</Text>
               </Pressable>
             </Link>
           ))}
@@ -158,7 +158,7 @@ export default function CategoriesPage() {
 
       {/* Tüm kategoriler */}
       <View style={{ gap: 14 }}>
-        <SectionHead title="Tüm kategoriler" subtitle="Tüm ana kategoriler ve alt kategorileri keşfet." />
+        <SectionHead title={translateCopy("Tüm kategoriler", language)} subtitle={translateCopy("Tüm ana kategoriler ve alt kategorileri keşfet.", language)} />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
           {catData.map(({ cat, count, image }, i) => (
             <Link key={cat.key} href={categoryHref(cat.key)} asChild>
@@ -185,7 +185,7 @@ export default function CategoriesPage() {
         <Link href="/explore" asChild>
           <Pressable style={{ alignItems: "center", alignSelf: "center", marginTop: 2 }}>
             <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 24, paddingVertical: 11 }}>
-              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Daha fazla kategori yükle</Text>
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Daha fazla kategori yükle", language)}</Text>
               <MaterialCommunityIcons name="chevron-down" size={16} color={colors.muted} />
             </View>
           </Pressable>
@@ -200,6 +200,7 @@ export default function CategoriesPage() {
 }
 
 function SectionHead({ title, subtitle }: { title: string; subtitle: string }) {
+  const { language } = useLanguage();
   return (
     <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between" }}>
       <View style={{ gap: 2 }}>
@@ -207,7 +208,7 @@ function SectionHead({ title, subtitle }: { title: string; subtitle: string }) {
         <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{subtitle}</Text>
       </View>
       <Link href="/explore" asChild>
-        <Pressable><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Tümünü Gör</Text></Pressable>
+        <Pressable><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Tümünü Gör", language)}</Text></Pressable>
       </Link>
     </View>
   );

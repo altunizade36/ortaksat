@@ -9,6 +9,7 @@ import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import type { CategoryNode } from "@/lib/category-tree";
 import { commissionAmount, moneyIn } from "@/lib/format";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { Skeleton } from "@/components/skeleton";
 import { getRecent } from "@/lib/recent";
 import { displayText } from "@/lib/text";
@@ -42,6 +43,7 @@ const HERO_FLOAT: Array<{ img: string; dx: number; dy: number }> = [
 ];
 
 export function HomeDesktop() {
+  const { language } = useLanguage();
   const router = useRouter();
   const { categoryTree, listings, isFavorite, toggleFavorite, marketplaceInitialLoading } = useStore();
 
@@ -138,7 +140,7 @@ export function HomeDesktop() {
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden" }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingHorizontal: 16, paddingVertical: 13 }}>
             <MaterialCommunityIcons name="view-grid-outline" size={18} color={colors.primaryDark} />
-            <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>Kategoriler</Text>
+            <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy("Kategoriler", language)}</Text>
           </View>
           <View style={{ backgroundColor: colors.line, height: 1 }} />
           <ScrollView style={{ maxHeight: 440 }} nestedScrollEnabled showsVerticalScrollIndicator>
@@ -159,7 +161,7 @@ export function HomeDesktop() {
                   {expanded && children.length ? (
                     <View style={{ backgroundColor: colors.surfaceAlt, paddingVertical: 4 }}>
                       <Pressable onPress={() => setSelectedNode(n)} style={{ paddingHorizontal: 16, paddingLeft: 44, paddingVertical: 8 }}>
-                        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Tümü · {n.label}</Text>
+                        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Tümü", language)} · {n.label}</Text>
                       </Pressable>
                       {children.map((ch) => {
                         const con = selectedNode?.key === ch.key;
@@ -177,7 +179,7 @@ export function HomeDesktop() {
             <Link href="/kategoriler" asChild>
               <Pressable style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 11, paddingHorizontal: 16, paddingVertical: 11 }}>
                 <MaterialCommunityIcons name="dots-grid" size={17} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "800" }}>Tüm Kategoriler</Text>
+                <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "800" }}>{translateCopy("Tüm Kategoriler", language)}</Text>
               </Pressable>
             </Link>
           </ScrollView>
@@ -188,19 +190,19 @@ export function HomeDesktop() {
           <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
               <MaterialCommunityIcons name="tune-variant" size={16} color={colors.primaryDark} />
-              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Filtrele</Text>
+              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Filtrele", language)}</Text>
               {activeFilterCount > 0 ? <View style={{ backgroundColor: colors.primary, borderRadius: 999, minWidth: 18, paddingHorizontal: 5, paddingVertical: 1 }}><Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900", textAlign: "center" }}>{activeFilterCount}</Text></View> : null}
             </View>
-            <Pressable onPress={resetFilters}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Temizle</Text></Pressable>
+            <Pressable onPress={resetFilters}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Temizle", language)}</Text></Pressable>
           </View>
 
           {/* Fiyat aralığı: min/max + hazır aralıklar */}
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Fiyat Aralığı (₺)</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Fiyat Aralığı (₺)", language)}</Text>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-              <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" placeholder="En az" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, minWidth: 0, paddingHorizontal: 8, textAlign: "center" }} />
+              <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, minWidth: 0, paddingHorizontal: 8, textAlign: "center" }} />
               <Text style={{ color: colors.subtle, fontSize: 13, fontWeight: "800" }}>—</Text>
-              <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" placeholder="En çok" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, minWidth: 0, paddingHorizontal: 8, textAlign: "center" }} />
+              <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 12.5, fontWeight: "700", minHeight: 40, minWidth: 0, paddingHorizontal: 8, textAlign: "center" }} />
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {PRICE_PRESETS.map(([mn, mx, lbl]) => {
@@ -216,10 +218,10 @@ export function HomeDesktop() {
 
           {/* Konum: inline açılır (altta kalmaz, içeriği aşağı iter) */}
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Konum</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum", language)}</Text>
             <Pressable onPress={() => setLocOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: locOpen ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 42, paddingHorizontal: 12 }}>
               <MaterialCommunityIcons name="map-marker-outline" size={16} color={colors.primary} />
-              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{locFilter || "Tüm Türkiye"}</Text>
+              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{locFilter || translateCopy("Tüm Türkiye", language)}</Text>
               <MaterialCommunityIcons name={locOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
             </Pressable>
             {locOpen ? (
@@ -229,7 +231,7 @@ export function HomeDesktop() {
                     const on = (locFilter || "Tüm Türkiye") === o;
                     return (
                       <Pressable key={o} onPress={() => { setLocFilter(o === "Tüm Türkiye" ? "" : o); setLocOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed || on ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 9 })}>
-                        <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: on ? "800" : "600" }}>{o}</Text>
+                        <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: on ? "800" : "600" }}>{o === "Tüm Türkiye" ? translateCopy("Tüm Türkiye", language) : o}</Text>
                       </Pressable>
                     );
                   })}
@@ -240,7 +242,7 @@ export function HomeDesktop() {
 
           {/* Ortak kazancı (min komisyon) */}
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>En Az Ortak Kazancı</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En Az Ortak Kazancı", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {COMMISSION_PRESETS.map(([v, lbl]) => {
                 const on = minCommission === v;
@@ -255,14 +257,14 @@ export function HomeDesktop() {
 
           {/* Hızlı anahtarlar */}
           <View style={{ gap: 10 }}>
-            <SwitchRow label="Sadece ortak satışa açık" on={onlyOpen} onPress={() => setOnlyOpen((v) => !v)} />
-            <SwitchRow label="Öne çıkan ilanlar" on={onlyFeatured} onPress={() => setOnlyFeatured((v) => !v)} />
-            <SwitchRow label="Stokta olanlar" on={inStock} onPress={() => setInStock((v) => !v)} />
-            <SwitchRow label="Yeni ilanlar (7 gün)" on={onlyNew} onPress={() => setOnlyNew((v) => !v)} />
+            <SwitchRow label={translateCopy("Sadece ortak satışa açık", language)} on={onlyOpen} onPress={() => setOnlyOpen((v) => !v)} />
+            <SwitchRow label={translateCopy("Öne çıkan ilanlar", language)} on={onlyFeatured} onPress={() => setOnlyFeatured((v) => !v)} />
+            <SwitchRow label={translateCopy("Stokta olanlar", language)} on={inStock} onPress={() => setInStock((v) => !v)} />
+            <SwitchRow label={translateCopy("Yeni ilanlar (7 gün)", language)} on={onlyNew} onPress={() => setOnlyNew((v) => !v)} />
           </View>
 
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, paddingVertical: 11 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{filtered.length} sonuç bulundu</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{filtered.length} {translateCopy("sonuç bulundu", language)}</Text>
           </View>
         </View>
       </View>
@@ -274,22 +276,22 @@ export function HomeDesktop() {
           <View style={{ backgroundColor: colors.primary, borderRadius: 18, flex: 1, flexDirection: "row", minWidth: 0, overflow: "hidden", paddingHorizontal: 22, paddingVertical: 18 }}>
             <View style={{ flex: 1.4, gap: 10, justifyContent: "center", minWidth: 0 }}>
               <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 21, fontWeight: "900", lineHeight: 26 }}>
-                Ortak alın, <Text style={{ color: colors.gold }}>kazancınızı katlayın!</Text>
+                {translateCopy("Ortak alın, ", language)}<Text style={{ color: colors.gold }}>{translateCopy("kazancınızı katlayın!", language)}</Text>
               </Text>
               <Text numberOfLines={2} style={{ color: "rgba(255,255,255,0.9)", fontSize: 12.5, fontWeight: "600", lineHeight: 17, maxWidth: 380 }}>
-                Ürünleri ortak sat, komisyon kazan. Güvenli, hızlı, kazançlı.
+                {translateCopy("Ürünleri ortak sat, komisyon kazan. Güvenli, hızlı, kazançlı.", language)}
               </Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 2 }}>
                 <Link href="/create" asChild>
                   <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
                     <MaterialCommunityIcons name="store-plus-outline" size={16} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>İlan Ver</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("İlan Ver", language)}</Text>
                   </Pressable>
                 </Link>
                 <Link href="/partner" asChild>
                   <Pressable style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 8 }}>
                     <MaterialCommunityIcons name="handshake-outline" size={16} color="#FFFFFF" />
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ortak Satışa Katıl</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortak Satışa Katıl", language)}</Text>
                   </Pressable>
                 </Link>
               </View>
@@ -318,7 +320,7 @@ export function HomeDesktop() {
                 </View>
                 <View style={{ flex: 1, gap: 0, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 16.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{new Intl.NumberFormat("tr-TR").format(s.value)}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{s.label}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{translateCopy(s.label, language)}</Text>
                 </View>
               </View>
             ))}
@@ -330,12 +332,12 @@ export function HomeDesktop() {
           <View style={{ backgroundColor: colors.primaryDark, borderRadius: 16, gap: 12, padding: 16 }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
               <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "900" }}>En Çok Kazandıran Fırsatlar</Text>
-                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, fontWeight: "600" }}>Ortak ol, sat, komisyonu kazan — komisyonu satıcı öder.</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "900" }}>{translateCopy("En Çok Kazandıran Fırsatlar", language)}</Text>
+                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.8)", fontSize: 11.5, fontWeight: "600" }}>{translateCopy("Ortak ol, sat, komisyonu kazan — komisyonu satıcı öder.", language)}</Text>
               </View>
               <Link href="/partner" asChild>
                 <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 14, paddingVertical: 8 }}>
-                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Tümü</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Tümü", language)}</Text>
                   <MaterialCommunityIcons name="arrow-right" size={14} color={colors.primaryDark} />
                 </Pressable>
               </Link>
@@ -347,14 +349,14 @@ export function HomeDesktop() {
                   <View style={{ height: 92, width: "100%" }}>
                     <SafeRemoteImage uri={l.image} style={{ height: 92, width: "100%" }} contentFit="cover" />
                     <View style={{ backgroundColor: colors.gold, borderRadius: 6, left: 8, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 8 }}>
-                      <Text style={{ color: "#1A1400", fontSize: 9.5, fontWeight: "900" }}>Kazanç {moneyIn(commissionAmount(l), l.currency)}</Text>
+                      <Text style={{ color: "#1A1400", fontSize: 9.5, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {moneyIn(commissionAmount(l), l.currency)}</Text>
                     </View>
                   </View>
                   <View style={{ gap: 4, padding: 9 }}>
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{displayText(l.title)}</Text>
                     <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{moneyIn(l.price, l.currency)}</Text>
                     <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, paddingVertical: 6 }}>
-                      <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>Ortak Ol</Text>
+                      <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Ortak Ol", language)}</Text>
                     </View>
                   </View>
                 </Pressable>
@@ -366,7 +368,7 @@ export function HomeDesktop() {
         {/* Son gezdiklerin */}
         {recentListings.length > 0 ? (
           <View style={{ gap: 10 }}>
-            <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Son Gezdiklerin</Text>
+            <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Son Gezdiklerin", language)}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 12 }}>
               {recentListings.map((l) => (
                 <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 150 }}>
@@ -383,7 +385,7 @@ export function HomeDesktop() {
 
         {/* Popüler kategoriler */}
         <View style={{ gap: 10 }}>
-          <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Popüler Kategoriler</Text>
+          <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Popüler Kategoriler", language)}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
             {popular.map((n) => (
               <Link key={n.key} href={{ pathname: "/kategori/[slug]", params: { slug: n.key } } as unknown as Href} asChild>
@@ -400,21 +402,21 @@ export function HomeDesktop() {
         <View style={{ gap: 10 }}>
           <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10 }}>
             <View style={{ flex: 1, gap: 2 }}>
-              <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{selectedNode ? selectedNode.label : "Öne Çıkan İlanlar"}</Text>
-              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{filtered.length} ilan listeleniyor</Text>
+              <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{selectedNode ? selectedNode.label : translateCopy("Öne Çıkan İlanlar", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{filtered.length} {translateCopy("ilan listeleniyor", language)}</Text>
             </View>
             <Link href="/explore" asChild>
-              <Pressable><Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Tümünü Gör →</Text></Pressable>
+              <Pressable><Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Tümünü Gör →", language)}</Text></Pressable>
             </Link>
           </View>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Sırala:</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Sırala:", language)}</Text>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
               {SORTS.map(([key, lbl]) => {
                 const on = sortMode === key;
                 return (
                   <Pressable key={key} onPress={() => setSortMode(key)} style={{ backgroundColor: on ? colors.ink : colors.surface, borderColor: on ? colors.ink : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 7 }}>
-                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{lbl}</Text>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
                   </Pressable>
                 );
               })}
@@ -441,23 +443,23 @@ export function HomeDesktop() {
           // Katalogda hiç ilan yok → ilk-ilan çağrısı (mobil ile tutarlı).
           <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 44 }}>
             <MaterialCommunityIcons name="storefront-outline" size={34} color={colors.primary} />
-            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Henüz ilan yok</Text>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", textAlign: "center" }}>İlk ilanı sen ver, ortaklarınla birlikte sat ve kazan.</Text>
+            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Henüz ilan yok", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", textAlign: "center" }}>{translateCopy("İlk ilanı sen ver, ortaklarınla birlikte sat ve kazan.", language)}</Text>
             <Link href="/create" asChild>
-              <Pressable accessibilityRole="button" accessibilityLabel="İlk ilanı ver" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 22, paddingVertical: 12 })}>
+              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("İlk ilanı ver", language)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 22, paddingVertical: 12 })}>
                 <MaterialCommunityIcons name="store-plus-outline" size={17} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>İlk İlanı Ver</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("İlk İlanı Ver", language)}</Text>
               </Pressable>
             </Link>
           </View>
         ) : grid.length === 0 ? (
           <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 40 }}>
             <MaterialCommunityIcons name="magnify-close" size={30} color={colors.primary} />
-            <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Sonuç bulunamadı</Text>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Filtreleri değiştirerek tekrar dene.</Text>
+            <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Sonuç bulunamadı", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Filtreleri değiştirerek tekrar dene.", language)}</Text>
             {activeFilterCount > 0 ? (
-              <Pressable accessibilityRole="button" accessibilityLabel="Filtreleri temizle" onPress={resetFilters} style={({ pressed }) => ({ backgroundColor: colors.primarySoft, borderRadius: 9, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 8 })}>
-                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>Filtreleri temizle</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Filtreleri temizle", language)} onPress={resetFilters} style={({ pressed }) => ({ backgroundColor: colors.primarySoft, borderRadius: 9, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 8 })}>
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Filtreleri temizle", language)}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -471,10 +473,10 @@ export function HomeDesktop() {
             {visibleCount < filtered.length ? (
               <Pressable onPress={() => setVisibleCount((c) => c + 18)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, opacity: pressed ? 0.85 : 1, paddingHorizontal: 26, paddingVertical: 13 })}>
                 <MaterialCommunityIcons name="chevron-down" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Daha fazla göster ({filtered.length - visibleCount})</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Daha fazla göster", language)} ({filtered.length - visibleCount})</Text>
               </Pressable>
             ) : (
-              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>Tüm ilanları gördün · {filtered.length} ilan</Text>
+              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{translateCopy("Tüm ilanları gördün", language)} · {filtered.length} {translateCopy("ilan", language)}</Text>
             )}
           </>
         )}
@@ -484,6 +486,7 @@ export function HomeDesktop() {
 }
 
 function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; favorited: boolean; onFav: () => void; onOpen: () => void }) {
+  const { language } = useLanguage();
   const { has, toggle } = useCompare();
   const inCompare = has(listing.id);
   const commission = commissionAmount(listing);
@@ -497,22 +500,22 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
           <SafeRemoteImage uri={listing.image} style={{ height: 150, width: "100%" }} contentFit="cover" />
           <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 4, left: 10, paddingHorizontal: 8, paddingVertical: 4, position: "absolute", top: 10 }}>
             <MaterialCommunityIcons name="handshake-outline" size={12} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>Ortak Satışa</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Ortak Satışa", language)}</Text>
           </View>
           {listing.demo ? (
             <View style={{ backgroundColor: "#F5C518", borderRadius: 6, position: "absolute", right: 44, top: 12, paddingHorizontal: 6, paddingVertical: 2 }}>
-              <Text style={{ color: "#1A1A00", fontSize: 9, fontWeight: "900" }}>ÖRNEK</Text>
+              <Text style={{ color: "#1A1A00", fontSize: 9, fontWeight: "900" }}>{translateCopy("ÖRNEK", language)}</Text>
             </View>
           ) : null}
-          <Pressable accessibilityRole="button" accessibilityState={{ selected: favorited }} accessibilityLabel={favorited ? "Favorilerden çıkar" : "Favorilere ekle"} onPress={onFav} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 10, width: 30 }}>
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: favorited }} accessibilityLabel={favorited ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)} onPress={onFav} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 10, width: 30 }}>
             <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={17} color={favorited ? colors.accent : colors.muted} />
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel="Karşılaştır" onPress={() => toggle(listing.id)} style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 46, width: 30 }}>
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Karşılaştır", language)} onPress={() => toggle(listing.id)} style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 46, width: 30 }}>
             <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
           </Pressable>
           {isNew && !listing.demo ? (
             <View style={{ backgroundColor: colors.info, borderRadius: 6, bottom: 10, left: 10, paddingHorizontal: 7, paddingVertical: 2, position: "absolute" }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 9.5, fontWeight: "900" }}>YENİ</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 9.5, fontWeight: "900" }}>{translateCopy("YENİ", language)}</Text>
             </View>
           ) : null}
         </View>
@@ -521,12 +524,12 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
         <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 14, fontWeight: "800", lineHeight: 18, minHeight: 36 }}>{displayText(listing.title)}</Text>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "space-between" }}>
           <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>{getCategoryShortLabel(listing.category)}</Text>
-          {lowStock ? <Text style={{ color: colors.accent, fontSize: 10.5, fontWeight: "900" }}>Son {listing.stockCount} ürün</Text> : null}
+          {lowStock ? <Text style={{ color: colors.accent, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Son", language)} {listing.stockCount} {translateCopy("ürün", language)}</Text> : null}
         </View>
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "space-between" }}>
           <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{moneyIn(listing.price, listing.currency)}</Text>
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>Kazanç {moneyIn(commission, listing.currency)}</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {moneyIn(commission, listing.currency)}</Text>
           </View>
         </View>
         {listing.bonusAmount && listing.bonusAmount > 0 && listing.bonusQuota ? (
@@ -539,7 +542,7 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
           <MaterialCommunityIcons name="map-marker-outline" size={12} color={colors.subtle} />
           <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>{displayText(listing.location)}</Text>
           <MaterialCommunityIcons name={listing.partnershipMode === "open" ? "flash" : "handshake-outline"} size={12} color={colors.primary} />
-          <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{listing.partnershipMode === "open" ? "Anında ortak" : "Ortaklığa açık"}</Text>
+          <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{listing.partnershipMode === "open" ? translateCopy("Anında ortak", language) : translateCopy("Ortaklığa açık", language)}</Text>
         </View>
       </Pressable>
     </View>

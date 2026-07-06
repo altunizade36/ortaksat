@@ -13,6 +13,7 @@ import { type CategoryNode } from "@/lib/category-tree";
 import { getCategoryIcon } from "@/lib/categories";
 import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, citySlug, findProvince, listingInCity } from "@/lib/cities";
 import { commissionAmount } from "@/lib/format";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
@@ -47,6 +48,7 @@ export async function generateStaticParams(): Promise<Array<{ slug: string; sehi
 }
 
 export default function CityCategoryScreen() {
+  const { language } = useLanguage();
   const params = useLocalSearchParams<{ slug: string; sehir: string }>();
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const sehir = Array.isArray(params.sehir) ? params.sehir[0] : params.sehir;
@@ -88,10 +90,10 @@ export default function CityCategoryScreen() {
   if (!node || !cityName) {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ alignItems: "center", flexGrow: 1, justifyContent: "center", padding: 24 }}>
-        <EmptyState title="Sayfa bulunamadı" body="Bu kategori veya şehir tanımlı değil." />
+        <EmptyState title={translateCopy("Sayfa bulunamadı", language)} body={translateCopy("Bu kategori veya şehir tanımlı değil.", language)} />
         <Link href="/kategoriler" asChild>
           <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, marginTop: 12, paddingHorizontal: 20, paddingVertical: 12 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>Tüm Kategoriler</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Tüm Kategoriler", language)}</Text>
           </Pressable>
         </Link>
       </ScrollView>
@@ -119,9 +121,9 @@ export default function CityCategoryScreen() {
       <WebContainer max={1240} padding={12} style={{ gap: 14 }}>
         {/* Breadcrumb */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-          <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
+          <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Ana Sayfa", language)}</Text></Pressable></Link>
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-          <Link href="/kategoriler" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Kategoriler</Text></Pressable></Link>
+          <Link href="/kategoriler" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Kategoriler", language)}</Text></Pressable></Link>
           {ancestors.map((a) => (
             <View key={a.key} style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
               <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
@@ -166,7 +168,7 @@ export default function CityCategoryScreen() {
             <Link href={catHref(node.slug)} asChild>
               <Pressable style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 12, paddingVertical: 7 }}>
                 <MaterialCommunityIcons name="map-marker-multiple" size={13} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tüm Türkiye</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm Türkiye", language)}</Text>
               </Pressable>
             </Link>
           </ScrollView>
@@ -179,13 +181,13 @@ export default function CityCategoryScreen() {
               const on = sortMode === k;
               return (
                 <Pressable key={k} onPress={() => setSortMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}>
-                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{lbl}</Text>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
                 </Pressable>
               );
             })}
             <Pressable onPress={() => setOnlyOpen((v) => !v)} style={{ alignItems: "center", backgroundColor: onlyOpen ? colors.primarySoft : colors.surface, borderColor: onlyOpen ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}>
               <MaterialCommunityIcons name="flash" size={13} color={onlyOpen ? colors.primaryDark : colors.muted} />
-              <Text style={{ color: onlyOpen ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: "800" }}>Anında ortak</Text>
+              <Text style={{ color: onlyOpen ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy("Anında ortak", language)}</Text>
             </Pressable>
           </ScrollView>
         </View>
@@ -216,7 +218,7 @@ export default function CityCategoryScreen() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               <Pressable onPress={() => router.push("/create")} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}>
                 <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ücretsiz İlan Ekle</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ücretsiz İlan Ekle", language)}</Text>
               </Pressable>
               <Link href={catHref(node.slug)} asChild>
                 <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}>

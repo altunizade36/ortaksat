@@ -44,67 +44,67 @@ export default function TrustScreen() {
 
   if (isWideWeb) {
     const resolvedCount = ownReports.filter((r) => r.status === "resolved" || r.status === "rejected").length;
-    const scoreLabel = trust.overall >= 85 ? "Mükemmel" : trust.overall >= 70 ? "Yüksek" : trust.overall >= 50 ? "Orta" : "Geliştirilmeli";
+    const scoreLabel = trust.overall >= 85 ? translateCopy("Mükemmel", language) : trust.overall >= 70 ? translateCopy("Yüksek", language) : trust.overall >= 50 ? translateCopy("Orta", language) : translateCopy("Geliştirilmeli", language);
     const badges: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; on: boolean }> = [
-      { icon: "phone-check", label: "Telefon", on: currentUser.verifiedPhone },
-      { icon: "email-check-outline", label: "E-posta", on: true },
-      { icon: "card-account-details-outline", label: "Kimlik", on: currentUser.verifiedIdentity },
+      { icon: "phone-check", label: translateCopy("Telefon", language), on: currentUser.verifiedPhone },
+      { icon: "email-check-outline", label: translateCopy("E-posta", language), on: true },
+      { icon: "card-account-details-outline", label: translateCopy("Kimlik", language), on: currentUser.verifiedIdentity },
       { icon: "bank-outline", label: "IBAN", on: false },
-      { icon: "map-marker-check-outline", label: "Adres", on: false }
+      { icon: "map-marker-check-outline", label: translateCopy("Adres", language), on: false }
     ];
     // Gerçek verilerden türetilen dağılım (sabit/sahte değer yok).
     const complaintScore = openReports.length === 0 ? 100 : Math.max(40, 100 - openReports.length * 15);
     const distribution: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: number; weight: number }> = [
-      { icon: "phone-check", label: "Telefon Doğrulama", value: currentUser.verifiedPhone ? 100 : 0, weight: 20 },
-      { icon: "email-check-outline", label: "E-posta Doğrulama", value: 100, weight: 15 },
-      { icon: "card-account-details-outline", label: "Kimlik Doğrulama", value: currentUser.verifiedIdentity ? 100 : 0, weight: 25 },
-      { icon: "lightning-bolt-outline", label: "Yanıt Hızı", value: currentUser.responseRate, weight: 20 },
-      { icon: "emoticon-happy-outline", label: "Şikayet Kaydı Durumu", value: complaintScore, weight: 20 }
+      { icon: "phone-check", label: translateCopy("Telefon Doğrulama", language), value: currentUser.verifiedPhone ? 100 : 0, weight: 20 },
+      { icon: "email-check-outline", label: translateCopy("E-posta Doğrulama", language), value: 100, weight: 15 },
+      { icon: "card-account-details-outline", label: translateCopy("Kimlik Doğrulama", language), value: currentUser.verifiedIdentity ? 100 : 0, weight: 25 },
+      { icon: "lightning-bolt-outline", label: translateCopy("Yanıt Hızı", language), value: currentUser.responseRate, weight: 20 },
+      { icon: "emoticon-happy-outline", label: translateCopy("Şikayet Kaydı Durumu", language), value: complaintScore, weight: 20 }
     ];
     // Gerçek durumdan üretilen güven sinyalleri.
     const signals: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string }> = [];
-    if (currentUser.verifiedPhone) signals.push({ icon: "phone-check", title: "Telefonun doğrulanmış.", sub: "Alıcılar seninle daha güvenle iletişim kurar." });
-    if (currentUser.verifiedIdentity) signals.push({ icon: "card-account-details-outline", title: "Kimliğin doğrulanmış.", sub: "Doğrulanmış kimlik güven skorunu yükseltir." });
-    if (typeof currentUser.responseRate === "number" && currentUser.responseRate > 0) signals.push({ icon: "lightning-bolt", title: "Mesaj yanıt oranın", sub: `Yanıt oranın %${currentUser.responseRate}.` });
-    if (openReports.length === 0) signals.push({ icon: "emoticon-happy-outline", title: "Açık şikayet kaydın yok.", sub: "Hakkında bekleyen inceleme bulunmuyor." });
-    signals.push({ icon: "handshake-outline", title: "Güvenli süreç kullanımı", sub: "Komisyon ve talepler platformda kayıt altında." });
+    if (currentUser.verifiedPhone) signals.push({ icon: "phone-check", title: translateCopy("Telefonun doğrulanmış.", language), sub: translateCopy("Alıcılar seninle daha güvenle iletişim kurar.", language) });
+    if (currentUser.verifiedIdentity) signals.push({ icon: "card-account-details-outline", title: translateCopy("Kimliğin doğrulanmış.", language), sub: translateCopy("Doğrulanmış kimlik güven skorunu yükseltir.", language) });
+    if (typeof currentUser.responseRate === "number" && currentUser.responseRate > 0) signals.push({ icon: "lightning-bolt", title: translateCopy("Mesaj yanıt oranın", language), sub: `Yanıt oranın %${currentUser.responseRate}.` });
+    if (openReports.length === 0) signals.push({ icon: "emoticon-happy-outline", title: translateCopy("Açık şikayet kaydın yok.", language), sub: translateCopy("Hakkında bekleyen inceleme bulunmuyor.", language) });
+    signals.push({ icon: "handshake-outline", title: translateCopy("Güvenli süreç kullanımı", language), sub: translateCopy("Komisyon ve talepler platformda kayıt altında.", language) });
     const calcRules = [
-      "Doğrulama seviyesi (kimlik, telefon, e-posta, IBAN)",
-      "Teslimat ve işlem başarı oranı",
-      "Mesajlara yanıt hızı ve iletişim kalitesi",
-      "Şikayet sayısı ve çözüm geçmişi",
-      "Hesabın yaşı ve aktiflik süresi"
+      translateCopy("Doğrulama seviyesi (kimlik, telefon, e-posta, IBAN)", language),
+      translateCopy("Teslimat ve işlem başarı oranı", language),
+      translateCopy("Mesajlara yanıt hızı ve iletişim kalitesi", language),
+      translateCopy("Şikayet sayısı ve çözüm geçmişi", language),
+      translateCopy("Hesabın yaşı ve aktiflik süresi", language)
     ];
     const safetyTips = [
-      "Ortaksat dışına iletişim kurun.",
-      "Şüpheli teklifleri ve kullanıcıları bildirin.",
-      "Kişisel bilgilerinizi paylaşmayın."
+      translateCopy("Ortaksat dışına iletişim kurun.", language),
+      translateCopy("Şüpheli teklifleri ve kullanıcıları bildirin.", language),
+      translateCopy("Kişisel bilgilerinizi paylaşmayın.", language)
     ];
 
     // Yalnızca gerçek şikayet/inceleme kayıtları — örnek/sahte kayıt yok.
     const allRows = ownReports.map((r) => ({
-      id: `#SR-${r.id}`, type: r.reason, listing: (r.listingId ? findListing(r.listingId)?.title : undefined) ?? "İlan / kullanıcı", party: r.reporterId === currentUser.id ? "Sen" : "Karşı taraf", status: r.status, date: r.createdAt
+      id: `#SR-${r.id}`, type: r.reason, listing: (r.listingId ? findListing(r.listingId)?.title : undefined) ?? translateCopy("İlan / kullanıcı", language), party: r.reporterId === currentUser.id ? translateCopy("Sen", language) : translateCopy("Karşı taraf", language), status: r.status, date: r.createdAt
     }));
     const rows = allRows.filter((r) => filter === "open" ? (r.status === "open" || r.status === "reviewing") : filter === "resolved" ? (r.status === "resolved" || r.status === "rejected") : true);
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
-        <Seo title="Güven Merkezi — Doğrulama, şeffaflık ve şikayet | OrtakSat" description="OrtakSat Güven Merkezi: satıcı/ortak doğrulama, güven puanı, şikayet yönetimi ve şeffaf süreçlerle güvenli bir ortak satış ortamı." path="/trust" />
+        <Seo title={translateCopy("Güven Merkezi — Doğrulama, şeffaflık ve şikayet | OrtakSat", language)} description={translateCopy("OrtakSat Güven Merkezi: satıcı/ortak doğrulama, güven puanı, şikayet yönetimi ve şeffaf süreçlerle güvenli bir ortak satış ortamı.", language)} path="/trust" />
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 52, justifyContent: "center", width: 52 }}>
             <MaterialCommunityIcons name="shield-check" size={28} color={colors.primary} />
           </View>
           <View style={{ flex: 1, gap: 3 }}>
-            <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Güven Merkezi</Text>
-            <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Ortaksat'ta güveni şeffaf verilerle yönetiyoruz. Doğrulama, şikayet yönetimi ve itibar takibi ile güvenli bir ortam sunuyoruz.</Text>
+            <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Güven Merkezi", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Ortaksat'ta güveni şeffaf verilerle yönetiyoruz. Doğrulama, şikayet yönetimi ve itibar takibi ile güvenli bir ortam sunuyoruz.", language)}</Text>
           </View>
         </View>
 
         {/* Top score card */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 20, padding: 20 }}>
           <View style={{ flex: 1.4, gap: 8, minWidth: 240 }}>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Genel Güven Skoru</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Genel Güven Skoru", language)}</Text>
             <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
               <Text style={{ color: colors.ink, fontSize: 40, fontWeight: "900" }}>{trust.overall}</Text>
               <Text style={{ color: colors.muted, fontSize: 16, fontWeight: "800", paddingBottom: 6 }}>/100</Text>
@@ -113,16 +113,16 @@ export default function TrustScreen() {
             <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 9, overflow: "hidden" }}>
               <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: "100%", width: `${trust.overall}%` }} />
             </View>
-            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>Puan, işlem geçmişin arttıkça otomatik güncellenir.</Text>
+            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("Puan, işlem geçmişin arttıkça otomatik güncellenir.", language)}</Text>
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-            <TrustMiniStat icon="store-check-outline" label="Satıcı Güven Skoru" value={`%${trust.seller.score}`} tag={scoreTag(trust.seller.score)} />
-            <TrustMiniStat icon="account-check-outline" label="Ortak Güven Skoru" value={`%${trust.partner.score}`} tag={scoreTag(trust.partner.score)} />
-            <TrustMiniStat icon="file-alert-outline" label="Açık Kayıtlar" value={`${openReports.length}`} sub="İnceleme aşamasında" />
-            <TrustMiniStat icon="check-decagram-outline" label="Çözülen Raporlar" value={`${resolvedCount}`} sub="Tüm zamanlar" />
+            <TrustMiniStat icon="store-check-outline" label={translateCopy("Satıcı Güven Skoru", language)} value={`%${trust.seller.score}`} tag={translateCopy(scoreTag(trust.seller.score), language)} />
+            <TrustMiniStat icon="account-check-outline" label={translateCopy("Ortak Güven Skoru", language)} value={`%${trust.partner.score}`} tag={translateCopy(scoreTag(trust.partner.score), language)} />
+            <TrustMiniStat icon="file-alert-outline" label={translateCopy("Açık Kayıtlar", language)} value={`${openReports.length}`} sub={translateCopy("İnceleme aşamasında", language)} />
+            <TrustMiniStat icon="check-decagram-outline" label={translateCopy("Çözülen Raporlar", language)} value={`${resolvedCount}`} sub={translateCopy("Tüm zamanlar", language)} />
           </View>
           <View style={{ borderLeftColor: colors.line, borderLeftWidth: 1, gap: 8, paddingLeft: 18 }}>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Doğrulama Rozetleri</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Doğrulama Rozetleri", language)}</Text>
             <View style={{ flexDirection: "row", gap: 10 }}>
               {badges.map((b) => (
                 <View key={b.label} style={{ alignItems: "center", gap: 4, opacity: b.on ? 1 : 0.4, width: 52 }}>
@@ -133,7 +133,7 @@ export default function TrustScreen() {
                 </View>
               ))}
             </View>
-            <Link href="/profile-edit" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Tüm doğrulamalar →</Text></Pressable></Link>
+            <Link href="/profile-edit" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm doğrulamalar →", language)}</Text></Pressable></Link>
           </View>
         </View>
 
@@ -142,8 +142,8 @@ export default function TrustScreen() {
           <View style={{ flex: 1.5, gap: 16, minWidth: 0 }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 18 }}>
               <View style={{ gap: 2 }}>
-                <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Güven Skoru Dağılımı</Text>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Puanınız, aşağıdaki faktörlerin ağırlıklı ortalaması ile hesaplanır.</Text>
+                <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Güven Skoru Dağılımı", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Puanınız, aşağıdaki faktörlerin ağırlıklı ortalaması ile hesaplanır.", language)}</Text>
               </View>
               {distribution.map((d) => (
                 <View key={d.label} style={{ gap: 6 }}>
@@ -151,23 +151,23 @@ export default function TrustScreen() {
                     <MaterialCommunityIcons name={d.icon} size={16} color={colors.primary} />
                     <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{d.label}</Text>
                     <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>%{d.value}</Text>
-                    <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: colors.muted, fontSize: 10, fontWeight: "800" }}>Ağırlık %{d.weight}</Text></View>
+                    <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: colors.muted, fontSize: 10, fontWeight: "800" }}>{translateCopy("Ağırlık", language)} %{d.weight}</Text></View>
                   </View>
                   <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 7, overflow: "hidden" }}>
                     <View style={{ backgroundColor: d.value >= 90 ? colors.success : d.value >= 60 ? colors.primary : colors.warning, borderRadius: 999, height: "100%", width: `${d.value}%` }} />
                   </View>
                 </View>
               ))}
-              <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Skorlar 0-100 arasıdır. Ağırlıklandırma politikası Ortaksat tarafından belirlenir.</Text>
+              <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("Skorlar 0-100 arasıdır. Ağırlıklandırma politikası Ortaksat tarafından belirlenir.", language)}</Text>
             </View>
 
             {/* Complaints table */}
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden" }}>
               <View style={{ gap: 10, padding: 18 }}>
-                <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Şikayet ve İnceleme Kayıtları</Text>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Şikayetleriniz ve hakkınızda açılan kayıtların durumunu buradan takip edebilirsiniz.</Text>
+                <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Şikayet ve İnceleme Kayıtları", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Şikayetleriniz ve hakkınızda açılan kayıtların durumunu buradan takip edebilirsiniz.", language)}</Text>
                 <View style={{ flexDirection: "row", gap: 8 }}>
-                  {([["all", "Tümü"], ["open", "Açık"], ["resolved", "Sonuçlanan"]] as Array<[TrustFilter, string]>).map(([k, lbl]) => {
+                  {([["all", translateCopy("Tümü", language)], ["open", translateCopy("Açık", language)], ["resolved", translateCopy("Sonuçlanan", language)]] as Array<[TrustFilter, string]>).map(([k, lbl]) => {
                     const on = filter === k;
                     const count = k === "all" ? allRows.length : k === "open" ? allRows.filter((r) => r.status === "open" || r.status === "reviewing").length : allRows.filter((r) => r.status === "resolved" || r.status === "rejected").length;
                     return (
@@ -179,13 +179,13 @@ export default function TrustScreen() {
                 </View>
               </View>
               <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderTopWidth: 1, flexDirection: "row", paddingHorizontal: 18, paddingVertical: 9 }}>
-                <Text style={{ color: colors.muted, flex: 1.4, fontSize: 11, fontWeight: "800" }}>KAYIT ID</Text>
-                <Text style={{ color: colors.muted, flex: 1.5, fontSize: 11, fontWeight: "800" }}>TÜR</Text>
-                <Text style={{ color: colors.muted, flex: 1.6, fontSize: 11, fontWeight: "800" }}>İLGİLİ İLAN</Text>
-                <Text style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "800" }}>DURUM</Text>
-                <Text style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "800", textAlign: "right" }}>İŞLEM</Text>
+                <Text style={{ color: colors.muted, flex: 1.4, fontSize: 11, fontWeight: "800" }}>{translateCopy("KAYIT ID", language)}</Text>
+                <Text style={{ color: colors.muted, flex: 1.5, fontSize: 11, fontWeight: "800" }}>{translateCopy("TÜR", language)}</Text>
+                <Text style={{ color: colors.muted, flex: 1.6, fontSize: 11, fontWeight: "800" }}>{translateCopy("İLGİLİ İLAN", language)}</Text>
+                <Text style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "800" }}>{translateCopy("DURUM", language)}</Text>
+                <Text style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "800", textAlign: "right" }}>{translateCopy("İŞLEM", language)}</Text>
               </View>
-              {rows.length === 0 ? <View style={{ padding: 18 }}><EmptyState title="Kayıt yok" body="Bu filtrede kayıt bulunmuyor." /></View> : null}
+              {rows.length === 0 ? <View style={{ padding: 18 }}><EmptyState title={translateCopy("Kayıt yok", language)} body={translateCopy("Bu filtrede kayıt bulunmuyor.", language)} /></View> : null}
               {rows.map((r, idx) => (
                 <View key={r.id} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", paddingHorizontal: 18, paddingVertical: 12 }}>
                   <Text numberOfLines={1} style={{ color: colors.primaryDark, flex: 1.4, fontSize: 12, fontWeight: "800" }}>{r.id}</Text>
@@ -197,7 +197,7 @@ export default function TrustScreen() {
                     </View>
                   </View>
                   <View style={{ alignItems: "flex-end", flex: 1 }}>
-                    <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Görüntüle</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Görüntüle", language)}</Text>
                   </View>
                 </View>
               ))}
@@ -207,7 +207,7 @@ export default function TrustScreen() {
           {/* Signals */}
           <View style={{ flex: 1, gap: 16, minWidth: 0 }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Güven Sinyalleri</Text>
+              <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Güven Sinyalleri", language)}</Text>
               {signals.map((s) => (
                 <View key={s.title} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
                   <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 8, height: 32, justifyContent: "center", width: 32 }}>
@@ -225,35 +225,35 @@ export default function TrustScreen() {
           {/* Right help sidebar */}
           <View style={{ gap: 16, width: 290 }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Güven Puanı Nasıl Hesaplanır?</Text>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Güven skorunuz, platformda sergilediğiniz davranışların bir ortalamasıdır. Aşağıdaki kriterler esas alınır:</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Güven Puanı Nasıl Hesaplanır?", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Güven skorunuz, platformda sergilediğiniz davranışların bir ortalamasıdır. Aşağıdaki kriterler esas alınır:", language)}</Text>
               {calcRules.map((c) => (
                 <View key={c} style={{ alignItems: "flex-start", flexDirection: "row", gap: 8 }}>
                   <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: 6, marginTop: 6, width: 6 }} />
                   <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{c}</Text>
                 </View>
               ))}
-              <Link href="/nasil-calisir" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Hesaplama metodolojisini incele →</Text></Pressable></Link>
+              <Link href="/nasil-calisir" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Hesaplama metodolojisini incele →", language)}</Text></Pressable></Link>
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 9, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Güvende Kalın</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Güvende Kalın", language)}</Text>
               {safetyTips.map((s) => (
                 <View key={s} style={{ alignItems: "flex-start", flexDirection: "row", gap: 8 }}>
                   <MaterialCommunityIcons name="check-circle-outline" size={16} color={colors.success} style={{ marginTop: 1 }} />
                   <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{s}</Text>
                 </View>
               ))}
-              <Link href="/guvenli-alisveris" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Güvenli alışveriş rehberi →</Text></Pressable></Link>
+              <Link href="/guvenli-alisveris" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Güvenli alışveriş rehberi →", language)}</Text></Pressable></Link>
             </View>
 
             <View style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Dolandırıcılığı Önleyin</Text>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Şüpheli bir durumla karşılaşırsan ilan veya profildeki "Bildir" ile kayda geçir. Ekibimiz kayıt üzerinden inceleme yapar.</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Dolandırıcılığı Önleyin", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy('Şüpheli bir durumla karşılaşırsan ilan veya profildeki "Bildir" ile kayda geçir. Ekibimiz kayıt üzerinden inceleme yapar.', language)}</Text>
               <Link href="/guvenli-alisveris" asChild>
                 <Pressable style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
                   <MaterialCommunityIcons name="flag-variant-outline" size={17} color="#FFFFFF" />
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Şikayet / Bildirim Oluştur</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Şikayet / Bildirim Oluştur", language)}</Text>
                 </Pressable>
               </Link>
             </View>
@@ -283,13 +283,13 @@ export default function TrustScreen() {
           </View>
         </View>
         <View style={{ flexDirection: "row", gap: 10, marginTop: 14 }}>
-          <Metric label="Genel güven" value={`%${trust.overall}`} />
-          <Metric label="Açık kayıt" value={`${openReports.length}`} />
+          <Metric label={translateCopy("Genel güven", language)} value={`%${trust.overall}`} />
+          <Metric label={translateCopy("Açık kayıt", language)} value={`${openReports.length}`} />
         </View>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-          <StatusPill label={currentUser.verifiedPhone ? "Telefon doğrulandı" : "Telefon bekliyor"} tone={currentUser.verifiedPhone ? "success" : "warning"} />
-          <StatusPill label={currentUser.verifiedIdentity ? "Kimlik doğrulandı" : "Kimlik bekliyor"} tone={currentUser.verifiedIdentity ? "success" : "info"} />
-          <StatusPill label={currentUser.verifiedInstagram ? "Instagram doğrulandı" : "Instagram bekliyor"} tone={currentUser.verifiedInstagram ? "success" : "info"} />
+          <StatusPill label={currentUser.verifiedPhone ? translateCopy("Telefon doğrulandı", language) : translateCopy("Telefon bekliyor", language)} tone={currentUser.verifiedPhone ? "success" : "warning"} />
+          <StatusPill label={currentUser.verifiedIdentity ? translateCopy("Kimlik doğrulandı", language) : translateCopy("Kimlik bekliyor", language)} tone={currentUser.verifiedIdentity ? "success" : "info"} />
+          <StatusPill label={currentUser.verifiedInstagram ? translateCopy("Instagram doğrulandı", language) : translateCopy("Instagram bekliyor", language)} tone={currentUser.verifiedInstagram ? "success" : "info"} />
         </View>
       </Card>
 
@@ -303,7 +303,7 @@ export default function TrustScreen() {
       </View>
 
       <Card>
-        <SectionTitle title="Puan mantığı" />
+        <SectionTitle title={translateCopy("Puan mantığı", language)} />
         <Rule icon="cellphone-check" text="Telefon doğrulama +10, kimlik doğrulama +20, Instagram doğrulama +10 puan etkisi verir." />
         <Rule icon="cash-check" text="Başarılı satış ve zamanında komisyon ödeme satıcı güvenini artırır." />
         <Rule icon="account-convert" text="Gerçek müşteri getiren, satışa dönen talep oluşturan ortakların ortak güveni yükselir." />
@@ -311,14 +311,14 @@ export default function TrustScreen() {
         <Rule icon="message-reply-text" text="Yanıt oranı hem satıcı hem ortak tarafında güven sinyali olarak kullanılır." />
       </Card>
 
-      <SectionTitle title={isAdmin ? "Moderasyon kuyruğu" : "Güven kayıtlarım"} action={`${visibleReports.length}`} />
+      <SectionTitle title={isAdmin ? translateCopy("Moderasyon kuyruğu", language) : translateCopy("Güven kayıtlarım", language)} action={`${visibleReports.length}`} />
       <View style={{ flexDirection: "row", gap: 8 }}>
         <TrustFilterChip active={filter === "all"} label="Tümü" onPress={() => setFilter("all")} />
         <TrustFilterChip active={filter === "open"} label="Açık" onPress={() => setFilter("open")} />
         <TrustFilterChip active={filter === "resolved"} label="Kapanan" onPress={() => setFilter("resolved")} />
       </View>
 
-      {visibleReports.length === 0 ? <EmptyState title="Kayıt yok" body="Bu filtrede bildirilen ilan, kullanıcı veya güven incelemesi bulunmuyor." /> : null}
+      {visibleReports.length === 0 ? <EmptyState title={translateCopy("Kayıt yok", language)} body={translateCopy("Bu filtrede bildirilen ilan, kullanıcı veya güven incelemesi bulunmuyor.", language)} /> : null}
 
       {visibleReports.map((report) => {
         const listing = report.listingId ? findListing(report.listingId) : undefined;
@@ -330,7 +330,7 @@ export default function TrustScreen() {
                   {listing?.title ?? translateCopy("İlan / kullanıcı bildirimi", language)}
                 </Text>
                 <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
-                  {report.reason} · {report.details || "Detay yok"}
+                  {report.reason} · {report.details || translateCopy("Detay yok", language)}
                 </Text>
                 <Text selectable style={{ color: colors.muted, fontSize: 12 }}>
                   {report.createdAt}
@@ -342,13 +342,13 @@ export default function TrustScreen() {
             {isAdmin ? (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-                  <PrimaryButton tone="secondary" onPress={() => void setStatus(report, "reviewing")}>İncele</PrimaryButton>
+                  <PrimaryButton tone="secondary" onPress={() => void setStatus(report, "reviewing")}>{translateCopy("İncele", language)}</PrimaryButton>
                 </View>
                 <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-                  <PrimaryButton tone="soft" onPress={() => void setStatus(report, "resolved")}>Çöz</PrimaryButton>
+                  <PrimaryButton tone="soft" onPress={() => void setStatus(report, "resolved")}>{translateCopy("Çöz", language)}</PrimaryButton>
                 </View>
                 <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-                  <PrimaryButton tone="secondary" onPress={() => void setStatus(report, "rejected")}>Reddet</PrimaryButton>
+                  <PrimaryButton tone="secondary" onPress={() => void setStatus(report, "rejected")}>{translateCopy("Reddet", language)}</PrimaryButton>
                 </View>
               </View>
             ) : null}

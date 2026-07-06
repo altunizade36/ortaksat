@@ -341,7 +341,7 @@ export default function SellerScreen() {
       </Card>
 
       {mounted && myLeads.length > 0 ? (
-        <MiniBarChart data={activitySeries} title="Son 14 gün · gelen talep" totalLabel={`${activitySeries.reduce((s, d) => s + d.value, 0)} talep`} />
+        <MiniBarChart data={activitySeries} title={translateCopy("Son 14 gün · gelen talep", language)} totalLabel={`${activitySeries.reduce((s, d) => s + d.value, 0)} ${translateCopy("talep", language)}`} />
       ) : null}
 
       <Card>
@@ -349,11 +349,11 @@ export default function SellerScreen() {
         <Pressable
           onPress={() => setBulkOpen(true)}
           accessibilityRole="button"
-          accessibilityLabel="Toplu ilan ekle"
+          accessibilityLabel={translateCopy("Toplu ilan ekle", language)}
           style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 13, paddingVertical: 8 }}
         >
           <MaterialCommunityIcons name="table-arrow-up" size={16} color={colors.primaryDark} />
-          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>Toplu ilan ekle</Text>
+          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Toplu ilan ekle", language)}</Text>
         </Pressable>
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 48, paddingHorizontal: 12 }}>
           <MaterialCommunityIcons name="magnify" size={21} color={colors.primary} />
@@ -365,7 +365,7 @@ export default function SellerScreen() {
             style={{ color: colors.ink, flex: 1, fontSize: 15, minHeight: 46, paddingVertical: 8 }}
           />
           {query ? (
-            <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityRole="button" accessibilityLabel="Aramayı temizle">
+            <Pressable onPress={() => setQuery("")} hitSlop={10} accessibilityRole="button" accessibilityLabel={translateCopy("Aramayı temizle", language)}>
               <MaterialCommunityIcons name="close-circle" size={19} color={colors.muted} />
             </Pressable>
           ) : null}
@@ -471,7 +471,7 @@ export default function SellerScreen() {
                 <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(listing.price, listing.currency)}</Text>
                   <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
-                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>ortak kazancı {moneyIn(commissionAmount(listing), listing.currency)}</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("ortak kazancı", language)} {moneyIn(commissionAmount(listing), listing.currency)}</Text>
                   </View>
                 </View>
               </View>
@@ -490,7 +490,7 @@ export default function SellerScreen() {
 
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               <StatusPill label={nextAction.label} tone={nextAction.tone} />
-              {pendingPartners > 0 ? <StatusPill label={`${pendingPartners} başvuru`} tone="warning" /> : null}
+              {pendingPartners > 0 ? <StatusPill label={`${pendingPartners} ${translateCopy("başvuru", language)}`} tone="warning" /> : null}
             </View>
 
             {/* Kompakt aksiyon satırı */}
@@ -515,17 +515,17 @@ export default function SellerScreen() {
             {listingLeads.length > 0 || listingSales.length > 0 ? (
               <Pressable onPress={() => setExpandedId(isExpanded ? null : listing.id)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 11 }}>
                 <MaterialCommunityIcons name="clipboard-list-outline" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "800" }}>Talep & ödeme yönetimi — {listingLeads.length} talep · {listingSales.length} satış</Text>
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "800" }}>{translateCopy("Talep & ödeme yönetimi", language)} — {listingLeads.length} {translateCopy("talep", language)} · {listingSales.length} {translateCopy("satış", language)}</Text>
                 <MaterialCommunityIcons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
               </Pressable>
             ) : (
-              <Text selectable style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>Bu ilana henüz talep gelmedi. Ortak satışa açıkça paylaşarak ilk talebi al.</Text>
+              <Text selectable style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Bu ilana henüz talep gelmedi. Ortak satışa açıkça paylaşarak ilk talebi al.", language)}</Text>
             )}
 
             {isExpanded ? (
             <>
             <SectionTitle title="Gelen talepler" action={`${listingLeads.length}`} />
-            {listingLeads.length === 0 ? <Text selectable style={{ color: colors.muted, fontSize: 14 }}>Bu ilana henüz talep gelmedi.</Text> : null}
+            {listingLeads.length === 0 ? <Text selectable style={{ color: colors.muted, fontSize: 14 }}>{translateCopy("Bu ilana henüz talep gelmedi.", language)}</Text> : null}
             {listingLeads
               .slice()
               .sort((a, b) => leadPriority(b) - leadPriority(a))
@@ -581,7 +581,7 @@ export default function SellerScreen() {
                 <StatusPill label={saleLabels[sale.status]} tone={sale.status === "paid" ? "success" : "warning"} />
                 <View style={{ flexDirection: "row", gap: 10 }}>
                   <Metric label="Adet" value={`${sale.quantity ?? 1}`} />
-                  <Metric label="Teslim" value={sale.deliveryStatus === "delivered" ? "Teslim" : sale.deliveryStatus === "cancelled" ? "İptal" : "Bekliyor"} />
+                  <Metric label="Teslim" value={sale.deliveryStatus === "delivered" ? translateCopy("Teslim", language) : sale.deliveryStatus === "cancelled" ? translateCopy("İptal", language) : translateCopy("Bekliyor", language)} />
                   <Metric label="İade sonu" value={sale.returnUntil ?? "-"} />
                 </View>
                 {sale.payoutNote ? (
@@ -592,7 +592,7 @@ export default function SellerScreen() {
                 {sale.status === "paid" ? (
                   <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 8, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 9 }}>
                     <MaterialCommunityIcons name="check-circle" size={15} color={colors.success} />
-                    <Text style={{ color: colors.success, fontSize: 12.5, fontWeight: "800" }}>Komisyon kapandı</Text>
+                    <Text style={{ color: colors.success, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Komisyon kapandı", language)}</Text>
                   </View>
                 ) : sale.status === "disputed" ? (
                   <View style={{ flexDirection: "row", gap: 8 }}>
@@ -601,7 +601,7 @@ export default function SellerScreen() {
                   </View>
                 ) : sale.status === "seller_paid" ? (
                   <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 8, paddingVertical: 9 }}>
-                    <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "800" }}>Ortak onayı bekleniyor</Text>
+                    <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortak onayı bekleniyor", language)}</Text>
                   </View>
                 ) : (
                   <View style={{ flexDirection: "row", gap: 8 }}>
@@ -631,10 +631,11 @@ export default function SellerScreen() {
 
 
 function SellerStat({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
+  const { language } = useLanguage();
   return (
     <View style={{ gap: 1, minWidth: 66 }}>
       <Text numberOfLines={1} style={{ color: warn ? colors.accent : colors.ink, fontSize: 14, fontWeight: "900" }}>{value}</Text>
-      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{label}</Text>
+      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{translateCopy(label, language)}</Text>
     </View>
   );
 }

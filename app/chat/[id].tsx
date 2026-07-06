@@ -45,8 +45,9 @@ function scanChatRisk(text: string) {
 
 export default function ChatScreen() {
   const { isAuthenticated } = useStore();
+  const { language } = useLanguage();
   if (!isAuthenticated) {
-    return <AuthRequired title="Mesajlarını görmek için giriş yap" body="Konuşmaların yalnızca sana özeldir; görmek için ücretsiz bir hesapla giriş yapman gerekir." />;
+    return <AuthRequired title={translateCopy("Mesajlarını görmek için giriş yap", language)} body={translateCopy("Konuşmaların yalnızca sana özeldir; görmek için ücretsiz bir hesapla giriş yapman gerekir.", language)} />;
   }
   return <ChatScreenInner />;
 }
@@ -295,12 +296,12 @@ function ChatScreenInner() {
       {draftRisk.hasRisk ? (
         <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderTopColor: colors.warning, borderTopWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 8 }}>
           <MaterialCommunityIcons name="shield-alert-outline" size={16} color={colors.warning} />
-          <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>Hassas ödeme veya site dışı iletişim ifadesi algılandı. Şartları mesaj içinde netleştir.</Text>
+          <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{translateCopy("Hassas ödeme veya site dışı iletişim ifadesi algılandı. Şartları mesaj içinde netleştir.", language)}</Text>
         </View>
       ) : null}
 
       <View style={{ alignItems: "flex-end", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, paddingBottom: insets.bottom > 0 ? insets.bottom : 10, paddingHorizontal: 10, paddingTop: 10 }}>
-        <Pressable accessibilityRole="button" accessibilityLabel="Görsel ekle" disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
+        <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Görsel ekle", language)} disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
           <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} />
         </Pressable>
         <TextInput
@@ -318,7 +319,7 @@ function ChatScreenInner() {
           }}
           style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 22, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14.5, maxHeight: 120, minHeight: 44, paddingHorizontal: 16, paddingVertical: 11 }}
         />
-        <Pressable accessibilityRole="button" accessibilityLabel="Gönder" disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
+        <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Gönder", language)} disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
           <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
         </Pressable>
       </View>

@@ -22,6 +22,7 @@ type ContactMethod = Listing["contactMethod"];
 const fallbackImage = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
 
 export default function ListingEditRoute() {
+  const { language } = useLanguage();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { currentUser, findListing } = useStore();
   const listing = findListing(id);
@@ -29,7 +30,7 @@ export default function ListingEditRoute() {
   if (!listing || listing.ownerId !== currentUser.id) {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 16 }}>
-        <EmptyState title="İlan düzenlenemiyor" body="Bu ilan bulunamadı veya düzenleme yetkin yok." />
+        <EmptyState title={translateCopy("İlan düzenlenemiyor", language)} body={translateCopy("Bu ilan bulunamadı veya düzenleme yetkin yok.", language)} />
       </ScrollView>
     );
   }
@@ -38,6 +39,7 @@ export default function ListingEditRoute() {
 }
 
 function ListingEditForm({ listing }: { listing: Listing }) {
+  const { language } = useLanguage();
   const router = useRouter();
   const { authError, backendMode, currentUser, updateListing } = useStore();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
@@ -80,7 +82,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   async function pickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("İzin gerekli", "İlan fotoğrafı seçmek için galeri izni vermelisin.");
+      Alert.alert(translateCopy("İzin gerekli", language), translateCopy("İlan fotoğrafı seçmek için galeri izni vermelisin.", language));
       return;
     }
 
@@ -99,7 +101,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   async function pickAdAssets() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!permission.granted) {
-      Alert.alert("İzin gerekli", "Ek fotoğraf seçmek için galeri izni vermelisin.");
+      Alert.alert(translateCopy("İzin gerekli", language), translateCopy("Ek fotoğraf seçmek için galeri izni vermelisin.", language));
       return;
     }
     const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.82, selectionLimit: 4 });
@@ -160,7 +162,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       !Number.isFinite(parsedStock) ||
       parsedStock < 0
     ) {
-      Alert.alert("Eksik bilgi", "Başlık, açıklama, fiyat, stok ve komisyon alanlarını kontrol et.");
+      Alert.alert(translateCopy("Eksik bilgi", language), translateCopy("Başlık, açıklama, fiyat, stok ve komisyon alanlarını kontrol et.", language));
       return;
     }
 
@@ -195,11 +197,11 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     setSaving(false);
 
     if (!ok) {
-      Alert.alert("Kaydedilemedi", authError ?? "İlan güncellenemedi.");
+      Alert.alert(translateCopy("Kaydedilemedi", language), authError ?? translateCopy("İlan güncellenemedi.", language));
       return;
     }
 
-    Alert.alert("İlan güncellendi", "Satıcı panelindeki ilan bilgileri yenilendi.");
+    Alert.alert(translateCopy("İlan güncellendi", language), translateCopy("Satıcı panelindeki ilan bilgileri yenilendi.", language));
     router.back();
   }
 
@@ -208,30 +210,30 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16, paddingBottom: 128 }}>
         <Card>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatusPill label="İlan düzenleme" tone="info" />
-            <StatusPill label={isLiveAccount ? "Canlı kayıt" : "Ön izleme"} tone={isLiveAccount ? "success" : "warning"} />
-            <StatusPill label={listing.status === "active" ? "Aktif" : listing.status === "paused" ? "Pasif" : "Satıldı"} tone={listing.status === "active" ? "success" : "warning"} />
+            <StatusPill label={translateCopy("İlan düzenleme", language)} tone="info" />
+            <StatusPill label={isLiveAccount ? translateCopy("Canlı kayıt", language) : translateCopy("Ön izleme", language)} tone={isLiveAccount ? "success" : "warning"} />
+            <StatusPill label={listing.status === "active" ? translateCopy("Aktif", language) : listing.status === "paused" ? translateCopy("Pasif", language) : translateCopy("Satıldı", language)} tone={listing.status === "active" ? "success" : "warning"} />
           </View>
           <Text selectable style={{ color: colors.ink, fontSize: 24, fontWeight: "900", lineHeight: 30 }}>
-            İlanı profesyonelce güncelle
+            {translateCopy("İlanı profesyonelce güncelle", language)}
           </Text>
           <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
-            Fiyat, stok, komisyon, ortaklık kuralı, teslimat notu ve görseli buradan canlı şekilde yönet.
+            {translateCopy("Fiyat, stok, komisyon, ortaklık kuralı, teslimat notu ve görseli buradan canlı şekilde yönet.", language)}
           </Text>
         </Card>
 
         <Card>
-          <SectionTitle title="Fotoğraf" action="1:1 önerilir" />
+          <SectionTitle title={translateCopy("Fotoğraf", language)} action={translateCopy("1:1 önerilir", language)} />
           <Image source={{ uri: image || listing.image || fallbackImage }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 8, height: 210 }} />
           <View style={{ flexDirection: "row", gap: 8 }}>
             <View style={{ flex: 1 }}>
               <PrimaryButton icon="image-plus" tone="secondary" onPress={() => void pickImage()}>
-                Fotoğraf Seç
+                {translateCopy("Fotoğraf Seç", language)}
               </PrimaryButton>
             </View>
             <View style={{ flex: 1 }}>
               <PrimaryButton icon="content-save-outline" onPress={() => void submit()}>
-                {saving ? "Kaydediliyor" : "Kaydet"}
+                {saving ? translateCopy("Kaydediliyor", language) : translateCopy("Kaydet", language)}
               </PrimaryButton>
             </View>
           </View>
@@ -239,7 +241,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
         </Card>
 
         <Card>
-          <SectionTitle title="Ürün bilgileri" />
+          <SectionTitle title={translateCopy("Ürün bilgileri", language)} />
           <Field label="Başlık" value={title} onChangeText={setTitle} />
           <Field label="Açıklama" value={description} onChangeText={setDescription} multiline />
           <View style={{ flexDirection: "row", gap: 10 }}>
@@ -254,12 +256,12 @@ function ListingEditForm({ listing }: { listing: Listing }) {
               lib/categories.ts'in 19 kaba kategorisini kullandığı için eşleşmez ve
               seçince kategoriyi bozuyordu. Artık create ile AYNI ağaç-tabanlı picker. */}
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Kategori</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Kategori", language)}</Text>
             <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Şu anki: {category || "—"}</Text>
               </View>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>Değiştirmek istersen aşağıdan yeni kategori seç (opsiyonel).</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy("Değiştirmek istersen aşağıdan yeni kategori seç (opsiyonel).", language)}</Text>
             </View>
             <TreeCategoryPicker value={catPath} onChange={(p) => { setCatPath(p); if (p.length) setCategory(p[p.length - 1].label); }} />
           </View>
@@ -268,17 +270,17 @@ function ListingEditForm({ listing }: { listing: Listing }) {
 
         {attrSchema ? (
           <Card>
-            <SectionTitle title={`Özellikler — ${attrSchema.title}`} action="Emlak / kategori detayları" />
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Bu kategorinin yapısal özellikleri (m², oda, imar, tapu, donatılar…). Doldurdukça ilan detayında ve filtrelerde görünür.</Text>
+            <SectionTitle title={`Özellikler — ${attrSchema.title}`} action={translateCopy("Emlak / kategori detayları", language)} />
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Bu kategorinin yapısal özellikleri (m², oda, imar, tapu, donatılar…). Doldurdukça ilan detayında ve filtrelerde görünür.", language)}</Text>
             <AttributeFields fields={attrSchema.fields} values={attrValues} onChange={setAttr} />
           </Card>
         ) : null}
 
         <Card>
-          <SectionTitle title="Ortaklık ve komisyon" />
+          <SectionTitle title={translateCopy("Ortaklık ve komisyon", language)} />
           <Segmented options={[["open", "Açık"], ["approval", "Onaylı"], ["invite", "Davetli"]]} value={partnershipMode} onChange={(value) => setPartnershipMode(value as PartnershipMode)} />
           <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
-            Açık: herkes anında ortak olur. Onaylı: satıcı başvuruyu değerlendirir. Davetli: sadece seçilen ortaklar katılır.
+            {translateCopy("Açık: herkes anında ortak olur. Onaylı: satıcı başvuruyu değerlendirir. Davetli: sadece seçilen ortaklar katılır.", language)}
           </Text>
           <Segmented options={[["rate", "Yüzde"], ["fixed", "Sabit"]]} value={commissionType} onChange={(value) => setCommissionType(value as CommissionType)} />
           <Field label="Komisyon" value={commissionValue} onChangeText={setCommissionValue} keyboardType="numeric" />
@@ -293,7 +295,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           <Field label="İade bekleme günü" value={returnWindowDays} onChangeText={setReturnWindowDays} keyboardType="numeric" />
           <Field label="Etiketler" value={tags} onChangeText={setTags} />
           <Field label="Satış argümanları" value={pitch} onChangeText={setPitch} multiline />
-          <SectionTitle title="Hazır paylaşım metinleri" action="Ortak kullanır" />
+          <SectionTitle title={translateCopy("Hazır paylaşım metinleri", language)} action={translateCopy("Ortak kullanır", language)} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}>
               <PrimaryButton tone="secondary" onPress={() => setInstagramText(buildShareTemplates({ title, price: Number(price), commissionType, commissionValue: Number(commissionValue), pitch: pitch.split("\n") }).instagram)}>Instagram</PrimaryButton>
@@ -309,7 +311,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           <Field label="WhatsApp paylaşım mesajı" value={whatsappText} onChangeText={setWhatsappText} multiline />
           <Field label="Kısa TikTok açıklaması" value={tiktokText} onChangeText={setTiktokText} multiline />
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Ek görseller (en fazla 4)</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ek görseller (en fazla 4)", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
               {adAssets.map((img, i) => (
                 <View key={img + i} style={{ borderColor: colors.line, borderRadius: 10, borderWidth: 1, height: 84, overflow: "hidden", width: 84 }}>
@@ -322,7 +324,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
               {adAssets.length < 4 ? (
                 <Pressable onPress={() => void pickAdAssets()} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderStyle: "dashed", borderWidth: 1.5, gap: 3, height: 84, justifyContent: "center", width: 84 }}>
                   <MaterialCommunityIcons name="image-plus" size={22} color={colors.primary} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>Ekle</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{translateCopy("Ekle", language)}</Text>
                 </Pressable>
               ) : null}
             </View>
@@ -332,10 +334,10 @@ function ListingEditForm({ listing }: { listing: Listing }) {
         </Card>
 
         <Card>
-          <SectionTitle title="İletişim tipi" />
+          <SectionTitle title={translateCopy("İletişim tipi", language)} />
           <Segmented options={[["whatsapp", "WhatsApp"], ["message", "Mesaj"], ["phone", "Telefon"]]} value={contactMethod} onChange={(value) => setContactMethod(value as ContactMethod)} />
           <PrimaryButton icon="content-save-outline" onPress={() => void submit()}>
-            {saving ? "Kaydediliyor" : "Değişiklikleri Kaydet"}
+            {saving ? translateCopy("Kaydediliyor", language) : translateCopy("Değişiklikleri Kaydet", language)}
           </PrimaryButton>
         </Card>
       </ScrollView>

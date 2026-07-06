@@ -32,7 +32,7 @@ export default function StoreScreen() {
 
   async function handleReportSeller() {
     if (!seller || isOwnStore) return;
-    const ok = await reportUser(seller.id, "Satıcı bildirimi", "Mağaza/satıcı profilinden bildirildi.");
+    const ok = await reportUser(seller.id, translateCopy("Satıcı bildirimi", language), translateCopy("Mağaza/satıcı profilinden bildirildi.", language));
     Alert.alert(
       ok ? translateCopy("Bildirim alındı", language) : translateCopy("Gönderilemedi", language),
       ok
@@ -95,26 +95,26 @@ export default function StoreScreen() {
   function messageSeller() {
     if (!seller || isOwnStore) return;
     if (currentUser.id === "anon") {
-      Alert.alert("Giriş gerekli", "Satıcıya mesaj göndermek için giriş yapmalısın.", [
-        { text: "Vazgeç", style: "cancel" },
-        { text: "Giriş yap", onPress: () => router.push("/auth") }
+      Alert.alert(translateCopy("Giriş gerekli", language), translateCopy("Satıcıya mesaj göndermek için giriş yapmalısın.", language), [
+        { text: translateCopy("Vazgeç", language), style: "cancel" },
+        { text: translateCopy("Giriş yap", language), onPress: () => router.push("/auth") }
       ]);
       return;
     }
     const firstListing = activeListings[0];
     if (!firstListing) {
-      Alert.alert("İletişim kurulamadı", "Bu satıcının şu an aktif ilanı yok. İlan yayınlandığında mesaj gönderebilirsin.");
+      Alert.alert(translateCopy("İletişim kurulamadı", language), translateCopy("Bu satıcının şu an aktif ilanı yok. İlan yayınlandığında mesaj gönderebilirsin.", language));
       return;
     }
     const conversation = startConversation(firstListing.id, seller.id, `${seller.name} mağazasındaki ürünler için bilgi almak istiyorum.`);
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
-    else Alert.alert("İletişim kurulamadı", "Şu an konuşma başlatılamadı, lütfen tekrar dene.");
+    else Alert.alert(translateCopy("İletişim kurulamadı", language), translateCopy("Şu an konuşma başlatılamadı, lütfen tekrar dene.", language));
   }
 
   if (!seller) {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 12 }}>
-        <EmptyState title="Mağaza bulunamadı" body="Bu satıcı profili kaldırılmış veya bağlantı geçersiz olabilir." />
+        <EmptyState title={translateCopy("Mağaza bulunamadı", language)} body={translateCopy("Bu satıcı profili kaldırılmış veya bağlantı geçersiz olabilir.", language)} />
       </ScrollView>
     );
   }
@@ -124,19 +124,19 @@ export default function StoreScreen() {
     const featured = activeListings.slice(0, 3);
     const deskCardWidth = responsiveGrid({ available: Math.min(width, 1480) - 40 - 300 - 24, gap: 16, minCardWidth: 210, maxColumns: 3 }).cardWidth;
     const badges: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; on: boolean; tint: string; color: string }> = [
-      { icon: "check-decagram", label: "Kimlik Doğrulandı", sub: "Resmi kimlik onaylı", on: seller.verifiedIdentity, tint: colors.successSoft, color: colors.success },
-      { icon: "phone-check", label: "Telefon Doğrulandı", sub: "Numara onaylı", on: seller.verifiedPhone, tint: colors.infoSoft, color: colors.info },
-      { icon: "instagram", label: "Instagram Bağlı", sub: "Sosyal hesap onaylı", on: !!seller.verifiedInstagram, tint: colors.violetSoft, color: colors.violet },
-      { icon: "star-circle", label: "Yüksek Puan", sub: "4.5+ değerlendirme", on: seller.rating >= 4.5, tint: colors.goldSoft, color: colors.gold },
-      { icon: "trophy", label: "Çok Satan", sub: "50+ başarılı satış", on: seller.successfulSales >= 50, tint: colors.primarySoft, color: colors.primaryDark },
-      { icon: "lightning-bolt", label: "Hızlı Yanıt", sub: "%90+ yanıt oranı", on: seller.responseRate >= 90, tint: colors.accentSoft, color: colors.accent }
+      { icon: "check-decagram", label: translateCopy("Kimlik Doğrulandı", language), sub: translateCopy("Resmi kimlik onaylı", language), on: seller.verifiedIdentity, tint: colors.successSoft, color: colors.success },
+      { icon: "phone-check", label: translateCopy("Telefon Doğrulandı", language), sub: translateCopy("Numara onaylı", language), on: seller.verifiedPhone, tint: colors.infoSoft, color: colors.info },
+      { icon: "instagram", label: translateCopy("Instagram Bağlı", language), sub: translateCopy("Sosyal hesap onaylı", language), on: !!seller.verifiedInstagram, tint: colors.violetSoft, color: colors.violet },
+      { icon: "star-circle", label: translateCopy("Yüksek Puan", language), sub: translateCopy("4.5+ değerlendirme", language), on: seller.rating >= 4.5, tint: colors.goldSoft, color: colors.gold },
+      { icon: "trophy", label: translateCopy("Çok Satan", language), sub: translateCopy("50+ başarılı satış", language), on: seller.successfulSales >= 50, tint: colors.primarySoft, color: colors.primaryDark },
+      { icon: "lightning-bolt", label: translateCopy("Hızlı Yanıt", language), sub: translateCopy("%90+ yanıt oranı", language), on: seller.responseRate >= 90, tint: colors.accentSoft, color: colors.accent }
     ];
     const tabs: Array<{ key: ProfileTab; label: string; count?: number }> = [
-      { key: "about", label: "Hakkında" },
-      { key: "listings", label: "İlanları", count: activeListings.length },
-      { key: "partnerships", label: "Ortaklıkları", count: sellerPartnerships.length },
-      { key: "reviews", label: "Yorumlar", count: reviewsAboutSeller.length },
-      { key: "badges", label: "Rozetler", count: badges.filter((b) => b.on).length }
+      { key: "about", label: translateCopy("Hakkında", language) },
+      { key: "listings", label: translateCopy("İlanları", language), count: activeListings.length },
+      { key: "partnerships", label: translateCopy("Ortaklıkları", language), count: sellerPartnerships.length },
+      { key: "reviews", label: translateCopy("Yorumlar", language), count: reviewsAboutSeller.length },
+      { key: "badges", label: translateCopy("Rozetler", language), count: badges.filter((b) => b.on).length }
     ];
 
     return (
@@ -161,39 +161,39 @@ export default function StoreScreen() {
                   <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{seller.name}</Text>
                   {seller.verifiedIdentity ? <MaterialCommunityIcons name="check-decagram" size={22} color={colors.info} /> : null}
                 </View>
-                <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 19, maxWidth: 560 }}>{seller.bio || "Ortaksat'ta güvenilir satıcı."}</Text>
+                <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 19, maxWidth: 560 }}>{seller.bio || translateCopy("Ortaksat'ta güvenilir satıcı.", language)}</Text>
                 <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 2 }}>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                     <MaterialCommunityIcons name="star" size={15} color={colors.gold} />
                     <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{seller.rating}</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>({reviewsAboutSeller.length} yorum)</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>({reviewsAboutSeller.length} {translateCopy("yorum", language)})</Text>
                   </View>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                     <MaterialCommunityIcons name="cart-check" size={15} color={colors.muted} />
-                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{seller.successfulSales} satış</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{seller.successfulSales} {translateCopy("satış", language)}</Text>
                   </View>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                     <MaterialCommunityIcons name="lightning-bolt" size={15} color={colors.muted} />
-                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>%{seller.responseRate} yanıt</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>%{seller.responseRate} {translateCopy("yanıt", language)}</Text>
                   </View>
                 </View>
               </View>
               <View style={{ flexDirection: "row", gap: 10, paddingTop: 6 }}>
                 {isOwnStore ? (
-                  <Link href="/create" asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="plus" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Yeni ilan</Text></Pressable></Link>
+                  <Link href="/create" asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="plus" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Yeni ilan", language)}</Text></Pressable></Link>
                 ) : (
-                  <Pressable onPress={messageSeller} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="message-text-outline" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Mesaj gönder</Text></Pressable>
+                  <Pressable onPress={messageSeller} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="message-text-outline" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Mesaj gönder", language)}</Text></Pressable>
                 )}
               </View>
             </View>
 
             {/* Stats strip */}
             <View style={{ borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", marginTop: 18, paddingTop: 16 }}>
-              <DeskProfileStat value={`${seller.rating}`} label="Puan" />
-              <DeskProfileStat value={`${seller.successfulSales}`} label="Satış" />
-              <DeskProfileStat value={`${activeListings.length}`} label="Aktif ilan" />
-              <DeskProfileStat value={`${sellerPartnerships.length}`} label="Ortaklık" />
-              <DeskProfileStat value={`%${trust?.seller.score ?? 0}`} label="Satıcı güveni" last />
+              <DeskProfileStat value={`${seller.rating}`} label={translateCopy("Puan", language)} />
+              <DeskProfileStat value={`${seller.successfulSales}`} label={translateCopy("Satış", language)} />
+              <DeskProfileStat value={`${activeListings.length}`} label={translateCopy("Aktif ilan", language)} />
+              <DeskProfileStat value={`${sellerPartnerships.length}`} label={translateCopy("Ortaklık", language)} />
+              <DeskProfileStat value={`%${trust?.seller.score ?? 0}`} label={translateCopy("Satıcı güveni", language)} last />
             </View>
           </View>
 
@@ -217,35 +217,35 @@ export default function StoreScreen() {
               {tab === "about" ? (
                 <>
                   <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
-                    <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Hakkında</Text>
-                    <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{seller.bio || "Bu satıcı henüz bir açıklama eklememiş. Ortaksat üzerinde doğrulanmış bir satıcıdır ve güvenli alışveriş sunar."}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Hakkında", language)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{seller.bio || translateCopy("Bu satıcı henüz bir açıklama eklememiş. Ortaksat üzerinde doğrulanmış bir satıcıdır ve güvenli alışveriş sunar.", language)}</Text>
                     <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 10, marginTop: 4, paddingTop: 14 }}>
-                      <DeskAboutRow icon="cart-check" label="Toplam satış" value={`${seller.successfulSales}`} />
-                      <DeskAboutRow icon="lightning-bolt" label="Yanıt oranı" value={`%${seller.responseRate}`} />
-                      <DeskAboutRow icon="tag-multiple-outline" label="Toplam komisyon havuzu" value={money(totalCommission)} />
-                      <DeskAboutRow icon="shield-check" label="Satıcı güven puanı" value={`%${trust?.seller.score ?? 0}`} />
+                      <DeskAboutRow icon="cart-check" label={translateCopy("Toplam satış", language)} value={`${seller.successfulSales}`} />
+                      <DeskAboutRow icon="lightning-bolt" label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} />
+                      <DeskAboutRow icon="tag-multiple-outline" label={translateCopy("Toplam komisyon havuzu", language)} value={money(totalCommission)} />
+                      <DeskAboutRow icon="shield-check" label={translateCopy("Satıcı güven puanı", language)} value={`%${trust?.seller.score ?? 0}`} />
                     </View>
                   </View>
                   {hasPartnerActivity ? (
                     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                         <MaterialCommunityIcons name="handshake-outline" size={19} color={colors.primaryDark} />
-                        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Ortak karnesi</Text>
+                        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Ortak karnesi", language)}</Text>
                       </View>
-                      <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>Bu kişinin başka satıcıların ürünlerini ortak olarak satarak / alıcı getirerek oluşturduğu performans.</Text>
+                      <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{translateCopy("Bu kişinin başka satıcıların ürünlerini ortak olarak satarak / alıcı getirerek oluşturduğu performans.", language)}</Text>
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                        <PartnerScoreCell value={`${partnerBroughtSales}`} label="Getirdiği satış" />
-                        <PartnerScoreCell value={`${partnerActiveCount}`} label="Aktif ortaklık" />
-                        <PartnerScoreCell value={money(partnerEarned)} label="Kazandırdığı komisyon" />
-                        <PartnerScoreCell value={`%${trust?.partner.score ?? 0}`} label="Ortak güven puanı" />
+                        <PartnerScoreCell value={`${partnerBroughtSales}`} label={translateCopy("Getirdiği satış", language)} />
+                        <PartnerScoreCell value={`${partnerActiveCount}`} label={translateCopy("Aktif ortaklık", language)} />
+                        <PartnerScoreCell value={money(partnerEarned)} label={translateCopy("Kazandırdığı komisyon", language)} />
+                        <PartnerScoreCell value={`%${trust?.partner.score ?? 0}`} label={translateCopy("Ortak güven puanı", language)} />
                       </View>
                     </View>
                   ) : null}
                   {featured.length > 0 ? (
                     <View style={{ gap: 12 }}>
                       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-                        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>Vitrin</Text>
-                        <Pressable onPress={() => setTab("listings")}><Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Tüm ilanları gör →</Text></Pressable>
+                        <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Vitrin", language)}</Text>
+                        <Pressable onPress={() => setTab("listings")}><Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Tüm ilanları gör →", language)}</Text></Pressable>
                       </View>
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
                         {featured.map((listing) => <ListingCard key={listing.id} listing={listing} owner={seller} width={deskCardWidth} />)}
@@ -263,7 +263,7 @@ export default function StoreScreen() {
                     <StoreFilterChip active={filter === "all"} icon="view-grid-outline" label="Tümü" onPress={() => setFilter("all")} />
                   </View>
                   {sellerListings.length === 0 ? (
-                    <EmptyState title="Ürün yok" body={isOwnStore ? "İlk ilanını açınca burada görünür." : "Bu mağazada şu an görünür ürün yok."} />
+                    <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca burada görünür.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
                   ) : (
                     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
                       {sellerListings.map((listing) => <ListingCard key={listing.id} listing={listing} owner={seller} width={deskCardWidth} />)}
@@ -274,9 +274,9 @@ export default function StoreScreen() {
 
               {tab === "partnerships" ? (
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 4, padding: 18 }}>
-                  <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900", marginBottom: 6 }}>Ortaklığa açık ilanlar</Text>
+                  <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900", marginBottom: 6 }}>{translateCopy("Ortaklığa açık ilanlar", language)}</Text>
                   {sellerPartnerships.length === 0 ? (
-                    <EmptyState title="Ortaklık yok" body="Bu satıcının ortaklığa açık ilanı bulunmuyor." />
+                    <EmptyState title={translateCopy("Ortaklık yok", language)} body={translateCopy("Bu satıcının ortaklığa açık ilanı bulunmuyor.", language)} />
                   ) : activeListings.filter((l) => l.partnershipMode !== "invite").map((l, idx) => (
                     <Link key={l.id} href={{ pathname: "/listing/[id]", params: { id: l.id } }} asChild>
                       <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingVertical: 12 })}>
@@ -288,7 +288,7 @@ export default function StoreScreen() {
                         <View style={{ alignItems: "flex-end", gap: 2 }}>
                           <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{money(l.price)}</Text>
                           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
-                            <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>{l.commissionType === "rate" ? `%${l.commissionValue}` : money(l.commissionValue)} komisyon</Text>
+                            <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>{l.commissionType === "rate" ? `%${l.commissionValue}` : money(l.commissionValue)} {translateCopy("komisyon", language)}</Text>
                           </View>
                         </View>
                       </Pressable>
@@ -300,7 +300,7 @@ export default function StoreScreen() {
               {tab === "reviews" ? (
                 <View style={{ gap: 12 }}>
                   {reviewsAboutSeller.length === 0 ? (
-                    <EmptyState title="Henüz yorum yok" body="Bu satıcı için ilk değerlendirmeyi sen yapabilirsin." />
+                    <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
                   ) : reviewsAboutSeller.map((r) => {
                     const reviewer = findUser(r.reviewerId);
                     return (
@@ -310,7 +310,7 @@ export default function StoreScreen() {
                             <MaterialCommunityIcons name="account" size={20} color={colors.primaryDark} />
                           </View>
                           <View style={{ flex: 1, minWidth: 0 }}>
-                            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{reviewer?.name ?? "Kullanıcı"}</Text>
+                            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{reviewer?.name ?? translateCopy("Kullanıcı", language)}</Text>
                             <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{shortDate(r.createdAt)}</Text>
                           </View>
                           <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
@@ -333,7 +333,7 @@ export default function StoreScreen() {
                       </View>
                       <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900", textAlign: "center" }}>{b.label}</Text>
                       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", textAlign: "center" }}>{b.sub}</Text>
-                      {b.on ? <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}><Text style={{ color: colors.success, fontSize: 11, fontWeight: "800" }}>Kazanıldı</Text></View> : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>Henüz yok</Text>}
+                      {b.on ? <View style={{ backgroundColor: colors.successSoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}><Text style={{ color: colors.success, fontSize: 11, fontWeight: "800" }}>{translateCopy("Kazanıldı", language)}</Text></View> : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>{translateCopy("Henüz yok", language)}</Text>}
                     </View>
                   ))}
                 </View>
@@ -343,39 +343,39 @@ export default function StoreScreen() {
             {/* Sidebar */}
             <View style={{ gap: 16, width: 300 }}>
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Doğrulama durumu</Text>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Doğrulama durumu", language)}</Text>
                 {[
-                  { label: "Kimlik", on: seller.verifiedIdentity },
-                  { label: "Telefon", on: seller.verifiedPhone },
+                  { label: translateCopy("Kimlik", language), on: seller.verifiedIdentity },
+                  { label: translateCopy("Telefon", language), on: seller.verifiedPhone },
                   { label: "Instagram", on: !!seller.verifiedInstagram }
                 ].map((v) => (
                   <View key={v.label} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
                     <MaterialCommunityIcons name={v.on ? "check-circle" : "close-circle-outline"} size={18} color={v.on ? colors.success : colors.subtle} />
                     <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{v.label}</Text>
-                    <Text style={{ color: v.on ? colors.success : colors.muted, fontSize: 12, fontWeight: "800" }}>{v.on ? "Onaylı" : "Bekliyor"}</Text>
+                    <Text style={{ color: v.on ? colors.success : colors.muted, fontSize: 12, fontWeight: "800" }}>{v.on ? translateCopy("Onaylı", language) : translateCopy("Bekliyor", language)}</Text>
                   </View>
                 ))}
               </View>
 
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Güven puanı</Text>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Güven puanı", language)}</Text>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
                   <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 56, justifyContent: "center", width: 56 }}>
                     <Text style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900" }}>%{trust?.overall ?? 0}</Text>
                   </View>
-                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>Doğrulama, satış geçmişi ve yorumlara göre hesaplanır.</Text>
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Doğrulama, satış geçmişi ve yorumlara göre hesaplanır.", language)}</Text>
                 </View>
               </View>
 
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>İletişim</Text>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("İletişim", language)}</Text>
                 {isOwnStore ? (
-                  <Link href="/profile-edit" asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="account-edit-outline" size={17} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Profili düzenle</Text></Pressable></Link>
+                  <Link href="/profile-edit" asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="account-edit-outline" size={17} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Profili düzenle", language)}</Text></Pressable></Link>
                 ) : (
-                  <Pressable onPress={messageSeller} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="message-text-outline" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Mesaj gönder</Text></Pressable>
+                  <Pressable onPress={messageSeller} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="message-text-outline" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{translateCopy("Mesaj gönder", language)}</Text></Pressable>
                 )}
                 {!isOwnStore ? (
-                  <Pressable onPress={() => void handleReportSeller()} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="flag-outline" size={17} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Satıcıyı şikayet et</Text></Pressable>
+                  <Pressable onPress={() => void handleReportSeller()} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="flag-outline" size={17} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Satıcıyı şikayet et", language)}</Text></Pressable>
                 ) : null}
               </View>
             </View>
@@ -430,13 +430,13 @@ export default function StoreScreen() {
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 8, padding: 12 }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
               <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} />
-              <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>Ortak karnesi</Text>
+              <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Ortak karnesi", language)}</Text>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              <PartnerScoreCell value={`${partnerBroughtSales}`} label="Getirdiği satış" />
-              <PartnerScoreCell value={`${partnerActiveCount}`} label="Aktif ortaklık" />
-              <PartnerScoreCell value={money(partnerEarned)} label="Kazandırdığı komisyon" />
-              <PartnerScoreCell value={`%${trust?.partner.score ?? 0}`} label="Ortak güveni" />
+              <PartnerScoreCell value={`${partnerBroughtSales}`} label={translateCopy("Getirdiği satış", language)} />
+              <PartnerScoreCell value={`${partnerActiveCount}`} label={translateCopy("Aktif ortaklık", language)} />
+              <PartnerScoreCell value={money(partnerEarned)} label={translateCopy("Kazandırdığı komisyon", language)} />
+              <PartnerScoreCell value={`%${trust?.partner.score ?? 0}`} label={translateCopy("Ortak güveni", language)} />
             </View>
           </View>
         ) : null}
@@ -444,16 +444,16 @@ export default function StoreScreen() {
         <View style={{ flexDirection: "row", gap: 8 }}>
           {isOwnStore ? (
             <View style={{ flex: 1 }}>
-              <PrimaryButton href="/create" icon="store-plus-outline">Yeni ilan aç</PrimaryButton>
+              <PrimaryButton href="/create" icon="store-plus-outline">{translateCopy("Yeni ilan aç", language)}</PrimaryButton>
             </View>
           ) : (
             <View style={{ flex: 1 }}>
-              <PrimaryButton icon="message-text-outline" onPress={messageSeller}>Mağazaya mesaj gönder</PrimaryButton>
+              <PrimaryButton icon="message-text-outline" onPress={messageSeller}>{translateCopy("Mağazaya mesaj gönder", language)}</PrimaryButton>
             </View>
           )}
           <View style={{ flex: 1 }}>
             <PrimaryButton href={isOwnStore ? "/(tabs)/seller" : "/(tabs)/partner"} tone="secondary" icon={isOwnStore ? "storefront-outline" : "handshake-outline"}>
-              {isOwnStore ? "Satıcı paneli" : "Ortaklık ürünleri"}
+              {isOwnStore ? translateCopy("Satıcı paneli", language) : translateCopy("Ortaklık ürünleri", language)}
             </PrimaryButton>
           </View>
         </View>
@@ -475,7 +475,7 @@ export default function StoreScreen() {
       </View>
 
       {sellerListings.length === 0 ? (
-        <EmptyState title="Ürün yok" body={isOwnStore ? "İlk ilanını açınca mağazana ve ana pazara otomatik düşer." : "Bu mağazada şu an görünür ürün yok."} />
+        <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca mağazana ve ana pazara otomatik düşer.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
       ) : (
         <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: gridGap }}>
           {sellerListings.map((listing) => (

@@ -119,7 +119,7 @@ export default function ExploreScreen() {
   const resolveOwner = (id: string) => serverOwners[id] ?? findUser(id);
   const feedFilters: Array<{ key: FeedFilter; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
     { key: "all", label: t("all"), icon: "grid" },
-    { key: "commission", label: "Yüksek komisyon", icon: "cash-plus" },
+    { key: "commission", label: translateCopy("Yüksek komisyon", language), icon: "cash-plus" },
     { key: "open", label: t("instantPartner"), icon: "flash" },
     { key: "hot", label: t("trend"), icon: "fire" },
     { key: "new", label: t("newest"), icon: "clock-outline" }
@@ -266,17 +266,17 @@ export default function ExploreScreen() {
 
   if (isWideWeb) {
     const pills: Array<{ key: FeedFilter | "near"; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
-      { key: "all", label: "Tümü", icon: "grid" },
-      { key: "hot", label: "Trend", icon: "fire" },
-      { key: "new", label: "Yeni", icon: "clock-outline" },
-      { key: "commission", label: "En Yüksek Komisyon", icon: "cash-plus" },
-      { key: "open", label: "Anında ortak", icon: "flash" }
+      { key: "all", label: translateCopy("Tümü", language), icon: "grid" },
+      { key: "hot", label: translateCopy("Trend", language), icon: "fire" },
+      { key: "new", label: translateCopy("Yeni", language), icon: "clock-outline" },
+      { key: "commission", label: translateCopy("En Yüksek Komisyon", language), icon: "cash-plus" },
+      { key: "open", label: translateCopy("Anında ortak", language), icon: "flash" }
     ];
     const trust = [
-      { icon: "shield-check" as const, label: "Komisyon şartı kayıt altında" },
-      { icon: "swap-horizontal" as const, label: "Şeffaf & güvenilir süreç" },
-      { icon: "message-text-outline" as const, label: "Satıcıyla güvenli iletişim" },
-      { icon: "account-check" as const, label: "Doğrulanmış satıcılar" }
+      { icon: "shield-check" as const, label: translateCopy("Komisyon şartı kayıt altında", language) },
+      { icon: "swap-horizontal" as const, label: translateCopy("Şeffaf & güvenilir süreç", language) },
+      { icon: "message-text-outline" as const, label: translateCopy("Satıcıyla güvenli iletişim", language) },
+      { icon: "account-check" as const, label: translateCopy("Doğrulanmış satıcılar", language) }
     ];
     const sortOrder: SortMode[] = ["recommended", "priceAsc", "priceDesc", "commission", "new"];
     const visibleProducts = productListings.slice(0, productVisible);
@@ -303,9 +303,9 @@ export default function ExploreScreen() {
         {/* Banner */}
         <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 26 }}>
           <View style={{ flex: 1.3, gap: 10, justifyContent: "center", minWidth: 0 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Keşfet, kazanmaya başla</Text>
-            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>Komisyonlu ilanları keşfet, ortak ol, kazan</Text>
-            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 460 }}>Kategorilere göz at, filtreleyin ve komisyonlu ilanlarla kolayca ortak olun.</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Keşfet, kazanmaya başla", language)}</Text>
+            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>{translateCopy("Komisyonlu ilanları keşfet, ortak ol, kazan", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 460 }}>{translateCopy("Kategorilere göz at, filtreleyin ve komisyonlu ilanlarla kolayca ortak olun.", language)}</Text>
           </View>
           <View style={{ flex: 1, gap: 10, justifyContent: "center", minWidth: 0 }}>
             {trust.map((item) => (
@@ -353,7 +353,7 @@ export default function ExploreScreen() {
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 8, padding: 12, position: "relative", zIndex: 60 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
             <MaterialCommunityIcons name="map-marker-radius" size={17} color={colors.primary} />
-            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Konum</Text>
+            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Konum", language)}</Text>
             {(provinceName || districtName) ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>· {[provinceName, districtName].filter(Boolean).join(" / ")}</Text> : null}
           </View>
           <View style={{ maxWidth: 520 }}>
@@ -373,7 +373,7 @@ export default function ExploreScreen() {
             style={{ alignItems: "center", backgroundColor: hasPanelFilter ? colors.primarySoft : colors.surfaceAlt, borderColor: hasPanelFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
           >
             <MaterialCommunityIcons name="filter-variant" size={15} color={colors.primaryDark} />
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{hasPanelFilter ? "Filtreleri temizle" : "Tüm Filtreler"}</Text>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{hasPanelFilter ? translateCopy("Filtreleri temizle", language) : translateCopy("Tüm Filtreler", language)}</Text>
           </Pressable>
           <FilterDropdown label="Fiyat Aralığı" value={priceRange} onSelect={(v) => setPriceRange(String(v))} options={[
             { label: "Tümü", value: "" },
@@ -398,15 +398,15 @@ export default function ExploreScreen() {
             <View style={{ alignItems: onlyVerified ? "flex-end" : "flex-start", backgroundColor: onlyVerified ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 38 }}>
               <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
             </View>
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Sadece onaylı satıcılar</Text>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Sadece onaylı satıcılar", language)}</Text>
           </Pressable>
           <View style={{ flex: 1 }} />
           <Pressable
             onPress={() => setSortMode(sortOrder[(sortOrder.indexOf(sortMode) + 1) % sortOrder.length])}
             style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}
           >
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Sırala:</Text>
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{SORT_LABELS[sortMode]}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>{translateCopy("Sırala:", language)}</Text>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy(SORT_LABELS[sortMode], language)}</Text>
             <MaterialCommunityIcons name="chevron-down" size={16} color={colors.muted} />
           </Pressable>
         </View>
@@ -416,10 +416,10 @@ export default function ExploreScreen() {
           <View style={{ flex: 1, gap: 14, minWidth: 0 }}>
             <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between" }}>
               <View style={{ gap: 2 }}>
-                <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>Öne çıkan ilanlar</Text>
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>Sizin için seçilmiş en iyi ortaklık fırsatları</Text>
+                <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{translateCopy("Öne çıkan ilanlar", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Sizin için seçilmiş en iyi ortaklık fırsatları", language)}</Text>
               </View>
-              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{productListings.length} ilan bulundu</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{productListings.length} {translateCopy("ilan bulundu", language)}</Text>
             </View>
 
             {/* Kayıtlı aramalar + arama kaydet */}
@@ -428,7 +428,7 @@ export default function ExploreScreen() {
                 {queryText && !savedSearches.some((s) => s.q.toLocaleLowerCase("tr-TR") === queryText.toLocaleLowerCase("tr-TR")) ? (
                   <Pressable onPress={() => addSaved(queryText)} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}>
                     <MaterialCommunityIcons name="bell-plus-outline" size={15} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>“{queryText}” aramasını kaydet</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{`“${queryText}” `}{translateCopy("aramasını kaydet", language)}</Text>
                   </Pressable>
                 ) : null}
                 {savedSearches.map((s) => {
@@ -438,8 +438,8 @@ export default function ExploreScreen() {
                     <View key={s.id} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingLeft: 12, paddingRight: 6, paddingVertical: 5 }}>
                       <MaterialCommunityIcons name="bookmark-outline" size={14} color={colors.muted} />
                       <Pressable onPress={() => router.setParams({ q: s.q })}><Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{s.q}</Text></Pressable>
-                      {newCount > 0 ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{newCount} yeni</Text></View> : null}
-                      <Pressable accessibilityRole="button" accessibilityLabel="Kayıtlı aramayı sil" onPress={() => removeSaved(s.id)} hitSlop={6} style={{ alignItems: "center", height: 22, justifyContent: "center", width: 22 }}>
+                      {newCount > 0 ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{newCount} {translateCopy("yeni", language)}</Text></View> : null}
+                      <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kayıtlı aramayı sil", language)} onPress={() => removeSaved(s.id)} hitSlop={6} style={{ alignItems: "center", height: 22, justifyContent: "center", width: 22 }}>
                         <MaterialCommunityIcons name="close" size={14} color={colors.subtle} />
                       </Pressable>
                     </View>
@@ -456,7 +456,7 @@ export default function ExploreScreen() {
                 <Link href="/create" asChild>
                   <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 11 })}>
                     <MaterialCommunityIcons name="store-plus-outline" size={16} color="#FFFFFF" />
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>İlan ver</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("İlan ver", language)}</Text>
                   </Pressable>
                 </Link>
               </View>
@@ -470,11 +470,11 @@ export default function ExploreScreen() {
 
             {visibleProducts.length < productListings.length ? (
               <Pressable onPress={() => { setProductVisible((c) => c + 20); if (productVisible + 20 >= productListings.length) { if (queryText && serverHasMore) loadMoreServer(); else if (!queryText && marketplaceHasMore) loadMoreMarketplace(); } }} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 28, paddingVertical: 12 }}>
-                <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>Daha fazla göster</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{translateCopy("Daha fazla göster", language)}</Text>
               </Pressable>
             ) : (queryText ? serverHasMore : marketplaceHasMore) ? (
               <Pressable onPress={() => (queryText ? loadMoreServer() : loadMoreMarketplace())} disabled={queryText ? serverLoading : marketplaceLoadingMore} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, opacity: (queryText ? serverLoading : marketplaceLoadingMore) ? 0.6 : 1, paddingHorizontal: 28, paddingVertical: 12 }}>
-                <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{(queryText ? serverLoading : marketplaceLoadingMore) ? "Yükleniyor…" : "Daha fazla ilan yükle"}</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{(queryText ? serverLoading : marketplaceLoadingMore) ? translateCopy("Yükleniyor…", language) : translateCopy("Daha fazla ilan yükle", language)}</Text>
               </Pressable>
             ) : null}
           </View>
@@ -483,32 +483,32 @@ export default function ExploreScreen() {
           <View style={{ gap: 16, width: sidebarWidth }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Yeni eklenen ilanlar</Text>
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{translateCopy("Yeni eklenen ilanlar", language)}</Text>
               </View>
               {dealListings.map((listing) => (
                 <SidebarListing key={listing.id} listing={listing} owner={findUser(listing.ownerId)} />
               ))}
               <Link href="/" asChild>
                 <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Tüm ilanları gör</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Tüm ilanları gör", language)}</Text>
                   <MaterialCommunityIcons name="arrow-right" size={16} color={colors.primaryDark} />
                 </Pressable>
               </Link>
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Yüksek komisyonlu ilanlar</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Yüksek komisyonlu ilanlar", language)}</Text>
               {topCommissionListings.map((listing) => (
                 <SidebarListing key={listing.id} listing={listing} owner={findUser(listing.ownerId)} />
               ))}
               <Pressable onPress={() => setFilter("commission")} style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Tümünü gör</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Tümünü gör", language)}</Text>
                 <MaterialCommunityIcons name="arrow-right" size={16} color={colors.primaryDark} />
               </Pressable>
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 16 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Neden Ortaksat?</Text>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Neden Ortaksat?", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
                 {[
                   { icon: "cash-remove" as const, value: "0 ₺", label: "İlan vermek ücretsiz" },
@@ -518,8 +518,8 @@ export default function ExploreScreen() {
                 ].map((item) => (
                   <View key={item.label} style={{ alignItems: "center", flexBasis: 120, flexGrow: 1, gap: 4 }}>
                     <MaterialCommunityIcons name={item.icon} size={22} color={colors.primary} />
-                    <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{item.value}</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{item.label}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy(item.value, language)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{translateCopy(item.label, language)}</Text>
                   </View>
                 ))}
               </View>
@@ -573,9 +573,9 @@ export default function ExploreScreen() {
           </View>
           {!isWideWeb ? (
             // Mobilde şehir/komisyon/durum filtreleri artık erişilebilir (önceden panel hiç render edilmiyordu).
-            <Pressable onPress={() => setShowMobileFilters((v) => !v)} accessibilityRole="button" accessibilityLabel="Filtrele" style={{ alignItems: "center", backgroundColor: showMobileFilters ? colors.primary : colors.surface, borderColor: (city || minCommission > 0 || statusOpen) ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+            <Pressable onPress={() => setShowMobileFilters((v) => !v)} accessibilityRole="button" accessibilityLabel={translateCopy("Filtrele", language)} style={{ alignItems: "center", backgroundColor: showMobileFilters ? colors.primary : colors.surface, borderColor: (city || minCommission > 0 || statusOpen) ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
               <MaterialCommunityIcons name="tune-variant" size={15} color={showMobileFilters ? "#FFFFFF" : colors.primaryDark} />
-              <Text style={{ color: showMobileFilters ? "#FFFFFF" : colors.primaryDark, fontSize: 12, fontWeight: "900" }}>Filtre</Text>
+              <Text style={{ color: showMobileFilters ? "#FFFFFF" : colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Filtre", language)}</Text>
               {(city || minCommission > 0 || statusOpen) ? <View style={{ backgroundColor: showMobileFilters ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 7, width: 7 }} /> : null}
             </Pressable>
           ) : null}
@@ -681,33 +681,34 @@ function FilterPanel({
   onClear: () => void;
   width: number;
 }) {
+  const { language } = useLanguage();
   const commissionPresets = [0, 100, 250, 500];
   const hasFilter = Boolean(city) || minCommission > 0 || statusOpen;
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 18, padding: 16, width }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <MaterialCommunityIcons name="filter-variant" size={18} color={colors.primaryDark} />
-        <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Filtrele</Text>
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{translateCopy("Filtrele", language)}</Text>
         {hasFilter ? (
           <Pressable onPress={onClear}>
-            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }}>Temizle</Text>
+            <Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text>
           </Pressable>
         ) : null}
       </View>
 
       <View style={{ gap: 8 }}>
-        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Durum</Text>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Durum", language)}</Text>
         <Pressable
           onPress={() => onStatusOpen(!statusOpen)}
           style={{ alignItems: "center", backgroundColor: statusOpen ? colors.primarySoft : colors.surfaceAlt, borderColor: statusOpen ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}
         >
           <MaterialCommunityIcons name={statusOpen ? "checkbox-marked" : "checkbox-blank-outline"} size={18} color={statusOpen ? colors.primary : colors.muted} />
-          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Ortak satışa açık</Text>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Ortak satışa açık", language)}</Text>
         </Pressable>
       </View>
 
       <View style={{ gap: 8 }}>
-        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Komisyon (en az)</Text>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Komisyon (en az)", language)}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           {commissionPresets.map((amount) => {
             const active = minCommission === amount;
@@ -718,7 +719,7 @@ function FilterPanel({
                 style={{ backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}
               >
                 <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>
-                  {amount === 0 ? "Tümü" : `₺${amount}+`}
+                  {amount === 0 ? translateCopy("Tümü", language) : `₺${amount}+`}
                 </Text>
               </Pressable>
             );
@@ -727,11 +728,11 @@ function FilterPanel({
       </View>
 
       <View style={{ gap: 8 }}>
-        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Şehir</Text>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Şehir", language)}</Text>
         <View style={{ gap: 4 }}>
           <Pressable onPress={() => onCity("")} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 6 }}>
             <MaterialCommunityIcons name={city === "" ? "radiobox-marked" : "radiobox-blank"} size={18} color={city === "" ? colors.primary : colors.muted} />
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Tüm şehirler</Text>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Tüm şehirler", language)}</Text>
           </Pressable>
           {cities.map((c) => {
             const active = city === c;
@@ -749,6 +750,7 @@ function FilterPanel({
 }
 
 function FilterDropdown({ label, value, options, onSelect, searchable }: { label: string; value: string | number; options: Array<{ label: string; value: string | number }>; onSelect: (value: string | number) => void; searchable?: boolean }) {
+  const { language } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const selected = options.find((o) => o.value === value);
@@ -767,7 +769,7 @@ function FilterDropdown({ label, value, options, onSelect, searchable }: { label
         style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
       >
         <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: active ? "900" : "700" }}>
-          {active && selected ? selected.label : label}
+          {translateCopy(active && selected ? selected.label : label, language)}
         </Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={15} color={colors.muted} />
       </Pressable>
@@ -782,7 +784,7 @@ function FilterDropdown({ label, value, options, onSelect, searchable }: { label
                   <TextInput
                     value={query}
                     onChangeText={setQuery}
-                    placeholder="Şehir ara"
+                    placeholder={translateCopy("Şehir ara", language)}
                     placeholderTextColor={colors.muted}
                     autoFocus
                     style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "600", height: 36, paddingVertical: 0 }}
@@ -792,7 +794,7 @@ function FilterDropdown({ label, value, options, onSelect, searchable }: { label
             ) : null}
             <ScrollView style={{ maxHeight: searchable ? 260 : undefined }} keyboardShouldPersistTaps="handled">
               {filtered.length === 0 ? (
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", paddingHorizontal: 14, paddingVertical: 10 }}>Sonuç yok</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", paddingHorizontal: 14, paddingVertical: 10 }}>{translateCopy("Sonuç yok", language)}</Text>
               ) : (
                 filtered.map((opt) => {
                   const isSel = opt.value === value;
@@ -803,7 +805,7 @@ function FilterDropdown({ label, value, options, onSelect, searchable }: { label
                       style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 10 })}
                     >
                       <MaterialCommunityIcons name={isSel ? "check-circle" : "circle-outline"} size={16} color={isSel ? colors.primary : colors.subtle} />
-                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{opt.label}</Text>
+                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{translateCopy(opt.label, language)}</Text>
                     </Pressable>
                   );
                 })
@@ -843,6 +845,7 @@ function CountdownBadge() {
 
 function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner?: User; showStock?: boolean }) {
   void owner;
+  const { language } = useLanguage();
   const commission = commissionAmount(listing);
   return (
     <Link href={`/listing/${listing.id}`} asChild>
@@ -854,10 +857,10 @@ function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner
           <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(listing.title)}</Text>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
             <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(listing.price)}</Text>
-            <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>Kazanç {money(commission)}</Text>
+            <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {money(commission)}</Text>
           </View>
           {showStock ? (
-            <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "900" }}>Son {listing.stockCount} stok!</Text>
+            <Text style={{ color: colors.accent, fontSize: 10, fontWeight: "900" }}>{translateCopy("Son", language)} {listing.stockCount} {translateCopy("stok!", language)}</Text>
           ) : (
             <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{displayText(listing.location)}</Text>
           )}

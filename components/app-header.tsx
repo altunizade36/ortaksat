@@ -62,7 +62,7 @@ export function AppHeader() {
               style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, marginRight: -14, opacity: pressed ? 0.75 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
             >
               <MaterialCommunityIcons name="chevron-left" size={20} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Geri</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Geri", language)}</Text>
             </Pressable>
           ) : null}
           <Link href="/" asChild>
@@ -204,6 +204,7 @@ function LanguageToggle({ compact }: { compact?: boolean }) {
 }
 
 function MaintenanceBanner() {
+  const { language } = useLanguage();
   const { platformSettings, currentUser, isSuspended } = useStore();
   // Askıya alınan kullanıcıya her sayfada net uyarı.
   if (isSuspended) {
@@ -211,7 +212,7 @@ function MaintenanceBanner() {
       <View style={{ alignItems: "center", backgroundColor: colors.accent, flexDirection: "row", gap: 8, justifyContent: "center", paddingHorizontal: 16, paddingVertical: 7 }}>
         <MaterialCommunityIcons name="account-cancel-outline" size={15} color="#FFFFFF" />
         <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800", textAlign: "center" }}>
-          Hesabın askıya alındı. İlan verme, mesajlaşma ve ortaklık işlemleri geçici olarak kapalı. Destek için Yasal & Destek sayfasına bakabilirsin.
+          {translateCopy("Hesabın askıya alındı. İlan verme, mesajlaşma ve ortaklık işlemleri geçici olarak kapalı. Destek için Yasal & Destek sayfasına bakabilirsin.", language)}
         </Text>
       </View>
     );
@@ -231,13 +232,14 @@ function MaintenanceBanner() {
     <View style={{ alignItems: "center", backgroundColor: isStaff ? colors.goldSoft : colors.accent, flexDirection: "row", gap: 8, justifyContent: "center", paddingHorizontal: 16, paddingVertical: 7 }}>
       <MaterialCommunityIcons name="wrench-outline" size={15} color={isStaff ? colors.gold : "#FFFFFF"} />
       <Text style={{ color: isStaff ? colors.ink : "#FFFFFF", fontSize: 12.5, fontWeight: "800", textAlign: "center" }}>
-        {isStaff ? "Bakım modu AÇIK — ziyaretçilere bakım uyarısı gösteriliyor." : "Sitemiz kısa süreli bakımda. Bazı işlemler geçici olarak sınırlı olabilir."}
+        {isStaff ? translateCopy("Bakım modu AÇIK — ziyaretçilere bakım uyarısı gösteriliyor.", language) : translateCopy("Sitemiz kısa süreli bakımda. Bazı işlemler geçici olarak sınırlı olabilir.", language)}
       </Text>
     </View>
   );
 }
 
 function DesktopActions() {
+  const { language } = useLanguage();
   const { currentUser, isAuthenticated, messages, notifications } = useStore();
   const unreadMessages = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
   const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
@@ -250,13 +252,13 @@ function DesktopActions() {
         <Link href="/auth" asChild>
           <Pressable style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 8 })}>
             <MaterialCommunityIcons name="login" size={17} color={colors.primaryDark} />
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Giriş yap</Text>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Giriş yap", language)}</Text>
           </Pressable>
         </Link>
         <Link href="/auth" asChild>
           <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 9 })}>
             <MaterialCommunityIcons name="account-plus-outline" size={17} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Kayıt ol</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Kayıt ol", language)}</Text>
           </Pressable>
         </Link>
       </View>
@@ -283,7 +285,7 @@ function DesktopActions() {
                 </View>
               ) : null}
             </View>
-            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{item.label}</Text>
+            <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{translateCopy(item.label, language)}</Text>
           </Pressable>
         </Link>
       ))}
@@ -297,6 +299,7 @@ type AccountItem = { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: 
 function AccountMenu() {
   const [open, setOpen] = useState(false);
   const router = useRouter();
+  const { language } = useLanguage();
   const { isAuthenticated, currentUser, messages, notifications, signOut } = useStore();
   const unreadMessages = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
   const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
@@ -336,7 +339,7 @@ function AccountMenu() {
           <MaterialCommunityIcons name="account" size={17} color={colors.primaryDark} />
           {hasUnread && !open ? <View style={{ backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1, height: 10, position: "absolute", right: -2, top: -2, width: 10 }} /> : null}
         </View>
-        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Hesabım</Text>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Hesabım", language)}</Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={16} color={colors.muted} />
       </Pressable>
       {open ? (
@@ -349,8 +352,8 @@ function AccountMenu() {
                 <MaterialCommunityIcons name="account" size={22} color="#FFFFFF" />
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{isAuthenticated ? currentUser.name : "Hesabım"}</Text>
-                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.72)", fontSize: 11.5, fontWeight: "700" }}>{isAuthenticated ? "Hesabını yönet" : "Giriş yapmadın"}</Text>
+                <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{isAuthenticated ? currentUser.name : translateCopy("Hesabım", language)}</Text>
+                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.72)", fontSize: 11.5, fontWeight: "700" }}>{isAuthenticated ? translateCopy("Hesabını yönet", language) : translateCopy("Giriş yapmadın", language)}</Text>
               </View>
             </View>
 
@@ -363,7 +366,7 @@ function AccountMenu() {
                         <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 30, justifyContent: "center", width: 30 }}>
                           <MaterialCommunityIcons name={item.icon} size={16} color={colors.primaryDark} />
                         </View>
-                        <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{item.label}</Text>
+                        <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{translateCopy(item.label, language)}</Text>
                         {item.badge ? (
                           <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, justifyContent: "center", minWidth: 18, paddingHorizontal: 5, paddingVertical: 1 }}>
                             <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{item.badge > 9 ? "9+" : item.badge}</Text>
@@ -381,13 +384,13 @@ function AccountMenu() {
               {isAuthenticated ? (
                 <Pressable onPress={() => void handleSignOut()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.accentSoft : colors.surface, borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 })}>
                   <MaterialCommunityIcons name="logout" size={17} color={colors.accent} />
-                  <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "900" }}>Çıkış Yap</Text>
+                  <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "900" }}>{translateCopy("Çıkış Yap", language)}</Text>
                 </Pressable>
               ) : (
                 <Link href="/auth" asChild>
                   <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primaryDark : colors.primary, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 })}>
                     <MaterialCommunityIcons name="login" size={17} color="#FFFFFF" />
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Giriş / Kayıt ol</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Giriş / Kayıt ol", language)}</Text>
                   </Pressable>
                 </Link>
               )}
@@ -400,6 +403,7 @@ function AccountMenu() {
 }
 
 function DesktopTopBar() {
+  const { language } = useLanguage();
   const trust: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
     { icon: "shield-check", label: "Anlaşma şartları kayıt altında" },
     { icon: "swap-horizontal", label: "Şeffaf süreç" },
@@ -415,7 +419,7 @@ function DesktopTopBar() {
       {trust.map((item) => (
         <View key={item.label} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
           <MaterialCommunityIcons name={item.icon} size={13} color="rgba(255,255,255,0.85)" />
-          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600" }}>{item.label}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600" }}>{translateCopy(item.label, language)}</Text>
         </View>
       ))}
       <View style={{ flex: 1 }} />
@@ -423,13 +427,13 @@ function DesktopTopBar() {
         <Link key={item.label} href={item.href} asChild>
           <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
             <MaterialCommunityIcons name={item.icon} size={13} color="rgba(255,255,255,0.85)" />
-            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600" }}>{item.label}</Text>
+            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600" }}>{translateCopy(item.label, language)}</Text>
           </Pressable>
         </Link>
       ))}
       <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
         <MaterialCommunityIcons name="web" size={13} color="rgba(255,255,255,0.85)" />
-        <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600" }}>Türkçe / ₺</Text>
+        <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600" }}>{translateCopy("Türkçe / ₺", language)}</Text>
         <MaterialCommunityIcons name="chevron-down" size={14} color="rgba(255,255,255,0.7)" />
       </View>
     </View>

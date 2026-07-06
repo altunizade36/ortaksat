@@ -14,6 +14,7 @@ import { categoryTree as CATEGORY_TREE, getFormSchema, resolveFormKey, type Cate
 import { getCategoryIcon } from "@/lib/categories";
 import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, findProvince } from "@/lib/cities";
 import { commissionAmount } from "@/lib/format";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
@@ -62,6 +63,7 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
 const PAGE = 24;
 
 export default function CategoryLandingScreen() {
+  const { language } = useLanguage();
   const params = useLocalSearchParams<{ slug: string }>();
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const router = useRouter();
@@ -179,10 +181,10 @@ export default function CategoryLandingScreen() {
   if (!node) {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ alignItems: "center", flexGrow: 1, justifyContent: "center", padding: 24 }}>
-        <EmptyState title="Kategori bulunamadı" body="Bu kategori kaldırılmış olabilir." />
+        <EmptyState title={translateCopy("Kategori bulunamadı", language)} body={translateCopy("Bu kategori kaldırılmış olabilir.", language)} />
         <Link href="/kategoriler" asChild>
           <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, marginTop: 12, paddingHorizontal: 20, paddingVertical: 12 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>Tüm Kategoriler</Text>
+            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Tüm Kategoriler", language)}</Text>
           </Pressable>
         </Link>
       </ScrollView>
@@ -214,9 +216,9 @@ export default function CategoryLandingScreen() {
       <WebContainer max={1280} padding={12} style={{ gap: 14 }}>
         {/* Breadcrumb — tam ata zinciri (her üst kategori tıklanabilir) */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-          <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Ana Sayfa</Text></Pressable></Link>
+          <Link href="/" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Ana Sayfa", language)}</Text></Pressable></Link>
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-          <Link href="/kategoriler" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Kategoriler</Text></Pressable></Link>
+          <Link href="/kategoriler" asChild><Pressable><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Kategoriler", language)}</Text></Pressable></Link>
           {ancestors.map((a) => (
             <View key={a.key} style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
               <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
@@ -258,7 +260,7 @@ export default function CategoryLandingScreen() {
               const on = sortMode === k;
               return (
                 <Pressable key={k} onPress={() => setSortMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}>
-                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{lbl}</Text>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
                 </Pressable>
               );
             })}
@@ -266,7 +268,7 @@ export default function CategoryLandingScreen() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
             <Pressable onPress={() => setOnlyOpen((v) => !v)} style={{ alignItems: "center", backgroundColor: onlyOpen ? colors.primarySoft : colors.surface, borderColor: onlyOpen ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
               <MaterialCommunityIcons name="flash" size={13} color={onlyOpen ? colors.primaryDark : colors.muted} />
-              <Text style={{ color: onlyOpen ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: "800" }}>Anında ortak</Text>
+              <Text style={{ color: onlyOpen ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy("Anında ortak", language)}</Text>
             </Pressable>
             {([[0, 1000, "0–1.000 ₺"], [1000, 5000, "1.000–5.000 ₺"], [5000, 25000, "5.000–25.000 ₺"], [25000, 100000, "25.000–100.000 ₺"], [100000, Number.MAX_SAFE_INTEGER, "100.000 ₺+"]] as const).map(([mn, mx, lbl]) => {
               const on = band?.[0] === mn && band?.[1] === mx;
@@ -286,9 +288,9 @@ export default function CategoryLandingScreen() {
                   <View key={nf.key} style={{ gap: 6 }}>
                     <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{nf.label} aralığı</Text>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                      <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" placeholder="En az" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 12 }} />
+                      <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 12 }} />
                       <Text style={{ color: colors.subtle, fontSize: 13 }}>—</Text>
-                      <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" placeholder="En çok" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 12 }} />
+                      <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 12 }} />
                     </View>
                   </View>
                 ))}
@@ -310,7 +312,7 @@ export default function CategoryLandingScreen() {
                 ))}
                 {Object.keys(attrFilters).length || numActiveCount ? (
                   <Pressable onPress={() => { setAttrFilters({}); setNumRange({}); }} style={{ alignSelf: "flex-start", borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 6 }}>
-                    <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>Filtreleri temizle</Text>
+                    <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>{translateCopy("Filtreleri temizle", language)}</Text>
                   </Pressable>
                 ) : null}
               </View>
@@ -320,7 +322,7 @@ export default function CategoryLandingScreen() {
 
         {items.length === 0 ? (
           band || onlyOpen ? (
-            <EmptyState title="Filtreye uyan ilan yok" body="Filtreleri gevşetmeyi dene ya da farklı bir kategoriye göz at." />
+            <EmptyState title={translateCopy("Filtreye uyan ilan yok", language)} body={translateCopy("Filtreleri gevşetmeyi dene ya da farklı bir kategoriye göz at.", language)} />
           ) : (
             <View style={{ backgroundColor: colors.primarySoft, borderRadius: 16, gap: 12, padding: 20 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
@@ -328,17 +330,17 @@ export default function CategoryLandingScreen() {
                 <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{node.label} kategorisinde ilk ilanı sen ekle</Text>
               </View>
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 20 }}>
-                Bu kategoride henüz ilan yok. Ürününü ücretsiz ekle, komisyonunu belirle; ortaklar senin için satsın. İlk olan öne çıkar. Ya da bir ürüne ortak olup kazanmaya başla.
+                {translateCopy("Bu kategoride henüz ilan yok. Ürününü ücretsiz ekle, komisyonunu belirle; ortaklar senin için satsın. İlk olan öne çıkar. Ya da bir ürüne ortak olup kazanmaya başla.", language)}
               </Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 <Pressable onPress={() => router.push("/create")} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}>
                   <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" />
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ücretsiz İlan Ver</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ücretsiz İlan Ver", language)}</Text>
                 </Pressable>
                 <Link href="/influencer-kazanc" asChild>
                   <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}>
                     <MaterialCommunityIcons name="cash-multiple" size={16} color={colors.primaryDark} />
-                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>Ortak Ol, Kazan</Text>
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortak Ol, Kazan", language)}</Text>
                   </Pressable>
                 </Link>
               </View>

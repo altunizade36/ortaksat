@@ -2,6 +2,18 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { getLocales } from "expo-localization";
 import { createContext, PropsWithChildren, useContext, useEffect, useMemo, useState } from "react";
 
+// Sayfa-grubu çeviri sözlükleri (paralel i18n çalışmasıyla üretildi). Her biri
+// kendi dosyasında; burada tek trToEnCopy'ye birleştirilir. Çakışmada SON gelen
+// kazanır — bu yüzden temel sözlük (baseTrToEn) en başta, gruplar sonra.
+import { accountDict } from "@/lib/i18n-dict/account";
+import { catalogDict } from "@/lib/i18n-dict/catalog";
+import { componentsDict } from "@/lib/i18n-dict/components";
+import { exploreDict } from "@/lib/i18n-dict/explore";
+import { homeDict } from "@/lib/i18n-dict/home";
+import { marketingDict } from "@/lib/i18n-dict/marketing";
+import { profileDict } from "@/lib/i18n-dict/profile";
+import { socialDict } from "@/lib/i18n-dict/social";
+
 export type AppLanguage = "tr" | "en";
 
 type Dictionary = Record<string, string>;
@@ -498,7 +510,7 @@ export function useLanguage() {
   return context ?? fallbackLanguageContext;
 }
 
-const trToEnCopy: Record<string, string> = {
+const baseTrToEn: Record<string, string> = {
   "Açık": "Open",
   "Açık komisyon": "Open commission",
   "Açık güven kaydı": "Open trust record",
@@ -1210,6 +1222,19 @@ const trToEnCopy: Record<string, string> = {
   "Yükleniyor...": "Loading...",
   "Bir hata oluştu": "An error occurred",
   "Tekrar dene": "Try again"
+};
+
+// Temel + tüm sayfa-grubu sözlükleri birleştirilmiş nihai TR→EN haritası.
+const trToEnCopy: Record<string, string> = {
+  ...baseTrToEn,
+  ...homeDict,
+  ...exploreDict,
+  ...catalogDict,
+  ...socialDict,
+  ...componentsDict,
+  ...accountDict,
+  ...profileDict,
+  ...marketingDict
 };
 
 export function translateCopy(value: string, language: AppLanguage): string {

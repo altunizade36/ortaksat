@@ -11,6 +11,7 @@ import { LocationSelector, type LocationValue } from "@/components/location-sele
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { deriveFieldsFromPath, getFormSchema, MODELS_BY_BRAND, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { CURRENCIES, moneyIn, type CurrencyCode } from "@/lib/format";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import { formatLocation, getProvince } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
 import { autoFillListing } from "@/lib/listing-autofill";
@@ -27,6 +28,7 @@ const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1
 type Values = Record<string, string | boolean | string[]>;
 
 export function DesktopCreateFlow() {
+  const { language } = useLanguage();
   const router = useRouter();
   const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, listings } = useStore();
   const [step, setStep] = useState(0);
@@ -61,7 +63,7 @@ export function DesktopCreateFlow() {
     if (kw.verdict === "block") return { level: "block" as const, msg: `Yasaklı ifade tespit edildi: "${kw.matched}". Bu içerikle ilan yayınlanamaz.` };
     const cat = categoryRisk(path.map((p) => p.label));
     if (kw.verdict === "review") return { level: "review" as const, msg: `"${kw.matched}" ifadesi dikkat gerektirebilir; ilan yönetici onayına düşebilir.` };
-    if (cat === "review") return { level: "review" as const, msg: "Bu kategori, güvenlik gereği yayından önce yönetici onayına düşer." };
+    if (cat === "review") return { level: "review" as const, msg: translateCopy("Bu kategori, güvenlik gereği yayından önce yönetici onayına düşer.", language) };
     return null;
   }, [values.title, values.description, path]);
 
@@ -104,14 +106,14 @@ export function DesktopCreateFlow() {
     if (result.canceled) return;
     const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
     const tooBig = result.assets.some((a) => typeof a.fileSize === "number" && a.fileSize > MAX_BYTES);
-    if (tooBig) setError("Bazı görseller 5 MB sınırını aşıyor ve eklenmedi. Lütfen daha küçük dosyalar seçin.");
+    if (tooBig) setError(translateCopy("Bazı görseller 5 MB sınırını aşıyor ve eklenmedi. Lütfen daha küçük dosyalar seçin.", language));
     const uris = result.assets
       .filter((a) => !(typeof a.fileSize === "number" && a.fileSize > MAX_BYTES))
       .map((a) => a.uri)
       .filter(Boolean);
     setImages((s) => {
       const next = [...s, ...uris].slice(0, 5); // en fazla 5 görsel
-      if (s.length + uris.length > 5) setError("En fazla 5 görsel ekleyebilirsin. Fazlası eklenmedi.");
+      if (s.length + uris.length > 5) setError(translateCopy("En fazla 5 görsel ekleyebilirsin. Fazlası eklenmedi.", language));
       return next;
     });
   }
@@ -154,7 +156,7 @@ export function DesktopCreateFlow() {
       // Hız sınırı (spam/bot ilan yağmurunu engeller).
       const rl = await rateLimit("listing_create");
       if (!rl.allowed) {
-        setError(rl.reason ?? "Çok sık denediniz, lütfen sonra tekrar deneyin.");
+        setError(rl.reason ?? translateCopy("Çok sık denediniz, lütfen sonra tekrar deneyin.", language));
         return;
       }
 
@@ -276,8 +278,8 @@ export function DesktopCreateFlow() {
   return (
     <View style={{ gap: 18 }}>
       <View style={{ gap: 4 }}>
-        <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>Yeni ilan oluştur</Text>
-        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>Kategorini seç, sana özel form açılsın. Ortak satışa açarak ortakların ürününü kendi kitlesine yaysın.</Text>
+        <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Yeni ilan oluştur", language)}</Text>
+        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Kategorini seç, sana özel form açılsın. Ortak satışa açarak ortakların ürününü kendi kitlesine yaysın.", language)}</Text>
       </View>
 
       {/* Stepper */}
@@ -291,7 +293,7 @@ export function DesktopCreateFlow() {
               <View style={{ alignItems: "center", backgroundColor: on ? "#FFFFFF" : done ? colors.primary : colors.surfaceAlt, borderRadius: 999, height: 20, justifyContent: "center", width: 20 }}>
                 {done ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" /> : <Text style={{ color: on ? colors.primary : colors.muted, fontSize: 11, fontWeight: "900" }}>{i + 1}</Text>}
               </View>
-              <Text style={{ color: on ? "#FFFFFF" : done ? colors.primaryDark : colors.muted, fontSize: 12.5, fontWeight: "800" }}>{s}</Text>
+              <Text style={{ color: on ? "#FFFFFF" : done ? colors.primaryDark : colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(s, language)}</Text>
             </Pressable>
           );
         })}
@@ -310,9 +312,9 @@ export function DesktopCreateFlow() {
               <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, paddingHorizontal: 12, paddingVertical: 9 }}>
                 <MaterialCommunityIcons name="tag-multiple-outline" size={15} color={colors.primaryDark} />
                 <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{path.map((p) => p.label).join(" › ")}</Text>
-                <Pressable onPress={() => setStep(0)} accessibilityRole="button" accessibilityLabel="Kategoriyi değiştir" style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <Pressable onPress={() => setStep(0)} accessibilityRole="button" accessibilityLabel={translateCopy("Kategoriyi değiştir", language)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 4 }}>
                   <MaterialCommunityIcons name="pencil-outline" size={13} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Değiştir</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
                 </Pressable>
               </View>
             ) : null}
@@ -331,7 +333,7 @@ export function DesktopCreateFlow() {
               })}
             </View>
             <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Para birimi</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Para birimi", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {CURRENCIES.map((c) => {
                   const on = currency === c.code;
@@ -343,23 +345,23 @@ export function DesktopCreateFlow() {
                   );
                 })}
               </View>
-              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>Fiyatı istediğin tutarda gir; üst sınır yok. Nokta binlik ayırıcıdır (örn. 1.500.000).</Text>
+              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("Fiyatı istediğin tutarda gir; üst sınır yok. Nokta binlik ayırıcıdır (örn. 1.500.000).", language)}</Text>
             </View>
           </View>
         ) : null}
 
         {step === 2 ? (
           <View style={{ gap: 16 }}>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Konum</Text>
+            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Konum", language)}</Text>
             <LocationSelector value={loc} onChange={setLoc} required showNeighborhood showAddressLine mode="listing" />
             <View style={{ gap: 8 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Adres görünürlüğü</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Adres görünürlüğü", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {([["city_only", "Sadece il/ilçe"], ["neighborhood", "İl/ilçe/mahalle"], ["full_address_private", "Açık adres yalnızca onay sonrası"]] as const).map(([k, lbl]) => {
                   const on = visibility === k;
                   return (
                     <Pressable key={k} onPress={() => setVisibility(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}>
-                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{lbl}</Text>
+                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
                     </Pressable>
                   );
                 })}
@@ -370,21 +372,21 @@ export function DesktopCreateFlow() {
 
         {step === 3 ? (
           <View style={{ gap: 14 }}>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Fotoğraflar</Text>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>En az 1, en fazla 5 görsel. İlk görsel kapak olur.</Text>
+            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Fotoğraflar", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En az 1, en fazla 5 görsel. İlk görsel kapak olur.", language)}</Text>
             <Pressable onPress={() => void pickFromGallery()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 11 }}>
               <MaterialCommunityIcons name="image-multiple-outline" size={17} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Galeriden / cihazdan seç</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Galeriden / cihazdan seç", language)}</Text>
             </Pressable>
-            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>veya görsel adresi yapıştır:</Text>
+            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("veya görsel adresi yapıştır:", language)}</Text>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <TextInput value={imageDraft} onChangeText={setImageDraft} placeholder="https://…/foto.jpg" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 46, paddingHorizontal: 12 }} />
               <Pressable onPress={() => { const u = imageDraft.trim(); if (u && images.length < 5) { setImages((s) => [...s, u]); setImageDraft(""); } }} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 12 }}>
-                <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Ekle</Text>
+                <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ekle", language)}</Text>
               </Pressable>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-              {images.length === 0 ? <Text style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>Henüz görsel yok — kategori görseli kapak olarak kullanılır.</Text> : null}
+              {images.length === 0 ? <Text style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Henüz görsel yok — kategori görseli kapak olarak kullanılır.", language)}</Text> : null}
               {images.map((img, i) => (
                 <View key={img + i} style={{ borderColor: i === 0 ? colors.primary : colors.line, borderRadius: 12, borderWidth: i === 0 ? 2 : 1, height: 110, overflow: "hidden", width: 150 }}>
                   <SafeRemoteImage uri={img} style={{ height: "100%", width: "100%" }} contentFit="cover" />
@@ -392,11 +394,11 @@ export function DesktopCreateFlow() {
                     <MaterialCommunityIcons name="close" size={15} color="#FFFFFF" />
                   </Pressable>
                   {i === 0 ? (
-                    <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 6, paddingHorizontal: 7, paddingVertical: 2, position: "absolute", top: 6 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>Kapak</Text></View>
+                    <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 6, paddingHorizontal: 7, paddingVertical: 2, position: "absolute", top: 6 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{translateCopy("Kapak", language)}</Text></View>
                   ) : (
                     <Pressable onPress={() => setImages((s) => [s[i], ...s.filter((_, idx) => idx !== i)])} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 6, bottom: 6, flexDirection: "row", gap: 4, left: 6, paddingHorizontal: 7, paddingVertical: 3, position: "absolute" }}>
                       <MaterialCommunityIcons name="star-outline" size={11} color="#FFFFFF" />
-                      <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>Kapak yap</Text>
+                      <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{translateCopy("Kapak yap", language)}</Text>
                     </Pressable>
                   )}
                 </View>
@@ -407,19 +409,19 @@ export function DesktopCreateFlow() {
 
         {step === 4 ? (
           <View style={{ gap: 16 }}>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Komisyon & Ortak Satış</Text>
+            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Komisyon & Ortak Satış", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
               <View style={{ flex: 1, gap: 6, minWidth: 200 }}>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Komisyon tipi</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Komisyon tipi", language)}</Text>
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   {(["rate", "fixed"] as const).map((tp) => {
                     const on = commissionType === tp;
-                    return <Pressable key={tp} onPress={() => setCommissionType(tp)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 11 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800", textAlign: "center" }}>{tp === "rate" ? "Yüzde (%)" : "Sabit (₺)"}</Text></Pressable>;
+                    return <Pressable key={tp} onPress={() => setCommissionType(tp)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 11 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800", textAlign: "center" }}>{tp === "rate" ? translateCopy("Yüzde (%)", language) : translateCopy("Sabit (₺)", language)}</Text></Pressable>;
                   })}
                 </View>
               </View>
               <View style={{ flex: 1, minWidth: 200 }}>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>Komisyon {commissionType === "rate" ? "oranı (%)" : "tutarı (₺)"}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>{translateCopy("Komisyon", language)} {commissionType === "rate" ? translateCopy("oranı (%)", language) : translateCopy("tutarı (₺)", language)}</Text>
                 <TextInput value={commissionValue} onChangeText={setCommissionValue} keyboardType="numeric" style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
               </View>
             </View>
@@ -428,57 +430,57 @@ export function DesktopCreateFlow() {
             <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
                 <MaterialCommunityIcons name="rocket-launch-outline" size={16} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>Hızlı başlangıç bonusu (opsiyonel)</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Hızlı başlangıç bonusu (opsiyonel)", language)}</Text>
               </View>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>İlk satışları yapan ortaklara komisyonun üstüne ek ödül taahhüt et — ilanın öne çıkar, ortaklar daha hızlı harekete geçer.</Text>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("İlk satışları yapan ortaklara komisyonun üstüne ek ödül taahhüt et — ilanın öne çıkar, ortaklar daha hızlı harekete geçer.", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                 <View style={{ flex: 1, minWidth: 150 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>Bonus tutarı ({CURRENCIES.find((c) => c.code === currency)?.symbol ?? "₺"})</Text>
-                  <TextInput value={bonusAmount} onChangeText={setBonusAmount} keyboardType="numeric" placeholder="Örn. 500" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>{translateCopy("Bonus tutarı", language)} ({CURRENCIES.find((c) => c.code === currency)?.symbol ?? "₺"})</Text>
+                  <TextInput value={bonusAmount} onChangeText={setBonusAmount} keyboardType="numeric" placeholder={translateCopy("Örn. 500", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
                 </View>
                 <View style={{ flex: 1, minWidth: 150 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>İlk kaç satış için?</Text>
-                  <TextInput value={bonusQuota} onChangeText={setBonusQuota} keyboardType="numeric" placeholder="Örn. 5" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>{translateCopy("İlk kaç satış için?", language)}</Text>
+                  <TextInput value={bonusQuota} onChangeText={setBonusQuota} keyboardType="numeric" placeholder={translateCopy("Örn. 5", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
                 </View>
               </View>
             </View>
 
             <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Ortaklık kabul şekli</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortaklık kabul şekli", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {([["open", "Herkese açık (anında ortak)"], ["approval", "Başvuru onayı gerekir"], ["invite", "Sadece davetle"]] as const).map(([k, lbl]) => {
                   const on = partnershipMode === k;
-                  return <Pressable key={k} onPress={() => setPartnershipMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{lbl}</Text></Pressable>;
+                  return <Pressable key={k} onPress={() => setPartnershipMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
                 })}
               </View>
             </View>
 
 
             <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>İletişim tercihi</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("İletişim tercihi", language)}</Text>
               <View style={{ flexDirection: "row", gap: 8 }}>
                 {([["message", "Mesaj"], ["whatsapp", "WhatsApp"], ["phone", "Telefon"]] as const).map(([k, lbl]) => {
                   const on = contactMethod === k;
-                  return <Pressable key={k} onPress={() => setContactMethod(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}><MaterialCommunityIcons name={k === "whatsapp" ? "whatsapp" : k === "phone" ? "phone" : "message-text-outline"} size={15} color={on ? "#FFFFFF" : colors.primary} /><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{lbl}</Text></Pressable>;
+                  return <Pressable key={k} onPress={() => setContactMethod(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}><MaterialCommunityIcons name={k === "whatsapp" ? "whatsapp" : k === "phone" ? "phone" : "message-text-outline"} size={15} color={on ? "#FFFFFF" : colors.primary} /><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
                 })}
               </View>
             </View>
 
             <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Ortak satıcıya özel açıklama (opsiyonel)</Text>
-              <TextInput value={partnerNote} onChangeText={setPartnerNote} multiline placeholder="Ortakların dikkat etmesi gerekenler…" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 70, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: "top" }} />
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortak satıcıya özel açıklama (opsiyonel)", language)}</Text>
+              <TextInput value={partnerNote} onChangeText={setPartnerNote} multiline placeholder={translateCopy("Ortakların dikkat etmesi gerekenler…", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 70, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: "top" }} />
             </View>
 
             <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 11 }}>
               <MaterialCommunityIcons name="information-outline" size={16} color={colors.info} style={{ marginTop: 1 }} />
-              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>Ortaksat para tutmaz; komisyon, satış sonrası satıcı ile ortak arasında doğrudan ödenir. Uygulama yalnızca kaydı tutar.</Text>
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Ortaksat para tutmaz; komisyon, satış sonrası satıcı ile ortak arasında doğrudan ödenir. Uygulama yalnızca kaydı tutar.", language)}</Text>
             </View>
           </View>
         ) : null}
 
         {step === 5 ? (
           <View style={{ gap: 14 }}>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>Önizleme & Yayınla</Text>
+            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Önizleme & Yayınla", language)}</Text>
             <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
               <View style={{ borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden", width: 280 }}>
                 <View style={{ backgroundColor: colors.line, height: 170, width: "100%" }}><SafeRemoteImage uri={coverImage} style={{ height: "100%", width: "100%" }} contentFit="cover" /></View>
@@ -488,10 +490,10 @@ export function DesktopCreateFlow() {
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(parseTrPrice(String(values.price ?? "")), currency)}</Text>
                   <View style={{ backgroundColor: colors.primarySoft, borderRadius: 8, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 9, paddingVertical: 6 }}>
                     <MaterialCommunityIcons name="cash-multiple" size={14} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11, fontWeight: "800" }}>Ortak kazancı</Text>
+                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11, fontWeight: "800" }}>{translateCopy("Ortak kazancı", language)}</Text>
                     <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{moneyIn(commissionType === "rate" ? Math.round((parseTrPrice(String(values.price ?? "")) * (Number(commissionValue) || 0)) / 100) : Number(commissionValue) || 0, currency)}</Text>
                   </View>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{formatLocation(loc, visibility) || "Konum belirtilmedi"}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{formatLocation(loc, visibility) || translateCopy("Konum belirtilmedi", language)}</Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
                       <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{commissionType === "rate" ? `%${commissionValue} komisyon` : `${moneyIn(Number(commissionValue) || 0, currency)} komisyon`}</Text>
@@ -505,11 +507,11 @@ export function DesktopCreateFlow() {
                 </View>
               </View>
               <View style={{ flex: 1, gap: 8, minWidth: 240 }}>
-                <PreviewRow label="Kategori" value={path.map((p) => p.label).join(" › ")} />
-                <PreviewRow label="Konum" value={formatLocation(loc, "neighborhood") || "—"} />
-                <PreviewRow label="Görsel" value={`${images.length || "kategori görseli"} adet`} />
-                <PreviewRow label="Ortaklık" value={partnershipMode === "open" ? "Herkese açık" : partnershipMode === "approval" ? "Onaylı" : "Davetle"} />
-                {missingFields.length ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>Eksik zorunlu alan: {missingFields.map((f) => f.label).join(", ")}</Text> : <Text style={{ color: colors.success, fontSize: 12.5, fontWeight: "800" }}>✓ Tüm zorunlu alanlar dolu</Text>}
+                <PreviewRow label={translateCopy("Kategori", language)} value={path.map((p) => p.label).join(" › ")} />
+                <PreviewRow label={translateCopy("Konum", language)} value={formatLocation(loc, "neighborhood") || "—"} />
+                <PreviewRow label={translateCopy("Görsel", language)} value={`${images.length || "kategori görseli"} adet`} />
+                <PreviewRow label={translateCopy("Ortaklık", language)} value={partnershipMode === "open" ? translateCopy("Herkese açık", language) : partnershipMode === "approval" ? translateCopy("Onaylı", language) : translateCopy("Davetle", language)} />
+                {missingFields.length ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>Eksik zorunlu alan: {missingFields.map((f) => f.label).join(", ")}</Text> : <Text style={{ color: colors.success, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("✓ Tüm zorunlu alanlar dolu", language)}</Text>}
               </View>
             </View>
           </View>
@@ -527,7 +529,7 @@ export function DesktopCreateFlow() {
         autoCorrect={false}
         autoCapitalize="none"
         style={{ height: 0, opacity: 0, position: "absolute", width: 0 }}
-        placeholder="Bu alanı boş bırakın"
+        placeholder={translateCopy("Bu alanı boş bırakın", language)}
       />
 
       {/* Anlık moderasyon uyarısı (kategori/kelime riski) */}
@@ -562,15 +564,15 @@ export function DesktopCreateFlow() {
           }}
           style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}
         >
-          <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{step === 0 ? "Vazgeç" : "Geri"}</Text>
+          <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{step === 0 ? translateCopy("Vazgeç", language) : translateCopy("Geri", language)}</Text>
         </Pressable>
         {step < STEPS.length - 1 ? (
           <Pressable disabled={!canNext()} onPress={() => setStep((s) => s + 1)} style={{ alignItems: "center", backgroundColor: canNext() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 22, paddingVertical: 12 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>Devam</Text><MaterialCommunityIcons name="arrow-right" size={16} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Devam", language)}</Text><MaterialCommunityIcons name="arrow-right" size={16} color="#FFFFFF" />
           </Pressable>
         ) : (
           <Pressable disabled={publishing || missingFields.length > 0 || liveModeration?.level === "block"} onPress={() => void publish()} style={{ alignItems: "center", backgroundColor: missingFields.length || liveModeration?.level === "block" ? colors.line : colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
-            <MaterialCommunityIcons name="check-decagram" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{publishing ? "Yayınlanıyor…" : "İlanı Yayınla"}</Text>
+            <MaterialCommunityIcons name="check-decagram" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{publishing ? translateCopy("Yayınlanıyor…", language) : translateCopy("İlanı Yayınla", language)}</Text>
           </Pressable>
         )}
       </View>
@@ -579,6 +581,7 @@ export function DesktopCreateFlow() {
 }
 
 function DField({ field, value, onChange }: { field: FieldDef; value: string | boolean | string[] | undefined; onChange: (v: string | boolean | string[]) => void }) {
+  const { language } = useLanguage();
   const wide = field.type === "textarea" || field.type === "multiselect";
   // Başlık/açıklama için karakter standardı (Sahibinden benzeri) + canlı sayaç.
   const charLimit = field.key === "title" ? LIMITS.title : field.key === "description" ? LIMITS.description : null;
@@ -605,10 +608,10 @@ function DField({ field, value, onChange }: { field: FieldDef; value: string | b
       ) : field.type === "bool" ? (
         <Pressable onPress={() => onChange(!(value === true))} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
           <View style={{ alignItems: value === true ? "flex-end" : "flex-start", backgroundColor: value === true ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} /></View>
-          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{value === true ? "Evet" : "Hayır"}</Text>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{value === true ? translateCopy("Evet", language) : translateCopy("Hayır", language)}</Text>
         </Pressable>
       ) : field.type === "select" ? (
-        <DSelect label="" value={String(value ?? "")} options={field.options ?? []} onChange={onChange} placeholder="Seçin" />
+        <DSelect label="" value={String(value ?? "")} options={field.options ?? []} onChange={onChange} placeholder={translateCopy("Seçin", language)} />
       ) : (
         <TextInput
           value={String(value ?? "")}
@@ -626,12 +629,13 @@ function DField({ field, value, onChange }: { field: FieldDef; value: string | b
 }
 
 function DSelect({ label, value, options, onChange, placeholder }: { label: string; value: string; options: string[]; onChange: (v: string) => void; placeholder?: string }) {
+  const { language } = useLanguage();
   const [open, setOpen] = useState(false);
   return (
     <View style={{ gap: label ? 6 : 0 }}>
       {label ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{label}</Text> : null}
       <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
-        <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || placeholder || "Seçin"}</Text>
+        <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || placeholder || translateCopy("Seçin", language)}</Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
       </Pressable>
       {/* Inline açılır liste: alttaki alanların ÜSTÜNE binmez, onları aşağı iter (mobil dahil sorunsuz). */}
