@@ -142,6 +142,11 @@ export default function ExploreScreen() {
     { key: "new", label: t("newest"), icon: "clock-outline" }
   ];
   const isWideWeb = useIsWideWeb();
+  // Hidrasyon güvenliği: SSG'de genişlik bilinmez → isWideWeb dalı sunucu/istemci
+  // arasında uyuşmayıp React #418 üretiyordu. Mount'a kadar deterministik kabuk
+  // göster (home ile aynı desen), sonra gerçek düzene geç.
+  const [mountedGate, setMountedGate] = useState(false);
+  useEffect(() => { setMountedGate(true); }, []);
   const tokens = searchKey(params.q ?? "").split(" ").filter(Boolean);
   const gap = isWideWeb ? 14 : 8;
   const padding = isWideWeb ? 20 : 12;
@@ -377,6 +382,21 @@ export default function ExploreScreen() {
       ) : null}
     </View>
   );
+
+  // SSG + ilk istemci render'ı: genişlikten BAĞIMSIZ deterministik kabuk (temiz
+  // hidrasyon). Mount sonrası (mountedGate) gerçek düzen render edilir.
+  if (Platform.OS === "web" && !mountedGate) {
+    return (
+      <ScrollView contentContainerStyle={{ backgroundColor: colors.background, gap: 12, padding: 16 }} style={{ backgroundColor: colors.background }}>
+        <View style={{ backgroundColor: colors.primarySoft, borderRadius: 18, height: 150 }} />
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+          {Array.from({ length: 8 }).map((_, i) => (
+            <View key={i} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height: 230, width: 200 }} />
+          ))}
+        </View>
+      </ScrollView>
+    );
+  }
 
   if (isWideWeb) {
     const pills: Array<{ key: FeedFilter | "near"; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [

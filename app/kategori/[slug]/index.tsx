@@ -69,6 +69,12 @@ export default function CategoryLandingScreen() {
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const router = useRouter();
   const { width } = useWindowDimensions();
+  // Hidrasyon güvenliği: SSG'de gerçek genişlik yok → cardWidth sunucu/istemci
+  // arasında uyuşmayıp React #418 üretiyordu. Mount'a kadar sabit genişlik kullan
+  // (içerik SEO için render edilmeye devam eder), sonra gerçek genişliğe geç.
+  const [mountedGate, setMountedGate] = useState(false);
+  useEffect(() => { setMountedGate(true); }, []);
+  const layoutWidth = mountedGate ? width : 1024;
   const { listings, categoryTree, findUser, marketplaceLoadFailed, retryMarketplace } = useStore();
   const [visible, setVisible] = useState(PAGE);
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
@@ -172,7 +178,7 @@ export default function CategoryLandingScreen() {
   useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, numRange]);
   useEffect(() => { setAttrFilters({}); setNumRange({}); }, [slug]);
 
-  const cardWidth = responsiveGrid({ available: Math.min(width, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
+  const cardWidth = responsiveGrid({ available: Math.min(layoutWidth, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
   const title = node ? `${node.label} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
   const desc = node
     ? `${node.label} kategorisinde ${items.length} ortak satış ilanı. Komisyonlu ürünleri keşfet, ortak ol, kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`

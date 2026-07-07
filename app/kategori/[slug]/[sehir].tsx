@@ -55,6 +55,11 @@ export default function CityCategoryScreen() {
   const sehir = Array.isArray(params.sehir) ? params.sehir[0] : params.sehir;
   const router = useRouter();
   const { width } = useWindowDimensions();
+  // Hidrasyon güvenliği (React #418): mount'a kadar sabit genişlik → cardWidth
+  // sunucu/istemci uyuşur; mount sonrası gerçek genişlik.
+  const [mountedGate, setMountedGate] = useState(false);
+  useEffect(() => { setMountedGate(true); }, []);
+  const layoutWidth = mountedGate ? width : 1024;
   const { listings, categoryTree, findUser, marketplaceLoadFailed, retryMarketplace } = useStore();
   const [visible, setVisible] = useState(PAGE);
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
@@ -86,7 +91,7 @@ export default function CityCategoryScreen() {
 
   useEffect(() => { setVisible(PAGE); }, [onlyOpen, sortMode, slug, sehir]);
 
-  const cardWidth = responsiveGrid({ available: Math.min(width, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
+  const cardWidth = responsiveGrid({ available: Math.min(layoutWidth, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
 
   if (!node || !cityName) {
     return (
