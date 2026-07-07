@@ -18,6 +18,22 @@ async function seedSellerListing(): Promise<{ ownerId: string; listingId: string
   return { ownerId, listingId: rows[0].id };
 }
 
+// Taze seed edilen ilan Supabase'e yayılana kadar findListing/fetchListingById
+// null dönebilir (skeleton/"bulunamadı"). Doğru başlık görünene kadar sayfayı
+// yenileyerek bekle — bu, race kaynaklı flaky testleri giderir.
+async function gotoListingReady(page: Page, listingId: string): Promise<void> {
+  for (let attempt = 1; attempt <= 4; attempt++) {
+    await page.goto(`/listing/${listingId}`, { waitUntil: "domcontentloaded" });
+    try {
+      await page.getByText(/E2E Etkilesim Koltuk/i).first().waitFor({ state: "visible", timeout: 8000 });
+      await page.waitForTimeout(800);
+      return;
+    } catch {
+      await page.waitForTimeout(1500);
+    }
+  }
+}
+
 async function loginBuyer(page: Page): Promise<string> {
   const email = uniqueEmail("buyer");
   const buyerId = await createConfirmedUser(email, PW, "E2E Alici");
@@ -34,8 +50,7 @@ async function loginBuyer(page: Page): Promise<string> {
 test("FAVORİ: 'Beğen' → favorites kaydı oluşur", async ({ page }) => {
   const { listingId } = await seedSellerListing();
   const buyerId = await loginBuyer(page);
-  await page.goto(`/listing/${listingId}`, { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(3000);
+  await gotoListingReady(page, listingId);
 
   await page.getByText("Beğen", { exact: true }).first().click();
   await page.waitForTimeout(2500);
@@ -50,8 +65,7 @@ test("FAVORİ: 'Beğen' → favorites kaydı oluşur", async ({ page }) => {
 test("ORTAK OL: 'Hemen Ortak Ol ve Kazan' → partnership/lead kaydı oluşur", async ({ page }) => {
   const { listingId } = await seedSellerListing();
   const buyerId = await loginBuyer(page);
-  await page.goto(`/listing/${listingId}`, { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(3000);
+  await gotoListingReady(page, listingId);
 
   await page.getByText(/Hemen Ortak Ol ve Kazan/i).first().click();
   await page.waitForTimeout(2000);
@@ -72,8 +86,7 @@ test("ORTAK OL: 'Hemen Ortak Ol ve Kazan' → partnership/lead kaydı oluşur", 
 test("MESAJ: 'Mesaj gönder' → conversation/message oluşur", async ({ page }) => {
   const { listingId, ownerId } = await seedSellerListing();
   const buyerId = await loginBuyer(page);
-  await page.goto(`/listing/${listingId}`, { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(3000);
+  await gotoListingReady(page, listingId);
 
   await page.getByText("Mesaj gönder", { exact: true }).first().click();
   await page.waitForTimeout(2500);
