@@ -56,6 +56,8 @@ import {
   saveSeoSettingLive,
   saveCategoryLive,
   deleteCategoryLive,
+  fetchHiddenCategories,
+  setHiddenCategoryLive,
   bulkInsertCategoriesLive,
   updatePlatformSettingLive,
   updateUserRoleLive,
@@ -70,7 +72,7 @@ import {
 import { rateLimit } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings, loadSeoSettings, loadSuggestions, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
-import { categoryTree as baseCategoryTree, type CategoryNode } from "@/lib/category-tree";
+import { categoryTree as baseCategoryTree, setHiddenCategories as setHiddenCategoriesModule, type CategoryNode } from "@/lib/category-tree";
 import { displayText, repairTurkishText } from "@/lib/text";
 import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
 import type {
@@ -225,6 +227,8 @@ type AppStore = {
   saveCategory: (c: ExtraCategory) => void;
   deleteCategory: (id: string) => void;
   importCategories: (items: ExtraCategory[]) => number;
+  hiddenCategories: string[];
+  toggleHiddenCategory: (key: string) => void;
   emailVerified: boolean;
   isSuspended: boolean;
   signInWithEmail: (email: string, password: string) => Promise<boolean>;
@@ -425,6 +429,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [contentPages, setContentPages] = useState<DbContentPage[]>([]);
   const [seoSettings, setSeoSettings] = useState<DbSeoSetting[]>([]);
   const [extraCategories, setExtraCategories] = useState<ExtraCategory[]>([]);
+  const [hiddenCategories, setHiddenCategoriesState] = useState<string[]>([]);
   // Preview (no-Supabase) auth registry so register/login/logout work end-to-end in demo mode.
   const [mockAccounts, setMockAccounts] = useState<Record<string, { password: string; user: User }>>({});
   // Öneriler: canlıda boş başlar (gerçek kullanıcı önerileriyle dolar), önizlemede örnek.
@@ -458,12 +463,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
       setBackendMode("supabase");
       const settings = await loadPlatformSettings();
       if (mounted && settings) setPlatformSettings(settings);
-      const [posts, pages, seo, cats] = await Promise.all([loadBlogPosts(), loadContentPages(), loadSeoSettings(), loadCategories()]);
+      const [posts, pages, seo, cats, hidden] = await Promise.all([loadBlogPosts(), loadContentPages(), loadSeoSettings(), loadCategories(), fetchHiddenCategories()]);
       if (!mounted) return;
       setBlogPosts(posts);
       setContentPages(pages);
       setSeoSettings(seo);
       setExtraCategories(cats);
+      setHiddenCategoriesModule(hidden);
+      setHiddenCategoriesState(hidden);
     }
 
     hydrateFromSupabase();
@@ -1805,6 +1812,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setExtraCategories((items) => items.filter((x) => x.id !== id));
         if (liveUser) void deleteCategoryLive(id);
       },
+      hiddenCategories,
+      toggleHiddenCategory(key) {
+        const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+        if (!isStaff) return;
+        const willHide = !hiddenCategories.includes(key);
+        const next = willHide ? [...hiddenCategories, key] : hiddenCategories.filter((k) => k !== key);
+        setHiddenCategoriesModule(next); // önce modül (topCategories anında doğru filtreler)
+        setHiddenCategoriesState(next);  // sonra state (yeniden render tetikler)
+        if (liveUser) void setHiddenCategoryLive(key, willHide);
+      },
       importCategories(list) {
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
         if (!isStaff || list.length === 0) return 0;
@@ -1870,7 +1887,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return favorites.some((item) => item.listingId === listingId && item.userId === currentUser.id);
       }
     };
-  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, messages, notifications, orders, partnerships, pendingVerifyEmail, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
+  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, hiddenCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, messages, notifications, orders, partnerships, pendingVerifyEmail, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }

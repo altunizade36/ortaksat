@@ -113,7 +113,8 @@ function AdminScreenInner() {
     platformSettings, updatePlatformSetting, setAnnouncement, setUserRole, setUserStatus,
     setUserVerification, adminNotifyUser, adminBroadcast,
     blogPosts, contentPages, seoSettings, saveBlogPost, deleteBlogPost, saveContentPage, saveSeoSetting,
-    categoryTree, extraCategories, saveCategory, deleteCategory, importCategories
+    categoryTree, extraCategories, saveCategory, deleteCategory, importCategories,
+    hiddenCategories, toggleHiddenCategory
   } = useStore();
   const [annText, setAnnText] = useState(platformSettings.announcement);
   const canManageUsers = currentUser.role === "admin" || currentUser.role === "super_admin";
@@ -585,14 +586,22 @@ function AdminScreenInner() {
             <Panel title="Kategori Yapısı" sub={`${categoryTree.length} ana kategori`}>
               {categoryTree.map((n) => {
                 const open = expandedCat === n.key;
+                const hidden = hiddenCategories.includes(n.key);
                 return (
                   <View key={n.key} style={{ borderBottomColor: colors.line, borderBottomWidth: 1 }}>
-                    <Pressable onPress={() => setExpandedCat(open ? null : n.key)} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 12 }}>
-                      <MaterialCommunityIcons name="folder-outline" size={18} color={colors.primaryDark} />
-                      <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "800" }}>{n.label}</Text>
-                      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{n.children?.length ?? 0} alt</Text>
-                      <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
-                    </Pressable>
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 12 }}>
+                      <Pressable onPress={() => setExpandedCat(open ? null : n.key)} style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minWidth: 0 }}>
+                        <MaterialCommunityIcons name="folder-outline" size={18} color={hidden ? colors.subtle : colors.primaryDark} />
+                        <Text style={{ color: hidden ? colors.muted : colors.ink, flex: 1, fontSize: 13.5, fontWeight: "800", textDecorationLine: hidden ? "line-through" : "none" }}>{n.label}</Text>
+                        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{n.children?.length ?? 0} alt</Text>
+                      </Pressable>
+                      {/* Gizle/Göster — gezinme yüzeylerinden (menü/keşfet/kategoriler) gizler; ilan verme etkilenmez. */}
+                      <Pressable onPress={() => toggleHiddenCategory(n.key)} accessibilityLabel={hidden ? "Kategoriyi göster" : "Kategoriyi gizle"} style={{ alignItems: "center", backgroundColor: hidden ? colors.warningSoft : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 5 }}>
+                        <MaterialCommunityIcons name={hidden ? "eye-off-outline" : "eye-outline"} size={14} color={hidden ? colors.warning : colors.muted} />
+                        <Text style={{ color: hidden ? colors.warning : colors.muted, fontSize: 11, fontWeight: "800" }}>{hidden ? "Gizli" : "Görünür"}</Text>
+                      </Pressable>
+                      <Pressable onPress={() => setExpandedCat(open ? null : n.key)}><MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} /></Pressable>
+                    </View>
                     {open ? (
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingBottom: 12 }}>
                         {(n.children ?? []).map((c) => (

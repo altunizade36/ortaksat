@@ -171,6 +171,22 @@ export async function deleteCategoryLive(id: string) {
   const { error } = await supabase.from("categories").delete().eq("id", id);
   if (error) console.warn("Category delete failed", error);
 }
+
+/** Admin panelden gizlenen kategori key'lerini getirir (gezinme yüzeylerinden gizlenir). */
+export async function fetchHiddenCategories(): Promise<string[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("hidden_categories").select("category_key");
+  if (error) { console.warn("Hidden categories fetch failed", error); return []; }
+  return (data ?? []).map((r) => r.category_key as string);
+}
+/** Bir kategoriyi gizle (hidden=true) ya da göster (hidden=false). Admin. */
+export async function setHiddenCategoryLive(key: string, hidden: boolean): Promise<void> {
+  if (!supabase) return;
+  const { error } = hidden
+    ? (await supabase.from("hidden_categories").upsert({ category_key: key }, { onConflict: "category_key" }))
+    : (await supabase.from("hidden_categories").delete().eq("category_key", key));
+  if (error) console.warn("Hidden category update failed", error);
+}
 /** Toplu ekstra kategori yukleme (JSON ice aktarim). key uniq -> upsert. */
 export async function bulkInsertCategoriesLive(rows: Array<{ id: string; key: string; label: string; slug: string; image: string; subcategories: Array<{ label: string; slug: string }>; sortOrder: number; isActive: boolean }>) {
   if (!supabase || rows.length === 0) return;

@@ -1349,8 +1349,29 @@ export const categoryTree: CategoryNode[] = [
 ];
 
 // ---- lookups & helpers ---------------------------------------------------
+// Admin panelden gizlenen kategoriler (üst veya alt, key ile). Store DB'den yükleyip
+// setHiddenCategories ile günceller; SSG/ilk render'da boş → sonra client filtreler
+// (dil-toggle deseniyle aynı). Gizleme yalnız GEZİNME yüzeylerini (menü/keşfet/
+// kategoriler) etkiler; ilan verme picker'ı tam ağacı gösterir.
+let _hiddenCats = new Set<string>();
+export function setHiddenCategories(keys: string[]): void {
+  _hiddenCats = new Set(keys);
+}
+export function isCategoryHidden(key: string): boolean {
+  return _hiddenCats.has(key);
+}
+// Gizli düğümleri (her seviyede) çıkararak görünür ağacı döndürür.
+export function visibleCategoryTree(): CategoryNode[] {
+  if (_hiddenCats.size === 0) return categoryTree;
+  const prune = (nodes: CategoryNode[]): CategoryNode[] =>
+    nodes
+      .filter((n) => !_hiddenCats.has(n.key))
+      .map((n) => (n.children ? { ...n, children: prune(n.children) } : n));
+  return prune(categoryTree);
+}
+
 export function topCategories(): CategoryNode[] {
-  return categoryTree;
+  return visibleCategoryTree();
 }
 
 /** Bir kategori etiketinin (ör. bir ilanın category alanı) landing slug'ını bulur.
