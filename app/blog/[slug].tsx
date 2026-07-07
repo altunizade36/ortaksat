@@ -106,7 +106,7 @@ export default function BlogPostPage() {
         </View>
 
         <View style={{ backgroundColor: colors.line, borderRadius: 16, height: 360, overflow: "hidden", width: "100%" }}>
-          <SafeRemoteImage uri={post.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={160} />
+          <SafeRemoteImage uri={post.image} alt={post.title} accessibilityLabel={post.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={160} />
         </View>
 
         <View style={{ gap: 16 }}>
@@ -171,7 +171,7 @@ export default function BlogPostPage() {
               <Link key={rp.slug} href={{ pathname: "/blog/[slug]", params: { slug: rp.slug } }} asChild>
                 <Pressable dataSet={{ card: "listing" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 220, flexGrow: 1, maxWidth: 360, overflow: "hidden" }}>
                   <View style={{ backgroundColor: colors.line, height: 110, width: "100%" }}>
-                    <SafeRemoteImage uri={rp.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
+                    <SafeRemoteImage uri={rp.image} alt={rp.title} accessibilityLabel={rp.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                   </View>
                   <View style={{ gap: 4, padding: 12 }}>
                     <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800", lineHeight: 18 }}>{rp.title}</Text>

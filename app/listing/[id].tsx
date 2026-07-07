@@ -487,10 +487,12 @@ export default function ListingDetailScreen() {
       <View style={isWideWeb ? { flex: 1.12, minWidth: 0 } : undefined}>
       {(() => {
         const mainImg = gallery[galleryIdx] ?? currentListing.image;
+        // SEO + a11y: ürün görseline açıklayıcı alt (Google Görseller + ekran okuyucu).
+        const imgAlt = `${currentListing.title}${currentListing.category ? ` — ${currentListing.category}` : ""}${currentListing.location ? `, ${currentListing.location}` : ""} · OrtakSat ortak satış ilanı`;
         return (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 18 : 0, borderWidth: isWideWeb ? 1 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
             <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => setLightbox(true)} style={{ position: "relative" }}>
-              <SafeRemoteImage uri={mainImg} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
+              <SafeRemoteImage uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
               <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
                 <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Büyüt", language)}{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
@@ -500,7 +502,7 @@ export default function ListingDetailScreen() {
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingTop: 12 }}>
                 {gallery.map((img, i) => (
                   <Pressable key={img + i} onPress={() => setActiveImage(i)} style={{ borderColor: i === galleryIdx ? colors.primary : colors.line, borderRadius: 10, borderWidth: i === galleryIdx ? 2 : 1, height: 64, overflow: "hidden", width: 64 }}>
-                    <SafeRemoteImage uri={img} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+                    <SafeRemoteImage uri={img} alt={`${imgAlt} — görsel ${i + 1}`} accessibilityLabel={`${imgAlt} — görsel ${i + 1}`} style={{ height: "100%", width: "100%" }} contentFit="cover" />
                   </Pressable>
                 ))}
               </View>
@@ -868,6 +870,8 @@ export default function ListingDetailScreen() {
           >
             <SafeRemoteImage
               uri={gallery[galleryIdx] ?? currentListing.image}
+              alt={currentListing.title}
+              accessibilityLabel={currentListing.title}
               style={{ height: "100%", transform: [{ scale: zoomed ? 2.2 : 1 }], width: "100%" }}
               contentFit="contain"
             />

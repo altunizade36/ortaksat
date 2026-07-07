@@ -103,7 +103,7 @@ export default function BlogPage() {
               </View>
             </View>
             <View style={{ backgroundColor: colors.line, borderRadius: 14, flex: 1, height: 220, minWidth: isWideWeb ? 0 : undefined, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
-              <SafeRemoteImage uri={featured.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={160} />
+              <SafeRemoteImage uri={featured.image} alt={featured.title} accessibilityLabel={featured.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={160} />
             </View>
           </View>
 
@@ -145,7 +145,7 @@ export default function BlogPage() {
                       <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{i + 1}</Text>
                     </View>
                     <View style={{ backgroundColor: colors.line, borderRadius: 8, height: 44, overflow: "hidden", width: 44 }}>
-                      <SafeRemoteImage uri={post.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
+                      <SafeRemoteImage uri={post.image} alt={post.title} accessibilityLabel={post.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
                     </View>
                     <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
                       <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800", lineHeight: 16 }}>{post.title}</Text>
@@ -221,7 +221,7 @@ function PostCard({ post }: { post: BlogPost }) {
     <Link href={{ pathname: "/blog/[slug]", params: { slug: post.slug } }} asChild>
       <Pressable dataSet={{ card: "listing" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 240, flexGrow: 1, maxWidth: 360, overflow: "hidden" }}>
         <View style={{ backgroundColor: colors.line, height: 150, width: "100%" }}>
-          <SafeRemoteImage uri={post.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={160} />
+          <SafeRemoteImage uri={post.image} alt={post.title} accessibilityLabel={post.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={160} />
           <View style={{ left: 10, position: "absolute", top: 10 }}>
             <View style={{ backgroundColor: bg, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 }}>
               <Text style={{ color: fg, fontSize: 10, fontWeight: "900" }}>{post.category}</Text>

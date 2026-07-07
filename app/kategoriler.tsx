@@ -146,7 +146,7 @@ export default function CategoriesPage() {
             <Link key={cat.key} href={categoryHref(cat.key)} asChild>
               <Pressable dataSet={{ card: "listing" }} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 130, flexGrow: 1, gap: 8, maxWidth: 200, padding: 12 }}>
                 <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 84, justifyContent: "center", overflow: "hidden", width: "100%" }}>
-                  <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
+                  <SafeRemoteImage uri={image} alt={`${translateCopy(cat.label, language)} kategorisi`} accessibilityLabel={`${translateCopy(cat.label, language)} kategorisi`} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                 </View>
                 <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy(cat.label, language)}</Text>
                 <Text numberOfLines={1} style={{ color: count > 0 ? colors.muted : colors.primaryDark, fontSize: 11, fontWeight: "700" }}>{count > 0 ? `${groupTr(count)} ilan` : translateCopy("İlan ekle →", language)}</Text>
@@ -165,7 +165,7 @@ export default function CategoriesPage() {
               <Pressable dataSet={{ card: "listing" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 250, flexGrow: 1, gap: 10, maxWidth: 360, padding: 16 }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
                   <View style={{ backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 46, overflow: "hidden", width: 46 }}>
-                    <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
+                    <SafeRemoteImage uri={image} alt={`${translateCopy(cat.label, language)} kategorisi`} accessibilityLabel={`${translateCopy(cat.label, language)} kategorisi`} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                   </View>
                   <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{translateCopy(cat.label, language)}</Text>
                 </View>

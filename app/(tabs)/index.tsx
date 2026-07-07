@@ -224,7 +224,7 @@ export default function HomeScreen() {
                 {topEarn.map((l) => (
                   <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
                     <View style={{ height: 90, width: "100%" }}>
-                      <SafeRemoteImage uri={l.image} style={{ height: 90, width: "100%" }} contentFit="cover" />
+                      <SafeRemoteImage uri={l.image} alt={l.title} accessibilityLabel={l.title} style={{ height: 90, width: "100%" }} contentFit="cover" />
                       <View style={{ backgroundColor: colors.gold, borderRadius: 6, left: 7, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 7 }}>
                         <Text style={{ color: "#1A1400", fontSize: 9, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {money(commissionAmount(l))}</Text>
                       </View>
@@ -245,7 +245,7 @@ export default function HomeScreen() {
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
                 {recentListings.map((l) => (
                   <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={l.title} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
-                    <SafeRemoteImage uri={l.image} style={{ height: 90, width: "100%" }} contentFit="cover" />
+                    <SafeRemoteImage uri={l.image} alt={l.title} accessibilityLabel={l.title} style={{ height: 90, width: "100%" }} contentFit="cover" />
                     <View style={{ gap: 3, padding: 8 }}>
                       <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{l.title}</Text>
                       <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(l.price)}</Text>
@@ -266,7 +266,7 @@ export default function HomeScreen() {
                 {newestListings.map((l) => (
                   <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={l.title} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
                     <View style={{ height: 90, width: "100%" }}>
-                      <SafeRemoteImage uri={l.image} style={{ height: 90, width: "100%" }} contentFit="cover" />
+                      <SafeRemoteImage uri={l.image} alt={l.title} accessibilityLabel={l.title} style={{ height: 90, width: "100%" }} contentFit="cover" />
                       <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 7, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 7 }}>
                         <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{translateCopy("YENİ", language)}</Text>
                       </View>
@@ -512,7 +512,7 @@ function CategoryShowcase({ categoryTree, isWideWeb }: { categoryTree: CategoryN
       <Pressable style={({ pressed }) => ({ alignItems: "center", gap: 7, opacity: pressed ? 0.75 : 1, width: isWideWeb ? undefined : 78 })}>
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, height: isWideWeb ? 72 : 64, justifyContent: "center", overflow: "hidden", width: isWideWeb ? 72 : 64 }}>
           {node.image ? (
-            <SafeRemoteImage uri={node.image} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+            <SafeRemoteImage uri={node.image} alt={`${node.label} kategorisi`} accessibilityLabel={`${node.label} kategorisi`} style={{ height: "100%", width: "100%" }} contentFit="cover" />
           ) : (
             <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={28} color={colors.primary} />
           )}

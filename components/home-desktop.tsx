@@ -501,7 +501,7 @@ function HomeCardBase({ listing, favorited, onFav, onOpen }: { listing: Listing;
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 176, flexGrow: 1, maxWidth: 240, minWidth: 0, overflow: "hidden", shadowColor: "#101828", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 14 }}>
       <Pressable onPress={onOpen}>
         <View style={{ backgroundColor: colors.line, height: 150, width: "100%" }}>
-          <SafeRemoteImage uri={listing.image} style={{ height: 150, width: "100%" }} contentFit="cover" />
+          <SafeRemoteImage uri={listing.image} alt={`${listing.title} — ${listing.category} · OrtakSat ilanı`} accessibilityLabel={listing.title} style={{ height: 150, width: "100%" }} contentFit="cover" />
           <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 4, left: 10, paddingHorizontal: 8, paddingVertical: 4, position: "absolute", top: 10 }}>
             <MaterialCommunityIcons name="handshake-outline" size={12} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Ortak Satışa", language)}</Text>
