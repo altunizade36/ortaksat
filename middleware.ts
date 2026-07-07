@@ -8,7 +8,7 @@
 import categoryMap from "./data/category-og-map.json";
 import cityMap from "./data/city-og-map.json";
 
-export const config = { matcher: ["/listing/:id*", "/kategori/:path*"] };
+export const config = { matcher: ["/listing/:id*", "/kategori/:path*", "/store/:id*"] };
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || "https://akyzzdwbzgsnhdircuce.supabase.co";
 const SUPABASE_KEY =
@@ -64,6 +64,23 @@ async function listingResponse(id: string): Promise<Response | undefined> {
   );
 }
 
+async function storeResponse(id: string): Promise<Response | undefined> {
+  if (!id || !SUPABASE_KEY) return;
+  const api = `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&select=full_name&limit=1`;
+  const res = await fetch(api, { headers: { apikey: SUPABASE_KEY, authorization: `Bearer ${SUPABASE_KEY}` } });
+  if (!res.ok) return;
+  const rows = (await res.json()) as Array<{ full_name: string | null }>;
+  const name = rows && rows[0] && rows[0].full_name;
+  if (!name) return;
+  return page(
+    `${name} — OrtakSat mağazası`,
+    `${name} satıcısının OrtakSat mağazası. Komisyonlu ürünlerini keşfet, ortak ol ve birlikte kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`,
+    OG_COVER,
+    `https://www.ortaksat.com/store/${id}`,
+    "profile"
+  );
+}
+
 function categoryResponse(catSlug: string, citySlugRaw: string | undefined): Response | undefined {
   const cat = CATEGORY_MAP[catSlug];
   if (!cat) return; // bilinmeyen kategori → uygulamaya geç
@@ -99,6 +116,9 @@ export default async function middleware(request: Request): Promise<Response | u
     }
     if (parts[0] === "kategori" && parts[1]) {
       return categoryResponse(parts[1], parts[2]);
+    }
+    if (parts[0] === "store" && parts[1]) {
+      return await storeResponse(parts[1]);
     }
     return;
   } catch {
