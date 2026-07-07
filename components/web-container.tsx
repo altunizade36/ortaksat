@@ -1,5 +1,5 @@
-import type { PropsWithChildren } from "react";
-import { View, type ViewStyle } from "react-native";
+import { useEffect, useState, type PropsWithChildren } from "react";
+import { Platform, View, type ViewStyle } from "react-native";
 
 import { useIsWideWeb } from "@/lib/layout";
 
@@ -22,8 +22,18 @@ export function WebContainer({
   style
 }: PropsWithChildren<{ max?: number; padding?: number; style?: ViewStyle }>) {
   const isWideWeb = useIsWideWeb();
+  // Hidrasyon güvenliği (React #418): SSG'de genişlik bilinmediğinden dar/geniş
+  // dalı sunucu↔istemci arasında YAPISAL uyuşmuyordu (geniş=<View> sarar, dar=çıplak
+  // children). Mount'a kadar deterministik olarak "geniş" varsay (hep View sar) →
+  // ilk render sunucuyla birebir; mount sonrası gerçek genişliğe geç.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => { setMounted(true); }, []);
 
-  if (!isWideWeb) return <>{children}</>;
+  // Native: mobil düzen etkilenmesin diye şeffaf geçiş.
+  if (Platform.OS !== "web") return <>{children}</>;
+
+  const wide = mounted ? isWideWeb : true;
+  if (!wide) return <>{children}</>;
 
   return (
     <View style={[{ alignSelf: "center", maxWidth: max, paddingHorizontal: padding, width: "100%" }, style]}>
