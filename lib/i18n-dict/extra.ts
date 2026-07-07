@@ -29,5 +29,13 @@ export const extraDict: Record<string, string> = {
   "Ortak onaylamıyor mu? Anlaşmazlık aç": "Partner not confirming? Open a dispute",
   "Ödeme yaptım ancak ortak onaylamadı.": "I paid but the partner hasn't confirmed.",
   "Stok tükendi — önce stok ekle": "Out of stock — add stock first",
-  "İlan pasif — önce yayına al": "Listing paused — publish it first"
+  "İlan pasif — önce yayına al": "Listing paused — publish it first",
+  "Hızlı filtreler": "Quick filters",
+  "Bildirim kanalları": "Notification channels",
+  "Sıralamayı değiştir": "Change sorting",
+  "Fiyat: artan": "Price: low to high",
+  "Fiyat: azalan": "Price: high to low",
+  "En yüksek komisyon": "Highest commission",
+  "Sola taşı": "Move left",
+  "Sağa taşı": "Move right"
 };

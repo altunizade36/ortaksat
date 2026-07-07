@@ -97,6 +97,14 @@ function NotificationsScreenInner() {
   const toggleMute = (tp: NotificationType) => setMutes((s) => { const v = !s[tp]; void savePreferences({ [`notif_mute_${tp}`]: v }); return { ...s, [tp]: v }; });
   const mutedCount = Object.values(mutes).filter(Boolean).length;
   const visibleNotifications = myNotifications.filter((n) => !mutes[n.type]);
+  // Kanal tercihleri (uygulama-içi/e-posta aktif; SMS/WhatsApp yakında) — hem
+  // masaüstü hem mobil kullanır (eskiden yalnız masaüstünde render ediliyordu).
+  const prefRows: Array<{ key: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; available: boolean }> = [
+    { key: "push", icon: "bell-ring-outline", label: "Uygulama içi bildirim", sub: "Talep, satış, mesaj, ortaklık — anlık", available: true },
+    { key: "email", icon: "email-outline", label: "E-posta bildirimleri", sub: "Talep, satış, mesaj ve ortaklık olaylarında e-posta", available: true },
+    { key: "sms", icon: "message-badge-outline", label: "SMS", sub: "Yakında", available: false },
+    { key: "whatsapp", icon: "whatsapp", label: "WhatsApp", sub: "Yakında", available: false }
+  ];
 
   if (isWideWeb) {
     const dateGroup = (createdAt: string): DeskNotif["group"] => {
@@ -151,12 +159,6 @@ function NotificationsScreenInner() {
     // Dürüst kanal durumu: yalnızca uygulama içi bildirim gerçek zamanlı çalışır.
     // E-posta yalnızca hesap/güvenlik (doğrulama, şifre) için kullanılır; olay-bazlı
     // e-posta/SMS/WhatsApp bildirimi henüz yok → "Yakında" olarak dürüstçe gösterilir.
-    const prefRows: Array<{ key: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; available: boolean }> = [
-      { key: "push", icon: "bell-ring-outline", label: "Uygulama içi bildirim", sub: "Talep, satış, mesaj, ortaklık — anlık", available: true },
-      { key: "email", icon: "email-outline", label: "E-posta bildirimleri", sub: "Talep, satış, mesaj ve ortaklık olaylarında e-posta", available: true },
-      { key: "sms", icon: "message-badge-outline", label: "SMS", sub: "Yakında", available: false },
-      { key: "whatsapp", icon: "whatsapp", label: "WhatsApp", sub: "Yakında", available: false }
-    ];
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
@@ -343,6 +345,29 @@ function NotificationsScreenInner() {
           <StatusPill label={`${unreadCount} ${translateCopy("okunmamış", language)}`} tone={unreadCount ? "warning" : "success"} />
           <StatusPill label={`${myNotifications.length} ${translateCopy("toplam", language)}`} />
         </View>
+      </Card>
+
+      {/* Bildirim kanalları (mobil) — push/e-posta aç-kapa; eskiden yalnız masaüstündeydi. */}
+      <Card>
+        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900", marginBottom: 4 }}>{translateCopy("Bildirim kanalları", language)}</Text>
+        {prefRows.map((p) => (
+          <View key={p.key} style={{ alignItems: "center", flexDirection: "row", gap: 10, opacity: p.available ? 1 : 0.7, paddingVertical: 8 }}>
+            <MaterialCommunityIcons name={p.icon} size={18} color={colors.muted} />
+            <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "700" }}>{translateCopy(p.label, language)}</Text>
+              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy(p.sub, language)}</Text>
+            </View>
+            {p.available ? (
+              <Pressable accessibilityRole="switch" accessibilityState={{ checked: !!prefs[p.key] }} onPress={() => togglePref(p.key)} style={{ alignItems: prefs[p.key] ? "flex-end" : "flex-start", backgroundColor: prefs[p.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+                <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
+              </Pressable>
+            ) : (
+              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 3 }}>
+                <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "800" }}>{translateCopy("Yakında", language)}</Text>
+              </View>
+            )}
+          </View>
+        ))}
       </Card>
 
       <SectionTitle title={translateCopy("Son bildirimler", language)} action={`${visibleNotifications.length}`} />

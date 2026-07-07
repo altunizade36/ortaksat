@@ -25,10 +25,8 @@ function FavoritesScreenInner() {
   const { currentUser, favorites, findUser, listings } = useStore();
   const [query, setQuery] = useState("");
   const [favTab, setFavTab] = useState<"all" | "open" | "highcomm" | "near" | "recent">("all");
-  const [alarms, setAlarms] = useState<Record<string, boolean>>({ a: true, b: true, c: false });
-  const [newListOpen, setNewListOpen] = useState(false);
-  const [newListName, setNewListName] = useState("");
-  const [extraLists, setExtraLists] = useState<string[]>([]);
+  const [sortMode, setSortMode] = useState<"new" | "priceAsc" | "priceDesc" | "commission">("new");
+  const [catFilter, setCatFilter] = useState<string | null>(null); // kenar çubuğundaki kategori listesinden
   const horizontalPadding = 12;
   const gap = 8;
   const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 3 }).cardWidth;
@@ -59,10 +57,19 @@ function FavoritesScreenInner() {
     const highComm = base.filter((l) => l.commissionType === "rate" && l.commissionValue >= 15);
     const openCount = base.filter((l) => l.partnershipMode === "open").length;
     const recent = base.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    const filtered = favTab === "open" ? base.filter((l) => l.partnershipMode === "open")
+    let filtered = favTab === "open" ? base.filter((l) => l.partnershipMode === "open")
       : favTab === "highcomm" ? highComm
       : favTab === "recent" ? recent
       : base;
+    if (catFilter) filtered = filtered.filter((l) => l.category === catFilter);
+    // Sıralama (çalışır — eskiden statik etiketti).
+    filtered = filtered.slice().sort((a, b) =>
+      sortMode === "priceAsc" ? a.price - b.price
+      : sortMode === "priceDesc" ? b.price - a.price
+      : sortMode === "commission" ? commissionAmount(b) - commissionAmount(a)
+      : b.createdAt.localeCompare(a.createdAt));
+    const SORT_LABELS: Record<typeof sortMode, string> = { new: "En yeni", priceAsc: "Fiyat: artan", priceDesc: "Fiyat: azalan", commission: "En yüksek komisyon" };
+    const SORT_ORDER: Array<typeof sortMode> = ["new", "priceAsc", "priceDesc", "commission"];
     const sidebarWidth = 300;
     const cardWidth = responsiveGrid({ available: Math.min(width, 1480) - 40 - sidebarWidth - 24, gap: 16, minCardWidth: 210, maxColumns: 4 }).cardWidth;
     const tabs: Array<{ key: typeof favTab; label: string; count: number }> = [
@@ -75,10 +82,11 @@ function FavoritesScreenInner() {
     const catCounts = new Map<string, number>();
     base.forEach((l) => catCounts.set(l.category, (catCounts.get(l.category) ?? 0) + 1));
     const topCats = Array.from(catCounts.entries()).sort((a, b) => b[1] - a[1]).slice(0, 4);
-    const lists: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; count: number; active: boolean }> = [
-      { icon: "check-circle", label: translateCopy("Tüm Favoriler", language), count: savedCount, active: true },
-      { icon: "percent", label: translateCopy("Yüksek Komisyon Fırsatları", language), count: highComm.length, active: false },
-      ...topCats.map(([cat, n]) => ({ icon: "tag-outline" as const, label: cat, count: n, active: false }))
+    // Tıklanır listeler: filtreyi/sekmeyi değiştirir (eskiden ölü dekorasyondu).
+    const lists: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; count: number; active: boolean; onPress: () => void }> = [
+      { icon: "check-circle", label: translateCopy("Tüm Favoriler", language), count: savedCount, active: favTab === "all" && !catFilter, onPress: () => { setFavTab("all"); setCatFilter(null); } },
+      { icon: "percent", label: translateCopy("Yüksek Komisyon Fırsatları", language), count: highComm.length, active: favTab === "highcomm" && !catFilter, onPress: () => { setFavTab("highcomm"); setCatFilter(null); } },
+      ...topCats.map(([cat, n]) => ({ icon: "tag-outline" as const, label: cat, count: n, active: catFilter === cat, onPress: () => { setCatFilter(catFilter === cat ? null : cat); setFavTab("all"); } }))
     ];
 
     return (
@@ -108,10 +116,10 @@ function FavoritesScreenInner() {
                 );
               })}
               <View style={{ flex: 1 }} />
-              <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy("Sıralama: En yeni", language)}</Text>
-                <MaterialCommunityIcons name="chevron-down" size={14} color={colors.muted} />
-              </View>
+              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Sıralamayı değiştir", language)} onPress={() => setSortMode(SORT_ORDER[(SORT_ORDER.indexOf(sortMode) + 1) % SORT_ORDER.length])} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, opacity: pressed ? 0.7 : 1, paddingHorizontal: 12, paddingVertical: 7 })}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy("Sıralama", language)}: <Text style={{ color: colors.ink, fontWeight: "900" }}>{translateCopy(SORT_LABELS[sortMode], language)}</Text></Text>
+                <MaterialCommunityIcons name="swap-vertical" size={14} color={colors.muted} />
+              </Pressable>
             </View>
 
             {filtered.length === 0 ? (
@@ -127,35 +135,16 @@ function FavoritesScreenInner() {
           <View style={{ gap: 16, width: sidebarWidth }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", marginBottom: 4 }}>
-                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Favori listeleri", language)}</Text>
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm listeler", language)}</Text>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Hızlı filtreler", language)}</Text>
+                {catFilter ? <Pressable onPress={() => { setCatFilter(null); setFavTab("all"); }} hitSlop={6}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Temizle", language)}</Text></Pressable> : null}
               </View>
               {lists.map((l) => (
-                <View key={l.label} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 7 }}>
+                <Pressable key={l.label} onPress={l.onPress} style={({ pressed }) => ({ alignItems: "center", backgroundColor: l.active ? colors.primarySoft : "transparent", borderRadius: 9, flexDirection: "row", gap: 10, opacity: pressed ? 0.7 : 1, paddingHorizontal: 8, paddingVertical: 8 })}>
                   <MaterialCommunityIcons name={l.icon} size={18} color={l.active ? colors.primary : colors.muted} />
-                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: l.active ? "900" : "700" }}>{l.label}</Text>
+                  <Text numberOfLines={1} style={{ color: l.active ? colors.primaryDark : colors.ink, flex: 1, fontSize: 13, fontWeight: l.active ? "900" : "700" }}>{l.label}</Text>
                   {l.active ? <MaterialCommunityIcons name="check-circle" size={16} color={colors.primary} /> : <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{l.count} {translateCopy("ilan", language)}</Text>}
-                </View>
+                </Pressable>
               ))}
-              {extraLists.map((name) => (
-                <View key={name} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 7 }}>
-                  <MaterialCommunityIcons name="playlist-star" size={18} color={colors.muted} />
-                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{name}</Text>
-                  <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Listeyi kaldır", language)} onPress={() => setExtraLists((s) => s.filter((x) => x !== name))} hitSlop={8}><MaterialCommunityIcons name="close" size={15} color={colors.subtle} /></Pressable>
-                </View>
-              ))}
-              <Pressable onPress={() => setNewListOpen((v) => !v)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1.5, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 6, opacity: pressed ? 0.7 : 1, paddingVertical: 10 })}>
-                <MaterialCommunityIcons name={newListOpen ? "close" : "plus"} size={16} color={colors.primary} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{newListOpen ? translateCopy("Vazgeç", language) : translateCopy("Yeni liste oluştur", language)}</Text>
-              </Pressable>
-              {newListOpen ? (
-                <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
-                  <TextInput value={newListName} onChangeText={setNewListName} placeholder={translateCopy("Liste adı", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, paddingHorizontal: 12, paddingVertical: 9 }} />
-                  <Pressable onPress={() => { if (newListName.trim()) { setExtraLists((s) => [...s, newListName.trim()]); setNewListName(""); setNewListOpen(false); } }} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, justifyContent: "center", paddingHorizontal: 14 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{translateCopy("Ekle", language)}</Text>
-                  </Pressable>
-                </View>
-              ) : null}
             </View>
           </View>
         </View>
