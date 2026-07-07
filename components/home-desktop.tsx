@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter, type Href } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -489,7 +489,7 @@ export function HomeDesktop() {
   );
 }
 
-function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; favorited: boolean; onFav: () => void; onOpen: () => void }) {
+function HomeCardBase({ listing, favorited, onFav, onOpen }: { listing: Listing; favorited: boolean; onFav: () => void; onOpen: () => void }) {
   const { language } = useLanguage();
   const { has, toggle } = useCompare();
   const inCompare = has(listing.id);
@@ -552,6 +552,12 @@ function HomeCard({ listing, favorited, onFav, onOpen }: { listing: Listing; fav
     </View>
   );
 }
+
+// Grid'de ~90 kart; parent (mesaj/favori/loading gibi) re-render'larında hepsi
+// boşuna render olmasın. Yalnız listing kimliği veya favori durumu değişince
+// render et. onFav/onOpen kimliği yok sayılır (davranışsal olarak sabit: id'ye
+// göre favori toggle / ilana git).
+const HomeCard = memo(HomeCardBase, (a, b) => a.listing === b.listing && a.favorited === b.favorited);
 
 function SwitchRow({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
   return (

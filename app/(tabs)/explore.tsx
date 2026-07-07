@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -1080,7 +1080,7 @@ function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner
   );
 }
 
-function ExploreTile({ height, item, language, onPress, order, size, t }: { height: number; item: ExploreMedia; language: "tr" | "en"; onPress: () => void; order: number; size: number; t: (key: string) => string }) {
+function ExploreTileBase({ height, item, language, onPress, order, size, t }: { height: number; item: ExploreMedia; language: "tr" | "en"; onPress: () => void; order: number; size: number; t: (key: string) => string }) {
   const { listing } = item;
   const featured = item.index === 0 || order % 12 === 0;
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
@@ -1126,6 +1126,13 @@ function ExploreTile({ height, item, language, onPress, order, size, t }: { heig
     </Pressable>
   );
 }
+
+// Medya-feed'de her karo; parent re-render'larında (arama/filtre dışı state
+// değişimi) boşuna render olmasın. Yalnız içerik/boyut/dil değişince render et;
+// onPress kimliği yok sayılır (davranışsal olarak sabit).
+const ExploreTile = memo(ExploreTileBase, (a, b) =>
+  a.item === b.item && a.height === b.height && a.size === b.size && a.order === b.order && a.language === b.language
+);
 
 function getExploreStatus(item: ExploreMedia, listing: Listing, featured: boolean, conversionScore: number, t: (key: string) => string): { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone: "primary" | "dark" | "warning" } {
   if (item.type === "video") return { icon: "play-circle", label: t("videoContent"), tone: "dark" };
