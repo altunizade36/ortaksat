@@ -325,6 +325,58 @@ export default function ExploreScreen() {
     }
   }
 
+  // Kategoriye göre dinamik filtre — hem masaüstü (ürün-kartı) hem mobil (medya-feed)
+  // düzeninde HER ZAMAN görünür. Üst kategori seç → şemasından sayısal aralık
+  // (m²/km/yıl) + facet (Yakıt/Vites/Isıtma…) filtreleri gelir.
+  const renderCatFilter = () => (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, marginBottom: 12, marginHorizontal: isWideWeb ? 0 : padding, padding: 14 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <MaterialCommunityIcons name="tune-variant" size={16} color={colors.primaryDark} />
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{translateCopy("Kategoriye göre filtrele", language)}</Text>
+        {catKey ? <Pressable onPress={clearCatFilter} hitSlop={8}><Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text></Pressable> : null}
+      </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 8 }}>
+        {topCategories().map((n) => {
+          const on = catKey === n.key;
+          return (
+            <Pressable key={n.key} onPress={() => selectCat(n.key)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+              <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
+            </Pressable>
+          );
+        })}
+      </ScrollView>
+      {catKey ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+          {catNums.map((nf) => (
+            <View key={nf.key} style={{ gap: 4, minWidth: 160 }}>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(nf.label, language)}{nf.suffix ? ` (${nf.suffix})` : ""}</Text>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 38, paddingHorizontal: 9 }} />
+                <Text style={{ color: colors.muted }}>—</Text>
+                <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 38, paddingHorizontal: 9 }} />
+              </View>
+            </View>
+          ))}
+          {catFacets.map((f) => (
+            <View key={f.key} style={{ gap: 4, minWidth: 160 }}>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(f.label, language)}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                {(f.options ?? []).slice(0, 14).map((opt) => {
+                  const on = (attrFilters[f.key] ?? []).includes(opt);
+                  return (
+                    <Pressable key={opt} onPress={() => toggleAttr(f.key, opt)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 4 }}>
+                      <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 11, fontWeight: "800" }}>{translateCopy(opt, language)}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ))}
+        </View>
+      ) : null}
+    </View>
+  );
+
   if (isWideWeb) {
     const pills: Array<{ key: FeedFilter | "near"; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
       { key: "all", label: translateCopy("Tümü", language), icon: "grid" },
@@ -475,6 +527,7 @@ export default function ExploreScreen() {
         {/* Main + sidebar */}
         <View style={{ flexDirection: "row", gap: 24, alignItems: "flex-start", position: "relative", zIndex: 1 }}>
           <View style={{ flex: 1, gap: 14, minWidth: 0 }}>
+            {renderCatFilter()}
             <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between" }}>
               <View style={{ gap: 2 }}>
                 <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{translateCopy("Öne çıkan ilanlar", language)}</Text>
@@ -683,54 +736,7 @@ export default function ExploreScreen() {
         </View>
       </View>
 
-      {/* Kategoriye göre filtre — HER ZAMAN görünür. Üst kategori seç → şemasından
-          sayısal aralık (m²/km/yıl) + facet (Yakıt/Vites/Isıtma…) filtreleri gelir. */}
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, marginBottom: 12, marginHorizontal: isWideWeb ? 0 : padding, padding: 14 }}>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-          <MaterialCommunityIcons name="tune-variant" size={16} color={colors.primaryDark} />
-          <Text style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{translateCopy("Kategoriye göre filtrele", language)}</Text>
-          {catKey ? <Pressable onPress={clearCatFilter} hitSlop={8}><Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text></Pressable> : null}
-        </View>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 8 }}>
-          {topCategories().map((n) => {
-            const on = catKey === n.key;
-            return (
-              <Pressable key={n.key} onPress={() => selectCat(n.key)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
-              </Pressable>
-            );
-          })}
-        </ScrollView>
-        {catKey ? (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-            {catNums.map((nf) => (
-              <View key={nf.key} style={{ gap: 4, minWidth: 160 }}>
-                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(nf.label, language)}{nf.suffix ? ` (${nf.suffix})` : ""}</Text>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                  <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 38, paddingHorizontal: 9 }} />
-                  <Text style={{ color: colors.muted }}>—</Text>
-                  <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 38, paddingHorizontal: 9 }} />
-                </View>
-              </View>
-            ))}
-            {catFacets.map((f) => (
-              <View key={f.key} style={{ gap: 4, minWidth: 160 }}>
-                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(f.label, language)}</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-                  {(f.options ?? []).slice(0, 14).map((opt) => {
-                    const on = (attrFilters[f.key] ?? []).includes(opt);
-                    return (
-                      <Pressable key={opt} onPress={() => toggleAttr(f.key, opt)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 4 }}>
-                        <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 11, fontWeight: "800" }}>{translateCopy(opt, language)}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </View>
-            ))}
-          </View>
-        ) : null}
-      </View>
+      {renderCatFilter()}
 
       {mediaItems.length === 0 ? (
         <View style={{ alignItems: "center", gap: 8, padding: 28 }}>
