@@ -18,5 +18,8 @@ export const extraDict: Record<string, string> = {
   "İlanları keşfet →": "Explore listings →",
   "Önceki sayfaya dön": "Go back to previous page",
   "Önceki adıma dön": "Go back to previous step",
-  "En fazla 5 görsel. İlk görsel kapak olur; eklemezsen kategori görseli kapak olur (önerilir: en az 1 gerçek foto).": "Up to 5 photos. The first is the cover; if you add none, the category image is used as cover (recommended: at least 1 real photo)."
+  "En fazla 5 görsel. İlk görsel kapak olur; eklemezsen kategori görseli kapak olur (önerilir: en az 1 gerçek foto).": "Up to 5 photos. The first is the cover; if you add none, the category image is used as cover (recommended: at least 1 real photo).",
+  "Kategoriye göre filtrele": "Filter by category",
+  "En az": "Min",
+  "En çok": "Max"
 };
