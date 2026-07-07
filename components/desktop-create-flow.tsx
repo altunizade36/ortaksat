@@ -25,6 +25,7 @@ import { useStore } from "@/lib/use-store";
 import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 
 const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon & Ortak Satış", "Önizleme & Yayınla"];
+const MAX_PHOTOS = 12; // ilan başına görsel üst sınırı (rakip pazaryerleriyle uyumlu)
 const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
 
 // Kategoriye göre önerilen komisyon aralığı (%). Yüksek-tutarlı kategoriler (emlak/
@@ -222,7 +223,7 @@ export function DesktopCreateFlow() {
   async function pickFromGallery() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
     if (!perm.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.85, selectionLimit: 5 });
+    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.85, selectionLimit: MAX_PHOTOS });
     if (result.canceled) return;
     const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
     const tooBig = result.assets.some((a) => typeof a.fileSize === "number" && a.fileSize > MAX_BYTES);
@@ -232,8 +233,8 @@ export function DesktopCreateFlow() {
       .map((a) => a.uri)
       .filter(Boolean);
     setImages((s) => {
-      const next = [...s, ...uris].slice(0, 5); // en fazla 5 görsel
-      if (s.length + uris.length > 5) setError(translateCopy("En fazla 5 görsel ekleyebilirsin. Fazlası eklenmedi.", language));
+      const next = [...s, ...uris].slice(0, MAX_PHOTOS);
+      if (s.length + uris.length > MAX_PHOTOS) setError(translateCopy(`En fazla ${MAX_PHOTOS} görsel ekleyebilirsin. Fazlası eklenmedi.`, language));
       return next;
     });
   }
@@ -323,8 +324,8 @@ export function DesktopCreateFlow() {
       attributes._formKey = schema.key;
 
       // Görselleri Supabase storage'a yükle (web'de otomatik ölçekleme+sıkıştırma).
-      // En fazla 5; yerel URI'ler public URL'e döner, böylece herkes görebilir.
-      const pickedImages = images.slice(0, 5);
+      // Yerel URI'ler public URL'e döner, böylece herkes görebilir.
+      const pickedImages = images.slice(0, MAX_PHOTOS);
       const uploadedImages = currentUser?.id
         ? await Promise.all(pickedImages.map((uri) => uploadListingImage(uri, currentUser.id)))
         : pickedImages;
@@ -531,7 +532,7 @@ export function DesktopCreateFlow() {
         {step === 3 ? (
           <View style={{ gap: 14 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Fotoğraflar", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En fazla 5 görsel. İlk görsel kapak olur; eklemezsen kategori görseli kapak olur (önerilir: en az 1 gerçek foto).", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En fazla 12 görsel. İlk görsel kapak olur; eklemezsen kategori görseli kapak olur (önerilir: en az 1 gerçek foto).", language)}</Text>
             <Pressable onPress={() => void pickFromGallery()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 11 }}>
               <MaterialCommunityIcons name="image-multiple-outline" size={17} color={colors.primaryDark} />
               <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Galeriden / cihazdan seç", language)}</Text>
@@ -539,7 +540,7 @@ export function DesktopCreateFlow() {
             <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("veya görsel adresi yapıştır:", language)}</Text>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <TextInput value={imageDraft} onChangeText={setImageDraft} placeholder="https://…/foto.jpg" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 46, paddingHorizontal: 12 }} />
-              <Pressable onPress={() => { const u = imageDraft.trim(); if (u && images.length < 5) { setImages((s) => [...s, u]); setImageDraft(""); } }} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 12 }}>
+              <Pressable onPress={() => { const u = imageDraft.trim(); if (u && images.length < MAX_PHOTOS) { setImages((s) => [...s, u]); setImageDraft(""); } }} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 12 }}>
                 <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ekle", language)}</Text>
               </Pressable>
             </View>
@@ -559,6 +560,19 @@ export function DesktopCreateFlow() {
                       <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{translateCopy("Kapak yap", language)}</Text>
                     </Pressable>
                   )}
+                  {/* Sıralama: sola/sağa taşı (görsel sırası ilan detay galerisinde korunur). */}
+                  <View style={{ bottom: 6, flexDirection: "row", gap: 4, position: "absolute", right: 6 }}>
+                    {i > 0 ? (
+                      <Pressable accessibilityLabel={translateCopy("Sola taşı", language)} onPress={() => setImages((s) => { const n = [...s]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; return n; })} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, height: 24, justifyContent: "center", width: 24 }}>
+                        <MaterialCommunityIcons name="chevron-left" size={16} color="#FFFFFF" />
+                      </Pressable>
+                    ) : null}
+                    {i < images.length - 1 ? (
+                      <Pressable accessibilityLabel={translateCopy("Sağa taşı", language)} onPress={() => setImages((s) => { const n = [...s]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; return n; })} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, height: 24, justifyContent: "center", width: 24 }}>
+                        <MaterialCommunityIcons name="chevron-right" size={16} color="#FFFFFF" />
+                      </Pressable>
+                    ) : null}
+                  </View>
                 </View>
               ))}
             </View>

@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
+import { openUrlSafe } from "@/lib/link";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState, PrimaryButton } from "@/components/ui";
 import { localToday, money } from "@/lib/format";
@@ -260,7 +261,9 @@ function ChatScreenInner() {
               <View style={{ alignItems: mine ? "flex-end" : "flex-start" }}>
                 <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "82%", overflow: "hidden", paddingHorizontal: message.attachmentType === "image" ? 4 : 12, paddingVertical: message.attachmentType === "image" ? 4 : 8 }}>
                   {message.attachmentType === "image" && message.attachmentUrl ? (
-                    <SafeRemoteImage uri={message.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 180, width: 220 }} />
+                    <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => message.attachmentUrl && void openUrlSafe(message.attachmentUrl)}>
+                      <SafeRemoteImage uri={message.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 180, width: 220 }} />
+                    </Pressable>
                   ) : null}
                   {message.attachmentType === "file" && message.attachmentUrl ? (
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}>

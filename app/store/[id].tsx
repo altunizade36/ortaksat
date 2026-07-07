@@ -121,18 +121,20 @@ export default function StoreScreen() {
     );
   }
 
+  // Doğrulama/başarı rozetleri — hem masaüstü hem mobil dal kullanır.
+  const badges: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; on: boolean; tint: string; color: string }> = [
+    { icon: "check-decagram", label: translateCopy("Kimlik Doğrulandı", language), sub: translateCopy("Resmi kimlik onaylı", language), on: seller.verifiedIdentity, tint: colors.successSoft, color: colors.success },
+    { icon: "phone-check", label: translateCopy("Telefon Doğrulandı", language), sub: translateCopy("Numara onaylı", language), on: seller.verifiedPhone, tint: colors.infoSoft, color: colors.info },
+    { icon: "instagram", label: translateCopy("Instagram Bağlı", language), sub: translateCopy("Sosyal hesap onaylı", language), on: !!seller.verifiedInstagram, tint: colors.violetSoft, color: colors.violet },
+    { icon: "star-circle", label: translateCopy("Yüksek Puan", language), sub: translateCopy("4.5+ değerlendirme", language), on: seller.rating >= 4.5, tint: colors.goldSoft, color: colors.gold },
+    { icon: "trophy", label: translateCopy("Çok Satan", language), sub: translateCopy("50+ başarılı satış", language), on: seller.successfulSales >= 50, tint: colors.primarySoft, color: colors.primaryDark },
+    { icon: "lightning-bolt", label: translateCopy("Hızlı Yanıt", language), sub: translateCopy("%90+ yanıt oranı", language), on: seller.responseRate >= 90, tint: colors.accentSoft, color: colors.accent }
+  ];
+
   if (isWideWeb) {
     const sellerPartnerships = partnerships.filter((p) => activeListings.some((l) => l.id === p.listingId));
     const featured = activeListings.slice(0, 3);
     const deskCardWidth = responsiveGrid({ available: Math.min(width, 1480) - 40 - 300 - 24, gap: 16, minCardWidth: 210, maxColumns: 3 }).cardWidth;
-    const badges: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; on: boolean; tint: string; color: string }> = [
-      { icon: "check-decagram", label: translateCopy("Kimlik Doğrulandı", language), sub: translateCopy("Resmi kimlik onaylı", language), on: seller.verifiedIdentity, tint: colors.successSoft, color: colors.success },
-      { icon: "phone-check", label: translateCopy("Telefon Doğrulandı", language), sub: translateCopy("Numara onaylı", language), on: seller.verifiedPhone, tint: colors.infoSoft, color: colors.info },
-      { icon: "instagram", label: translateCopy("Instagram Bağlı", language), sub: translateCopy("Sosyal hesap onaylı", language), on: !!seller.verifiedInstagram, tint: colors.violetSoft, color: colors.violet },
-      { icon: "star-circle", label: translateCopy("Yüksek Puan", language), sub: translateCopy("4.5+ değerlendirme", language), on: seller.rating >= 4.5, tint: colors.goldSoft, color: colors.gold },
-      { icon: "trophy", label: translateCopy("Çok Satan", language), sub: translateCopy("50+ başarılı satış", language), on: seller.successfulSales >= 50, tint: colors.primarySoft, color: colors.primaryDark },
-      { icon: "lightning-bolt", label: translateCopy("Hızlı Yanıt", language), sub: translateCopy("%90+ yanıt oranı", language), on: seller.responseRate >= 90, tint: colors.accentSoft, color: colors.accent }
-    ];
     const tabs: Array<{ key: ProfileTab; label: string; count?: number }> = [
       { key: "about", label: translateCopy("Hakkında", language) },
       { key: "listings", label: translateCopy("İlanları", language), count: activeListings.length },
@@ -461,6 +463,19 @@ export default function StoreScreen() {
         </View>
       </View>
 
+      {/* Doğrulama rozetleri (mobil) — güven sinyali masaüstündeki gibi görünür. */}
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 8, padding: 12 }}>
+        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Doğrulama & rozetler", language)}</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+          {badges.map((b) => (
+            <View key={b.label} style={{ alignItems: "center", backgroundColor: b.on ? b.tint : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 5, opacity: b.on ? 1 : 0.55, paddingHorizontal: 10, paddingVertical: 6 }}>
+              <MaterialCommunityIcons name={b.on ? b.icon : "lock-outline"} size={13} color={b.on ? b.color : colors.subtle} />
+              <Text style={{ color: b.on ? b.color : colors.subtle, fontSize: 11.5, fontWeight: "800" }}>{b.label}</Text>
+            </View>
+          ))}
+        </View>
+      </View>
+
       <View style={{ flexDirection: "row", gap: 8 }}>
         <StoreFilterChip active={filter === "active"} icon="check-circle-outline" label="Aktif" onPress={() => setFilter("active")} />
         <StoreFilterChip active={filter === "partner"} icon="handshake-outline" label="Ortaklığa açık" onPress={() => setFilter("partner")} />
@@ -485,6 +500,37 @@ export default function StoreScreen() {
           ))}
         </View>
       )}
+
+      {/* Yorumlar (mobil) — güven sinyali masaüstündeki gibi görünür. */}
+      <View style={{ gap: 10, marginTop: 4 }}>
+        <Text selectable style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>
+          {translateCopy("Satıcı yorumları", language)} {reviewsAboutSeller.length ? `(${reviewsAboutSeller.length})` : ""}
+        </Text>
+        {reviewsAboutSeller.length === 0 ? (
+          <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
+        ) : (
+          reviewsAboutSeller.map((r) => {
+            const reviewer = findUser(r.reviewerId);
+            return (
+              <View key={r.id} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 7, padding: 13 }}>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
+                    <MaterialCommunityIcons name="account" size={18} color={colors.primaryDark} />
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{reviewer?.name ?? translateCopy("Kullanıcı", language)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{shortDate(r.createdAt)}</Text>
+                  </View>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 1 }}>
+                    {[1, 2, 3, 4, 5].map((n) => <MaterialCommunityIcons key={n} name={n <= r.rating ? "star" : "star-outline"} size={13} color={colors.gold} />)}
+                  </View>
+                </View>
+                <Text selectable style={{ color: colors.ink, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{r.comment}</Text>
+              </View>
+            );
+          })
+        )}
+      </View>
     </ScrollView>
   );
 }
