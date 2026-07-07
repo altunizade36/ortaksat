@@ -7,6 +7,7 @@ import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } fro
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
+import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { EmptyState } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
@@ -68,7 +69,7 @@ export default function CategoryLandingScreen() {
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { listings, categoryTree, findUser } = useStore();
+  const { listings, categoryTree, findUser, marketplaceLoadFailed, retryMarketplace } = useStore();
   const [visible, setVisible] = useState(PAGE);
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
   const [band, setBand] = useState<[number, number] | null>(null);
@@ -320,7 +321,10 @@ export default function CategoryLandingScreen() {
           ) : null}
         </View>
 
-        {items.length === 0 ? (
+        {items.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
+          // Katalog hiç yüklenemedi → "kategoride ilan yok" yerine yeniden-dene.
+          <MarketplaceRetry onRetry={retryMarketplace} />
+        ) : items.length === 0 ? (
           band || onlyOpen ? (
             <EmptyState title={translateCopy("Filtreye uyan ilan yok", language)} body={translateCopy("Filtreleri gevşetmeyi dene ya da farklı bir kategoriye göz at.", language)} />
           ) : (

@@ -6,6 +6,7 @@ import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshCo
 
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
+import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { inferListingSubcategory, listingCategories } from "@/lib/categories";
 import { getFormSchema, resolveFormKey, topCategories, type CategoryNode, type FieldDef } from "@/lib/category-tree";
@@ -58,7 +59,7 @@ export default function ExploreScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const params = useLocalSearchParams<{ q?: string; province?: string; district?: string }>();
-  const { findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceLoadingMore } = useStore();
+  const { findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceLoadingMore, marketplaceLoadFailed, retryMarketplace } = useStore();
   const { items: savedSearches, add: addSaved, remove: removeSaved } = useSavedSearches();
   const [refreshing, setRefreshing] = useState(false);
   const [seed, setSeed] = useState(1);
@@ -562,7 +563,10 @@ export default function ExploreScreen() {
               </View>
             ) : null}
 
-            {visibleProducts.length === 0 ? (
+            {visibleProducts.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
+              // Katalog hiç yüklenemedi (ağ/sunucu) → "sonuç yok" yerine yeniden-dene.
+              <MarketplaceRetry onRetry={retryMarketplace} />
+            ) : visibleProducts.length === 0 ? (
               <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 40 }}>
                 <MaterialCommunityIcons name="magnify-close" size={32} color={colors.primary} />
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{t("noResults")}</Text>
@@ -738,7 +742,9 @@ export default function ExploreScreen() {
 
       {renderCatFilter()}
 
-      {mediaItems.length === 0 ? (
+      {mediaItems.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
+        <MarketplaceRetry onRetry={retryMarketplace} />
+      ) : mediaItems.length === 0 ? (
         <View style={{ alignItems: "center", gap: 8, padding: 28 }}>
           <MaterialCommunityIcons name="image-search-outline" size={32} color={colors.primary} />
           <Text selectable style={{ color: colors.ink, fontSize: 17, fontWeight: "900", textAlign: "center" }}>

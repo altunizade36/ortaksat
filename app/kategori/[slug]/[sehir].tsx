@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-na
 
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
+import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { EmptyState } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
@@ -54,7 +55,7 @@ export default function CityCategoryScreen() {
   const sehir = Array.isArray(params.sehir) ? params.sehir[0] : params.sehir;
   const router = useRouter();
   const { width } = useWindowDimensions();
-  const { listings, categoryTree, findUser } = useStore();
+  const { listings, categoryTree, findUser, marketplaceLoadFailed, retryMarketplace } = useStore();
   const [visible, setVisible] = useState(PAGE);
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
   const [onlyOpen, setOnlyOpen] = useState(false);
@@ -206,6 +207,9 @@ export default function CityCategoryScreen() {
               </Pressable>
             ) : null}
           </>
+        ) : marketplaceLoadFailed && listings.length === 0 ? (
+          // Katalog hiç yüklenemedi → şehir-boş mesajı yerine yeniden-dene.
+          <MarketplaceRetry onRetry={retryMarketplace} />
         ) : (
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 16, gap: 12, padding: 20 }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
