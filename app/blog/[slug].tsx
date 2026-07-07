@@ -1,9 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
-import { Linking, Pressable, ScrollView, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { openUrlSafe } from "@/lib/link";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter } from "@/components/web-landing";
 import { BLOG_POSTS, getPost, type BlogCategory, type BlogPost } from "@/lib/blog";
@@ -127,7 +128,7 @@ export default function BlogPostPage() {
               {sources.map((source, i) => (
                 <Pressable
                   key={`${source.url}-${i}`}
-                  onPress={() => void Linking.openURL(source.url)}
+                  onPress={() => void openUrlSafe(source.url)}
                   style={({ pressed }) => ({
                     alignItems: "center",
                     backgroundColor: colors.surfaceAlt,

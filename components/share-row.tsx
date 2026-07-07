@@ -1,10 +1,11 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
 import { useState } from "react";
-import { Linking, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { openUrlSafe } from "@/lib/link";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -20,9 +21,12 @@ export function ShareRow({ url, text, compact }: { url: string; text: string; co
   ];
 
   async function copy() {
-    await Clipboard.setStringAsync(url);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1600);
+    // Yalnızca gerçekten kopyalanınca onay göster; pano reddederse yanıltıcı ✓ çıkmasın.
+    try {
+      await Clipboard.setStringAsync(url);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 1600);
+    } catch { /* pano izni yok — sessiz geç, kullanıcı linki manuel seçebilir */ }
   }
 
   return (
@@ -32,7 +36,7 @@ export function ShareRow({ url, text, compact }: { url: string; text: string; co
           key={tg.key}
           accessibilityRole="button"
           accessibilityLabel={`${tg.label} ${translateCopy("ile paylaş", language)}`}
-          onPress={() => void Linking.openURL(tg.href)}
+          onPress={() => void openUrlSafe(tg.href)}
           style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: compact ? 11 : 14, paddingVertical: compact ? 7 : 9 }}
         >
           <MaterialCommunityIcons name={tg.icon} size={16} color={tg.color} />

@@ -1,9 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link } from "expo-router";
 import Head from "expo-router/head";
-import { Linking, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { openUrlSafe } from "@/lib/link";
 import { WebFooter } from "@/components/web-landing";
 import { SUPPORT_EMAIL, SUPPORT_EMAIL_MAILTO } from "@/lib/contact";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -20,7 +21,7 @@ const REASONS: Array<{ icon: IconName; title: string; body: string }> = [
 export default function ContactScreen() {
   const { language } = useLanguage();
   function openMail() {
-    void Linking.openURL(SUPPORT_EMAIL_MAILTO).catch(() => undefined);
+    void openUrlSafe(SUPPORT_EMAIL_MAILTO);
   }
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 0, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>

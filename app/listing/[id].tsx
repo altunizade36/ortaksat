@@ -4,9 +4,11 @@ import { Image } from "expo-image";
 import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { openUrlSafe } from "@/lib/link";
+import { shareOrCopy } from "@/lib/share";
 
 import { describeAttributes, findCategorySlug } from "@/lib/category-tree";
 import { useCompare } from "@/lib/compare";
@@ -287,19 +289,25 @@ export default function ListingDetailScreen() {
   async function handleShare() {
     // Ortak aktif paylaşımıysa referans linki (komisyon takibi), değilse düz ürün linki.
     const url = activeShareUrl ?? productUrl(currentListing);
-    await Share.share({ title: currentListing.title, message: `${currentListing.title}\n${moneyIn(currentListing.price, currentListing.currency)}\n${url}`, url });
+    const r = await shareOrCopy({ title: currentListing.title, message: `${currentListing.title}\n${moneyIn(currentListing.price, currentListing.currency)}\n${url}`, url });
+    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Paylaşmak için istediğin yere yapıştırabilirsin.", language));
   }
 
   async function copyText(label: string, text: string) {
-    await Clipboard.setStringAsync(text);
-    Alert.alert(translateCopy("Kopyalandı", language), translateCopy(`${label} panoya kopyalandı.`, language));
+    try {
+      await Clipboard.setStringAsync(text);
+      Alert.alert(translateCopy("Kopyalandı", language), translateCopy(`${label} panoya kopyalandı.`, language));
+    } catch {
+      // Pano izni yoksa (güvensiz bağlam) sessiz başarısızlık yerine metni göster.
+      Alert.alert(translateCopy("Kopyalanamadı", language), text);
+    }
   }
 
   async function openShareTarget(target: "whatsapp" | "telegram") {
     if (!activeShareUrl) return;
     const text = encodeURIComponent(`${activeTemplates.whatsapp}\n${activeShareUrl}`);
     const url = target === "whatsapp" ? `https://wa.me/?text=${text}` : `https://t.me/share/url?url=${encodeURIComponent(activeShareUrl)}&text=${text}`;
-    await Linking.openURL(url);
+    await openUrlSafe(url);
   }
 
   // Ortak bağlantısıyla gelen ziyaretçi satıcıyla iletişime geçince, lead'i o ortağa
@@ -332,12 +340,13 @@ export default function ListingDetailScreen() {
     // kullanıcı) ayrı çekilir. Anon ziyaretçi boş alır → uygulama-içi mesaja düşer.
     const sellerPhone = owner.phone || (await fetchSellerPhone(owner.id));
     const waPhone = trPhoneIntl(sellerPhone);
+    // Dış-link (WhatsApp/telefon) açılabilirse oraya git; açılamazsa (masaüstü
+    // web'de şema desteklenmez/popup engellenir) uygulama-içi mesaja DÜŞ.
     if (currentListing.contactMethod === "whatsapp") {
-      // Numara uluslararası formata çevrilebiliyorsa WhatsApp'a git; değilse mesaja düş.
-      if (waPhone) { await Linking.openURL(`https://wa.me/${waPhone}?text=${encodeURIComponent(`${currentListing.title} ilanı hakkında bilgi almak istiyorum.`)}`); return; }
+      if (waPhone && await openUrlSafe(`https://wa.me/${waPhone}?text=${encodeURIComponent(`${currentListing.title} ilanı hakkında bilgi almak istiyorum.`)}`)) return;
     } else if (currentListing.contactMethod === "phone") {
       const tel = sellerPhone.replace(/[^0-9+]/g, "");
-      if (tel) { await Linking.openURL(`tel:${tel}`); return; }
+      if (tel && await openUrlSafe(`tel:${tel}`)) return;
     }
     const fallbackMessage = `${currentListing.title} ilanı için bilgi almak istiyorum. Fiyat, stok ve teslimat detayları güncel mi?`;
     const conversation = startConversation(currentListing.id, owner.id, message.trim() || fallbackMessage);

@@ -3,9 +3,11 @@ import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Linking, Platform, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { openUrlSafe } from "@/lib/link";
+import { shareOrCopy } from "@/lib/share";
 
 import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";
@@ -138,15 +140,20 @@ export default function PartnerScreen() {
   }
 
   async function copyText(label: string, text: string) {
-    await Clipboard.setStringAsync(text);
-    Alert.alert(translateCopy("Kopyala", language), language === "en" ? `${translateCopy(label, language)} copied to clipboard.` : `${label} panoya kopyalandı.`);
+    try {
+      await Clipboard.setStringAsync(text);
+      Alert.alert(translateCopy("Kopyala", language), language === "en" ? `${translateCopy(label, language)} copied to clipboard.` : `${label} panoya kopyalandı.`);
+    } catch {
+      Alert.alert(translateCopy("Kopyalanamadı", language), text);
+    }
   }
 
   async function sharePartnership(listingId: string, refCode: string) {
     const listing = listings.find((item) => item.id === listingId);
     if (!listing) return;
     const url = shareUrl(listing, refCode);
-    await Share.share({ title: listing.title, message: `${listingShareTemplates(listing, url).whatsapp}\n${url}`, url });
+    const r = await shareOrCopy({ title: listing.title, message: `${listingShareTemplates(listing, url).whatsapp}\n${url}`, url });
+    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Paylaşmak için istediğin yere yapıştırabilirsin.", language));
   }
 
   async function openWhatsapp(listingId: string, refCode: string) {
@@ -154,7 +161,7 @@ export default function PartnerScreen() {
     if (!listing) return;
     const url = shareUrl(listing, refCode);
     const text = encodeURIComponent(`${listingShareTemplates(listing, url).whatsapp}\n${url}`);
-    await Linking.openURL(`https://wa.me/?text=${text}`);
+    await openUrlSafe(`https://wa.me/?text=${text}`);
   }
 
   function messageSeller(listingId: string, sellerId: string, title: string) {

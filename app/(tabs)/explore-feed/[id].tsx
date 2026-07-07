@@ -3,9 +3,10 @@ import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { shareOrCopy } from "@/lib/share";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -131,11 +132,8 @@ export default function ExploreFeedScreen() {
     const message = mine
       ? `${listing.title}\n${money(listing.price)}\n${url}`
       : `${listing.title}\n${money(listing.price)}\n${translateCopy("OrtakSat'ta gör:", language)} ${url}`;
-    try {
-      await Share.share({ title: listing.title, message, url });
-    } catch {
-      // kullanıcı iptal etti / paylaşım desteklenmiyor
-    }
+    const r = await shareOrCopy({ title: listing.title, message, url });
+    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Paylaşmak için istediğin yere yapıştırabilirsin.", language));
   }
 
   function submitComment(listing: Listing) {

@@ -65,6 +65,7 @@ function ChatScreenInner() {
   // Kullanıcı geçmişi okumak için yukarı kaydırdıysa, gelen mesaj/görsel yüklenmesi
   // onu zorla aşağı çekmesin. Yalnızca dibe yakınken otomatik aşağı in.
   const nearBottomRef = useRef(true);
+  const sendingRef = useRef(false); // çift-gönderim (hızlı Enter) koruması
   const conversation = findConversation(id);
   const { otherTyping, notifyTyping } = useTypingIndicator(conversation?.id, currentUser.id);
 
@@ -117,9 +118,14 @@ function ChatScreenInner() {
     : "Ödeme ve teslimat koşullarını OrtakSat mesaj kaydında netleştirelim.";
 
   function send() {
-    if (!body.trim()) return;
-    sendConversationMessage(currentConversation.id, body.trim());
+    const text = body.trim();
+    // Metni önce yakala + kutuyu hemen temizle: hızlı çift Enter/tık (web keypress)
+    // aynı mesajı iki kez göndermesin.
+    if (!text || sendingRef.current) return;
+    sendingRef.current = true;
     setBody("");
+    sendConversationMessage(currentConversation.id, text);
+    setTimeout(() => { sendingRef.current = false; }, 250);
     // onContentSizeChange sona kaydırır; kaymalı çift-scroll jank'i olmasın.
   }
 
