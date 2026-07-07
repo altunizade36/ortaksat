@@ -121,8 +121,10 @@ export function DesktopCreateFlow() {
   const canNext = () => {
     if (step === 0) return path.length > 0;
     if (step === 1) return missingFields.length === 0;
-    if (step === 2) return !!loc.provinceId && !!loc.districtId;
-    if (step === 3) return images.length > 0;
+    // İl zorunlu; ilçe opsiyonel (dijital ürün/uzaktan hizmet konum-bağımsız olabilir).
+    if (step === 2) return !!loc.provinceId;
+    // Görsel opsiyonel — yoksa kategori görseli kapak olur (aşağıdaki metinle tutarlı).
+    if (step === 3) return true;
     if (step === 4) return Number(commissionValue) > 0;
     return true;
   };
@@ -275,8 +277,24 @@ export function DesktopCreateFlow() {
     }
   }
 
+  // Geri: adım 0'da önceki sayfaya (yoksa ana sayfa), adım >0'da önceki adıma.
+  const goBack = () => {
+    if (step === 0) { if (router.canGoBack()) router.back(); else router.replace("/(tabs)"); return; }
+    setStep((s) => Math.max(0, s - 1));
+  };
+
   return (
     <View style={{ gap: 18 }}>
+      {/* Üstte her zaman görünür geri butonu — önceki sayfaya / önceki adıma. */}
+      <Pressable
+        onPress={goBack}
+        accessibilityRole="button"
+        accessibilityLabel={translateCopy(step === 0 ? "Önceki sayfaya dön" : "Önceki adıma dön", language)}
+        style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingHorizontal: 14, paddingVertical: 8 })}
+      >
+        <MaterialCommunityIcons name="arrow-left" size={17} color={colors.primaryDark} />
+        <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{step === 0 ? translateCopy("Geri", language) : `${translateCopy("Geri", language)}: ${translateCopy(STEPS[step - 1], language)}`}</Text>
+      </Pressable>
       <View style={{ gap: 4 }}>
         <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Yeni ilan oluştur", language)}</Text>
         <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Kategorini seç, sana özel form açılsın. Ortak satışa açarak ortakların ürününü kendi kitlesine yaysın.", language)}</Text>
@@ -373,7 +391,7 @@ export function DesktopCreateFlow() {
         {step === 3 ? (
           <View style={{ gap: 14 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Fotoğraflar", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En az 1, en fazla 5 görsel. İlk görsel kapak olur.", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En fazla 5 görsel. İlk görsel kapak olur; eklemezsen kategori görseli kapak olur (önerilir: en az 1 gerçek foto).", language)}</Text>
             <Pressable onPress={() => void pickFromGallery()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 11 }}>
               <MaterialCommunityIcons name="image-multiple-outline" size={17} color={colors.primaryDark} />
               <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Galeriden / cihazdan seç", language)}</Text>
@@ -557,11 +575,7 @@ export function DesktopCreateFlow() {
       {/* Nav */}
       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
         <Pressable
-          onPress={() => {
-            // İlk adımdayken (kategori) geri = ilan verme ekranından çık.
-            if (step === 0) { if (router.canGoBack()) router.back(); else router.replace("/(tabs)"); return; }
-            setStep((s) => Math.max(0, s - 1));
-          }}
+          onPress={goBack}
           style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}
         >
           <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{step === 0 ? translateCopy("Vazgeç", language) : translateCopy("Geri", language)}</Text>

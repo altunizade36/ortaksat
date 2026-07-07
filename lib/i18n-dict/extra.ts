@@ -15,5 +15,8 @@ export const extraDict: Record<string, string> = {
   "404 — Sayfa bulunamadı": "404 — Page not found",
   "Aradığın sayfa taşınmış veya hiç var olmamış olabilir. Aşağıdan keşfetmeye devam edebilirsin.": "The page you're looking for may have moved or never existed. Keep exploring below.",
   "Ana sayfaya dön": "Back to home",
-  "İlanları keşfet →": "Explore listings →"
+  "İlanları keşfet →": "Explore listings →",
+  "Önceki sayfaya dön": "Go back to previous page",
+  "Önceki adıma dön": "Go back to previous step",
+  "En fazla 5 görsel. İlk görsel kapak olur; eklemezsen kategori görseli kapak olur (önerilir: en az 1 gerçek foto).": "Up to 5 photos. The first is the cover; if you add none, the category image is used as cover (recommended: at least 1 real photo)."
 };
