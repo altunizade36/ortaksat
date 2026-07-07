@@ -50,3 +50,4 @@ gen-demo.ps1
 test-results/
 playwright-report/
 e2e-artifacts/
+_smoke*
