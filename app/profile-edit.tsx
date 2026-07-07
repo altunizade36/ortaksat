@@ -28,7 +28,7 @@ function isImageAvatar(value: string) {
 function ProfileEditScreenInner() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, backendMode, currentUser, updateProfile, savePreferences, requestAccountDeletion, signOut, signOutAllDevices } = useStore();
+  const { authError, backendMode, currentUser, updateProfile, savePreferences, requestAccountDeletion, requestVerification, signOut, signOutAllDevices } = useStore();
   const prefs0 = currentUser.preferences ?? {};
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const [name, setName] = useState(currentUser.name);
@@ -103,10 +103,17 @@ function ProfileEditScreenInner() {
   function startVerification(label: string) {
     Alert.alert(
       label,
-      translateCopy("Doğrulama, güvenlik gereği ekibimizce belge/bilgi kontrolüyle yapılır. Talebini iletişim kanalımızdan başlat; kimlik/telefon bilgini ekleyerek gönder, incelendikten sonra rozetin eklenir.", language),
+      translateCopy("Doğrulama, güvenlik gereği ekibimizce yapılır. Talebini şimdi gönder — kimlik/telefon bilgin incelenip uygun bulunursa hesabın doğrulanır. Ek belge gerekirse iletişime geçeriz.", language),
       [
         { text: translateCopy("Kapat", language), style: "cancel" },
-        { text: translateCopy("Doğrulama talebi gönder", language), onPress: () => router.push("/iletisim") }
+        { text: translateCopy("Talebi gönder", language), onPress: () => { void (async () => {
+          const ok = await requestVerification();
+          Alert.alert(
+            translateCopy(ok ? "Doğrulama talebin alındı" : "Gönderilemedi", language),
+            translateCopy(ok ? "Ekibimiz en kısa sürede inceleyecek. Ek belge gerekirse iletişim üzerinden ulaşırız." : "Lütfen tekrar dene ya da iletişim sayfasından yaz.", language),
+            ok ? [{ text: translateCopy("Tamam", language) }, { text: translateCopy("İletişime geç", language), onPress: () => router.push("/iletisim") }] : undefined
+          );
+        })(); } }
       ]
     );
   }

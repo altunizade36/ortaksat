@@ -557,6 +557,18 @@ function AdminScreenInner() {
                         </Pressable>
                       </>
                     ) : null}
+                    {isOpenReport(r) && r.reason.startsWith("DOĞRULAMA TALEBİ") && actUser && canManageUsers ? (
+                      <>
+                        <Pressable onPress={() => { setUserVerification(actUser.id, "verifiedIdentity", true); void updateReportStatus(r.id, "resolved"); }} style={{ alignItems: "center", backgroundColor: colors.success, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+                          <MaterialCommunityIcons name="check-decagram" size={14} color="#FFFFFF" />
+                          <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>Kimlik doğrula</Text>
+                        </Pressable>
+                        <Pressable onPress={() => { setUserVerification(actUser.id, "verifiedPhone", true); void updateReportStatus(r.id, "resolved"); }} style={{ alignItems: "center", backgroundColor: colors.info, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+                          <MaterialCommunityIcons name="phone-check" size={14} color="#FFFFFF" />
+                          <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>Telefon doğrula</Text>
+                        </Pressable>
+                      </>
+                    ) : null}
                     {isOpenReport(r) ? (
                       <>
                         <Pressable onPress={() => void updateReportStatus(r.id, "resolved")} style={{ alignItems: "center", backgroundColor: colors.success, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>

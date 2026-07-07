@@ -48,5 +48,10 @@ export const extraDict: Record<string, string> = {
   "Bildirilemedi": "Couldn't report",
   "Ekibimiz inceleyecek. Teşekkürler.": "Our team will review it. Thank you.",
   "Doğrulama, güvenlik gereği ekibimizce belge/bilgi kontrolüyle yapılır. Talebini iletişim kanalımızdan başlat; kimlik/telefon bilgini ekleyerek gönder, incelendikten sonra rozetin eklenir.": "For security, verification is done by our team via document/info checks. Start your request from our contact channel; send it with your ID/phone info, and your badge is added after review.",
-  "Doğrulama talebi gönder": "Send verification request"
+  "Doğrulama talebi gönder": "Send verification request",
+  "Doğrulama, güvenlik gereği ekibimizce yapılır. Talebini şimdi gönder — kimlik/telefon bilgin incelenip uygun bulunursa hesabın doğrulanır. Ek belge gerekirse iletişime geçeriz.": "For security, verification is handled by our team. Send your request now — your ID/phone info is reviewed and your account is verified if approved. We'll contact you if extra documents are needed.",
+  "Talebi gönder": "Send request",
+  "Doğrulama talebin alındı": "Verification request received",
+  "Ekibimiz en kısa sürede inceleyecek. Ek belge gerekirse iletişim üzerinden ulaşırız.": "Our team will review it shortly. If extra documents are needed, we'll reach out via contact.",
+  "İletişime geç": "Contact us"
 };

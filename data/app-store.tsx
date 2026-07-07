@@ -249,6 +249,9 @@ type AppStore = {
   setEmailNotifications: (enabled: boolean) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, details?: string) => Promise<boolean>;
   reportUser: (reportedUserId: string, reason: string, details?: string) => Promise<boolean>;
+  // Self-service doğrulama talebi: kullanıcı kendi hesabı için doğrulama ister →
+  // admin moderasyon kuyruğunda "DOĞRULAMA TALEBİ" olarak görünür, admin onaylar.
+  requestVerification: (note?: string) => Promise<boolean>;
   updateReportStatus: (reportId: string, status: Report["status"]) => Promise<boolean>;
   recordLegalConsent: (documentType: "privacy" | "terms" | "kvkk" | "seller_rules") => Promise<boolean>;
   createSupportTicket: (subject: string, message: string) => Promise<boolean>;
@@ -1217,6 +1220,23 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (reportId) {
           setReports((items) => [
             { id: reportId, reporterId: currentUser.id, reportedUserId, reason, details: details ?? "", status: "open", createdAt: today() },
+            ...items
+          ]);
+        }
+        return Boolean(reportId);
+      },
+      async requestVerification(note) {
+        if (!liveUser) { setAuthError("Doğrulama talebi için e-posta ile giriş yapmalısın."); return false; }
+        // Zaten açık bir talebi varsa tekrar oluşturma (spam engeli).
+        const existing = reports.find((r) => r.reporterId === currentUser.id && r.reportedUserId === currentUser.id && r.reason.startsWith("DOĞRULAMA TALEBİ") && r.status === "open");
+        if (existing) return true;
+        const reason = "DOĞRULAMA TALEBİ";
+        const details = note?.trim() || "Kullanıcı hesap doğrulaması (kimlik/telefon) talep ediyor.";
+        // reports RLS: reporter_id=auth.uid() → self-talep DB'de geçerli.
+        const reportId = await insertReport({ reporterId: currentUser.id, reportedUserId: currentUser.id, reason, details });
+        if (reportId) {
+          setReports((items) => [
+            { id: reportId, reporterId: currentUser.id, reportedUserId: currentUser.id, reason, details, status: "open", createdAt: today() },
             ...items
           ]);
         }
