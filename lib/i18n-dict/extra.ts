@@ -46,5 +46,7 @@ export const extraDict: Record<string, string> = {
   "Mesajlaşmadan bildirildi.": "Reported from messaging.",
   "Bildirim alındı": "Report received",
   "Bildirilemedi": "Couldn't report",
-  "Ekibimiz inceleyecek. Teşekkürler.": "Our team will review it. Thank you."
+  "Ekibimiz inceleyecek. Teşekkürler.": "Our team will review it. Thank you.",
+  "Doğrulama, güvenlik gereği ekibimizce belge/bilgi kontrolüyle yapılır. Talebini iletişim kanalımızdan başlat; kimlik/telefon bilgini ekleyerek gönder, incelendikten sonra rozetin eklenir.": "For security, verification is done by our team via document/info checks. Start your request from our contact channel; send it with your ID/phone info, and your badge is added after review.",
+  "Doğrulama talebi gönder": "Send verification request"
 };

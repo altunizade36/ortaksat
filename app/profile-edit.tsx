@@ -103,10 +103,10 @@ function ProfileEditScreenInner() {
   function startVerification(label: string) {
     Alert.alert(
       label,
-      translateCopy("Doğrulama işlemleri güvenlik nedeniyle ekibimiz tarafından, ilgili belge/bilgi kontrolüyle yapılır. Talebini Yasal & Destek üzerinden başlatabilirsin.", language),
+      translateCopy("Doğrulama, güvenlik gereği ekibimizce belge/bilgi kontrolüyle yapılır. Talebini iletişim kanalımızdan başlat; kimlik/telefon bilgini ekleyerek gönder, incelendikten sonra rozetin eklenir.", language),
       [
         { text: translateCopy("Kapat", language), style: "cancel" },
-        { text: translateCopy("Destek talebi", language), onPress: () => router.push("/legal") }
+        { text: translateCopy("Doğrulama talebi gönder", language), onPress: () => router.push("/iletisim") }
       ]
     );
   }
