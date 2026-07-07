@@ -432,6 +432,19 @@ export default function ListingDetailScreen() {
     }
   });
 
+  // BreadcrumbList — Google arama sonucunda breadcrumb zengin-sonucu (Ana Sayfa ›
+  // Kategori › Ürün). Görünür breadcrumb ile aynı kategori slug'ını kullanır.
+  const bcCatSlug = findCategorySlug(currentListing.category);
+  const breadcrumbLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://www.ortaksat.com/" },
+      ...(bcCatSlug ? [{ "@type": "ListItem", position: 2, name: currentListing.category, item: `https://www.ortaksat.com/kategori/${bcCatSlug}` }] : []),
+      { "@type": "ListItem", position: bcCatSlug ? 3 : 2, name: currentListing.title, item: metaUrl }
+    ]
+  });
+
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: 96 }}>
       <Head>
@@ -454,6 +467,7 @@ export default function ListingDetailScreen() {
         <meta name="twitter:image" content={currentListing.image} />
         <meta name="twitter:image:alt" content={currentListing.imageAlt || currentListing.title} />
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productLd }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
       </Head>
       <WebContainer max={1280} padding={0} style={{ gap: 16 }}>
       {/* Breadcrumb: Ana Sayfa › Kategori › Ürün */}

@@ -110,6 +110,17 @@ export default function CityCategoryScreen() {
   const desc = `${cityName} için ${node.label} kategorisinde ${items.length} ortak satış ilanı. ${cityName}'da komisyonlu ${node.label.toLocaleLowerCase("tr-TR")} ürünlerini keşfet, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
   const url = `https://www.ortaksat.com/kategori/${slug}/${wantedCity}`;
   const otherCities = SEO_CITY_SLUGS.filter((c) => c !== wantedCity);
+  // BreadcrumbList — Ana Sayfa › Kategoriler › {Kategori} › {Şehir}.
+  const breadcrumbLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://www.ortaksat.com/" },
+      { "@type": "ListItem", position: 2, name: "Kategoriler", item: "https://www.ortaksat.com/kategoriler" },
+      { "@type": "ListItem", position: 3, name: node.label, item: `https://www.ortaksat.com/kategori/${slug}` },
+      { "@type": "ListItem", position: 4, name: cityName, item: url }
+    ]
+  });
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, paddingBottom: 40, paddingTop: 14 }}>
@@ -122,6 +133,7 @@ export default function CityCategoryScreen() {
         <meta property="og:description" content={desc} />
         <meta property="og:url" content={url} />
         {items[0]?.image ? <meta property="og:image" content={items[0].image} /> : null}
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
       </Head>
 
       <WebContainer max={1240} padding={12} style={{ gap: 14 }}>

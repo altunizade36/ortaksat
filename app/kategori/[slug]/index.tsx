@@ -205,6 +205,16 @@ export default function CategoryLandingScreen() {
     { q: `${node.label} ürününü ortak olarak nasıl paylaşırım?`, a: "Ürüne ortak olursun ve sana özel bir referans linki oluşur. Bu linki Instagram, TikTok veya WhatsApp'ta paylaşırsın; linkten gelen alıcı satın alırsa komisyon senin olur." }
   ];
   const faqLd = JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
+  // BreadcrumbList — Ana Sayfa › Kategoriler › {Kategori} (Google breadcrumb zengin-sonucu).
+  const breadcrumbLd = JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://www.ortaksat.com/" },
+      { "@type": "ListItem", position: 2, name: "Kategoriler", item: "https://www.ortaksat.com/kategoriler" },
+      { "@type": "ListItem", position: 3, name: node.label, item: url }
+    ]
+  });
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, paddingBottom: 40, paddingTop: 14 }}>
@@ -218,6 +228,7 @@ export default function CategoryLandingScreen() {
         <meta property="og:url" content={url} />
         {items[0]?.image ? <meta property="og:image" content={items[0].image} /> : null}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd }} />
+        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
       </Head>
 
       <WebContainer max={1280} padding={12} style={{ gap: 14 }}>
