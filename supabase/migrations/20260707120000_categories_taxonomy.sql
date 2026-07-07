@@ -6,9 +6,9 @@
 -- category_seed.json (scripts/build-category-seed.mts) buraya yüklenir.
 -- ============================================================================
 
-create table if not exists public.categories (
+create table if not exists public.taxonomy_categories (
   id uuid primary key default gen_random_uuid(),
-  parent_id uuid references public.categories(id) on delete cascade,
+  parent_id uuid references public.taxonomy_categories(id) on delete cascade,
   slug text not null,                        -- kendi slug'ı (parent altında benzersiz)
   path text not null unique,                 -- tam slug yolu: "emlak/konut/satilik"
   name text not null,                        -- Türkçe görünen ad
@@ -35,18 +35,18 @@ create table if not exists public.categories (
   unique (parent_id, slug)
 );
 
-create index if not exists categories_parent_idx on public.categories(parent_id);
-create index if not exists categories_kind_idx on public.categories(kind);
-create index if not exists categories_leaf_idx on public.categories(is_leaf) where is_leaf;
-create index if not exists categories_google_idx on public.categories(google_product_category_id);
-create index if not exists categories_active_sort_idx on public.categories(active, level, sort_order);
+create index if not exists taxonomy_categories_parent_idx on public.taxonomy_categories(parent_id);
+create index if not exists taxonomy_categories_kind_idx on public.taxonomy_categories(kind);
+create index if not exists taxonomy_categories_leaf_idx on public.taxonomy_categories(is_leaf) where is_leaf;
+create index if not exists taxonomy_categories_google_idx on public.taxonomy_categories(google_product_category_id);
+create index if not exists taxonomy_categories_active_sort_idx on public.taxonomy_categories(active, level, sort_order);
 
 -- RLS: herkes okur (kategori ağacı public), yalnız admin yazar.
-alter table public.categories enable row level security;
-drop policy if exists "categories readable" on public.categories;
-create policy "categories readable" on public.categories for select using (true);
-drop policy if exists "admins manage categories" on public.categories;
-create policy "admins manage categories" on public.categories for all
+alter table public.taxonomy_categories enable row level security;
+drop policy if exists "taxonomy_categories readable" on public.taxonomy_categories;
+create policy "taxonomy_categories readable" on public.taxonomy_categories for select using (true);
+drop policy if exists "admins manage taxonomy_categories" on public.taxonomy_categories;
+create policy "admins manage taxonomy_categories" on public.taxonomy_categories for all
   using (public.is_admin()) with check (public.is_admin());
 
-select 'categories table ready' as status;
+select 'taxonomy_categories table ready' as status;

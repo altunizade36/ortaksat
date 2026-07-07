@@ -1,5 +1,5 @@
 /**
- * category_seed.json → Supabase public.categories yükleyici.
+ * category_seed.json → Supabase public.taxonomy_categories yükleyici.
  * Batch INSERT + parent_id çözümleme (parent_path üzerinden).
  * Çalıştır: node scripts/load-categories.mjs   (.env'den SUPABASE_MGMT_TOKEN)
  */
@@ -39,7 +39,7 @@ const seed = JSON.parse(readFileSync("data/category_seed.json", "utf8"));
 const rows = seed.categories;
 console.log(`Yüklenecek: ${rows.length} kategori`);
 
-await sql("truncate table public.categories restart identity cascade; alter table public.categories add column if not exists _pp text;");
+await sql("truncate table public.taxonomy_categories restart identity cascade; alter table public.taxonomy_categories add column if not exists _pp text;");
 
 const cols = "(path, _pp, slug, name, full_name, level, sort_order, kind, is_leaf, form_schema_key, google_product_category_id, google_product_category)";
 const CHUNK = 400;
@@ -49,22 +49,22 @@ for (let i = 0; i < rows.length; i += CHUNK) {
   const values = batch.map((r) =>
     `(${q(r.path)}, ${q(r.parent_path)}, ${q(r.slug)}, ${q(r.name)}, ${q(r.full_name)}, ${n(r.level)}, ${n(r.sort_order)}, ${q(r.kind)}, ${b(r.is_leaf)}, ${q(r.form_schema_key)}, ${n(r.google_product_category_id)}, ${q(r.google_product_category)})`
   ).join(",\n");
-  await sql(`insert into public.categories ${cols} values\n${values}\non conflict (path) do nothing;`);
+  await sql(`insert into public.taxonomy_categories ${cols} values\n${values}\non conflict (path) do nothing;`);
   done += batch.length;
   process.stdout.write(`\r  yüklendi ${done}/${rows.length}`);
 }
 console.log("");
 
 console.log("parent_id çözümleniyor...");
-await sql(`update public.categories c set parent_id = p.id from public.categories p where c._pp is not null and p.path = c._pp;`);
-await sql(`alter table public.categories drop column if exists _pp;`);
+await sql(`update public.taxonomy_categories c set parent_id = p.id from public.taxonomy_categories p where c._pp is not null and p.path = c._pp;`);
+await sql(`alter table public.taxonomy_categories drop column if exists _pp;`);
 
 const stats = await sql(`select
-  (select count(*) from public.categories) as total,
-  (select count(*) from public.categories where parent_id is not null) as with_parent,
-  (select count(*) from public.categories where google_product_category_id is not null) as google_mapped,
-  (select count(distinct kind) from public.categories) as kinds,
-  (select count(*) from public.categories where level=0) as top;`);
+  (select count(*) from public.taxonomy_categories) as total,
+  (select count(*) from public.taxonomy_categories where parent_id is not null) as with_parent,
+  (select count(*) from public.taxonomy_categories where google_product_category_id is not null) as google_mapped,
+  (select count(distinct kind) from public.taxonomy_categories) as kinds,
+  (select count(*) from public.taxonomy_categories where level=0) as top;`);
 console.log("Sonuç:", JSON.stringify(stats[0]));
 
 // Form şemalarını da ayrı tabloya koy (kategori → form alanları).
