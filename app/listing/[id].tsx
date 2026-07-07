@@ -15,6 +15,7 @@ import { useCompare } from "@/lib/compare";
 import { Accordion } from "@/components/accordion";
 import { AgreementCard } from "@/components/agreement-card";
 import { colors } from "@/components/colors";
+import { JsonLd } from "@/components/json-ld";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
 import { EarningsCalculator } from "@/components/earnings-calculator";
@@ -466,9 +467,9 @@ export default function ListingDetailScreen() {
         <meta name="twitter:description" content={ogDesc} />
         <meta name="twitter:image" content={currentListing.image} />
         <meta name="twitter:image:alt" content={currentListing.imageAlt || currentListing.title} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: productLd }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
       </Head>
+      <JsonLd id="product" json={productLd} />
+      <JsonLd id="breadcrumb" json={breadcrumbLd} />
       <WebContainer max={1280} padding={0} style={{ gap: 16 }}>
       {/* Breadcrumb: Ana Sayfa › Kategori › Ürün */}
       <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, marginHorizontal: isWideWeb ? 0 : 12 }}>

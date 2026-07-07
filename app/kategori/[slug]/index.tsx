@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } fro
 
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
+import { JsonLd } from "@/components/json-ld";
 import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { EmptyState } from "@/components/ui";
@@ -227,9 +228,9 @@ export default function CategoryLandingScreen() {
         <meta property="og:description" content={desc} />
         <meta property="og:url" content={url} />
         {items[0]?.image ? <meta property="og:image" content={items[0].image} /> : null}
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: faqLd }} />
-        <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: breadcrumbLd }} />
       </Head>
+      <JsonLd id="faq" json={faqLd} />
+      <JsonLd id="breadcrumb" json={breadcrumbLd} />
 
       <WebContainer max={1280} padding={12} style={{ gap: 14 }}>
         {/* Breadcrumb — tam ata zinciri (her üst kategori tıklanabilir) */}
