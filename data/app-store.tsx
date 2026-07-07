@@ -831,7 +831,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setMessages((items) => [message, ...items]);
         setConversations((items) => items.map((item) => (item.id === conversation.id ? { ...item, lastMessageAt: message.createdAt } : item)));
         notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${message.body}`);
-        if (liveUser) void insertMessage(message);
+        if (liveUser) persistCritical(insertMessage(message), () => {
+          setMessages((items) => items.filter((m) => m.id !== message.id));
+        }, "Mesaj gönderilemedi. Bağlantını kontrol edip tekrar dene.");
       }
       return conversation;
     }
@@ -1359,7 +1361,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
             listing.id === listingId ? { ...listing, reviewCount: listing.reviewCount + 1 } : listing
           )
         );
-        if (liveUser) void insertReview(review);
+        if (liveUser) persistCritical(insertReview(review), () => {
+          setReviews((items) => items.filter((r) => r.id !== review.id));
+          setListings((items) => items.map((l) => (l.id === listingId ? { ...l, reviewCount: Math.max(0, l.reviewCount - 1) } : l)));
+        }, "Değerlendirme kaydedilemedi. Lütfen tekrar dene.");
         return review;
       },
       canReviewSale(saleId) {
@@ -1394,7 +1399,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         };
         setReviews((items) => [review, ...items]);
         setListings((items) => items.map((item) => (item.id === listing.id ? { ...item, reviewCount: item.reviewCount + 1 } : item)));
-        if (liveUser) void insertReview(review);
+        if (liveUser) persistCritical(insertReview(review), () => {
+          setReviews((items) => items.filter((r) => r.id !== review.id));
+          setListings((items) => items.map((l) => (l.id === listing.id ? { ...l, reviewCount: Math.max(0, l.reviewCount - 1) } : l)));
+        }, "Değerlendirme kaydedilemedi. Lütfen tekrar dene.");
         return review;
       },
       createSaleFromLead(leadId, input) {
@@ -1591,7 +1599,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setConversations((items) => items.map((item) => (item.id === conversationId ? { ...item, lastMessageAt: message.createdAt } : item)));
         const preview = trimmed || (attachment?.type === "file" ? `📎 ${attachment.name ?? "Dosya"}` : "📷 Görsel");
         notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${preview}`);
-        if (liveUser) void insertMessage(message);
+        // Mesaj DB'ye yazılamazsa (bağlantı/RLS) optimistik baloncuğu geri al ve
+        // görünür hata göster — mesaj sessizce kaybolup alıcıya ulaşmamazlık yaşanmasın.
+        if (liveUser) persistCritical(insertMessage(message), () => {
+          setMessages((items) => items.filter((m) => m.id !== message.id));
+        }, "Mesaj gönderilemedi. Bağlantını kontrol edip tekrar dene.");
       },
       markConversationRead(conversationId) {
         const unread = messages.filter((item) => item.conversationId === conversationId && item.receiverId === currentUser.id && !item.read);

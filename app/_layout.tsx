@@ -2,9 +2,10 @@ import Head from "expo-router/head";
 import { Stack } from "expo-router/stack";
 import { StatusBar } from "expo-status-bar";
 import { useEffect } from "react";
-import { Alert, View } from "react-native";
+import { View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
 
+import { Alert } from "@/lib/alert";
 import { AppHeader } from "@/components/app-header";
 import { colors } from "@/components/colors";
 import { CompareBar } from "@/components/compare-bar";

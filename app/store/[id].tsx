@@ -2,7 +2,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
+
+import { Alert } from "@/lib/alert";
 
 import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";

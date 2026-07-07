@@ -750,8 +750,8 @@ export async function deleteFavorite(listingId: string, userId: string) {
   if (error) console.warn("Supabase favorite delete failed", error);
 }
 
-export async function insertReview(review: Review) {
-  if (!supabase) return;
+export async function insertReview(review: Review): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase.from("reviews").insert({
     id: review.id,
     listing_id: review.listingId,
@@ -764,7 +764,8 @@ export async function insertReview(review: Review) {
     sale_id: review.saleId ?? null,
     reviewed_user_id: review.reviewedUserId ?? null
   });
-  if (error) console.warn("Supabase review insert failed", error);
+  if (error) { console.warn("Supabase review insert failed", error); return false; }
+  return true;
 }
 
 // Bir kullanıcı HAKKINDA yazılmış (aldığı) yorumları getir — mağaza/profil
@@ -810,8 +811,8 @@ export async function insertConversation(conversation: Conversation) {
   if (error) console.warn("Supabase conversation insert failed", error);
 }
 
-export async function insertMessage(message: Message) {
-  if (!supabase) return;
+export async function insertMessage(message: Message): Promise<boolean> {
+  if (!supabase) return true;
   const payload: Record<string, unknown> = {
     id: message.id,
     conversation_id: message.conversationId,
@@ -829,7 +830,8 @@ export async function insertMessage(message: Message) {
     if (message.attachmentName) payload.attachment_name = message.attachmentName;
   }
   const { error } = await supabase.from("messages").insert(payload);
-  if (error) console.warn("Supabase message insert failed", error);
+  if (error) { console.warn("Supabase message insert failed", error); return false; }
+  return true;
 }
 
 /**
