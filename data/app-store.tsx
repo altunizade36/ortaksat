@@ -1751,6 +1751,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
         ) {
           return;
         }
+        // TERMİNAL DURUM: cancelled/paid personel dışında geri alınamaz — iptal edilen
+        // ya da kapanan komisyon yeniden "ödenecek/onaylı" duruma sokulup metrikleri
+        // ve panel sinyalini bozmasın.
+        if (!staff && (sale.status === "cancelled" || sale.status === "paid") && status !== sale.status) {
+          return;
+        }
         const disputeText = reason?.trim() ? `Anlaşmazlık: ${reason.trim()}` : "Komisyon için anlaşmazlık kaydı açıldı.";
         const updatedSale = sale
           ? {

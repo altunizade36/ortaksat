@@ -157,12 +157,16 @@ export default function SellerScreen() {
   }, [myLeads]);
   const mySales = sales.filter((sale) => myListingIds.has(sale.listingId));
   const myApplications = partnerships.filter((partnership) => myListingIds.has(partnership.listingId) && partnership.status === "pending");
-  const openCommission = mySales.filter((sale) => sale.status !== "paid").reduce((sum, sale) => sum + sale.commissionAmount, 0);
+  // "Açık/ödenecek" komisyon = henüz ödenmemiş AMA iptal/anlaşmazlık DIŞI satışlar.
+  // cancelled (iptal) hiç ödenmez; disputed (çözülene dek) limbo — ikisi de "açık
+  // komisyon" ve "panel temiz" sinyalini kalıcı bozmasın.
+  const isOwedSale = (s: (typeof mySales)[number]) => s.status !== "paid" && s.status !== "cancelled" && s.status !== "disputed";
+  const openCommission = mySales.filter(isOwedSale).reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const paidCommission = mySales.filter((sale) => sale.status === "paid").reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const newLeads = myLeads.filter((lead) => lead.status === "new");
   const contactedLeads = myLeads.filter((lead) => lead.status === "contacted");
   const convertedLeads = myLeads.filter((lead) => lead.status === "converted");
-  const unpaidSales = mySales.filter((sale) => sale.status !== "paid");
+  const unpaidSales = mySales.filter(isOwedSale);
   const lowStockListings = myListings.filter((listing) => listing.status === "active" && listing.stockCount <= 3);
   const activePartnerCount = partnerships.filter((partnership) => myListingIds.has(partnership.listingId) && partnership.status === "active").length;
   const totalActionCount = newLeads.length + myApplications.length + unpaidSales.length + lowStockListings.length;
@@ -562,13 +566,27 @@ export default function SellerScreen() {
                         <PrimaryButton tone="secondary" onPress={() => openConversation(listing.id, partnership?.partnerId, `${lead.buyerName} talebi hakkında konuşalım. Kaynak: ${sourceLabels[lead.source]}, durum: ${lead.status}.`)}>Mesaj</PrimaryButton>
                       </View>
                     </View>
-                    <View style={{ flexDirection: "row", gap: 8 }}>
-                      <View style={{ flex: 1 }}>
-                        <PrimaryButton tone={hasSaleForLead(lead.id) ? "soft" : "primary"} onPress={() => (hasSaleForLead(lead.id) ? undefined : confirmConvertLead(lead.id))}>
-                          {hasSaleForLead(lead.id) ? "Satış Kaydı Var" : "Satışa Çevir"}
-                        </PrimaryButton>
-                      </View>
-                    </View>
+                    {(() => {
+                      const converted = hasSaleForLead(lead.id);
+                      // İlan pasif/tükendiyse createSaleFromLead reddeder → butonu boşuna
+                      // "aktif ama hata veren" bırakmak yerine nedenini göster (satıcı ilanı
+                      // yeniden yayınlar/stok ekler).
+                      const canConvert = listing.status === "active" && listing.stockCount > 0;
+                      const label = converted
+                        ? translateCopy("Satış Kaydı Var", language)
+                        : !canConvert
+                          ? (listing.stockCount <= 0 ? translateCopy("Stok tükendi — önce stok ekle", language) : translateCopy("İlan pasif — önce yayına al", language))
+                          : translateCopy("Satışa Çevir", language);
+                      return (
+                        <View style={{ flexDirection: "row", gap: 8 }}>
+                          <View style={{ flex: 1 }}>
+                            <PrimaryButton tone={converted || !canConvert ? "soft" : "primary"} onPress={() => (converted || !canConvert ? undefined : confirmConvertLead(lead.id))}>
+                              {label}
+                            </PrimaryButton>
+                          </View>
+                        </View>
+                      );
+                    })()}
                   </View>
                 );
               })}
@@ -596,14 +614,25 @@ export default function SellerScreen() {
                     <MaterialCommunityIcons name="check-circle" size={15} color={colors.success} />
                     <Text style={{ color: colors.success, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Komisyon kapandı", language)}</Text>
                   </View>
+                ) : sale.status === "cancelled" ? (
+                  <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 9 }}>
+                    <MaterialCommunityIcons name="close-circle-outline" size={15} color={colors.muted} />
+                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Satış iptal edildi", language)}</Text>
+                  </View>
                 ) : sale.status === "disputed" ? (
                   <View style={{ flexDirection: "row", gap: 8 }}>
                     <View style={{ flex: 1 }}><PrimaryButton tone="soft" onPress={() => confirmPaidSale(sale.id)}>Yeniden Ödedim</PrimaryButton></View>
                     <View style={{ flex: 1 }}><PrimaryButton tone="secondary" onPress={() => updateSaleStatus(sale.id, "cancelled")}>İptal Et</PrimaryButton></View>
                   </View>
                 ) : sale.status === "seller_paid" ? (
-                  <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 8, paddingVertical: 9 }}>
-                    <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortak onayı bekleniyor", language)}</Text>
+                  <View style={{ gap: 8 }}>
+                    <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 8, paddingVertical: 9 }}>
+                      <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortak onayı bekleniyor", language)}</Text>
+                    </View>
+                    {/* Ortak hiç onaylamazsa satıcı sonsuza dek takılmasın — anlaşmazlık açabilsin. */}
+                    <Pressable onPress={() => updateSaleStatus(sale.id, "disputed", translateCopy("Ödeme yaptım ancak ortak onaylamadı.", language))} style={{ alignItems: "center", paddingVertical: 4 }}>
+                      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700", textDecorationLine: "underline" }}>{translateCopy("Ortak onaylamıyor mu? Anlaşmazlık aç", language)}</Text>
+                    </Pressable>
                   </View>
                 ) : (
                   <View style={{ flexDirection: "row", gap: 8 }}>

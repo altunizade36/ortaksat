@@ -410,7 +410,17 @@ export async function searchListings(params: {
   if (q) {
     // PostgREST .or() wildcard'i '*' kullanir; virgul ayirici oldugu icin temizle.
     const safe = q.replace(/[,*%()]/g, " ").replace(/\s+/g, " ").trim();
-    if (safe) query = query.or(`title.ilike.*${safe}*,description.ilike.*${safe}*,category.ilike.*${safe}*,location.ilike.*${safe}*`);
+    if (safe) {
+      // Coklu-kelime: HER kelime herhangi bir alanda gecmeli (kelimeler arasi AND).
+      // Ard arda .or() cagrilari PostgREST'te AND ile birlesir. Boylece "kirmizi
+      // koltuk" -> baslikta "koltuk" + aciklamada "kirmizi" olan ilani da bulur
+      // (eski tek-parca substring bunu kaciriyordu).
+      const tokens = safe.split(" ").filter((t) => t.length >= 2);
+      const groups = tokens.length ? tokens : [safe];
+      for (const t of groups) {
+        query = query.or(`title.ilike.*${t}*,description.ilike.*${t}*,category.ilike.*${t}*,location.ilike.*${t}*`);
+      }
+    }
   }
   if (typeof params.minPrice === "number") query = query.gte("price", params.minPrice);
   if (typeof params.maxPrice === "number") query = query.lte("price", params.maxPrice);

@@ -23,5 +23,11 @@ export const extraDict: Record<string, string> = {
   "En az": "Min",
   "En çok": "Max",
   "İlanlar yüklenemedi": "Couldn't load listings",
-  "Bağlantında geçici bir sorun olabilir. Lütfen yeniden dene.": "There may be a temporary connection issue. Please try again."
+  "Bağlantında geçici bir sorun olabilir. Lütfen yeniden dene.": "There may be a temporary connection issue. Please try again.",
+  "E-posta bildirimleri aktif — talep, satış ve mesaj olayları e-postana düşer (Bildirimler sayfasından yönet). SMS/WhatsApp yakında.": "Email notifications are active — you'll get emails for leads, sales and messages (manage on the Notifications page). SMS/WhatsApp coming soon.",
+  "Satış iptal edildi": "Sale cancelled",
+  "Ortak onaylamıyor mu? Anlaşmazlık aç": "Partner not confirming? Open a dispute",
+  "Ödeme yaptım ancak ortak onaylamadı.": "I paid but the partner hasn't confirmed.",
+  "Stok tükendi — önce stok ekle": "Out of stock — add stock first",
+  "İlan pasif — önce yayına al": "Listing paused — publish it first"
 };

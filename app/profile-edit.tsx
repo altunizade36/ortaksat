@@ -334,7 +334,7 @@ function ProfileEditScreenInner() {
                   <MaterialCommunityIcons name="bell-ring-outline" size={20} color={colors.primary} style={{ marginTop: 1 }} />
                   <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{translateCopy("Talep, satış, komisyon, ortaklık ve mesaj gibi", language)} <Text style={{ fontWeight: "900" }}>{translateCopy("önemli hareketler uygulama içinde anlık bildirim", language)}</Text> {translateCopy("olarak sana gösterilir — Bildirimler sekmesinden takip edebilirsin.", language)}</Text>
                 </View>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("E-posta/SMS bildirim kanalları ileride eklendiğinde buradan yönetebileceksin.", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("E-posta bildirimleri aktif — talep, satış ve mesaj olayları e-postana düşer (Bildirimler sayfasından yönet). SMS/WhatsApp yakında.", language)}</Text>
               </View>
             ) : null}
 
@@ -481,7 +481,7 @@ function ProfileEditScreenInner() {
         <Card>
           <SectionTitle title={translateCopy("Bildirimler", language)} />
           <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{translateCopy("Talep, satış, komisyon, ortaklık ve mesaj gibi", language)} <Text style={{ fontWeight: "900" }}>{translateCopy("önemli hareketler uygulama içinde anlık bildirim", language)}</Text> {translateCopy("olarak gösterilir; Bildirimler sekmesinden takip edebilirsin.", language)}</Text>
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("E-posta/SMS bildirim kanalları ileride eklendiğinde buradan yönetebileceksin.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("E-posta bildirimleri aktif — talep, satış ve mesaj olayları e-postana düşer (Bildirimler sayfasından yönet). SMS/WhatsApp yakında.", language)}</Text>
         </Card>
 
         <Card>

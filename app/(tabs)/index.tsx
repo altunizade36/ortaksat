@@ -508,7 +508,7 @@ function CategoryShowcase({ categoryTree, isWideWeb }: { categoryTree: CategoryN
   if (cats.length === 0) return null;
 
   const Tile = ({ node }: { node: CategoryNode }) => (
-    <Link href={{ pathname: "/kategoriler", params: { c: node.slug ?? node.key } }} asChild>
+    <Link href={{ pathname: "/kategori/[slug]", params: { slug: node.slug ?? node.key } }} asChild>
       <Pressable style={({ pressed }) => ({ alignItems: "center", gap: 7, opacity: pressed ? 0.75 : 1, width: isWideWeb ? undefined : 78 })}>
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, height: isWideWeb ? 72 : 64, justifyContent: "center", overflow: "hidden", width: isWideWeb ? 72 : 64 }}>
           {node.image ? (
