@@ -244,8 +244,9 @@ export function DesktopCreateFlow() {
     if (step === 1) return missingFields.length === 0;
     // İl zorunlu; ilçe opsiyonel (dijital ürün/uzaktan hizmet konum-bağımsız olabilir).
     if (step === 2) return !!loc.provinceId;
-    // Görsel opsiyonel — yoksa kategori görseli kapak olur (aşağıdaki metinle tutarlı).
-    if (step === 3) return true;
+    // En az 1 gerçek görsel zorunlu (fotoğraflı ilan çok daha fazla görüntülenir /
+    // güven verir — standart pazaryeri davranışı).
+    if (step === 3) return images.length > 0;
     if (step === 4) return Number(commissionValue) > 0;
     return true;
   };
@@ -532,7 +533,7 @@ export function DesktopCreateFlow() {
         {step === 3 ? (
           <View style={{ gap: 14 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Fotoğraflar", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En fazla 12 görsel. İlk görsel kapak olur; eklemezsen kategori görseli kapak olur (önerilir: en az 1 gerçek foto).", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En az 1, en fazla 12 görsel ekle. İlk görsel kapak olur. Gerçek fotoğraflı ilanlar çok daha fazla görüntülenir.", language)}</Text>
             <Pressable onPress={() => void pickFromGallery()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 11 }}>
               <MaterialCommunityIcons name="image-multiple-outline" size={17} color={colors.primaryDark} />
               <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Galeriden / cihazdan seç", language)}</Text>
@@ -545,7 +546,7 @@ export function DesktopCreateFlow() {
               </Pressable>
             </View>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-              {images.length === 0 ? <Text style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Henüz görsel yok — kategori görseli kapak olarak kullanılır.", language)}</Text> : null}
+              {images.length === 0 ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Devam etmek için en az 1 görsel ekle.", language)}</Text> : null}
               {images.map((img, i) => (
                 <View key={img + i} style={{ borderColor: i === 0 ? colors.primary : colors.line, borderRadius: 12, borderWidth: i === 0 ? 2 : 1, height: 110, overflow: "hidden", width: 150 }}>
                   <SafeRemoteImage uri={img} style={{ height: "100%", width: "100%" }} contentFit="cover" />

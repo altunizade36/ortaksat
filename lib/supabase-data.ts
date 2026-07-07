@@ -429,6 +429,10 @@ export async function searchListings(params: {
   const sort = params.sort ?? "new";
   if (sort === "priceAsc") query = query.order("price", { ascending: true });
   else if (sort === "priceDesc") query = query.order("price", { ascending: false });
+  // Komisyon sıralaması: kesin komisyon (rate: fiyat×oran) hesaplı ORDER BY gerektirir;
+  // yaklaşık olarak commission_value DESC ile sırala → sayfalama newest yerine yüksek-
+  // komisyonluları önce çeker (istemci her sayfayı kesin komisyonla yeniden sıralar).
+  else if (sort === "commission") query = query.order("commission_value", { ascending: false }).order("created_at", { ascending: false });
   else query = query.order("created_at", { ascending: false });
 
   const offset = params.offset ?? 0;

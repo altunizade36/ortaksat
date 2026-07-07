@@ -37,5 +37,14 @@ export const extraDict: Record<string, string> = {
   "Fiyat: azalan": "Price: high to low",
   "En yüksek komisyon": "Highest commission",
   "Sola taşı": "Move left",
-  "Sağa taşı": "Move right"
+  "Sağa taşı": "Move right",
+  "En az 1, en fazla 12 görsel ekle. İlk görsel kapak olur. Gerçek fotoğraflı ilanlar çok daha fazla görüntülenir.": "Add 1 to 12 photos. The first is the cover. Listings with real photos get far more views.",
+  "Devam etmek için en az 1 görsel ekle.": "Add at least 1 photo to continue.",
+  "Kullanıcıyı bildir": "Report user",
+  "Bu kullanıcıyı uygunsuz davranış için ekibimize bildirmek istiyor musun?": "Report this user to our team for inappropriate behavior?",
+  "Kullanıcı bildirimi": "User report",
+  "Mesajlaşmadan bildirildi.": "Reported from messaging.",
+  "Bildirim alındı": "Report received",
+  "Bildirilemedi": "Couldn't report",
+  "Ekibimiz inceleyecek. Teşekkürler.": "Our team will review it. Thank you."
 };

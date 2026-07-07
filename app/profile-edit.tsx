@@ -40,11 +40,6 @@ function ProfileEditScreenInner() {
   const [section, setSection] = useState<SettingsSection>("personal");
   const [storeName, setStoreName] = useState(currentUser.name);
   const [iban, setIban] = useState((prefs0.iban as string) ?? "");
-  const [storePrefs, setStorePrefs] = useState<Record<string, boolean>>({ autoApprove: prefs0.store_autoApprove === true, vacation: prefs0.store_vacation === true, showPhone: prefs0.store_showPhone !== false });
-
-  function toggleStore(key: string) {
-    setStorePrefs((s) => { const v = !s[key]; void savePreferences({ [`store_${key}`]: v }); return { ...s, [key]: v }; });
-  }
   // Şifre değiştir (mevcut şifre + yeni + tekrar). Güvenlik: Supabase mevcut
   // şifreyi ister; ayrıca web'de Alert no-op olduğu için satır-içi mesaj gösteririz.
   const [pwCurrent, setPwCurrent] = useState("");
@@ -573,20 +568,6 @@ function DeskField({ icon, label, multiline, onChangeText, placeholder, secure, 
           style={{ color: colors.ink, flex: 1, fontSize: 14, minHeight: multiline ? 90 : 46, paddingVertical: 10, textAlignVertical: multiline ? "top" : "center" }}
         />
       </View>
-    </View>
-  );
-}
-
-function ToggleRow({ label, on, onPress, sub }: { label: string; on: boolean; onPress: () => void; sub: string }) {
-  return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-      <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{label}</Text>
-        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{sub}</Text>
-      </View>
-      <Pressable onPress={onPress} style={{ alignItems: on ? "flex-end" : "flex-start", backgroundColor: on ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}>
-        <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} />
-      </Pressable>
     </View>
   );
 }

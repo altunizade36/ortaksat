@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
+import { Alert } from "@/lib/alert";
 import { openUrlSafe } from "@/lib/link";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState, PrimaryButton } from "@/components/ui";
@@ -59,7 +60,7 @@ function ChatScreenInner() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { currentUser, findConversation, findListing, findUser, leads, markConversationRead, messages, partnerships, sales, sendConversationMessage } = useStore();
+  const { currentUser, findConversation, findListing, findUser, leads, markConversationRead, messages, partnerships, reportUser, sales, sendConversationMessage } = useStore();
   const [body, setBody] = useState("");
   const [attaching, setAttaching] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
@@ -201,6 +202,23 @@ function ChatScreenInner() {
               style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}
             >
               <MaterialCommunityIcons name="open-in-new" size={18} color={colors.primaryDark} />
+            </Pressable>
+          ) : null}
+          {/* Şikayet — mobil chat'te de kullanıcıyı bildir (masaüstü inbox parity). */}
+          {otherId ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={translateCopy("Kullanıcıyı bildir", language)}
+              hitSlop={8}
+              onPress={() => {
+                Alert.alert(translateCopy("Kullanıcıyı bildir", language), translateCopy("Bu kullanıcıyı uygunsuz davranış için ekibimize bildirmek istiyor musun?", language), [
+                  { text: translateCopy("Vazgeç", language), style: "cancel" },
+                  { text: translateCopy("Bildir", language), style: "destructive", onPress: () => { void (async () => { const ok = await reportUser(otherId, translateCopy("Kullanıcı bildirimi", language), translateCopy("Mesajlaşmadan bildirildi.", language)); Alert.alert(translateCopy(ok ? "Bildirim alındı" : "Bildirilemedi", language), translateCopy(ok ? "Ekibimiz inceleyecek. Teşekkürler." : "Lütfen tekrar dene.", language)); })(); } }
+                ]);
+              }}
+              style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}
+            >
+              <MaterialCommunityIcons name="flag-outline" size={17} color={colors.muted} />
             </Pressable>
           ) : null}
         </View>

@@ -1,4 +1,7 @@
-﻿import { supabase } from "@/lib/supabase";
+﻿import { Platform } from "react-native";
+import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
+
+import { supabase } from "@/lib/supabase";
 import { commissionAmount } from "@/lib/format";
 import type { CategorySuggestion, Conversation, Lead, Listing, LocationSuggestion, Message, ModerationStatus, Notification, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
 
@@ -415,18 +418,34 @@ export async function uploadListingImage(uri: string, userId: string) {
   const extension = uri.split(".").pop()?.split("?")[0]?.toLowerCase() || "jpg";
   const isVideo = Boolean(ALLOWED_VIDEO_TYPES[extension]);
   let contentType = ALLOWED_IMAGE_TYPES[extension] ?? ALLOWED_VIDEO_TYPES[extension] ?? "image/jpeg";
+  let ext = extension;
+
+  // NATIVE görsel: web'deki canvas sıkıştırması native'de çalışmaz (document yok),
+  // bu yüzden yükleme öncesi expo-image-manipulator ile 1600px'e ölçekle + sıkıştır.
+  // Web'de aşağıdaki compressImageBlob (canvas) yolu kullanılır.
+  let workUri = uri;
+  if (!isVideo && Platform.OS !== "web") {
+    try {
+      const manip = await manipulateAsync(uri, [{ resize: { width: 1600 } }], { compress: 0.8, format: SaveFormat.JPEG });
+      workUri = manip.uri;
+      contentType = "image/jpeg";
+      ext = "jpg";
+    } catch (e) {
+      console.warn("Görsel ölçeklenemedi, orijinal yüklenecek:", (e as Error)?.message);
+    }
+  }
 
   let response: Response;
   try {
-    response = await fetch(uri);
+    response = await fetch(workUri);
   } catch (e) {
     console.warn("Görsel okunamadı:", (e as Error)?.message);
     return uri;
   }
   let body = await response.blob();
 
-  // Görselleri (video değil) hedef MB altına OTOMATİK sıkıştır/ölçekle.
-  let ext = extension;
+  // Görselleri (video değil) hedef MB altına OTOMATİK sıkıştır/ölçekle (web: canvas;
+  // native: yukarıda zaten ölçeklendi, burada boyut yine yüksekse ikinci geçiş).
   if (!isVideo) {
     const compressed = await compressImageBlob(body, 1600, 0.82, MAX_IMAGE_BYTES);
     body = compressed.blob;
