@@ -1,4 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
@@ -25,7 +27,47 @@ import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon & Ortak Satış", "Önizleme & Yayınla"];
 const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
 
+// Kategoriye göre önerilen komisyon aralığı (%). Yüksek-tutarlı kategoriler (emlak/
+// vasıta) düşük oran, dijital/hizmet yüksek oran. Bilgi amaçlı öneri — zorlayıcı değil.
+const SUGGESTED_COMMISSION: Record<string, [number, number]> = {
+  "Emlak": [1, 3],
+  "Vasıta": [2, 6],
+  "Yedek Parça, Aksesuar & Tuning": [8, 15],
+  "İkinci El & Sıfır Alışveriş": [8, 18],
+  "İş Makineleri & Sanayi": [3, 10],
+  "Ustalar & Hizmetler": [10, 20],
+  "Özel Ders & Eğitim": [10, 20],
+  "Hayvanlar Alemi": [8, 15],
+  "Dijital Ürünler & Hizmetler": [15, 30],
+  "Yapı Market & Bahçe": [8, 18],
+  "Müzik Enstrümanları": [8, 18],
+  "Sağlık & Medikal": [8, 15]
+};
+const DEFAULT_COMMISSION_RANGE: [number, number] = [8, 20];
+
+// Yarım kalan ilan taslağı — cihazda saklanır, kullanıcı geri döndüğünde devam eder.
+const DRAFT_KEY = "ortaksat_listing_draft_v1";
+const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 gün
+
 type Values = Record<string, string | boolean | string[]>;
+
+type DraftShape = {
+  savedAt: number;
+  step: number;
+  path: Array<Pick<CategoryNode, "key" | "label" | "slug" | "formKey" | "image">>;
+  values: Values;
+  images: string[];
+  loc: LocationValue;
+  visibility: "city_only" | "district_only" | "neighborhood" | "full_address_private";
+  currency: CurrencyCode;
+  commissionType: CommissionType;
+  commissionValue: string;
+  bonusAmount: string;
+  bonusQuota: string;
+  partnershipMode: PartnershipMode;
+  partnerNote: string;
+  contactMethod: "message" | "whatsapp" | "phone";
+};
 
 export function DesktopCreateFlow() {
   const { language } = useLanguage();
@@ -51,6 +93,9 @@ export function DesktopCreateFlow() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState(""); // bot tuzağı: gerçek kullanıcı boş bırakır
+  const [pendingDraft, setPendingDraft] = useState<DraftShape | null>(null); // "devam et?" banner'ı
+  const [draftReady, setDraftReady] = useState(false); // ilk yükleme bitti mi (autosave'i geciktir)
+  const [shareCopied, setShareCopied] = useState(false); // paylaşım metni kopyalandı bildirimi
 
   const formKey = path.length ? resolveFormKey(path) : "";
   const schema = formKey ? getFormSchema(formKey) : undefined;
@@ -68,6 +113,28 @@ export function DesktopCreateFlow() {
   }, [values.title, values.description, path]);
 
   const setV = (k: string, v: string | boolean | string[]) => setValues((s) => ({ ...s, [k]: v }));
+
+  // Komisyon/kazanç yardımı: fiyattan ortak kazancını ve kategoriye göre önerilen
+  // komisyon aralığını canlı hesapla.
+  const priceNum = parseTrPrice(String(values.price ?? ""));
+  const perSaleCommission = commissionType === "rate"
+    ? Math.round((priceNum * (Number(commissionValue) || 0)) / 100)
+    : Number(commissionValue) || 0;
+  const suggestedRange = SUGGESTED_COMMISSION[path[0]?.label ?? ""] ?? DEFAULT_COMMISSION_RANGE;
+
+  // Paylaşım önizlemesi: yayınlandığında ortakların kullanacağı hazır metinler
+  // (WhatsApp/Instagram/TikTok). Yayından önce görülür + kopyalanabilir.
+  const sharePreview = useMemo(() => autoFillListing({
+    title: String(values.title ?? leafLabel).trim() || leafLabel || "Ürün",
+    category: leafLabel || path[0]?.label || "Genel",
+    price: priceNum,
+    commission: commissionType === "rate" ? Number(commissionValue) || 0 : 0,
+    currency
+  }).shareTemplates, [values.title, leafLabel, path, priceNum, commissionType, commissionValue, currency]);
+
+  const copyShare = async (text: string) => {
+    try { await Clipboard.setStringAsync(text); setShareCopied(true); setTimeout(() => setShareCopied(false), 1800); } catch { /* pano yoksa sessiz geç */ }
+  };
   const missingFields = useMemo(() => (schema ? schema.fields.filter((f) => {
     if (!f.required) return false;
     const val = values[f.key];
@@ -98,6 +165,59 @@ export function DesktopCreateFlow() {
     // path/formKey değişince yeniden türet
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formKey, pathKey]);
+
+  // ---- Taslak (yarım kalan ilan) otomatik kaydetme/geri-yükleme ----
+  // İlk açılışta cihazdaki taslağı oku; kategori seçilmişse "devam et?" banner'ı göster.
+  useEffect(() => {
+    let alive = true;
+    AsyncStorage.getItem(DRAFT_KEY).then((raw) => {
+      if (!alive) return;
+      setDraftReady(true);
+      if (!raw) return;
+      try {
+        const d = JSON.parse(raw) as DraftShape;
+        if (!d?.savedAt || Date.now() - d.savedAt > DRAFT_TTL_MS) { void AsyncStorage.removeItem(DRAFT_KEY); return; }
+        if (Array.isArray(d.path) && d.path.length) setPendingDraft(d);
+      } catch { void AsyncStorage.removeItem(DRAFT_KEY); }
+    }).catch(() => setDraftReady(true));
+    return () => { alive = false; };
+  }, []);
+
+  // Değişiklikleri cihaza yaz (debounce). Sadece kategori seçilip form başladıysa ve
+  // ilk yükleme bittiyse — böylece boş/eski taslağın üzerine hemen yazılmaz.
+  useEffect(() => {
+    if (!draftReady || !path.length || publishing) return;
+    const draft: DraftShape = {
+      savedAt: Date.now(), step,
+      path: path.map((p) => ({ key: p.key, label: p.label, slug: p.slug, formKey: p.formKey, image: p.image })),
+      values, images, loc, visibility, currency, commissionType, commissionValue,
+      bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod
+    };
+    const h = setTimeout(() => { void AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); }, 700);
+    return () => clearTimeout(h);
+  }, [draftReady, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, step, publishing]);
+
+  const clearDraft = () => { setPendingDraft(null); void AsyncStorage.removeItem(DRAFT_KEY); };
+
+  const restoreDraft = () => {
+    const d = pendingDraft;
+    if (!d) return;
+    setPath((d.path as CategoryNode[]) ?? []);
+    setValues(d.values ?? {});
+    setImages(d.images ?? []);
+    setLoc(d.loc ?? {});
+    if (d.visibility) setVisibility(d.visibility);
+    if (d.currency) setCurrency(d.currency);
+    if (d.commissionType) setCommissionType(d.commissionType);
+    if (d.commissionValue) setCommissionValue(d.commissionValue);
+    setBonusAmount(d.bonusAmount ?? "");
+    setBonusQuota(d.bonusQuota ?? "");
+    if (d.partnershipMode) setPartnershipMode(d.partnershipMode);
+    setPartnerNote(d.partnerNote ?? "");
+    if (d.contactMethod) setContactMethod(d.contactMethod);
+    setStep(typeof d.step === "number" ? d.step : 1);
+    setPendingDraft(null);
+  };
 
   async function pickFromGallery() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -264,6 +384,9 @@ export function DesktopCreateFlow() {
         contactMethod
       }, statusOverride);
 
+      // İlan oluşturuldu → yarım-kalan taslağı sil (tekrar "devam et?" çıkmasın).
+      void AsyncStorage.removeItem(DRAFT_KEY);
+
       if (verdict === "review") {
         // İnceleme gerektiren ilan: kullanıcıya bilgi ver, ardından yönlendir.
         setNotice(MODERATION_MESSAGES.review);
@@ -299,6 +422,23 @@ export function DesktopCreateFlow() {
         <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Yeni ilan oluştur", language)}</Text>
         <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Kategorini seç, sana özel form açılsın. Ortak satışa açarak ortakların ürününü kendi kitlesine yaysın.", language)}</Text>
       </View>
+
+      {/* Yarım kalan taslak — "kaldığın yerden devam et" */}
+      {pendingDraft ? (
+        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 12, padding: 14 }}>
+          <MaterialCommunityIcons name="content-save-edit-outline" size={20} color={colors.primaryDark} />
+          <View style={{ flex: 1, gap: 2, minWidth: 180 }}>
+            <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Yarım kalan bir ilanın var", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{(pendingDraft.path?.map((p) => translateCopy(p.label, language)).join(" › ") || translateCopy("Taslak", language))} · {translateCopy("kaldığın yerden devam edebilirsin", language)}</Text>
+          </View>
+          <Pressable onPress={restoreDraft} style={{ backgroundColor: colors.primary, borderRadius: 999, paddingHorizontal: 16, paddingVertical: 9 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Devam et", language)}</Text>
+          </Pressable>
+          <Pressable onPress={clearDraft} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 9 }}>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Yeni başla", language)}</Text>
+          </Pressable>
+        </View>
+      ) : null}
 
       {/* Stepper */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -444,6 +584,54 @@ export function DesktopCreateFlow() {
               </View>
             </View>
 
+            {/* Kategoriye göre önerilen komisyon aralığı — bilgi amaçlı, tek tıkla uygula. */}
+            {commissionType === "rate" ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
+                <MaterialCommunityIcons name="lightbulb-on-outline" size={15} color={colors.primaryDark} />
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
+                  {translateCopy(path[0]?.label ? `${path[0].label} için önerilen komisyon` : "Önerilen komisyon", language)}: <Text style={{ color: colors.ink, fontWeight: "900" }}>%{suggestedRange[0]}–%{suggestedRange[1]}</Text>
+                </Text>
+                <View style={{ flex: 1 }} />
+                {[suggestedRange[0], Math.round((suggestedRange[0] + suggestedRange[1]) / 2), suggestedRange[1]].map((v) => (
+                  <Pressable key={v} onPress={() => setCommissionValue(String(v))} style={{ backgroundColor: Number(commissionValue) === v ? colors.primary : colors.surface, borderColor: Number(commissionValue) === v ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 5 }}>
+                    <Text style={{ color: Number(commissionValue) === v ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "900" }}>%{v}</Text>
+                  </Pressable>
+                ))}
+              </View>
+            ) : null}
+
+            {/* Canlı kazanç hesaplayıcı: fiyattan ortak kazancını ve satıcıya kalanı göster. */}
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, padding: 14 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                <MaterialCommunityIcons name="calculator-variant-outline" size={16} color={colors.primaryDark} />
+                <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Kazanç hesabı", language)}</Text>
+              </View>
+              {priceNum > 0 ? (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                  <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 10, flex: 1, gap: 3, minWidth: 130, padding: 11 }}>
+                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Satış fiyatı", language)}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{moneyIn(priceNum, currency)}</Text>
+                  </View>
+                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, flex: 1, gap: 3, minWidth: 130, padding: 11 }}>
+                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>{translateCopy("Ortak kazancı (satış başına)", language)}</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 16, fontWeight: "900" }}>{moneyIn(perSaleCommission, currency)}</Text>
+                  </View>
+                  <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 10, flex: 1, gap: 3, minWidth: 130, padding: 11 }}>
+                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Sana kalan", language)}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{moneyIn(Math.max(0, priceNum - perSaleCommission), currency)}</Text>
+                  </View>
+                </View>
+              ) : (
+                <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{translateCopy("Kazanç hesabını görmek için 2. adımda fiyat gir.", language)}</Text>
+              )}
+              {Number(bonusAmount) > 0 && Number(bonusQuota) > 0 && priceNum > 0 ? (
+                <Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "800" }}>
+                  {translateCopy("Bonus dahil ilk", language)} {Number(bonusQuota)} {translateCopy("satışta ortak toplam", language)}: {moneyIn((perSaleCommission + Number(bonusAmount)) * Number(bonusQuota), currency)}
+                </Text>
+              ) : null}
+              <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("Ortaksat para tutmaz; ödeme satıcı ile ortak arasında yapılır. Rakamlar bilgilendirme amaçlıdır.", language)}</Text>
+            </View>
+
             {/* Teşvik bonusu (opsiyonel): ilk N satışa komisyon üstüne ek ödül. */}
             <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
@@ -531,6 +719,29 @@ export function DesktopCreateFlow() {
                 <PreviewRow label={translateCopy("Ortaklık", language)} value={partnershipMode === "open" ? translateCopy("Herkese açık", language) : partnershipMode === "approval" ? translateCopy("Onaylı", language) : translateCopy("Davetle", language)} />
                 {missingFields.length ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>Eksik zorunlu alan: {missingFields.map((f) => f.label).join(", ")}</Text> : <Text style={{ color: colors.success, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("✓ Tüm zorunlu alanlar dolu", language)}</Text>}
               </View>
+            </View>
+
+            {/* Paylaşım önizlemesi — yayınlandığında ortakların kullanacağı hazır metinler. */}
+            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, padding: 14 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                <MaterialCommunityIcons name="share-variant-outline" size={16} color={colors.primaryDark} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Paylaşım metni önizlemesi", language)}</Text>
+                {shareCopied ? <Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Kopyalandı ✓", language)}</Text> : null}
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("İlanın yayınlandığında ortaklar bu hazır metinlerle paylaşabilir. Şimdiden kopyalayabilirsin.", language)}</Text>
+              {([["whatsapp", "WhatsApp", sharePreview.whatsapp], ["instagram", "Instagram", sharePreview.instagram], ["tiktok", "TikTok", sharePreview.tiktok]] as const).map(([k, lbl, text]) => (
+                <View key={k} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, gap: 6, padding: 11 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                    <MaterialCommunityIcons name={k === "whatsapp" ? "whatsapp" : k === "instagram" ? "instagram" : "music-note"} size={14} color={colors.primary} />
+                    <Text style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "900" }}>{lbl}</Text>
+                    <Pressable onPress={() => void copyShare(text)} accessibilityRole="button" accessibilityLabel={`${lbl} ${translateCopy("metnini kopyala", language)}`} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 4 }}>
+                      <MaterialCommunityIcons name="content-copy" size={12} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>{translateCopy("Kopyala", language)}</Text>
+                    </Pressable>
+                  </View>
+                  <Text selectable style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{text}</Text>
+                </View>
+              ))}
             </View>
           </View>
         ) : null}
