@@ -4,7 +4,9 @@ import { Image } from "expo-image";
 import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Alert, Linking, Modal, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Linking, Modal, Platform, Pressable, ScrollView, Share, Text, TextInput, View, useWindowDimensions } from "react-native";
+
+import { Alert } from "@/lib/alert";
 
 import { describeAttributes, findCategorySlug } from "@/lib/category-tree";
 import { useCompare } from "@/lib/compare";

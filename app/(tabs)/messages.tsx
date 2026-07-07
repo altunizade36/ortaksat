@@ -490,6 +490,7 @@ function MessagesScreenInner() {
                   {/* Aksiyonlar */}
                   <View style={{ gap: 2 }}>
                     <DeskActionRow icon="handshake-outline" title={translateCopy("Ortaklık öner", language)} sub={translateCopy("Bu ilan için ortaklık teklifi gönder", language)} onPress={() => setDraft(translateCopy("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?", language))} />
+                    <DeskActionRow icon="shield-check-outline" title={translateCopy("Güvenli anlaşma taslağı", language)} sub={translateCopy("Ödeme/teslimat/komisyon şartlarını mesajda netleştir", language)} onPress={() => setDraft(safeDealDraft)} />
                     <DeskActionRow icon="tag-outline" title={translateCopy("Fiyat teklifi gönder", language)} sub={translateCopy("Composer'a teklif taslağı ekler", language)} onPress={insertPriceOffer} />
                     <DeskActionRow icon="archive-outline" title={archivedIds.includes(activeConversation.id) ? translateCopy("Arşivden çıkar", language) : translateCopy("Sohbeti arşivle", language)} sub={translateCopy("Görüşmeyi gelen kutusundan gizle", language)} onPress={() => toggleArchive(activeConversation.id)} />
                     <DeskActionRow icon="flag-outline" title={translateCopy("Şikayet et", language)} sub={translateCopy("Bu ilanı veya kullanıcıyı bildir", language)} href="/trust" />
@@ -735,17 +736,6 @@ function ConversationTrustCard({
           </View>
         ))}
       </View>
-    </View>
-  );
-}
-
-function MiniSignal({ icon, label, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone?: "ok" | "warn" }) {
-  const tint = tone === "warn" ? colors.warningSoft : tone === "ok" ? colors.successSoft : colors.surfaceAlt;
-  const color = tone === "warn" ? colors.warning : tone === "ok" ? colors.success : colors.muted;
-  return (
-    <View style={{ alignItems: "center", backgroundColor: tint, borderColor: tone ? color : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 28, paddingHorizontal: 9 }}>
-      <MaterialCommunityIcons name={icon} size={13} color={color} />
-      <Text numberOfLines={1} style={{ color: tone ? color : colors.ink, fontSize: 11.5, fontWeight: "800", maxWidth: 150 }}>{label}</Text>
     </View>
   );
 }

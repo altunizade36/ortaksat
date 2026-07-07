@@ -109,16 +109,6 @@ function ChatScreenInner() {
   }
 
   const currentConversation = conversation;
-  const context = buildChatContext({
-    conversation: currentConversation,
-    currentUserId: currentUser.id,
-    findUser,
-    leads,
-    messages,
-    partnerships,
-    sales,
-    language
-  });
   const quickReplies = buildQuickReplies(contextSeedForReplies(conversationMessages));
   const conversationRisk = scanChatRisk([...conversationMessages.map((item) => item.body), body].filter(Boolean).join(" "));
   const draftRisk = scanChatRisk(body);
@@ -298,6 +288,22 @@ function ChatScreenInner() {
           <MaterialCommunityIcons name="shield-alert-outline" size={16} color={colors.warning} />
           <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{translateCopy("Hassas ödeme veya site dışı iletişim ifadesi algılandı. Şartları mesaj içinde netleştir.", language)}</Text>
         </View>
+      ) : null}
+
+      {/* Hızlı yanıt önerileri — kutu boşken bağlama göre (stok/fiyat/teslimat/ödeme)
+          hazır cevaplar + "güvenli anlaşma" şablonu. Tıklayınca mesaj kutusuna yazılır. */}
+      {!body.trim() ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingVertical: 8 }} style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, maxHeight: 52 }}>
+          <Pressable onPress={() => setBody(safeDealDraft)} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+            <MaterialCommunityIcons name="shield-check-outline" size={13} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Güvenli anlaşma", language)}</Text>
+          </Pressable>
+          {quickReplies.map((reply) => (
+            <Pressable key={reply} onPress={() => setBody(reply)} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+              <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{translateCopy(reply, language)}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
       ) : null}
 
       <View style={{ alignItems: "flex-end", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, paddingBottom: insets.bottom > 0 ? insets.bottom : 10, paddingHorizontal: 10, paddingTop: 10 }}>

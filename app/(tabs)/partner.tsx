@@ -3,7 +3,9 @@ import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Alert, Linking, Platform, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
+import { Linking, Platform, Pressable, ScrollView, Share, Text, TextInput, View } from "react-native";
+
+import { Alert } from "@/lib/alert";
 
 import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";
@@ -118,7 +120,16 @@ export default function PartnerScreen() {
   const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id);
 
   function onJoin(listingId: string) {
-    const result = joinListing(listingId, { note: "Ortak satış panelinden başvuru.", shareChannel: "Instagram ve WhatsApp", audience: "Kendi çevrem ve sosyal medya", platformHandle: "", reachEstimate: 250 });
+    const listing = listings.find((l) => l.id === listingId);
+    // Onay/davet modu: satıcı gerçek başvuru bilgisi görmeli — uydurma sabit metin
+    // GÖNDERME. Kullanıcıyı ilan detayındaki gerçek başvuru formuna yönlendir
+    // (kanal/erişim/kitle/handle alanları orada doldurulur).
+    if (listing && listing.partnershipMode !== "open") {
+      router.push({ pathname: "/listing/[id]", params: { id: listingId, apply: "1" } });
+      return;
+    }
+    // Açık mod: başvuru gerekmez, anında ortak ol.
+    const result = joinListing(listingId);
     const ok = Boolean(result);
     Alert.alert(
       translateCopy(ok ? (result?.status === "active" ? "Ortaklık aktif" : "Başvuru gönderildi") : "İşlem yapılamadı", language),

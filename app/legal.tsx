@@ -1,7 +1,9 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+
+import { Alert } from "@/lib/alert";
 
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
