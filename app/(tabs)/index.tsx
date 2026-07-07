@@ -8,6 +8,7 @@ import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshCo
 import { colors } from "@/components/colors";
 import { HomeDesktop } from "@/components/home-desktop";
 import { ListingCard } from "@/components/listing-card";
+import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SkeletonGrid } from "@/components/skeleton";
 import { getRecent } from "@/lib/recent";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -34,7 +35,7 @@ export default function HomeScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const params = useLocalSearchParams<{ q?: string }>();
-  const { categoryTree, currentUser, findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceInitialLoading, refreshMarketplace } = useStore();
+  const { categoryTree, currentUser, findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceInitialLoading, marketplaceLoadFailed, refreshMarketplace, retryMarketplace } = useStore();
   const query = params.q ?? "";
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sortMode, setSortMode] = useState<SortMode>("featured");
@@ -337,6 +338,8 @@ export default function HomeScreen() {
           >
             {visibleListings.length === 0 && marketplaceInitialLoading ? (
               <SkeletonGrid count={6} cardWidth={cardWidth} gap={columnGap} />
+            ) : visibleListings.length === 0 && marketplaceLoadFailed ? (
+              <MarketplaceRetry onRetry={retryMarketplace} />
             ) : (
               visibleListings.map((listing) => (
                 <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} />

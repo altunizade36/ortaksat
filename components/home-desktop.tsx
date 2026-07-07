@@ -10,6 +10,7 @@ import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import type { CategoryNode } from "@/lib/category-tree";
 import { commissionAmount, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { Skeleton } from "@/components/skeleton";
 import { getRecent } from "@/lib/recent";
 import { displayText } from "@/lib/text";
@@ -45,7 +46,7 @@ const HERO_FLOAT: Array<{ img: string; dx: number; dy: number }> = [
 export function HomeDesktop() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { categoryTree, listings, isFavorite, toggleFavorite, marketplaceInitialLoading } = useStore();
+  const { categoryTree, listings, isFavorite, toggleFavorite, marketplaceInitialLoading, marketplaceLoadFailed, retryMarketplace } = useStore();
 
   const active = useMemo(() => listings.filter((l) => l.status === "active"), [listings]);
   const today = new Date().toISOString().slice(0, 10);
@@ -439,6 +440,9 @@ export function HomeDesktop() {
               </View>
             ))}
           </View>
+        ) : grid.length === 0 && active.length === 0 && marketplaceLoadFailed ? (
+          // Yükleme başarısız → "Henüz ilan yok" YERİNE yeniden-dene (yanıltıcı olmasın).
+          <MarketplaceRetry onRetry={retryMarketplace} />
         ) : grid.length === 0 && active.length === 0 ? (
           // Katalogda hiç ilan yok → ilk-ilan çağrısı (mobil ile tutarlı).
           <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 44 }}>

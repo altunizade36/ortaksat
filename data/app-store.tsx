@@ -197,8 +197,11 @@ type AppStore = {
   marketplaceHasMore: boolean;
   marketplaceLoadingMore: boolean;
   marketplaceInitialLoading: boolean;
+  // İlk yükleme başarısız oldu (ağ/sunucu) → boş sayfa yerine "yeniden dene" göster.
+  marketplaceLoadFailed: boolean;
   loadMoreMarketplace: () => void;
   refreshMarketplace: () => Promise<void>;
+  retryMarketplace: () => Promise<void>;
   // Kritik akış yazımı canlıda başarısız olduğunda dolan görünür hata (UI Alert gösterir).
   syncError: string | null;
   clearSyncError: () => void;
@@ -423,6 +426,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [marketplaceLoadingMore, setMarketplaceLoadingMore] = useState(false);
   // İlk ilan yüklemesi sürerken skeleton göstermek için (yalnız canlı modda).
   const [marketplaceInitialLoading, setMarketplaceInitialLoading] = useState(isSupabaseConfigured);
+  // İlk yükleme başarısız (snapshot null / ağ hatası) → "yeniden dene" durumu.
+  const [marketplaceLoadFailed, setMarketplaceLoadFailed] = useState(false);
   // Kritik akışlarda arka plan Supabase yazımı başarısız olursa kullanıcıya gösterilecek hata.
   const [syncError, setSyncError] = useState<string | null>(null);
   const [blogPosts, setBlogPosts] = useState<DbBlogPost[]>([]);
@@ -449,28 +454,45 @@ export function StoreProvider({ children }: PropsWithChildren) {
 
     async function hydrateFromSupabase() {
       if (!isSupabaseConfigured) return;
-      const snapshot = await loadMarketplaceSnapshot();
-      if (!mounted || !snapshot) {
+      try {
+        const snapshot = await loadMarketplaceSnapshot();
+        if (!mounted) return;
+        if (!snapshot) {
+          // Ağ/sunucu hatası veya boş yanıt → boş sayfa yerine "yeniden dene".
+          setMarketplaceLoadFailed(true);
+          return;
+        }
+        // Canlı: yalnızca gerçek Supabase verisi (demo/mock birleştirme yok).
+        setMarketplaceLoadFailed(false);
+        setUsers(snapshot.users);
+        setListings(snapshot.listings);
+        mpOffsetRef.current = snapshot.listings.length;
+        setMarketplaceHasMore(snapshot.listings.length >= 90);
+        setBackendMode("supabase");
+        // İkincil veriler (ayar/blog/kategori): biri hata verse bile ilanlar yüklendi;
+        // her birini ayrı sararak birinin hatası diğerlerini engellemesin.
+        const settings = await loadPlatformSettings().catch(() => null);
+        if (mounted && settings) setPlatformSettings(settings);
+        const [posts, pages, seo, cats, hidden] = await Promise.all([
+          loadBlogPosts().catch(() => []),
+          loadContentPages().catch(() => []),
+          loadSeoSettings().catch(() => null),
+          loadCategories().catch(() => []),
+          fetchHiddenCategories().catch(() => [])
+        ]);
+        if (!mounted) return;
+        setBlogPosts(posts);
+        setContentPages(pages);
+        if (seo) setSeoSettings(seo);
+        setExtraCategories(cats);
+        setHiddenCategoriesModule(hidden);
+        setHiddenCategoriesState(hidden);
+      } catch {
+        if (mounted) setMarketplaceLoadFailed(true);
+      } finally {
+        // Ne olursa olsun skeleton'ı kapat — sonsuz yükleme yaşanmasın.
         if (mounted) setMarketplaceInitialLoading(false);
-        return;
       }
-      // Canlı: yalnızca gerçek Supabase verisi (demo/mock birleştirme yok).
-      setUsers(snapshot.users);
-      setListings(snapshot.listings);
-      setMarketplaceInitialLoading(false);
-      mpOffsetRef.current = snapshot.listings.length;
-      setMarketplaceHasMore(snapshot.listings.length >= 90);
-      setBackendMode("supabase");
-      const settings = await loadPlatformSettings();
-      if (mounted && settings) setPlatformSettings(settings);
-      const [posts, pages, seo, cats, hidden] = await Promise.all([loadBlogPosts(), loadContentPages(), loadSeoSettings(), loadCategories(), fetchHiddenCategories()]);
-      if (!mounted) return;
-      setBlogPosts(posts);
-      setContentPages(pages);
-      setSeoSettings(seo);
-      setExtraCategories(cats);
-      setHiddenCategoriesModule(hidden);
-      setHiddenCategoriesState(hidden);
     }
 
     hydrateFromSupabase();
@@ -1861,6 +1883,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       marketplaceHasMore,
       marketplaceLoadingMore,
       marketplaceInitialLoading,
+      marketplaceLoadFailed,
       loadMoreMarketplace() {
         if (!isSupabaseConfigured || !marketplaceHasMore || marketplaceLoadingMore) return;
         setMarketplaceLoadingMore(true);
@@ -1891,10 +1914,31 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (!isSupabaseConfigured) return;
         const snapshot = await loadMarketplaceSnapshot();
         if (!snapshot) return;
+        setMarketplaceLoadFailed(false);
         setUsers(snapshot.users);
         setListings(snapshot.listings);
         mpOffsetRef.current = snapshot.listings.length;
         setMarketplaceHasMore(snapshot.listings.length >= 90);
+      },
+      // İlk yükleme başarısızsa "Yeniden dene" düğmesinin çağırdığı retry: skeleton'ı
+      // tekrar aç, snapshot'ı yeniden çek; yine başarısızsa fail durumunu koru.
+      async retryMarketplace() {
+        if (!isSupabaseConfigured) return;
+        setMarketplaceInitialLoading(true);
+        setMarketplaceLoadFailed(false);
+        try {
+          const snapshot = await loadMarketplaceSnapshot();
+          if (!snapshot) { setMarketplaceLoadFailed(true); return; }
+          setUsers(snapshot.users);
+          setListings(snapshot.listings);
+          mpOffsetRef.current = snapshot.listings.length;
+          setMarketplaceHasMore(snapshot.listings.length >= 90);
+          setBackendMode("supabase");
+        } catch {
+          setMarketplaceLoadFailed(true);
+        } finally {
+          setMarketplaceInitialLoading(false);
+        }
       },
       findConversation(id) {
         return conversationById.get(id);
@@ -1912,7 +1956,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return favorites.some((item) => item.listingId === listingId && item.userId === currentUser.id);
       }
     };
-  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, hiddenCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, messages, notifications, orders, partnerships, pendingVerifyEmail, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
+  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, hiddenCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, marketplaceLoadFailed, messages, notifications, orders, partnerships, pendingVerifyEmail, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
