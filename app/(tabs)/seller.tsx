@@ -294,6 +294,15 @@ export default function SellerScreen() {
             </PrimaryButton>
           </View>
         </View>
+        {/* Toplu yükleme: çok ürünü olan satıcılar için CSV ile toplu ilan. */}
+        <Pressable onPress={() => router.push("/toplu-ilan")} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 11 })}>
+          <MaterialCommunityIcons name="file-upload-outline" size={17} color={colors.primaryDark} />
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Toplu ilan yükle (CSV)", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("Yüzlerce ürünü tek seferde — kategori/il eşleme + admin onayı", language)}</Text>
+          </View>
+          <MaterialCommunityIcons name="chevron-right" size={18} color={colors.muted} />
+        </Pressable>
       </Card>
 
       <Card>

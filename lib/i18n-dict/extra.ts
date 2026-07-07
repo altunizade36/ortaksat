@@ -53,5 +53,21 @@ export const extraDict: Record<string, string> = {
   "Talebi gönder": "Send request",
   "Doğrulama talebin alındı": "Verification request received",
   "Ekibimiz en kısa sürede inceleyecek. Ek belge gerekirse iletişim üzerinden ulaşırız.": "Our team will review it shortly. If extra documents are needed, we'll reach out via contact.",
-  "İletişime geç": "Contact us"
+  "İletişime geç": "Contact us",
+  "Toplu ilan yükleme": "Bulk listing upload",
+  "Toplu ilan yükle (CSV)": "Bulk upload listings (CSV)",
+  "Yüzlerce ürünü tek seferde — kategori/il eşleme + admin onayı": "Hundreds of products at once — category/province mapping + admin approval",
+  "Yüzlerce ürünü tek tek girmek yerine CSV ile yükle. Kategori ve il otomatik eşlenir, komisyonu toplu belirlersin. İlanlar admin onayından sonra yayına alınır.": "Instead of entering products one by one, upload via CSV. Category and province are auto-matched, set commission in bulk. Listings go live after admin approval.",
+  "Şablonu kullan": "Use the template",
+  "Şablonu kopyala": "Copy template",
+  "CSV yapıştır": "Paste CSV",
+  "Ayrıştır ve önizle": "Parse and preview",
+  "Komisyonu toplu belirle (%) — opsiyonel": "Set commission in bulk (%) — optional",
+  "Toplu fotoğraf (sıralı) — opsiyonel": "Bulk photos (in order) — optional",
+  "Galeriden seç": "Choose from gallery",
+  "Önizleme": "Preview",
+  "geçerli": "valid",
+  "Toplu yüklenen ilanlar YAYINA ALINMADAN önce admin onayına düşer. Onaylananlar pazara çıkar.": "Bulk-uploaded listings go to admin approval BEFORE publishing. Approved ones go to the market.",
+  "ilanı onaya gönder": "listings for approval",
+  "Toplu ilan için giriş yapın": "Sign in for bulk upload"
 };

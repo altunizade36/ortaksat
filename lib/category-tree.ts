@@ -1376,6 +1376,27 @@ export function topCategories(): CategoryNode[] {
 
 /** Bir kategori etiketinin (ör. bir ilanın category alanı) landing slug'ını bulur.
  *  Ağaçta etikete göre DFS; bulunamazsa undefined (çağıran genel sayfaya düşer). */
+// Serbest metinden (CSV/toplu yükleme) kategori adını ağaçtaki bir düğüme eşler.
+// Önce tam (normalize) eşleşme, sonra "içeren" eşleşme. path + node döner (formKey
+// çözümü ve kapak görseli için). Bulamazsa undefined.
+export function matchCategoryByName(name: string): { node: CategoryNode; path: CategoryNode[] } | undefined {
+  const norm = (s: string) => s.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
+  const target = norm(name);
+  if (!target) return undefined;
+  const flat: Array<{ node: CategoryNode; path: CategoryNode[] }> = [];
+  const walk2 = (nodes: CategoryNode[], path: CategoryNode[]) => {
+    for (const n of nodes) {
+      const p = [...path, n];
+      flat.push({ node: n, path: p });
+      if (n.children) walk2(n.children, p);
+    }
+  };
+  walk2(categoryTree, []);
+  let hit = flat.find((f) => norm(f.node.label) === target);
+  if (!hit) hit = flat.find((f) => { const l = norm(f.node.label); return l.includes(target) || target.includes(l); });
+  return hit;
+}
+
 export function findCategorySlug(label: string): string | undefined {
   const walk = (nodes: CategoryNode[]): string | undefined => {
     for (const n of nodes) {

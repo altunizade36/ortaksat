@@ -286,7 +286,7 @@ function ProfileEditScreenInner() {
                 </View>
                 <View style={{ flexDirection: "row", gap: 14 }}>
                   <View style={{ flex: 1 }}><DeskField label={translateCopy("Ad soyad / mağaza adı", language)} value={name} onChangeText={setName} icon="account-outline" /></View>
-                  <View style={{ flex: 1 }}><DeskField label={translateCopy("Telefon", language)} value={phone} onChangeText={setPhone} icon="phone-outline" /></View>
+                  <View style={{ flex: 1 }}><DeskField label={translateCopy("Telefon", language)} value={phone} onChangeText={setPhone} icon="phone-outline" keyboardType="phone-pad" /></View>
                 </View>
                 <DeskField label={translateCopy("Bio", language)} value={bio} onChangeText={setBio} icon="text-account" multiline />
                 <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Rol, puan, yanıt oranı ve doğrulama durumu güvenlik nedeniyle elle değiştirilemez.", language)}</Text>
@@ -559,7 +559,7 @@ function LoginHistoryCard({ history, loading, isLive, onRefresh, onSignOutAll, s
   );
 }
 
-function DeskField({ icon, label, multiline, onChangeText, placeholder, secure, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; multiline?: boolean; onChangeText: (v: string) => void; placeholder?: string; secure?: boolean; value: string }) {
+function DeskField({ icon, keyboardType, label, multiline, onChangeText, placeholder, secure, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; keyboardType?: "default" | "phone-pad" | "email-address"; label: string; multiline?: boolean; onChangeText: (v: string) => void; placeholder?: string; secure?: boolean; value: string }) {
   return (
     <View style={{ gap: 6 }}>
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
@@ -570,6 +570,7 @@ function DeskField({ icon, label, multiline, onChangeText, placeholder, secure, 
           onChangeText={onChangeText}
           multiline={multiline}
           secureTextEntry={secure}
+          keyboardType={keyboardType}
           placeholder={placeholder}
           placeholderTextColor={colors.subtle}
           style={{ color: colors.ink, flex: 1, fontSize: 14, minHeight: multiline ? 90 : 46, paddingVertical: 10, textAlignVertical: multiline ? "top" : "center" }}
