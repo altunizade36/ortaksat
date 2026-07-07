@@ -16,25 +16,28 @@ const SETTING_COLUMN: Record<string, string> = {
 };
 
 /** Kullanici rolunu gunceller (yalniz admin; RLS harden_profile_roles uygular). */
-export async function updateUserRoleLive(userId: string, role: string) {
-  if (!supabase) return;
+export async function updateUserRoleLive(userId: string, role: string): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase.from("profiles").update({ role }).eq("id", userId);
-  if (error) console.warn("User role update failed", error);
+  if (error) { console.warn("User role update failed", error); return false; }
+  return true;
 }
 
 /** Kullanici durumunu gunceller (active/suspended/deleted; yalniz admin). */
-export async function updateUserStatusLive(userId: string, status: string) {
-  if (!supabase) return;
+export async function updateUserStatusLive(userId: string, status: string): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase.from("profiles").update({ status }).eq("id", userId);
-  if (error) console.warn("User status update failed", error);
+  if (error) { console.warn("User status update failed", error); return false; }
+  return true;
 }
 
 /** Kullanici dogrulama rozetini (telefon/kimlik) admin manuel gunceller. */
-export async function updateUserVerificationLive(userId: string, field: "verifiedPhone" | "verifiedIdentity", value: boolean) {
-  if (!supabase) return;
+export async function updateUserVerificationLive(userId: string, field: "verifiedPhone" | "verifiedIdentity", value: boolean): Promise<boolean> {
+  if (!supabase) return true;
   const column = field === "verifiedPhone" ? "verified_phone" : "verified_identity";
   const { error } = await supabase.from("profiles").update({ [column]: value }).eq("id", userId);
-  if (error) console.warn("User verification update failed", error);
+  if (error) { console.warn("User verification update failed", error); return false; }
+  return true;
 }
 
 /** Referans linki tiklamasini kaydeder (anonim; RLS public insert). */
@@ -145,17 +148,19 @@ export async function insertBulkNotifications(rows: Array<{ id: string; userId: 
 }
 
 /** Ilani one cikar/geri al (admin; RLS uygular). */
-export async function updateListingFeaturedLive(listingId: string, featured: boolean) {
-  if (!supabase) return;
+export async function updateListingFeaturedLive(listingId: string, featured: boolean): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase.from("listings").update({ featured }).eq("id", listingId);
-  if (error) console.warn("Listing featured update failed", error);
+  if (error) { console.warn("Listing featured update failed", error); return false; }
+  return true;
 }
 
 /** Ilani kalici siler (sahibi veya admin; RLS uygular). Iliskili kayitlar FK cascade ile temizlenir. */
-export async function deleteListingLive(listingId: string) {
-  if (!supabase) return;
+export async function deleteListingLive(listingId: string): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase.from("listings").delete().eq("id", listingId);
-  if (error) console.warn("Listing delete failed", error);
+  if (error) { console.warn("Listing delete failed", error); return false; }
+  return true;
 }
 
 /** Ekstra kategori ekle/guncelle (admin). key uniq -> upsert. */
@@ -663,10 +668,11 @@ export async function updateSaleStatusLive(sale: Sale): Promise<boolean> {
   return true;
 }
 
-export async function updateListingStatusLive(listing: Listing) {
-  if (!supabase) return;
+export async function updateListingStatusLive(listing: Listing): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase.from("listings").update({ status: listing.status }).eq("id", listing.id);
-  if (error) console.warn("Supabase listing status update failed", error);
+  if (error) { console.warn("Supabase listing status update failed", error); return false; }
+  return true;
 }
 
 export async function updateListingInventoryLive(listing: Pick<Listing, "id" | "status" | "stockCount">) {

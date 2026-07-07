@@ -858,6 +858,13 @@ export function StoreProvider({ children }: PropsWithChildren) {
         .then((ok) => { if (!ok) { rollback(); setSyncError(message); } })
         .catch(() => { rollback(); setSyncError(message); });
     }
+    // Rollback'i karmaşık/gereksiz olan (ör. admin moderasyonu — sahip reload'da
+    // gerçeği görür) yazımlar için: hata olursa yalnız görünür uyarı göster.
+    function persistOrWarn(write: Promise<boolean>, message: string) {
+      write
+        .then((ok) => { if (!ok) setSyncError(message); })
+        .catch(() => setSyncError(message));
+    }
 
     return {
       backendMode,
@@ -1620,12 +1627,18 @@ export function StoreProvider({ children }: PropsWithChildren) {
       addCategorySuggestion(input) {
         const suggestion: CategorySuggestion = { id: newId("cs", liveUser), userId: currentUser.id, userName: currentUser.name, suggestedPath: input.suggestedPath, note: input.note, listingId: input.listingId, status: "pending", createdAt: today() };
         setCategorySuggestions((items) => [suggestion, ...items]);
-        if (liveUser) void insertCategorySuggestion(suggestion);
+        // Öneri DB'ye yazılamazsa geri al + hata göster (kullanıcı "gönderildi" sanıp
+        // önerisini kaybetmesin).
+        if (liveUser) persistCritical(insertCategorySuggestion(suggestion), () => {
+          setCategorySuggestions((items) => items.filter((s) => s.id !== suggestion.id));
+        }, "Öneri gönderilemedi. Lütfen tekrar dene.");
       },
       addLocationSuggestion(input) {
         const suggestion: LocationSuggestion = { id: newId("ls", liveUser), userId: currentUser.id, userName: currentUser.name, provinceId: input.provinceId, districtId: input.districtId, suggestedName: input.suggestedName, type: "neighborhood", note: input.note, status: "pending", createdAt: today() };
         setLocationSuggestions((items) => [suggestion, ...items]);
-        if (liveUser) void insertLocationSuggestion(suggestion);
+        if (liveUser) persistCritical(insertLocationSuggestion(suggestion), () => {
+          setLocationSuggestions((items) => items.filter((s) => s.id !== suggestion.id));
+        }, "Öneri gönderilemedi. Lütfen tekrar dene.");
       },
       setCategorySuggestionStatus(id, status) {
         setCategorySuggestions((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
@@ -1648,38 +1661,38 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // İlan sahibi veya admin/moderatör (moderasyon) değiştirebilir.
         if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return;
         setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status } : item)));
-        if (liveUser) void updateListingStatusLive({ ...listing, status });
+        if (liveUser) persistOrWarn(updateListingStatusLive({ ...listing, status }), "İlan durumu güncellenemedi. Lütfen tekrar dene.");
       },
       setListingFeatured(listingId, featured) {
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
         if (!isStaff) return;
         setListings((items) => items.map((item) => (item.id === listingId ? { ...item, featured } : item)));
-        if (liveUser) void updateListingFeaturedLive(listingId, featured);
+        if (liveUser) persistOrWarn(updateListingFeaturedLive(listingId, featured), "İlan öne çıkarma güncellenemedi.");
       },
       deleteListing(listingId) {
         const listing = listings.find((item) => item.id === listingId);
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
         if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return;
         setListings((items) => items.filter((item) => item.id !== listingId));
-        if (liveUser) void deleteListingLive(listingId);
+        if (liveUser) persistOrWarn(deleteListingLive(listingId), "İlan silinemedi. Lütfen tekrar dene.");
       },
       setUserRole(userId, role) {
         const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
         if (!isAdmin || userId === currentUser.id) return; // kendi rolunu degistirme
         setUsers((items) => items.map((item) => (item.id === userId ? { ...item, role } : item)));
-        if (liveUser) void updateUserRoleLive(userId, role);
+        if (liveUser) persistOrWarn(updateUserRoleLive(userId, role), "Kullanıcı rolü güncellenemedi.");
       },
       setUserStatus(userId, status) {
         const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
         if (!isAdmin || userId === currentUser.id) return;
         setUsers((items) => items.map((item) => (item.id === userId ? { ...item, status } : item)));
-        if (liveUser) void updateUserStatusLive(userId, status);
+        if (liveUser) persistOrWarn(updateUserStatusLive(userId, status), "Kullanıcı durumu güncellenemedi.");
       },
       setUserVerification(userId, field, value) {
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
         if (!isStaff) return;
         setUsers((items) => items.map((item) => (item.id === userId ? { ...item, [field]: value } : item)));
-        if (liveUser) void updateUserVerificationLive(userId, field, value);
+        if (liveUser) persistOrWarn(updateUserVerificationLive(userId, field, value), "Doğrulama güncellenemedi.");
       },
       adminNotifyUser(userId, title, body) {
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
