@@ -48,7 +48,9 @@ export function commissionText(listing: Listing) {
     return localize(`%${listing.commissionValue} komisyon`, `${listing.commissionValue}% commission`);
   }
 
-  return localize(`${money(listing.commissionValue)} komisyon`, `${money(listing.commissionValue)} commission`);
+  // Sabit komisyon: ilanın para birimiyle göster (money() her zaman ₺ verirdi).
+  const fixed = moneyIn(listing.commissionValue, listing.currency);
+  return localize(`${fixed} komisyon`, `${fixed} commission`);
 }
 
 export function commissionAmount(listing: Listing) {

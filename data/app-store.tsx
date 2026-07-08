@@ -260,7 +260,7 @@ type AppStore = {
   createListing: (input: NewListingInput, statusOverride?: Listing["status"]) => Listing;
   updateListing: (listingId: string, input: NewListingInput) => Promise<boolean>;
   createLead: (input: Omit<Lead, "id" | "createdAt" | "status">) => Lead | undefined;
-  createReview: (listingId: string, rating: number, comment: string) => Review;
+  createReview: (listingId: string, rating: number, comment: string) => Review | undefined;
   createSaleReview: (saleId: string, rating: number, comment: string) => Review | undefined;
   canReviewSale: (saleId: string) => boolean;
   createSaleFromLead: (leadId: string, input?: Partial<SaleFromLeadInput>) => Sale | undefined;
@@ -1395,6 +1395,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return lead;
       },
       createReview(listingId, rating, comment) {
+        const listing = listings.find((item) => item.id === listingId);
+        // Kendi ilanına yorum yasak + kullanıcı başına ilan başına tek yorum:
+        // sahte 5-yıldızla reviewCount/güven/rich-result puanı şişirilmesin.
+        if (!listing || listing.ownerId === currentUser.id) { setAuthError("Kendi ilanını değerlendiremezsin."); return undefined; }
+        if (reviews.some((item) => item.listingId === listingId && item.reviewerId === currentUser.id && item.type === "product")) {
+          setAuthError("Bu ilanı zaten değerlendirdin.");
+          return undefined;
+        }
         const review: Review = {
           id: newId("r", liveUser),
           listingId,
@@ -1418,7 +1426,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       canReviewSale(saleId) {
         const sale = sales.find((item) => item.id === saleId);
-        if (!sale || sale.status === "pending") return false;
+        // Yalnızca olumlu/kapanmış satışlar yorumlanabilir; iptal/anlaşmazlık/
+        // bekleyen/iade-penceresi durumları puan/güven şişirmesin.
+        if (!sale || !(sale.status === "approved" || sale.status === "seller_paid" || sale.status === "paid")) return false;
         const listing = listings.find((item) => item.id === sale.listingId);
         const partnership = partnerships.find((item) => item.id === sale.partnershipId);
         const allowed = listing?.ownerId === currentUser.id || partnership?.partnerId === currentUser.id;
@@ -1455,6 +1465,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return review;
       },
       createSaleFromLead(leadId, input) {
+        if (isSuspended) { setAuthError("Hesabın askıya alındığı için işlem yapamazsın."); return undefined; }
         const lead = leads.find((item) => item.id === leadId);
         if (!lead || lead.status === "lost" || lead.status === "converted" || sales.some((sale) => sale.leadId === leadId)) return undefined;
 
@@ -1764,6 +1775,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
         // İlan sahibi veya admin/moderatör (moderasyon) değiştirebilir.
         if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return;
+        // Moderasyon kaçağını önle: sahip, incelemedeki/reddedilen ilanı kendisi
+        // "active" yapamaz — yalnızca admin/moderatör yayınlayabilir.
+        if (!isStaff && (listing.status === "pending_review" || listing.status === "rejected") && status === "active") {
+          setAuthError("Bu ilan incelemede. Yayına alınması için admin onayı gerekir.");
+          return;
+        }
         setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status } : item)));
         if (liveUser) persistOrWarn(updateListingStatusLive({ ...listing, status }), "İlan durumu güncellenemedi. Lütfen tekrar dene.");
       },
@@ -1837,6 +1854,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // ya da kapanan komisyon yeniden "ödenecek/onaylı" duruma sokulup metrikleri
         // ve panel sinyalini bozmasın.
         if (!staff && (sale.status === "cancelled" || sale.status === "paid") && status !== sale.status) {
+          return;
+        }
+        // Geçiş ön-koşulu: ortak "paid"i yalnızca satıcı ödeme bildirdikten (seller_paid)
+        // veya anlaşmazlık (disputed) durumundan kapatabilir — açık/iade-penceresi
+        // komisyonu erkenden kapatılamaz.
+        if (!staff && partnerAction && sale.status !== "seller_paid" && sale.status !== "disputed") {
           return;
         }
         const disputeText = reason?.trim() ? `Anlaşmazlık: ${reason.trim()}` : "Komisyon için anlaşmazlık kaydı açıldı.";

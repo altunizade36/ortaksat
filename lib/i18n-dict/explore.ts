@@ -42,6 +42,7 @@ export const exploreDict: Record<string, string> = {
   "aramasını kaydet": "save this search",
   "Bu filtreyi kaydet": "Save this filter",
   "Filtreli arama": "Filtered search",
+  "Bu filtreler sonuçları daraltıyor. Daha fazlası için filtreleri gevşet.": "These filters are narrowing results. Loosen filters to see more.",
   "yeni": "new",
   "Kayıtlı aramayı sil": "Delete saved search",
   "İlan ver": "Post a listing",

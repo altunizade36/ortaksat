@@ -51,6 +51,10 @@ const intentLabels: Record<PurchaseIntent, string> = {
 
 type SellerFilter = "all" | "needsAction" | "active" | "paused" | "withLeads" | "applications" | "payments" | "lowStock";
 
+// Komisyonu satıcıdan hâlâ "beklenen" satış: ödenmemiş, iptal ve anlaşmazlık hariç.
+// (İptal/anlaşmazlık "bekleyen ödeme" sayılmamalı — aksi hâlde sonsuza dek nag eder.)
+const saleIsOwed = (s: { status: SaleStatus }) => s.status !== "paid" && s.status !== "cancelled" && s.status !== "disputed";
+
 export default function SellerScreen() {
   const { language, t } = useLanguage();
   const router = useRouter();
@@ -165,7 +169,7 @@ export default function SellerScreen() {
   // "Açık/ödenecek" komisyon = henüz ödenmemiş AMA iptal/anlaşmazlık DIŞI satışlar.
   // cancelled (iptal) hiç ödenmez; disputed (çözülene dek) limbo — ikisi de "açık
   // komisyon" ve "panel temiz" sinyalini kalıcı bozmasın.
-  const isOwedSale = (s: (typeof mySales)[number]) => s.status !== "paid" && s.status !== "cancelled" && s.status !== "disputed";
+  const isOwedSale = saleIsOwed;
   const openCommission = mySales.filter(isOwedSale).reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const paidCommission = mySales.filter((sale) => sale.status === "paid").reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const newLeads = myLeads.filter((lead) => lead.status === "new");
@@ -187,7 +191,7 @@ export default function SellerScreen() {
     const pendingApplications = partnerships.filter((partnership) => partnership.listingId === listing.id && partnership.status === "pending");
     const listingNeedsAction =
       listingLeads.some((lead) => lead.status === "new") ||
-      listingSales.some((sale) => sale.status !== "paid") ||
+      listingSales.some(saleIsOwed) ||
       listing.stockCount <= 3 ||
       pendingApplications.length > 0;
     if (filter === "needsAction" && !listingNeedsAction) return false;
@@ -461,7 +465,7 @@ export default function SellerScreen() {
         const listingSales = mySales.filter((sale) => sale.listingId === listing.id);
         const activePartners = listingPartnerships.filter((item) => item.status === "active").length;
         const pendingPartners = listingPartnerships.filter((item) => item.status === "pending").length;
-        const unpaidListingSales = listingSales.filter((sale) => sale.status !== "paid");
+        const unpaidListingSales = listingSales.filter(saleIsOwed);
         const convertedListingLeads = listingLeads.filter((lead) => lead.status === "converted").length;
         const conversionRate = listingLeads.length > 0 ? Math.round((convertedListingLeads / listingLeads.length) * 100) : 0;
         const listingClicks = listingPartnerships.reduce((sum, item) => sum + (clickCounts[item.id] ?? 0), 0);
@@ -516,9 +520,13 @@ export default function SellerScreen() {
                 <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: listing.id } }} tone="soft" icon="pencil-outline">Düzenle</PrimaryButton>
               </View>
               <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-                <PrimaryButton tone={listing.status === "active" ? "secondary" : "soft"} icon={listing.status === "active" ? "pause" : "play"} onPress={() => updateListingStatus(listing.id, listing.status === "active" ? "paused" : "active")}>
-                  {listing.status === "active" ? "Pasife Al" : "Aktifleştir"}
-                </PrimaryButton>
+                {listing.status === "pending_review" ? (
+                  <PrimaryButton tone="soft" icon="clock-outline" onPress={() => undefined}>İncelemede</PrimaryButton>
+                ) : (
+                  <PrimaryButton tone={listing.status === "active" ? "secondary" : "soft"} icon={listing.status === "active" ? "pause" : "play"} onPress={() => updateListingStatus(listing.id, listing.status === "active" ? "paused" : "active")}>
+                    {listing.status === "active" ? "Pasife Al" : "Aktifleştir"}
+                  </PrimaryButton>
+                )}
               </View>
               <View style={{ flexBasis: "47%", flexGrow: 1 }}>
                 <PrimaryButton href={`/listing/${listing.id}`} tone="secondary" icon="eye-outline">Detay</PrimaryButton>
@@ -775,7 +783,7 @@ function sellerPriority(listing: Listing, leads: Lead[], sales: Sale[], partners
   const pendingApplications = partnerships.filter((partnership) => partnership.listingId === listing.id && partnership.status === "pending").length;
   const newLeadScore = listingLeads.filter((lead) => lead.status === "new").length * 40;
   const hotLeadScore = listingLeads.filter((lead) => lead.intent === "hot" && lead.status !== "converted").length * 14;
-  const unpaidScore = listingSales.filter((sale) => sale.status !== "paid").length * 18;
+  const unpaidScore = listingSales.filter(saleIsOwed).length * 18;
   const stockScore = listing.status === "active" && listing.stockCount <= 3 ? 12 : 0;
 
   return newLeadScore + hotLeadScore + unpaidScore + pendingApplications * 10 + stockScore;
@@ -785,7 +793,7 @@ function sellerNextAction(listing: Listing, leads: Lead[], sales: Sale[], pendin
   if (leads.some((lead) => lead.status === "new" && lead.intent === "hot")) return { label: "Sıcak talebi ara", tone: "warning" };
   if (leads.some((lead) => lead.status === "new")) return { label: "Yeni talebi işle", tone: "warning" };
   if (pendingPartners > 0) return { label: "Başvuruyu değerlendir", tone: "warning" };
-  if (sales.some((sale) => sale.status !== "paid")) return { label: "Komisyonu kapat", tone: "warning" };
+  if (sales.some(saleIsOwed)) return { label: "Komisyonu kapat", tone: "warning" };
   if (listing.status === "active" && listing.stockCount <= 3) return { label: "Stok kontrolü", tone: "warning" };
   if (listing.status !== "active") return { label: "Yayına almayı değerlendir", tone: "info" };
   return { label: "Akış temiz", tone: "success" };

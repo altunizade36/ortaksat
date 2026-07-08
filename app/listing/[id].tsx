@@ -573,6 +573,29 @@ export default function ListingDetailScreen() {
             <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{owner?.successfulSales ? ` · ${owner.successfulSales} ${translateCopy("satış", language)}` : ""} · {currentListing.location}</Text>
           </View>
 
+          {/* İlan tarihi + no (Sahibinden tarzı referans/tazelik bilgisi) */}
+          {(() => {
+            const created = new Date(currentListing.createdAt);
+            const valid = !Number.isNaN(created.getTime());
+            const days = valid ? Math.floor((Date.now() - created.getTime()) / 86400000) : -1;
+            const dateLabel = !valid ? "" : days <= 0 ? translateCopy("Bugün", language) : days === 1 ? translateCopy("Dün", language) : days < 30 ? `${days} ${translateCopy("gün önce", language)}` : created.toLocaleDateString(language === "en" ? "en-GB" : "tr-TR");
+            const ilanNo = currentListing.id.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toUpperCase();
+            return (
+              <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {dateLabel ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                    <MaterialCommunityIcons name="calendar-blank-outline" size={13} color={colors.subtle} />
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{dateLabel}</Text>
+                  </View>
+                ) : null}
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                  <MaterialCommunityIcons name="pound" size={13} color={colors.subtle} />
+                  <Text selectable style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>{translateCopy("İlan no", language)}: {ilanNo}</Text>
+                </View>
+              </View>
+            );
+          })()}
+
           <Text selectable style={{ color: colors.ink, fontSize: 28, fontWeight: "900" }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
 
           {/* Ortak kazancı vurgusu — modelimizin çekirdeği */}

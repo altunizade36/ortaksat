@@ -209,6 +209,10 @@ export default function ExploreScreen() {
     return f;
   };
   const hasSaveableFilter = Boolean(priceRange) || minCommission > 0 || Boolean(catKey) || Boolean(city) || statusOpen || Boolean(stockFilter) || sortMode !== "recommended";
+  // Sunucuya GÖNDERİLMEYEN (yalnızca istemcide uygulanan) filtreler. Bunlar aktifken
+  // sunucu-sayfalama güvenilmez (getirilen sayfa tümden elenebilir) → "daha fazla yükle"
+  // ölü görünür. Bu durumda sunucu-sayfalama butonu gizlenip ipucu gösterilir.
+  const clientOnlyActive = minCommission > 0 || Boolean(catKey) || Boolean(stockFilter) || onlyVerified || Object.keys(attrFilters).length > 0 || Object.keys(numRange).length > 0;
   const isCurrentSaved = savedSearches.some((s) => (s.q ?? "").toLocaleLowerCase("tr-TR") === queryText.toLocaleLowerCase("tr-TR") && JSON.stringify(s.f ?? {}) === JSON.stringify(currentFilters()));
   const applySaved = (s: SavedSearch) => {
     const f = s.f ?? {};
@@ -657,6 +661,8 @@ export default function ExploreScreen() {
               <Pressable onPress={() => { setProductVisible((c) => c + 20); if (productVisible + 20 >= productListings.length) { if (queryText && serverHasMore) loadMoreServer(); else if (!queryText && marketplaceHasMore) loadMoreMarketplace(); } }} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 28, paddingVertical: 12 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{translateCopy("Daha fazla göster", language)}</Text>
               </Pressable>
+            ) : (queryText && clientOnlyActive && serverHasMore) ? (
+              <Text style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "700", textAlign: "center" }}>{translateCopy("Bu filtreler sonuçları daraltıyor. Daha fazlası için filtreleri gevşet.", language)}</Text>
             ) : (queryText ? serverHasMore : marketplaceHasMore) ? (
               <Pressable onPress={() => (queryText ? loadMoreServer() : loadMoreMarketplace())} disabled={queryText ? serverLoading : marketplaceLoadingMore} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, opacity: (queryText ? serverLoading : marketplaceLoadingMore) ? 0.6 : 1, paddingHorizontal: 28, paddingVertical: 12 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{(queryText ? serverLoading : marketplaceLoadingMore) ? translateCopy("Yükleniyor…", language) : translateCopy("Daha fazla ilan yükle", language)}</Text>

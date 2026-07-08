@@ -350,7 +350,7 @@ export function DesktopCreateFlow() {
         id: "draft", ownerId: currentUser?.id ?? "", title: v.clean.title || leafLabel,
         description: description || auto.description, salesPitch: detailLines, price,
         category: leafLabel || path[0]?.label || "Genel", commissionType, commissionValue: Number(commissionValue) || 0,
-        adAssets: uploadedImages.slice(1, 5), status: "active"
+        adAssets: uploadedImages.slice(1), status: "active"
       } as unknown as Listing;
       const risk = computeListingRisk(riskDraft, listings, currentUser);
       if (risk.level === "high" && !statusOverride) { verdict = "review"; statusOverride = "pending_review"; }
@@ -360,7 +360,7 @@ export function DesktopCreateFlow() {
         description: description ? v.clean.description : auto.description,
         salesPitch: detailLines.slice(0, 4).length ? detailLines.slice(0, 4) : auto.salesPitch,
         shareTemplates: auto.shareTemplates,
-        adAssets: uploadedImages.slice(1, 5),
+        adAssets: uploadedImages.slice(1),
         tags: tags.length ? tags : auto.tags,
         price,
         currency,
