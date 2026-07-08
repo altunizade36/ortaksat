@@ -529,10 +529,10 @@ export default function SellerScreen() {
             </View>
 
             {/* Talep & ödeme yönetimi: katlanır (varsayılan kapalı) */}
-            {listingLeads.length > 0 || listingSales.length > 0 ? (
+            {listingLeads.length > 0 || listingSales.length > 0 || activePartners > 0 ? (
               <Pressable onPress={() => setExpandedId(isExpanded ? null : listing.id)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 11 }}>
                 <MaterialCommunityIcons name="clipboard-list-outline" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "800" }}>{translateCopy("Talep & ödeme yönetimi", language)} — {listingLeads.length} {translateCopy("talep", language)} · {listingSales.length} {translateCopy("satış", language)}</Text>
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "800" }}>{translateCopy("Talep & ödeme yönetimi", language)} — {activePartners} {translateCopy("ortak", language)} · {listingLeads.length} {translateCopy("talep", language)} · {listingSales.length} {translateCopy("satış", language)}</Text>
                 <MaterialCommunityIcons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
               </Pressable>
             ) : (
