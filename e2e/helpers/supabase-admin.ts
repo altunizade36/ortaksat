@@ -82,6 +82,16 @@ export async function restInsertAsUser(token: string, table: string, row: Record
   return { ok: res.ok, status: res.status, body: res.ok ? "" : (await res.text()).slice(0, 300) };
 }
 
+/** Giriş yapmış kullanıcı olarak (RLS + trigger uygulanır) satır günceller. */
+export async function restUpdateAsUser(token: string, table: string, filter: string, patch: Record<string, unknown>): Promise<{ ok: boolean; status: number; body: string }> {
+  const res = await fetch(`${SUPA_URL}/rest/v1/${table}?${filter}`, {
+    method: "PATCH",
+    headers: { apikey: ANON, Authorization: `Bearer ${token}`, "Content-Type": "application/json", Prefer: "return=minimal" },
+    body: JSON.stringify(patch)
+  });
+  return { ok: res.ok, status: res.status, body: res.ok ? "" : (await res.text()).slice(0, 300) };
+}
+
 /** Gerçek bir satış zinciri kurar: partnership + order + commission. commission
  * id'sini (= review.sale_id) döner. Karşılıklı yorum artık gerçek satış ister. */
 export async function seedSale(sellerId: string, partnerId: string, listingId: string): Promise<string> {

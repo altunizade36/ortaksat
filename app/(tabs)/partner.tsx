@@ -54,7 +54,7 @@ const intentLabels: Record<PurchaseIntent, string> = {
 type PartnerFilter = "all" | "active" | "pending" | "earning";
 
 export default function PartnerScreen() {
-  const { canReviewSale, createSaleReview, currentUser, findUser, joinListing, leads, listings, partnerships, sales, startConversation, updateSaleStatus, users } = useStore();
+  const { canReviewSale, createSaleReview, currentUser, findUser, joinListing, leads, listings, partnerships, sales, startConversation, updateLeadStatus, updateSaleStatus, users } = useStore();
   const { language, t } = useLanguage();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
@@ -655,6 +655,19 @@ export default function PartnerScreen() {
                   <StatusPill label={intentLabels[lead.intent]} tone={lead.intent === "hot" ? "warning" : "info"} />
                 </View>
                 <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{lead.note}</Text>
+                {/* Ortak kendi hunisini takip eder: durum ilerlet (satışa çevirmeyi satıcı yapar). */}
+                {lead.status !== "converted" ? (
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                    {([["contacted", "İletişimde"], ["interested", "İlgileniyor"], ["lost", "Kayıp"]] as const).map(([st, lbl]) => {
+                      const on = lead.status === st;
+                      return (
+                        <Pressable key={st} onPress={() => updateLeadStatus(lead.id, st)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 }}>
+                          <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                ) : null}
               </View>
             ))}
 

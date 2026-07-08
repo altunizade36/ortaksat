@@ -1751,7 +1751,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
       updateLeadStatus(leadId, status) {
         const lead = leads.find((item) => item.id === leadId);
         const listing = lead ? listings.find((item) => item.id === lead.listingId) : undefined;
-        if (!lead || !listing || listing.ownerId !== currentUser.id) return;
+        // Satıcı (ilan sahibi) VEYA lead'i getiren ortak durumu güncelleyebilir.
+        // (Ortak yalnızca status değiştirebilir — DB trigger'ı kolon-korumalı.)
+        const leadPartnership = lead?.partnershipId ? partnerships.find((p) => p.id === lead.partnershipId) : undefined;
+        const canManage = !!listing && (listing.ownerId === currentUser.id || leadPartnership?.partnerId === currentUser.id);
+        if (!lead || !listing || !canManage) return;
         setLeads((items) => items.map((item) => (item.id === leadId ? { ...item, status } : item)));
         if (liveUser && lead) void updateLeadStatusLive({ ...lead, status });
       },
