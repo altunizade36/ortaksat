@@ -1,10 +1,8 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
-import { Image } from "expo-image";
 import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useRef, useState } from "react";
-import { ActivityIndicator, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
 import { openUrlSafe } from "@/lib/link";
@@ -26,7 +24,7 @@ import { tokenize } from "@/lib/search";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { SafetyNote } from "@/components/safety-note";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
-import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
+import { commissionAmount, commissionText, moneyIn, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
@@ -226,7 +224,6 @@ export default function ListingDetailScreen() {
   const inCompare = hasInCompare(currentListing.id);
   const commission = commissionAmount(currentListing);
   const reviewableSale = sales.find((sale) => sale.listingId === currentListing.id && canReviewSale(sale.id));
-  const activeTemplates = listingShareTemplates(currentListing, activeShareUrl);
   const relatedCardWidth = Math.max(148, Math.min(176, Math.floor((width - 34) / 2)));
   const sellerOtherListings = listings
     .filter((item) => item.ownerId === currentListing.ownerId && item.id !== currentListing.id && item.status === "active")
@@ -294,22 +291,6 @@ export default function ListingDetailScreen() {
     if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Paylaşmak için istediğin yere yapıştırabilirsin.", language));
   }
 
-  async function copyText(label: string, text: string) {
-    try {
-      await Clipboard.setStringAsync(text);
-      Alert.alert(translateCopy("Kopyalandı", language), translateCopy(`${label} panoya kopyalandı.`, language));
-    } catch {
-      // Pano izni yoksa (güvensiz bağlam) sessiz başarısızlık yerine metni göster.
-      Alert.alert(translateCopy("Kopyalanamadı", language), text);
-    }
-  }
-
-  async function openShareTarget(target: "whatsapp" | "telegram") {
-    if (!activeShareUrl) return;
-    const text = encodeURIComponent(`${activeTemplates.whatsapp}\n${activeShareUrl}`);
-    const url = target === "whatsapp" ? `https://wa.me/?text=${text}` : `https://t.me/share/url?url=${encodeURIComponent(activeShareUrl)}&text=${text}`;
-    await openUrlSafe(url);
-  }
 
   // Ortak bağlantısıyla gelen ziyaretçi satıcıyla iletişime geçince, lead'i o ortağa
   // bağla. Canlıda buyer'ın store'unda ortaklık bulunmaz → landing'deki gibi

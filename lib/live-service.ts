@@ -2,7 +2,6 @@
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 
 import { supabase } from "@/lib/supabase";
-import { commissionAmount } from "@/lib/format";
 import type { CategorySuggestion, Conversation, Lead, Listing, LocationSuggestion, Message, ModerationStatus, Notification, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

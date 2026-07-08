@@ -352,29 +352,11 @@ function userFromAuth(id: string, phone?: string | null, name?: string | null): 
   };
 }
 
-function mergeUsers(localUsers: User[], remoteUsers: User[]) {
-  const seen = new Set<string>();
-  return [...remoteUsers, ...localUsers].filter((user) => {
-    if (seen.has(user.id)) return false;
-    seen.add(user.id);
-    return true;
-  });
-}
-
 // incoming id'leri prev'i EZER (admin tam verisi mevcut kısmi veriyi gunceller).
 function mergeById<T extends { id: string }>(prev: T[], incoming: T[]): T[] {
   const map = new Map(prev.map((x) => [x.id, x]));
   for (const item of incoming) map.set(item.id, item);
   return Array.from(map.values());
-}
-
-function mergeMarketplaceListings(remoteListings: Listing[]) {
-  if (remoteListings.length >= 12) return remoteListings;
-
-  const seenIds = new Set(remoteListings.map((listing) => listing.id));
-  const seenSlugs = new Set(remoteListings.map((listing) => listing.slug));
-  const previewListings = initialListings.filter((listing) => !seenIds.has(listing.id) && !seenSlugs.has(listing.slug));
-  return [...remoteListings, ...previewListings];
 }
 
 // Canlı modda oturum açılmadan gezerken kullanılan misafir kullanıcı.

@@ -894,15 +894,6 @@ function DSelect({ label, value, options, onChange, placeholder }: { label: stri
   );
 }
 
-function ToggleRow({ label, on, onPress }: { label: string; on: boolean; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-      <View style={{ alignItems: on ? "flex-end" : "flex-start", backgroundColor: on ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}><View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} /></View>
-      <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "700" }}>{label}</Text>
-    </Pressable>
-  );
-}
-
 function PreviewRow({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 8 }}>

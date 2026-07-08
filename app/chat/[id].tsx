@@ -11,7 +11,7 @@ import { colors } from "@/components/colors";
 import { Alert } from "@/lib/alert";
 import { openUrlSafe } from "@/lib/link";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { EmptyState, PrimaryButton } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { localToday, money } from "@/lib/format";
 import { uploadMessageAttachment } from "@/lib/live-service";
 import { useTypingIndicator } from "@/lib/use-typing";
@@ -60,7 +60,7 @@ function ChatScreenInner() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { currentUser, findConversation, findListing, findUser, leads, markConversationRead, messages, partnerships, reportUser, sales, sendConversationMessage } = useStore();
+  const { currentUser, findConversation, findListing, findUser, markConversationRead, messages, reportUser, sendConversationMessage } = useStore();
   const [body, setBody] = useState("");
   const [attaching, setAttaching] = useState(false);
   const scrollRef = useRef<ScrollView>(null);

@@ -184,7 +184,6 @@ export default function ExploreScreen() {
     return EXPLORE_NUM_FILTERS.filter((f) => keys.has(f.key) && !seen.has(f.label) && (seen.add(f.label), true));
   }, [catSchema]);
   const catLabelSet = useMemo(() => (catNode ? new Set(collectDescendantLabels(catNode).map((s) => s.toLocaleLowerCase("tr-TR").trim()).filter((s) => s.length > 2)) : null), [catNode]);
-  const catAttrActive = Object.keys(attrFilters).length > 0 || catNums.some((f) => (numRange[f.key]?.min ?? "").trim() || (numRange[f.key]?.max ?? "").trim());
   const selectCat = (key: string) => { setCatKey((cur) => (cur === key ? "" : key)); setAttrFilters({}); setNumRange({}); };
   const toggleAttr = (key: string, val: string) => setAttrFilters((s) => { const cur = s[key] ?? []; const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]; const copy = { ...s }; if (next.length) copy[key] = next; else delete copy[key]; return copy; });
   const setNum = (key: string, side: "min" | "max", v: string) => setNumRange((s) => ({ ...s, [key]: { min: s[key]?.min ?? "", max: s[key]?.max ?? "", [side]: v } }));

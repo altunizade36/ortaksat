@@ -25,7 +25,7 @@ export default function AuthScreen() {
   const { language } = useLanguage();
   const router = useRouter();
   const params = useLocalSearchParams<{ redirect?: string; mode?: string }>();
-  const { authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signUpWithEmail, updatePasswordWithEmail } = useStore();
+  const { authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signUpWithEmail } = useStore();
   const [mode, setMode] = useState<AuthMode>(params.mode === "register" ? "register" : "login");
   // Kayıt: Ad ve Soyad ayrı alanlar (e-ticaret standardı); birleştirilip saklanır.
   const [firstName, setFirstName] = useState("");
@@ -236,37 +236,6 @@ export default function AuthScreen() {
     } finally {
       setLoading(false);
     }
-  }
-
-  async function resetPassword() {
-    if (!cleanEmail) {
-      Alert.alert(language === "en" ? "Email required" : "E-posta gerekli", language === "en" ? "Enter your email address to receive a password reset link." : "Şifre sıfırlama bağlantısı göndermek için e-posta adresini yaz.");
-      return;
-    }
-
-    setLoading(true);
-    const ok = await resetPasswordWithEmail(cleanEmail);
-    setLoading(false);
-    Alert.alert(
-      ok ? (language === "en" ? "Email sent" : "E-posta gönderildi") : (language === "en" ? "Could not send" : "Gönderilemedi"),
-      ok ? (language === "en" ? "Password reset link was sent to your email address." : "Şifre sıfırlama bağlantısı e-posta adresine gönderildi.") : authError ?? (language === "en" ? "Please try again." : "Lütfen tekrar dene.")
-    );
-  }
-
-  async function updatePassword() {
-    if (newPassword.length < 6) {
-      Alert.alert(language === "en" ? "Password missing" : "Şifre eksik", language === "en" ? "New password must be at least 6 characters." : "Yeni şifre en az 6 karakter olmalı.");
-      return;
-    }
-
-    setLoading(true);
-    const ok = await updatePasswordWithEmail(newPassword);
-    setLoading(false);
-    Alert.alert(
-      ok ? (language === "en" ? "Password updated" : "Şifre güncellendi") : (language === "en" ? "Could not update" : "Güncellenemedi"),
-      ok ? (language === "en" ? "Your new password was saved. You can now sign in with email and the new password." : "Yeni şifren kaydedildi. Bundan sonra e-posta ve yeni şifrenle giriş yapabilirsin.") : authError ?? (language === "en" ? "Make sure you opened the reset link from the app." : "Sıfırlama bağlantısını uygulamadan açtığından emin ol.")
-    );
-    if (ok) setMode("login");
   }
 
   // Mavi altı-çizili link stili (yasal metinler için) — tek yerde.

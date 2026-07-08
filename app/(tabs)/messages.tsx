@@ -11,7 +11,7 @@ import { openUrlSafe } from "@/lib/link";
 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
-import { EmptyState, StatusPill } from "@/components/ui";
+import { EmptyState } from "@/components/ui";
 import { commissionAmount, localToday, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadMessageAttachment } from "@/lib/live-service";
@@ -91,7 +91,7 @@ function scanMessageRisk(text: string) {
 }
 
 function MessagesScreenInner() {
-  const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, notifications, partnerships, sales, sendConversationMessage } = useStore();
+  const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, partnerships, sales, sendConversationMessage } = useStore();
   const { t, language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const contentWidth = useContentWidth();
@@ -141,7 +141,6 @@ function MessagesScreenInner() {
 
   const { otherTyping, notifyTyping } = useTypingIndicator(activeId ?? undefined, currentUser.id);
   const unreadMessages = messages.filter((item) => item.receiverId === currentUser.id && !item.read);
-  const unreadNotifications = notifications.filter((item) => item.userId === currentUser.id && !item.read);
   const tokens = searchKey(query).split(" ").filter(Boolean);
 
   const visibleConversations = myConversations.filter((conversation) => {

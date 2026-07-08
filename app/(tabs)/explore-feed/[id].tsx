@@ -45,8 +45,7 @@ export default function ExploreFeedScreen() {
     startConversation,
     toggleFavorite
   } = useStore();
-  const [refreshing, setRefreshing] = useState(false);
-  const [seed, setSeed] = useState(1);
+  const [seed] = useState(1);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [openComments, setOpenComments] = useState<Record<string, boolean>>({});
   const [commentDrafts, setCommentDrafts] = useState<Record<string, string>>({});
