@@ -68,6 +68,27 @@ export function productUrl(listing: Listing) {
   return `https://www.ortaksat.com/listing/${listing.id}`;
 }
 
+/**
+ * "Sadece davetle" modundaki ilanlar için ilana-bağlı deterministik davet kodu.
+ * İlan id'si zaten tahmin edilemez; kod, linki paylaşmayan birinin ortak
+ * olmasını engelleyen ek kapıdır (FNV-1a, kısa base36). Satıcı bu kodu içeren
+ * daveti paylaşınca, linke sahip ortak anında (ön-onaylı) katılabilir.
+ */
+export function listingInviteCode(listing: Pick<Listing, "id" | "ownerId">): string {
+  const s = `ortak-davet:${listing.id}:${listing.ownerId}`;
+  let h = 2166136261;
+  for (let i = 0; i < s.length; i++) {
+    h ^= s.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(36);
+}
+
+/** Satıcının paylaşacağı ortak davet linki (ilan detayında ?ortak-davet=<kod>). */
+export function partnerInviteUrl(listing: Listing) {
+  return `https://www.ortaksat.com/listing/${listing.id}?ortak-davet=${listingInviteCode(listing)}`;
+}
+
 /** TR cep telefonunu WhatsApp/wa.me için uluslararası haneye çevirir ("0555…" -> "90555…"). Geçersizse "". */
 export function trPhoneIntl(phone: string | undefined | null): string {
   let d = (phone ?? "").replace(/[^0-9]/g, "");

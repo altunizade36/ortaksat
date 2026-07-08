@@ -67,6 +67,7 @@ export default function PartnerScreen() {
   const [oppCity, setOppCity] = useState("");
   const [oppStock, setOppStock] = useState("");
   const [oppGuven, setOppGuven] = useState("");
+  const [oppSort, setOppSort] = useState<"recommended" | "commission" | "stock" | "rating" | "new">("recommended");
   const [oppVisible, setOppVisible] = useState(8);
   // Bildirim derin-linki (?focus=<listingId>): ilgili ortaklığı "Aktif" sekmesinde öne al.
   const params = useLocalSearchParams<{ focus?: string }>();
@@ -119,7 +120,15 @@ export default function PartnerScreen() {
 
   // Ortaklık fırsatları: başkalarının TÜM aktif ilanları (herkese açık, global).
   const joinedIds = new Set(myPartnerships.map((p) => p.listingId));
-  const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id);
+  // "Sadece davetle" ilanlar fırsat listesinde gösterilmez — bunlara yalnızca
+  // satıcının paylaştığı davet linkiyle ortak olunabilir.
+  const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id && l.partnershipMode !== "invite");
+  // Mobil liste (filtre paneli yok): en iyi fırsatlar önce — doğrulanmış/öne çıkan, sonra komisyon.
+  const rankedOpportunities = useMemo(() => allOpportunities.slice().sort((a, b) => {
+    const av = (a.featured ? 2 : 0) + ((findUser(a.ownerId)?.verifiedIdentity || findUser(a.ownerId)?.verifiedPhone) ? 1 : 0);
+    const bv = (b.featured ? 2 : 0) + ((findUser(b.ownerId)?.verifiedIdentity || findUser(b.ownerId)?.verifiedPhone) ? 1 : 0);
+    return bv - av || commissionAmount(b) - commissionAmount(a);
+  }), [allOpportunities, findUser]);
 
   function onJoin(listingId: string) {
     const listing = listings.find((l) => l.id === listingId);
@@ -185,6 +194,15 @@ export default function PartnerScreen() {
         if (oppGuven === "mid" && (r < 4.3 || r >= 4.7)) return false;
       }
       return true;
+    }).sort((a, b) => {
+      if (oppSort === "commission") return commissionAmount(b) - commissionAmount(a);
+      if (oppSort === "stock") return b.stockCount - a.stockCount;
+      if (oppSort === "rating") return (findUser(b.ownerId)?.rating ?? 0) - (findUser(a.ownerId)?.rating ?? 0);
+      if (oppSort === "new") return b.createdAt.localeCompare(a.createdAt);
+      // recommended: doğrulanmış/öne çıkan önce, sonra komisyon değeri
+      const av = (a.featured ? 2 : 0) + ((findUser(a.ownerId)?.verifiedIdentity || findUser(a.ownerId)?.verifiedPhone) ? 1 : 0);
+      const bv = (b.featured ? 2 : 0) + ((findUser(b.ownerId)?.verifiedIdentity || findUser(b.ownerId)?.verifiedPhone) ? 1 : 0);
+      return bv - av || commissionAmount(b) - commissionAmount(a);
     });
     const totalEarn = waiting + approved + paid;
     const rateListings = opportunities.filter((l) => l.commissionType === "rate");
@@ -282,8 +300,9 @@ export default function PartnerScreen() {
                   <PanelDropdown label="Konum" value={oppCity} onSelect={(v) => setOppCity(String(v))} options={[{ label: "Tümü", value: "" }, ...oppCityOptions.map((c) => ({ label: c, value: c }))]} />
                   <PanelDropdown label="Stok Durumu" value={oppStock} onSelect={(v) => setOppStock(String(v))} options={[{ label: "Tümü", value: "" }, { label: "Stokta var", value: "in" }, { label: "Az stok", value: "low" }]} />
                   <PanelDropdown label="Güven Seviyesi" value={oppGuven} onSelect={(v) => setOppGuven(String(v))} options={[{ label: "Tümü", value: "" }, { label: "Yüksek", value: "high" }, { label: "Orta", value: "mid" }]} />
-                  {(oppCategory || oppCommission || oppCity || oppStock || oppGuven) ? (
-                    <Pressable onPress={() => { setOppCategory(""); setOppCommission(0); setOppCity(""); setOppStock(""); setOppGuven(""); }} style={{ alignItems: "center", flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 7 }}>
+                  <PanelDropdown label="Sırala" value={oppSort} onSelect={(v) => setOppSort(String(v) as typeof oppSort)} options={[{ label: "Önerilen", value: "recommended" }, { label: "En yüksek komisyon", value: "commission" }, { label: "En çok stok", value: "stock" }, { label: "Satıcı puanı", value: "rating" }, { label: "Yeni eklenen", value: "new" }]} />
+                  {(oppCategory || oppCommission || oppCity || oppStock || oppGuven || oppSort !== "recommended") ? (
+                    <Pressable onPress={() => { setOppCategory(""); setOppCommission(0); setOppCity(""); setOppStock(""); setOppGuven(""); setOppSort("recommended"); }} style={{ alignItems: "center", flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 7 }}>
                       <MaterialCommunityIcons name="close" size={14} color={colors.accent} />
                       <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>{translateCopy("Temizle", language)}</Text>
                     </Pressable>
@@ -482,7 +501,7 @@ export default function PartnerScreen() {
         <Card>
           <SectionTitle title="Ortak satış fırsatları" action={`${allOpportunities.length}`} />
           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Beğendiğin ürüne ortak ol, kendi kitlene sat, satış olunca komisyon kazan.", language)}</Text>
-          {allOpportunities.slice(0, oppVisible).map((listing) => {
+          {rankedOpportunities.slice(0, oppVisible).map((listing) => {
             const owner = findUser(listing.ownerId);
             const joined = joinedIds.has(listing.id);
             return (
@@ -584,6 +603,19 @@ export default function PartnerScreen() {
                   Satıcıya mesaj yaz
                 </PrimaryButton>
               </>
+            ) : partnership.status === "rejected" ? (
+              <View style={{ gap: 8 }}>
+                <View style={{ backgroundColor: colors.warningSoft, borderColor: colors.line, borderRadius: 10, borderWidth: 1, gap: 4, padding: 12 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                    <MaterialCommunityIcons name="account-cancel-outline" size={16} color={colors.warning} />
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Başvuru reddedildi", language)}</Text>
+                  </View>
+                  <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{displayText(partnership.rejectionReason || "Satıcı bu başvuruyu uygun görmedi.")}</Text>
+                </View>
+                <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => messageSeller(listing.id, listing.ownerId, listing.title)}>
+                  Satıcıya mesaj yaz
+                </PrimaryButton>
+              </View>
             ) : (
               <View style={{ gap: 8 }}>
                 <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>

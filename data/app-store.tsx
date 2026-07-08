@@ -16,7 +16,7 @@ import {
 } from "@/data/mock-data";
 import { logActivity } from "@/lib/audit";
 import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@/lib/auth-links";
-import { commissionAmount, msgStamp } from "@/lib/format";
+import { commissionAmount, listingInviteCode, msgStamp } from "@/lib/format";
 import {
   deleteFavorite,
   ensureProfile,
@@ -137,6 +137,7 @@ type PartnershipApplicationInput = {
   platformHandle: string;
   reachEstimate: number;
   note: string;
+  inviteCode: string;
 };
 
 type SaleFromLeadInput = {
@@ -265,7 +266,7 @@ type AppStore = {
   createSaleFromLead: (leadId: string, input?: Partial<SaleFromLeadInput>) => Sale | undefined;
   joinListing: (listingId: string, input?: Partial<PartnershipApplicationInput>) => Partnership | undefined;
   approvePartnership: (partnershipId: string) => void;
-  rejectPartnership: (partnershipId: string) => void;
+  rejectPartnership: (partnershipId: string, reason?: string) => void;
   toggleFavorite: (listingId: string) => void;
   startConversation: (listingId: string, receiverId: string, body?: string) => Conversation | undefined;
   sendMessage: (listingId: string, receiverId: string, body: string) => void;
@@ -1513,8 +1514,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setAuthError("Bu ilana ortak olunamaz. İlan pasif olabilir veya kendi ilanın olabilir.");
           return undefined;
         }
-        if (listing.partnershipMode === "invite") {
-          setAuthError("Bu ilan sadece davetli ortaklara açıktır.");
+        const invited = listing.partnershipMode === "invite" && input?.inviteCode === listingInviteCode(listing);
+        if (listing.partnershipMode === "invite" && !invited) {
+          setAuthError("Bu ilan sadece davetle ortaklığa açıktır. Ortak olmak için satıcıdan davet linki iste.");
           return undefined;
         }
         if (currentUser.rating < listing.minPartnerRating) {
@@ -1530,7 +1532,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           return existing;
         }
 
-        const status = listing.partnershipMode === "open" ? "active" : "pending";
+        const status = listing.partnershipMode === "open" || invited ? "active" : "pending";
         const partnership: Partnership = {
           id: newId("p", liveUser),
           listingId,
@@ -1577,17 +1579,18 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setListings((items) => items.map((item) => (item.id === partnership.listingId ? { ...item, partnerCount: Math.max(0, item.partnerCount - 1) } : item)));
         }, "Başvuru onayı kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
       },
-      rejectPartnership(partnershipId) {
+      rejectPartnership(partnershipId, reason) {
         const partnership = partnerships.find((item) => item.id === partnershipId);
         const listing = partnership ? listings.find((item) => item.id === partnership.listingId) : undefined;
         if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "pending") return;
+        const cleanReason = reason?.trim() || "Satıcı bu başvuruyu uygun görmedi.";
         const updatedPartnership = partnership
-          ? { ...partnership, status: "rejected" as const, rejectionReason: "Satıcı bu başvuruyu uygun görmedi." }
+          ? { ...partnership, status: "rejected" as const, rejectionReason: cleanReason }
           : undefined;
         setPartnerships((items) =>
           items.map((item) => (item.id === partnershipId && updatedPartnership ? updatedPartnership : item))
         );
-        if (partnership) notify(partnership.partnerId, "application", "Ortaklık reddedildi", "Satıcı bu başvuruyu uygun görmedi.");
+        if (partnership) notify(partnership.partnerId, "application", "Ortaklık reddedildi", cleanReason);
         if (liveUser && updatedPartnership && partnership) persistCritical(updatePartnershipStatus(updatedPartnership), () => {
           setPartnerships((items) => items.map((item) => (item.id === partnershipId ? partnership : item)));
         }, "Başvuru reddi kaydedilemedi. Bağlantını kontrol edip tekrar dene.");

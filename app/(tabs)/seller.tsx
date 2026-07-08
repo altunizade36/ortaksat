@@ -8,6 +8,7 @@ import { Alert } from "@/lib/alert";
 
 import { BulkListingModal } from "@/components/bulk-listing-modal";
 import { colors } from "@/components/colors";
+import { ReasonModal } from "@/components/reason-modal";
 import { QuickStart } from "@/components/quick-start";
 import { MiniBarChart } from "@/components/mini-bar-chart";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
@@ -76,6 +77,7 @@ export default function SellerScreen() {
   const [filter, setFilter] = useState<SellerFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
+  const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   // Grafik yalnız istemcide (new Date) render edilsin — SSG hydration uyuşmazlığı olmasın.
   const [mounted, setMounted] = useState(false);
@@ -217,10 +219,7 @@ export default function SellerScreen() {
   }
 
   function confirmRejectPartnership(partnershipId: string) {
-    Alert.alert(t("rejectApplication"), t("rejectApplicationBody"), [
-      { text: t("cancel"), style: "cancel" },
-      { text: translateCopy("Reddet", language), style: "destructive", onPress: () => rejectPartnership(partnershipId) }
-    ]);
+    setRejectTargetId(partnershipId);
   }
 
   function confirmPaidSale(saleId: string) {
@@ -663,6 +662,16 @@ export default function SellerScreen() {
       })}
       </WebContainer>
       <BulkListingModal visible={bulkOpen} onClose={() => setBulkOpen(false)} onCreate={handleBulkCreate} />
+      <ReasonModal
+        visible={rejectTargetId !== null}
+        title="Başvuruyu reddet"
+        intro="Ortağa iletilecek net bir gerekçe seç; başvurusu neden uygun bulunmadığını bilsin."
+        reasons={["Kitle/kanal ürüne uygun değil", "Yetersiz erişim veya takipçi", "Eksik veya belirsiz başvuru bilgisi", "Şu an yeni ortak almıyorum", "Diğer"]}
+        submitLabel="Reddet"
+        icon="account-cancel-outline"
+        onClose={() => setRejectTargetId(null)}
+        onSubmit={(reason) => { if (rejectTargetId) rejectPartnership(rejectTargetId, reason); setRejectTargetId(null); }}
+      />
     </ScrollView>
   );
 }

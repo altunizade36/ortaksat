@@ -186,6 +186,15 @@ export const components2Dict: Record<string, string> = {
   "satışta bonus": "sales for bonus",
   "Hemen Ortak Ol ve Kazan": "Become a Partner Now and Earn",
   "Ortaklık Başvurusu Gönder": "Send Partnership Application",
+  "Ortaklık sadece davetle": "Partnership by invite only",
+  "Davetle ortaklık": "Invite-only partnership",
+  "Davetle": "By invite",
+  "Bu ürünün ortaklığı herkese açık değil. Ortak olmak istiyorsan satıcıdan davet linki iste; linkle geldiğinde anında ortak olabilirsin.": "Partnership for this product isn't open to everyone. If you want to partner, ask the seller for an invite link; with the link you can partner instantly.",
+  "Satıcıdan davet iste": "Ask the seller for an invite",
+  "Satıcı seni davet etti — anında ortak olabilirsin.": "The seller invited you — you can partner instantly.",
+  "Ortak davet linki": "Partner invite link",
+  "Bu ilan sadece davetle. Aşağıdaki linki güvendiğin ortaklarla paylaş; linkle gelen kişi anında (ön-onaylı) ortak olur.": "This listing is invite-only. Share the link below with partners you trust; anyone arriving via the link becomes a partner instantly (pre-approved).",
+  "ortak daveti": "partner invite",
 
   // safety-note.tsx
   "Güvenli alışveriş": "Safe shopping",

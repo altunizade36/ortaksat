@@ -24,7 +24,7 @@ import { tokenize } from "@/lib/search";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { SafetyNote } from "@/components/safety-note";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
-import { commissionAmount, commissionText, moneyIn, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
+import { commissionAmount, commissionText, listingInviteCode, moneyIn, partnerInviteUrl, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
@@ -51,8 +51,9 @@ const intentLabels: Record<PurchaseIntent, string> = {
 };
 
 export default function ListingDetailScreen() {
-  const params = useLocalSearchParams<{ id: string; ref?: string; p?: string }>();
+  const params = useLocalSearchParams<{ id: string; ref?: string; p?: string; "ortak-davet"?: string }>();
   const id = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
+  const inviteParam = Array.isArray(params["ortak-davet"]) ? params["ortak-davet"][0] : params["ortak-davet"];
   // Ortak referans kodu: ?ref= veya kısa ?p= (varsa). Landing dışı akışta da yakalanır.
   const refParam = (Array.isArray(params.ref) ? params.ref[0] : params.ref) || (Array.isArray(params.p) ? params.p[0] : params.p) || "";
   const { language } = useLanguage();
@@ -208,6 +209,10 @@ export default function ListingDetailScreen() {
   }
 
   const currentListing = listing;
+  // "Sadece davetle" ilan: ortaklık yalnızca satıcının paylaştığı geçerli davet
+  // linkiyle açılır. Geçerli kod URL'de varsa ziyaretçi anında (ön-onaylı) katılır.
+  const isInviteMode = currentListing.partnershipMode === "invite";
+  const validInvite = isInviteMode && !!inviteParam && inviteParam === listingInviteCode(currentListing);
   const gallery = [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean);
   const galleryIdx = Math.min(activeImage, Math.max(0, gallery.length - 1));
   const owner = findUser(currentListing.ownerId) ?? remote?.owner;
@@ -265,8 +270,9 @@ export default function ListingDetailScreen() {
 
   function handleJoin() {
     if (isDemo) return demoBlocked();
-    // Onaylı ilanlarda başvuru notu zorunlu — satıcı gerçek gerekçeyi görsün.
-    if (currentListing.partnershipMode !== "open" && !applicationNote.trim()) {
+    // Davetli katılım ön-onaylıdır → başvuru notu istenmez. Onaylı (başvuru) ilanlarda
+    // not zorunlu — satıcı gerçek gerekçeyi görsün.
+    if (currentListing.partnershipMode !== "open" && !validInvite && !applicationNote.trim()) {
       Alert.alert(translateCopy("Eksik başvuru", language), translateCopy("Lütfen neden bu ürünü satmak istediğini kısaca yaz.", language));
       return;
     }
@@ -275,7 +281,8 @@ export default function ListingDetailScreen() {
       shareChannel: applicationChannel.trim(),
       audience: applicationAudience.trim(),
       platformHandle: applicationHandle.trim(),
-      reachEstimate: Number((applicationReach || "").replace(/[^0-9]/g, "")) || 0
+      reachEstimate: Number((applicationReach || "").replace(/[^0-9]/g, "")) || 0,
+      inviteCode: validInvite ? (inviteParam ?? "") : ""
     });
     if (!result) {
       Alert.alert(translateCopy("İşlem yapılamadı", language), translateCopy(authError ?? "Kendi ilanına ortak olamazsın veya ilan aktif olmayabilir.", language));
@@ -519,7 +526,7 @@ export default function ListingDetailScreen() {
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             <StatusPill label={translateCopy(currentListing.category, language)} />
-            <StatusPill label={translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : "Satıcı onaylı", language)} tone={currentListing.partnershipMode === "open" ? "success" : "warning"} />
+            <StatusPill label={translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı", language)} tone={currentListing.partnershipMode === "open" ? "success" : "warning"} />
           </View>
 
           <Text selectable accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 23, fontWeight: "900", lineHeight: 29 }}>{currentListing.title}</Text>
@@ -559,7 +566,7 @@ export default function ListingDetailScreen() {
           {/* Anahtar bilgiler */}
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Metric label={translateCopy("Stok", language)} value={`${currentListing.stockCount} ${translateCopy("adet", language)}`} />
-            <Metric label={translateCopy("Ortaklık", language)} value={translateCopy(currentListing.partnershipMode === "open" ? "Anında" : "Onaylı", language)} />
+            <Metric label={translateCopy("Ortaklık", language)} value={translateCopy(currentListing.partnershipMode === "open" ? "Anında" : isInviteMode ? "Davetle" : "Onaylı", language)} />
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Metric label={translateCopy("İade", language)} value={`${currentListing.returnWindowDays} ${translateCopy("gün", language)}`} />
@@ -571,6 +578,16 @@ export default function ListingDetailScreen() {
             <View style={{ gap: 8 }}>
               <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: currentListing.id } }} icon="pencil-outline">{translateCopy("İlanı Düzenle", language)}</PrimaryButton>
               <PrimaryButton href="/(tabs)/seller" tone="secondary" icon="storefront-outline">{translateCopy("Satıcı panelinde yönet", language)}</PrimaryButton>
+              {isInviteMode ? (
+                <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                    <MaterialCommunityIcons name="ticket-account" size={16} color={colors.primaryDark} />
+                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortak davet linki", language)}</Text>
+                  </View>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Bu ilan sadece davetle. Aşağıdaki linki güvendiğin ortaklarla paylaş; linkle gelen kişi anında (ön-onaylı) ortak olur.", language)}</Text>
+                  <ShareRow url={partnerInviteUrl(currentListing)} text={`${currentListing.title} — ${translateCopy("ortak daveti", language)}`} />
+                </View>
+              ) : null}
             </View>
           ) : isDemo ? (
             <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
@@ -590,10 +607,25 @@ export default function ListingDetailScreen() {
               <MaterialCommunityIcons name="clock-outline" size={16} color={colors.warning} />
               <Text style={{ color: colors.warning, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Başvurun satıcı onayında.", language)}</Text>
             </View>
+          ) : isInviteMode && !validInvite ? (
+            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 14 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <MaterialCommunityIcons name="email-lock-outline" size={17} color={colors.muted} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ortaklık sadece davetle", language)}</Text>
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Bu ürünün ortaklığı herkese açık değil. Ortak olmak istiyorsan satıcıdan davet linki iste; linkle geldiğinde anında ortak olabilirsin.", language)}</Text>
+              <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => void handleContact()}>{translateCopy("Satıcıdan davet iste", language)}</PrimaryButton>
+            </View>
           ) : (
             <View style={{ gap: 10 }}>
-              {/* Onaylı ilanlarda küçük başvuru formu (açık modda gösterilmez). */}
-              {currentListing.partnershipMode !== "open" ? (
+              {validInvite ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, flexDirection: "row", gap: 8, padding: 12 }}>
+                  <MaterialCommunityIcons name="ticket-confirmation-outline" size={17} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Satıcı seni davet etti — anında ortak olabilirsin.", language)}</Text>
+                </View>
+              ) : null}
+              {/* Onaylı ilanlarda küçük başvuru formu (açık modda ve davetli katılımda gösterilmez). */}
+              {currentListing.partnershipMode !== "open" && !validInvite ? (
                 <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 11, padding: 12 }}>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
                     <MaterialCommunityIcons name="account-edit-outline" size={16} color={colors.primaryDark} />
@@ -664,7 +696,7 @@ export default function ListingDetailScreen() {
                   </View>
                 </View>
               ) : null}
-              <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{translateCopy(currentListing.partnershipMode === "open" ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder", language)}</PrimaryButton>
+              <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{translateCopy(currentListing.partnershipMode === "open" || validInvite ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder", language)}</PrimaryButton>
             </View>
           )}
 
@@ -747,7 +779,7 @@ export default function ListingDetailScreen() {
             ))}
             <SpecRow label="Stok" value={`${currentListing.stockCount} ${translateCopy("adet", language)}`} />
             <SpecRow label="Komisyon" value={currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : moneyIn(commission, currentListing.currency)} />
-            <SpecRow label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında ortaklık" : "Satıcı onaylı"} />
+            <SpecRow label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı"} />
             <SpecRow label="İletişim" value={contactLabel(currentListing.contactMethod)} />
           </Accordion>
           <Accordion title={translateCopy("Teslimat ve iade", language)} icon="truck-outline">
