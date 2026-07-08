@@ -71,7 +71,7 @@ import {
 } from "@/lib/live-service";
 import { rateLimit } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
-import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadPlatformSettings, loadSeoSettings, loadSuggestions, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
+import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadOwnListings, loadPlatformSettings, loadSeoSettings, loadSuggestions, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import { categoryTree as baseCategoryTree, setHiddenCategories as setHiddenCategoriesModule, type CategoryNode } from "@/lib/category-tree";
 import { displayText, repairTurkishText } from "@/lib/text";
 import { firstError, isValidEmail, validateSignIn, validateSignUp } from "@/lib/validation";
@@ -500,6 +500,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
     });
     return () => { alive = false; };
   }, [authUser?.role, authUser?.id]);
+
+  // Her girişli kullanıcı KENDİ ilanlarını (her statü) yükler → satıcı reload'da
+  // onay-bekleyen/duraklatılmış/toplu-yüklenen ilanlarını satıcı panosunda görür
+  // (katalog snapshot'ı yalnız active çeker). RLS owner=self ile sınırlar.
+  useEffect(() => {
+    const uid = authUser?.id;
+    if (!supabase || !uid) return;
+    let alive = true;
+    void loadOwnListings(uid).then((own) => {
+      if (!alive || !own.length) return;
+      setListings((prev) => mergeById(prev, own));
+    });
+    return () => { alive = false; };
+  }, [authUser?.id]);
 
   useEffect(() => {
     if (!supabase) return;

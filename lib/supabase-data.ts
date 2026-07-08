@@ -366,6 +366,24 @@ export async function loadMarketplaceSnapshot(): Promise<MarketplaceSnapshot | n
 }
 
 /**
+ * Kullanıcının KENDİ ilanlarını (her statü: active/pending_review/paused/sold)
+ * getirir. Katalog snapshot'ı yalnız active çektiğinden, satıcı reload'da kendi
+ * onay-bekleyen/duraklatılmış ilanlarını göremiyordu (özellikle toplu yükleme
+ * sonrası). RLS `owner_id = auth.uid()` sahibin tüm statüleri görmesine izin verir.
+ */
+export async function loadOwnListings(userId: string): Promise<Listing[]> {
+  if (!supabase || !userId) return [];
+  const { data, error } = await supabase
+    .from("listing_public_cards")
+    .select("*")
+    .eq("owner_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(500);
+  if (error || !data) return [];
+  return (data as PublicListingCardRow[]).map(mapListing);
+}
+
+/**
  * Katalog sayfalama: sunucudan sonraki ilan sayfasini ve o ilanlarin sahiplerini
  * getirir. Sonsuz kaydirma icin `offset` kadar atlar, `limit` kadar okur.
  * Donen liste `limit`'ten azsa katalog bitti demektir (hasMore=false).

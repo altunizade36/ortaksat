@@ -478,7 +478,7 @@ export default function SellerScreen() {
                   <Text selectable numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900", lineHeight: 20 }}>
                     {displayText(listing.title)}
                   </Text>
-                  <StatusPill label={listing.status === "active" ? "Aktif" : listing.status === "paused" ? "Pasif" : "Satıldı"} tone={listing.status === "active" ? "success" : "warning"} />
+                  <StatusPill label={listing.status === "active" ? "Aktif" : listing.status === "pending_review" ? "İncelemede" : listing.status === "paused" ? "Pasif" : listing.status === "sold" ? "Satıldı" : listing.status} tone={listing.status === "active" ? "success" : listing.status === "pending_review" ? "info" : "warning"} />
                 </View>
                 <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
                   {translateCopy(displayText(listing.category), language)} · {displayText(listing.location)}
