@@ -105,6 +105,7 @@ export default function ListingDetailScreen() {
   const [reportDetail, setReportDetail] = useState("");
   const [zoomed, setZoomed] = useState(false);
   const swipeStartX = useRef(0);
+  const inlineSwiped = useRef(false); // inline ana görselde kaydırma olduysa dokunuş "büyüt"ü açmasın
   // Ortak referans atfı: bu ilana hangi ortağın yönlendirdiği (varsa).
   const [attributedPartnershipId, setAttributedPartnershipId] = useState<string | null>(null);
   const refCapturedFor = useRef<string>(""); // aynı ref'i aynı ilan için tekrar çözme/loglama kilidi
@@ -494,12 +495,33 @@ export default function ListingDetailScreen() {
         const imgAlt = `${currentListing.title}${currentListing.category ? ` — ${currentListing.category}` : ""}${currentListing.location ? `, ${currentListing.location}` : ""} · OrtakSat ortak satış ilanı`;
         return (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 18 : 0, borderWidth: isWideWeb ? 1 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
-            <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => setLightbox(true)} style={{ position: "relative" }}>
+            <Pressable
+              accessibilityRole="imagebutton"
+              accessibilityLabel={translateCopy("Görseli büyüt", language)}
+              onPress={() => { if (inlineSwiped.current) { inlineSwiped.current = false; return; } setLightbox(true); }}
+              onTouchStart={(e) => { swipeStartX.current = e.nativeEvent.pageX; inlineSwiped.current = false; }}
+              onTouchEnd={(e) => {
+                const dx = e.nativeEvent.pageX - swipeStartX.current;
+                if (Math.abs(dx) > 45 && gallery.length > 1) {
+                  inlineSwiped.current = true;
+                  setActiveImage((dx < 0 ? galleryIdx + 1 : galleryIdx - 1 + gallery.length) % gallery.length);
+                }
+              }}
+              style={{ position: "relative" }}
+            >
               <SafeRemoteImage uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
               <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
                 <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Büyüt", language)}{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
               </View>
+              {/* Mobil: birden çok görselde kaydırma ipucu (nokta göstergesi) */}
+              {!isWideWeb && gallery.length > 1 ? (
+                <View style={{ alignItems: "center", bottom: 12, flexDirection: "row", gap: 5, justifyContent: "center", left: 0, position: "absolute", right: 0 }}>
+                  {gallery.map((_, i) => (
+                    <View key={i} style={{ backgroundColor: i === galleryIdx ? "#FFFFFF" : "rgba(255,255,255,0.5)", borderRadius: 999, height: 7, width: i === galleryIdx ? 18 : 7 }} />
+                  ))}
+                </View>
+              ) : null}
             </Pressable>
             {gallery.length > 1 ? (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingTop: 12 }}>

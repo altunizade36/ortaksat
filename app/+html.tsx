@@ -151,6 +151,15 @@ const responsiveShell = `
 :root { color-scheme: light; }
 * { -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; }
+/* iOS Safari yatay/dikey döndürmede metni şişirmesin; app gibi sabit kalsın. */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+/* Mobil tarayıcıda input odağında iOS'un otomatik yakınlaştırmasını engelle:
+   16px altındaki alanlar odaklanınca sayfa zıplar. Telefonlarda tabanı 16px yap. */
+@media (max-width: 480px) {
+  input, textarea, select { font-size: 16px !important; }
+}
+/* Butonlarda iOS uzun-basış "kopyala/paylaş" balonunu kapat — app hissi. */
+[role="button"], button { -webkit-touch-callout: none; }
 
 /* Açılış ekranı (boot splash) — markalı yumuşak yükleme */
 #boot-splash {
@@ -180,6 +189,7 @@ body {
   text-rendering: optimizeLegibility;
   background: #F4F6F8;
   min-height: 100vh;
+  min-height: 100dvh; /* iOS adres çubuğu açılıp kapanınca içerik zıplamaz/kesilmez */
 }
 
 /* Full-bleed website: the app fills the entire viewport width, edge to edge,
@@ -188,6 +198,7 @@ body {
 #root {
   width: 100%;
   min-height: 100vh;
+  min-height: 100dvh;
   margin: 0;
   background: #F4F6F8;
 }
