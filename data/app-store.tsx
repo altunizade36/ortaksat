@@ -504,16 +504,18 @@ export function StoreProvider({ children }: PropsWithChildren) {
   // Her girişli kullanıcı KENDİ ilanlarını (her statü) yükler → satıcı reload'da
   // onay-bekleyen/duraklatılmış/toplu-yüklenen ilanlarını satıcı panosunda görür
   // (katalog snapshot'ı yalnız active çeker). RLS owner=self ile sınırlar.
+  // ÖNEMLİ: hydrate (loadMarketplaceSnapshot) listings'i REPLACE ediyor; bu yüzden
+  // kendi ilanları hydrate BİTTİKTEN sonra merge edilir, yoksa üzerine yazılır.
   useEffect(() => {
     const uid = authUser?.id;
-    if (!supabase || !uid) return;
+    if (!supabase || !uid || marketplaceInitialLoading) return;
     let alive = true;
     void loadOwnListings(uid).then((own) => {
       if (!alive || !own.length) return;
       setListings((prev) => mergeById(prev, own));
     });
     return () => { alive = false; };
-  }, [authUser?.id]);
+  }, [authUser?.id, marketplaceInitialLoading]);
 
   useEffect(() => {
     if (!supabase) return;
