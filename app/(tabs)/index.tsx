@@ -77,13 +77,6 @@ export default function HomeScreen() {
   const topEarn = useMemo(() => activeListings.filter((l) => commissionAmount(l) > 0).slice().sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [activeListings]);
   const recentListings = useMemo(() => recentIds.map((id) => listings.find((l) => l.id === id)).filter((l): l is Listing => Boolean(l) && l!.status === "active").slice(0, 10), [recentIds, listings]);
   const newestListings = useMemo(() => [...activeListings].sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 10), [activeListings]);
-  const stats = useMemo(() => ({
-    myActiveListings: activeListings.filter((listing) => listing.ownerId === currentUser.id).length,
-    openPartnerListings: activeListings.filter((listing) => listing.partnershipMode === "open").length,
-    cityCount: new Set(activeListings.map((listing) => listing.location)).size,
-    averageCommission: activeListings.length ? Math.round(activeListings.reduce((sum, listing) => sum + commissionAmount(listing), 0) / activeListings.length) : 0
-  }), [activeListings, currentUser.id]);
-  const { myActiveListings, openPartnerListings, cityCount, averageCommission } = stats;
 
   function refresh() {
     setRefreshing(true);
@@ -281,15 +274,6 @@ export default function HomeScreen() {
           ) : null}
 
           <HomeQuickActions currentUserId={currentUser.id} />
-          {activeListings.length > 0 ? (
-            <MarketplacePulse
-              averageCommission={averageCommission}
-              cityCount={cityCount}
-              myActiveListings={myActiveListings}
-              openPartnerListings={openPartnerListings}
-              totalListings={activeListings.length}
-            />
-          ) : null}
 
           <View style={{ gap: 7 }}>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
@@ -543,71 +527,6 @@ function CategoryShowcase({ categoryTree, isWideWeb }: { categoryTree: CategoryN
           {cats.map((node) => <Tile key={node.key} node={node} />)}
         </ScrollView>
       )}
-    </View>
-  );
-}
-
-function MarketplacePulse({
-  averageCommission,
-  cityCount,
-  myActiveListings,
-  openPartnerListings,
-  totalListings
-}: {
-  averageCommission: number;
-  cityCount: number;
-  myActiveListings: number;
-  openPartnerListings: number;
-  totalListings: number;
-}) {
-  const { language } = useLanguage();
-  const isWideWeb = useIsWideWeb();
-  const items = [
-    { icon: "tag-multiple-outline" as const, label: "Aktif ürün", value: `${totalListings}` },
-    { icon: "flash" as const, label: "Anında ortak", value: `${openPartnerListings}` },
-    { icon: "cash-plus" as const, label: "Ort. komisyon teklifi", value: money(averageCommission) },
-    { icon: "map-marker-outline" as const, label: "Şehir", value: `${cityCount}` }
-  ];
-
-  return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 16 : 10, borderWidth: 1, gap: isWideWeb ? 10 : 8, padding: isWideWeb ? 14 : 10 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text selectable numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: isWideWeb ? 16 : 14, fontWeight: "900" }}>
-          {translateCopy("Canlı pazar özeti", language)}
-        </Text>
-        <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: isWideWeb ? 13 : 11, fontWeight: "900" }}>
-          {myActiveListings > 0 ? `${myActiveListings} ${translateCopy("ilanın yayında", language)}` : translateCopy("Ürünler otomatik yenilenir", language)}
-        </Text>
-      </View>
-      <View style={{ flexDirection: "row", gap: isWideWeb ? 12 : 6 }}>
-        {items.map((item) =>
-          isWideWeb ? (
-            <View key={item.label} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 12, flex: 1, flexDirection: "row", gap: 12, minHeight: 72, paddingHorizontal: 16 }}>
-              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
-                <MaterialCommunityIcons name={item.icon} size={20} color={colors.primary} />
-              </View>
-              <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 22, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-                  {item.value}
-                </Text>
-                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
-                  {translateCopy(item.label, language)}
-                </Text>
-              </View>
-            </View>
-          ) : (
-            <View key={item.label} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, flex: 1, gap: 4, minHeight: 58, padding: 7 }}>
-              <MaterialCommunityIcons name={item.icon} size={15} color={colors.primary} />
-              <Text adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-                {item.value}
-              </Text>
-              <Text adjustsFontSizeToFit minimumFontScale={0.68} numberOfLines={1} style={{ color: colors.muted, fontSize: 9, fontWeight: "800" }}>
-                {translateCopy(item.label, language)}
-              </Text>
-            </View>
-          )
-        )}
-      </View>
     </View>
   );
 }

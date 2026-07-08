@@ -508,13 +508,7 @@ export default function ExploreScreen() {
             <MaterialCommunityIcons name="filter-variant" size={15} color={colors.primaryDark} />
             <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{hasPanelFilter ? translateCopy("Filtreleri temizle", language) : translateCopy("Tüm Filtreler", language)}</Text>
           </Pressable>
-          <FilterDropdown label="Fiyat Aralığı" value={priceRange} onSelect={(v) => setPriceRange(String(v))} options={[
-            { label: "Tümü", value: "" },
-            { label: "0 - ₺1.000", value: "0-1000" },
-            { label: "₺1.000 - ₺5.000", value: "1000-5000" },
-            { label: "₺5.000 - ₺20.000", value: "5000-20000" },
-            { label: "₺20.000+", value: "20000-" }
-          ]} />
+          <PriceRangeFilter value={priceRange} onChange={setPriceRange} />
           <FilterDropdown label="Komisyon Oranı" value={minCommission} onSelect={(v) => setMinCommission(Number(v))} options={[
             { label: "Tümü", value: 0 },
             { label: "₺100+", value: 100 },
@@ -686,9 +680,11 @@ export default function ExploreScreen() {
           onCity={setCity}
           minCommission={minCommission}
           onMinCommission={setMinCommission}
+          priceRange={priceRange}
+          onPriceRange={setPriceRange}
           statusOpen={statusOpen}
           onStatusOpen={setStatusOpen}
-          onClear={() => { setCity(""); setMinCommission(0); setStatusOpen(false); clearCatFilter(); }}
+          onClear={() => { setCity(""); setMinCommission(0); setPriceRange(""); setStockFilter(""); setStatusOpen(false); clearCatFilter(); }}
           catKey={catKey}
           onSelectCat={selectCat}
           catFacets={catFacets}
@@ -815,6 +811,8 @@ function FilterPanel({
   onCity,
   minCommission,
   onMinCommission,
+  priceRange,
+  onPriceRange,
   statusOpen,
   onStatusOpen,
   onClear,
@@ -833,6 +831,8 @@ function FilterPanel({
   onCity: (v: string) => void;
   minCommission: number;
   onMinCommission: (v: number) => void;
+  priceRange: string;
+  onPriceRange: (v: string) => void;
   statusOpen: boolean;
   onStatusOpen: (v: boolean) => void;
   onClear: () => void;
@@ -848,7 +848,21 @@ function FilterPanel({
 }) {
   const { language } = useLanguage();
   const commissionPresets = [0, 100, 250, 500];
-  const hasFilter = Boolean(city) || minCommission > 0 || statusOpen || Boolean(catKey);
+  const [pMinDraft, setPMinDraft] = useState("");
+  const [pMaxDraft, setPMaxDraft] = useState("");
+  useEffect(() => {
+    const [mn, mx] = priceRange ? priceRange.split("-") : ["", ""];
+    setPMinDraft(mn ?? "");
+    setPMaxDraft(mx ?? "");
+  }, [priceRange]);
+  const applyPrice = () => {
+    const mn = pMinDraft.replace(/[^0-9]/g, "");
+    const mx = pMaxDraft.replace(/[^0-9]/g, "");
+    if (!mn && !mx) { onPriceRange(""); return; }
+    if (mn && mx && Number(mn) > Number(mx)) { onPriceRange(`${mx}-${mn}`); return; }
+    onPriceRange(`${mn}-${mx}`);
+  };
+  const hasFilter = Boolean(city) || minCommission > 0 || Boolean(priceRange) || statusOpen || Boolean(catKey);
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 18, padding: 16, width }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -914,6 +928,43 @@ function FilterPanel({
           <MaterialCommunityIcons name={statusOpen ? "checkbox-marked" : "checkbox-blank-outline"} size={18} color={statusOpen ? colors.primary : colors.muted} />
           <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Ortak satışa açık", language)}</Text>
         </Pressable>
+      </View>
+
+      <View style={{ gap: 8 }}>
+        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Fiyat aralığı (₺)", language)}</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          {PRICE_PRESETS.map((p) => {
+            const on = priceRange === p.value;
+            return (
+              <Pressable key={p.value} onPress={() => onPriceRange(on ? "" : p.value)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 7 }}>
+                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{p.label}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          <TextInput
+            value={pMinDraft}
+            onChangeText={(t) => setPMinDraft(t.replace(/[^0-9]/g, ""))}
+            keyboardType="number-pad"
+            placeholder={translateCopy("En az", language)}
+            placeholderTextColor={colors.subtle}
+            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 42, paddingHorizontal: 10 }}
+          />
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>—</Text>
+          <TextInput
+            value={pMaxDraft}
+            onChangeText={(t) => setPMaxDraft(t.replace(/[^0-9]/g, ""))}
+            keyboardType="number-pad"
+            placeholder={translateCopy("En çok", language)}
+            placeholderTextColor={colors.subtle}
+            onSubmitEditing={applyPrice}
+            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 42, paddingHorizontal: 10 }}
+          />
+          <Pressable onPress={applyPrice} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 42, justifyContent: "center", paddingHorizontal: 14 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Uygula", language)}</Text>
+          </Pressable>
+        </View>
       </View>
 
       <View style={{ gap: 8 }}>
@@ -1020,6 +1071,108 @@ function FilterDropdown({ label, value, options, onSelect, searchable }: { label
                 })
               )}
             </ScrollView>
+          </View>
+        </>
+      ) : null}
+    </View>
+  );
+}
+
+// Fiyat aralığı filtresi: hazır aralıklar + serbest min/max girişi (value "min-max").
+const PRICE_PRESETS: Array<{ label: string; value: string }> = [
+  { label: "0 - ₺1.000", value: "0-1000" },
+  { label: "₺1.000 - ₺5.000", value: "1000-5000" },
+  { label: "₺5.000 - ₺20.000", value: "5000-20000" },
+  { label: "₺20.000 - ₺100.000", value: "20000-100000" },
+  { label: "₺100.000+", value: "100000-" }
+];
+function formatPriceLabel(value: string): string | null {
+  if (!value) return null;
+  const [mnRaw, mxRaw] = value.split("-");
+  const mn = mnRaw ? Number(mnRaw) : 0;
+  const mx = mxRaw ? Number(mxRaw) : 0;
+  const fmt = (n: number) => `₺${new Intl.NumberFormat("tr-TR").format(n)}`;
+  if (mn && mx) return `${fmt(mn)}–${fmt(mx)}`;
+  if (mn && !mx) return `${fmt(mn)}+`;
+  if (!mn && mx) return `≤ ${fmt(mx)}`;
+  return null;
+}
+function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const { language } = useLanguage();
+  const [open, setOpen] = useState(false);
+  const [minVal, setMinVal] = useState("");
+  const [maxVal, setMaxVal] = useState("");
+  useEffect(() => {
+    const [mn, mx] = value ? value.split("-") : ["", ""];
+    setMinVal(mn ?? "");
+    setMaxVal(mx ?? "");
+  }, [value, open]);
+  const active = Boolean(value);
+  const label = formatPriceLabel(value) ?? translateCopy("Fiyat", language);
+  function applyCustom() {
+    const mn = minVal.replace(/[^0-9]/g, "");
+    const mx = maxVal.replace(/[^0-9]/g, "");
+    if (!mn && !mx) { onChange(""); setOpen(false); return; }
+    if (mn && mx && Number(mn) > Number(mx)) { onChange(`${mx}-${mn}`); setOpen(false); return; }
+    onChange(`${mn}-${mx}`);
+    setOpen(false);
+  }
+  return (
+    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
+      <Pressable
+        onPress={() => setOpen((o) => !o)}
+        style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
+      >
+        <MaterialCommunityIcons name="cash" size={14} color={active ? colors.primaryDark : colors.muted} />
+        <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: active ? "900" : "700" }}>{label}</Text>
+        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={15} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <>
+          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 90 }} />
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, left: 0, minWidth: 250, padding: 12, position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 44, zIndex: 100 }}>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {PRICE_PRESETS.map((p) => {
+                const on = value === p.value;
+                return (
+                  <Pressable key={p.value} onPress={() => { onChange(p.value); setOpen(false); }} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 }}>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{p.label}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+            <View style={{ backgroundColor: colors.line, height: 1 }} />
+            <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Kendi aralığın (₺)", language)}</Text>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <TextInput
+                value={minVal}
+                onChangeText={(t) => setMinVal(t.replace(/[^0-9]/g, ""))}
+                keyboardType="number-pad"
+                placeholder={translateCopy("En az", language)}
+                placeholderTextColor={colors.subtle}
+                style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 40, paddingHorizontal: 10 }}
+              />
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>—</Text>
+              <TextInput
+                value={maxVal}
+                onChangeText={(t) => setMaxVal(t.replace(/[^0-9]/g, ""))}
+                keyboardType="number-pad"
+                placeholder={translateCopy("En çok", language)}
+                placeholderTextColor={colors.subtle}
+                onSubmitEditing={applyCustom}
+                style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 40, paddingHorizontal: 10 }}
+              />
+            </View>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              {active ? (
+                <Pressable onPress={() => { onChange(""); setOpen(false); }} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flex: 1, paddingVertical: 10 }}>
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Temizle", language)}</Text>
+                </Pressable>
+              ) : null}
+              <Pressable onPress={applyCustom} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flex: 1, paddingVertical: 10 }}>
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Uygula", language)}</Text>
+              </Pressable>
+            </View>
           </View>
         </>
       ) : null}

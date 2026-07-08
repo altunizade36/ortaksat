@@ -49,19 +49,6 @@ export function HomeDesktop() {
   const { categoryTree, listings, isFavorite, toggleFavorite, marketplaceInitialLoading, marketplaceLoadFailed, retryMarketplace } = useStore();
 
   const active = useMemo(() => listings.filter((l) => l.status === "active"), [listings]);
-  const today = new Date().toISOString().slice(0, 10);
-  const stats = useMemo(() => {
-    const openCount = active.filter((l) => l.partnershipMode === "open").length;
-    const todayCount = active.filter((l) => (l.createdAt ?? "").slice(0, 10) === today).length;
-    const cityCount = new Set(active.map((l) => l.location)).size;
-    return [
-      { icon: "package-variant-closed" as IconName, tint: colors.primarySoft, color: colors.primaryDark, value: active.length, label: "Aktif ilan" },
-      { icon: "handshake-outline" as IconName, tint: colors.violetSoft, color: colors.violet, value: openCount, label: "Ortak satışa açık" },
-      { icon: "file-document-outline" as IconName, tint: colors.infoSoft, color: colors.info, value: todayCount, label: "Bugün eklenen" },
-      { icon: "map-marker-outline" as IconName, tint: colors.goldSoft, color: colors.gold, value: cityCount, label: "Şehir" }
-    ];
-  }, [active, today]);
-
   // Filtreler
   const [selectedNode, setSelectedNode] = useState<CategoryNode | null>(null);
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
@@ -312,20 +299,6 @@ export function HomeDesktop() {
             </View>
           </View>
 
-          {/* İstatistik kartları */}
-          <View style={{ gap: 9, width: 178 }}>
-            {stats.map((s) => (
-              <View key={s.label} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flex: 1, flexDirection: "row", gap: 10, paddingHorizontal: 12, paddingVertical: 10 }}>
-                <View style={{ alignItems: "center", backgroundColor: s.tint, borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
-                  <MaterialCommunityIcons name={s.icon} size={18} color={s.color} />
-                </View>
-                <View style={{ flex: 1, gap: 0, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 16.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{new Intl.NumberFormat("tr-TR").format(s.value)}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{translateCopy(s.label, language)}</Text>
-                </View>
-              </View>
-            ))}
-          </View>
         </View>
 
         {/* Ortak-satış: nasıl kazanılır + en çok kazandıran fırsatlar */}
