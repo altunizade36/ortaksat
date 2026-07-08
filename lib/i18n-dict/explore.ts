@@ -253,6 +253,7 @@ export const exploreDict: Record<string, string> = {
   "Satıcının diğer ürünleri": "Seller's other products",
   "Bu satıcının başka aktif ürünü yok.": "This seller has no other active products.",
   "Benzer ürünler": "Similar products",
+  "Son gezdiklerin": "Recently viewed",
   "Bu kategoride başka aktif ürün yok.": "There are no other active products in this category.",
   "Alıcı talebi": "Buyer lead",
   "Yorumlar": "Reviews",

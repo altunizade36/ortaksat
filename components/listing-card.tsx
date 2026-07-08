@@ -7,6 +7,7 @@ import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getCategoryIcon, getCategoryShortLabel, inferListingSubcategory } from "@/lib/categories";
 import { useCompare } from "@/lib/compare";
+import { useFavoriteFlag } from "@/lib/favorites-cache";
 import { commissionAmount, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { compactNumber, REFERENCE_NOW } from "@/lib/locale";
@@ -31,6 +32,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
   const sellerSales = owner?.successfulSales ?? 0;
   const { has, toggle } = useCompare();
   const inCompare = has(listing.id);
+  const { isFav, toggle: toggleFav } = useFavoriteFlag(listing.id);
   const imageUri = listing.imageUrl ?? listing.image;
   const imageAlt = listing.imageAlt ?? `${displayText(listing.title)} ${translateCopy("ilan görseli", language)}`;
   // Emlak/kategori kartında en önemli 3 yapısal özellik rozeti (oda · m² · ilan tipi).
@@ -194,15 +196,26 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
         </Pressable>
       </Link>
       {!listing.demo ? (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityState={{ selected: inCompare }}
-          accessibilityLabel={inCompare ? translateCopy("Karşılaştırmadan çıkar", language) : translateCopy("Karşılaştır", language)}
-          onPress={() => toggle(listing.id)}
-          style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderColor: inCompare ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 30, justifyContent: "center", position: "absolute", right: 8, top: 8, width: 30, zIndex: 4 }}
-        >
-          <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
-        </Pressable>
+        <>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: isFav }}
+            accessibilityLabel={isFav ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)}
+            onPress={toggleFav}
+            style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderColor: isFav ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, height: 30, justifyContent: "center", position: "absolute", right: 8, top: 8, width: 30, zIndex: 4 }}
+          >
+            <MaterialCommunityIcons name={isFav ? "heart" : "heart-outline"} size={16} color={isFav ? colors.accent : colors.muted} />
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: inCompare }}
+            accessibilityLabel={inCompare ? translateCopy("Karşılaştırmadan çıkar", language) : translateCopy("Karşılaştır", language)}
+            onPress={() => toggle(listing.id)}
+            style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderColor: inCompare ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 30, justifyContent: "center", position: "absolute", right: 44, top: 8, width: 30, zIndex: 4 }}
+          >
+            <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
+          </Pressable>
+        </>
       ) : null}
     </View>
   );

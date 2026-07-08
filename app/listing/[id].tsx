@@ -32,7 +32,7 @@ import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
 import { insertReferralLead, logReferralClick, resolveReferralLink } from "@/lib/live-service";
 import { getRefAttribution, saveRefAttribution } from "@/lib/referral";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { pushRecent } from "@/lib/recent";
+import { getRecent, pushRecent } from "@/lib/recent";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { LeadSource, Listing, PartnershipStatus, PurchaseIntent, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -90,6 +90,8 @@ export default function ListingDetailScreen() {
   const [applicationAudience, setApplicationAudience] = useState("");
   const [applicationHandle, setApplicationHandle] = useState("");
   const [applicationReach, setApplicationReach] = useState("");
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+  useEffect(() => { setRecentIds(getRecent()); }, [id]);
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [leadNote, setLeadNote] = useState("");
@@ -268,6 +270,11 @@ export default function ListingDetailScreen() {
   const similarFinal = similarListings.length
     ? similarListings
     : listings.filter((item) => item.id !== currentListing.id && item.status === "active" && item.category === currentListing.category).slice(0, 8);
+  // Son gezdiklerin (bu ilan hariç, aktif) — client-only localStorage.
+  const recentViewed = recentIds
+    .map((rid) => listings.find((l) => l.id === rid))
+    .filter((l): l is Listing => Boolean(l) && l!.status === "active" && l!.id !== currentListing.id)
+    .slice(0, 10);
 
   function handleJoin() {
     if (isDemo) return demoBlocked();
@@ -859,6 +866,16 @@ export default function ListingDetailScreen() {
           title={translateCopy("Benzer ürünler", language)}
           emptyText={translateCopy("Bu kategoride başka aktif ürün yok.", language)}
         />
+
+        {recentViewed.length > 0 ? (
+          <RelatedListingsSection
+            cardWidth={relatedCardWidth}
+            listings={recentViewed}
+            ownersById={(ownerId) => findUser(ownerId)}
+            title={translateCopy("Son gezdiklerin", language)}
+            emptyText=""
+          />
+        ) : null}
 
         <Card>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>

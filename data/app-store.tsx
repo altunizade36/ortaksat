@@ -16,6 +16,7 @@ import {
 } from "@/data/mock-data";
 import { logActivity } from "@/lib/audit";
 import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@/lib/auth-links";
+import { registerFavoriteToggle, syncFavorites } from "@/lib/favorites-cache";
 import { commissionAmount, listingInviteCode, msgStamp } from "@/lib/format";
 import {
   deleteFavorite,
@@ -1664,6 +1665,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }, "Başvuru reddi kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
       },
       toggleFavorite(listingId) {
+        if (!isAuthenticated) { setAuthError("Favorilere eklemek için giriş yapmalısın."); return; }
         const existing = favorites.find((item) => item.listingId === listingId && item.userId === currentUser.id);
         if (existing) {
           setFavorites((items) => items.filter((item) => item.id !== existing.id));
@@ -2068,6 +2070,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
       }
     };
   }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, hiddenCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, marketplaceLoadFailed, messages, notifications, orders, partnerships, pendingVerifyEmail, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
+
+  // Hafif favori-önbelleğini app-store ile senkronla (kart favori kalbi için).
+  const favToggleRef = useRef<(id: string) => void>(() => {});
+  favToggleRef.current = value.toggleFavorite;
+  useEffect(() => { registerFavoriteToggle((id) => favToggleRef.current(id)); }, []);
+  useEffect(() => {
+    syncFavorites(favorites.filter((f) => f.userId === currentUserId).map((f) => f.listingId));
+  }, [favorites, currentUserId]);
 
   return <StoreContext.Provider value={value}>{children}</StoreContext.Provider>;
 }
