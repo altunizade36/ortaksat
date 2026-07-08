@@ -13,6 +13,7 @@ import { openUrlSafe } from "@/lib/link";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState } from "@/components/ui";
 import { localToday, money } from "@/lib/format";
+import { displayText } from "@/lib/text";
 import { uploadMessageAttachment } from "@/lib/live-service";
 import { useTypingIndicator } from "@/lib/use-typing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -321,9 +322,17 @@ function ChatScreenInner() {
           hazır cevaplar + "güvenli anlaşma" şablonu. Tıklayınca mesaj kutusuna yazılır. */}
       {!body.trim() ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingVertical: 8 }} style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, maxHeight: 52 }}>
-          <Pressable onPress={() => setBody(safeDealDraft)} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+          <Pressable onPress={() => setBody(translateCopy("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?", language))} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+            <MaterialCommunityIcons name="handshake-outline" size={13} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Ortaklık öner", language)}</Text>
+          </Pressable>
+          <Pressable onPress={() => setBody(listing ? `${displayText(listing.title)} için fiyat teklifim: ₺___ (liste: ${money(listing.price)}). Uygun olur mu?` : translateCopy("Fiyat teklifim: ₺___ — uygun olur mu?", language))} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+            <MaterialCommunityIcons name="tag-outline" size={13} color={colors.primaryDark} />
+            <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{translateCopy("Fiyat teklifi", language)}</Text>
+          </Pressable>
+          <Pressable onPress={() => setBody(safeDealDraft)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
             <MaterialCommunityIcons name="shield-check-outline" size={13} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Güvenli anlaşma", language)}</Text>
+            <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{translateCopy("Güvenli anlaşma", language)}</Text>
           </Pressable>
           {quickReplies.map((reply) => (
             <Pressable key={reply} onPress={() => setBody(reply)} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
