@@ -112,8 +112,18 @@ export function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function EmptyState({ title, body }: { title: string; body: string }) {
+export function EmptyState({ title, body, action }: { title: string; body: string; action?: { label: string; href?: Href; onPress?: () => void; icon?: keyof typeof MaterialCommunityIcons.glyphMap } }) {
   const { language } = useLanguage();
+  const cta = action ? (
+    <Pressable
+      accessibilityRole={action.href ? "link" : "button"}
+      onPress={action.onPress}
+      style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 10 })}
+    >
+      {action.icon ? <MaterialCommunityIcons name={action.icon} size={16} color="#FFFFFF" /> : null}
+      <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy(action.label, language)}</Text>
+    </Pressable>
+  ) : null;
   return (
     <Card>
       <Text selectable style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>
@@ -122,6 +132,7 @@ export function EmptyState({ title, body }: { title: string; body: string }) {
       <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
         {translateCopy(body, language)}
       </Text>
+      {action?.href ? <Link href={action.href} asChild>{cta}</Link> : cta}
     </Card>
   );
 }

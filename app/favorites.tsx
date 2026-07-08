@@ -120,7 +120,7 @@ function FavoritesScreenInner() {
             </View>
 
             {filtered.length === 0 ? (
-              <EmptyState title={translateCopy("Favori yok", language)} body={translateCopy("Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin.", language)} />
+              <EmptyState title={translateCopy("Favori yok", language)} body={translateCopy("Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin.", language)} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} />
             ) : (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
                 {filtered.map((listing) => <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} />)}
@@ -185,7 +185,7 @@ function FavoritesScreenInner() {
         <Text selectable style={{ color: colors.accent, fontSize: 12, fontWeight: "900" }}>{visibleListings.length} {language === "en" ? "results" : "sonuç"}</Text>
       </View>
 
-      {favoriteListings.length === 0 ? <EmptyState title={language === "en" ? "No favorites" : "Favori yok"} body={language === "en" ? "Tap the heart on product details to add products to favorites." : "Ürün detayında kalp simgesine basarak ürünleri favorilerine ekleyebilirsin."} /> : null}
+      {favoriteListings.length === 0 ? <EmptyState title={language === "en" ? "No favorites" : "Favori yok"} body={language === "en" ? "Tap the heart on product details to add products to favorites." : "Ürün detayında kalp simgesine basarak ürünleri favorilerine ekleyebilirsin."} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} /> : null}
       {favoriteListings.length > 0 && visibleListings.length === 0 ? <EmptyState title={translateCopy("Sonuç yok", language)} body={language === "en" ? "Change your search term to list your favorites again." : "Arama kelimesini değiştirerek favorilerini tekrar listeleyebilirsin."} /> : null}
 
       {droppedCount > 0 ? (

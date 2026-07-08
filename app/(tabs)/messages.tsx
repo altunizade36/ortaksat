@@ -543,7 +543,7 @@ function MessagesScreenInner() {
       </View>
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
-      {myConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noConversation")} body={t("noConversationBody")} /></View> : null}
+      {myConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noConversation")} body={t("noConversationBody")} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} /></View> : null}
       {myConversations.length > 0 && visibleConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noResults")} body={t("searchOrFilterAgain")} /></View> : null}
 
       {visibleConversations.map((conversation) => {

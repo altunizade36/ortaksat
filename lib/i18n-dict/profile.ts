@@ -213,6 +213,8 @@ export const profileDict: Record<string, string> = {
   "Daha önce": "Earlier",
   "Bildirim": "Notification",
   "İlana git →": "Go to listing →",
+  "Mesaja git →": "Go to message →",
+  "Ürünleri keşfet": "Explore products",
   "Görüntülendi": "Viewed",
   "Okundu işaretle": "Mark as read",
   "Özet": "Summary",

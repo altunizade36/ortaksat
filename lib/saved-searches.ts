@@ -1,7 +1,10 @@
 import { useEffect, useState } from "react";
 
-// Kayıtlı aramalar (web'de localStorage). Her kayıt: sorgu + kaydedildiği an.
-export type SavedSearch = { id: string; q: string; ts: number };
+// Kayıtlı aramalar (web'de localStorage). Her kayıt: sorgu + aktif filtreler +
+// kaydedildiği an. `f` = kaydedildiği andaki filtre kümesi (fiyat/komisyon/
+// kategori/şehir/sıralama…), tıklanınca geri yüklenir.
+export type SavedFilters = Record<string, string | number | boolean>;
+export type SavedSearch = { id: string; q: string; ts: number; f?: SavedFilters };
 const KEY = "ortaksat_saved_searches_v1";
 const MAX = 12;
 const listeners = new Set<() => void>();
@@ -29,12 +32,14 @@ function emit() {
   persist();
   listeners.forEach((l) => l());
 }
-export function addSaved(q: string) {
+export function addSaved(q: string, f?: SavedFilters) {
   const query = q.trim();
-  if (!query) return;
-  if (items.some((s) => s.q.toLocaleLowerCase("tr-TR") === query.toLocaleLowerCase("tr-TR"))) return;
+  const hasFilters = f && Object.keys(f).length > 0;
+  if (!query && !hasFilters) return;
   const ts = Date.now();
-  items = [{ id: `${ts}-${query.slice(0, 12)}`, q: query, ts }, ...items].slice(0, MAX);
+  const key = `${query.toLocaleLowerCase("tr-TR")}|${hasFilters ? JSON.stringify(f) : ""}`;
+  if (items.some((s) => `${s.q.toLocaleLowerCase("tr-TR")}|${s.f ? JSON.stringify(s.f) : ""}` === key)) return;
+  items = [{ id: `${ts}-${query.slice(0, 12) || "flt"}`, q: query, ts, ...(hasFilters ? { f } : {}) }, ...items].slice(0, MAX);
   emit();
 }
 export function removeSaved(id: string) {

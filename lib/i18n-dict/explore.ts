@@ -40,6 +40,8 @@ export const exploreDict: Record<string, string> = {
   "Sizin için seçilmiş en iyi ortaklık fırsatları": "The best partnership opportunities picked for you",
   "ilan bulundu": "listings found",
   "aramasını kaydet": "save this search",
+  "Bu filtreyi kaydet": "Save this filter",
+  "Filtreli arama": "Filtered search",
   "yeni": "new",
   "Kayıtlı aramayı sil": "Delete saved search",
   "İlan ver": "Post a listing",

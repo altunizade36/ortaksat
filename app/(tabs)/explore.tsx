@@ -15,7 +15,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { REFERENCE_NOW, searchKey } from "@/lib/locale";
 import { scoreListing } from "@/lib/search";
-import { useSavedSearches } from "@/lib/saved-searches";
+import { useSavedSearches, type SavedFilters, type SavedSearch } from "@/lib/saved-searches";
 import { LocationSelector } from "@/components/location-selector";
 import { districtsOfProvince, getDistrict, getProvince, locKey, provinces } from "@/lib/locations";
 import { searchListings } from "@/lib/supabase-data";
@@ -194,6 +194,36 @@ export default function ExploreScreen() {
   const toggleAttr = (key: string, val: string) => setAttrFilters((s) => { const cur = s[key] ?? []; const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]; const copy = { ...s }; if (next.length) copy[key] = next; else delete copy[key]; return copy; });
   const setNum = (key: string, side: "min" | "max", v: string) => setNumRange((s) => ({ ...s, [key]: { min: s[key]?.min ?? "", max: s[key]?.max ?? "", [side]: v } }));
   const clearCatFilter = () => { setCatKey(""); setSubKey(""); setAttrFilters({}); setNumRange({}); };
+
+  // Kayıtlı arama: o anki filtre kümesini yakala + tıklanınca geri yükle.
+  const currentFilters = (): SavedFilters => {
+    const f: SavedFilters = {};
+    if (priceRange) f.price = priceRange;
+    if (minCommission) f.comm = minCommission;
+    if (catKey) f.cat = catKey;
+    if (subKey) f.sub = subKey;
+    if (city) f.city = city;
+    if (statusOpen) f.open = true;
+    if (stockFilter) f.stock = stockFilter;
+    if (sortMode && sortMode !== "recommended") f.sort = sortMode;
+    return f;
+  };
+  const hasSaveableFilter = Boolean(priceRange) || minCommission > 0 || Boolean(catKey) || Boolean(city) || statusOpen || Boolean(stockFilter) || sortMode !== "recommended";
+  const isCurrentSaved = savedSearches.some((s) => (s.q ?? "").toLocaleLowerCase("tr-TR") === queryText.toLocaleLowerCase("tr-TR") && JSON.stringify(s.f ?? {}) === JSON.stringify(currentFilters()));
+  const applySaved = (s: SavedSearch) => {
+    const f = s.f ?? {};
+    setPriceRange(typeof f.price === "string" ? f.price : "");
+    setMinCommission(typeof f.comm === "number" ? f.comm : 0);
+    setCatKey(typeof f.cat === "string" ? f.cat : "");
+    setSubKey(typeof f.sub === "string" ? f.sub : "");
+    setCity(typeof f.city === "string" ? f.city : "");
+    setStatusOpen(f.open === true);
+    setStockFilter(typeof f.stock === "string" ? f.stock : "");
+    setSortMode(typeof f.sort === "string" ? (f.sort as SortMode) : "recommended");
+    setAttrFilters({});
+    setNumRange({});
+    router.setParams({ q: s.q || undefined });
+  };
 
   const hasPanelFilter = provinceId != null || Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter) || Boolean(catKey);
 
@@ -573,21 +603,23 @@ export default function ExploreScreen() {
             </View>
 
             {/* Kayıtlı aramalar + arama kaydet */}
-            {(queryText || savedSearches.length > 0) ? (
+            {(queryText || hasSaveableFilter || savedSearches.length > 0) ? (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {queryText && !savedSearches.some((s) => s.q.toLocaleLowerCase("tr-TR") === queryText.toLocaleLowerCase("tr-TR")) ? (
-                  <Pressable onPress={() => addSaved(queryText)} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}>
+                {(queryText || hasSaveableFilter) && !isCurrentSaved ? (
+                  <Pressable onPress={() => addSaved(queryText, currentFilters())} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}>
                     <MaterialCommunityIcons name="bell-plus-outline" size={15} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{`“${queryText}” `}{translateCopy("aramasını kaydet", language)}</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{queryText ? `“${queryText}” ${translateCopy("aramasını kaydet", language)}` : translateCopy("Bu filtreyi kaydet", language)}</Text>
                   </Pressable>
                 ) : null}
                 {savedSearches.map((s) => {
                   const tokens = searchKey(s.q).split(" ").filter(Boolean);
-                  const newCount = listings.filter((l) => l.status === "active" && Date.parse(l.createdAt ?? "") > s.ts && tokens.every((tk) => searchKey(`${l.title} ${l.category} ${l.location}`).includes(tk))).length;
+                  const newCount = tokens.length > 0 ? listings.filter((l) => l.status === "active" && Date.parse(l.createdAt ?? "") > s.ts && tokens.every((tk) => searchKey(`${l.title} ${l.category} ${l.location}`).includes(tk))).length : 0;
+                  const hasF = s.f && Object.keys(s.f).length > 0;
+                  const label = s.q || translateCopy("Filtreli arama", language);
                   return (
                     <View key={s.id} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingLeft: 12, paddingRight: 6, paddingVertical: 5 }}>
-                      <MaterialCommunityIcons name="bookmark-outline" size={14} color={colors.muted} />
-                      <Pressable onPress={() => router.setParams({ q: s.q })}><Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{s.q}</Text></Pressable>
+                      <MaterialCommunityIcons name={hasF ? "filter-check-outline" : "bookmark-outline"} size={14} color={colors.muted} />
+                      <Pressable onPress={() => applySaved(s)}><Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{label}</Text></Pressable>
                       {newCount > 0 ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{newCount} {translateCopy("yeni", language)}</Text></View> : null}
                       <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kayıtlı aramayı sil", language)} onPress={() => removeSaved(s.id)} hitSlop={6} style={{ alignItems: "center", height: 22, justifyContent: "center", width: 22 }}>
                         <MaterialCommunityIcons name="close" size={14} color={colors.subtle} />

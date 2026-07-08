@@ -57,7 +57,7 @@ export default function NotificationsScreen() {
 
 function NotificationsScreenInner() {
   const { language } = useLanguage();
-  const { currentUser, listings, markNotificationRead, notifications, partnerships, savePreferences, setEmailNotifications } = useStore();
+  const { conversations, currentUser, listings, markNotificationRead, notifications, partnerships, savePreferences, setEmailNotifications } = useStore();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
 
@@ -65,7 +65,14 @@ function NotificationsScreenInner() {
   //  • İlanın sahibi (satıcı) isem → satıcı panelinde ilgili ilanı aç (?focus=)
   //  • Ortaklığın ortağı isem → ortak panelinde ilgili ortaklığı öne al (?focus=)
   //  • Değilsem → ilan detayına git. Metadata yoksa null (sadece okundu işaretlenir).
-  const hrefForMeta = (meta?: NotificationMeta): Href | null => {
+  const hrefForMeta = (meta?: NotificationMeta, type?: NotificationType): Href | null => {
+    // Mesaj bildirimi → doğrudan ilgili sohbeti aç (en aksiyon-odaklı bildirim).
+    if (type === "message") {
+      const convo = conversations
+        .filter((c) => c.participantIds.includes(currentUser.id) && (!meta?.listingId || c.listingId === meta.listingId))
+        .sort((a, b) => (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? ""))[0];
+      if (convo) return { pathname: "/chat/[id]", params: { id: convo.id } } as unknown as Href;
+    }
     if (!meta?.listingId) return null;
     const listing = listings.find((l) => l.id === meta.listingId);
     const partnership = meta.partnershipId ? partnerships.find((p) => p.id === meta.partnershipId) : undefined;
@@ -146,7 +153,7 @@ function NotificationsScreenInner() {
     // Tıklayınca okundu işaretle + rol-duyarlı hedefe git (satıcı/ortak/ilan).
     const openDesk = (n: DeskNotif) => {
       markRead(n);
-      const href = hrefForMeta(n.metadata);
+      const href = hrefForMeta(n.metadata, n.type);
       if (href) router.push(href);
     };
     const markAll = () => {
@@ -206,7 +213,7 @@ function NotificationsScreenInner() {
                     {items.map((n, idx) => {
                       const read = isRead(n);
                       const meta = typeMeta[n.type] ?? { label: translateCopy("Bildirim", language), tint: colors.infoSoft, color: colors.info };
-                      const hasLink = Boolean(n.metadata?.listingId);
+                      const hasLink = Boolean(n.metadata?.listingId) || n.type === "message";
                       return (
                         <Pressable key={n.id} accessibilityRole="button" accessibilityLabel={hasLink ? `${n.title} — ${translateCopy("ilana git", language)}` : n.title} onPress={() => openDesk(n)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : read ? colors.surface : colors.primarySoft + "55", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 })}>
                           <View style={{ alignItems: "center", backgroundColor: meta.tint, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
@@ -223,7 +230,7 @@ function NotificationsScreenInner() {
                             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{translateCopy(n.body, language)}</Text>
                             <View style={{ alignItems: "center", flexDirection: "row", gap: 10, marginTop: 2 }}>
                               <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{n.createdAt}</Text>
-                              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{hasLink ? translateCopy("İlana git →", language) : read ? translateCopy("Görüntülendi", language) : translateCopy("Okundu işaretle", language)}</Text>
+                              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{hasLink ? translateCopy(n.type === "message" ? "Mesaja git →" : "İlana git →", language) : read ? translateCopy("Görüntülendi", language) : translateCopy("Okundu işaretle", language)}</Text>
                             </View>
                           </View>
                         </Pressable>
@@ -387,10 +394,10 @@ function NotificationsScreenInner() {
         ))}
       </Card>
 
-      {visibleNotifications.length === 0 ? <EmptyState title={mutedCount > 0 ? translateCopy("Görünür bildirim yok", language) : translateCopy("Bildirim yok", language)} body={mutedCount > 0 ? translateCopy("Bazı türleri kapattın. Görmek için yukarıdan aç.", language) : translateCopy("Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek.", language)} /> : null}
+      {visibleNotifications.length === 0 ? <EmptyState title={mutedCount > 0 ? translateCopy("Görünür bildirim yok", language) : translateCopy("Bildirim yok", language)} body={mutedCount > 0 ? translateCopy("Bazı türleri kapattın. Görmek için yukarıdan aç.", language) : translateCopy("Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek.", language)} action={mutedCount > 0 ? undefined : { label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} /> : null}
 
       {visibleNotifications.map((notification) => {
-        const href = hrefForMeta(notification.metadata);
+        const href = hrefForMeta(notification.metadata, notification.type);
         const openMobile = () => {
           if (!notification.read) markNotificationRead(notification.id);
           if (href) router.push(href);
