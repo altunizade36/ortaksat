@@ -60,7 +60,7 @@ export function GlobalSearchBar() {
           placeholderTextColor={colors.muted}
           returnKeyType="search"
           submitBehavior="submit"
-          style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "700", height: 40, paddingVertical: 0 }}
+          style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "700", height: 40, minWidth: 0, paddingVertical: 0 }}
         />
         {value ? (
           <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Temizle", language)} onPress={() => { setValue(""); inputRef.current?.focus(); }} hitSlop={8}>

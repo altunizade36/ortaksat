@@ -122,7 +122,7 @@ export function WebFooter() {
       }}
     >
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 24 }}>
-        <View style={{ flex: 1.6, gap: 8, minWidth: 280 }}>
+        <View style={{ flex: 1.6, gap: 8, minWidth: 220 }}>
           <Text style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900" }}>ortaksat</Text>
           <Text style={{ color: light, fontSize: 13, fontWeight: "600", lineHeight: 19, maxWidth: 380 }}>
             {t("appSlogan")}. {translateCopy("İlanını aç, satış yapabilecek ortaklarla eşleş; komisyonu birlikte belirleyin.", language)}
@@ -178,7 +178,7 @@ export function WebFooter() {
         ))}
       </View>
       <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between", marginTop: 12, paddingTop: 10 }}>
-        <View style={{ gap: 3 }}>
+        <View style={{ flex: 1, gap: 3, minWidth: 200 }}>
           <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" }}>
             {translateCopy("© 2026 OrtakSat. Tüm hakları saklıdır.", language)}
           </Text>
