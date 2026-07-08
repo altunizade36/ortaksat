@@ -103,11 +103,9 @@ export default function StoreScreen() {
       ]);
       return;
     }
-    // Aktif ilan yoksa da iletişim kopmasın: satıcının herhangi bir ilanı (pasif/
-    // satıldı) üzerinden konuşma başlat. Hiç ilanı yoksa yönlendir.
     const firstListing = activeListings[0] ?? sellerListings[0];
     if (!firstListing) {
-      Alert.alert(translateCopy("İletişim kurulamadı", language), translateCopy("Bu satıcının henüz ilanı yok. İlan yayınlandığında mesaj gönderebilirsin.", language));
+      Alert.alert(translateCopy("İletişim kurulamadı", language), translateCopy("Bu satıcının şu an aktif ilanı yok. İlan yayınlandığında mesaj gönderebilirsin.", language));
       return;
     }
     const conversation = startConversation(firstListing.id, seller.id, `${seller.name} mağazasındaki ürünler için bilgi almak istiyorum.`);
