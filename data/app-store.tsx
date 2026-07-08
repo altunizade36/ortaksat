@@ -264,6 +264,7 @@ type AppStore = {
   createSaleReview: (saleId: string, rating: number, comment: string) => Review | undefined;
   canReviewSale: (saleId: string) => boolean;
   createSaleFromLead: (leadId: string, input?: Partial<SaleFromLeadInput>) => Sale | undefined;
+  recordSaleForPartner: (partnershipId: string, input?: Partial<SaleFromLeadInput> & { buyerName?: string }) => Sale | undefined;
   joinListing: (listingId: string, input?: Partial<PartnershipApplicationInput>) => Partnership | undefined;
   approvePartnership: (partnershipId: string) => void;
   rejectPartnership: (partnershipId: string, reason?: string) => void;
@@ -1501,6 +1502,62 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setSales((items) => items.filter((s) => s.id !== sale.id));
           setOrders((items) => items.filter((o) => o.id !== order.id));
           setLeads((items) => items.map((l) => (l.id === leadId ? lead : l)));
+          setListings((items) => items.map((l) => (l.id === listing.id ? listing : l)));
+        }, "Satış kaydı oluşturulamadı. Bağlantını kontrol edip tekrar dene.");
+        if (liveUser) void updateListingInventoryLive(updatedListing);
+        return sale;
+      },
+      // Doğrudan satış: ortak referans linkiyle gelen alıcı WhatsApp/elden satın
+      // aldıysa (lead kaydı yoksa), satıcı satışı bu ortağa atayıp komisyonu
+      // başlatır. createSaleFromLead ile aynı boru hattı; farkı lead yok.
+      recordSaleForPartner(partnershipId, input) {
+        if (isSuspended) { setAuthError("Hesabın askıya alındığı için işlem yapamazsın."); return undefined; }
+        const partnership = partnerships.find((item) => item.id === partnershipId);
+        if (!partnership || partnership.status !== "active") { setAuthError("Ortaklık aktif değil."); return undefined; }
+        const listing = listings.find((item) => item.id === partnership.listingId);
+        if (!listing || listing.ownerId !== currentUser.id || listing.status !== "active" || listing.stockCount <= 0) {
+          setAuthError("Satış eklenemez. İlan sana ait ve aktif olmalı, stok bulunmalı.");
+          return undefined;
+        }
+
+        const quantity = Math.max(1, Math.floor(input?.quantity ?? 1));
+        const amount = Number.isFinite(input?.amount) && Number(input?.amount) > 0 ? Number(input?.amount) : listing.price * quantity;
+        const returnUntil = new Date(Date.now() + listing.returnWindowDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        const sale: Sale = {
+          id: newId("s", liveUser),
+          listingId: listing.id,
+          partnershipId: partnership.id,
+          amount,
+          quantity,
+          commissionAmount: listing.commissionType === "rate" ? Math.round((amount * listing.commissionValue) / 100) : commissionAmount(listing) * quantity,
+          status: listing.returnWindowDays > 0 ? "return_pending" : "approved",
+          buyerName: input?.buyerName?.trim() || "Doğrudan satış",
+          deliveryStatus: input?.deliveryStatus ?? "confirmed",
+          returnUntil,
+          approvedAt: listing.returnWindowDays > 0 ? undefined : today(),
+          payoutNote: `Satıcı tarafından eklendi (doğrudan satış). ${listing.returnWindowDays} gün iade penceresi sonrası ${listing.commissionDueDays} gün içinde dış ödeme.`
+        };
+        const order: Order = {
+          id: newId("o", liveUser),
+          listingId: listing.id,
+          buyerId: currentUser.id,
+          sellerId: listing.ownerId,
+          partnershipId: partnership.id,
+          amount,
+          status: "confirmed",
+          createdAt: today()
+        };
+        setSales((items) => [sale, ...items]);
+        setOrders((items) => [order, ...items]);
+        const nextStockCount = Math.max(0, listing.stockCount - quantity);
+        const nextListingStatus = nextStockCount === 0 ? "sold" : listing.status;
+        const updatedListing: Listing = { ...listing, stockCount: nextStockCount, status: nextListingStatus };
+        setListings((items) => items.map((item) => (item.id === listing.id ? updatedListing : item)));
+        setAuthError(undefined);
+        notify(partnership.partnerId, "sale", "Satış kaydı oluştu", `${listing.title} için satıcı doğrudan satış ekledi; komisyonun süreçte.`);
+        if (liveUser) persistCritical(insertSaleFromLead(sale, listing), () => {
+          setSales((items) => items.filter((s) => s.id !== sale.id));
+          setOrders((items) => items.filter((o) => o.id !== order.id));
           setListings((items) => items.map((l) => (l.id === listing.id ? listing : l)));
         }, "Satış kaydı oluşturulamadı. Bağlantını kontrol edip tekrar dene.");
         if (liveUser) void updateListingInventoryLive(updatedListing);

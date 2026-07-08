@@ -21,6 +21,7 @@ import { useContentWidth, useIsWideWeb } from "@/lib/layout";
 import { searchKey, shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Conversation, Lead, Message, Partnership } from "@/lib/types";
+import { useInboxPrefs } from "@/lib/inbox-prefs";
 import { useStore } from "@/lib/use-store";
 
 type InboxFilter = "all" | "unread" | "action" | "sales" | "partner";
@@ -103,9 +104,8 @@ function MessagesScreenInner() {
   const [activeId, setActiveId] = useState<string | null>(params.c ?? null);
   const [draft, setDraft] = useState("");
   const [attaching, setAttaching] = useState(false);
-  const [starred, setStarred] = useState<Record<string, boolean>>({});
-  const [following, setFollowing] = useState<Record<string, boolean>>({});
-  const [archivedIds, setArchivedIds] = useState<string[]>([]);
+  // Yıldız / takip / arşiv artık kullanıcıya göre kalıcı (web localStorage).
+  const { starred, following, archivedIds, toggleStar, toggleFollow, toggleArchive } = useInboxPrefs(currentUser.id);
   const [showArchived, setShowArchived] = useState(false);
   const deskScrollRef = useRef<ScrollView>(null);
   // Yukarı kaydırıldıysa gelen mesaj/görsel zorla aşağı çekmesin (dibe yakınken in).
@@ -226,7 +226,6 @@ function MessagesScreenInner() {
         sendDraft();
       }
     };
-    const toggleArchive = (cid: string) => setArchivedIds((ids) => (ids.includes(cid) ? ids.filter((x) => x !== cid) : [...ids, cid]));
     const insertPriceOffer = () => {
       const base = activeListing ? money(activeListing.price) : "";
       setDraft((d) => (d.trim() ? d : `Fiyat teklifim: ${base ? base.replace(/[0-9.,]+/, "___") : "₺___"} — uygun olur mu?`));
@@ -362,7 +361,7 @@ function MessagesScreenInner() {
                     // Telefon feed'de taşınmaz; arama anında (girişli kullanıcı) çekilir.
                     <Pressable accessibilityLabel={translateCopy("Ara", language)} onPress={async () => { const p = activeOther.phone || (await fetchSellerPhone(activeOther.id)); const tel = p.replace(/[^0-9+]/g, ""); if (tel) void openUrlSafe(`tel:${tel}`); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="phone-outline" size={16} color={colors.muted} /></Pressable>
                   ) : null}
-                  <Pressable accessibilityLabel={translateCopy("Önemli işaretle", language)} onPress={() => setStarred((s) => ({ ...s, [activeConversation.id]: !s[activeConversation.id] }))} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name={starred[activeConversation.id] ? "star" : "star-outline"} size={16} color={starred[activeConversation.id] ? colors.gold : colors.muted} /></Pressable>
+                  <Pressable accessibilityLabel={translateCopy("Önemli işaretle", language)} onPress={() => toggleStar(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name={starred[activeConversation.id] ? "star" : "star-outline"} size={16} color={starred[activeConversation.id] ? colors.gold : colors.muted} /></Pressable>
                   <Pressable accessibilityLabel={translateCopy("Arşivle", language)} onPress={() => toggleArchive(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="archive-outline" size={16} color={colors.muted} /></Pressable>
                 </View>
 
@@ -488,7 +487,7 @@ function MessagesScreenInner() {
                         <Link href={{ pathname: "/store/[id]", params: { id: activeOtherId } }} asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flex: 1, paddingVertical: 9 }}><Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Profili Gör", language)}</Text></Pressable></Link>
                       ) : null}
                       <Link href={{ pathname: "/listing/[id]", params: { id: activeListing.id } }} asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flex: 1, paddingVertical: 9 }}><Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("İlanı Gör", language)}</Text></Pressable></Link>
-                      <Pressable onPress={() => setFollowing((s) => ({ ...s, [activeOtherId ?? ""]: !s[activeOtherId ?? ""] }))} style={{ alignItems: "center", backgroundColor: following[activeOtherId ?? ""] ? colors.primarySoft : colors.surface, borderColor: following[activeOtherId ?? ""] ? colors.primary : colors.line, borderRadius: 9, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 9 }}><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{following[activeOtherId ?? ""] ? translateCopy("Takipte", language) : translateCopy("+ Takip", language)}</Text></Pressable>
+                      <Pressable onPress={() => toggleFollow(activeOtherId ?? "")} style={{ alignItems: "center", backgroundColor: following[activeOtherId ?? ""] ? colors.primarySoft : colors.surface, borderColor: following[activeOtherId ?? ""] ? colors.primary : colors.line, borderRadius: 9, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 9 }}><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{following[activeOtherId ?? ""] ? translateCopy("Takipte", language) : translateCopy("+ Takip", language)}</Text></Pressable>
                     </View>
                   </View>
 

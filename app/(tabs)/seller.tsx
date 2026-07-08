@@ -9,6 +9,7 @@ import { Alert } from "@/lib/alert";
 import { BulkListingModal } from "@/components/bulk-listing-modal";
 import { colors } from "@/components/colors";
 import { ReasonModal } from "@/components/reason-modal";
+import { RecordSaleModal } from "@/components/record-sale-modal";
 import { QuickStart } from "@/components/quick-start";
 import { MiniBarChart } from "@/components/mini-bar-chart";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
@@ -59,6 +60,7 @@ export default function SellerScreen() {
     createListing,
     createSaleReview,
     createSaleFromLead,
+    recordSaleForPartner,
     currentUser,
     findUser,
     leads,
@@ -78,6 +80,7 @@ export default function SellerScreen() {
   const [expandedId, setExpandedId] = useState<string | null>(null);
   const [bulkOpen, setBulkOpen] = useState(false);
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
+  const [saleTarget, setSaleTarget] = useState<{ partnershipId: string; partnerName: string; price: number; currency?: string; commissionType: "rate" | "fixed"; commissionValue: number } | null>(null);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   // Grafik yalnız istemcide (new Date) render edilsin — SSG hydration uyuşmazlığı olmasın.
   const [mounted, setMounted] = useState(false);
@@ -599,6 +602,36 @@ export default function SellerScreen() {
                 );
               })}
 
+            {(() => {
+              const activeList = listingPartnerships.filter((item) => item.status === "active");
+              if (activeList.length === 0) return null;
+              const canSell = listing.status === "active" && listing.stockCount > 0;
+              return (
+                <>
+                  <SectionTitle title="Ortaklar" action={`${activeList.length}`} />
+                  <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Referans linkiyle gelen alıcı site dışında (WhatsApp/elden) satın aldıysa, satışı ilgili ortağa ekle; komisyonu başlasın.", language)}</Text>
+                  {activeList.map((p) => {
+                    const partner = findUser(p.partnerId);
+                    return (
+                      <View key={p.id} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 10, padding: 10 }}>
+                        <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{partner?.name ?? translateCopy("Ortak", language)}</Text>
+                          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>★ {partner?.rating ?? 0} · {clickCounts[p.id] ?? 0} {translateCopy("tıklama", language)}</Text>
+                        </View>
+                        <Pressable
+                          onPress={() => canSell ? setSaleTarget({ partnershipId: p.id, partnerName: partner?.name ?? translateCopy("Ortak", language), price: listing.price, currency: listing.currency, commissionType: listing.commissionType, commissionValue: listing.commissionValue }) : undefined}
+                          style={({ pressed }) => ({ alignItems: "center", backgroundColor: canSell ? colors.primary : colors.line, borderRadius: 8, flexDirection: "row", gap: 5, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
+                        >
+                          <MaterialCommunityIcons name="cash-plus" size={15} color="#FFFFFF" />
+                          <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(canSell ? "Satış ekle" : (listing.stockCount <= 0 ? "Stok yok" : "İlan pasif"), language)}</Text>
+                        </Pressable>
+                      </View>
+                    );
+                  })}
+                </>
+              );
+            })()}
+
             {listingSales.length > 0 ? <SectionTitle title="Komisyon ödemeleri" /> : null}
             {listingSales.map((sale) => (
               <View key={sale.id} style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 10, paddingTop: 12 }}>
@@ -671,6 +704,16 @@ export default function SellerScreen() {
         icon="account-cancel-outline"
         onClose={() => setRejectTargetId(null)}
         onSubmit={(reason) => { if (rejectTargetId) rejectPartnership(rejectTargetId, reason); setRejectTargetId(null); }}
+      />
+      <RecordSaleModal
+        visible={saleTarget !== null}
+        partnerName={saleTarget?.partnerName ?? ""}
+        listPrice={saleTarget?.price ?? 0}
+        currency={saleTarget?.currency}
+        commissionType={saleTarget?.commissionType ?? "rate"}
+        commissionValue={saleTarget?.commissionValue ?? 0}
+        onClose={() => setSaleTarget(null)}
+        onSubmit={(amount, quantity) => { if (saleTarget) recordSaleForPartner(saleTarget.partnershipId, { amount, quantity }); setSaleTarget(null); }}
       />
     </ScrollView>
   );

@@ -121,7 +121,7 @@ export type Sale = {
   id: string;
   listingId: string;
   partnershipId: string;
-  leadId: string;
+  leadId?: string; // doğrudan (ortağa atanan) satışta lead olmayabilir
   amount: number;
   quantity?: number;
   commissionAmount: number;

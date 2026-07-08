@@ -650,7 +650,7 @@ export async function insertSaleFromLead(sale: Sale, listing: Listing): Promise<
     order_id: orderId,
     listing_id: sale.listingId,
     partnership_id: sale.partnershipId,
-    lead_id: sale.leadId,
+    lead_id: sale.leadId ?? null, // doğrudan satışta lead yok → null (kolon nullable)
     amount: sale.commissionAmount,
     sale_amount: sale.amount,
     quantity: sale.quantity ?? 1,
