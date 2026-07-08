@@ -73,6 +73,7 @@ export default function ExploreScreen() {
   // Kategori-özel filtre: üst kategori seç → şemasından facet (Yakıt/Isıtma…) +
   // sayısal aralık (m²/km/yıl) filtreleri gelir. /kategori/[slug] ile aynı motor.
   const [catKey, setCatKey] = useState("");
+  const [subKey, setSubKey] = useState("");
   const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
   const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>({});
   const [statusOpen, setStatusOpen] = useState(false);
@@ -168,7 +169,11 @@ export default function ExploreScreen() {
   const provinceName = useMemo(() => (provinceId != null ? getProvince(provinceId)?.name : undefined), [provinceId]);
   const districtName = useMemo(() => (districtId != null ? getDistrict(districtId)?.name : undefined), [districtId]);
   // Seçili kategori düğümü + şeması + filtre alanları (facet/sayısal) + eşleşme etiketleri.
-  const catNode = useMemo(() => (catKey ? topCategories().find((n) => n.key === catKey) : undefined), [catKey]);
+  const topNode = useMemo(() => (catKey ? topCategories().find((n) => n.key === catKey) : undefined), [catKey]);
+  const subNodes = useMemo(() => (topNode?.children ?? []).filter((c) => (c.children?.length ?? 0) > 0 || Boolean(c.formKey)), [topNode]);
+  const subNode = useMemo(() => (topNode && subKey ? (topNode.children ?? []).find((c) => c.key === subKey) : undefined), [topNode, subKey]);
+  // Etkin kategori düğümü: alt kategori seçiliyse o, değilse üst kategori.
+  const catNode = subNode ?? topNode;
   const catSchema = useMemo(() => (catNode ? getFormSchema(resolveFormKey([catNode])) : undefined), [catNode]);
   const catFacets = useMemo<FieldDef[]>(() => (catSchema ? catSchema.fields.filter((f) => {
     const n = f.options?.length ?? 0;
@@ -184,10 +189,11 @@ export default function ExploreScreen() {
     return EXPLORE_NUM_FILTERS.filter((f) => keys.has(f.key) && !seen.has(f.label) && (seen.add(f.label), true));
   }, [catSchema]);
   const catLabelSet = useMemo(() => (catNode ? new Set(collectDescendantLabels(catNode).map((s) => s.toLocaleLowerCase("tr-TR").trim()).filter((s) => s.length > 2)) : null), [catNode]);
-  const selectCat = (key: string) => { setCatKey((cur) => (cur === key ? "" : key)); setAttrFilters({}); setNumRange({}); };
+  const selectCat = (key: string) => { setCatKey((cur) => (cur === key ? "" : key)); setSubKey(""); setAttrFilters({}); setNumRange({}); };
+  const selectSub = (key: string) => { setSubKey((cur) => (cur === key ? "" : key)); setAttrFilters({}); setNumRange({}); };
   const toggleAttr = (key: string, val: string) => setAttrFilters((s) => { const cur = s[key] ?? []; const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]; const copy = { ...s }; if (next.length) copy[key] = next; else delete copy[key]; return copy; });
   const setNum = (key: string, side: "min" | "max", v: string) => setNumRange((s) => ({ ...s, [key]: { min: s[key]?.min ?? "", max: s[key]?.max ?? "", [side]: v } }));
-  const clearCatFilter = () => { setCatKey(""); setAttrFilters({}); setNumRange({}); };
+  const clearCatFilter = () => { setCatKey(""); setSubKey(""); setAttrFilters({}); setNumRange({}); };
 
   const hasPanelFilter = provinceId != null || Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter) || Boolean(catKey);
 
@@ -350,6 +356,22 @@ export default function ExploreScreen() {
           );
         })}
       </ScrollView>
+      {catKey && subNodes.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 8 }}>
+          <Pressable onPress={() => setSubKey("")} style={{ alignItems: "center", backgroundColor: !subKey ? colors.primarySoft : colors.surface, borderColor: !subKey ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 }}>
+            <Text style={{ color: !subKey ? colors.primaryDark : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Tümü", language)}</Text>
+          </Pressable>
+          {subNodes.map((c) => {
+            const on = subKey === c.key;
+            return (
+              <Pressable key={c.key} onPress={() => selectSub(c.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primaryDark : colors.surface, borderColor: on ? colors.primaryDark : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 11, paddingVertical: 6 }}>
+                {on ? <MaterialCommunityIcons name="check" size={12} color="#FFFFFF" /> : null}
+                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(c.label, language)}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
       {catKey ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
           {catNums.map((nf) => (
