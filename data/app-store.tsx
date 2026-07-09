@@ -17,7 +17,7 @@ import {
 import { logActivity } from "@/lib/audit";
 import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@/lib/auth-links";
 import { registerFavoriteToggle, syncFavorites } from "@/lib/favorites-cache";
-import { commissionAmount, listingInviteCode, msgStamp } from "@/lib/format";
+import { commissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
 import {
   deleteFavorite,
   ensureProfile,
@@ -90,6 +90,7 @@ import type {
   LocationSuggestion,
   Message,
   Notification,
+  NotificationMeta,
   Order,
   Partnership,
   PlatformSettings,
@@ -894,7 +895,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       }
       return conversation;
     }
-    function notify(userId: string, type: Notification["type"], title: string, body: string) {
+    function notify(userId: string, type: Notification["type"], title: string, body: string, metadata?: NotificationMeta) {
       const notification: Notification = {
         id: newId("n", liveUser),
         userId,
@@ -902,7 +903,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         title,
         body,
         read: false,
-        createdAt: today()
+        createdAt: today(),
+        // Derin-link için metadata (ilan/ortaklık) — bildirim merkezi tıklanınca yönlendirir.
+        ...(metadata ? { metadata } : {})
       };
       setNotifications((items) => [notification, ...items]);
       if (liveUser) void insertNotification(notification);
@@ -1511,6 +1514,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const quantity = Math.max(1, Math.floor(input?.quantity ?? 1));
         const amount = Number.isFinite(input?.amount) && Number(input?.amount) > 0 ? Number(input?.amount) : listing.price * quantity;
         const returnUntil = new Date(Date.now() + listing.returnWindowDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        // Başlangıç bonusu: ilanın ilk `bonusQuota` satışına ek `bonusAmount` (satıcı taahhüdü,
+        // reklamı yapılıyordu ama komisyona hiç eklenmiyordu — sahte vaat). İptal olmayan
+        // önceki satış sayısı kotanın altındaysa bu satışa bonus eklenir.
+        const priorPartnerSales = sales.filter((s) => s.partnershipId === lead.partnershipId && s.status !== "cancelled").length;
+        const bonusApplied = (listing.bonusAmount ?? 0) > 0 && (listing.bonusQuota ?? 0) > 0 && priorPartnerSales < (listing.bonusQuota ?? 0) ? Math.round(listing.bonusAmount ?? 0) : 0;
+        const baseCommission = listing.commissionType === "rate" ? Math.round((amount * listing.commissionValue) / 100) : commissionAmount(listing) * quantity;
         const sale: Sale = {
           id: newId("s", liveUser),
           listingId: listing.id,
@@ -1518,7 +1527,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           leadId: lead.id,
           amount,
           quantity,
-          commissionAmount: listing.commissionType === "rate" ? Math.round((amount * listing.commissionValue) / 100) : commissionAmount(listing) * quantity,
+          commissionAmount: baseCommission + bonusApplied,
+          bonusApplied: bonusApplied || undefined,
           status: listing.returnWindowDays > 0 ? "return_pending" : "approved",
           buyerName: lead.buyerName,
           deliveryStatus: input?.deliveryStatus ?? "confirmed",
@@ -1543,7 +1553,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const nextListingStatus = nextStockCount === 0 ? "sold" : listing.status;
         const updatedListing: Listing = { ...listing, stockCount: nextStockCount, status: nextListingStatus };
         setListings((items) => items.map((item) => (item.id === listing.id ? updatedListing : item)));
-        if (partnership) notify(partnership.partnerId, "sale", "Satış kaydı oluştu", `${listing.title} için komisyon kaydı iade penceresine alındı.`);
+        if (partnership) notify(partnership.partnerId, "sale", "Satış kaydı oluştu", `${listing.title} için komisyon kaydı iade penceresine alındı.${bonusApplied ? ` Başlangıç bonusu ${moneyIn(bonusApplied, listing.currency)} dahil.` : ""}`, { listingId: listing.id, partnershipId: partnership.id });
         if (liveUser) persistCritical(insertSaleFromLead(sale, listing), () => {
           setSales((items) => items.filter((s) => s.id !== sale.id));
           setOrders((items) => items.filter((o) => o.id !== order.id));
@@ -1569,13 +1579,18 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const quantity = Math.max(1, Math.floor(input?.quantity ?? 1));
         const amount = Number.isFinite(input?.amount) && Number(input?.amount) > 0 ? Number(input?.amount) : listing.price * quantity;
         const returnUntil = new Date(Date.now() + listing.returnWindowDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+        // Başlangıç bonusu (ilk bonusQuota satış) — createSaleFromLead ile aynı mantık.
+        const priorPartnerSales = sales.filter((s) => s.partnershipId === partnership.id && s.status !== "cancelled").length;
+        const bonusApplied = (listing.bonusAmount ?? 0) > 0 && (listing.bonusQuota ?? 0) > 0 && priorPartnerSales < (listing.bonusQuota ?? 0) ? Math.round(listing.bonusAmount ?? 0) : 0;
+        const baseCommission = listing.commissionType === "rate" ? Math.round((amount * listing.commissionValue) / 100) : commissionAmount(listing) * quantity;
         const sale: Sale = {
           id: newId("s", liveUser),
           listingId: listing.id,
           partnershipId: partnership.id,
           amount,
           quantity,
-          commissionAmount: listing.commissionType === "rate" ? Math.round((amount * listing.commissionValue) / 100) : commissionAmount(listing) * quantity,
+          commissionAmount: baseCommission + bonusApplied,
+          bonusApplied: bonusApplied || undefined,
           status: listing.returnWindowDays > 0 ? "return_pending" : "approved",
           buyerName: input?.buyerName?.trim() || "Doğrudan satış",
           deliveryStatus: input?.deliveryStatus ?? "confirmed",
@@ -1600,7 +1615,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const updatedListing: Listing = { ...listing, stockCount: nextStockCount, status: nextListingStatus };
         setListings((items) => items.map((item) => (item.id === listing.id ? updatedListing : item)));
         setAuthError(undefined);
-        notify(partnership.partnerId, "sale", "Satış kaydı oluştu", `${listing.title} için satıcı doğrudan satış ekledi; komisyonun süreçte.`);
+        notify(partnership.partnerId, "sale", "Satış kaydı oluştu", `${listing.title} için satıcı doğrudan satış ekledi; komisyonun süreçte.${bonusApplied ? ` Başlangıç bonusu ${moneyIn(bonusApplied, listing.currency)} dahil.` : ""}`, { listingId: listing.id, partnershipId: partnership.id });
         if (liveUser) persistCritical(insertSaleFromLead(sale, listing), () => {
           setSales((items) => items.filter((s) => s.id !== sale.id));
           setOrders((items) => items.filter((o) => o.id !== order.id));
@@ -1610,6 +1625,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return sale;
       },
       joinListing(listingId, input) {
+        // Giriş kapısı (favori/takip ile aynı): anonim kullanıcıda ortaklık yalnız yerel
+        // state'te kalıyor, refCode sunucuda çözülmüyordu → hayalet ortaklık + sahte başarı.
+        if (!isAuthenticated) { setAuthError("Ortak olmak için giriş yapmalısın."); return undefined; }
         if (isSuspended) { setAuthError("Hesabın askıya alındığı için işlem yapamazsın."); return undefined; }
         const listing = listings.find((item) => item.id === listingId);
         if (listing?.demo) { setAuthError("Bu bir örnek (vitrin) ilandır; ortaklık kapalıdır."); return undefined; }
@@ -1658,7 +1676,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           if (reopenStatus === "active") {
             setListings((items) => items.map((item) => (item.id === listingId ? { ...item, partnerCount: item.partnerCount + 1 } : item)));
           } else {
-            notify(listing.ownerId, "application", "Yeni ortak başvurusu", `${currentUser.name}, ${listing.title} ilanına yeniden başvurdu.`);
+            notify(listing.ownerId, "application", "Yeni ortak başvurusu", `${currentUser.name}, ${listing.title} ilanına yeniden başvurdu.`, { listingId: listing.id, partnershipId: reopened.id });
           }
           if (liveUser) persistCritical(updatePartnershipStatus(reopened), () => {
             setPartnerships((items) => items.map((p) => (p.id === existing.id ? existing : p)));
@@ -1674,9 +1692,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
           partnerId: currentUser.id,
           refCode: makeRefCode(currentUser.id, listingId),
           status,
-          note: input?.note?.trim() || "Bu ürünü kendi çevremde paylaşmak istiyorum.",
-          shareChannel: input?.shareChannel?.trim() || "WhatsApp ve sosyal medya",
-          audience: input?.audience?.trim() || "Yakın çevrem ve takipçilerim",
+          // Uydurma varsayılan metin YOK (sahte veri yasağı). Anında (open) ortaklıkta
+          // satıcı onayı olmadığından bu alanlar boş kalabilir; başvuru formu doldurunca dolar.
+          note: input?.note?.trim() || "",
+          shareChannel: input?.shareChannel?.trim() || "",
+          audience: input?.audience?.trim() || "",
           platformHandle: input?.platformHandle?.trim() || "",
           reachEstimate: Number.isFinite(input?.reachEstimate) ? Math.max(0, Number(input?.reachEstimate)) : 0,
           approvedAt: status === "active" ? today() : undefined,
@@ -1689,7 +1709,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
             items.map((item) => (item.id === listingId ? { ...item, partnerCount: item.partnerCount + 1 } : item))
           );
         } else {
-          notify(listing.ownerId, "application", "Yeni ortak başvurusu", `${currentUser.name}, ${listing.title} ilanına başvurdu.`);
+          notify(listing.ownerId, "application", "Yeni ortak başvurusu", `${currentUser.name}, ${listing.title} ilanına başvurdu.`, { listingId: listing.id, partnershipId: partnership.id });
         }
         if (liveUser) persistCritical(insertPartnership(partnership), () => {
           setPartnerships((items) => items.filter((p) => p.id !== partnership.id));
@@ -1708,7 +1728,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
             listing.id === partnership.listingId ? { ...listing, partnerCount: listing.partnerCount + 1 } : listing
           )
         );
-        notify(partnership.partnerId, "application", "Ortaklık kabul edildi", "Paylaşım linkin aktif edildi.");
+        notify(partnership.partnerId, "application", "Ortaklık kabul edildi", `${listing.title} — paylaşım linkin aktif edildi. Paylaş, sat, kazan.`, { listingId: listing.id, partnershipId: partnership.id });
         if (liveUser) persistCritical(updatePartnershipStatus(updatedPartnership), () => {
           setPartnerships((items) => items.map((item) => (item.id === partnershipId ? partnership : item)));
           setListings((items) => items.map((item) => (item.id === partnership.listingId ? { ...item, partnerCount: Math.max(0, item.partnerCount - 1) } : item)));
@@ -1725,7 +1745,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setPartnerships((items) =>
           items.map((item) => (item.id === partnershipId && updatedPartnership ? updatedPartnership : item))
         );
-        if (partnership) notify(partnership.partnerId, "application", "Ortaklık reddedildi", cleanReason);
+        if (partnership) notify(partnership.partnerId, "application", "Ortaklık reddedildi", cleanReason, { listingId: listing.id, partnershipId: partnership.id });
         if (liveUser && updatedPartnership && partnership) persistCritical(updatePartnershipStatus(updatedPartnership), () => {
           setPartnerships((items) => items.map((item) => (item.id === partnershipId ? partnership : item)));
         }, "Başvuru reddi kaydedilemedi. Bağlantını kontrol edip tekrar dene.");

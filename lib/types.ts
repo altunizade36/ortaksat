@@ -125,7 +125,8 @@ export type Sale = {
   leadId?: string; // doğrudan (ortağa atanan) satışta lead olmayabilir
   amount: number;
   quantity?: number;
-  commissionAmount: number;
+  commissionAmount: number; // taban komisyon + varsa başlangıç bonusu (satıcının toplam borcu)
+  bonusApplied?: number; // commissionAmount içindeki başlangıç bonusu payı (gösterim)
   status: SaleStatus;
   buyerName?: string;
   deliveryStatus?: OrderStatus;
