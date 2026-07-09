@@ -1577,10 +1577,15 @@ export function suggestCategories(query: string, limit = 8): SuggestHit[] {
 
   const pushPath = (path: CategoryNode[]) => {
     if (!path.length) return;
-    const id = path.map((p) => p.key).join(">");
+    const formKey = resolveFormKey(path);
+    // Tekrarı GİDER: aynı yaprak etiketi + aynı form (aynı "şey") birden çok dalda
+    // olsa da tek öneri göster (iPhone hem Elektronik hem Telefon & Aksesuar altında
+    // görünüyordu). Farklı form → farklı anlam (Basketbol ekipman vs. ders) → korunur.
+    const leaf = path[path.length - 1];
+    const id = `${key(leaf.label)}|${formKey}`;
     if (seen.has(id)) return;
     seen.add(id);
-    hits.push({ path, labels: path.map((p) => p.label), formKey: resolveFormKey(path), image: path.find((p) => p.image)?.image });
+    hits.push({ path, labels: path.map((p) => p.label), formKey, image: path.find((p) => p.image)?.image });
   };
 
   for (const hint of HINTS) {
