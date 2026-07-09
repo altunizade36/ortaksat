@@ -27,6 +27,12 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
   const current = trail[trail.length - 1];
   const midItems = current?.children ?? (top ? [] : []);
   const finalized = value.length > 0;
+  // Dalda "seç" yalnızca kendi ÖZGÜL formu varsa açık kalır. Jenerik forma
+  // ("alisverisGenel") düşen bir dalda (Elektronik/Ev…) alt kategorileri olan
+  // düğümde durmak yanlış form verir → kullanıcı yaprağa inmeli.
+  const currentFormKey = trail.length ? resolveFormKey(trail) : "";
+  const hasChildren = !!(current?.children && current.children.length);
+  const canFinalizeHere = trail.length >= 2 && (!hasChildren || currentFormKey !== "alisverisGenel");
 
   const pickTop = (n: CategoryNode) => { setTrail([n]); setQuery(""); };
   const pickChild = (n: CategoryNode) => {
@@ -162,15 +168,12 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
             ) : (
               <Text style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Henüz kategori seçilmedi.", language)}</Text>
             )}
-            {/* Yalnızca son (yaprak) kategoride bitir: alt-kategorisi olan bir dalda
-                durmak jenerik forma düşürüyordu (Elektronik/Bilgisayar…). Dalda ise
-                kullanıcı bir alt kategori seçmeli. */}
-            {trail.length >= 2 && !(current?.children && current.children.length) ? (
+            {canFinalizeHere ? (
               <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 11 }}>
                 <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bu kategoriyi seç", language)}</Text>
               </Pressable>
-            ) : trail.length >= 1 && current?.children && current.children.length ? (
+            ) : hasChildren && trail.length >= 1 ? (
               <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{translateCopy("Devam etmek için bir alt kategori seç — böylece doğru form ve filtreler gelir.", language)}</Text>
             ) : null}
             {requiredLabels.length ? (
