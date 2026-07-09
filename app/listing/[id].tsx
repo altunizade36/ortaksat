@@ -92,6 +92,8 @@ export default function ListingDetailScreen() {
   const [applicationReach, setApplicationReach] = useState("");
   const [recentIds, setRecentIds] = useState<string[]>([]);
   useEffect(() => { setRecentIds(getRecent()); }, [id]);
+  const [revealedPhone, setRevealedPhone] = useState<string | null>(null);
+  const [revealingPhone, setRevealingPhone] = useState(false);
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
   const [leadNote, setLeadNote] = useState("");
@@ -349,6 +351,18 @@ export default function ListingDetailScreen() {
     const conversation = startConversation(currentListing.id, owner.id, message.trim() || fallbackMessage);
     setMessage("");
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
+  }
+
+  // Sahibinden tarzı "Numarayı Göster": tıklayınca gerçek numarayı çeker (girişli
+  // kullanıcıya). Numara feed'de taşınmaz; yalnız burada, istek üzerine gelir.
+  async function revealPhone() {
+    if (isDemo || !owner || revealingPhone) return;
+    setRevealingPhone(true);
+    const p = owner.phone || (await fetchSellerPhone(owner.id));
+    setRevealingPhone(false);
+    if (!p) { Alert.alert(translateCopy("Numara görünmüyor", language), translateCopy("Numarayı görmek için giriş yap; ya da satıcıya mesaj gönder.", language)); return; }
+    attributeReferralLead("phone");
+    setRevealedPhone(p);
   }
 
   function handleCreateLead() {
@@ -757,6 +771,18 @@ export default function ListingDetailScreen() {
             <View style={{ gap: 10 }}>
               <SafetyNote />
               <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
+              {/* Numarayı Göster (Sahibinden tarzı) — istek üzerine gerçek numara */}
+              {revealedPhone ? (
+                <Pressable onPress={() => { const tel = revealedPhone.replace(/[^0-9+]/g, ""); if (tel) void openUrlSafe(`tel:${tel}`); }} accessibilityRole="button" accessibilityLabel={`${translateCopy("Ara", language)}: ${revealedPhone}`} style={{ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
+                  <MaterialCommunityIcons name="phone" size={16} color={colors.success} />
+                  <Text selectable style={{ color: colors.success, fontSize: 15, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{revealedPhone}</Text>
+                </Pressable>
+              ) : (
+                <Pressable onPress={() => void revealPhone()} disabled={revealingPhone} accessibilityRole="button" accessibilityLabel={translateCopy("Numarayı göster", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", opacity: revealingPhone ? 0.7 : 1, paddingVertical: 12 }}>
+                  <MaterialCommunityIcons name="phone-outline" size={16} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{revealingPhone ? translateCopy("Yükleniyor…", language) : translateCopy("Numarayı Göster", language)}</Text>
+                </Pressable>
+              )}
             </View>
           ) : null}
 
