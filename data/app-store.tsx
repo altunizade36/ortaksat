@@ -42,6 +42,7 @@ import {
   updateLeadStatusLive,
   updateListingLive,
   updateListingStatusLive,
+  updateListingStockPriceLive,
   updateListingInventoryLive,
   updatePartnershipStatus,
   updateReportStatusLive,
@@ -289,6 +290,7 @@ type AppStore = {
   setLocationSuggestionStatus: (id: string, status: SuggestionStatus) => void;
   updateLeadStatus: (leadId: string, status: LeadStatus) => void;
   updateListingStatus: (listingId: string, status: Listing["status"]) => void;
+  updateListingInventory: (listingId: string, patch: { stockCount?: number; price?: number }) => void;
   setListingFeatured: (listingId: string, featured: boolean) => void;
   deleteListing: (listingId: string) => void;
   setUserRole: (userId: string, role: UserRole) => void;
@@ -1869,6 +1871,37 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
         setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status } : item)));
         if (liveUser) persistOrWarn(updateListingStatusLive({ ...listing, status }), "İlan durumu güncellenemedi. Lütfen tekrar dene.");
+      },
+      updateListingInventory(listingId, patch) {
+        const listing = listings.find((item) => item.id === listingId);
+        // Yalnız ilan sahibi satır-içi stok/fiyat düzenleyebilir.
+        if (!listing || listing.ownerId !== currentUser.id) return;
+        const nextStock = typeof patch.stockCount === "number" ? Math.max(0, Math.floor(patch.stockCount)) : undefined;
+        const nextPrice = typeof patch.price === "number" ? Math.max(0, Math.round(patch.price)) : undefined;
+        if (nextStock === undefined && nextPrice === undefined) return;
+        const prev = { stockCount: listing.stockCount, price: listing.price };
+        setListings((items) =>
+          items.map((item) =>
+            item.id === listingId
+              ? {
+                  ...item,
+                  ...(nextStock !== undefined ? { stockCount: nextStock } : {}),
+                  ...(nextPrice !== undefined ? { price: nextPrice } : {})
+                }
+              : item
+          )
+        );
+        if (liveUser) {
+          persistCritical(
+            updateListingStockPriceLive(listingId, { stockCount: nextStock, price: nextPrice }),
+            () => {
+              setListings((items) =>
+                items.map((item) => (item.id === listingId ? { ...item, ...prev } : item))
+              );
+            },
+            "Güncelleme kaydedilemedi. Bağlantını kontrol edip tekrar dene."
+          );
+        }
       },
       setListingFeatured(listingId, featured) {
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";

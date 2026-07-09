@@ -714,6 +714,18 @@ export async function updateListingStatusLive(listing: Listing): Promise<boolean
   return true;
 }
 
+/** Satır-içi hızlı düzenleme: yalnız stok ve/veya fiyat günceller (RLS: sahip). */
+export async function updateListingStockPriceLive(id: string, patch: { stockCount?: number; price?: number }): Promise<boolean> {
+  if (!supabase) return true;
+  const payload: Record<string, number> = {};
+  if (typeof patch.stockCount === "number") payload.stock_count = patch.stockCount;
+  if (typeof patch.price === "number") payload.price = patch.price;
+  if (Object.keys(payload).length === 0) return true;
+  const { error } = await supabase.from("listings").update(payload).eq("id", id);
+  if (error) console.warn("Supabase listing stock/price update failed", error);
+  return !error;
+}
+
 export async function updateListingInventoryLive(listing: Pick<Listing, "id" | "status" | "stockCount">) {
   if (!supabase) return;
   const { error } = await supabase

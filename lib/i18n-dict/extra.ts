@@ -107,5 +107,16 @@ export const extraDict: Record<string, string> = {
   "geçerli": "valid",
   "Toplu yüklenen ilanlar YAYINA ALINMADAN önce admin onayına düşer. Onaylananlar pazara çıkar.": "Bulk-uploaded listings go to admin approval BEFORE publishing. Approved ones go to the market.",
   "ilanı onaya gönder": "listings for approval",
-  "Toplu ilan için giriş yapın": "Sign in for bulk upload"
+  "Toplu ilan için giriş yapın": "Sign in for bulk upload",
+  // Satıcı paneli: toplu işlem + satır-içi hızlı düzenleme.
+  "seçili": "selected",
+  "Tümünü seç": "Select all",
+  "Vazgeç": "Cancel",
+  "Aktifleştir": "Activate",
+  "Toplu işlem için seç": "Select for bulk action",
+  "Seçili ilanları kaldır": "Remove selected listings",
+  "ilan pasife alınacak. İstediğinde tekrar yayınlayabilirsin.": "listings will be paused. You can republish them anytime.",
+  "Stok azalt": "Decrease stock",
+  "Stok artır": "Increase stock",
+  "Kaydet": "Save"
 };

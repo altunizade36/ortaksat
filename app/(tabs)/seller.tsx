@@ -81,11 +81,14 @@ function SellerScreenInner() {
     startConversation,
     updateLeadStatus,
     updateListingStatus,
+    updateListingInventory,
     updateSaleStatus
   } = useStore();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Toplu işlem: seçili ilan kimlikleri (Trendyol tarzı çoklu seçim).
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const isWideWeb = useIsWideWeb();
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const [saleTarget, setSaleTarget] = useState<{ partnershipId: string; partnerName: string; price: number; currency?: string; commissionType: "rate" | "fixed"; commissionValue: number } | null>(null);
@@ -228,6 +231,39 @@ function SellerScreenInner() {
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
   }
 
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
+  // Toplu işlem, yalnız seçili + o işleme uygun ilanlara uygulanır.
+  // Moderasyon kaçağı yok: updateListingStatus, incelemedeki ilanı sahibin
+  // "active" yapmasını zaten engeller.
+  function bulkStatus(ids: string[], status: Listing["status"]) {
+    ids.forEach((id) => updateListingStatus(id, status));
+    clearSelection();
+  }
+
+  function confirmBulkRemove(ids: string[]) {
+    if (ids.length === 0) return;
+    Alert.alert(
+      translateCopy("Seçili ilanları kaldır", language),
+      `${ids.length} ${translateCopy("ilan pasife alınacak. İstediğinde tekrar yayınlayabilirsin.", language)}`,
+      [
+        { text: t("cancel"), style: "cancel" },
+        { text: translateCopy("Pasife Al", language), onPress: () => bulkStatus(ids, "paused") }
+      ]
+    );
+  }
+
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
       <WebContainer max={1280} padding={0} style={{ gap: 14 }}>
@@ -367,6 +403,35 @@ function SellerScreenInner() {
           <PanelFilterChip active={filter === "payments"} icon="cash-clock" label="Ödeme" onPress={() => setFilter("payments")} />
           <PanelFilterChip active={filter === "lowStock"} icon="package-variant" label="Az stok" onPress={() => setFilter("lowStock")} />
         </ScrollView>
+        {visibleListings.length > 0 ? (
+          (() => {
+            const visibleIds = visibleListings.map((item) => item.id);
+            const selectedVisible = visibleIds.filter((id) => selectedIds.has(id));
+            const allSelected = selectedVisible.length === visibleIds.length;
+            return (
+              <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                <Pressable
+                  onPress={() => (allSelected ? clearSelection() : setSelectedIds(new Set(visibleIds)))}
+                  accessibilityRole="button"
+                  style={{ alignItems: "center", flexDirection: "row", gap: 6 }}
+                >
+                  <MaterialCommunityIcons name={allSelected ? "checkbox-marked" : selectedVisible.length > 0 ? "minus-box" : "checkbox-blank-outline"} size={20} color={selectedVisible.length > 0 ? colors.primary : colors.muted} />
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>
+                    {selectedVisible.length > 0 ? `${selectedVisible.length} ${translateCopy("seçili", language)}` : translateCopy("Tümünü seç", language)}
+                  </Text>
+                </Pressable>
+                {selectedVisible.length > 0 ? (
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, marginLeft: "auto" }}>
+                    <BulkActionBtn icon="play" label={translateCopy("Aktifleştir", language)} onPress={() => bulkStatus(selectedVisible, "active")} />
+                    <BulkActionBtn icon="pause" label={translateCopy("Pasife Al", language)} onPress={() => bulkStatus(selectedVisible, "paused")} />
+                    <BulkActionBtn icon="trash-can-outline" tone="danger" label={translateCopy("Kaldır", language)} onPress={() => confirmBulkRemove(selectedVisible)} />
+                    <BulkActionBtn icon="close" label={translateCopy("Vazgeç", language)} onPress={clearSelection} />
+                  </View>
+                ) : null}
+              </View>
+            );
+          })()
+        ) : null}
       </Card>
 
       {myApplications.length > 0 ? (
@@ -443,8 +508,18 @@ function SellerScreenInner() {
         const unpaidTotal = unpaidListingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
         return (
           <Card key={listing.id}>
-            {/* Kompakt üst satır (Sahibinden tarzı): görsel · başlık · fiyat · durum */}
+            {/* Kompakt üst satır (Sahibinden tarzı): seç · görsel · başlık · fiyat · durum */}
             <View style={{ flexDirection: "row", gap: 12 }}>
+              <Pressable
+                onPress={() => toggleSelect(listing.id)}
+                hitSlop={8}
+                accessibilityRole="checkbox"
+                accessibilityState={{ checked: selectedIds.has(listing.id) }}
+                accessibilityLabel={translateCopy("Toplu işlem için seç", language)}
+                style={{ justifyContent: "center", paddingRight: 2 }}
+              >
+                <MaterialCommunityIcons name={selectedIds.has(listing.id) ? "checkbox-marked" : "checkbox-blank-outline"} size={22} color={selectedIds.has(listing.id) ? colors.primary : colors.muted} />
+              </Pressable>
               <Image source={{ uri: listing.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 88, width: 88 }} />
               <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
                 <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 8 }}>
@@ -476,6 +551,14 @@ function SellerScreenInner() {
               <SellerStat label="Satış" value={`${listingSales.length}`} />
               <SellerStat label="Bekleyen ödeme" value={moneyIn(unpaidTotal, listing.currency)} warn={unpaidListingSales.length > 0} />
             </View>
+
+            {/* Satır-içi hızlı düzenleme: stok ±/fiyat (Trendyol tarzı) — anında kaydolur */}
+            <QuickInventoryEditor
+              stock={listing.stockCount}
+              price={listing.price}
+              currency={listing.currency}
+              onSave={(patch) => updateListingInventory(listing.id, patch)}
+            />
 
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               <StatusPill label={nextAction.label} tone={nextAction.tone} />
@@ -718,6 +801,72 @@ function SellerStat({ label, value, warn }: { label: string; value: string; warn
     <View style={{ gap: 1, minWidth: 66 }}>
       <Text numberOfLines={1} style={{ color: warn ? colors.accent : colors.ink, fontSize: 14, fontWeight: "900" }}>{value}</Text>
       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{translateCopy(label, language)}</Text>
+    </View>
+  );
+}
+
+function BulkActionBtn({ icon, label, tone, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone?: "danger"; onPress: () => void }) {
+  const danger = tone === "danger";
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      style={{ alignItems: "center", backgroundColor: danger ? colors.accentSoft : colors.primarySoft, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 7 }}
+    >
+      <MaterialCommunityIcons name={icon} size={15} color={danger ? colors.accent : colors.primary} />
+      <Text style={{ color: danger ? colors.accent : colors.primary, fontSize: 12, fontWeight: "900" }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+// Satır-içi stok/fiyat hızlı düzenleme. ±: anında kaydeder; sayı girişi Kaydet ile.
+// Prop değişince taslak senkronlanır (dış güncelleme/rollback yansısın).
+function QuickInventoryEditor({ stock, price, currency, onSave }: { stock: number; price: number; currency?: string; onSave: (patch: { stockCount?: number; price?: number }) => void }) {
+  const { language } = useLanguage();
+  const [stockDraft, setStockDraft] = useState(String(stock));
+  const [priceDraft, setPriceDraft] = useState(String(price));
+  useEffect(() => { setStockDraft(String(stock)); }, [stock]);
+  useEffect(() => { setPriceDraft(String(price)); }, [price]);
+  const parsedStock = Math.max(0, Math.floor(Number(stockDraft.replace(/[^0-9]/g, "")) || 0));
+  const parsedPrice = Math.max(0, Math.round(Number(priceDraft.replace(/[^0-9.,]/g, "").replace(",", ".")) || 0));
+  const dirty = parsedStock !== stock || parsedPrice !== price;
+  const cellInput = { backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, fontSize: 14, fontWeight: "800" as const, minWidth: 46, paddingHorizontal: 8, paddingVertical: Platform.OS === "web" ? 6 : 4, textAlign: "center" as const };
+  const stepBtn = { alignItems: "center" as const, backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 32, justifyContent: "center" as const, width: 32 };
+  const step = (delta: number) => {
+    const next = Math.max(0, parsedStock + delta);
+    setStockDraft(String(next));
+    onSave({ stockCount: next });
+  };
+  const commit = () => {
+    const patch: { stockCount?: number; price?: number } = {};
+    if (parsedStock !== stock) patch.stockCount = parsedStock;
+    if (parsedPrice !== price) patch.price = parsedPrice;
+    if (patch.stockCount === undefined && patch.price === undefined) return;
+    onSave(patch);
+  };
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 10, paddingHorizontal: 10, paddingVertical: 8 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Stok", language)}</Text>
+        <Pressable onPress={() => step(-1)} hitSlop={4} accessibilityRole="button" accessibilityLabel={translateCopy("Stok azalt", language)} style={stepBtn}>
+          <MaterialCommunityIcons name="minus" size={16} color={colors.ink} />
+        </Pressable>
+        <TextInput value={stockDraft} onChangeText={setStockDraft} keyboardType="number-pad" selectTextOnFocus style={cellInput} />
+        <Pressable onPress={() => step(1)} hitSlop={4} accessibilityRole="button" accessibilityLabel={translateCopy("Stok artır", language)} style={stepBtn}>
+          <MaterialCommunityIcons name="plus" size={16} color={colors.ink} />
+        </Pressable>
+      </View>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Fiyat", language)}</Text>
+        <TextInput value={priceDraft} onChangeText={setPriceDraft} keyboardType="numeric" selectTextOnFocus style={[cellInput, { minWidth: 84 }]} />
+        <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{currency === "USD" ? "$" : currency === "EUR" ? "€" : "₺"}</Text>
+      </View>
+      {dirty ? (
+        <Pressable onPress={commit} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 4, marginLeft: "auto", paddingHorizontal: 12, paddingVertical: 8 }}>
+          <MaterialCommunityIcons name="content-save" size={15} color="#fff" />
+          <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900" }}>{translateCopy("Kaydet", language)}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }
