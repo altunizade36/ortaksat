@@ -137,6 +137,22 @@ function PartnerScreenInner() {
     return bv - av || commissionAmount(b) - commissionAmount(a);
   }), [allOpportunities, findUser]);
 
+  // Mobil fırsat filtresi/sıralaması (önceden mobilde HİÇ filtre/sort yoktu; masaüstü
+  // toolbar'daki oppCommission/oppSort state'i mobil çiplerle de kullanılır).
+  const mobileOpportunities = useMemo(() => {
+    const arr = rankedOpportunities.filter((l) => {
+      if (oppCommission > 0) {
+        const effRate = l.commissionType === "rate" ? l.commissionValue : (l.price > 0 ? (l.commissionValue / l.price) * 100 : 0);
+        if (effRate < oppCommission) return false;
+      }
+      return true;
+    });
+    if (oppSort === "commission") return arr.slice().sort((a, b) => commissionAmount(b) - commissionAmount(a));
+    if (oppSort === "new") return arr.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    if (oppSort === "stock") return arr.slice().sort((a, b) => b.stockCount - a.stockCount);
+    return arr;
+  }, [rankedOpportunities, oppCommission, oppSort]);
+
   function onJoin(listingId: string) {
     const listing = listings.find((l) => l.id === listingId);
     // Onay/davet modu: satıcı gerçek başvuru bilgisi görmeli — uydurma sabit metin
@@ -191,7 +207,13 @@ function PartnerScreenInner() {
     const oppCityOptions = Array.from(new Set(allOpportunities.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr"));
     const opportunities = allOpportunities.filter((l) => {
       if (oppCategory && l.category !== oppCategory) return false;
-      if (oppCommission > 0 && !(l.commissionType === "rate" && l.commissionValue >= oppCommission)) return false;
+      // Komisyon oranı filtresi: sabit-₺ ilanlar için efektif oran (komisyon/fiyat×100)
+      // hesaplanır. Önceden yalnız commissionType==="rate" geçiyordu; tüm sabit-₺ komisyonlu
+      // (çoğu en kazançlı) ilanlar filtre açılınca TAMAMEN gizleniyordu.
+      if (oppCommission > 0) {
+        const effRate = l.commissionType === "rate" ? l.commissionValue : (l.price > 0 ? (l.commissionValue / l.price) * 100 : 0);
+        if (effRate < oppCommission) return false;
+      }
       if (oppCity && l.location !== oppCity) return false;
       if (oppStock === "in" && l.stockCount <= 0) return false;
       if (oppStock === "low" && (l.stockCount > 5 || l.stockCount <= 0)) return false;
@@ -506,9 +528,32 @@ function PartnerScreenInner() {
 
       {allOpportunities.length > 0 ? (
         <Card>
-          <SectionTitle title="Ortak satış fırsatları" action={`${allOpportunities.length}`} />
+          <SectionTitle title="Ortak satış fırsatları" action={`${mobileOpportunities.length}`} />
           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Beğendiğin ürüne ortak ol, kendi kitlene sat, satış olunca komisyon kazan.", language)}</Text>
-          {rankedOpportunities.slice(0, oppVisible).map((listing) => {
+          {/* Mobil fırsat filtre/sıralama çipleri (masaüstü toolbar'ın karşılığı). */}
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
+            {([[0, "Tümü komisyon"], [10, "%10+"], [15, "%15+"]] as const).map(([val, lbl]) => {
+              const on = oppCommission === val;
+              return (
+                <Pressable key={`c${val}`} onPress={() => setOppCommission(val)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+                </Pressable>
+              );
+            })}
+            <View style={{ backgroundColor: colors.line, marginHorizontal: 2, width: 1 }} />
+            {([["recommended", "Önerilen"], ["commission", "Yüksek komisyon"], ["new", "Yeni"], ["stock", "Çok stok"]] as const).map(([val, lbl]) => {
+              const on = oppSort === val;
+              return (
+                <Pressable key={`s${val}`} onPress={() => setOppSort(val)} style={{ backgroundColor: on ? colors.primaryDark : colors.surfaceAlt, borderColor: on ? colors.primaryDark : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+          {mobileOpportunities.length === 0 ? (
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700", paddingVertical: 10 }}>{translateCopy("Bu filtreye uyan fırsat yok. Komisyon eşiğini düşür.", language)}</Text>
+          ) : null}
+          {mobileOpportunities.slice(0, oppVisible).map((listing) => {
             const owner = findUser(listing.ownerId);
             const joined = joinedIds.has(listing.id);
             return (
@@ -525,7 +570,7 @@ function PartnerScreenInner() {
               </View>
             );
           })}
-          {allOpportunities.length > oppVisible ? (
+          {mobileOpportunities.length > oppVisible ? (
             <Pressable onPress={() => setOppVisible((v) => v + 8)} style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderWidth: 1.5, marginTop: 4, paddingVertical: 11 }}>
               <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Daha fazla fırsat göster", language)}</Text>
             </Pressable>

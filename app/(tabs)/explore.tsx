@@ -13,7 +13,7 @@ import { getFormSchema, resolveFormKey, topCategories, type CategoryNode, type F
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
-import { REFERENCE_NOW, searchKey } from "@/lib/locale";
+import { searchKey } from "@/lib/locale";
 import { scoreListing } from "@/lib/search";
 import { useSavedSearches, type SavedFilters, type SavedSearch } from "@/lib/saved-searches";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
@@ -94,7 +94,9 @@ export default function ExploreScreen() {
 
   useEffect(() => {
     let alive = true;
-    if (!queryText) { setServerResults(null); setServerOwners({}); setServerOffset(0); setServerHasMore(false); return; }
+    // Tek harf/boş sorguda sunucuya gitme; serverResults=null → istemci yüklü katalogda
+    // arar (anlamsız tek-harf DB taraması ve gereksiz yük önlenir).
+    if (queryText.length < 2) { setServerResults(null); setServerOwners({}); setServerOffset(0); setServerHasMore(false); return; }
     setServerLoading(true);
     const priceParts = priceRange ? priceRange.split("-") : [];
     const minPrice = priceParts[0] ? Number(priceParts[0]) : undefined;
@@ -104,7 +106,10 @@ export default function ExploreScreen() {
       void searchListings({ q: queryText, minPrice, maxPrice, openOnly: statusOpen, sort, offset: 0, limit: SERVER_PAGE }).then((res) => {
         if (!alive) return;
         setServerLoading(false);
-        if (!res) { setServerResults([]); setServerHasMore(false); return; }
+        // Sunucu ilike Türkçe-katlama yapmaz ("sarj"≠"şarj") ve typo'da 0 döner. Sunucu
+        // BOŞ/HATA dönerse serverResults=null bırak → baseListings yüklü kataloğa düşer,
+        // istemci searchKey (fold) + fuzzy skorlamasıyla arar. Böylece "sonuç yok"a düşmez.
+        if (!res || res.listings.length === 0) { setServerResults(null); setServerHasMore(false); return; }
         setServerResults(res.listings);
         setServerOwners(Object.fromEntries(res.users.map((u) => [u.id, u])));
         setServerOffset(res.listings.length);
@@ -148,7 +153,9 @@ export default function ExploreScreen() {
   // göster (home ile aynı desen), sonra gerçek düzene geç.
   const [mountedGate, setMountedGate] = useState(false);
   useEffect(() => { setMountedGate(true); }, []);
-  const tokens = searchKey(params.q ?? "").split(" ").filter(Boolean);
+  // tokens memoize edilir: activeListings useMemo bağımlılığı; her render'da yeni dizi
+  // kimliği memo'yu geçersizleştirip ağır scoreListing'i tekrar koşturuyordu.
+  const tokens = useMemo(() => searchKey(params.q ?? "").split(" ").filter(Boolean), [params.q]);
   const gap = isWideWeb ? 14 : 8;
   const padding = isWideWeb ? 20 : 12;
   const panelWidth = 260;
@@ -320,18 +327,15 @@ export default function ExploreScreen() {
   }, [baseListings, city, districtName, filter, findUser, hasPanelFilter, minCommission, onlyVerified, priceRange, provinceName, seed, statusOpen, stockFilter, tokens, catLabelSet, attrFilters, catNums, numRange]);
 
   const productListings = useMemo(() => {
-    const arr = activeListings.filter((listing) => {
-      if (!onlyVerified) return true;
-      const owner = findUser(listing.ownerId);
-      return Boolean(owner?.verifiedPhone || owner?.verifiedIdentity);
-    });
-    const sorted = arr.slice();
+    // onlyVerified artık activeListings'te uygulanıyor (mobil feed de kapsasın diye);
+    // burada tekrar süzmeye gerek yok — yalnızca sıralama.
+    const sorted = activeListings.slice();
     if (sortMode === "priceAsc") sorted.sort((a, b) => a.price - b.price);
     else if (sortMode === "priceDesc") sorted.sort((a, b) => b.price - a.price);
     else if (sortMode === "commission") sorted.sort((a, b) => commissionAmount(b) - commissionAmount(a));
     else if (sortMode === "new") sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return sorted;
-  }, [activeListings, findUser, onlyVerified, sortMode]);
+  }, [activeListings, sortMode]);
   // "Yeni eklenen" = en yeni ilanlar (gerçek). Önceden en-az-stoklu 3 ilan sahte
   // "fırsat/geri sayım/son X stok" aciliyetiyle sunuluyordu — kaldırıldı.
   const dealListings = useMemo(() => activeListings.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, 3), [activeListings]);
@@ -587,7 +591,7 @@ export default function ExploreScreen() {
         {/* Toolbar */}
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingVertical: 10, position: "relative", zIndex: 50 }}>
           <Pressable
-            onPress={() => { setPriceRange(""); setMinCommission(0); router.setParams({ province: undefined, district: undefined }); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setFilter("all"); setCity(""); clearCatFilter(); }}
+            onPress={() => { setPriceRange(""); setMinCommission(0); router.setParams({ province: undefined, district: undefined }); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setFilter("all"); setCity(""); setSortMode("recommended"); clearCatFilter(); }}
             style={{ alignItems: "center", backgroundColor: hasPanelFilter ? colors.primarySoft : colors.surfaceAlt, borderColor: hasPanelFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
           >
             <MaterialCommunityIcons name="filter-variant" size={15} color={colors.primaryDark} />
@@ -952,7 +956,7 @@ function FilterPanel({
     if (mn && mx && Number(mn) > Number(mx)) { onPriceRange(`${mx}-${mn}`); return; }
     onPriceRange(`${mn}-${mx}`);
   };
-  const hasFilter = Boolean(city) || minCommission > 0 || Boolean(priceRange) || statusOpen;
+  const hasFilter = Boolean(city) || minCommission > 0 || Boolean(priceRange) || statusOpen || provinceId != null || districtId != null || Boolean(stockFilter) || Boolean(onlyVerified);
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 18, padding: 16, width }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -1429,7 +1433,9 @@ function exploreScore(listing: Listing, seed: number) {
 
 function isNewListing(value: string) {
   const date = new Date(value);
-  const age = REFERENCE_NOW - date.getTime();
+  // Gerçek "şimdi" (REFERENCE_NOW dondurulmuştu → 30 Haziran sonrası ilanlar hiç "yeni"
+  // sayılmıyor, zamanla kötüleşiyordu). Explore feed'i mount-gate'li → hidrasyon güvenli.
+  const age = Date.now() - date.getTime();
   return Number.isFinite(age) && age >= 0 && age < 7 * 24 * 60 * 60 * 1000;
 }
 
