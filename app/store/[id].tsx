@@ -11,8 +11,10 @@ import { Seo } from "@/components/seo";
 import { ListingCard } from "@/components/listing-card";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
-import { money } from "@/lib/format";
+import { money, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { fetchSellerPhone } from "@/lib/supabase-data";
+import { openUrlSafe } from "@/lib/link";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
@@ -45,6 +47,8 @@ export default function StoreScreen() {
   const [filter, setFilter] = useState<StoreFilter>("active");
   const [tab, setTab] = useState<ProfileTab>("about");
   const [refreshing, setRefreshing] = useState(false);
+  const [revealedPhone, setRevealedPhone] = useState<string | null>(null);
+  const [revealingPhone, setRevealingPhone] = useState(false);
   const seller = id ? findUser(id) : undefined;
   const isOwnStore = seller?.id === currentUser.id;
   const trust = seller ? calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: seller }) : undefined;
@@ -111,6 +115,23 @@ export default function StoreScreen() {
     const conversation = startConversation(firstListing.id, seller.id, `${seller.name} mağazasındaki ürünler için bilgi almak istiyorum.`);
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
     else Alert.alert(translateCopy("İletişim kurulamadı", language), translateCopy("Şu an konuşma başlatılamadı, lütfen tekrar dene.", language));
+  }
+
+  // Sahibinden tarzı "Numarayı Göster": istek üzerine gerçek numara (girişli kullanıcıya).
+  async function revealPhone() {
+    if (!seller || isOwnStore || revealingPhone) return;
+    if (currentUser.id === "anon") {
+      Alert.alert(translateCopy("Giriş gerekli", language), translateCopy("Numarayı görmek için giriş yapmalısın.", language), [
+        { text: translateCopy("Vazgeç", language), style: "cancel" },
+        { text: translateCopy("Giriş yap", language), onPress: () => router.push("/auth") }
+      ]);
+      return;
+    }
+    setRevealingPhone(true);
+    const p = await fetchSellerPhone(seller.id);
+    setRevealingPhone(false);
+    if (!p) { Alert.alert(translateCopy("Numara görünmüyor", language), translateCopy("Satıcı numara paylaşmamış; mesaj gönderebilirsin.", language)); return; }
+    setRevealedPhone(p);
   }
 
   if (!seller) {
@@ -379,6 +400,13 @@ export default function StoreScreen() {
                   <Pressable onPress={messageSeller} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="message-text-outline" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{translateCopy("Mesaj gönder", language)}</Text></Pressable>
                 )}
                 {!isOwnStore ? (
+                  revealedPhone ? (
+                    <Pressable onPress={() => void openUrlSafe(`tel:${trPhoneIntl(revealedPhone)}`)} style={{ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="phone" size={17} color={colors.success} /><Text selectable style={{ color: colors.success, fontSize: 14, fontWeight: "900" }}>{revealedPhone}</Text></Pressable>
+                  ) : (
+                    <Pressable onPress={() => void revealPhone()} style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="phone-outline" size={17} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{revealingPhone ? "…" : translateCopy("Numarayı Göster", language)}</Text></Pressable>
+                  )
+                ) : null}
+                {!isOwnStore ? (
                   <Pressable onPress={() => void handleReportSeller()} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="flag-outline" size={17} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Satıcıyı şikayet et", language)}</Text></Pressable>
                 ) : null}
               </View>
@@ -467,6 +495,14 @@ export default function StoreScreen() {
             </Pressable>
           ) : null}
         </View>
+        {/* Numarayı Göster (mobil, Sahibinden tarzı) */}
+        {!isOwnStore ? (
+          revealedPhone ? (
+            <Pressable onPress={() => void openUrlSafe(`tel:${trPhoneIntl(revealedPhone)}`)} style={{ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 8, paddingVertical: 12 }}><MaterialCommunityIcons name="phone" size={18} color={colors.success} /><Text selectable style={{ color: colors.success, fontSize: 15, fontWeight: "900" }}>{revealedPhone}</Text></Pressable>
+          ) : (
+            <Pressable onPress={() => void revealPhone()} style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 8, paddingVertical: 12 }}><MaterialCommunityIcons name="phone-outline" size={18} color={colors.primaryDark} /><Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "800" }}>{revealingPhone ? "…" : translateCopy("Numarayı Göster", language)}</Text></Pressable>
+          )
+        ) : null}
       </View>
 
       {/* Doğrulama rozetleri (mobil) — güven sinyali masaüstündeki gibi görünür. */}
