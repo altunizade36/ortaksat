@@ -7,6 +7,8 @@ import { useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
+import { useMounted } from "@/lib/layout";
 import { colors } from "@/components/colors";
 import { Alert } from "@/lib/alert";
 import { WebContainer } from "@/components/web-container";
@@ -315,6 +317,8 @@ function BulkUploadInner() {
 export default function BulkUploadScreen() {
   const { language } = useLanguage();
   const { isAuthenticated } = useStore();
+  const mounted = useMounted();
+  if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!isAuthenticated) return <AuthRequired title={translateCopy("Toplu ilan için giriş yapın", language)} />;
   return <BulkUploadInner />;
 }

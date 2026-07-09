@@ -9,7 +9,8 @@ import { EmptyState, PrimaryButton } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
+import { responsiveGrid, useIsWideWeb, useMounted } from "@/lib/layout";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey } from "@/lib/locale";
 import { matchesQuery } from "@/lib/search";
 import type { Listing } from "@/lib/types";
@@ -224,6 +225,8 @@ function FavStat({ icon, tint, color, value, title, sub }: { icon: keyof typeof 
 export default function FavoritesScreen() {
   const { language } = useLanguage();
   const auth = useStore();
+  const mounted = useMounted();
+  if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate: SSG↔istemci-ilk render eşitlenir (#418)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Favorilerin için giriş yapın", language)} />;
   return <FavoritesScreenInner />;
 }

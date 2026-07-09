@@ -13,7 +13,8 @@ import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { useIsWideWeb } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { changePasswordLive, reauthenticateLive, uploadProfileAvatar } from "@/lib/live-service";
 import { actionLabel, fetchLoginHistory, type LoginEvent } from "@/lib/security-history";
 import { useStore } from "@/lib/use-store";
@@ -619,6 +620,8 @@ function Field({
 export default function ProfileEditScreen() {
   const { language } = useLanguage();
   const auth = useStore();
+  const mounted = useMounted();
+  if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Ayarlar için giriş yapın", language)} />;
   return <ProfileEditScreenInner />;
 }

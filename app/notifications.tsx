@@ -9,7 +9,8 @@ import { isSupabaseConfigured } from "@/lib/supabase";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { useIsWideWeb } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import type { NotificationMeta, NotificationType } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
@@ -49,6 +50,8 @@ const SAMPLE: DeskNotif[] = [
 export default function NotificationsScreen() {
   const { language } = useLanguage();
   const { isAuthenticated } = useStore();
+  const mounted = useMounted();
+  if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!isAuthenticated) {
     return <AuthRequired title={translateCopy("Bildirimlerin için giriş yap", language)} body={translateCopy("Başvuru, satış ve mesaj bildirimlerin hesabına özeldir; görmek için giriş yapman gerekir.", language)} />;
   }

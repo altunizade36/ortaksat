@@ -10,7 +10,8 @@ import { Card, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { useIsWideWeb } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { compactNumber } from "@/lib/locale";
 import { calculateUserTrustScores, type RoleTrustScore } from "@/lib/trust-score";
 import { useStore } from "@/lib/use-store";
@@ -466,6 +467,8 @@ function Shortcut({ href, icon, label }: { href: Href; icon: keyof typeof Materi
 export default function ProfileScreen() {
   const { language } = useLanguage();
   const auth = useStore();
+  const mounted = useMounted();
+  if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Hesabım için giriş yapın", language)} />;
   return <ProfileScreenInner />;
 }

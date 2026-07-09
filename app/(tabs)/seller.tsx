@@ -10,6 +10,8 @@ import { BulkListingModal } from "@/components/bulk-listing-modal";
 import { colors } from "@/components/colors";
 import { ReasonModal } from "@/components/reason-modal";
 import { RecordSaleModal } from "@/components/record-sale-modal";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
+import { useMounted } from "@/lib/layout";
 import { QuickStart } from "@/components/quick-start";
 import { MiniBarChart } from "@/components/mini-bar-chart";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
@@ -56,6 +58,12 @@ type SellerFilter = "all" | "needsAction" | "active" | "paused" | "withLeads" | 
 const saleIsOwed = (s: { status: SaleStatus }) => s.status !== "paid" && s.status !== "cancelled" && s.status !== "disputed";
 
 export default function SellerScreen() {
+  // Hidrasyon-gate (#418): SSG-verisiz ↔ istemci-veri uyuşmazlığı için mount'a
+  // kadar iskelet.
+  return useMounted() ? <SellerScreenInner /> : <ScreenSkeleton />;
+}
+
+function SellerScreenInner() {
   const { language, t } = useLanguage();
   const router = useRouter();
   const {

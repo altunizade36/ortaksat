@@ -21,7 +21,8 @@ import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } fro
 import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, shareUrl } from "@/lib/format";
 import { loadClickCounts } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { useIsWideWeb } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { LeadSource, Listing, PurchaseIntent, Sale, SaleStatus, User } from "@/lib/types";
@@ -54,6 +55,12 @@ const intentLabels: Record<PurchaseIntent, string> = {
 type PartnerFilter = "all" | "active" | "pending" | "earning";
 
 export default function PartnerScreen() {
+  // Hidrasyon-gate: SSG (verisiz) ↔ istemci (girişli, veri dolu) render'ı arasındaki
+  // React #418 metin uyuşmazlığını gider; mount'a kadar iskelet.
+  return useMounted() ? <PartnerScreenInner /> : <ScreenSkeleton />;
+}
+
+function PartnerScreenInner() {
   const { canReviewSale, createSaleReview, currentUser, findUser, joinListing, leads, listings, partnerships, sales, startConversation, updateLeadStatus, updateSaleStatus, users } = useStore();
   const { language, t } = useLanguage();
   const router = useRouter();

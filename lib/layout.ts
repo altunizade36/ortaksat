@@ -59,6 +59,19 @@ export function useIsWideWeb() {
 }
 
 /**
+ * Hidrasyon-gate: web'de ilk render'da (SSG + istemci-ilk) `false`, mount sonrası
+ * `true`. Auth-korumalı / uygulama-içi (SEO'suz) sayfalarda, SSG'de bake edilen
+ * ağaç (ör. AuthRequired) ile istemcinin girişli ağacı arasındaki React #418
+ * uyuşmazlığını gidermek için: `if (!useMounted()) return <iskelet>`. SEO baked
+ * içeriği olan sayfalarda (kategori/blog) KULLANMA — SSG'yi boşaltır.
+ */
+export function useMounted(): boolean {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  return Platform.OS !== "web" ? true : mounted;
+}
+
+/**
  * Responsive column count + exact card width for a wrap grid.
  * Phones land on `minColumns`; wide web shells fill with more columns while
  * keeping each card at least `minCardWidth` wide.

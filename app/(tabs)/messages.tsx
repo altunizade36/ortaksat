@@ -17,7 +17,8 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadMessageAttachment } from "@/lib/live-service";
 import { fetchSellerPhone } from "@/lib/supabase-data";
 import { useTypingIndicator } from "@/lib/use-typing";
-import { useContentWidth, useIsWideWeb } from "@/lib/layout";
+import { useContentWidth, useIsWideWeb, useMounted } from "@/lib/layout";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey, shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Conversation, Lead, Message, Partnership } from "@/lib/types";
@@ -770,6 +771,8 @@ function DeskActionRow({ icon, title, sub, onPress, href }: { icon: keyof typeof
 export default function MessagesScreen() {
   const auth = useStore();
   const { language } = useLanguage();
+  const mounted = useMounted();
+  if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Mesajların için giriş yapın", language)} />;
   return <MessagesScreenInner />;
 }
