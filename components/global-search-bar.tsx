@@ -9,6 +9,7 @@ import { suggestCategories } from "@/lib/category-tree";
 import { moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { searchAndRank } from "@/lib/search";
+import { clearRecentSearches, getRecentSearches, pushRecentSearch, removeRecentSearch } from "@/lib/recent-searches";
 import { displayText } from "@/lib/text";
 import { useStore } from "@/lib/use-store";
 
@@ -19,6 +20,7 @@ export function GlobalSearchBar() {
   const { listings } = useStore();
   const [value, setValue] = useState(params.q ?? "");
   const [focused, setFocused] = useState(false);
+  const [recents, setRecents] = useState<string[]>([]);
   const inputRef = useRef<TextInput>(null);
 
   useEffect(() => {
@@ -34,16 +36,19 @@ export function GlobalSearchBar() {
   }, [q, listings]);
 
   const hasSug = focused && q.length >= 2 && (suggestions.cats.length > 0 || suggestions.products.length > 0);
+  // Boş/kısa sorguda ve odaktayken son aramaları göster (hızlı tekrar).
+  const showRecents = focused && q.length < 2 && recents.length > 0;
 
   function submitSearch(query?: string) {
     const finalQ = (query ?? value).trim();
+    if (finalQ.length >= 2) pushRecentSearch(finalQ);
     inputRef.current?.blur();
     setFocused(false);
     router.push({ pathname: "/(tabs)/explore", params: finalQ ? { q: finalQ } : undefined });
   }
 
   return (
-    <View style={{ position: "relative", width: "100%", zIndex: hasSug ? 1000 : 1 }}>
+    <View style={{ position: "relative", width: "100%", zIndex: hasSug || showRecents ? 1000 : 1 }}>
       <View
         style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: focused ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 10, height: 46, minWidth: 0, paddingLeft: 16, paddingRight: 6, width: "100%" }}
       >
@@ -52,7 +57,7 @@ export function GlobalSearchBar() {
           ref={inputRef}
           value={value}
           onChangeText={setValue}
-          onFocus={() => setFocused(true)}
+          onFocus={() => { setRecents(getRecentSearches()); setFocused(true); }}
           onBlur={() => setTimeout(() => setFocused(false), 180)}
           onSubmitEditing={() => submitSearch()}
           blurOnSubmit
@@ -104,6 +109,27 @@ export function GlobalSearchBar() {
             <MaterialCommunityIcons name="magnify" size={16} color={colors.primaryDark} />
             <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>“{q}” {translateCopy("için tüm sonuçlar", language)}</Text>
           </Pressable>
+        </View>
+      ) : null}
+
+      {showRecents ? (
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, left: 0, overflow: "hidden", position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 14 }, shadowOpacity: 0.16, shadowRadius: 26, top: 52, zIndex: 1000 }}>
+          <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 9 }}>
+            <MaterialCommunityIcons name="history" size={16} color={colors.muted} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "800" }}>{translateCopy("Son aramalar", language)}</Text>
+            <Pressable onPress={() => { clearRecentSearches(); setRecents([]); }} hitSlop={8}>
+              <Text style={{ color: colors.primary, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Temizle", language)}</Text>
+            </Pressable>
+          </View>
+          {recents.map((r) => (
+            <Pressable key={`r-${r}`} onPress={() => submitSearch(r)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 10 })}>
+              <MaterialCommunityIcons name="magnify" size={16} color={colors.subtle} />
+              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{r}</Text>
+              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kaldır", language)} onPress={() => { removeRecentSearch(r); setRecents(getRecentSearches()); }} hitSlop={8}>
+                <MaterialCommunityIcons name="close" size={16} color={colors.muted} />
+              </Pressable>
+            </Pressable>
+          ))}
         </View>
       ) : null}
     </View>

@@ -59,28 +59,32 @@ export default function ExploreScreen() {
   const { language, t } = useLanguage();
   const { width } = useWindowDimensions();
   const router = useRouter();
-  const params = useLocalSearchParams<{ q?: string; province?: string; district?: string }>();
+  const params = useLocalSearchParams<{ q?: string; province?: string; district?: string; price?: string; comm?: string; stock?: string; verified?: string; open?: string; sort?: string; cat?: string; city?: string; tab?: string }>();
+  // Param değeri string | string[] gelebilir; tek değere indir.
+  const sp = (v?: string | string[]) => (Array.isArray(v) ? v[0] ?? "" : v ?? "");
   const { findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceLoadingMore, marketplaceLoadFailed, retryMarketplace } = useStore();
   const { items: savedSearches, add: addSaved, remove: removeSaved } = useSavedSearches();
   const [refreshing, setRefreshing] = useState(false);
   const [seed, setSeed] = useState(1);
-  const [filter, setFilter] = useState<FeedFilter>("all");
+  // Filtre başlangıç durumu URL param'ından okunur → derin-linklenebilir/paylaşılabilir
+  // filtreli sayfa (SEO). Değişince aşağıdaki senkron effect'i URL'e geri yazar.
+  const [filter, setFilter] = useState<FeedFilter>(() => (["all", "commission", "open", "hot", "new"].includes(sp(params.tab)) ? (sp(params.tab) as FeedFilter) : "all"));
   const provinceId = useMemo(() => provinces.find((p) => p.slug === params.province)?.id, [params.province]);
   const districtId = useMemo(() => districtsOfProvince(provinceId).find((d) => d.slug === params.district)?.id, [provinceId, params.district]);
-  const [city, setCity] = useState(""); // mobile-only exact city filter
-  const [minCommission, setMinCommission] = useState(0);
-  const [priceRange, setPriceRange] = useState("");
-  const [stockFilter, setStockFilter] = useState("");
+  const [city, setCity] = useState(() => sp(params.city)); // mobile-only exact city filter
+  const [minCommission, setMinCommission] = useState(() => Number(sp(params.comm)) || 0);
+  const [priceRange, setPriceRange] = useState(() => sp(params.price));
+  const [stockFilter, setStockFilter] = useState(() => (sp(params.stock) === "in" || sp(params.stock) === "low" ? sp(params.stock) : ""));
   // Kategori-özel filtre: üst kategori seç → şemasından facet (Yakıt/Isıtma…) +
   // sayısal aralık (m²/km/yıl) filtreleri gelir. /kategori/[slug] ile aynı motor.
   // Çok seviyeli kategori yolu (Emlak > Konut > Satılık > Daire …), node key dizisi.
-  const [catPath, setCatPath] = useState<string[]>([]);
+  const [catPath, setCatPath] = useState<string[]>(() => (sp(params.cat) ? sp(params.cat).split(">").filter(Boolean) : []));
   const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
   const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>({});
-  const [statusOpen, setStatusOpen] = useState(false);
+  const [statusOpen, setStatusOpen] = useState(() => sp(params.open) === "1");
   const [showMobileFilters, setShowMobileFilters] = useState(false); // mobilde filtre panelini aç/kapat
-  const [sortMode, setSortMode] = useState<SortMode>("recommended");
-  const [onlyVerified, setOnlyVerified] = useState(false);
+  const [sortMode, setSortMode] = useState<SortMode>(() => (["priceAsc", "priceDesc", "commission", "new"].includes(sp(params.sort)) ? (sp(params.sort) as SortMode) : "recommended"));
+  const [onlyVerified, setOnlyVerified] = useState(() => sp(params.verified) === "1");
   const [productVisible, setProductVisible] = useState(20);
   const [visibleCount, setVisibleCount] = useState(INITIAL_EXPLORE_ITEMS);
   // Sunucu-tarafli arama: q girilince tum katalogda arar (yuklu 90 ile sinirli
@@ -407,6 +411,25 @@ export default function ExploreScreen() {
     setVisibleCount(INITIAL_EXPLORE_ITEMS);
     setTimeout(() => setRefreshing(false), 420);
   }
+
+  // Filtre durumunu URL'e yaz → paylaşılabilir/derin-linklenebilir filtreli sayfa (SEO).
+  // setParams mevcut param'larla birleşir (q/province/district korunur); undefined =
+  // param'ı kaldır. Bağımlılık yalnızca filtre state'i → setParams'ın yol açtığı
+  // yeniden-render effect'i TEKRAR tetiklemez (döngü olmaz; başlangıç state param'dan gelir).
+  useEffect(() => {
+    router.setParams({
+      price: priceRange || undefined,
+      comm: minCommission > 0 ? String(minCommission) : undefined,
+      stock: stockFilter || undefined,
+      verified: onlyVerified ? "1" : undefined,
+      open: statusOpen ? "1" : undefined,
+      sort: sortMode !== "recommended" ? sortMode : undefined,
+      cat: catPath.length ? catPath.join(">") : undefined,
+      city: city || undefined,
+      tab: filter !== "all" ? filter : undefined
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [priceRange, minCommission, stockFilter, onlyVerified, statusOpen, sortMode, catPath, city, filter]);
 
   // KENAR-tetiklemeli: her scroll karesinde değil, dibe her yaklaşımda bir kez.
   const exploreLoadArmed = useRef(true);

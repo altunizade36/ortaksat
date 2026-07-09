@@ -13,6 +13,7 @@ export const extraDict: Record<string, string> = {
   "okunmamış": "unread",
   "Konum (İl / İlçe)": "Location (Province / District)",
   "Tümü komisyon": "All commissions",
+  "Son aramalar": "Recent searches",
   "kaldır": "remove",
   "Tümünü temizle": "Clear all",
   "Onaylı satıcı": "Verified seller",
