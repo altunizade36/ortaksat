@@ -801,6 +801,76 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Araç bilgileri",
     fields: [F.title, F.marka, F.model, { key: "year", label: "Yıl", type: "number", required: true }, { key: "km", label: "Kilometre", type: "number", suffix: "km" }, F.price, F.takas, F.desc]
   },
+  // Ticari araç (panelvan/minibüs/kamyonet): Sahibinden-vari kasa/yük/çekiş alanları.
+  ticari: {
+    key: "ticari",
+    title: "Ticari araç bilgileri",
+    fields: [
+      F.title,
+      { key: "brand", label: "Marka", type: "select", required: true, options: COMMERCIAL_BRANDS },
+      F.model,
+      { key: "year", label: "Yıl", type: "number", required: true },
+      { key: "km", label: "Kilometre", type: "number", required: true, suffix: "km" },
+      { key: "bodyType", label: "Kasa tipi", type: "select", options: ["Panelvan", "Minibüs", "Kamyonet", "Kombi Van", "Camlı Van", "Şasi Kabin", "Frigorifik", "Damperli", "Tenteli", "Kapalı Kasa"] },
+      { key: "fuel", label: "Yakıt", type: "select", required: true, options: ["Dizel", "Benzin", "LPG", "Elektrik", "Hibrit"] },
+      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"] },
+      { key: "traction", label: "Çekiş", type: "select", options: ["Önden Çekiş", "Arkadan İtiş", "4x4"] },
+      { key: "maxLoad", label: "İstiab / max yük", type: "text", suffix: "kg" },
+      { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp" },
+      { key: "seatCapacity", label: "Koltuk kapasitesi", type: "text" },
+      { key: "color", label: "Renk", type: "select", options: CAR_COLORS },
+      { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Değişen Var", "Hasar Kayıtlı"] },
+      { key: "inspection", label: "Muayene", type: "select", options: ["Yeni Muayeneli", "Muayenesi Var", "Muayenesi Yok"] },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"] },
+      F.garanti, F.price, F.takas,
+      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
+      VASITA_ETIKET_FIELD, F.desc
+    ]
+  },
+  // Ağır vasıta (kamyon/TIR/otobüs/dorse): dingil/kabin/motor gücü.
+  agirVasita: {
+    key: "agirVasita",
+    title: "Ağır vasıta bilgileri",
+    fields: [
+      F.title, F.marka, F.model,
+      { key: "vehicleType", label: "Araç tipi", type: "select", options: ["Kamyon", "Çekici (TIR)", "Kamyonet", "Otobüs", "Midibüs", "Dorse", "Römork", "Tanker", "Damperli", "Beton Mikseri", "Vinçli"] },
+      { key: "year", label: "Yıl", type: "number", required: true },
+      { key: "km", label: "Kilometre", type: "number", suffix: "km" },
+      { key: "axle", label: "Dingil", type: "select", options: ["4x2", "6x2", "6x4", "8x2", "8x4", "10x4"] },
+      { key: "engineCc", label: "Motor hacmi", type: "text", suffix: "cc" },
+      { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp" },
+      { key: "fuel", label: "Yakıt", type: "select", options: ["Dizel", "Benzin", "LPG", "Elektrik"] },
+      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"] },
+      { key: "cabin", label: "Kabin", type: "select", options: ["Çift Kabin", "Tek Kabin", "Yataklı Kabin"] },
+      { key: "tireCondition", label: "Lastik durumu", type: "text", suffix: "%" },
+      { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Değişen Var", "Hasar Kayıtlı"] },
+      { key: "inspection", label: "Muayene", type: "select", options: ["Yeni Muayeneli", "Muayenesi Var", "Muayenesi Yok"] },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"] },
+      F.price, F.takas, VASITA_ETIKET_FIELD, F.desc
+    ]
+  },
+  // Deniz aracı (tekne/yat): boy/en/motor saati/malzeme.
+  deniz: {
+    key: "deniz",
+    title: "Deniz aracı bilgileri",
+    fields: [
+      F.title,
+      { key: "vesselType", label: "Tekne tipi", type: "select", options: ["Motoryat", "Yelkenli", "Sürat Teknesi", "Gulet", "Katamaran", "Şişme Bot / Zodyak", "Jet Ski", "Balıkçı Teknesi", "Fiber Tekne", "Ahşap Tekne"] },
+      F.markaSerbest,
+      { key: "year", label: "Üretim yılı", type: "number" },
+      { key: "lengthM", label: "Boy", type: "text", suffix: "m" },
+      { key: "beamM", label: "En", type: "text", suffix: "m" },
+      { key: "material", label: "Gövde malzemesi", type: "select", options: ["Fiber (GRP)", "Ahşap", "Alüminyum", "Çelik", "PVC / Şişme"] },
+      { key: "engineType", label: "Motor tipi", type: "select", options: ["İçten Takma", "Dıştan Takma", "Motorsuz"] },
+      { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp" },
+      { key: "engineHours", label: "Motor saati", type: "number", suffix: "saat" },
+      { key: "fuel", label: "Yakıt", type: "select", options: ["Dizel", "Benzin", "Elektrik", "Yelken"] },
+      { key: "cabins", label: "Kabin sayısı", type: "select", options: ["0", "1", "2", "3", "4", "4+"] },
+      { key: "capacity", label: "Kişi kapasitesi", type: "text" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"] },
+      F.price, F.takas, F.desc
+    ]
+  },
   yedekParca: {
     key: "yedekParca",
     title: "Parça / aksesuar bilgileri",
@@ -1124,7 +1194,17 @@ export const categoryTree: CategoryNode[] = [
       node("Kiralık", leaves(["Konteyner", "Tiny House", "Prefabrik Ev", "Şantiye Konteyneri", "Ofis Konteyneri", "Yaşam Konteyneri", "Bungalov"], "prefabrik"), "prefabrik")
     ], "prefabrik"),
     node("Emlak Hizmetleri", leaves(["Emlak Danışmanı", "Gayrimenkul Değerleme", "Ekspertiz Hizmeti", "Tapu Takip", "Kentsel Dönüşüm Danışmanlığı", "Mimari Proje", "İç Mimarlık", "Tadilat Hizmeti", "Boya Badana", "Nakliye / Evden Eve", "Temizlik Hizmeti", "Fotoğraf / Video Çekimi", "Drone Çekimi", "3D Sanal Tur", "Kiracı Bulma", "Mülk Yönetimi", "Site Yönetimi"], "emlakHizmet"), "emlakHizmet"),
-    node("Ortak Satışa Açık Emlak", leaves(["Ortak Satışa Açık Daire", "Ortak Satışa Açık Villa", "Ortak Satışa Açık Müstakil Ev", "Ortak Satışa Açık Yazlık", "Ortak Satışa Açık Arsa", "Ortak Satışa Açık Tarla", "Ortak Satışa Açık İş Yeri", "Ortak Satışa Açık Dükkan", "Ortak Satışa Açık Ofis", "Ortak Satışa Açık Bina", "Ortak Satışa Açık Turistik Tesis", "Ortak Satışa Açık Proje", "Komisyonlu Emlak İlanı", "Emlakçı İş Birliği"], "konut"), "konut")
+    // Ortağa açık emlak: her tür kendi şemasına gider (konut→oda/m², arsa→imar/tapu,
+    // işyeri→m²/bölüm, bina/turistik/proje). Eskiden hepsi "konut" formunu alıyordu.
+    node("Ortak Satışa Açık Emlak", [
+      ...leaves(["Ortak Satışa Açık Daire", "Ortak Satışa Açık Villa", "Ortak Satışa Açık Müstakil Ev", "Ortak Satışa Açık Yazlık"], "konut"),
+      ...leaves(["Ortak Satışa Açık Arsa", "Ortak Satışa Açık Tarla"], "arsa"),
+      ...leaves(["Ortak Satışa Açık İş Yeri", "Ortak Satışa Açık Dükkan", "Ortak Satışa Açık Ofis"], "isyeri"),
+      leaf("Ortak Satışa Açık Bina", "bina"),
+      leaf("Ortak Satışa Açık Turistik Tesis", "turistik"),
+      leaf("Ortak Satışa Açık Proje", "proje"),
+      ...leaves(["Komisyonlu Emlak İlanı", "Emlakçı İş Birliği"], "emlakHizmet")
+    ], "konut")
   ], "konut", IMG("1560518883-ce09059eeffa")),
 
   node("Vasıta", [
@@ -1134,14 +1214,14 @@ export const categoryTree: CategoryNode[] = [
     node("Elektrikli & Hibrit Araçlar", leaves(["Elektrikli Otomobil", "Hibrit (HEV)", "Plug-in Hibrit (PHEV)", "Menzil Artırıcılı (EREV)", "Elektrikli SUV", "Elektrikli Ticari", "Şarj Ekipmanı"], "otomobil"), "otomobil"),
     node("Motosiklet (Markaya Göre)", brandModelNodes(MOTO_BRANDS, MOTO_MODELS, "motosiklet"), "motosiklet"),
     node("Motosiklet (Türe Göre)", leaves(MOTO_TYPES, "motosiklet"), "motosiklet"),
-    node("Ticari Araçlar", brandModelNodes(COMMERCIAL_BRANDS, COMMERCIAL_MODELS, "vasitaGenel"), "vasitaGenel"),
-    node("Minivan & Panelvan", leaves(["Panelvan", "Minivan", "Kombi Van", "Camlı Van", "Yük Vanı", "Yolcu Vanı"], "vasitaGenel"), "vasitaGenel"),
-    node("Ağır Vasıta", leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Dorse", "Römork (Ticari)", "Tanker", "Frigorifik", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "vasitaGenel"), "vasitaGenel"),
+    node("Ticari Araçlar", brandModelNodes(COMMERCIAL_BRANDS, COMMERCIAL_MODELS, "ticari"), "ticari"),
+    node("Minivan & Panelvan", leaves(["Panelvan", "Minivan", "Kombi Van", "Camlı Van", "Yük Vanı", "Yolcu Vanı"], "ticari"), "ticari"),
+    node("Ağır Vasıta", leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Dorse", "Römork (Ticari)", "Tanker", "Frigorifik", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "agirVasita"), "agirVasita"),
     node("Deniz Araçları", [
-      node("Yat", leaves(["Motoryat", "Yelkenli Yat", "Katamaran", "Trawler", "Mega Yat", "Gulet", "Klasik Yat", "Ahşap Yat", "Süper Yat"], "vasitaGenel"), "vasitaGenel"),
-      ...leaves(["Sürat Teknesi", "Yelkenli", "Şişme Bot & Zodyak", "Jet Ski", "Balıkçı Teknesi", "Fiber Tekne", "Ahşap Tekne", "Kano & Kayak", "SUP & Sörf", "Römork (Deniz)"], "vasitaGenel"),
-      node("Tekne Motoru", brandModelNodes(MARINE_ENGINE_BRANDS, {}, "vasitaGenel"), "vasitaGenel")
-    ], "vasitaGenel"),
+      node("Yat", leaves(["Motoryat", "Yelkenli Yat", "Katamaran", "Trawler", "Mega Yat", "Gulet", "Klasik Yat", "Ahşap Yat", "Süper Yat"], "deniz"), "deniz"),
+      ...leaves(["Sürat Teknesi", "Yelkenli", "Şişme Bot & Zodyak", "Jet Ski", "Balıkçı Teknesi", "Fiber Tekne", "Ahşap Tekne", "Kano & Kayak", "SUP & Sörf", "Römork (Deniz)"], "deniz"),
+      node("Tekne Motoru", brandModelNodes(MARINE_ENGINE_BRANDS, {}, "deniz"), "deniz")
+    ], "deniz"),
     node("Karavan", leaves(["Motokaravan", "Çekme Karavan", "Van Karavan", "Off-road Karavan", "Kamp Römorku", "Karavan Aksesuarı"], "vasitaGenel"), "vasitaGenel"),
     node("ATV & UTV", leaves(["ATV", "UTV", "Buggy", "Elektrikli ATV", "Çocuk ATV"], "vasitaGenel"), "vasitaGenel"),
     node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Elektrikli Bisiklet", "Elektrikli Motosiklet", "Hoverboard", "Segway", "Elektrikli Golf Aracı"], "vasitaGenel"), "vasitaGenel"),
@@ -1175,7 +1255,7 @@ export const categoryTree: CategoryNode[] = [
       node("Akıllı Ev", leaves(["Akıllı Ampul & Priz", "Güvenlik Kamerası", "Akıllı Kilit", "Sesli Asistan", "Akıllı Termostat", "Robot Süpürge"], "elektronik"), "elektronik"),
       node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Hoverboard", "Elektrikli Kaykay", "Segway", "Scooter Yedek Parça"], "elektronik"), "elektronik"),
       ...leaves(["Projeksiyon", "Yazıcı & Tarayıcı", "Network & Modem", "Elektronik Aksesuar"], "elektronik")
-    ], "alisverisGenel"),
+    ], "elektronik"),
     node("Telefon & Aksesuar", [
       node("Cep Telefonu", brandModelNodes(PHONE_BRANDS, MODELS_BY_BRAND, "telefon"), "telefon"),
       leaf("Tuşlu Telefon", "telefon"),
@@ -1189,7 +1269,7 @@ export const categoryTree: CategoryNode[] = [
       node("Çevre Birimleri", leaves(["Monitör", "Klavye", "Mouse", "Kulaklık", "Webcam", "Mikrofon", "Yazıcı & Tarayıcı", "Modem & Network", "Harici Disk", "USB Bellek"], "elektronik"), "elektronik"),
       node("Oyun & Konsol", leaves(["PlayStation 5", "PlayStation 4", "Xbox Series X/S", "Xbox One", "Nintendo Switch", "Konsol Oyunları", "Oyun Kolu", "VR Gözlük", "Oyuncu Koltuğu"], "elektronik"), "elektronik"),
       leaf("Yazılım & Lisans", "dijitalHizmet")
-    ], "alisverisGenel"),
+    ], "bilgisayar"),
     node("Ev & Yaşam", [
       node("Mobilya", leaves(["Koltuk Takımı", "Köşe Koltuk", "Kanepe", "Berjer", "Masa", "Sandalye", "Yatak", "Baza", "Gardırop", "Kitaplık", "TV Ünitesi", "Çalışma Masası", "Bebek Mobilyası"], "mobilya"), "mobilya"),
       ...leaves(["Dekorasyon", "Aydınlatma", "Ev Tekstili", "Banyo", "Bahçe & Balkon", "Temizlik Ürünleri", "Düzenleyiciler", "Ev Gereçleri"], "alisverisGenel")
