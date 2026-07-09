@@ -8,6 +8,7 @@ import { Alert } from "@/lib/alert";
 
 import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";
+import { JsonLd } from "@/components/json-ld";
 import { ListingCard } from "@/components/listing-card";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
@@ -184,6 +185,16 @@ export default function StoreScreen() {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
         <Seo title={`${seller?.name ?? "Satıcı"} — Mağaza ve ilanları | OrtakSat`} description={`${seller?.name ?? "Bu satıcının"} OrtakSat mağazası: ${activeListings.length} aktif ilan. Ürünleri incele, ortak ol veya doğrudan satıcıyla iletişime geç.`} path={id ? `/store/${id}` : undefined} image={seller?.avatar?.startsWith("http") ? seller.avatar : undefined} />
+        {seller ? (
+          <JsonLd id="store" json={JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Store",
+            name: seller.name,
+            url: `https://www.ortaksat.com/store/${seller.id}`,
+            ...(seller.avatar?.startsWith("http") ? { image: seller.avatar } : {}),
+            ...(reviewsAboutSeller.length > 0 && seller.rating > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: Number(seller.rating.toFixed(1)), reviewCount: reviewsAboutSeller.length } } : {})
+          })} />
+        ) : null}
         {/* Cover */}
         <View style={{ backgroundColor: colors.primaryDark, height: 150 }} />
         <View style={{ alignSelf: "center", marginTop: -64, maxWidth: 1280, paddingHorizontal: 20, width: "100%" }}>
