@@ -43,10 +43,21 @@ function FavoritesScreenInner() {
     return { text: `%${pct}`, down: currentPrice < saved };
   };
   const droppedCount = favoriteListings.filter((l) => l && (savedPriceById.get(l.id) ?? 0) > l.price).length;
-  const visibleListings = favoriteListings.filter((listing) => {
-    if (!listing || tokens.length === 0) return true;
-    return matchesQuery(listing, undefined, tokens);
-  });
+  // Mobil liste: arama + sekme (favTab) + kategori + sıralama uygulanır (masaüstü
+  // paritesi — önceden mobilde yalnız arama vardı).
+  const visibleListings = (() => {
+    let base = favoriteListings.filter((l): l is Listing => Boolean(l));
+    if (tokens.length) base = base.filter((l) => matchesQuery(l, undefined, tokens));
+    if (favTab === "open") base = base.filter((l) => l.partnershipMode === "open");
+    else if (favTab === "highcomm") base = base.filter((l) => l.commissionType === "rate" && l.commissionValue >= 15);
+    if (catFilter) base = base.filter((l) => l.category === catFilter);
+    return base.slice().sort((a, b) =>
+      sortMode === "priceAsc" ? a.price - b.price
+        : sortMode === "priceDesc" ? b.price - a.price
+          : sortMode === "commission" ? commissionAmount(b) - commissionAmount(a)
+            : b.createdAt.localeCompare(a.createdAt)
+    );
+  })();
 
   if (isWideWeb) {
     const myFavs = favoriteListings.filter(Boolean) as Listing[];
@@ -180,6 +191,25 @@ function FavoritesScreenInner() {
           </Pressable>
         ) : null}
       </View>
+
+      {/* Filtre çipleri + sıralama (masaüstü paritesi) */}
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
+        {([["all", "Tümü"], ["open", "Ortak satışa açık"], ["highcomm", "Yüksek komisyon"]] as const).map(([k, lbl]) => {
+          const on = favTab === k && !catFilter;
+          return (
+            <Pressable key={k} onPress={() => { setFavTab(k); setCatFilter(null); }} style={{ backgroundColor: on ? colors.accent : colors.surface, borderColor: on ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+              <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+            </Pressable>
+          );
+        })}
+        <Pressable
+          onPress={() => setSortMode((["new", "priceAsc", "priceDesc", "commission"] as const)[((["new", "priceAsc", "priceDesc", "commission"] as const).indexOf(sortMode) + 1) % 4])}
+          style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}
+        >
+          <MaterialCommunityIcons name="sort" size={14} color={colors.muted} />
+          <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy({ new: "En yeni", priceAsc: "Fiyat: artan", priceDesc: "Fiyat: azalan", commission: "En yüksek komisyon" }[sortMode], language)}</Text>
+        </Pressable>
+      </ScrollView>
 
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ürünler", language)}</Text>
