@@ -429,42 +429,29 @@ export async function searchListings(params: {
   limit?: number;
 }): Promise<{ listings: Listing[]; users: User[] } | null> {
   if (!supabase) return null;
-  let query = supabase.from("listing_public_cards").select("*").eq("status", "active");
-
   const q = params.q?.trim();
-  if (q) {
-    // PostgREST .or() wildcard'i '*' kullanir; virgul ayirici oldugu icin temizle.
-    const safe = q.replace(/[,*%()]/g, " ").replace(/\s+/g, " ").trim();
-    if (safe) {
-      // Coklu-kelime: HER kelime herhangi bir alanda gecmeli (kelimeler arasi AND).
-      // Ard arda .or() cagrilari PostgREST'te AND ile birlesir. Boylece "kirmizi
-      // koltuk" -> baslikta "koltuk" + aciklamada "kirmizi" olan ilani da bulur
-      // (eski tek-parca substring bunu kaciriyordu).
-      const tokens = safe.split(" ").filter((t) => t.length >= 2);
-      const groups = tokens.length ? tokens : [safe];
-      for (const t of groups) {
-        query = query.or(`title.ilike.*${t}*,description.ilike.*${t}*,category.ilike.*${t}*,location.ilike.*${t}*`);
-      }
-    }
-  }
-  if (typeof params.minPrice === "number") query = query.gte("price", params.minPrice);
-  if (typeof params.maxPrice === "number") query = query.lte("price", params.maxPrice);
-  if (params.openOnly) query = query.eq("partnership_mode", "open");
-
-  const sort = params.sort ?? "new";
-  if (sort === "priceAsc") query = query.order("price", { ascending: true });
-  else if (sort === "priceDesc") query = query.order("price", { ascending: false });
-  // Komisyon sıralaması: görünümdeki commission_tl (oranlıysa fiyat×oran/100, değilse
-  // sabit ₺) ile kesin ORDER BY → oran ve sabit tutarlar artık aynı ₺ ekseninde
-  // karşılaştırılır (eski ham commission_value %'yi ₺ ile karıştırıyordu).
-  else if (sort === "commission") query = query.order("commission_tl", { ascending: false }).order("created_at", { ascending: false });
-  else query = query.order("created_at", { ascending: false });
-
   const offset = params.offset ?? 0;
   const limit = params.limit ?? 40;
-  query = query.range(offset, offset + limit - 1);
+  // Sorguyu temizle (RPC/PostgREST için güvenli).
+  const safe = (q ?? "").replace(/[,*%()]/g, " ").replace(/\s+/g, " ").trim();
 
-  const { data, error } = await query;
+  // Sunucu-tarafı Türkçe-DUYARSIZ + trigram-sıralı arama RPC'si: lower(unaccent(...)) ile
+  // "sarj"→"şarj", "guclu"→"güçlü" eşleşir; ilgi (similarity) sırasına dizilir. Fiyat/açık/
+  // sıralama/konum gibi diğer filtreleri istemci (activeListings) serverResults üzerinde
+  // zaten yeniden uygular; bu yüzden RPC sade tutulur.
+  if (safe) {
+    const { data, error } = await supabase.rpc("search_listings", { q: safe, lim: limit, off: offset });
+    if (error) return null;
+    const listings = ((data ?? []) as PublicListingCardRow[]).map(mapListing);
+    if (listings.length === 0) return { listings: [], users: [] };
+    const ownerIds = Array.from(new Set(listings.map((l) => l.ownerId)));
+    const { data: profileData } = await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).in("id", ownerIds);
+    const users = ((profileData ?? []) as ProfileRow[]).map(mapProfile);
+    return { listings, users };
+  }
+
+  // q yoksa (nadiren çağrılır): en yeni aktif ilanlar.
+  const { data, error } = await supabase.from("listing_public_cards").select("*").eq("status", "active").order("created_at", { ascending: false }).range(offset, offset + limit - 1);
   if (error) return null;
   const listings = ((data ?? []) as PublicListingCardRow[]).map(mapListing);
   if (listings.length === 0) return { listings: [], users: [] };

@@ -213,6 +213,7 @@ export default function ExploreScreen() {
   const toggleAttr = (key: string, val: string) => setAttrFilters((s) => { const cur = s[key] ?? []; const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]; const copy = { ...s }; if (next.length) copy[key] = next; else delete copy[key]; return copy; });
   const setNum = (key: string, side: "min" | "max", v: string) => setNumRange((s) => ({ ...s, [key]: { min: s[key]?.min ?? "", max: s[key]?.max ?? "", [side]: v } }));
   const clearCatFilter = () => { setCatPath([]); setAttrFilters({}); setNumRange({}); };
+  const clearAllFilters = () => { setPriceRange(""); setMinCommission(0); router.setParams({ province: undefined, district: undefined }); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setFilter("all"); setCity(""); setSortMode("recommended"); clearCatFilter(); };
 
   // Kayıtlı arama: o anki filtre kümesini yakala + tıklanınca geri yükle.
   const currentFilters = (): SavedFilters => {
@@ -247,6 +248,20 @@ export default function ExploreScreen() {
   };
 
   const hasPanelFilter = provinceId != null || Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter) || onlyVerified || catPath.length > 0;
+
+  // Aktif filtre çipleri: seçili her filtre için tek-tek kaldırılabilir rozet (× ile).
+  // Kullanıcı hangi filtrelerin açık olduğunu görür ve tek tıkla kaldırır.
+  const activeChips: Array<{ key: string; label: string; onRemove: () => void }> = [];
+  if (provinceId != null) activeChips.push({ key: "prov", label: getProvince(provinceId)?.name ?? "İl", onRemove: () => router.setParams({ province: undefined, district: undefined }) });
+  if (districtId != null) activeChips.push({ key: "dist", label: getDistrict(districtId)?.name ?? "İlçe", onRemove: () => router.setParams({ district: undefined }) });
+  if (city) activeChips.push({ key: "city", label: city, onRemove: () => setCity("") });
+  if (priceRange) { const [mn, mx] = priceRange.split("-"); activeChips.push({ key: "price", label: `₺${mn || "0"} – ${mx || "∞"}`, onRemove: () => setPriceRange("") }); }
+  if (minCommission > 0) activeChips.push({ key: "comm", label: `Komisyon ₺${minCommission}+`, onRemove: () => setMinCommission(0) });
+  if (stockFilter) activeChips.push({ key: "stock", label: stockFilter === "in" ? "Stokta var" : "Az stok", onRemove: () => setStockFilter("") });
+  if (onlyVerified) activeChips.push({ key: "ver", label: "Onaylı satıcı", onRemove: () => setOnlyVerified(false) });
+  if (statusOpen) activeChips.push({ key: "open", label: "Ortak satışa açık", onRemove: () => setStatusOpen(false) });
+  if (catPath.length) activeChips.push({ key: "cat", label: catPath[catPath.length - 1], onRemove: clearCatFilter });
+  if (sortMode !== "recommended") activeChips.push({ key: "sort", label: `Sırala: ${SORT_LABELS[sortMode]}`, onRemove: () => setSortMode("recommended") });
 
   // q girildiyse temel set sunucu sonuclari (tum katalog); degilse yuklu katalog.
   const baseListings = serverResults ?? marketplaceListings;
@@ -846,6 +861,23 @@ export default function ExploreScreen() {
           <ExploreStat icon="play-box-multiple-outline" label="Video" value={`${videoCount}`} />
           <ExploreStat icon="flash" label="Anında" value={`${openCount}`} />
         </View>
+
+        {/* Aktif filtre çipleri (tek-tek kaldırılabilir + tümünü temizle). */}
+        {activeChips.length > 0 ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", gap: 6, paddingVertical: 2 }}>
+            {activeChips.map((c) => (
+              <Pressable key={c.key} onPress={c.onRemove} accessibilityRole="button" accessibilityLabel={`${translateCopy(c.label, language)} — ${translateCopy("kaldır", language)}`} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
+                <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800", maxWidth: 160 }}>{translateCopy(c.label, language)}</Text>
+                <MaterialCommunityIcons name="close-circle" size={14} color={colors.primaryDark} />
+              </Pressable>
+            ))}
+            {activeChips.length > 1 ? (
+              <Pressable onPress={clearAllFilters} accessibilityRole="button" style={{ alignItems: "center", borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 }}>
+                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Tümünü temizle", language)}</Text>
+              </Pressable>
+            ) : null}
+          </ScrollView>
+        ) : null}
       </View>
 
       {renderCatFilter()}
