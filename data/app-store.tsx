@@ -425,6 +425,19 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [hiddenCategories, setHiddenCategoriesState] = useState<string[]>([]);
   // Preview (no-Supabase) auth registry so register/login/logout work end-to-end in demo mode.
   const [mockAccounts, setMockAccounts] = useState<Record<string, { password: string; user: User }>>({});
+
+  // Çıkışta kullanıcıya ÖZEL (private) durumları temizle → aynı tarayıcıda sıradaki
+  // kullanıcı/oturum önceki kullanıcının konuşma/mesaj/favori/ortaklık/talep/satış/
+  // bildirim verisini GÖRMESİN. Herkese açık listings/reviews korunur (public feed).
+  const resetPrivateState = () => {
+    setConversations([]);
+    setMessages([]);
+    setFavorites([]);
+    setPartnerships([]);
+    setLeads([]);
+    setSales([]);
+    setNotifications([]);
+  };
   // Öneriler: canlıda boş başlar (gerçek kullanıcı önerileriyle dolar), önizlemede örnek.
   const [categorySuggestions, setCategorySuggestions] = useState<CategorySuggestion[]>(
     isSupabaseConfigured ? [] : [
@@ -613,6 +626,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
       } else {
         setAuthUser(null);
         setEmailVerified(false);
+        // Oturum başka bir yolla kapandıysa (token süresi, başka sekmede çıkış) da
+        // özel veriyi temizle → sonraki kullanıcıya sızmasın.
+        resetPrivateState();
       }
       setAuthReady(true);
     });
@@ -1135,14 +1151,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
       async signOut() {
         if (supabase) await supabase.auth.signOut();
         setAuthUser(null);
+        resetPrivateState();
       },
       // Tüm cihazlardan çıkış: sunucudaki tüm refresh token'ları geçersiz kılar
       // (scope: "global"). Bu cihazdaki oturum da kapanır.
       async signOutAllDevices() {
-        if (!supabase) { setAuthUser(null); return true; }
+        if (!supabase) { setAuthUser(null); resetPrivateState(); return true; }
         void logActivity("sign_out", { userId: authUser?.id, metadata: { scope: "global" } });
         const { error } = await supabase.auth.signOut({ scope: "global" });
         setAuthUser(null);
+        resetPrivateState();
         if (error) { setAuthError(translateAuthError(error.message)); return false; }
         return true;
       },

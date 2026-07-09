@@ -18,6 +18,7 @@ import { uploadMessageAttachment } from "@/lib/live-service";
 import { useTypingIndicator } from "@/lib/use-typing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
+import { useKeyboardInset } from "@/lib/use-keyboard-inset";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey, shortDate } from "@/lib/locale";
 import type { Conversation, Lead, Message, Partnership, Sale, User } from "@/lib/types";
@@ -69,6 +70,10 @@ function ChatScreenInner() {
   const [body, setBody] = useState("");
   const [attaching, setAttaching] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  // Sohbet gövde-kaydırması OLMAYAN sabit bir düzen; mobil web'de klavye composer'ı
+  // örtmesin diye SADECE bu ekrana klavye inset'i uygulanır (genel kök değil → başka
+  // sayfalarda "ekran komple kayıyor" olmaz).
+  const kbInset = useKeyboardInset();
   const scrollRef = useRef<ScrollView>(null);
   // Kullanıcı geçmişi okumak için yukarı kaydırdıysa, gelen mesaj/görsel yüklenmesi
   // onu zorla aşağı çekmesin. Yalnızca dibe yakınken otomatik aşağı in.
@@ -157,7 +162,7 @@ function ChatScreenInner() {
     <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined}
       keyboardVerticalOffset={0}
-      style={{ backgroundColor: colors.background, flex: 1 }}
+      style={{ backgroundColor: colors.background, flex: 1, paddingBottom: kbInset }}
     >
       {/* Kompakt sohbet başlığı (WhatsApp/Sahibinden benzeri): geri · avatar ·
           isim/durum · ilana git. Pazaryeri arama çubuğu YOK → dikey alan mesajlara. */}
