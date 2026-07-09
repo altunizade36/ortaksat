@@ -12,6 +12,7 @@ import { EmptyState } from "@/components/ui";
 import { money } from "@/lib/format";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
+import { downloadCsv } from "@/lib/csv-export";
 import { getDistrict, getProvince } from "@/lib/locations";
 import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
@@ -128,6 +129,7 @@ function AdminScreenInner() {
   const [listingFilter, setListingFilter] = useState<"all" | "pending" | "active" | "rejected" | "paused" | "featured" | "risky">("all");
   const [userFilter, setUserFilter] = useState<"all" | "active" | "suspended" | "seller" | "staff">("all");
   const [msgFilter, setMsgFilter] = useState<"all" | "risky">("all");
+  const [commFilter, setCommFilter] = useState<"all" | "pending" | "approved" | "seller_paid" | "paid" | "cancelled" | "disputed">("all");
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
   const uq = userQuery.trim().toLocaleLowerCase("tr-TR");
   const lq = listingQuery.trim().toLocaleLowerCase("tr-TR");
@@ -311,13 +313,22 @@ function AdminScreenInner() {
         {section === "users" ? (
           <Panel title="Kullanıcılar" sub={`${shownUsers.length} aktif kullanıcı${deletedUserCount ? ` · ${deletedUserCount} silinmiş (gizli)` : ""}${canManageUsers ? " · rol, durum, doğrulama, bildirim" : ""}`}>
             <AdminSearch value={userQuery} onChange={setUserQuery} placeholder="İsim, rol veya durum ara…" />
-            <FilterChips value={userFilter} onChange={setUserFilter} options={[
-              { key: "all", label: "Tümü", count: liveUsers.length },
-              { key: "active", label: "Aktif" },
-              { key: "suspended", label: "Askıda", count: liveUsers.filter((u) => u.status === "suspended").length },
-              { key: "seller", label: "Satıcı" },
-              { key: "staff", label: "Yönetici", count: liveUsers.filter((u) => u.role === "admin" || u.role === "moderator" || u.role === "super_admin").length }
-            ]} />
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
+              <FilterChips value={userFilter} onChange={setUserFilter} options={[
+                { key: "all", label: "Tümü", count: liveUsers.length },
+                { key: "active", label: "Aktif" },
+                { key: "suspended", label: "Askıda", count: liveUsers.filter((u) => u.status === "suspended").length },
+                { key: "seller", label: "Satıcı" },
+                { key: "staff", label: "Yönetici", count: liveUsers.filter((u) => u.role === "admin" || u.role === "moderator" || u.role === "super_admin").length }
+              ]} />
+              {canManageUsers ? (
+                <ExportButton
+                  filename={`kullanicilar-${userFilter}.csv`}
+                  headers={["Ad", "Telefon", "Rol", "Durum", "Puan", "Başarılı Satış", "Doğrulanmış Tel", "Doğrulanmış Kimlik"]}
+                  rows={shownUsers.map((u) => [u.name, u.phone ?? "", u.role ?? "user", u.status ?? "active", u.rating, u.successfulSales, u.verifiedPhone ? "Evet" : "Hayır", u.verifiedIdentity ? "Evet" : "Hayır"])}
+                />
+              ) : null}
+            </View>
             {detailUserId ? (() => {
               const du = users.find((x) => x.id === detailUserId);
               if (!du) return null;
@@ -457,15 +468,22 @@ function AdminScreenInner() {
           ) : null}
           <Panel title="İlanlar" sub={`${activeListings.length} aktif · ${pendingReview.length} incelemede · ${listings.length} toplam${lq ? ` · ${shownListings.length} sonuç` : ""}`}>
             <AdminSearch value={listingQuery} onChange={setListingQuery} placeholder="Başlık, kategori, sahip veya durum ara…" />
-            <FilterChips value={listingFilter} onChange={setListingFilter} options={[
-              { key: "all", label: "Tümü", count: listings.length },
-              { key: "pending", label: "Onay bekleyen", count: pendingReview.length },
-              { key: "active", label: "Yayında", count: activeListings.length },
-              { key: "paused", label: "Askıda", count: listings.filter((l) => l.status === "paused").length },
-              { key: "rejected", label: "Reddedilen", count: listings.filter((l) => l.status === "rejected").length },
-              { key: "featured", label: "Öne çıkan", count: listings.filter((l) => l.featured).length },
-              { key: "risky", label: "⚠ Riskli", count: riskyListings.length }
-            ]} />
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
+              <FilterChips value={listingFilter} onChange={setListingFilter} options={[
+                { key: "all", label: "Tümü", count: listings.length },
+                { key: "pending", label: "Onay bekleyen", count: pendingReview.length },
+                { key: "active", label: "Yayında", count: activeListings.length },
+                { key: "paused", label: "Askıda", count: listings.filter((l) => l.status === "paused").length },
+                { key: "rejected", label: "Reddedilen", count: listings.filter((l) => l.status === "rejected").length },
+                { key: "featured", label: "Öne çıkan", count: listings.filter((l) => l.featured).length },
+                { key: "risky", label: "⚠ Riskli", count: riskyListings.length }
+              ]} />
+              <ExportButton
+                filename={`ilanlar-${listingFilter}.csv`}
+                headers={["Başlık", "Kategori", "Fiyat", "Para Birimi", "Sahip", "Durum", "Komisyon Tipi", "Komisyon", "Stok", "Şehir", "Öne Çıkan", "Oluşturma"]}
+                rows={shownListings.map((l) => [l.title, l.category, l.price, l.currency, findUser(l.ownerId)?.name ?? "", l.status, l.commissionType, l.commissionValue, l.stockCount, l.location, l.featured ? "Evet" : "Hayır", l.createdAt])}
+              />
+            </View>
             <Table head={["İLAN", "KATEGORİ", "FİYAT", "SAHİP", "DURUM", "İŞLEM"]} cols={[2.2, 1.2, 1, 1.4, 1, 1.4]}>
               {shownListings.map((l) => {
                 const risk = computeListingRisk(l, listings, findUser(l.ownerId));
@@ -701,16 +719,42 @@ function AdminScreenInner() {
           })()
         ) : null}
 
-        {section === "commissions" ? (
-          <Panel title="Komisyon Kayıtları" sub="Ortaksat para tutmaz; bu kayıtlar taraflar arası komisyonun takibidir.">
+        {section === "commissions" ? (() => {
+          const shownSales = commFilter === "all" ? sales : sales.filter((s) => s.status === commFilter);
+          const totalShown = shownSales.reduce((a, s) => a + s.commissionAmount, 0);
+          return (
+          <Panel title="Komisyon Kayıtları" sub={`${shownSales.length} kayıt · toplam ${money(totalShown)} — Ortaksat para tutmaz; bu kayıtlar taraflar arası komisyon takibidir.`}>
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between", marginBottom: 4 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                {([["all", "Tümü"], ["pending", "Bekleyen"], ["approved", "Onaylı"], ["seller_paid", "Satıcı ödedi"], ["paid", "Ödendi"], ["disputed", "Anlaşmazlık"], ["cancelled", "İptal"]] as const).map(([k, lbl]) => {
+                  const on = commFilter === k;
+                  const c = k === "all" ? sales.length : sales.filter((s) => s.status === k).length;
+                  return (
+                    <Pressable key={k} onPress={() => setCommFilter(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 }}>
+                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{lbl} · {c}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+              <ExportButton
+                filename={`komisyonlar-${commFilter}.csv`}
+                headers={["İlan", "Komisyon", "Satış Tutarı", "Ortak", "Durum", "Adet", "İade Sonu", "Oluşturma"]}
+                rows={shownSales.map((s) => {
+                  const l = listings.find((x) => x.id === s.listingId);
+                  const p = partnerships.find((x) => x.id === s.partnershipId);
+                  return [l?.title ?? s.listingId, s.commissionAmount, s.amount, p ? findUser(p.partnerId)?.name ?? "" : "", SALE_TONE[s.status]?.label ?? s.status, s.quantity ?? 1, s.returnUntil ?? "", s.approvedAt ?? ""];
+                })}
+              />
+            </View>
             {sales.filter((s) => s.status === "disputed").length > 0 ? (
               <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 10, flexDirection: "row", gap: 8, marginBottom: 10, padding: 11 }}>
                 <MaterialCommunityIcons name="scale-balance" size={17} color={colors.accent} />
                 <Text style={{ color: colors.accent, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{sales.filter((s) => s.status === "disputed").length} anlaşmazlık kaydı arabuluculuk bekliyor (en üstte).</Text>
               </View>
             ) : null}
+            {shownSales.length === 0 ? <EmptyState title="Kayıt yok" body="Bu filtreye uygun komisyon kaydı bulunmuyor." /> : null}
             <Table head={["İLAN", "KOMİSYON", "ORTAKLIK", "DURUM", "ARABULUCULUK"]} cols={[2, 1, 1.3, 1, 1.5]}>
-              {[...sales].sort((a, b) => (a.status === "disputed" ? -1 : 0) - (b.status === "disputed" ? -1 : 0)).map((s) => {
+              {[...shownSales].sort((a, b) => (a.status === "disputed" ? -1 : 0) - (b.status === "disputed" ? -1 : 0)).map((s) => {
                 const listing = listings.find((l) => l.id === s.listingId);
                 const p = partnerships.find((x) => x.id === s.partnershipId);
                 return (
@@ -730,7 +774,8 @@ function AdminScreenInner() {
               })}
             </Table>
           </Panel>
-        ) : null}
+          );
+        })() : null}
 
         {section === "stats" ? (
           <View style={{ gap: 16 }}>
@@ -1322,6 +1367,21 @@ function countBy<T>(items: T[], getKey: (item: T) => string) {
     acc[key] = (acc[key] ?? 0) + 1;
     return acc;
   }, {});
+}
+
+// CSV dışa-aktarım butonu (web). Verilen başlık + satırları indirir.
+function ExportButton({ label = "CSV indir", filename, headers, rows }: { label?: string; filename: string; headers: string[]; rows: Array<Array<unknown>> }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={`${label} (${rows.length} satır)`}
+      onPress={() => downloadCsv(filename, headers, rows)}
+      style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.8 : 1, paddingHorizontal: 12, paddingVertical: 7 })}
+    >
+      <MaterialCommunityIcons name="download-outline" size={15} color={colors.primaryDark} />
+      <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{label} · {rows.length}</Text>
+    </Pressable>
+  );
 }
 
 // Sıralı dağılım listesi (satıcı/ortak/kategori/şehir) — etiket + değer + oran çubuğu.
