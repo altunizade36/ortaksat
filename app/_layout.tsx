@@ -14,6 +14,7 @@ import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
 import { LanguageProvider, useLanguage } from "@/lib/i18n";
+import { useKeyboardInset } from "@/lib/use-keyboard-inset";
 import { useStore } from "@/lib/use-store";
 
 // expo-router, alt ağaçta render hatası yakalarsa bu fallback'i gösterir.
@@ -33,9 +34,13 @@ export default function RootLayout() {
 
 function RootStack() {
   const { t } = useLanguage();
+  // Mobil web'de yumuşak klavye açılınca içerik alanını klavyenin üstüne çeker
+  // (alta sabit sohbet/soru-cevap/filtre girişleri artık klavye altında kalmaz).
+  // Masaüstü/native ve odak yokken 0 → hiçbir etkisi olmaz.
+  const kbInset = useKeyboardInset();
 
   return (
-    <View style={{ flex: 1 }}>
+    <View nativeID="app-shell" style={{ flex: 1, paddingBottom: kbInset }}>
       <StatusBar style="dark" />
       {/* Varsayılan <title>/description — sayfaların kendi Head'i (varsa) bunu ezer.
           Böylece hiçbir sayfa BOŞ başlıkla kalmaz (statik export SEO). */}
