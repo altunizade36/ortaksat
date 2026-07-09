@@ -9,7 +9,7 @@ import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { inferListingSubcategory, listingCategories } from "@/lib/categories";
-import { getFormSchema, resolveFormKey, topCategories, type CategoryNode, type FieldDef } from "@/lib/category-tree";
+import { getFormSchema, matchCategoryByName, resolveFormKey, topCategories, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
@@ -648,16 +648,22 @@ export default function ExploreScreen() {
               </Pressable>
             );
           })}
-          {listingCategories.slice(0, 6).map((category) => (
-            <Pressable
-              key={category.key}
-              onPress={() => router.setParams({ q: category.label })}
-              style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 14, paddingVertical: 9 }}
-            >
-              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy(category.shortLabel, language)}</Text>
-              <MaterialCommunityIcons name="chevron-down" size={15} color={colors.muted} />
-            </Pressable>
-          ))}
+          {listingCategories.slice(0, 6).map((category) => {
+            // Hızlı kategori kısayolu: ağaçta gerçek düğüme çöz → gerçek kategori filtresi
+            // (eskiden yalnız metin araması yapıyordu, chevron yanıltıcıydı).
+            const match = matchCategoryByName(category.label);
+            const on = match ? catPath[catPath.length - 1] === match.node.key : false;
+            return (
+              <Pressable
+                key={category.key}
+                onPress={() => { if (match) setCatPath(match.path.map((p) => p.key)); else router.setParams({ q: category.label }); }}
+                style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 14, paddingVertical: 9 }}
+              >
+                <MaterialCommunityIcons name="tag-outline" size={14} color={on ? "#FFFFFF" : colors.primary} />
+                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy(category.shortLabel, language)}</Text>
+              </Pressable>
+            );
+          })}
         </View>
 
         {/* Location filter */}

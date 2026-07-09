@@ -629,6 +629,26 @@ export default function ListingDetailScreen() {
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy("Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.", language)}</Text>
           </View>
 
+          {/* İlan Bilgileri (Sahibinden tarzı) — kategoriye özel skaler özellikler,
+              fiyatın hemen altında öne çıkarılır. Donanım (çok-seçim) dizileri hariç. */}
+          {(() => {
+            const scalarSpecs = describeAttributes(currentListing.attributes).filter((r) => !r.items);
+            if (scalarSpecs.length === 0) return null;
+            return (
+              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, overflow: "hidden" }}>
+                <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 13, paddingVertical: 9 }}>
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("İlan Bilgileri", language)}</Text>
+                </View>
+                {scalarSpecs.map((row, i) => (
+                  <View key={row.label} style={{ backgroundColor: i % 2 === 1 ? colors.surface : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 13, paddingVertical: 8 }}>
+                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(row.label, language)}</Text>
+                    <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", textAlign: "right" }}>{translateCopy(row.value, language)}</Text>
+                  </View>
+                ))}
+              </View>
+            );
+          })()}
+
           {/* Anahtar bilgiler */}
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Metric label={translateCopy("Stok", language)} value={`${currentListing.stockCount} ${translateCopy("adet", language)}`} />
@@ -847,14 +867,35 @@ export default function ListingDetailScreen() {
               <Bullet key={line} icon="check-circle-outline" text={line} tone="info" />
             ))}
           </Accordion>
-          <Accordion title={translateCopy("Ürün özellikleri", language)} icon="format-list-bulleted" defaultOpen>
+          {/* Özellikler & Donanım (Sahibinden tarzı) — çok-seçimli donanım/güvenlik/
+              konfor dizileri çip olarak. Skaler özellikler yukarıdaki İlan Bilgileri kutusunda. */}
+          {(() => {
+            const listSpecs = describeAttributes(currentListing.attributes).filter((r) => r.items && r.items.length);
+            if (listSpecs.length === 0) return null;
+            return (
+              <Accordion title={translateCopy("Özellikler & Donanım", language)} icon="star-check-outline" defaultOpen>
+                <View style={{ gap: 12 }}>
+                  {listSpecs.map((row) => (
+                    <View key={row.label} style={{ gap: 7 }}>
+                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(row.label, language)}</Text>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                        {(row.items ?? []).map((it) => (
+                          <View key={it} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
+                            <MaterialCommunityIcons name="check" size={13} color={colors.primaryDark} />
+                            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{translateCopy(it, language)}</Text>
+                          </View>
+                        ))}
+                      </View>
+                    </View>
+                  ))}
+                </View>
+              </Accordion>
+            );
+          })()}
+          <Accordion title={translateCopy("İlan detayları", language)} icon="format-list-bulleted">
             <SpecRow label="Kategori" value={currentListing.category} />
             {currentListing.attributes?.listingType ? <SpecRow label="İlan tipi" value={String(currentListing.attributes.listingType)} /> : null}
             <SpecRow label="Konum" value={currentListing.location} />
-            {/* Yapısal kategori özellikleri (emlak: m²/oda/imar/tapu…) */}
-            {describeAttributes(currentListing.attributes).map((a) => (
-              <SpecRow key={a.label} label={a.label} value={a.value} />
-            ))}
             <SpecRow label="Stok" value={`${currentListing.stockCount} ${translateCopy("adet", language)}`} />
             <SpecRow label="Komisyon" value={currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : moneyIn(commission, currentListing.currency)} />
             <SpecRow label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı"} />

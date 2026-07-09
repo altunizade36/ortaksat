@@ -1555,10 +1555,15 @@ function groupThousands(value: number): string {
   return (value < 0 ? "-" : "") + out;
 }
 
-/** attributes jsonb'sini özellik tablosu için [{label, value}] listesine çevirir. */
-export function describeAttributes(attributes?: Record<string, string | number | boolean | string[]> | null): Array<{ label: string; value: string }> {
+/**
+ * attributes jsonb'sini özellik tablosu satırlarına çevirir.
+ * `items` yalnız çok-seçimli (donanım/güvenlik/konfor gibi) dizi alanlarda dolar →
+ * detay sayfası bunları çip listesi olarak ayrı "Özellikler & Donanım" bölümünde,
+ * skaler alanları (m²/oda/km/yıl) ise Sahibinden-vari "İlan Bilgileri" kutusunda gösterir.
+ */
+export function describeAttributes(attributes?: Record<string, string | number | boolean | string[]> | null): Array<{ label: string; value: string; items?: string[] }> {
   if (!attributes) return [];
-  const rows: Array<{ label: string; value: string }> = [];
+  const rows: Array<{ label: string; value: string; items?: string[] }> = [];
   for (const [key, val] of Object.entries(attributes)) {
     if (key.startsWith("_")) continue; // _leaf/_root iç kullanım
     if (val === undefined || val === null || val === "") continue;
@@ -1570,13 +1575,15 @@ export function describeAttributes(attributes?: Record<string, string | number |
     // Sayısal değerlerde binlik ayıracı (km/m²/₺): "85000 km" değil "85.000 km".
     // Yıl 4 haneli kalmalı ("2018", "2.018" değil).
     const isNumericVal = typeof val === "number" || (typeof val === "string" && /^\d+$/.test(val.trim()));
-    const value = Array.isArray(val)
-      ? val.join(", ")
-      : typeof val === "boolean"
-        ? (val ? "Evet" : "Hayır")
-        : isNumericVal && key !== "year" && Number(val) >= 1000
-          ? `${groupThousands(Number(val))}${suffix}`
-          : `${val}${suffix}`;
+    if (Array.isArray(val)) {
+      rows.push({ label: def?.label ?? key, value: val.join(", "), items: val.map(String) });
+      continue;
+    }
+    const value = typeof val === "boolean"
+      ? (val ? "Evet" : "Hayır")
+      : isNumericVal && key !== "year" && Number(val) >= 1000
+        ? `${groupThousands(Number(val))}${suffix}`
+        : `${val}${suffix}`;
     rows.push({ label: def?.label ?? key, value });
   }
   return rows;

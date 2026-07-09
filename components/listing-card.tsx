@@ -5,7 +5,7 @@ import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { getCategoryIcon, getCategoryShortLabel, inferListingSubcategory } from "@/lib/categories";
+import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { useCompare } from "@/lib/compare";
 import { useFavoriteFlag } from "@/lib/favorites-cache";
 import { commissionAmount, groupThousands, moneyIn } from "@/lib/format";
@@ -25,7 +25,10 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
   const featured = Boolean(listing.featured);
   const statusLabel = featured ? translateCopy("★ Öne Çıkan", language) : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? t("newListing") : `${compactNumber(listing.partnerCount)} ${t("partners")}`;
   const statusTone: StatusTone = featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
-  const subcategory = inferListingSubcategory(listing);
+  // Kartın kategori etiketleri ilanın GERÇEK ağaç kategorisinden gelir. Eski sezgisel
+  // inferListingSubcategory tree-ilanlarda yanlış eşliyordu (kamera → "Araç elektroniği").
+  const rootCat = String(listing.attributes?._root || "").trim();
+  const leafCat = displayText(listing.category);
   const isVerified = Boolean(owner?.verifiedPhone || owner?.verifiedIdentity);
   const rating = owner?.rating ?? 0;
   const hasRating = rating > 0;
@@ -107,7 +110,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
                 <StatusBadge label={statusLabel} tone={statusTone} />
                 <View style={{ backgroundColor: "rgba(255,255,255,0.94)", borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 }}>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 10, fontWeight: "900" }}>
-                    {translateCopy(getCategoryShortLabel(listing.category), language)}
+                    {translateCopy(rootCat || getCategoryShortLabel(listing.category), language)}
                   </Text>
                 </View>
               </View>
@@ -117,7 +120,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
               <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                 <MaterialCommunityIcons name={getCategoryIcon(listing.category)} size={12} color={colors.primaryDark} />
                 <Text numberOfLines={1} selectable style={{ color: colors.primaryDark, flex: 1, fontSize: 11, fontWeight: "800", letterSpacing: 0.3, textTransform: "uppercase" }}>
-                  {translateCopy(subcategory, language)}
+                  {translateCopy(leafCat, language)}
                 </Text>
               </View>
               <Text numberOfLines={2} selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "800", lineHeight: 19, minHeight: 38 }}>

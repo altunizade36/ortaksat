@@ -183,5 +183,9 @@ export const extraDict: Record<string, string> = {
   "Kapasite": "Capacity",
   "Enerji sınıfı": "Energy class",
   "Beden / ölçü": "Size",
-  "yaş": "yrs"
+  "yaş": "yrs",
+  // İlan detay: Sahibinden-vari bölümler
+  "İlan Bilgileri": "Listing Details",
+  "Özellikler & Donanım": "Features & Equipment",
+  "İlan detayları": "Listing info"
 };
