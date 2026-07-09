@@ -138,8 +138,14 @@ export default function CategoryLandingScreen() {
     // etiketleriyle birebir tutmayabilir; normalize edip "içerir/içerilir" bakılır.
     const nlabels = new Set([...labels].map((s) => s.toLocaleLowerCase("tr-TR").trim()).filter((s) => s.length > 2));
     // Kesin (tam) eşleşme — alt-metin eşleşmesi kategoriler arası sızıntı yapıyordu
-    // (ör. "Yat" ⊂ "Yatak"). İlan kategorisi ağaç etiketiyle birebir olmalı.
-    const matchCat = (cat: string) => labels.has(cat) || nlabels.has(cat.toLocaleLowerCase("tr-TR").trim());
+    // (ör. "Yat" ⊂ "Yatak"). Bileşik/eski kategori ("Konut - Satılık") ayraçla bölünüp
+    // TAM segment eşleşmesiyle kurtarılır (kelime-tam, alt-metin değil).
+    const matchCat = (cat: string) => {
+      const nc = cat.toLocaleLowerCase("tr-TR").trim();
+      if (labels.has(cat) || nlabels.has(nc)) return true;
+      const segs = nc.split(/\s*[-/>·|]\s*/).map((s) => s.trim()).filter((s) => s.length > 2);
+      return segs.length > 1 && segs.some((s) => nlabels.has(s));
+    };
     const activeAttrKeys = Object.keys(attrFilters);
     const out = listings.filter((l) => {
       if (l.status !== "active" || !matchCat(l.category)) return false;

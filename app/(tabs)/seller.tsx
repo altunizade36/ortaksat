@@ -18,6 +18,7 @@ import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { loadClickCounts } from "@/lib/live-service";
 import { searchKey } from "@/lib/locale";
+import { parseTrPrice } from "@/lib/validation";
 import { matchesQuery } from "@/lib/search";
 import { displayText } from "@/lib/text";
 import { calculateUserTrustScores } from "@/lib/trust-score";
@@ -828,7 +829,9 @@ function QuickInventoryEditor({ stock, price, currency, onSave }: { stock: numbe
   useEffect(() => { setStockDraft(String(stock)); }, [stock]);
   useEffect(() => { setPriceDraft(String(price)); }, [price]);
   const parsedStock = Math.max(0, Math.floor(Number(stockDraft.replace(/[^0-9]/g, "")) || 0));
-  const parsedPrice = Math.max(0, Math.round(Number(priceDraft.replace(/[^0-9.,]/g, "").replace(",", ".")) || 0));
+  // TR biçimli fiyat ("1.500.000") — parseTrPrice binlik ayıracını doğru çözer.
+  // Number("1.500.000") → NaN → 0 idi (fiyatı sessizce sıfırlıyordu).
+  const parsedPrice = Math.max(0, Math.round(parseTrPrice(priceDraft)));
   const dirty = parsedStock !== stock || parsedPrice !== price;
   const cellInput = { backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, fontSize: 14, fontWeight: "800" as const, minWidth: 46, paddingHorizontal: 8, paddingVertical: Platform.OS === "web" ? 6 : 4, textAlign: "center" as const };
   const stepBtn = { alignItems: "center" as const, backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 32, justifyContent: "center" as const, width: 32 };

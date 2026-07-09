@@ -45,8 +45,10 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
     if (!a) return [] as string[];
     const out: string[] = [];
     const num = (v: unknown) => (typeof v === "number" ? v : Number(String(v).replace(/[^\d]/g, "")));
-    // Vasıta
-    if (a.year || a.km != null) {
+    // Vasıta: yalnız gerçek araç sinyali (km/yakıt/vites) varken. Sadece "year" ile
+    // tetikleme (koleksiyon/antika "üretim yılı") araç sanılıyordu.
+    const isVehicle = a.km != null || a.fuel != null || a.gear != null;
+    if (isVehicle) {
       if (a.year) out.push(String(a.year));
       if (a.km != null && String(a.km).trim() !== "") out.push(`${groupThousands(num(a.km))} km`);
       if (a.fuel) out.push(translateCopy(String(a.fuel), language));

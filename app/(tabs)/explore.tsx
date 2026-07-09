@@ -337,7 +337,12 @@ export default function ExploreScreen() {
         // Kesin (tam) eşleşme: alt-metin eşleşmesi kategoriler arası sızıntı yapıyordu
         // (ör. Vasıta alt "Yat" ⊂ "Yatak" → mobilya, araç filtresine düşüyordu).
         const nc = listing.category.toLocaleLowerCase("tr-TR").trim();
-        if (!catLabelSet.has(nc)) return false;
+        const leaf = String(listing.attributes?._leaf ?? "").toLocaleLowerCase("tr-TR").trim();
+        // Eski/bileşik kategori ("Konut - Satılık") → ayraçla böl, TAM segment eşleşmesi
+        // dene (kelime-tam, alt-metin değil → sızıntı yok).
+        const segs = nc.split(/\s*[-/>·|]\s*/).map((s) => s.trim()).filter((s) => s.length > 2);
+        const catMatch = catLabelSet.has(nc) || (!!leaf && catLabelSet.has(leaf)) || (segs.length > 1 && segs.some((s) => catLabelSet.has(s)));
+        if (!catMatch) return false;
       }
       for (const key of Object.keys(attrFilters)) {
         const want = attrFilters[key];

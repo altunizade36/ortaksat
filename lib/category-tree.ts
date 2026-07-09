@@ -1622,6 +1622,9 @@ const _LISTING_TYPES = ["Satılık", "Kiralık", "Devren", "Günlük", "Kat Kar�
 // seçilince motosiklet modelleri (ALL_MODELS_BY_BRAND union'ından) sızmaz.
 export const MODELS_BY_SCHEMA: Record<string, Record<string, string[]>> = {
   otomobil: MODELS_BY_BRAND,
+  // telefon markası PHONE_BRANDS ile kısıtlı; MODELS_BY_BRAND telefon modellerini de
+  // içerir (iPhone/Samsung/Xiaomi…). Marka select kısıtlı olduğu için araba modeli sızmaz.
+  telefon: MODELS_BY_BRAND,
   motosiklet: MOTO_MODELS,
   televizyon: TV_MODELS,
   bilgisayar: COMPUTER_MODELS,
