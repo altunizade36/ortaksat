@@ -35,6 +35,33 @@ function collectDescendantLabels(node: CategoryNode): string[] {
   for (const c of node.children ?? []) out.push(...collectDescendantLabels(c));
   return out;
 }
+// Kategori-özel facet/sayısal filtreleri URL param'ından güvenle çöz (derin-link/kayıt).
+function parseAttrParam(raw: string): Record<string, string[]> {
+  if (!raw) return {};
+  try {
+    const o = JSON.parse(raw) as unknown;
+    if (!o || typeof o !== "object") return {};
+    const out: Record<string, string[]> = {};
+    for (const [k, v] of Object.entries(o as Record<string, unknown>)) if (Array.isArray(v) && v.length) out[k] = v.map(String);
+    return out;
+  } catch { return {}; }
+}
+function parseNumParam(raw: string): Record<string, { min: string; max: string }> {
+  if (!raw) return {};
+  try {
+    const o = JSON.parse(raw) as unknown;
+    if (!o || typeof o !== "object") return {};
+    const out: Record<string, { min: string; max: string }> = {};
+    for (const [k, v] of Object.entries(o as Record<string, unknown>)) {
+      if (v && typeof v === "object") {
+        const min = String((v as { min?: unknown }).min ?? "");
+        const max = String((v as { max?: unknown }).max ?? "");
+        if (min || max) out[k] = { min, max };
+      }
+    }
+    return out;
+  } catch { return {}; }
+}
 const SORT_LABELS: Record<SortMode, string> = {
   recommended: "Önerilen",
   priceAsc: "En düşük fiyat",
@@ -59,7 +86,7 @@ export default function ExploreScreen() {
   const { language, t } = useLanguage();
   const { width } = useWindowDimensions();
   const router = useRouter();
-  const params = useLocalSearchParams<{ q?: string; province?: string; district?: string; price?: string; comm?: string; stock?: string; verified?: string; open?: string; sort?: string; cat?: string; city?: string; tab?: string }>();
+  const params = useLocalSearchParams<{ q?: string; province?: string; district?: string; price?: string; comm?: string; stock?: string; verified?: string; open?: string; sort?: string; cat?: string; city?: string; tab?: string; attr?: string; num?: string }>();
   // Param değeri string | string[] gelebilir; tek değere indir.
   const sp = (v?: string | string[]) => (Array.isArray(v) ? v[0] ?? "" : v ?? "");
   const { findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceLoadingMore, marketplaceLoadFailed, retryMarketplace } = useStore();
@@ -79,8 +106,8 @@ export default function ExploreScreen() {
   // sayısal aralık (m²/km/yıl) filtreleri gelir. /kategori/[slug] ile aynı motor.
   // Çok seviyeli kategori yolu (Emlak > Konut > Satılık > Daire …), node key dizisi.
   const [catPath, setCatPath] = useState<string[]>(() => (sp(params.cat) ? sp(params.cat).split(">").filter(Boolean) : []));
-  const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
-  const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>({});
+  const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>(() => parseAttrParam(sp(params.attr)));
+  const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>(() => parseNumParam(sp(params.num)));
   const [statusOpen, setStatusOpen] = useState(() => sp(params.open) === "1");
   const [showMobileFilters, setShowMobileFilters] = useState(false); // mobilde filtre panelini aç/kapat
   const [sortMode, setSortMode] = useState<SortMode>(() => (["priceAsc", "priceDesc", "commission", "new"].includes(sp(params.sort)) ? (sp(params.sort) as SortMode) : "recommended"));
@@ -230,9 +257,11 @@ export default function ExploreScreen() {
     if (statusOpen) f.open = true;
     if (stockFilter) f.stock = stockFilter;
     if (sortMode && sortMode !== "recommended") f.sort = sortMode;
+    if (Object.keys(attrFilters).length) f.attr = attrFilters;
+    if (Object.keys(numRange).length) f.num = numRange;
     return f;
   };
-  const hasSaveableFilter = Boolean(priceRange) || minCommission > 0 || catPath.length > 0 || Boolean(city) || statusOpen || Boolean(stockFilter) || sortMode !== "recommended";
+  const hasSaveableFilter = Boolean(priceRange) || minCommission > 0 || catPath.length > 0 || Boolean(city) || statusOpen || Boolean(stockFilter) || sortMode !== "recommended" || Object.keys(attrFilters).length > 0 || Object.keys(numRange).length > 0;
   // Sunucuya GÖNDERİLMEYEN (yalnızca istemcide uygulanan) filtreler. Bunlar aktifken
   // sunucu-sayfalama güvenilmez (getirilen sayfa tümden elenebilir) → "daha fazla yükle"
   // ölü görünür. Bu durumda sunucu-sayfalama butonu gizlenip ipucu gösterilir.
@@ -247,8 +276,8 @@ export default function ExploreScreen() {
     setStatusOpen(f.open === true);
     setStockFilter(typeof f.stock === "string" ? f.stock : "");
     setSortMode(typeof f.sort === "string" ? (f.sort as SortMode) : "recommended");
-    setAttrFilters({});
-    setNumRange({});
+    setAttrFilters(f.attr && typeof f.attr === "object" ? f.attr : {});
+    setNumRange(f.num && typeof f.num === "object" ? f.num : {});
     router.setParams({ q: s.q || undefined });
   };
 
@@ -433,10 +462,13 @@ export default function ExploreScreen() {
       sort: sortMode !== "recommended" ? sortMode : undefined,
       cat: catPath.length ? catPath.join(">") : undefined,
       city: city || undefined,
-      tab: filter !== "all" ? filter : undefined
+      tab: filter !== "all" ? filter : undefined,
+      // Kategori-özel filtreler de URL'e → "Otomobil, Dizel, 2018+" paylaşılabilir/derin-linklenebilir.
+      attr: Object.keys(attrFilters).length ? JSON.stringify(attrFilters) : undefined,
+      num: Object.keys(numRange).length ? JSON.stringify(numRange) : undefined
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [priceRange, minCommission, stockFilter, onlyVerified, statusOpen, sortMode, catPath, city, filter]);
+  }, [priceRange, minCommission, stockFilter, onlyVerified, statusOpen, sortMode, catPath, city, filter, attrFilters, numRange]);
 
   // KENAR-tetiklemeli: her scroll karesinde değil, dibe her yaklaşımda bir kez.
   const exploreLoadArmed = useRef(true);

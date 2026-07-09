@@ -3,7 +3,18 @@ import { useEffect, useState } from "react";
 // Kayıtlı aramalar (web'de localStorage). Her kayıt: sorgu + aktif filtreler +
 // kaydedildiği an. `f` = kaydedildiği andaki filtre kümesi (fiyat/komisyon/
 // kategori/şehir/sıralama…), tıklanınca geri yüklenir.
-export type SavedFilters = Record<string, string | number | boolean>;
+export type SavedFilters = {
+  price?: string;
+  comm?: number;
+  cat?: string;
+  city?: string;
+  open?: boolean;
+  stock?: string;
+  sort?: string;
+  // Kategori-özel filtreler: facet (attribute) seçimleri + sayısal aralıklar.
+  attr?: Record<string, string[]>;
+  num?: Record<string, { min: string; max: string }>;
+};
 export type SavedSearch = { id: string; q: string; ts: number; f?: SavedFilters };
 const KEY = "ortaksat_saved_searches_v1";
 const MAX = 12;
