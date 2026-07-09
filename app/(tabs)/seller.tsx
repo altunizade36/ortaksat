@@ -10,7 +10,7 @@ import { colors } from "@/components/colors";
 import { ReasonModal } from "@/components/reason-modal";
 import { RecordSaleModal } from "@/components/record-sale-modal";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
-import { useMounted } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { QuickStart } from "@/components/quick-start";
 import { MiniBarChart } from "@/components/mini-bar-chart";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
@@ -86,6 +86,7 @@ function SellerScreenInner() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const isWideWeb = useIsWideWeb();
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const [saleTarget, setSaleTarget] = useState<{ partnershipId: string; partnerName: string; price: number; currency?: string; commissionType: "rate" | "fixed"; commissionValue: number } | null>(null);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
@@ -247,13 +248,14 @@ function SellerScreenInner() {
             </Text>
           </View>
         </View>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
-          <Metric label="Başvuru" value={`${myApplications.length}`} />
-          <Metric label="Açık komisyon" value={money(openCommission)} />
-        </View>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <Metric label="Ödenen" value={money(paidCommission)} />
-          <Metric label="Aktif ilan" value={`${myListings.filter((listing) => listing.status === "active").length}`} />
+        {/* KPI paneli (Trendyol Satıcı Merkezi tarzı) — tüm metrikler türetilmiş veriden. */}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 10 }}>
+          <KpiCard icon="storefront-outline" label={translateCopy("Aktif ilan", language)} value={`${myListings.filter((listing) => listing.status === "active").length}`} />
+          <KpiCard icon="cash-clock" label={translateCopy("Açık komisyon", language)} value={money(openCommission)} tone={openCommission > 0 ? "warn" : undefined} />
+          <KpiCard icon="cash-check" label={translateCopy("Ödenen komisyon", language)} value={money(paidCommission)} tone="ok" />
+          <KpiCard icon="account-plus-outline" label={translateCopy("Bekleyen başvuru", language)} value={`${myApplications.length}`} tone={myApplications.length ? "warn" : undefined} />
+          <KpiCard icon="account-clock-outline" label={translateCopy("Yeni talep", language)} value={`${newLeads.length}`} tone={newLeads.length ? "warn" : undefined} />
+          <KpiCard icon="chart-line" label={translateCopy("Dönüşüm", language)} value={`%${totalConversionRate}`} />
         </View>
         <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "800", lineHeight: 18 }}>
           {translateCopy(sellerHealth.detail, language)}
@@ -303,31 +305,37 @@ function SellerScreenInner() {
         </View>
       </Card>
 
-      <Card>
-        <SectionTitle title="Satış hattı" action={`${totalConversionRate}%`} />
-        <SellerPipeline
-          activePartners={activePartnerCount}
-          applications={myApplications.length}
-          leads={myLeads.length}
-          paidSales={mySales.filter((sale) => sale.status === "paid").length}
-          sales={mySales.length}
-          unpaidSales={unpaidSales.length}
-        />
-      </Card>
-
-      <Card>
-        <SectionTitle title="Operasyon özeti" action={`${newLeads.length + myApplications.length + unpaidSales.length} ${translateCopy("aksiyon", language)}`} />
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <OperationTile icon="account-clock-outline" label="Yeni talep" tone={newLeads.length ? "warning" : "neutral"} value={`${newLeads.length}`} />
-          <OperationTile icon="phone-check-outline" label="Aranan" tone="neutral" value={`${contactedLeads.length}`} />
-          <OperationTile icon="cart-check" label="Satış" tone={convertedLeads.length ? "success" : "neutral"} value={`${convertedLeads.length}`} />
+      {/* Masaüstünde iki analitik kartı yan yana (geniş ekran boşluğunu kullanır); mobilde alt alta. */}
+      <View style={isWideWeb ? { flexDirection: "row", gap: 14, alignItems: "stretch" } : { gap: 14 }}>
+        <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
+          <Card>
+            <SectionTitle title="Satış hattı" action={`${totalConversionRate}%`} />
+            <SellerPipeline
+              activePartners={activePartnerCount}
+              applications={myApplications.length}
+              leads={myLeads.length}
+              paidSales={mySales.filter((sale) => sale.status === "paid").length}
+              sales={mySales.length}
+              unpaidSales={unpaidSales.length}
+            />
+          </Card>
         </View>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <OperationTile icon="cash-clock" label="Ödeme bekleyen" tone={unpaidSales.length ? "warning" : "neutral"} value={`${unpaidSales.length}`} />
-          <OperationTile icon="package-variant" label="Az stok" tone={lowStockListings.length ? "warning" : "neutral"} value={`${lowStockListings.length}`} />
-          <OperationTile icon="account-plus-outline" label="Başvuru" tone={myApplications.length ? "warning" : "neutral"} value={`${myApplications.length}`} />
+        <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
+          <Card>
+            <SectionTitle title="Operasyon özeti" action={`${newLeads.length + myApplications.length + unpaidSales.length} ${translateCopy("aksiyon", language)}`} />
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <OperationTile icon="account-clock-outline" label="Yeni talep" tone={newLeads.length ? "warning" : "neutral"} value={`${newLeads.length}`} />
+              <OperationTile icon="phone-check-outline" label="Aranan" tone="neutral" value={`${contactedLeads.length}`} />
+              <OperationTile icon="cart-check" label="Satış" tone={convertedLeads.length ? "success" : "neutral"} value={`${convertedLeads.length}`} />
+            </View>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <OperationTile icon="cash-clock" label="Ödeme bekleyen" tone={unpaidSales.length ? "warning" : "neutral"} value={`${unpaidSales.length}`} />
+              <OperationTile icon="package-variant" label="Az stok" tone={lowStockListings.length ? "warning" : "neutral"} value={`${lowStockListings.length}`} />
+              <OperationTile icon="account-plus-outline" label="Başvuru" tone={myApplications.length ? "warning" : "neutral"} value={`${myApplications.length}`} />
+            </View>
+          </Card>
         </View>
-      </Card>
+      </View>
 
       {mounted && myLeads.length > 0 ? (
         <MiniBarChart data={activitySeries} title={translateCopy("Son 14 gün · gelen talep", language)} totalLabel={`${activitySeries.reduce((s, d) => s + d.value, 0)} ${translateCopy("talep", language)}`} />
@@ -688,6 +696,21 @@ function SellerScreenInner() {
 
 
 
+
+// KPI kartı (Trendyol Satıcı Merkezi dashboard başlığı). tone: warn=aksiyon, ok=olumlu.
+function KpiCard({ icon, label, value, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; tone?: "warn" | "ok" }) {
+  const color = tone === "warn" ? colors.accent : tone === "ok" ? colors.success : colors.primaryDark;
+  const bg = tone === "warn" ? colors.accentSoft : tone === "ok" ? colors.successSoft : colors.primarySoft;
+  return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 150, flexGrow: 1, gap: 6, minWidth: 132, padding: 12 }}>
+      <View style={{ alignItems: "center", backgroundColor: bg, borderRadius: 8, height: 30, justifyContent: "center", width: 30 }}>
+        <MaterialCommunityIcons name={icon} size={17} color={color} />
+      </View>
+      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{label}</Text>
+    </View>
+  );
+}
 
 function SellerStat({ label, value, warn }: { label: string; value: string; warn?: boolean }) {
   const { language } = useLanguage();

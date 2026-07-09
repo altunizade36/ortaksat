@@ -14,6 +14,8 @@ export const extraDict: Record<string, string> = {
   "Konum (İl / İlçe)": "Location (Province / District)",
   "Tümü komisyon": "All commissions",
   "Son aramalar": "Recent searches",
+  "Ödenen komisyon": "Paid commission",
+  "Bekleyen başvuru": "Pending applications",
   "Takip Et": "Follow",
   "Takiptesin": "Following",
   "takipçi": "followers",
