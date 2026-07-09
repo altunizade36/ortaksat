@@ -55,6 +55,7 @@ type ProfileRow = {
   response_rate: number | null;
   role?: User["role"] | null;
   status?: string | null;
+  successful_sales?: number | null;
 };
 
 // Herkese açık (anon dahil) profil okumalarında yalnızca gösterime uygun kolonlar
@@ -62,7 +63,7 @@ type ProfileRow = {
 // DB'de geri alınmıştır (bkz. migration 20260704120000_profiles_phone_privacy),
 // telefon yalnızca iletişim anında girişli kullanıcıya `fetchSellerPhone` ile verilir.
 const PUBLIC_PROFILE_COLUMNS =
-  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status" as const;
+  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales" as const;
 
 export type MarketplaceSnapshot = {
   listings: Listing[];
@@ -120,7 +121,7 @@ function mapProfile(row: ProfileRow): User {
     verifiedInstagram: Boolean(row.verified_instagram),
     rating: toNumber(row.rating),
     listingCount: 0,
-    successfulSales: 0,
+    successfulSales: toNumber(row.successful_sales),
     responseRate: row.response_rate ?? 0,
     role: row.role ?? "user",
     status: (row.status as User["status"]) ?? "active"
