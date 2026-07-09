@@ -45,6 +45,7 @@ export default function StoreScreen() {
     );
   }
   const [filter, setFilter] = useState<StoreFilter>("active");
+  const [storeSort, setStoreSort] = useState<"new" | "priceAsc" | "priceDesc">("new");
   const [tab, setTab] = useState<ProfileTab>("about");
   const [refreshing, setRefreshing] = useState(false);
   const [revealedPhone, setRevealedPhone] = useState<string | null>(null);
@@ -61,15 +62,18 @@ export default function StoreScreen() {
   const partnerEarned = partnerSalesList.reduce((sum, s) => sum + s.commissionAmount, 0);
   const hasPartnerActivity = partnerAllPartnerships.length > 0 || partnerBroughtSales > 0;
   const sellerListings = useMemo(() => {
-    return listings
+    const arr = listings
       .filter((listing) => listing.ownerId === id && listing.status !== "rejected")
       .filter((listing) => {
         if (filter === "active") return listing.status === "active";
         if (filter === "partner") return listing.status === "active" && listing.partnershipMode !== "invite";
         return true;
-      })
-      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [filter, id, listings]);
+      });
+    if (storeSort === "priceAsc") arr.sort((a, b) => a.price - b.price);
+    else if (storeSort === "priceDesc") arr.sort((a, b) => b.price - a.price);
+    else arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt)); // "new"
+    return arr;
+  }, [filter, id, listings, storeSort]);
   const activeListings = listings.filter((listing) => listing.ownerId === id && listing.status === "active");
   const totalCommission = activeListings.reduce((sum, listing) => {
     return sum + (listing.commissionType === "rate" ? Math.round((listing.price * listing.commissionValue) / 100) : listing.commissionValue);
@@ -305,10 +309,16 @@ export default function StoreScreen() {
 
               {tab === "listings" ? (
                 <>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                     <StoreFilterChip active={filter === "active"} icon="check-circle-outline" label="Aktif" onPress={() => setFilter("active")} />
                     <StoreFilterChip active={filter === "partner"} icon="handshake-outline" label="Ortaklığa açık" onPress={() => setFilter("partner")} />
                     <StoreFilterChip active={filter === "all"} icon="view-grid-outline" label="Tümü" onPress={() => setFilter("all")} />
+                  </View>
+                  {/* Mağaza-içi sıralama (Trendyol mağaza sayfasındaki gibi). */}
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                    <StoreFilterChip active={storeSort === "new"} icon="clock-outline" label="En yeni" onPress={() => setStoreSort("new")} />
+                    <StoreFilterChip active={storeSort === "priceAsc"} icon="sort-ascending" label="En düşük fiyat" onPress={() => setStoreSort("priceAsc")} />
+                    <StoreFilterChip active={storeSort === "priceDesc"} icon="sort-descending" label="En yüksek fiyat" onPress={() => setStoreSort("priceDesc")} />
                   </View>
                   {sellerListings.length === 0 ? (
                     <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca burada görünür.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
@@ -347,6 +357,7 @@ export default function StoreScreen() {
 
               {tab === "reviews" ? (
                 <View style={{ gap: 12 }}>
+                  {reviewsAboutSeller.length > 0 ? <ReviewSummary reviews={reviewsAboutSeller} rating={seller.rating} language={language} /> : null}
                   {reviewsAboutSeller.length === 0 ? (
                     <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
                   ) : reviewsAboutSeller.map((r) => {
@@ -547,11 +558,16 @@ export default function StoreScreen() {
         </View>
       </View>
 
-      <View style={{ flexDirection: "row", gap: 8 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         <StoreFilterChip active={filter === "active"} icon="check-circle-outline" label="Aktif" onPress={() => setFilter("active")} />
         <StoreFilterChip active={filter === "partner"} icon="handshake-outline" label="Ortaklığa açık" onPress={() => setFilter("partner")} />
         <StoreFilterChip active={filter === "all"} icon="view-grid-outline" label="Tümü" onPress={() => setFilter("all")} />
       </View>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+        <StoreFilterChip active={storeSort === "new"} icon="clock-outline" label="En yeni" onPress={() => setStoreSort("new")} />
+        <StoreFilterChip active={storeSort === "priceAsc"} icon="sort-ascending" label="En düşük fiyat" onPress={() => setStoreSort("priceAsc")} />
+        <StoreFilterChip active={storeSort === "priceDesc"} icon="sort-descending" label="En yüksek fiyat" onPress={() => setStoreSort("priceDesc")} />
+      </ScrollView>
 
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 19, fontWeight: "900" }}>
@@ -577,6 +593,7 @@ export default function StoreScreen() {
         <Text selectable style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>
           {translateCopy("Satıcı yorumları", language)} {reviewsAboutSeller.length ? `(${reviewsAboutSeller.length})` : ""}
         </Text>
+        {reviewsAboutSeller.length > 0 ? <ReviewSummary reviews={reviewsAboutSeller} rating={seller.rating} language={language} /> : null}
         {reviewsAboutSeller.length === 0 ? (
           <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
         ) : (
@@ -603,6 +620,36 @@ export default function StoreScreen() {
         )}
       </View>
     </ScrollView>
+  );
+}
+
+// Yorum özeti: büyük ortalama + yıldız satırı + 5★..1★ dağılım barları (Trendyol/Sahibinden).
+function ReviewSummary({ reviews, rating, language }: { reviews: Review[]; rating: number; language: "tr" | "en" }) {
+  const total = reviews.length;
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexDirection: "row", gap: 18, padding: 16 }}>
+      <View style={{ alignItems: "center", justifyContent: "center", minWidth: 78, paddingHorizontal: 6 }}>
+        <Text style={{ color: colors.ink, fontSize: 34, fontWeight: "900" }}>{rating.toFixed(1)}</Text>
+        <View style={{ flexDirection: "row", gap: 1 }}>{[1, 2, 3, 4, 5].map((n) => <MaterialCommunityIcons key={n} name={n <= Math.round(rating) ? "star" : "star-outline"} size={13} color={colors.gold} />)}</View>
+        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700", marginTop: 2 }}>{total} {translateCopy("yorum", language)}</Text>
+      </View>
+      <View style={{ flex: 1, gap: 4, justifyContent: "center" }}>
+        {[5, 4, 3, 2, 1].map((star) => {
+          const count = reviews.filter((r) => Math.round(r.rating) === star).length;
+          const pct = total ? Math.round((count / total) * 100) : 0;
+          return (
+            <View key={star} style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+              <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800", width: 10 }}>{star}</Text>
+              <MaterialCommunityIcons name="star" size={11} color={colors.gold} />
+              <View style={{ backgroundColor: colors.line, borderRadius: 999, flex: 1, height: 7, overflow: "hidden" }}>
+                <View style={{ backgroundColor: colors.gold, height: 7, width: `${pct}%` }} />
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", textAlign: "right", width: 24 }}>{count}</Text>
+            </View>
+          );
+        })}
+      </View>
+    </View>
   );
 }
 
