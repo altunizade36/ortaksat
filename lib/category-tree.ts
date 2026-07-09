@@ -1392,9 +1392,24 @@ export function matchCategoryByName(name: string): { node: CategoryNode; path: C
     }
   };
   walk2(categoryTree, []);
-  let hit = flat.find((f) => norm(f.node.label) === target);
-  if (!hit) hit = flat.find((f) => { const l = norm(f.node.label); return l.includes(target) || target.includes(l); });
-  return hit;
+  // 1) Birebir etiket eşleşmesi.
+  const exact = flat.find((f) => norm(f.node.label) === target);
+  if (exact) return exact;
+  if (target.length < 2) return undefined;
+  // 2) TAM-KELİME örtüşmesi (alt-string değil): "ev" artık "Televizyon"a eşleşmez;
+  //    "Ev & Yaşam"a eşleşir. Ortak anlamlı-kelime sayısına göre puanla, sonra
+  //    yaprak düğümü ve daha kısa (daha özgül) etiketi öne al.
+  const words = (s: string) => s.split(/[\s&/,]+/).map((w) => w.trim()).filter(Boolean);
+  const tWords = words(target);
+  const scored = flat
+    .map((f) => {
+      const lWords = words(norm(f.node.label));
+      const common = tWords.filter((w) => lWords.includes(w)).length;
+      return { f, common, leaf: !(f.node.children && f.node.children.length), len: norm(f.node.label).length };
+    })
+    .filter((x) => x.common > 0)
+    .sort((a, b) => b.common - a.common || (a.leaf === b.leaf ? a.len - b.len : a.leaf ? -1 : 1));
+  return scored[0]?.f;
 }
 
 export function findCategorySlug(label: string): string | undefined {
@@ -1465,9 +1480,19 @@ const _ALL_BRANDS = new Set<string>(
     ...HEATING_BRANDS, ...AC_BRANDS, ...PHONE_BRANDS
   ].filter((b) => b && b !== "Diğer")
 );
-const _ALL_MODELS: Record<string, string[]> = {
-  ...MODELS_BY_BRAND, ...MOTO_MODELS, ...COMPUTER_MODELS, ...TV_MODELS, ...COMMERCIAL_MODELS
-};
+// Marka aynı anda birden çok haritada olabilir (Mercedes/Ford: oto+ticari, Honda:
+// oto+moto, Samsung: telefon+TV). Spread ile SON harita önceki modelleri EZİYORDU
+// → oto marka model listesi ticari/moto'yla değişiyor, "C Serisi" bulunamıyor,
+// model oto-doldurma sessizce başarısız oluyordu. Ezmek yerine BİRLEŞTİR (union).
+const _ALL_MODELS: Record<string, string[]> = (() => {
+  const merged: Record<string, string[]> = {};
+  for (const map of [MODELS_BY_BRAND, MOTO_MODELS, COMPUTER_MODELS, TV_MODELS, COMMERCIAL_MODELS]) {
+    for (const [brand, models] of Object.entries(map)) {
+      merged[brand] = Array.from(new Set([...(merged[brand] ?? []), ...models]));
+    }
+  }
+  return merged;
+})();
 const _LISTING_TYPES = ["Satılık", "Kiralık", "Devren", "Günlük", "Kat Karşılığı"];
 
 export function deriveFieldsFromPath(path: CategoryNode[], schema: FormSchema): Record<string, string> {

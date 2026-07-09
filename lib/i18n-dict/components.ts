@@ -20,6 +20,7 @@ export const componentsDict: Record<string, string> = {
   "Seçim özeti": "Selection summary",
   "Henüz kategori seçilmedi.": "No category selected yet.",
   "Bu kategoriyi seç": "Select this category",
+  "Devam etmek için bir alt kategori seç — böylece doğru form ve filtreler gelir.": "Pick a subcategory to continue — this brings the correct form and filters.",
   "Bu kategori için gerekenler:": "Required for this category:",
   ", fotoğraf, fiyat, konum, komisyon.": ", photo, price, location, commission.",
   "Kategori seçildi": "Category selected",

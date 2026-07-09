@@ -162,11 +162,16 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
             ) : (
               <Text style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Henüz kategori seçilmedi.", language)}</Text>
             )}
-            {trail.length >= 2 ? (
+            {/* Yalnızca son (yaprak) kategoride bitir: alt-kategorisi olan bir dalda
+                durmak jenerik forma düşürüyordu (Elektronik/Bilgisayar…). Dalda ise
+                kullanıcı bir alt kategori seçmeli. */}
+            {trail.length >= 2 && !(current?.children && current.children.length) ? (
               <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 11 }}>
                 <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bu kategoriyi seç", language)}</Text>
               </Pressable>
+            ) : trail.length >= 1 && current?.children && current.children.length ? (
+              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{translateCopy("Devam etmek için bir alt kategori seç — böylece doğru form ve filtreler gelir.", language)}</Text>
             ) : null}
             {requiredLabels.length ? (
               <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 4, marginTop: 2, padding: 11 }}>

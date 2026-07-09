@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { CategoryPicker } from "@/components/category-picker";
@@ -148,8 +148,12 @@ export function DesktopCreateFlow() {
   // form boş gelmez. Marka/model/ilan-tipi kategoriyle güncellenir; başlık yalnızca
   // kullanıcı henüz yazmadıysa doldurulur (elle girdisinin üzerine yazılmaz).
   const pathKey = path.map((p) => p.key).join("/");
+  // Taslak geri yüklenirken (setPath) türetme etkisi tetiklenir ve kullanıcının
+  // elle düzelttiği marka/model/ilan-tipini EZERDİ. Restore bir kez atlatılır.
+  const skipNextDerive = useRef(false);
   useEffect(() => {
     if (!schema) return;
+    if (skipNextDerive.current) { skipNextDerive.current = false; return; }
     const seed = deriveFieldsFromPath(path, schema);
     if (!Object.keys(seed).length) return;
     setValues((s) => {
@@ -203,6 +207,7 @@ export function DesktopCreateFlow() {
   const restoreDraft = () => {
     const d = pendingDraft;
     if (!d) return;
+    skipNextDerive.current = true; // geri-yüklenen değerlerin üzerine türetme yazmasın
     setPath((d.path as CategoryNode[]) ?? []);
     setValues(d.values ?? {});
     setImages(d.images ?? []);
