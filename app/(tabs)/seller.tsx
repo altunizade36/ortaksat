@@ -6,7 +6,6 @@ import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-na
 
 import { Alert } from "@/lib/alert";
 
-import { BulkListingModal } from "@/components/bulk-listing-modal";
 import { colors } from "@/components/colors";
 import { ReasonModal } from "@/components/reason-modal";
 import { RecordSaleModal } from "@/components/record-sale-modal";
@@ -18,8 +17,6 @@ import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } fro
 import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { loadClickCounts } from "@/lib/live-service";
-import { autoFillListing, matchCategory } from "@/lib/listing-autofill";
-import { scanTextLocal } from "@/lib/moderation";
 import { searchKey } from "@/lib/locale";
 import { matchesQuery } from "@/lib/search";
 import { displayText } from "@/lib/text";
@@ -69,7 +66,6 @@ function SellerScreenInner() {
   const {
     approvePartnership,
     canReviewSale,
-    createListing,
     createSaleReview,
     createSaleFromLead,
     recordSaleForPartner,
@@ -90,7 +86,6 @@ function SellerScreenInner() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
-  const [bulkOpen, setBulkOpen] = useState(false);
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const [saleTarget, setSaleTarget] = useState<{ partnershipId: string; partnerName: string; price: number; currency?: string; commissionType: "rate" | "fixed"; commissionValue: number } | null>(null);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
@@ -106,41 +101,6 @@ function SellerScreenInner() {
     if (focusId) { setExpandedId(focusId); setFilter("all"); setQuery(""); }
   }, [focusId]);
 
-  function handleBulkCreate(row: { title: string; price: number; commission: number; category: string; image: string }) {
-    // Shopify-tarzı otomatik doldurma: başlık+kategori+fiyat+komisyondan
-    // düzenlenebilir açıklama/argüman/etiket/paylaşım metni üretilir; serbest
-    // yazılan kategori bilinen kategoriye eşlenir.
-    const category = matchCategory(row.category) || row.category;
-    const auto = autoFillListing({ title: row.title, category, price: row.price, commission: row.commission });
-    // Toplu ekleme de içerik moderasyonundan geçer (önceden yasaklı kelimeler
-    // doğrudan yayınlanabiliyordu). Yasaklı = atla; şüpheli = admin onayına düşür.
-    const scan = scanTextLocal(`${row.title} ${auto.description}`);
-    if (scan.verdict === "block") return;
-    const statusOverride = scan.verdict === "review" ? ("pending_review" as const) : undefined;
-    createListing({
-      title: row.title,
-      description: auto.description,
-      salesPitch: auto.salesPitch,
-      shareTemplates: auto.shareTemplates,
-      adAssets: [],
-      tags: auto.tags,
-      price: row.price,
-      currency: "TRY",
-      commissionType: "rate",
-      commissionValue: row.commission,
-      category,
-      location: myListings[0]?.location || "Türkiye",
-      image: row.image,
-      stockCount: 1,
-      minPartnerRating: 4,
-      commissionDueDays: 3,
-      returnWindowDays: 7,
-      partnerRules: ["Komisyon sadece onaylı satış kaydında oluşur."],
-      deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; Ortaksat para tutmaz.",
-      contactMethod: "message",
-      partnershipMode: "approval"
-    }, statusOverride);
-  }
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status !== "rejected");
   const myListingIds = new Set(myListings.map((listing) => listing.id));
   const myPartnershipIds = partnerships.filter((partnership) => myListingIds.has(partnership.listingId)).map((partnership) => partnership.id);
@@ -375,15 +335,6 @@ function SellerScreenInner() {
 
       <Card>
         <SectionTitle title="İlan yönetimi" action={`${visibleListings.length}`} />
-        <Pressable
-          onPress={() => setBulkOpen(true)}
-          accessibilityRole="button"
-          accessibilityLabel={translateCopy("Toplu ilan ekle", language)}
-          style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 13, paddingVertical: 8 }}
-        >
-          <MaterialCommunityIcons name="table-arrow-up" size={16} color={colors.primaryDark} />
-          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Toplu ilan ekle", language)}</Text>
-        </Pressable>
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 48, paddingHorizontal: 12 }}>
           <MaterialCommunityIcons name="magnify" size={21} color={colors.primary} />
           <TextInput
@@ -492,7 +443,7 @@ function SellerScreenInner() {
                   <Text selectable numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900", lineHeight: 20 }}>
                     {displayText(listing.title)}
                   </Text>
-                  <StatusPill label={listing.status === "active" ? "Aktif" : listing.status === "pending_review" ? "İncelemede" : listing.status === "paused" ? "Pasif" : listing.status === "sold" ? "Satıldı" : listing.status} tone={listing.status === "active" ? "success" : listing.status === "pending_review" ? "info" : "warning"} />
+                  <StatusPill label={listing.status === "active" ? (listing.stockCount <= 0 ? "Tükendi" : "Aktif") : listing.status === "pending_review" ? "İncelemede" : listing.status === "paused" ? "Pasif" : listing.status === "sold" ? "Satıldı" : listing.status} tone={listing.status === "active" ? (listing.stockCount <= 0 ? "danger" : "success") : listing.status === "pending_review" ? "info" : listing.status === "paused" || listing.status === "sold" ? "neutral" : "warning"} />
                 </View>
                 <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
                   {translateCopy(displayText(listing.category), language)} · {displayText(listing.location)}
@@ -513,6 +464,7 @@ function SellerScreenInner() {
               <SellerStat label="Link tıklama" value={`${listingClicks}`} />
               <SellerStat label="Talep" value={`${listingLeads.length}`} />
               <SellerStat label="Dönüşüm" value={`%${conversionRate}`} />
+              <SellerStat label="Favori" value={`${listing.favoriteCount}`} />
               <SellerStat label="Satış" value={`${listingSales.length}`} />
               <SellerStat label="Bekleyen ödeme" value={moneyIn(unpaidTotal, listing.currency)} warn={unpaidListingSales.length > 0} />
             </View>
@@ -710,7 +662,6 @@ function SellerScreenInner() {
         );
       })}
       </WebContainer>
-      <BulkListingModal visible={bulkOpen} onClose={() => setBulkOpen(false)} onCreate={handleBulkCreate} />
       <ReasonModal
         visible={rejectTargetId !== null}
         title="Başvuruyu reddet"

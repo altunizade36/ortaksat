@@ -80,12 +80,15 @@ export function PrimaryButton({ children, onPress, href, tone = "primary", icon 
   );
 }
 
-export function StatusPill({ label, tone = "info" }: { label: string; tone?: "info" | "success" | "warning" }) {
+export function StatusPill({ label, tone = "info" }: { label: string; tone?: "info" | "success" | "warning" | "neutral" | "danger" }) {
   const { language } = useLanguage();
   const palette = {
     info: [colors.info, colors.infoSoft],
     success: [colors.success, colors.successSoft],
-    warning: [colors.warning, colors.warningSoft]
+    warning: [colors.warning, colors.warningSoft],
+    // pasif/nötr durumlar için gri; reddedildi/tükendi gibi olumsuzlar için kırmızı.
+    neutral: [colors.muted, "#F2F4F7"],
+    danger: [colors.accent, colors.accentSoft]
   } as const;
   const [color, backgroundColor] = palette[tone];
 

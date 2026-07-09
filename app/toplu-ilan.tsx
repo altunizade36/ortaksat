@@ -17,6 +17,7 @@ import { matchCategoryByName, resolveFormKey, type CategoryNode } from "@/lib/ca
 import { autoFillListing } from "@/lib/listing-autofill";
 import { formatLocation, getProvince, resolveProvinceByName, districtsOfProvince } from "@/lib/locations";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { downloadCsv } from "@/lib/csv-export";
 import { uploadListingImage } from "@/lib/live-service";
 import { useStore } from "@/lib/use-store";
 import { parseTrPrice, validateListing } from "@/lib/validation";
@@ -90,18 +91,28 @@ function BulkUploadInner() {
   const [publishing, setPublishing] = useState(false);
   const [bulkImages, setBulkImages] = useState<string[]>([]); // sıralı toplu foto
   const [notice, setNotice] = useState<string | null>(null);
+  const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
+  const [failedRows, setFailedRows] = useState<Array<{ row: number; title: string; reason: string }>>([]);
 
   const parse = () => {
     setNotice(null);
     const lines = csv.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     if (lines.length < 2) { Alert.alert(translateCopy("Boş veri", language), translateCopy("Başlık satırı + en az 1 ürün satırı gerekli.", language)); return; }
+    // Spam/hız koruması: tek partide üst sınır (Trendyol'da da parti tavanı vardır).
+    const MAX_BULK = 200;
+    if (lines.length - 1 > MAX_BULK) {
+      Alert.alert(translateCopy("Çok fazla satır", language), `${translateCopy("Tek seferde en fazla", language)} ${MAX_BULK} ${translateCopy("ürün yükleyebilirsin. Partiyi böl.", language)}`);
+      return;
+    }
     const headers = splitCsvLine(lines[0]);
     const col = resolveHeader(headers);
     if (col.title === undefined || col.price === undefined) {
       Alert.alert(translateCopy("Sütun bulunamadı", language), translateCopy("En az 'baslik' ve 'fiyat' sütunları gerekli. Şablonu kullan.", language));
       return;
     }
+    // Mükerrer başlık uyarısı (aynı partide aynı ürün adı) — kullanıcı fark etsin.
     const overrideComm = Number(commissionAll) > 0 ? Number(commissionAll) : undefined;
+    const seenTitles = new Set<string>();
     const parsed: ParsedRow[] = lines.slice(1).map((line, idx) => {
       const cells = splitCsvLine(line);
       const get = (k: string) => (col[k] !== undefined ? (cells[col[k]] ?? "") : "");
@@ -127,6 +138,9 @@ function BulkUploadInner() {
       if (!category) errors.push(`${translateCopy("Kategori eşleşmedi", language)}: "${categoryRaw || bos}"`);
       if (!prov) errors.push(`${translateCopy("İl eşleşmedi", language)}: "${get("province") || bos}"`);
       if (commission <= 0 || commission > 90) errors.push(translateCopy("Komisyon 1–90 arası olmalı", language));
+      const titleKey = title.toLocaleLowerCase("tr-TR").trim();
+      if (titleKey && seenTitles.has(titleKey)) errors.push(translateCopy("Bu başlık partide zaten var (mükerrer)", language));
+      else if (titleKey) seenTitles.add(titleKey);
       return { raw: {}, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, stock, image, errors };
     });
     setRows(parsed);
@@ -148,10 +162,13 @@ function BulkUploadInner() {
     if (!validRows.length) return;
     setPublishing(true);
     setNotice(null);
+    setFailedRows([]);
+    setProgress({ done: 0, total: validRows.length });
     let ok = 0;
-    try {
-      for (let i = 0; i < validRows.length; i++) {
-        const r = validRows[i];
+    const failures: Array<{ row: number; title: string; reason: string }> = [];
+    for (let i = 0; i < validRows.length; i++) {
+      const r = validRows[i];
+      try {
         const leaf = r.category!.node;
         const rootLabel = r.category!.path[0]?.label ?? leaf.label;
         const formKey = resolveFormKey(r.category!.path);
@@ -190,15 +207,34 @@ function BulkUploadInner() {
           attributes: { _root: rootLabel, _leaf: leaf.label, _formKey: formKey }
         }, "pending_review"); // TOPLU: yayından önce admin onayı
         ok++;
+      } catch (e) {
+        // TEK bir hatalı satır tüm partiyi durdurmasın: hatayı topla, devam et.
+        failures.push({ row: i + 1, title: r.title, reason: e instanceof Error ? e.message : translateCopy("bilinmeyen hata", language) });
+      } finally {
+        setProgress({ done: i + 1, total: validRows.length });
       }
+    }
+    setProgress(null);
+    setPublishing(false);
+    setFailedRows(failures);
+    if (failures.length === 0) {
       setNotice(translateCopy(`${ok} ilan admin onayına gönderildi. Onaylandıkça yayına alınır.`, language));
       setRows(null);
       setCsv("");
       setBulkImages([]);
       setTimeout(() => router.replace("/(tabs)/seller"), 2200);
-    } finally {
-      setPublishing(false);
+    } else {
+      // Kısmi başarı: başarısızlar listelenir + CSV indirilebilir; kullanıcı düzeltip tekrar dener.
+      setNotice(`${ok} ${translateCopy("başarılı", language)} · ${failures.length} ${translateCopy("başarısız", language)}. ${translateCopy("Başarısız satırları aşağıda görüp CSV olarak indirebilirsin.", language)}`);
     }
+  }
+
+  function downloadFailedCsv() {
+    downloadCsv(
+      "toplu-ilan-basarisiz.csv",
+      ["satir", "baslik", "sebep"],
+      failedRows.map((f) => [String(f.row), f.title, f.reason])
+    );
   }
 
   return (
@@ -225,10 +261,18 @@ function BulkUploadInner() {
           <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, padding: 10 }}>
             <Text selectable style={{ color: colors.ink, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", fontSize: 11.5 }}>{TEMPLATE}</Text>
           </View>
-          <Pressable onPress={() => void Clipboard.setStringAsync(TEMPLATE).then(() => setNotice(translateCopy("Şablon panoya kopyalandı.", language))).catch(() => {})} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 9, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}>
-            <MaterialCommunityIcons name="content-copy" size={15} color={colors.primaryDark} />
-            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şablonu kopyala", language)}</Text>
-          </Pressable>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <Pressable onPress={() => void Clipboard.setStringAsync(TEMPLATE).then(() => setNotice(translateCopy("Şablon panoya kopyalandı.", language))).catch(() => {})} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 9, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}>
+              <MaterialCommunityIcons name="content-copy" size={15} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şablonu kopyala", language)}</Text>
+            </Pressable>
+            {Platform.OS === "web" ? (
+              <Pressable onPress={() => downloadCsv("ortaksat-toplu-ilan-sablon.csv", ["baslik", "aciklama", "fiyat", "kategori", "il", "ilce", "komisyon", "stok", "gorsel_url"], [["Örnek Ürün Adı", "Ürünün kısa açıklaması", "1500", "Elektronik", "İstanbul", "Kadıköy", "15", "3", "https://...jpg"], ["İkinci Ürün", "Açıklama metni", "899", "Moda & Giyim", "Ankara", "Çankaya", "20", "10", ""]])} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}>
+                <MaterialCommunityIcons name="download" size={15} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şablonu indir (.csv)", language)}</Text>
+              </Pressable>
+            ) : null}
+          </View>
         </View>
 
         {/* Adım 2: yapıştır + toplu ayarlar */}
@@ -258,6 +302,39 @@ function BulkUploadInner() {
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
             <MaterialCommunityIcons name="information-outline" size={18} color={colors.primaryDark} />
             <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{notice}</Text>
+          </View>
+        ) : null}
+
+        {/* İlerleme çubuğu — uzun partilerde nerede olduğunu göster. */}
+        {progress ? (
+          <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 7, padding: 13 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <MaterialCommunityIcons name="cloud-upload-outline" size={16} color={colors.primaryDark} />
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Yükleniyor", language)}… {progress.done}/{progress.total}</Text>
+            </View>
+            <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 7, overflow: "hidden" }}>
+              <View style={{ backgroundColor: colors.primary, height: 7, width: `${Math.round((progress.done / Math.max(1, progress.total)) * 100)}%` }} />
+            </View>
+          </View>
+        ) : null}
+
+        {/* Başarısız satır raporu — parti tümden iptal olmaz; düzelt-ve-tekrar. */}
+        {failedRows.length > 0 ? (
+          <View style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 12, borderWidth: 1, gap: 7, padding: 13 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={17} color={colors.accent} />
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{failedRows.length} {translateCopy("satır yüklenemedi", language)}</Text>
+              {Platform.OS === "web" ? (
+                <Pressable onPress={downloadFailedCsv} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.accent, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
+                  <MaterialCommunityIcons name="download" size={13} color={colors.accent} />
+                  <Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "800" }}>CSV</Text>
+                </Pressable>
+              ) : null}
+            </View>
+            {failedRows.slice(0, 10).map((f) => (
+              <Text key={f.row} numberOfLines={1} style={{ color: colors.ink, fontSize: 11.5, fontWeight: "600" }}>#{f.row} {f.title} — {f.reason}</Text>
+            ))}
+            {failedRows.length > 10 ? <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>+{failedRows.length - 10} {translateCopy("daha", language)}</Text> : null}
           </View>
         ) : null}
 
