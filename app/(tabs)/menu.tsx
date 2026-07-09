@@ -4,8 +4,10 @@ import { useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { WebContainer } from "@/components/web-container";
 import { getCategoryIcon } from "@/lib/categories";
+import { useMounted } from "@/lib/layout";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { searchKey } from "@/lib/locale";
 import { type CategoryNode } from "@/lib/category-tree";
@@ -37,7 +39,13 @@ const partnerGroup: MenuGroup = {
 
 const landing = (slug: string): Href => ({ pathname: "/kategori/[slug]", params: { slug } }) as unknown as Href;
 
+// menu = uygulama-içi navigasyon (SEO-kritik değil): mount-gate ile #418 önlenir.
+// Kategori/blog SEO gereği gate'lenmez; menu içeriği zaten /kategori sayfalarında baked.
 export default function MenuScreen() {
+  return useMounted() ? <MenuScreenInner /> : <ScreenSkeleton />;
+}
+
+function MenuScreenInner() {
   const { language } = useLanguage();
   const { categoryTree } = useStore();
   const [open, setOpen] = useState<string>("Ortak Satış Merkezi");

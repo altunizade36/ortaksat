@@ -343,7 +343,7 @@ export default function CategoryLandingScreen() {
           // Katalog hiç yüklenemedi → "kategoride ilan yok" yerine yeniden-dene.
           <MarketplaceRetry onRetry={retryMarketplace} />
         ) : items.length === 0 ? (
-          band || onlyOpen ? (
+          band || onlyOpen || Object.keys(attrFilters).length || numActiveCount ? (
             <EmptyState title={translateCopy("Filtreye uyan ilan yok", language)} body={translateCopy("Filtreleri gevşetmeyi dene ya da farklı bir kategoriye göz at.", language)} />
           ) : (
             <View style={{ backgroundColor: colors.primarySoft, borderRadius: 16, gap: 12, padding: 20 }}>

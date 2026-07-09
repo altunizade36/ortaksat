@@ -75,9 +75,12 @@ export function HomeDesktop() {
   const catLabelSet = useMemo(() => (selectedNode ? new Set(descendantLabels(selectedNode).map((s) => s.toLocaleLowerCase("tr-TR"))) : null), [selectedNode]);
   const matchesCat = (l: Listing) => {
     if (!catLabelSet) return true;
-    const c = l.category.toLocaleLowerCase("tr-TR");
-    const short = getCategoryShortLabel(l.category).toLocaleLowerCase("tr-TR");
-    return catLabelSet.has(c) || catLabelSet.has(short);
+    const c = l.category.toLocaleLowerCase("tr-TR").trim();
+    const short = getCategoryShortLabel(l.category).toLocaleLowerCase("tr-TR").trim();
+    if (catLabelSet.has(c) || catLabelSet.has(short)) return true;
+    // explore/kategori yüzeyleriyle aynı bulanık eşleşme (yüzeyler arası tutarlılık):
+    // önceden home tam-eşitlik yapıp aynı ilanları gizleyebiliyordu.
+    return [...catLabelSet].some((label) => c === label || c.includes(label) || label.includes(c));
   };
 
   const filtered = useMemo(() => {

@@ -11,7 +11,7 @@ import { colors } from "@/components/colors";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { deriveFieldsFromPath, getFormSchema, MODELS_BY_BRAND, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
+import { ALL_MODELS_BY_BRAND, deriveFieldsFromPath, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { CURRENCIES, moneyIn, type CurrencyCode } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { formatLocation, getProvince } from "@/lib/locations";
@@ -244,17 +244,26 @@ export function DesktopCreateFlow() {
     });
   }
 
-  const canNext = () => {
-    if (step === 0) return path.length > 0;
-    if (step === 1) return missingFields.length === 0;
-    // İl zorunlu; ilçe opsiyonel (dijital ürün/uzaktan hizmet konum-bağımsız olabilir).
-    if (step === 2) return !!loc.provinceId;
-    // En az 1 gerçek görsel zorunlu (fotoğraflı ilan çok daha fazla görüntülenir /
-    // güven verir — standart pazaryeri davranışı).
-    if (step === 3) return images.length > 0;
-    if (step === 4) return Number(commissionValue) > 0;
-    return true;
+  // Adım-1 kapısı yalnızca "boş değil"e bakınca kısa (otomatik-önerilen) başlık adımı
+  // geçip yayında patlıyordu. Aynı uzunluk kurallarını burada uygularız; nedeni de
+  // kullanıcıya nextBlockReason ile gösteririz (buton sessizce kilitlenmesin).
+  const nextBlockReason = (): string | null => {
+    if (step === 0) return path.length ? null : translateCopy("Devam etmek için bir kategori seç.", language);
+    if (step === 1) {
+      if (missingFields.length) return `${translateCopy("Zorunlu alanları doldur", language)}: ${missingFields.map((f) => f.label).slice(0, 3).join(", ")}`;
+      const t = String(values.title ?? leafLabel).trim();
+      if (t.length < LIMITS.title.min) return `${translateCopy("Başlık en az", language)} ${LIMITS.title.min} ${translateCopy("karakter olmalı", language)}.`;
+      const descReq = schema?.fields.some((f) => f.key === "description" && f.required);
+      const d = String(values.description ?? "").trim();
+      if (descReq && d.length < LIMITS.description.min) return `${translateCopy("Açıklama en az", language)} ${LIMITS.description.min} ${translateCopy("karakter olmalı", language)}.`;
+      return null;
+    }
+    if (step === 2) return loc.provinceId ? null : translateCopy("İl seçmelisin.", language);
+    if (step === 3) return images.length ? null : translateCopy("Devam etmek için en az 1 görsel ekle.", language);
+    if (step === 4) return Number(commissionValue) > 0 ? null : translateCopy("Komisyon değeri sıfırdan büyük olmalı.", language);
+    return null;
   };
+  const canNext = () => nextBlockReason() === null;
 
   async function publish() {
     if (!schema) return;
@@ -271,9 +280,25 @@ export function DesktopCreateFlow() {
     const description = String(values.description ?? "").trim();
     const descRequired = schema.fields.some((f) => f.key === "description" && f.required);
 
+    // Fiyat alanı her şemada "price" anahtarıyla gelmez: kimi form gecelik/kişi-başı/
+    // başlangıç fiyatı gibi farklı bir anahtar kullanır. Etkin fiyatı şemadan türetiriz;
+    // aksi halde günlük kiralık, tur/etkinlik, talep gibi kategoriler hiç yayınlanamıyordu.
+    const priceField =
+      schema.fields.find((f) => f.key === "price") ??
+      schema.fields.find((f) => f.type === "number" && f.suffix === "₺" && f.required) ??
+      schema.fields.find((f) => f.type === "number" && f.suffix === "₺");
+    const priceRaw = priceField ? values[priceField.key] : values.price;
+    const priceFilled = priceRaw != null && String(priceRaw).trim().length > 0;
+    const priceRequired = priceField ? !!priceField.required : true;
+
     // Merkezi doğrulama (başlık/açıklama/fiyat). Fiyat TR formatıyla ("1.500.000") ayrıştırılır.
-    const v = validateListing({ title, description, price: parseTrPrice(String(values.price ?? "")) });
-    const errs = v.errors.filter((e) => !(e.field === "description" && !descRequired && !description));
+    const v = validateListing({ title, description, price: parseTrPrice(String(priceRaw ?? "")) });
+    const errs = v.errors.filter((e) => {
+      if (e.field === "description" && !descRequired && !description) return false;
+      // Fiyat şemada opsiyonel (hayvan/hizmet/ders vb.) ve boşsa: fiyat=0 kabul, hatayı düşür.
+      if (e.field === "price" && !priceRequired && !priceFilled) return false;
+      return true;
+    });
     if (errs.length) {
       setError(errs[0].message);
       setStep(1);
@@ -387,7 +412,7 @@ export function DesktopCreateFlow() {
         addressVisibility: visibility,
         locationNote: loc.neighborhood?.trim() || undefined,
         image: cover,
-        stockCount: Number(values.stock) || 1,
+        stockCount: Math.max(1, Math.floor(parseTrPrice(String(values.stock ?? "")) || 1)),
         minPartnerRating: 4,
         commissionDueDays: 3,
         returnWindowDays: 7,
@@ -493,7 +518,7 @@ export function DesktopCreateFlow() {
                 // Model alanı: marka seçiliyse ve markanın modelleri biliniyorsa bağımlı select.
                 if (f.key === "model") {
                   const brand = String(values.brand ?? "").trim();
-                  const models = MODELS_BY_BRAND[brand];
+                  const models = ALL_MODELS_BY_BRAND[brand];
                   if (models && models.length) {
                     const dep: FieldDef = { ...f, type: "select", options: [...models, "Diğer"] };
                     return <DField key={f.key} field={dep} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
@@ -527,7 +552,7 @@ export function DesktopCreateFlow() {
             <View style={{ gap: 8 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Adres görünürlüğü", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {([["city_only", "Sadece il/ilçe"], ["neighborhood", "İl/ilçe/mahalle"], ["full_address_private", "Açık adres yalnızca onay sonrası"]] as const).map(([k, lbl]) => {
+                {([["district_only", "Sadece il/ilçe"], ["neighborhood", "İl/ilçe/mahalle"], ["full_address_private", "Açık adres yalnızca onay sonrası"]] as const).map(([k, lbl]) => {
                   const on = visibility === k;
                   return (
                     <Pressable key={k} onPress={() => setVisibility(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}>
@@ -806,6 +831,11 @@ export function DesktopCreateFlow() {
           <MaterialCommunityIcons name="clock-check-outline" size={18} color={colors.warning} />
           <Text style={{ color: colors.warning, flex: 1, fontSize: 13, fontWeight: "700" }}>{notice}</Text>
         </View>
+      ) : null}
+
+      {/* Adımın neden ilerleyemediğini açıkça göster (sessiz kilitli buton yerine). */}
+      {step < STEPS.length - 1 && nextBlockReason() ? (
+        <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700", marginBottom: 8 }}>{nextBlockReason()}</Text>
       ) : null}
 
       {/* Nav */}

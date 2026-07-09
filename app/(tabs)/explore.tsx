@@ -249,8 +249,18 @@ export default function ExploreScreen() {
     const distKey = districtName ? locKey(districtName) : "";
     const nonText = baseListings.filter((listing) => {
       if (city && listing.location !== city) return false;
-      if (provKey && !locKey(listing.location).includes(provKey)) return false;
-      if (distKey && !locKey(listing.location).includes(distKey)) return false;
+      // Yapısal id varsa kesin eşleşme; yoksa (eski ilan) serbest metne düş.
+      // Alt-metin eşleştirmesi tek başına yanıltıcıydı (ör. "Van" ⊂ başka metinler).
+      if (provinceId != null) {
+        if (listing.provinceId != null) {
+          if (listing.provinceId !== provinceId) return false;
+        } else if (provKey && !locKey(listing.location).includes(provKey)) return false;
+      }
+      if (districtId != null) {
+        if (listing.districtId != null) {
+          if (listing.districtId !== districtId) return false;
+        } else if (distKey && !locKey(listing.location).includes(distKey)) return false;
+      }
       if (minCommission > 0 && commissionAmount(listing) < minCommission) return false;
       if (priceRange) {
         const [mn, mx] = priceRange.split("-");
@@ -350,7 +360,9 @@ export default function ExploreScreen() {
   useEffect(() => {
     setVisibleCount(INITIAL_EXPLORE_ITEMS);
     setProductVisible(20);
-  }, [filter, params.q, city, minCommission, statusOpen, sortMode, onlyVerified, priceRange, stockFilter]);
+    // Kategori-özel filtreler (catPath/attrFilters/numRange) de sayacı sıfırlamalı;
+    // yoksa daraltılan sonuç kümesinde eski "daha fazla göster" sayacı takılı kalıyordu.
+  }, [filter, params.q, city, minCommission, statusOpen, sortMode, onlyVerified, priceRange, stockFilter, catPath, attrFilters, numRange, provinceId, districtId]);
 
   function refresh() {
     setRefreshing(true);

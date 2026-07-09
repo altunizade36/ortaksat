@@ -17,7 +17,8 @@ import { displayText } from "@/lib/text";
 import { uploadMessageAttachment } from "@/lib/live-service";
 import { useTypingIndicator } from "@/lib/use-typing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { useIsWideWeb } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey, shortDate } from "@/lib/locale";
 import type { Conversation, Lead, Message, Partnership, Sale, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -49,6 +50,9 @@ function scanChatRisk(text: string) {
 export default function ChatScreen() {
   const { isAuthenticated } = useStore();
   const { language } = useLanguage();
+  const mounted = useMounted();
+  // SSG (giriş yok) → client (giriş var) uyuşmazlığını (#418) mount-gate ile giderir.
+  if (!mounted) return <ScreenSkeleton />;
   if (!isAuthenticated) {
     return <AuthRequired title={translateCopy("Mesajlarını görmek için giriş yap", language)} body={translateCopy("Konuşmaların yalnızca sana özeldir; görmek için ücretsiz bir hesapla giriş yapman gerekir.", language)} />;
   }

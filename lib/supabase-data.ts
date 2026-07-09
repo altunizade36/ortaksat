@@ -24,6 +24,9 @@ type PublicListingCardRow = {
   bonus_quota?: number | string | null;
   category: string;
   location: string;
+  province_id?: number | null;
+  district_id?: number | null;
+  neighborhood_id?: number | null;
   status: Listing["status"];
   partnership_mode: Listing["partnershipMode"];
   stock_count: number | null;
@@ -154,6 +157,9 @@ function mapListing(row: PublicListingCardRow): Listing {
     bonusQuota: row.bonus_quota != null ? toNumber(row.bonus_quota) : undefined,
     category,
     location: displayText(row.location),
+    provinceId: row.province_id ?? undefined,
+    districtId: row.district_id ?? undefined,
+    neighborhoodId: row.neighborhood_id ?? undefined,
     image: demoImage?.imageUrl ?? baseImage,
     imageUrl: demoImage?.imageUrl ?? baseImage,
     imageAlt: demoImage?.imageAlt ?? `${title} ilan görseli`,
@@ -448,10 +454,10 @@ export async function searchListings(params: {
   const sort = params.sort ?? "new";
   if (sort === "priceAsc") query = query.order("price", { ascending: true });
   else if (sort === "priceDesc") query = query.order("price", { ascending: false });
-  // Komisyon sıralaması: kesin komisyon (rate: fiyat×oran) hesaplı ORDER BY gerektirir;
-  // yaklaşık olarak commission_value DESC ile sırala → sayfalama newest yerine yüksek-
-  // komisyonluları önce çeker (istemci her sayfayı kesin komisyonla yeniden sıralar).
-  else if (sort === "commission") query = query.order("commission_value", { ascending: false }).order("created_at", { ascending: false });
+  // Komisyon sıralaması: görünümdeki commission_tl (oranlıysa fiyat×oran/100, değilse
+  // sabit ₺) ile kesin ORDER BY → oran ve sabit tutarlar artık aynı ₺ ekseninde
+  // karşılaştırılır (eski ham commission_value %'yi ₺ ile karıştırıyordu).
+  else if (sort === "commission") query = query.order("commission_tl", { ascending: false }).order("created_at", { ascending: false });
   else query = query.order("created_at", { ascending: false });
 
   const offset = params.offset ?? 0;

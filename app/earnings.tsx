@@ -10,7 +10,8 @@ import { Card, EmptyState } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { useIsWideWeb } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { displayText } from "@/lib/text";
 import type { SaleStatus } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -305,6 +306,9 @@ function MiniStat({ label, value }: { label: string; value: string }) {
 export default function EarningsScreen() {
   const { language } = useLanguage();
   const auth = useStore();
+  const mounted = useMounted();
+  // SSG (giriş yok) → client (giriş var) uyuşmazlığını (#418) mount-gate ile giderir.
+  if (!mounted) return <ScreenSkeleton />;
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Kazançlarını görmek için giriş yapın", language)} />;
   return <EarningsScreenInner />;
 }

@@ -61,7 +61,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [bonusQuota, setBonusQuota] = useState(listing.bonusQuota ? String(listing.bonusQuota) : "");
   // Yapısal konum (create ile aynı): il/ilçe korunur; boş metin-alan bug'ı giderildi.
   const [loc, setLoc] = useState<LocationValue>({ provinceId: listing.provinceId ?? undefined, districtId: listing.districtId ?? undefined });
-  const [visibility] = useState<AddressVisibility>((listing.addressVisibility as AddressVisibility) ?? "neighborhood");
+  const [visibility, setVisibility] = useState<AddressVisibility>((listing.addressVisibility as AddressVisibility) ?? "neighborhood");
   const [stockCount, setStockCount] = useState(`${listing.stockCount}`);
   const [minPartnerRating, setMinPartnerRating] = useState(`${listing.minPartnerRating}`);
   const [commissionDueDays, setCommissionDueDays] = useState(`${listing.commissionDueDays}`);
@@ -303,7 +303,17 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           </View>
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Konum", language)}</Text>
-            <LocationSelector value={loc} onChange={setLoc} />
+            <LocationSelector value={loc} onChange={setLoc} showNeighborhood showAddressLine mode="listing" />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {([["district_only", "Sadece il/ilçe"], ["neighborhood", "İl/ilçe/mahalle"], ["full_address_private", "Açık adres yalnızca onay sonrası"]] as const).map(([k, lbl]) => {
+                const on = visibility === k;
+                return (
+                  <Pressable key={k} onPress={() => setVisibility(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
             <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{formatLocation(loc, visibility) || translateCopy("İl/ilçe seçildikçe konum güncellenir.", language)}</Text>
           </View>
         </Card>

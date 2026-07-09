@@ -1588,7 +1588,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setAuthError("Bu ilan sadece davetle ortaklığa açıktır. Ortak olmak için satıcıdan davet linki iste.");
           return undefined;
         }
-        if (currentUser.rating < listing.minPartnerRating) {
+        // Yeni kullanıcının puanı 0'dır (henüz yorum yok). 0'ı "yetersiz puan" sayıp
+        // herkesi engellemek yerine yalnızca gerçekten puanlanmış (rating>0) ve eşiğin
+        // altındaki ortakları eleriz — aksi halde hiçbir yeni kullanıcı ortak olamıyordu.
+        if (currentUser.rating > 0 && currentUser.rating < listing.minPartnerRating) {
           setAuthError(`Bu ilan için en az ${listing.minPartnerRating} ortak puanı gerekiyor.`);
           return undefined;
         }
@@ -1596,9 +1599,38 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const existing = partnerships.find(
           (item) => item.listingId === listingId && item.partnerId === currentUser.id
         );
-        if (existing) {
+        // Reddedilmemiş mevcut ortaklık aynen döner. Reddedilmiş başvuru ise tekrar
+        // açılabilmeli: DB'de (listing_id, partner_id) benzersiz olduğundan yeni satır
+        // insert edilemez → mevcut satır güncellenir.
+        if (existing && existing.status !== "rejected") {
           setAuthError(undefined);
           return existing;
+        }
+        if (existing && existing.status === "rejected") {
+          const reopenStatus = listing.partnershipMode === "open" || invited ? "active" : "pending";
+          const reopened: Partnership = {
+            ...existing,
+            status: reopenStatus,
+            rejectionReason: undefined,
+            note: input?.note?.trim() || existing.note,
+            shareChannel: input?.shareChannel?.trim() || existing.shareChannel,
+            audience: input?.audience?.trim() || existing.audience,
+            platformHandle: input?.platformHandle?.trim() || existing.platformHandle,
+            reachEstimate: Number.isFinite(input?.reachEstimate) ? Math.max(0, Number(input?.reachEstimate)) : existing.reachEstimate,
+            approvedAt: reopenStatus === "active" ? today() : existing.approvedAt
+          };
+          setPartnerships((items) => items.map((p) => (p.id === existing.id ? reopened : p)));
+          setAuthError(undefined);
+          if (reopenStatus === "active") {
+            setListings((items) => items.map((item) => (item.id === listingId ? { ...item, partnerCount: item.partnerCount + 1 } : item)));
+          } else {
+            notify(listing.ownerId, "application", "Yeni ortak başvurusu", `${currentUser.name}, ${listing.title} ilanına yeniden başvurdu.`);
+          }
+          if (liveUser) persistCritical(updatePartnershipStatus(reopened), () => {
+            setPartnerships((items) => items.map((p) => (p.id === existing.id ? existing : p)));
+            if (reopenStatus === "active") setListings((items) => items.map((l) => (l.id === listingId ? { ...l, partnerCount: Math.max(0, l.partnerCount - 1) } : l)));
+          }, "Başvuru güncellenemedi. Bağlantını kontrol edip tekrar dene.");
+          return reopened;
         }
 
         const status = listing.partnershipMode === "open" || invited ? "active" : "pending";
@@ -1888,6 +1920,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
             }
           : undefined;
         setSales((items) => items.map((item) => (item.id === saleId && updatedSale ? updatedSale : item)));
+        // İptalde stoğu ve (satış yüzünden otomatik "sold" olduysa) ilan durumunu geri
+        // al — aksi halde iptal edilen satış ilanı kalıcı "tükendi"de bırakıyordu.
+        // Yalnızca cancelled'a İLK geçişte çalışır (çift-iade önlenir: terminal-guard
+        // non-staff'i cancelled'dan çıkaramaz; staff re-cancel'de sale.status zaten cancelled).
+        if (sale && status === "cancelled" && sale.status !== "cancelled" && saleListing) {
+          const restoredStock = saleListing.stockCount + Math.max(1, Math.floor(sale.quantity ?? 1));
+          const restoredStatus = saleListing.status === "sold" ? "active" : saleListing.status;
+          const restoredListing: Listing = { ...saleListing, stockCount: restoredStock, status: restoredStatus };
+          setListings((items) => items.map((item) => (item.id === saleListing.id ? restoredListing : item)));
+          if (liveUser) void updateListingInventoryLive(restoredListing);
+        }
         if (sale && status === "seller_paid") {
           const partnership = partnerships.find((item) => item.id === sale.partnershipId);
           if (partnership) notify(partnership.partnerId, "payout", "Komisyon ödendi bildirildi", `${sale.commissionAmount} TL için ödemeyi aldığını onayla.`);

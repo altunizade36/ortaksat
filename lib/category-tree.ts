@@ -75,7 +75,7 @@ const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "
 // Cep telefonu markaları (telefon şeması brand seçenekleriyle BİREBİR aynı olmalı ki
 // kategori yolundan seçilen marka forma otomatik dolsun). MODELS_BY_BRAND'de modeli
 // olanlar (iPhone/Samsung/Xiaomi/Huawei/Oppo/Realme) marka→model ağacı olur.
-export const PHONE_BRANDS = ["iPhone", "Samsung", "Xiaomi", "Huawei", "Oppo", "Realme", "Vivo", "Tecno", "Honor", "OnePlus", "General Mobile", "Reeder", "Poco", "Infinix", "Google", "Sony", "Nokia", "Casper", "TCL", "Alcatel", "Diğer"];
+export const PHONE_BRANDS = ["iPhone", "Samsung", "Xiaomi", "Huawei", "Oppo", "Realme", "Vivo", "Tecno", "Honor", "OnePlus", "Nothing", "General Mobile", "Reeder", "Poco", "Infinix", "Google", "Sony", "Nokia", "Casper", "TCL", "Alcatel", "Diğer"];
 
 // Marka -> model haritası (bağımlı model seçimi için). Marka seçilince model bu
 // listeden gelir; markası burada yoksa model serbest metin olarak girilir.
@@ -103,7 +103,8 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   // Cep telefonu
   iPhone: ["iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro Max", "iPhone 15", "iPhone 14", "iPhone 13", "iPhone 12", "iPhone 11", "iPhone SE"],
   Samsung: ["Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy S23 Ultra", "Galaxy S23", "Galaxy S22", "Galaxy A55", "Galaxy A35", "Galaxy A25", "Galaxy A15", "Galaxy A05", "Galaxy M Serisi", "Galaxy Z Fold5", "Galaxy Z Flip5", "Galaxy Note 20", "Galaxy S21 FE"],
-  Xiaomi: ["14 Pro", "14", "13T Pro", "13T", "Redmi Note 13 Pro", "Redmi Note 13", "Redmi Note 12", "Redmi 13C", "Redmi 12", "Poco X6 Pro", "Poco X6", "Poco F5", "Poco C65"],
+  Xiaomi: ["14 Pro", "14", "13T Pro", "13T", "Redmi Note 13 Pro", "Redmi Note 13", "Redmi Note 12", "Redmi 13C", "Redmi 12"],
+  Poco: ["Poco X6 Pro", "Poco X6", "Poco F5", "Poco F5 Pro", "Poco C65", "Poco M6 Pro", "Poco X5 Pro"],
   Huawei: ["P60", "P50", "Mate 50", "Nova 12", "Nova 11"],
   Oppo: ["Reno 11", "Reno 10", "A98", "A78", "A58"],
   Realme: ["C67", "C55", "11 Pro", "GT Neo", "Number serisi"],
@@ -858,6 +859,18 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Beyaz eşya bilgileri",
     fields: [F.title, { key: "brand", label: "Marka", type: "select", options: WHITE_GOODS_BRANDS }, F.model, F.durum, F.enerji, F.kapasite, F.renkSelect, F.garanti, F.fatura, URUN_OZELLIK_FIELD, F.price, F.kargo, F.pazarlik, F.takas, GENEL_ETIKET_FIELD, F.desc]
   },
+  // Klima ve kombi/ısıtma markaları beyaz eşyadan farklı; kendi marka seçenekleriyle
+  // ayrı şema (aksi halde Daikin/Mitsubishi/Vaillant gibi markalar seçilemiyordu).
+  klima: {
+    key: "klima",
+    title: "Klima bilgileri",
+    fields: [F.title, { key: "brand", label: "Marka", type: "select", options: AC_BRANDS }, F.model, F.durum, F.enerji, { key: "btu", label: "Kapasite (BTU)", type: "select", options: ["9.000 BTU", "12.000 BTU", "18.000 BTU", "24.000 BTU", "Diğer"] }, F.garanti, F.fatura, URUN_OZELLIK_FIELD, F.price, F.kargo, F.pazarlik, F.takas, GENEL_ETIKET_FIELD, F.desc]
+  },
+  kombi: {
+    key: "kombi",
+    title: "Kombi & ısıtma bilgileri",
+    fields: [F.title, { key: "brand", label: "Marka", type: "select", options: HEATING_BRANDS }, F.model, F.durum, { key: "capacityKw", label: "Kapasite", type: "text", placeholder: "ör. 24 kW / 20.000 kcal" }, F.garanti, F.fatura, URUN_OZELLIK_FIELD, F.price, F.kargo, F.pazarlik, F.takas, GENEL_ETIKET_FIELD, F.desc]
+  },
   moda: {
     key: "moda",
     title: "Giyim bilgileri",
@@ -1153,7 +1166,7 @@ export const categoryTree: CategoryNode[] = [
 
   node("İkinci El & Sıfır Alışveriş", [
     node("Elektronik", [
-      node("Cep Telefonu", brandModelNodes(["iPhone", "Samsung", "Xiaomi", "Huawei", "Oppo", "Realme", "Vivo", "Tecno", "General Mobile", "OnePlus", "Nothing", "Reeder", "Diğer Marka"], MODELS_BY_BRAND, "telefon"), "telefon"),
+      node("Cep Telefonu", brandModelNodes(PHONE_BRANDS, MODELS_BY_BRAND, "telefon"), "telefon"),
       node("Televizyon", brandModelNodes(TV_BRANDS, TV_MODELS, "televizyon"), "televizyon"),
       node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "Diğer Tablet"], "elektronik"), "elektronik"),
       node("Ses & Kulaklık", leaves(["Kablosuz Kulaklık", "Kulak İçi Kulaklık", "Kulak Üstü Kulaklık", "Bluetooth Hoparlör", "Soundbar", "Ev Sinema Sistemi", "Mikrofon"], "elektronik"), "elektronik"),
@@ -1188,8 +1201,8 @@ export const categoryTree: CategoryNode[] = [
       node("Bulaşık Makinesi", leaves(WHITE_GOODS_BRANDS, "beyazEsya"), "beyazEsya"),
       node("Fırın & Ankastre", leaves(["Ankastre Fırın", "Set Üstü Fırın", "Mikrodalga", "Ankastre Ocak", "Ankastre Set", "Davlumbaz"], "beyazEsya"), "beyazEsya"),
       node("Ocak & Set Üstü", leaves(["Gazlı Ocak", "Elektrikli Ocak", "İndüksiyon Ocak", "Vitroseramik", "Set Üstü Fırın"], "beyazEsya"), "beyazEsya"),
-      node("Klima", leaves(AC_BRANDS, "beyazEsya"), "beyazEsya"),
-      node("Kombi & Isıtma", leaves(HEATING_BRANDS, "beyazEsya"), "beyazEsya"),
+      node("Klima", leaves(AC_BRANDS, "klima"), "klima"),
+      node("Kombi & Isıtma", leaves(HEATING_BRANDS, "kombi"), "kombi"),
       node("Süpürge", leaves(["Robot Süpürge", "Dikey Süpürge", "Toz Torbalı", "Toz Torbasız", "Islak-Kuru", "Halı Yıkama"], "beyazEsya"), "beyazEsya"),
       ...leaves(["Derin Dondurucu", "Su Sebili", "Şofben & Termosifon", "Bulaşık Kurutma"], "beyazEsya")
     ], "beyazEsya"),
@@ -1477,14 +1490,17 @@ const _ALL_BRANDS = new Set<string>(
   [
     ...CAR_BRANDS, ...MOTO_BRANDS, ...COMPUTER_BRANDS, ...TV_BRANDS,
     ...WHITE_GOODS_BRANDS, ...COMMERCIAL_BRANDS, ...MARINE_ENGINE_BRANDS,
-    ...HEATING_BRANDS, ...AC_BRANDS, ...PHONE_BRANDS
+    ...HEATING_BRANDS, ...AC_BRANDS, ...PHONE_BRANDS,
+    // Moda/kozmetik markaları da eklenmeli ki saat/gözlük/parfüm/makyaj yollarında
+    // marka oto-doldurma çalışsın (önceden bu dallar için hiç tetiklenmiyordu).
+    ...WATCH_BRANDS, ...EYEWEAR_BRANDS, ...COSMETIC_BRANDS, ...PERFUME_BRANDS
   ].filter((b) => b && b !== "Diğer")
 );
 // Marka aynı anda birden çok haritada olabilir (Mercedes/Ford: oto+ticari, Honda:
 // oto+moto, Samsung: telefon+TV). Spread ile SON harita önceki modelleri EZİYORDU
 // → oto marka model listesi ticari/moto'yla değişiyor, "C Serisi" bulunamıyor,
 // model oto-doldurma sessizce başarısız oluyordu. Ezmek yerine BİRLEŞTİR (union).
-const _ALL_MODELS: Record<string, string[]> = (() => {
+export const ALL_MODELS_BY_BRAND: Record<string, string[]> = (() => {
   const merged: Record<string, string[]> = {};
   for (const map of [MODELS_BY_BRAND, MOTO_MODELS, COMPUTER_MODELS, TV_MODELS, COMMERCIAL_MODELS]) {
     for (const [brand, models] of Object.entries(map)) {
@@ -1493,6 +1509,7 @@ const _ALL_MODELS: Record<string, string[]> = (() => {
   }
   return merged;
 })();
+const _ALL_MODELS = ALL_MODELS_BY_BRAND;
 const _LISTING_TYPES = ["Satılık", "Kiralık", "Devren", "Günlük", "Kat Karşılığı"];
 
 export function deriveFieldsFromPath(path: CategoryNode[], schema: FormSchema): Record<string, string> {
