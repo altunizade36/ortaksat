@@ -46,6 +46,16 @@ test("Arama Türkçe-katlama fallback: 'sisli' → 'Şışlı' ilanını bulur",
   expect(body, "katlanmış arama Türkçe-harfli ilanı bulmalı").toContain(token);
 });
 
+test("Aktif-filtre çipleri: il/ilçe seçiliyken 'Tümünü temizle' görünür", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/explore?province=istanbul&district=kadikoy", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(4500);
+  await page.screenshot({ path: "e2e-artifacts/active-chips.png", fullPage: true });
+  const body = await page.locator("body").innerText();
+  // İl + ilçe = 2 çip → "Tümünü temizle" çıkar (yalnız aktif çip varken).
+  expect(body, "aktif-filtre çipleriyle 'Tümünü temizle' görünmeli").toContain("Tümünü temizle");
+});
+
 test("Partner fırsatları mobilde komisyon + sıralama çipleri gösterir", async ({ page }) => {
   const email = uniqueEmail("pfilter");
   await createConfirmedUser(email, PW, "E2E Partner Filter");
