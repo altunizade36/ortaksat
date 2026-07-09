@@ -68,6 +68,7 @@ function ChatScreenInner() {
   const { currentUser, findConversation, findListing, findUser, markConversationRead, messages, reportUser, sendConversationMessage } = useStore();
   const [body, setBody] = useState("");
   const [attaching, setAttaching] = useState(false);
+  const [inputFocused, setInputFocused] = useState(false);
   const scrollRef = useRef<ScrollView>(null);
   // Kullanıcı geçmişi okumak için yukarı kaydırdıysa, gelen mesaj/görsel yüklenmesi
   // onu zorla aşağı çekmesin. Yalnızca dibe yakınken otomatik aşağı in.
@@ -255,11 +256,13 @@ function ChatScreenInner() {
       <ScrollView
         ref={scrollRef}
         scrollEventThrottle={16}
+        keyboardShouldPersistTaps="handled"
         onScroll={(e) => {
           const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
           nearBottomRef.current = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120;
         }}
         onContentSizeChange={() => { if (nearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false }); }}
+        style={{ flex: 1 }}
         contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, justifyContent: conversationMessages.length === 0 ? "center" : "flex-start", padding: 12, paddingBottom: 16 }}
       >
         {conversationMessages.length === 0 ? (
@@ -322,9 +325,9 @@ function ChatScreenInner() {
         </View>
       ) : null}
 
-      {/* Hızlı yanıt önerileri — kutu boşken bağlama göre (stok/fiyat/teslimat/ödeme)
-          hazır cevaplar + "güvenli anlaşma" şablonu. Tıklayınca mesaj kutusuna yazılır. */}
-      {!body.trim() ? (
+      {/* Hızlı yanıt önerileri — kutu boşken ve odak yokken. Odaklanınca gizlenir ki
+          yazmaya başlayınca ekran "zıplamasın" (kayma tek seferde klavye açılışına biner). */}
+      {!inputFocused && !body.trim() ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingVertical: 8 }} style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, maxHeight: 52 }}>
           <Pressable onPress={() => setBody(translateCopy("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?", language))} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
             <MaterialCommunityIcons name="handshake-outline" size={13} color={colors.primaryDark} />
@@ -354,6 +357,8 @@ function ChatScreenInner() {
           value={body}
           onChangeText={(t) => { setBody(t); notifyTyping(); }}
           multiline
+          onFocus={() => { setInputFocused(true); setTimeout(() => scrollRef.current?.scrollToEnd({ animated: false }), 120); }}
+          onBlur={() => setInputFocused(false)}
           placeholder={translateCopy("Mesaj yaz…", language)}
           placeholderTextColor={colors.muted}
           onKeyPress={(e) => {

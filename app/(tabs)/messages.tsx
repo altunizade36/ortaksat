@@ -312,6 +312,7 @@ function MessagesScreenInner() {
                 const last = convMessages[0];
                 const unread = convMessages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
                 const on = activeConversation?.id === conversation.id;
+                const ctx = buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t });
                 return (
                   <Pressable key={conversation.id} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 12 })}>
                     {listing ? (
@@ -329,6 +330,13 @@ function MessagesScreenInner() {
                         <Text numberOfLines={1} style={{ color: unread ? colors.ink : colors.muted, flex: 1, fontSize: 12, fontWeight: unread ? "800" : "500" }}>{last ? `${last.senderId === currentUser.id ? translateCopy("Sen: ", language) : ""}${messagePreview(last)}` : t("conversationStarted")}</Text>
                         {unread ? <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{unread}</Text></View> : null}
                       </View>
+                      {/* Durum etiketi: görüşmenin nerede olduğunu (stok/fiyat/komisyon…) tek bakışta göster. */}
+                      {ctx.status ? (
+                        <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: ctx.needsAction ? colors.accentSoft : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 2 }}>
+                          {ctx.needsAction ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, height: 5, width: 5 }} /> : null}
+                          <Text numberOfLines={1} style={{ color: ctx.needsAction ? colors.accent : colors.subtle, fontSize: 10, fontWeight: "800" }}>{ctx.status}</Text>
+                        </View>
+                      ) : null}
                     </View>
                   </Pressable>
                 );
@@ -557,6 +565,7 @@ function MessagesScreenInner() {
         const rowRisk = scanMessageRisk(conversationMessages.map((item) => item.body).join(" "));
 
         const isPartner = Boolean(conversation.partnerId);
+        const ctx = buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t });
         return (
           <Link key={conversation.id} href={{ pathname: "/chat/[id]", params: { id: conversation.id } }} asChild>
             <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 12 })}>
@@ -595,6 +604,13 @@ function MessagesScreenInner() {
                     <MaterialCommunityIcons name="tag-outline" size={12} color={colors.subtle} />
                     <Text numberOfLines={1} style={{ color: colors.subtle, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{displayText(listing.title)}</Text>
                     {rowRisk.hasRisk ? <MaterialCommunityIcons name="shield-alert-outline" size={13} color={colors.warning} /> : null}
+                  </View>
+                ) : null}
+                {/* Durum etiketi: görüşme nerede (stok/fiyat/komisyon…) — tek bakışta. */}
+                {ctx.status ? (
+                  <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: ctx.needsAction ? colors.accentSoft : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 4, marginTop: 1, paddingHorizontal: 8, paddingVertical: 2 }}>
+                    {ctx.needsAction ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, height: 5, width: 5 }} /> : null}
+                    <Text numberOfLines={1} style={{ color: ctx.needsAction ? colors.accent : colors.subtle, fontSize: 10.5, fontWeight: "800" }}>{ctx.status}</Text>
                   </View>
                 ) : null}
               </View>
