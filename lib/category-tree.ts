@@ -1524,8 +1524,14 @@ export function deriveFieldsFromPath(path: CategoryNode[], schema: FormSchema): 
   }
 
   // Başlık önerisi: marka + model + yaprak kategori (yalnızca boşsa uygulanır).
+  // Tekrarı gider: bir parça diğerini içeriyorsa (marka "iPhone" ⊂ model "iPhone 15
+  // Pro Max") yalnızca kapsayan kalır → "iPhone iPhone 15 Pro Max" düzelir.
   const leafLbl = labels[labels.length - 1];
-  const titleSeed = Array.from(new Set([brand, model, leafLbl].filter(Boolean))).join(" ").trim();
+  const rawParts = [brand, model, leafLbl].filter((p): p is string => Boolean(p));
+  const uniq: string[] = [];
+  for (const p of rawParts) if (!uniq.includes(p)) uniq.push(p);
+  const kept = uniq.filter((p) => !uniq.some((o) => o !== p && o.toLocaleLowerCase("tr-TR").includes(p.toLocaleLowerCase("tr-TR"))));
+  const titleSeed = (kept.length ? kept : uniq).join(" ").trim();
   if (titleSeed.length >= 3) out.title = titleSeed.slice(0, 70);
 
   return out;
