@@ -460,6 +460,12 @@ export default function StoreScreen() {
               {isOwnStore ? translateCopy("Satıcı paneli", language) : translateCopy("Ortaklık ürünleri", language)}
             </PrimaryButton>
           </View>
+          {/* Şikayet et (mobil) — masaüstü sidebar'daki güvenlik aksiyonunun karşılığı. */}
+          {!isOwnStore ? (
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Satıcıyı şikayet et", language)} onPress={() => void handleReportSeller()} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 12 })}>
+              <MaterialCommunityIcons name="flag-outline" size={19} color={colors.muted} />
+            </Pressable>
+          ) : null}
         </View>
       </View>
 

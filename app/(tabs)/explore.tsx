@@ -16,7 +16,7 @@ import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { REFERENCE_NOW, searchKey } from "@/lib/locale";
 import { scoreListing } from "@/lib/search";
 import { useSavedSearches, type SavedFilters, type SavedSearch } from "@/lib/saved-searches";
-import { LocationSelector } from "@/components/location-selector";
+import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { districtsOfProvince, getDistrict, getProvince, locKey, provinces } from "@/lib/locations";
 import { searchListings } from "@/lib/supabase-data";
 import { displayText } from "@/lib/text";
@@ -239,7 +239,7 @@ export default function ExploreScreen() {
     router.setParams({ q: s.q || undefined });
   };
 
-  const hasPanelFilter = provinceId != null || Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter) || catPath.length > 0;
+  const hasPanelFilter = provinceId != null || Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter) || onlyVerified || catPath.length > 0;
 
   // q girildiyse temel set sunucu sonuclari (tum katalog); degilse yuklu katalog.
   const baseListings = serverResults ?? marketplaceListings;
@@ -296,6 +296,12 @@ export default function ExploreScreen() {
         if (mn !== null && val < mn) return false;
         if (mx !== null && val > mx) return false;
       }
+      // Yalnızca onaylı satıcı: activeListings'e taşındı ki mobil feed de (media tiles)
+      // bu filtreyi uygulasın (önceden yalnız masaüstü productListings'te vardı).
+      if (onlyVerified) {
+        const owner = findUser(listing.ownerId);
+        if (!(owner?.verifiedPhone || owner?.verifiedIdentity)) return false;
+      }
       return true;
     });
 
@@ -311,7 +317,7 @@ export default function ExploreScreen() {
 
     if (filtered.length || tokens.length > 0 || filter !== "all" || hasPanelFilter) return filtered;
     return baseListings.slice().sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));
-  }, [baseListings, city, districtName, filter, findUser, hasPanelFilter, minCommission, priceRange, provinceName, seed, statusOpen, stockFilter, tokens, catLabelSet, attrFilters, catNums, numRange]);
+  }, [baseListings, city, districtName, filter, findUser, hasPanelFilter, minCommission, onlyVerified, priceRange, provinceName, seed, statusOpen, stockFilter, tokens, catLabelSet, attrFilters, catNums, numRange]);
 
   const productListings = useMemo(() => {
     const arr = activeListings.filter((listing) => {
@@ -767,8 +773,16 @@ export default function ExploreScreen() {
           onPriceRange={setPriceRange}
           statusOpen={statusOpen}
           onStatusOpen={setStatusOpen}
-          onClear={() => { setCity(""); setMinCommission(0); setPriceRange(""); setStockFilter(""); setStatusOpen(false); clearCatFilter(); }}
+          onClear={() => { setCity(""); setMinCommission(0); setPriceRange(""); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); router.setParams({ province: undefined, district: undefined }); clearCatFilter(); }}
           width={isWideWeb ? panelWidth : Math.max(0, width - padding * 2)}
+          mobile={!isWideWeb}
+          provinceId={provinceId}
+          districtId={districtId}
+          onLocation={(v) => router.setParams({ province: v.provinceId != null ? getProvince(v.provinceId)?.slug : undefined, district: v.districtId != null ? getDistrict(v.districtId)?.slug : undefined })}
+          stockFilter={stockFilter}
+          onStockFilter={setStockFilter}
+          onlyVerified={onlyVerified}
+          onOnlyVerified={setOnlyVerified}
         />
       ) : null}
       <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
@@ -789,10 +803,10 @@ export default function ExploreScreen() {
           </View>
           {!isWideWeb ? (
             // Mobilde şehir/komisyon/durum filtreleri artık erişilebilir (önceden panel hiç render edilmiyordu).
-            <Pressable onPress={() => setShowMobileFilters((v) => !v)} accessibilityRole="button" accessibilityLabel={translateCopy("Filtrele", language)} style={{ alignItems: "center", backgroundColor: showMobileFilters ? colors.primary : colors.surface, borderColor: (city || minCommission > 0 || statusOpen) ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+            <Pressable onPress={() => setShowMobileFilters((v) => !v)} accessibilityRole="button" accessibilityLabel={translateCopy("Filtrele", language)} style={{ alignItems: "center", backgroundColor: showMobileFilters ? colors.primary : colors.surface, borderColor: hasPanelFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
               <MaterialCommunityIcons name="tune-variant" size={15} color={showMobileFilters ? "#FFFFFF" : colors.primaryDark} />
               <Text style={{ color: showMobileFilters ? "#FFFFFF" : colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Filtre", language)}</Text>
-              {(city || minCommission > 0 || statusOpen) ? <View style={{ backgroundColor: showMobileFilters ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 7, width: 7 }} /> : null}
+              {hasPanelFilter ? <View style={{ backgroundColor: showMobileFilters ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 7, width: 7 }} /> : null}
             </Pressable>
           ) : null}
         </View>
@@ -891,7 +905,15 @@ function FilterPanel({
   statusOpen,
   onStatusOpen,
   onClear,
-  width
+  width,
+  mobile,
+  provinceId,
+  districtId,
+  onLocation,
+  stockFilter,
+  onStockFilter,
+  onlyVerified,
+  onOnlyVerified
 }: {
   cities: string[];
   city: string;
@@ -904,6 +926,15 @@ function FilterPanel({
   onStatusOpen: (v: boolean) => void;
   onClear: () => void;
   width: number;
+  // Mobil-özel: masaüstü bu filtreleri üst toolbar'da gösterdiğinden yalnız mobilde çizilir.
+  mobile?: boolean;
+  provinceId?: number;
+  districtId?: number;
+  onLocation?: (v: LocationValue) => void;
+  stockFilter?: string;
+  onStockFilter?: (v: string) => void;
+  onlyVerified?: boolean;
+  onOnlyVerified?: (v: boolean) => void;
 }) {
   const { language } = useLanguage();
   const commissionPresets = [0, 100, 250, 500];
@@ -1002,24 +1033,58 @@ function FilterPanel({
         </View>
       </View>
 
-      <View style={{ gap: 8 }}>
-        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Şehir", language)}</Text>
-        <View style={{ gap: 4 }}>
-          <Pressable onPress={() => onCity("")} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 6 }}>
-            <MaterialCommunityIcons name={city === "" ? "radiobox-marked" : "radiobox-blank"} size={18} color={city === "" ? colors.primary : colors.muted} />
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Tüm şehirler", language)}</Text>
-          </Pressable>
-          {cities.map((c) => {
-            const active = city === c;
-            return (
-              <Pressable key={c} onPress={() => onCity(active ? "" : c)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 6 }}>
-                <MaterialCommunityIcons name={active ? "radiobox-marked" : "radiobox-blank"} size={18} color={active ? colors.primary : colors.muted} />
-                <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{c}</Text>
-              </Pressable>
-            );
-          })}
+      {/* Mobil: masaüstü toolbar'ındaki il/ilçe + stok + onaylı-satıcı filtreleri burada. */}
+      {mobile && onLocation ? (
+        <View style={{ gap: 8, zIndex: 20 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Konum (İl / İlçe)", language)}</Text>
+          <LocationSelector value={{ provinceId, districtId }} onChange={onLocation} showNeighborhood={false} mode="filter" />
         </View>
-      </View>
+      ) : null}
+
+      {mobile && onStockFilter ? (
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Stok Durumu", language)}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {([["", "Tümü"], ["in", "Stokta var"], ["low", "Az stok"]] as const).map(([val, lbl]) => {
+              const on = (stockFilter ?? "") === val;
+              return (
+                <Pressable key={val || "all"} onPress={() => onStockFilter(on ? "" : val)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+
+      {mobile && onOnlyVerified ? (
+        <Pressable onPress={() => onOnlyVerified(!onlyVerified)} style={{ alignItems: "center", backgroundColor: onlyVerified ? colors.primarySoft : colors.surfaceAlt, borderColor: onlyVerified ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
+          <MaterialCommunityIcons name={onlyVerified ? "checkbox-marked" : "checkbox-blank-outline"} size={18} color={onlyVerified ? colors.primary : colors.muted} />
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Sadece onaylı satıcılar", language)}</Text>
+        </Pressable>
+      ) : null}
+
+      {/* Masaüstü sidebar'ında düz şehir listesi (mobilde yerini LocationSelector alır). */}
+      {!mobile ? (
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Şehir", language)}</Text>
+          <View style={{ gap: 4 }}>
+            <Pressable onPress={() => onCity("")} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 6 }}>
+              <MaterialCommunityIcons name={city === "" ? "radiobox-marked" : "radiobox-blank"} size={18} color={city === "" ? colors.primary : colors.muted} />
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Tüm şehirler", language)}</Text>
+            </Pressable>
+            {cities.map((c) => {
+              const active = city === c;
+              return (
+                <Pressable key={c} onPress={() => onCity(active ? "" : c)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 6 }}>
+                  <MaterialCommunityIcons name={active ? "radiobox-marked" : "radiobox-blank"} size={18} color={active ? colors.primary : colors.muted} />
+                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{c}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }

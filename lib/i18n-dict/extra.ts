@@ -10,6 +10,8 @@ export const extraDict: Record<string, string> = {
   "En az 'baslik' ve 'fiyat' sütunları gerekli. Şablonu kullan.": "At least the 'baslik' and 'fiyat' columns are required. Use the template.",
   "Soruyu gönder": "Send question",
   "Cevabı gönder": "Send answer",
+  "okunmamış": "unread",
+  "Konum (İl / İlçe)": "Location (Province / District)",
   "Mesajlara yönlendiriliyor…": "Redirecting to messages…",
   "Ortak satış görüşmesi": "Partner sale conversation",
   "Satış görüşmesi": "Sale conversation",

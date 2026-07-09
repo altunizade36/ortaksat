@@ -50,12 +50,19 @@ export function MobileNavMenu() {
     <>
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={translateCopy("Menü", language)}
+        accessibilityLabel={`${translateCopy("Menü", language)}${unreadMsg + unreadNotif > 0 ? ` — ${unreadMsg + unreadNotif} ${translateCopy("okunmamış", language)}` : ""}`}
         hitSlop={10}
         onPress={() => setOpen(true)}
         style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}
       >
         <MaterialCommunityIcons name="menu" size={22} color={colors.primaryDark} />
+        {/* Okunmamış mesaj/bildirim rozeti: mobilde tek bakışta görünsün (masaüstü
+            header ikonlarındaki rozetin karşılığı; hamburger'da saklı kalmasın). */}
+        {unreadMsg + unreadNotif > 0 ? (
+          <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1.5, height: 16, justifyContent: "center", minWidth: 16, paddingHorizontal: 3, position: "absolute", right: -5, top: -5 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{unreadMsg + unreadNotif > 9 ? "9+" : unreadMsg + unreadNotif}</Text>
+          </View>
+        ) : null}
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
