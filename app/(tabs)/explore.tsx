@@ -227,10 +227,14 @@ export default function ExploreScreen() {
   const catFacets = useMemo<FieldDef[]>(() => (catSchema ? catSchema.fields.filter((f) => {
     const n = f.options?.length ?? 0;
     if (f.key === "seller") return false;
+    if (f.key === "brand" && f.type === "select" && n > 16) return false; // marka ayrı aranabilir filtreye
     if (f.type === "select") return n >= 2 && n <= 16;
     if (f.type === "multiselect") return n >= 2 && n <= 24;
     return false;
   }) : []), [catSchema]);
+  // Aranabilir bağımsız marka filtresi: seçenek sayısı facet sınırını (16) aşan
+  // marka alanları (CAR_BRANDS ~74, PHONE_BRANDS 22…) chip-facet olarak sığmaz.
+  const catBrandField = useMemo<FieldDef | undefined>(() => (catSchema ? catSchema.fields.find((f) => f.key === "brand" && f.type === "select" && (f.options?.length ?? 0) > 16) : undefined), [catSchema]);
   const catNums = useMemo(() => {
     if (!catSchema) return [] as Array<{ key: string; label: string; suffix?: string }>;
     const keys = new Set(catSchema.fields.map((f) => f.key));
@@ -535,6 +539,15 @@ export default function ExploreScreen() {
       ) : null}
       {catPath.length > 0 ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+          {catBrandField ? (
+            <BrandFilter
+              label={catBrandField.label}
+              options={catBrandField.options ?? []}
+              selected={attrFilters.brand ?? []}
+              onToggle={(b) => toggleAttr("brand", b)}
+              language={language}
+            />
+          ) : null}
           {catNums.map((nf) => (
             <View key={nf.key} style={{ gap: 4, minWidth: 160 }}>
               <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(nf.label, language)}{nf.suffix ? ` (${nf.suffix})` : ""}</Text>
@@ -1305,6 +1318,49 @@ function formatPriceLabel(value: string): string | null {
   if (!mn && mx) return `≤ ${fmt(mx)}`;
   return null;
 }
+// Aranabilir çoklu-seçim marka filtresi (Sahibinden marka arama kutusu gibi).
+// Marka seçenekleri facet sınırını aştığında (araba ~74, telefon 22…) kullanılır.
+function BrandFilter({ label, options, selected, onToggle, language }: { label: string; options: string[]; selected: string[]; onToggle: (b: string) => void; language: "tr" | "en" }) {
+  const [q, setQ] = useState("");
+  const needle = q.trim().toLocaleLowerCase("tr-TR");
+  const shown = (needle ? options.filter((o) => o.toLocaleLowerCase("tr-TR").includes(needle)) : options).slice(0, 60);
+  return (
+    <View style={{ gap: 6, width: "100%" }}>
+      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>
+        {translateCopy(label, language)}{selected.length ? ` · ${selected.length} ${translateCopy("seçili", language)}` : ""}
+      </Text>
+      <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 38, paddingHorizontal: 9 }}>
+        <MaterialCommunityIcons name="magnify" size={16} color={colors.muted} />
+        <TextInput value={q} onChangeText={setQ} placeholder={translateCopy("Marka ara…", language)} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13, minHeight: 38 }} />
+        {q ? <Pressable onPress={() => setQ("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable> : null}
+      </View>
+      {selected.length ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+          {selected.map((b) => (
+            <Pressable key={b} onPress={() => onToggle(b)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 4 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>{b}</Text>
+              <MaterialCommunityIcons name="close" size={12} color="#FFFFFF" />
+            </Pressable>
+          ))}
+        </View>
+      ) : null}
+      <View style={{ maxHeight: 150 }}>
+        <ScrollView showsVerticalScrollIndicator style={{ maxHeight: 150 }} contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+          {shown.map((o) => {
+            const on = selected.includes(o);
+            return (
+              <Pressable key={o} onPress={() => onToggle(o)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 4 }}>
+                <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 11, fontWeight: "800" }}>{o}</Text>
+              </Pressable>
+            );
+          })}
+          {shown.length === 0 ? <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", padding: 6 }}>{translateCopy("Marka bulunamadı", language)}</Text> : null}
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
+
 function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { language } = useLanguage();
   const [open, setOpen] = useState(false);

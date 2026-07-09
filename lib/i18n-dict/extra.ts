@@ -187,5 +187,7 @@ export const extraDict: Record<string, string> = {
   // İlan detay: Sahibinden-vari bölümler
   "İlan Bilgileri": "Listing Details",
   "Özellikler & Donanım": "Features & Equipment",
-  "İlan detayları": "Listing info"
+  "İlan detayları": "Listing info",
+  "Marka ara…": "Search brand…",
+  "Marka bulunamadı": "No brands found"
 };
