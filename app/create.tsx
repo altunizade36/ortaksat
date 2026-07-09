@@ -1,5 +1,6 @@
 import Head from "expo-router/head";
-import { KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
+import { useEffect, useState } from "react";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
@@ -17,6 +18,18 @@ export default function CreateListingScreen() {
   const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const { isAuthenticated, platformSettings, emailVerified, isSuspended } = useStore();
+  // Hidrasyon-gate: SSG ve istemcinin İLK render'ı aynı olmalı (aksi halde SSG'de
+  // AuthRequired, istemcide form → React #418 uyuşmazlığı; bu, derin kategori
+  // yolunda create sayfasını çökertebiliyordu). Mount'a kadar nötr iskelet göster.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+  if (!mounted) {
+    return (
+      <View style={{ alignItems: "center", backgroundColor: colors.background, flex: 1, justifyContent: "center", minHeight: 320, paddingVertical: 60 }}>
+        <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
   if (!isAuthenticated) return <AuthRequired title={translateCopy("İlan vermek için giriş yapın", language)} body={translateCopy("Ücretsiz hesap aç, ürününü yüzlerce ortağa ulaştır. Gezmeye giriş gerekmez; ilan vermek için gerekir.", language)} icon="store-plus-outline" />;
   if (isSuspended) return <AuthRequired title={translateCopy("Hesabın askıya alındı", language)} body={translateCopy("Hesabın askıda olduğu için ilan veremezsin. İşlem yapabilmek için Yasal & Destek üzerinden bizimle iletişime geçebilirsin.", language)} icon="account-cancel-outline" />;
   // Admin "e-posta doğrulama zorunlu" açıksa, doğrulanmamış hesap ilan veremez.
