@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -49,6 +49,15 @@ export function ListingQA({ listingId, isOwner, isDemo }: { listingId: string; i
     void refresh();
   }
 
+  // Web'de Enter gönderir, Shift+Enter yeni satır (mesajlaşmayla aynı davranış).
+  const webEnter = (fn: () => void) => (e: { nativeEvent: { key?: string; shiftKey?: boolean } }) => {
+    if (Platform.OS !== "web") return;
+    if (e.nativeEvent.key === "Enter" && !e.nativeEvent.shiftKey) {
+      (e as unknown as { preventDefault?: () => void }).preventDefault?.();
+      fn();
+    }
+  };
+
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 18 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -65,12 +74,13 @@ export function ListingQA({ listingId, isOwner, isDemo }: { listingId: string; i
               value={draft}
               onChangeText={setDraft}
               multiline
+              onKeyPress={webEnter(() => void ask())}
               placeholder={isDemo ? translateCopy("Örnek ilanda soru kapalı", language) : translateCopy("Satıcıya herkese açık bir soru sor…", language)}
               placeholderTextColor={colors.subtle}
               editable={!isDemo}
               style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 44, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: "top" }}
             />
-            <Pressable disabled={sending || isDemo} onPress={() => void ask()} style={{ alignItems: "center", backgroundColor: isDemo ? colors.line : colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, opacity: sending ? 0.6 : 1, paddingHorizontal: 16, paddingVertical: 12 }}>
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Soruyu gönder", language)} disabled={sending || isDemo} onPress={() => void ask()} style={{ alignItems: "center", backgroundColor: isDemo ? colors.line : colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, opacity: sending ? 0.6 : 1, paddingHorizontal: 16, paddingVertical: 12 }}>
               <MaterialCommunityIcons name="send" size={15} color="#FFFFFF" />
               <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{sending ? "…" : translateCopy("Sor", language)}</Text>
             </Pressable>
@@ -106,11 +116,12 @@ export function ListingQA({ listingId, isOwner, isDemo }: { listingId: string; i
                     value={answerDrafts[it.id] ?? ""}
                     onChangeText={(v) => setAnswerDrafts((s) => ({ ...s, [it.id]: v }))}
                     multiline
+                    onKeyPress={webEnter(() => void answer(it.id))}
                     placeholder={translateCopy("Cevapla…", language)}
                     placeholderTextColor={colors.subtle}
                     style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 10, paddingVertical: 8, textAlignVertical: "top" }}
                   />
-                  <Pressable onPress={() => void answer(it.id)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 }}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Cevabı gönder", language)} onPress={() => void answer(it.id)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 14, paddingVertical: 10 }}>
                     <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Gönder", language)}</Text>
                   </Pressable>
                 </View>
