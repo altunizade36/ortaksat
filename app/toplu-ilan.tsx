@@ -123,9 +123,10 @@ function BulkUploadInner() {
       const errors: string[] = [];
       const v = validateListing({ title, description: description || "Toplu yükleme ürünü.", price });
       v.errors.forEach((e) => { if (e.field !== "description") errors.push(e.message); });
-      if (!category) errors.push(`Kategori eşleşmedi: "${categoryRaw || "(boş)"}"`);
-      if (!prov) errors.push(`İl eşleşmedi: "${get("province") || "(boş)"}"`);
-      if (commission <= 0 || commission > 90) errors.push("Komisyon 1–90 arası olmalı");
+      const bos = translateCopy("(boş)", language);
+      if (!category) errors.push(`${translateCopy("Kategori eşleşmedi", language)}: "${categoryRaw || bos}"`);
+      if (!prov) errors.push(`${translateCopy("İl eşleşmedi", language)}: "${get("province") || bos}"`);
+      if (commission <= 0 || commission > 90) errors.push(translateCopy("Komisyon 1–90 arası olmalı", language));
       return { raw: {}, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, stock, image, errors };
     });
     setRows(parsed);

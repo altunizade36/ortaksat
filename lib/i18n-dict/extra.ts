@@ -1,6 +1,15 @@
 // Gap-analizinde bulunan: translateCopy ile sarılmış ama gruplarda çevirisi
 // eksik kalan anahtarlar (bunlar EN modda Türkçe render ediyordu).
 export const extraDict: Record<string, string> = {
+  // Toplu ilan (CSV) doğrulama + Soru-Cevap butonları — EN modda Türkçe kalıyordu.
+  "Kategori eşleşmedi": "Category not matched",
+  "İl eşleşmedi": "Province not matched",
+  "Komisyon 1–90 arası olmalı": "Commission must be between 1–90",
+  "(boş)": "(empty)",
+  "Sütun bulunamadı": "Column not found",
+  "En az 'baslik' ve 'fiyat' sütunları gerekli. Şablonu kullan.": "At least the 'baslik' and 'fiyat' columns are required. Use the template.",
+  "Soruyu gönder": "Send question",
+  "Cevabı gönder": "Send answer",
   "Mesajlara yönlendiriliyor…": "Redirecting to messages…",
   "Ortak satış görüşmesi": "Partner sale conversation",
   "Satış görüşmesi": "Sale conversation",
