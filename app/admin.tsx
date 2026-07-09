@@ -10,7 +10,8 @@ import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { EmptyState } from "@/components/ui";
 import { money } from "@/lib/format";
-import { useIsWideWeb } from "@/lib/layout";
+import { useIsWideWeb, useMounted } from "@/lib/layout";
+import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { getDistrict, getProvince } from "@/lib/locations";
 import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
@@ -175,6 +176,37 @@ function AdminScreenInner() {
 
   // Son 12 ay — gerçek veri: aya göre yayınlanan ilan sayısı (kayıtlı veriden).
   const { data: chartData, labels: chartLabels } = useMemo(() => monthlyListingChart(listings), [listings]);
+
+  // Analitik dağılımlar (İstatistikler): en çok ilanı olan satıcılar, en çok
+  // komisyon kazanan ortaklar, kategori ve şehir dağılımı — gerçek veriden.
+  const topSellers = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of listings) if (l.status === "active") m.set(l.ownerId, (m.get(l.ownerId) ?? 0) + 1);
+    const arr = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const max = arr[0]?.[1] ?? 1;
+    return arr.map(([id, c]) => ({ label: findUser(id)?.name ?? "—", value: `${c} ilan`, count: c, max }));
+  }, [listings, findUser]);
+  const topPartners = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of sales) { const p = partnerships.find((pp) => pp.id === s.partnershipId); if (p) m.set(p.partnerId, (m.get(p.partnerId) ?? 0) + s.commissionAmount); }
+    const arr = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
+    const max = arr[0]?.[1] ?? 1;
+    return arr.map(([id, v]) => ({ label: findUser(id)?.name ?? "—", value: money(v), count: v, max }));
+  }, [sales, partnerships, findUser]);
+  const catDist = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of listings) if (l.status === "active") { const c = l.category || "Diğer"; m.set(c, (m.get(c) ?? 0) + 1); }
+    const arr = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const max = arr[0]?.[1] ?? 1;
+    return arr.map(([c, n]) => ({ label: c, value: `${n}`, count: n, max }));
+  }, [listings]);
+  const cityDist = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of listings) if (l.status === "active") { const c = l.location || "—"; m.set(c, (m.get(c) ?? 0) + 1); }
+    const arr = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
+    const max = arr[0]?.[1] ?? 1;
+    return arr.map(([c, n]) => ({ label: c, value: `${n}`, count: n, max }));
+  }, [listings]);
 
   const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : k === "listings" ? pendingReview.length : k === "complaints" ? pendingReports : k === "partnerships" ? pendingPartnerships : 0);
 
@@ -709,10 +741,36 @@ function AdminScreenInner() {
               <Stat icon="cart-check" tint={colors.successSoft} color={colors.success} value={`${sales.length}`} title="Satış" />
               <Stat icon="account-clock" tint={colors.goldSoft} color={colors.gold} value={`${leads.length}`} title="Talep" />
               <Stat icon="cash-multiple" tint={colors.successSoft} color={colors.success} value={money(totalCommission)} title="Komisyon (kayıt)" />
+              <Stat icon="check-decagram" tint={colors.primarySoft} color={colors.primaryDark} value={`${users.filter((u) => u.verifiedPhone || u.verifiedIdentity).length}`} title="Doğrulanmış üye" />
+              <Stat icon="star" tint={colors.goldSoft} color={colors.gold} value={`${listings.filter((l) => l.featured).length}`} title="Öne çıkan ilan" />
+              <Stat icon="map-marker" tint={colors.infoSoft} color={colors.info} value={`${new Set(activeListings.map((l) => l.location)).size}`} title="Şehir" />
+              <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(unpaidCommission)} title="Bekleyen komisyon" />
             </View>
             <Panel title="Aylık İlan Grafiği" sub="Son 12 ay — yayınlanan ilan (gerçek veri)">
               <BarChart data={chartData} labels={chartLabels} />
             </Panel>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+              <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
+                <Panel title="En Çok İlanı Olan Satıcılar" sub="Aktif ilan sayısına göre ilk 6">
+                  <RankList rows={topSellers} emptyText="Henüz satıcı verisi yok." />
+                </Panel>
+              </View>
+              <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
+                <Panel title="En Çok Kazanan Ortaklar" sub="Kayıtlı komisyona göre ilk 6">
+                  <RankList rows={topPartners} emptyText="Henüz komisyon kaydı yok." />
+                </Panel>
+              </View>
+              <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
+                <Panel title="Kategori Dağılımı" sub="Aktif ilana göre ilk 8 kategori">
+                  <RankList rows={catDist} emptyText="Aktif ilan yok." />
+                </Panel>
+              </View>
+              <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
+                <Panel title="Şehir Dağılımı" sub="Aktif ilana göre ilk 8 şehir">
+                  <RankList rows={cityDist} emptyText="Aktif ilan yok." />
+                </Panel>
+              </View>
+            </View>
           </View>
         ) : null}
 
@@ -1266,6 +1324,27 @@ function countBy<T>(items: T[], getKey: (item: T) => string) {
   }, {});
 }
 
+// Sıralı dağılım listesi (satıcı/ortak/kategori/şehir) — etiket + değer + oran çubuğu.
+function RankList({ rows, emptyText }: { rows: Array<{ label: string; value: string; count: number; max: number }>; emptyText: string }) {
+  if (rows.length === 0) return <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{emptyText}</Text>;
+  return (
+    <View style={{ gap: 9 }}>
+      {rows.map((r, i) => (
+        <View key={`${r.label}-${i}`} style={{ gap: 4 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "900", width: 16 }}>{i + 1}</Text>
+            <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", minWidth: 0 }}>{r.label}</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{r.value}</Text>
+          </View>
+          <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 6, marginLeft: 24, overflow: "hidden" }}>
+            <View style={{ backgroundColor: colors.primary, height: "100%", width: `${Math.max(4, Math.round((r.count / (r.max || 1)) * 100))}%` }} />
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
 function Panel({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
@@ -1596,6 +1675,8 @@ function BarChart({ data, labels }: { data: number[]; labels?: string[] }) {
 
 export default function AdminScreen() {
   const auth = useStore();
+  const mounted = useMounted();
+  if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!auth.isAuthenticated) return <AuthRequired title="Yönetim paneli için giriş yapın" />;
   const role = auth.currentUser.role;
   const isStaff = role === "admin" || role === "moderator" || role === "super_admin";
