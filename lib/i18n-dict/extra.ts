@@ -118,5 +118,20 @@ export const extraDict: Record<string, string> = {
   "ilan pasife alınacak. İstediğinde tekrar yayınlayabilirsin.": "listings will be paused. You can republish them anytime.",
   "Stok azalt": "Decrease stock",
   "Stok artır": "Increase stock",
-  "Kaydet": "Save"
+  "Kaydet": "Save",
+  // Mağaza politikaları sekmesi.
+  "Politikalar": "Policies",
+  "Mağaza politikaları": "Store policies",
+  "Ödeme modeli": "Payment model",
+  "OrtakSat bir aracı platformdur — para tutmaz, ödeme almaz. Ödeme, teslimat ve iade tamamen alıcı ile satıcı arasında yapılır. Görüşmeyi uygulama içi mesajdan yürütmen önerilir.": "OrtakSat is an intermediary platform — it never holds money or takes payment. Payment, delivery and returns are entirely between buyer and seller. We recommend keeping the conversation in in-app messaging.",
+  "İade süresi": "Return window",
+  "Komisyon vadesi": "Commission term",
+  "Teslimat / kargo": "Delivery / shipping",
+  "Ortaklık kuralları": "Partnership rules",
+  "İlana göre değişir": "Varies by listing",
+  "Satışta belirlenir": "Set at sale time",
+  "Uygulama içi mesaj": "In-app message",
+  "Teslimat koşulları ilana göre değişir; ilan sayfasındaki teslimat notuna bak veya satıcıya sor.": "Delivery terms vary by listing; check the delivery note on the listing page or ask the seller.",
+  "Bu politikalar satıcının aktif ilanlarından derlenmiştir. Kesin koşullar için ilgili ilanı incele.": "These policies are compiled from the seller's active listings. Check the relevant listing for exact terms.",
+  "gün": "days"
 };

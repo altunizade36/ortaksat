@@ -21,11 +21,11 @@ import { shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import { fetchReviewsForUser } from "@/lib/live-service";
 import { calculateUserTrustScores } from "@/lib/trust-score";
-import type { Review } from "@/lib/types";
+import type { Listing, Review } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 type StoreFilter = "active" | "all" | "partner";
-type ProfileTab = "about" | "listings" | "partnerships" | "reviews" | "badges";
+type ProfileTab = "about" | "listings" | "partnerships" | "policies" | "reviews" | "badges";
 
 export default function StoreScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -178,6 +178,7 @@ export default function StoreScreen() {
       { key: "about", label: translateCopy("Hakkında", language) },
       { key: "listings", label: translateCopy("İlanları", language), count: activeListings.length },
       { key: "partnerships", label: translateCopy("Ortaklıkları", language), count: sellerPartnerships.length },
+      { key: "policies", label: translateCopy("Politikalar", language) },
       { key: "reviews", label: translateCopy("Yorumlar", language), count: reviewsAboutSeller.length },
       { key: "badges", label: translateCopy("Rozetler", language), count: badges.filter((b) => b.on).length }
     ];
@@ -195,8 +196,8 @@ export default function StoreScreen() {
             ...(reviewsAboutSeller.length > 0 && seller.rating > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: Number(seller.rating.toFixed(1)), reviewCount: reviewsAboutSeller.length } } : {})
           })} />
         ) : null}
-        {/* Cover */}
-        <View style={{ backgroundColor: colors.primaryDark, height: 150 }} />
+        {/* Cover — mağazaya özgü katmanlı banner (harici görsel yok; CSP-güvenli) */}
+        <StoreCover seed={seller.id} height={150} />
         <View style={{ alignSelf: "center", marginTop: -64, maxWidth: 1280, paddingHorizontal: 20, width: "100%" }}>
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, padding: 20 }}>
             <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 18 }}>
@@ -366,6 +367,10 @@ export default function StoreScreen() {
                 </View>
               ) : null}
 
+              {tab === "policies" ? (
+                <StorePolicies listings={activeListings} language={language} />
+              ) : null}
+
               {tab === "reviews" ? (
                 <View style={{ gap: 12 }}>
                   {reviewsAboutSeller.length > 0 ? <ReviewSummary reviews={reviewsAboutSeller} rating={seller.rating} language={language} /> : null}
@@ -472,7 +477,8 @@ export default function StoreScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
       contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 104 }}
     >
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 12, padding: 14 }}>
+      <StoreCover seed={seller.id} height={92} radius={10} />
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 12, marginTop: -44, padding: 14 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
           {isImageAvatar(seller.avatar) ? (
             <Image source={{ uri: seller.avatar }} contentFit="cover" style={{ borderRadius: 14, height: 66, width: 66 }} />
@@ -599,6 +605,16 @@ export default function StoreScreen() {
         </View>
       )}
 
+      {/* Politikalar (mobil) — masaüstü sekmesinin karşılığı; ilanlardan derlenir. */}
+      {activeListings.length > 0 ? (
+        <View style={{ gap: 10, marginTop: 4 }}>
+          <Text selectable style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>
+            {translateCopy("Mağaza politikaları", language)}
+          </Text>
+          <StorePolicies listings={activeListings} language={language} />
+        </View>
+      ) : null}
+
       {/* Yorumlar (mobil) — güven sinyali masaüstündeki gibi görünür. */}
       <View style={{ gap: 10, marginTop: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>
@@ -660,6 +676,90 @@ function ReviewSummary({ reviews, rating, language }: { reviews: Review[]; ratin
           );
         })}
       </View>
+    </View>
+  );
+}
+
+// Mağazaya özgü katmanlı banner. Harici görsel yok (CSP), gradient kütüphanesi
+// yok — üst üste bindirilmiş yarı saydam Views ile derinlik. Tohum (seller.id)
+// aksan tonunu belirler; her mağaza farklı görünür ama marka tutarlı kalır.
+function StoreCover({ seed, height = 150, radius = 0 }: { seed: string; height?: number; radius?: number }) {
+  const accents = [colors.primary, colors.info, colors.gold, colors.accent];
+  let h = 0;
+  for (let i = 0; i < seed.length; i += 1) h = (h * 31 + seed.charCodeAt(i)) >>> 0;
+  const accent = accents[h % accents.length];
+  return (
+    <View style={{ backgroundColor: colors.primaryDark, borderRadius: radius, height, overflow: "hidden" }}>
+      <View style={{ position: "absolute", backgroundColor: colors.primary, opacity: 0.5, width: "170%", height: 130, top: -24, left: -60, transform: [{ rotate: "-7deg" }] }} />
+      <View style={{ position: "absolute", backgroundColor: accent, opacity: 0.3, width: 240, height: 240, borderRadius: 240, right: -60, top: -80 }} />
+      <View style={{ position: "absolute", backgroundColor: "#FFFFFF", opacity: 0.07, width: 170, height: 170, borderRadius: 170, right: 150, bottom: -90 }} />
+      <View style={{ position: "absolute", backgroundColor: accent, opacity: 0.16, width: 130, height: 130, borderRadius: 130, left: -40, bottom: -60 }} />
+    </View>
+  );
+}
+
+// Mağaza politikaları: satıcının AKTİF ilanlarındaki gerçek alanlardan derlenir
+// (sahte veri yok). Aracı-platform/para-tutmaz uyarısı her zaman görünür.
+function StorePolicies({ listings, language }: { listings: Listing[]; language: "tr" | "en" }) {
+  const tr = (s: string) => translateCopy(s, language);
+  const returnDays = listings.map((l) => l.returnWindowDays).filter((d) => d > 0);
+  const minReturn = returnDays.length ? Math.min(...returnDays) : 0;
+  const maxReturn = returnDays.length ? Math.max(...returnDays) : 0;
+  const dueDays = listings.map((l) => l.commissionDueDays).filter((d) => d > 0);
+  const minDue = dueDays.length ? Math.min(...dueDays) : 0;
+  const maxDue = dueDays.length ? Math.max(...dueDays) : 0;
+  const deliveryNotes = Array.from(new Set(listings.map((l) => (l.deliveryNote || "").trim()).filter(Boolean))).slice(0, 4);
+  const contactLabels: Record<string, string> = { whatsapp: "WhatsApp", phone: tr("Telefon"), message: tr("Uygulama içi mesaj") };
+  const contacts = Array.from(new Set(listings.map((l) => l.contactMethod))).map((c) => contactLabels[c] ?? c);
+  const partnerRules = Array.from(new Set(listings.flatMap((l) => l.partnerRules || []).map((r) => r.trim()).filter(Boolean))).slice(0, 6);
+
+  const returnText = returnDays.length === 0 ? tr("İlana göre değişir") : minReturn === maxReturn ? `${minReturn} ${tr("gün")}` : `${minReturn}–${maxReturn} ${tr("gün")}`;
+  const dueText = dueDays.length === 0 ? tr("Satışta belirlenir") : minDue === maxDue ? `${minDue} ${tr("gün")}` : `${minDue}–${maxDue} ${tr("gün")}`;
+
+  return (
+    <View style={{ gap: 12 }}>
+      <PolicyCard icon="cash-remove" title={tr("Ödeme modeli")} tone="warn" body={tr("OrtakSat bir aracı platformdur — para tutmaz, ödeme almaz. Ödeme, teslimat ve iade tamamen alıcı ile satıcı arasında yapılır. Görüşmeyi uygulama içi mesajdan yürütmen önerilir.")} />
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+        <PolicyStat icon="backup-restore" title={tr("İade süresi")} value={returnText} />
+        <PolicyStat icon="cash-clock" title={tr("Komisyon vadesi")} value={dueText} />
+        <PolicyStat icon="phone-outline" title={tr("İletişim")} value={contacts.length ? contacts.join(" · ") : tr("Uygulama içi mesaj")} />
+      </View>
+      {deliveryNotes.length > 0 ? (
+        <PolicyCard icon="truck-outline" title={tr("Teslimat / kargo")} list={deliveryNotes} />
+      ) : (
+        <PolicyCard icon="truck-outline" title={tr("Teslimat / kargo")} body={tr("Teslimat koşulları ilana göre değişir; ilan sayfasındaki teslimat notuna bak veya satıcıya sor.")} />
+      )}
+      {partnerRules.length > 0 ? <PolicyCard icon="handshake-outline" title={tr("Ortaklık kuralları")} list={partnerRules} /> : null}
+      <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 17 }}>{tr("Bu politikalar satıcının aktif ilanlarından derlenmiştir. Kesin koşullar için ilgili ilanı incele.")}</Text>
+    </View>
+  );
+}
+
+function PolicyCard({ icon, title, body, list, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; body?: string; list?: string[]; tone?: "warn" }) {
+  const warn = tone === "warn";
+  return (
+    <View style={{ backgroundColor: warn ? colors.warningSoft : colors.surface, borderColor: warn ? colors.warning : colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 18 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <MaterialCommunityIcons name={icon} size={19} color={warn ? colors.warning : colors.primaryDark} />
+        <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{title}</Text>
+      </View>
+      {body ? <Text style={{ color: warn ? colors.warning : colors.muted, fontSize: 13.5, fontWeight: "500", lineHeight: 20 }}>{body}</Text> : null}
+      {list ? list.map((item, i) => (
+        <View key={i} style={{ flexDirection: "row", gap: 8 }}>
+          <MaterialCommunityIcons name="check-circle" size={15} color={colors.success} style={{ marginTop: 3 }} />
+          <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "500", lineHeight: 20 }}>{item}</Text>
+        </View>
+      )) : null}
+    </View>
+  );
+}
+
+function PolicyStat({ icon, title, value }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; value: string }) {
+  return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 150, flexGrow: 1, gap: 6, padding: 14 }}>
+      <MaterialCommunityIcons name={icon} size={18} color={colors.primary} />
+      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{title}</Text>
+      <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{value}</Text>
     </View>
   );
 }
