@@ -8,7 +8,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getCategoryIcon, getCategoryShortLabel, inferListingSubcategory } from "@/lib/categories";
 import { useCompare } from "@/lib/compare";
 import { useFavoriteFlag } from "@/lib/favorites-cache";
-import { commissionAmount, moneyIn } from "@/lib/format";
+import { commissionAmount, groupThousands, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { compactNumber, REFERENCE_NOW } from "@/lib/locale";
 import { displayText } from "@/lib/text";
@@ -35,16 +35,33 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
   const { isFav, toggle: toggleFav } = useFavoriteFlag(listing.id);
   const imageUri = listing.imageUrl ?? listing.image;
   const imageAlt = listing.imageAlt ?? `${displayText(listing.title)} ${translateCopy("ilan görseli", language)}`;
-  // Emlak/kategori kartında en önemli 3 yapısal özellik rozeti (oda · m² · ilan tipi).
+  // Karttaki en önemli 3 yapısal özellik rozeti — kategoriye göre (Sahibinden gibi):
+  // vasıta → yıl · km · yakıt; emlak → oda · m² · ilan tipi; genel → marka · model · durum.
   const attrSpecs = (() => {
     const a = listing.attributes;
     if (!a) return [] as string[];
     const out: string[] = [];
+    const num = (v: unknown) => (typeof v === "number" ? v : Number(String(v).replace(/[^\d]/g, "")));
+    // Vasıta
+    if (a.year || a.km != null) {
+      if (a.year) out.push(String(a.year));
+      if (a.km != null && String(a.km).trim() !== "") out.push(`${groupThousands(num(a.km))} km`);
+      if (a.fuel) out.push(translateCopy(String(a.fuel), language));
+      if (out.length < 3 && a.gear) out.push(translateCopy(String(a.gear), language));
+      if (out.length) return out.slice(0, 3);
+    }
+    // Emlak
     if (a.rooms) out.push(String(a.rooms));
     const m2 = a.grossM2 ?? a.m2 ?? a.totalGrossM2 ?? a.netM2 ?? a.closedM2;
-    if (m2) out.push(`${m2} m²`);
-    if (a.listingType) out.push(String(a.listingType));
+    if (m2) out.push(`${groupThousands(num(m2))} m²`);
+    if (a.listingType) out.push(translateCopy(String(a.listingType), language));
     if (out.length < 3 && a.buildingAge) out.push(`${a.buildingAge} ${translateCopy("yaş", language)}`);
+    if (out.length) return out.slice(0, 3);
+    // Genel
+    if (a.brand) out.push(String(a.brand));
+    if (a.model && out.length < 2) out.push(String(a.model));
+    const cond = a.condition ?? a.durum;
+    if (cond && out.length < 3) out.push(translateCopy(String(cond), language));
     return out.slice(0, 3);
   })();
   // İlan etiketleri (Acil / Fırsat / Yatırımlık…) — renkli vurgu rozetleri (spec 72).

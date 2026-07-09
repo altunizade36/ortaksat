@@ -291,8 +291,10 @@ export default function ExploreScreen() {
       if (minCommission > 0 && commissionAmount(listing) < minCommission) return false;
       if (priceRange) {
         const [mn, mx] = priceRange.split("-");
-        const min = Number(mn) || 0;
-        const max = mx ? Number(mx) : Infinity;
+        let min = Number(mn) || 0;
+        let max = mx ? Number(mx) : Infinity;
+        // URL/derin-link ile ters aralık (min>max) gelebilir → sonuç boş kalmasın, takas et.
+        if (Number.isFinite(max) && min > max) { const t = min; min = max; max = t; }
         if (listing.price < min || listing.price > max) return false;
       }
       if (stockFilter === "in" && listing.stockCount <= 0) return false;
@@ -303,9 +305,10 @@ export default function ExploreScreen() {
       if (filter === "new" && !isNewListing(listing.createdAt)) return false;
       // Kategori-özel filtre: seçili kategori + facet (attribute) + sayısal aralık.
       if (catLabelSet) {
+        // Kesin (tam) eşleşme: alt-metin eşleşmesi kategoriler arası sızıntı yapıyordu
+        // (ör. Vasıta alt "Yat" ⊂ "Yatak" → mobilya, araç filtresine düşüyordu).
         const nc = listing.category.toLocaleLowerCase("tr-TR").trim();
-        const catMatch = catLabelSet.has(nc) || [...catLabelSet].some((l) => nc === l || nc.includes(l) || l.includes(nc));
-        if (!catMatch) return false;
+        if (!catLabelSet.has(nc)) return false;
       }
       for (const key of Object.keys(attrFilters)) {
         const want = attrFilters[key];
@@ -318,8 +321,12 @@ export default function ExploreScreen() {
         const mn = r?.min?.trim() ? Number(r.min) : null;
         const mx = r?.max?.trim() ? Number(r.max) : null;
         if (mn === null && mx === null) continue;
-        const val = Number(listing.attributes?.[nf.key] ?? (nf.key === "grossM2" ? listing.attributes?.m2 : 0) ?? 0) || 0;
-        if (!val) return false;
+        // Özellik değeri yoksa aralık filtresi bu ilanı eler; ama değer=0 (ör. km=0
+        // sıfır araç, yeni m²) geçerlidir — "yok" ile "0"ı karıştırma.
+        const raw = listing.attributes?.[nf.key] ?? (nf.key === "grossM2" ? listing.attributes?.m2 : undefined);
+        if (raw === undefined || raw === null || raw === "") return false;
+        const val = Number(raw);
+        if (!Number.isFinite(val)) return false;
         if (mn !== null && val < mn) return false;
         if (mx !== null && val > mx) return false;
       }

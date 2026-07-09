@@ -25,14 +25,15 @@ function descendantLabels(node: CategoryNode): string[] {
   return out;
 }
 
-function findTrail(nodes: CategoryNode[], slug: string, trail: CategoryNode[] = []): CategoryNode[] | undefined {
-  for (const n of nodes) {
-    const next = [...trail, n];
-    if (n.slug === slug || n.key === slug) return next;
-    if (n.children) {
-      const found = findTrail(n.children, slug, next);
-      if (found) return found;
-    }
+// Genişlik-öncelikli (en sığ eşleşme): sl(label) slug çakışmalarında üst kategori kazanır.
+function findTrail(nodes: CategoryNode[], slug: string): CategoryNode[] | undefined {
+  let frontier = nodes.map((n) => ({ node: n, trail: [n] as CategoryNode[] }));
+  while (frontier.length) {
+    const hit = frontier.find((f) => f.node.slug === slug || f.node.key === slug);
+    if (hit) return hit.trail;
+    const next: Array<{ node: CategoryNode; trail: CategoryNode[] }> = [];
+    for (const f of frontier) for (const c of f.node.children ?? []) next.push({ node: c, trail: [...f.trail, c] });
+    frontier = next;
   }
   return undefined;
 }

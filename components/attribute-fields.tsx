@@ -3,7 +3,7 @@ import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
-import type { FieldDef } from "@/lib/category-tree";
+import { modelsForSchema, type FieldDef } from "@/lib/category-tree";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 
 type AttrValue = string | boolean | string[];
@@ -13,13 +13,20 @@ type AttrValue = string | boolean | string[];
  * biçimde render eder. Hem ilan düzenleme hem de tekrar-kullanım için tek kaynak.
  * multiselect → çip; select → açılır liste; bool → anahtar; number/text → giriş.
  */
-export function AttributeFields({ fields, values, onChange }: { fields: FieldDef[]; values: Record<string, AttrValue>; onChange: (key: string, v: AttrValue) => void }) {
+export function AttributeFields({ fields, values, onChange, schemaKey }: { fields: FieldDef[]; values: Record<string, AttrValue>; onChange: (key: string, v: AttrValue) => void; schemaKey?: string }) {
   const editable = fields.filter((f) => f.key !== "title" && f.key !== "description" && f.key !== "price");
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-      {editable.map((f) => (
-        <AField key={f.key} field={f} value={values[f.key]} onChange={(v) => onChange(f.key, v)} />
-      ))}
+      {editable.map((f) => {
+        // Marka→model bağımlı seçici (create ile parite): markanın bilinen modelleri
+        // varsa model alanı serbest metin yerine açılır liste olur.
+        let field = f;
+        if (f.key === "model") {
+          const models = modelsForSchema(schemaKey ?? "", String(values.brand ?? ""));
+          if (models.length) field = { ...f, type: "select", options: [...models, "Diğer"] };
+        }
+        return <AField key={f.key} field={field} value={values[f.key]} onChange={(v) => onChange(f.key, v)} />;
+      })}
     </View>
   );
 }
@@ -59,7 +66,8 @@ function AField({ field, value, onChange }: { field: FieldDef; value: AttrValue 
           keyboardType={field.type === "number" ? "numeric" : "default"}
           placeholder={field.placeholder}
           placeholderTextColor={colors.subtle}
-          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12, paddingVertical: 8 }}
+          multiline={field.type === "textarea"}
+          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: field.type === "textarea" ? 92 : 46, paddingHorizontal: 12, paddingVertical: field.type === "textarea" ? 10 : 8, textAlignVertical: field.type === "textarea" ? "top" : "center" }}
         />
       )}
     </View>

@@ -847,7 +847,7 @@ export default function ListingDetailScreen() {
               <Bullet key={line} icon="check-circle-outline" text={line} tone="info" />
             ))}
           </Accordion>
-          <Accordion title={translateCopy("Ürün özellikleri", language)} icon="format-list-bulleted">
+          <Accordion title={translateCopy("Ürün özellikleri", language)} icon="format-list-bulleted" defaultOpen>
             <SpecRow label="Kategori" value={currentListing.category} />
             {currentListing.attributes?.listingType ? <SpecRow label="İlan tipi" value={String(currentListing.attributes.listingType)} /> : null}
             <SpecRow label="Konum" value={currentListing.location} />

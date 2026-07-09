@@ -1373,14 +1373,13 @@ export function setHiddenCategories(keys: string[]): void {
 export function isCategoryHidden(key: string): boolean {
   return _hiddenCats.has(key);
 }
-// Gizli düğümleri (her seviyede) çıkararak görünür ağacı döndürür.
+// Gizli ÜST-SEVİYE kategorileri çıkararak görünür ağacı döndürür.
+// Yalnız top-level filtrelenir: yaprak key'leri (sl(label)) tekrar ettiği için
+// (ör. "Diğer"/"Diğer Model"/"Diğer Kuş") derine inen filtre, üst "Diğer"i gizleyince
+// tüm ağaçtaki "Diğer" seçeneklerini de siliyordu (marka/model picker'ları bozuluyordu).
 export function visibleCategoryTree(): CategoryNode[] {
   if (_hiddenCats.size === 0) return categoryTree;
-  const prune = (nodes: CategoryNode[]): CategoryNode[] =>
-    nodes
-      .filter((n) => !_hiddenCats.has(n.key))
-      .map((n) => (n.children ? { ...n, children: prune(n.children) } : n));
-  return prune(categoryTree);
+  return categoryTree.filter((n) => !_hiddenCats.has(n.key));
 }
 
 export function topCategories(): CategoryNode[] {
@@ -1463,6 +1462,19 @@ export const FIELD_LABELS: Record<string, { label: string; suffix?: string }> = 
   return map;
 })();
 
+// Deterministik binlik ayıracı (SSG/Node ve tarayıcıda aynı → hydration güvenli).
+// lib/format'a bağımlılık yaratmamak için bu veri dosyasında yerel kopya.
+function groupThousands(value: number): string {
+  const rounded = Math.round(Math.abs(Number.isFinite(value) ? value : 0));
+  const digits = String(rounded);
+  let out = "";
+  for (let i = 0; i < digits.length; i += 1) {
+    if (i > 0 && (digits.length - i) % 3 === 0) out += ".";
+    out += digits[i];
+  }
+  return (value < 0 ? "-" : "") + out;
+}
+
 /** attributes jsonb'sini özellik tablosu için [{label, value}] listesine çevirir. */
 export function describeAttributes(attributes?: Record<string, string | number | boolean | string[]> | null): Array<{ label: string; value: string }> {
   if (!attributes) return [];
@@ -1471,13 +1483,20 @@ export function describeAttributes(attributes?: Record<string, string | number |
     if (key.startsWith("_")) continue; // _leaf/_root iç kullanım
     if (val === undefined || val === null || val === "") continue;
     if (Array.isArray(val) && val.length === 0) continue;
-    if (["title", "description", "price"].includes(key)) continue;
+    // listingType (Satılık/Kiralık) detay sayfasında bağlam satırında ayrıca gösterilir; mükerrer olmasın.
+    if (["title", "description", "price", "listingType"].includes(key)) continue;
     const def = FIELD_LABELS[key];
+    const suffix = def?.suffix ? " " + def.suffix : "";
+    // Sayısal değerlerde binlik ayıracı (km/m²/₺): "85000 km" değil "85.000 km".
+    // Yıl 4 haneli kalmalı ("2018", "2.018" değil).
+    const isNumericVal = typeof val === "number" || (typeof val === "string" && /^\d+$/.test(val.trim()));
     const value = Array.isArray(val)
       ? val.join(", ")
       : typeof val === "boolean"
         ? (val ? "Evet" : "Hayır")
-        : `${val}${def?.suffix ? " " + def.suffix : ""}`;
+        : isNumericVal && key !== "year" && Number(val) >= 1000
+          ? `${groupThousands(Number(val))}${suffix}`
+          : `${val}${suffix}`;
     rows.push({ label: def?.label ?? key, value });
   }
   return rows;
@@ -1511,6 +1530,23 @@ export const ALL_MODELS_BY_BRAND: Record<string, string[]> = (() => {
 })();
 const _ALL_MODELS = ALL_MODELS_BY_BRAND;
 const _LISTING_TYPES = ["Satılık", "Kiralık", "Devren", "Günlük", "Kat Karşılığı"];
+
+// Marka→model kaynağını ŞEMAYA göre seçer. Böylece bir otomobil ilanında "BMW"
+// seçilince motosiklet modelleri (ALL_MODELS_BY_BRAND union'ından) sızmaz.
+export const MODELS_BY_SCHEMA: Record<string, Record<string, string[]>> = {
+  otomobil: MODELS_BY_BRAND,
+  motosiklet: MOTO_MODELS,
+  televizyon: TV_MODELS,
+  bilgisayar: COMPUTER_MODELS,
+  ticari: COMMERCIAL_MODELS
+};
+
+/** Şema-bağlamlı model listesi. Bilinmeyen şema/marka → boş (model serbest metin kalır). */
+export function modelsForSchema(schemaKey: string, brand: string): string[] {
+  const map = MODELS_BY_SCHEMA[schemaKey];
+  const b = (brand ?? "").trim();
+  return (map && b && map[b]) || [];
+}
 
 export function deriveFieldsFromPath(path: CategoryNode[], schema: FormSchema): Record<string, string> {
   const out: Record<string, string> = {};

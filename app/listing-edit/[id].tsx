@@ -122,6 +122,10 @@ function ListingEditForm({ listing }: { listing: Listing }) {
 
   async function submit() {
     const parsedPrice = parseTrPrice(price); // "1.500.000" gibi TR biçimini doğru okur (Number NaN veriyordu)
+    // Fiyat, şemada price alanı yoksa (İş İlanı) veya opsiyonelse (hayvan/hizmet/ders
+    // "Teklif al") zorunlu değildir — create ile parite. Aksi hâlde edit bu ilanları kilitliyordu.
+    const priceSchemaField = attrSchema?.fields.find((f) => f.key === "price") ?? attrSchema?.fields.find((f) => f.type === "number" && f.suffix === "₺");
+    const priceRequired = priceSchemaField ? !!priceSchemaField.required : false;
     const parsedCommission = Number(commissionValue);
     const parsedStock = Number(stockCount);
     const parsedMinRating = Number(minPartnerRating);
@@ -142,7 +146,8 @@ function ListingEditForm({ listing }: { listing: Listing }) {
         if (raw === undefined || raw === null || (typeof raw === "string" && !raw.trim())) continue;
         if (Array.isArray(raw)) { if (raw.length) builtAttrs[f.key] = raw; continue; }
         if (typeof raw === "boolean") { if (raw) builtAttrs[f.key] = true; continue; }
-        builtAttrs[f.key] = f.type === "number" ? Number(raw) : String(raw);
+        // TR biçimli sayı ("150.000") — Number() binlik ayıracını bozardı (km/m²).
+        builtAttrs[f.key] = f.type === "number" ? parseTrPrice(String(raw)) : String(raw);
       }
     } else {
       for (const [k, v] of Object.entries(attrValues)) if (v !== "" && !(Array.isArray(v) && !v.length)) builtAttrs[k] = v;
@@ -166,7 +171,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       !title.trim() ||
       !description.trim() ||
       !Number.isFinite(parsedPrice) ||
-      parsedPrice <= 0 ||
+      (priceRequired ? parsedPrice <= 0 : parsedPrice < 0) ||
       !Number.isFinite(parsedCommission) ||
       parsedCommission < 0 ||
       !Number.isFinite(parsedStock) ||
@@ -322,7 +327,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           <Card>
             <SectionTitle title={`Özellikler — ${attrSchema.title}`} action={translateCopy("Emlak / kategori detayları", language)} />
             <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Bu kategorinin yapısal özellikleri (m², oda, imar, tapu, donatılar…). Doldurdukça ilan detayında ve filtrelerde görünür.", language)}</Text>
-            <AttributeFields fields={attrSchema.fields} values={attrValues} onChange={setAttr} />
+            <AttributeFields fields={attrSchema.fields} values={attrValues} onChange={setAttr} schemaKey={attrSchema.key} />
           </Card>
         ) : null}
 

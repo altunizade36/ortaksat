@@ -11,7 +11,7 @@ import { colors } from "@/components/colors";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { ALL_MODELS_BY_BRAND, deriveFieldsFromPath, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
+import { modelsForSchema, deriveFieldsFromPath, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { CURRENCIES, moneyIn, type CurrencyCode } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { formatLocation, getProvince } from "@/lib/locations";
@@ -289,7 +289,9 @@ export function DesktopCreateFlow() {
       schema.fields.find((f) => f.type === "number" && f.suffix === "₺");
     const priceRaw = priceField ? values[priceField.key] : values.price;
     const priceFilled = priceRaw != null && String(priceRaw).trim().length > 0;
-    const priceRequired = priceField ? !!priceField.required : true;
+    // Şemada fiyat alanı YOKSA fiyat opsiyoneldir (ör. İş İlanları). Aksi hâlde
+    // fiyatsız kategori hiç yayınlanamıyordu (validateListing daima fiyat ister).
+    const priceRequired = priceField ? !!priceField.required : false;
 
     // Merkezi doğrulama (başlık/açıklama/fiyat). Fiyat TR formatıyla ("1.500.000") ayrıştırılır.
     const v = validateListing({ title, description, price: parseTrPrice(String(priceRaw ?? "")) });
@@ -351,7 +353,9 @@ export function DesktopCreateFlow() {
         if (raw === undefined || raw === null || (typeof raw === "string" && !raw.trim())) continue;
         if (Array.isArray(raw)) { if (raw.length) attributes[f.key] = raw; continue; }
         if (typeof raw === "boolean") { if (raw) attributes[f.key] = true; continue; }
-        attributes[f.key] = f.type === "number" ? Number(raw) : String(raw);
+        // Sayısal alanlar TR biçimiyle girilir ("150.000"); parseTrPrice binlik
+        // ayıracını doğru çözer. Number("150.000") → 150 (km/m² veri bozulması).
+        attributes[f.key] = f.type === "number" ? parseTrPrice(String(raw)) : String(raw);
       }
       // Kategori bağlamı da sakla (alt-kategori filtresi, rozetler ve DÜZENLEME
       // ekranının form şemasını çözebilmesi için).
@@ -517,9 +521,10 @@ export function DesktopCreateFlow() {
               {schema.fields.map((f) => {
                 // Model alanı: marka seçiliyse ve markanın modelleri biliniyorsa bağımlı select.
                 if (f.key === "model") {
-                  const brand = String(values.brand ?? "").trim();
-                  const models = ALL_MODELS_BY_BRAND[brand];
-                  if (models && models.length) {
+                  // Şema-bağlamlı model listesi: otomobilde araba modelleri, motosiklette
+                  // moto modelleri (union sızıntısı yok).
+                  const models = modelsForSchema(schema.key, String(values.brand ?? ""));
+                  if (models.length) {
                     const dep: FieldDef = { ...f, type: "select", options: [...models, "Diğer"] };
                     return <DField key={f.key} field={dep} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
                   }

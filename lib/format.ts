@@ -10,7 +10,7 @@ const formatter = new Intl.NumberFormat(deviceLocale, {
 
 // Deterministic thousands grouping with "." — identical on Node (static export)
 // and the browser, so prices don't trigger a hydration mismatch (React #418).
-function groupThousands(value: number) {
+export function groupThousands(value: number) {
   const rounded = Math.round(Math.abs(Number.isFinite(value) ? value : 0));
   const digits = String(rounded);
   let out = "";

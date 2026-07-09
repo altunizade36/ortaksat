@@ -26,15 +26,17 @@ function descendantLabels(node: CategoryNode): string[] {
   return out;
 }
 
-// Kök→hedef ata zinciri: breadcrumb'da her üst kategoriye tıklanabilir çıkış için.
-function findTrail(nodes: CategoryNode[], slug: string, trail: CategoryNode[] = []): CategoryNode[] | undefined {
-  for (const n of nodes) {
-    const next = [...trail, n];
-    if (n.slug === slug || n.key === slug) return next;
-    if (n.children) {
-      const found = findTrail(n.children, slug, next);
-      if (found) return found;
-    }
+// Kök→hedef ata zinciri (breadcrumb için). Genişlik-öncelikli: aynı slug birden çok
+// düğümde olabilir (sl(label) çakışması) → en SIĞ eşleşme seçilir; böylece üst-seviye
+// "Diğer" gibi kategoriler, daha derindeki bir marka yaprağının ("Diğer") gölgesinde kalmaz.
+function findTrail(nodes: CategoryNode[], slug: string): CategoryNode[] | undefined {
+  let frontier = nodes.map((n) => ({ node: n, trail: [n] as CategoryNode[] }));
+  while (frontier.length) {
+    const hit = frontier.find((f) => f.node.slug === slug || f.node.key === slug);
+    if (hit) return hit.trail;
+    const next: Array<{ node: CategoryNode; trail: CategoryNode[] }> = [];
+    for (const f of frontier) for (const c of f.node.children ?? []) next.push({ node: c, trail: [...f.trail, c] });
+    frontier = next;
   }
   return undefined;
 }
@@ -134,12 +136,10 @@ export default function CategoryLandingScreen() {
     const labels = new Set(descendantLabels(node));
     // Esnek eşleşme: ilan kategorisi (ör. "Konut - Satılık") ağaç yaprak/düğüm
     // etiketleriyle birebir tutmayabilir; normalize edip "içerir/içerilir" bakılır.
-    const nlabels = [...labels].map((s) => s.toLocaleLowerCase("tr-TR").trim()).filter((s) => s.length > 2);
-    const matchCat = (cat: string) => {
-      if (labels.has(cat)) return true;
-      const nc = cat.toLocaleLowerCase("tr-TR").trim();
-      return nlabels.some((nl) => nc === nl || nc.includes(nl) || nl.includes(nc));
-    };
+    const nlabels = new Set([...labels].map((s) => s.toLocaleLowerCase("tr-TR").trim()).filter((s) => s.length > 2));
+    // Kesin (tam) eşleşme — alt-metin eşleşmesi kategoriler arası sızıntı yapıyordu
+    // (ör. "Yat" ⊂ "Yatak"). İlan kategorisi ağaç etiketiyle birebir olmalı.
+    const matchCat = (cat: string) => labels.has(cat) || nlabels.has(cat.toLocaleLowerCase("tr-TR").trim());
     const activeAttrKeys = Object.keys(attrFilters);
     const out = listings.filter((l) => {
       if (l.status !== "active" || !matchCat(l.category)) return false;
@@ -159,8 +159,11 @@ export default function CategoryLandingScreen() {
         const mn = r?.min?.trim() ? Number(r.min) : null;
         const mx = r?.max?.trim() ? Number(r.max) : null;
         if (mn === null && mx === null) continue;
-        const val = Number(l.attributes?.[nf.key] ?? (nf.key === "grossM2" ? l.attributes?.m2 : 0) ?? 0) || 0;
-        if (!val) return false;
+        // Değer yoksa eler; ama 0 (sıfır km/yeni m²) geçerli — "yok" ≠ "0".
+        const raw = l.attributes?.[nf.key] ?? (nf.key === "grossM2" ? l.attributes?.m2 : undefined);
+        if (raw === undefined || raw === null || raw === "") return false;
+        const val = Number(raw);
+        if (!Number.isFinite(val)) return false;
         if (mn !== null && val < mn) return false;
         if (mx !== null && val > mx) return false;
       }
