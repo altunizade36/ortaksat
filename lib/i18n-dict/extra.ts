@@ -189,5 +189,13 @@ export const extraDict: Record<string, string> = {
   "Özellikler & Donanım": "Features & Equipment",
   "İlan detayları": "Listing info",
   "Marka ara…": "Search brand…",
-  "Marka bulunamadı": "No brands found"
+  "Marka bulunamadı": "No brands found",
+  // Ortaklık yönetimi (satıcı ortağı sonlandır) + ortak satış bildirimi
+  "Sonlandır": "End",
+  "Engelle": "Block",
+  "Ortaklığı sonlandır": "End partnership",
+  "ile ortaklığı sonlandırmak istiyor musun? Paylaşım linki artık lead getirmez. Kötüye kullanım varsa Engelle'yi seç.": "— do you want to end this partnership? Their share link will stop bringing leads. Choose Block for abuse.",
+  "borç": "owed",
+  "Sattım — satıcıya bildir": "I sold it — notify seller",
+  "Satışını satıcı sisteme ekleyince komisyonun başlar. Referans linkinle satış yaptıysan buradan satıcıya bildir.": "Your commission starts once the seller records your sale. If you sold via your referral link, notify the seller here."
 };

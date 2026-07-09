@@ -202,6 +202,14 @@ function PartnerScreenInner() {
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
   }
 
+  // Satışı ortak bildirir: satışları yalnız satıcı sisteme ekler; ortak, referansıyla
+  // yaptığı satışı satıcıya bildirip komisyonun başlatılmasını ister (güven döngüsü).
+  function claimSale(listingId: string, sellerId: string, title: string) {
+    const seller = findUser(sellerId);
+    const conversation = startConversation(listingId, sellerId, `Merhaba${seller ? ` ${seller.name}` : ""}, "${title}" ürününü referans linkimle sattım. Satışı sisteme ekleyip komisyonumu başlatır mısın? Alıcı ve tutar bilgisini paylaşabilirim.`);
+    if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
+  }
+
   if (isWideWeb) {
     const oppCategoryOptions = Array.from(new Set(allOpportunities.map((l) => l.category))).sort((a, b) => a.localeCompare(b, "tr"));
     const oppCityOptions = Array.from(new Set(allOpportunities.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr"));
@@ -654,6 +662,13 @@ function PartnerScreenInner() {
                 <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => messageSeller(listing.id, listing.ownerId, listing.title)}>
                   Satıcıya mesaj yaz
                 </PrimaryButton>
+                {/* Satışı ortak bildirir → satıcı sisteme ekler (satışları yalnız satıcı ekler). */}
+                <PrimaryButton tone="soft" icon="cash-check" onPress={() => claimSale(listing.id, listing.ownerId, listing.title)}>
+                  Sattım — satıcıya bildir
+                </PrimaryButton>
+                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
+                  {translateCopy("Satışını satıcı sisteme ekleyince komisyonun başlar. Referans linkinle satış yaptıysan buradan satıcıya bildir.", language)}
+                </Text>
               </>
             ) : partnership.status === "rejected" ? (
               <View style={{ gap: 8 }}>

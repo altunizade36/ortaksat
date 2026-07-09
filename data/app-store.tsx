@@ -274,6 +274,7 @@ type AppStore = {
   joinListing: (listingId: string, input?: Partial<PartnershipApplicationInput>) => Partnership | undefined;
   approvePartnership: (partnershipId: string) => void;
   rejectPartnership: (partnershipId: string, reason?: string) => void;
+  endPartnership: (partnershipId: string, mode?: "blocked" | "cancelled") => void;
   toggleFavorite: (listingId: string) => void;
   followedSellerIds: string[];
   isFollowing: (sellerId: string) => boolean;
@@ -1749,6 +1750,22 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (liveUser && updatedPartnership && partnership) persistCritical(updatePartnershipStatus(updatedPartnership), () => {
           setPartnerships((items) => items.map((item) => (item.id === partnershipId ? partnership : item)));
         }, "Başvuru reddi kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
+      },
+      // Aktif ortaklığı satıcı sonlandırır/kapatır (eski hâlde bir kez onaylanan ortak
+      // — sızan davet linkiyle gelen dahil — kalıcıydı). "cancelled": normal sonlandırma,
+      // "blocked": kötüye kullanım engeli. Paylaşım linki artık lead getirmez.
+      endPartnership(partnershipId, mode = "cancelled") {
+        const partnership = partnerships.find((item) => item.id === partnershipId);
+        const listing = partnership ? listings.find((item) => item.id === partnership.listingId) : undefined;
+        if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff) || partnership.status !== "active") return;
+        const updated: Partnership = { ...partnership, status: mode };
+        setPartnerships((items) => items.map((p) => (p.id === partnershipId ? updated : p)));
+        setListings((items) => items.map((l) => (l.id === partnership.listingId ? { ...l, partnerCount: Math.max(0, l.partnerCount - 1) } : l)));
+        notify(partnership.partnerId, "application", mode === "blocked" ? "Ortaklık kapatıldı" : "Ortaklık sonlandırıldı", `${listing.title} için ortaklığın satıcı tarafından ${mode === "blocked" ? "kapatıldı" : "sonlandırıldı"}. Paylaşım linkin artık aktif değil.`, { listingId: listing.id, partnershipId: partnership.id });
+        if (liveUser) persistCritical(updatePartnershipStatus(updated), () => {
+          setPartnerships((items) => items.map((p) => (p.id === partnershipId ? partnership : p)));
+          setListings((items) => items.map((l) => (l.id === partnership.listingId ? { ...l, partnerCount: l.partnerCount + 1 } : l)));
+        }, "Ortaklık güncellenemedi. Bağlantını kontrol edip tekrar dene.");
       },
       toggleFavorite(listingId) {
         if (!isAuthenticated) { setAuthError("Favorilere eklemek için giriş yapmalısın."); return; }

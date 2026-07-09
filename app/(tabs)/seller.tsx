@@ -66,6 +66,7 @@ function SellerScreenInner() {
   const router = useRouter();
   const {
     approvePartnership,
+    endPartnership,
     canReviewSale,
     createSaleReview,
     createSaleFromLead,
@@ -230,6 +231,18 @@ function SellerScreenInner() {
     if (!receiverId) return;
     const conversation = startConversation(listingId, receiverId, body);
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
+  }
+
+  function confirmEndPartnership(partnershipId: string, partnerName: string) {
+    Alert.alert(
+      translateCopy("Ortaklığı sonlandır", language),
+      `${partnerName} ${translateCopy("ile ortaklığı sonlandırmak istiyor musun? Paylaşım linki artık lead getirmez. Kötüye kullanım varsa Engelle'yi seç.", language)}`,
+      [
+        { text: t("cancel"), style: "cancel" },
+        { text: translateCopy("Sonlandır", language), onPress: () => endPartnership(partnershipId, "cancelled") },
+        { text: translateCopy("Engelle", language), style: "destructive", onPress: () => endPartnership(partnershipId, "blocked") }
+      ]
+    );
   }
 
   function toggleSelect(id: string) {
@@ -672,19 +685,48 @@ function SellerScreenInner() {
                   <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Referans linkiyle gelen alıcı site dışında (WhatsApp/elden) satın aldıysa, satışı ilgili ortağa ekle; komisyonu başlasın.", language)}</Text>
                   {activeList.map((p) => {
                     const partner = findUser(p.partnerId);
+                    // Bu ortağın bu ilandaki performansı + satıcının ona borcu.
+                    const pLeads = listingLeads.filter((l) => l.partnershipId === p.id).length;
+                    const pSales = listingSales.filter((s) => s.partnershipId === p.id);
+                    const pOwed = pSales.filter(saleIsOwed).reduce((sum, s) => sum + s.commissionAmount, 0);
+                    const partnerName = partner?.name ?? translateCopy("Ortak", language);
                     return (
-                      <View key={p.id} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 10, padding: 10 }}>
-                        <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{partner?.name ?? translateCopy("Ortak", language)}</Text>
-                          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>★ {partner?.rating ?? 0} · {clickCounts[p.id] ?? 0} {translateCopy("tıklama", language)}</Text>
+                      <View key={p.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 8, padding: 10 }}>
+                        <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                          <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                            <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{partnerName}</Text>
+                            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>★ {partner?.rating ?? 0} · {clickCounts[p.id] ?? 0} {translateCopy("tıklama", language)} · {pLeads} {translateCopy("talep", language)} · {pSales.length} {translateCopy("satış", language)}</Text>
+                          </View>
+                          {pOwed > 0 ? (
+                            <View style={{ alignItems: "flex-end" }}>
+                              <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "900" }}>{moneyIn(pOwed, listing.currency)}</Text>
+                              <Text style={{ color: colors.muted, fontSize: 10, fontWeight: "700" }}>{translateCopy("borç", language)}</Text>
+                            </View>
+                          ) : null}
                         </View>
-                        <Pressable
-                          onPress={() => canSell ? setSaleTarget({ partnershipId: p.id, partnerName: partner?.name ?? translateCopy("Ortak", language), price: listing.price, currency: listing.currency, commissionType: listing.commissionType, commissionValue: listing.commissionValue }) : undefined}
-                          style={({ pressed }) => ({ alignItems: "center", backgroundColor: canSell ? colors.primary : colors.line, borderRadius: 8, flexDirection: "row", gap: 5, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
-                        >
-                          <MaterialCommunityIcons name="cash-plus" size={15} color="#FFFFFF" />
-                          <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(canSell ? "Satış ekle" : (listing.stockCount <= 0 ? "Stok yok" : "İlan pasif"), language)}</Text>
-                        </Pressable>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                          <Pressable
+                            onPress={() => canSell ? setSaleTarget({ partnershipId: p.id, partnerName, price: listing.price, currency: listing.currency, commissionType: listing.commissionType, commissionValue: listing.commissionValue }) : undefined}
+                            style={({ pressed }) => ({ alignItems: "center", backgroundColor: canSell ? colors.primary : colors.line, borderRadius: 8, flexDirection: "row", flexGrow: 1, gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
+                          >
+                            <MaterialCommunityIcons name="cash-plus" size={15} color="#FFFFFF" />
+                            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(canSell ? "Satış ekle" : (listing.stockCount <= 0 ? "Stok yok" : "İlan pasif"), language)}</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => openConversation(listing.id, p.partnerId, `${displayText(listing.title)} ortaklığın hakkında konuşalım.`)}
+                            style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
+                          >
+                            <MaterialCommunityIcons name="message-text-outline" size={15} color={colors.primaryDark} />
+                            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Mesaj", language)}</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => confirmEndPartnership(p.id, partnerName)}
+                            style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
+                          >
+                            <MaterialCommunityIcons name="account-off-outline" size={15} color={colors.muted} />
+                            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "900" }}>{translateCopy("Sonlandır", language)}</Text>
+                          </Pressable>
+                        </View>
                       </View>
                     );
                   })}
