@@ -72,8 +72,8 @@ export default function ExploreScreen() {
   const [stockFilter, setStockFilter] = useState("");
   // Kategori-özel filtre: üst kategori seç → şemasından facet (Yakıt/Isıtma…) +
   // sayısal aralık (m²/km/yıl) filtreleri gelir. /kategori/[slug] ile aynı motor.
-  const [catKey, setCatKey] = useState("");
-  const [subKey, setSubKey] = useState("");
+  // Çok seviyeli kategori yolu (Emlak > Konut > Satılık > Daire …), node key dizisi.
+  const [catPath, setCatPath] = useState<string[]>([]);
   const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
   const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>({});
   const [statusOpen, setStatusOpen] = useState(false);
@@ -169,11 +169,21 @@ export default function ExploreScreen() {
   const provinceName = useMemo(() => (provinceId != null ? getProvince(provinceId)?.name : undefined), [provinceId]);
   const districtName = useMemo(() => (districtId != null ? getDistrict(districtId)?.name : undefined), [districtId]);
   // Seçili kategori düğümü + şeması + filtre alanları (facet/sayısal) + eşleşme etiketleri.
-  const topNode = useMemo(() => (catKey ? topCategories().find((n) => n.key === catKey) : undefined), [catKey]);
-  const subNodes = useMemo(() => (topNode?.children ?? []).filter((c) => (c.children?.length ?? 0) > 0 || Boolean(c.formKey)), [topNode]);
-  const subNode = useMemo(() => (topNode && subKey ? (topNode.children ?? []).find((c) => c.key === subKey) : undefined), [topNode, subKey]);
-  // Etkin kategori düğümü: alt kategori seçiliyse o, değilse üst kategori.
-  const catNode = subNode ?? topNode;
+  // catPath'i düğüm zincirine çöz (üstten aşağı). Etkin düğüm = en derin seçili.
+  const pathNodes = useMemo(() => {
+    const out: CategoryNode[] = [];
+    let level = topCategories();
+    for (const key of catPath) {
+      const found = level.find((n) => n.key === key);
+      if (!found) break;
+      out.push(found);
+      level = found.children ?? [];
+    }
+    return out;
+  }, [catPath]);
+  const catNode = pathNodes[pathNodes.length - 1];
+  // Mevcut seviyede inilebilecek alt düğümler (drill seçenekleri).
+  const drillOptions = catNode?.children ?? [];
   const catSchema = useMemo(() => (catNode ? getFormSchema(resolveFormKey([catNode])) : undefined), [catNode]);
   const catFacets = useMemo<FieldDef[]>(() => (catSchema ? catSchema.fields.filter((f) => {
     const n = f.options?.length ?? 0;
@@ -189,37 +199,37 @@ export default function ExploreScreen() {
     return EXPLORE_NUM_FILTERS.filter((f) => keys.has(f.key) && !seen.has(f.label) && (seen.add(f.label), true));
   }, [catSchema]);
   const catLabelSet = useMemo(() => (catNode ? new Set(collectDescendantLabels(catNode).map((s) => s.toLocaleLowerCase("tr-TR").trim()).filter((s) => s.length > 2)) : null), [catNode]);
-  const selectCat = (key: string) => { setCatKey((cur) => (cur === key ? "" : key)); setSubKey(""); setAttrFilters({}); setNumRange({}); };
-  const selectSub = (key: string) => { setSubKey((cur) => (cur === key ? "" : key)); setAttrFilters({}); setNumRange({}); };
+  // Üst kategori: seç/kaldır (tekrar basınca temizle). Alt seviyeye in / breadcrumb'a dön.
+  const selectTop = (key: string) => { setCatPath((cur) => (cur.length === 1 && cur[0] === key ? [] : [key])); setAttrFilters({}); setNumRange({}); };
+  const drillTo = (key: string) => { setCatPath((cur) => [...cur, key]); setAttrFilters({}); setNumRange({}); };
+  const crumbTo = (i: number) => { setCatPath((cur) => cur.slice(0, i + 1)); setAttrFilters({}); setNumRange({}); };
   const toggleAttr = (key: string, val: string) => setAttrFilters((s) => { const cur = s[key] ?? []; const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]; const copy = { ...s }; if (next.length) copy[key] = next; else delete copy[key]; return copy; });
   const setNum = (key: string, side: "min" | "max", v: string) => setNumRange((s) => ({ ...s, [key]: { min: s[key]?.min ?? "", max: s[key]?.max ?? "", [side]: v } }));
-  const clearCatFilter = () => { setCatKey(""); setSubKey(""); setAttrFilters({}); setNumRange({}); };
+  const clearCatFilter = () => { setCatPath([]); setAttrFilters({}); setNumRange({}); };
 
   // Kayıtlı arama: o anki filtre kümesini yakala + tıklanınca geri yükle.
   const currentFilters = (): SavedFilters => {
     const f: SavedFilters = {};
     if (priceRange) f.price = priceRange;
     if (minCommission) f.comm = minCommission;
-    if (catKey) f.cat = catKey;
-    if (subKey) f.sub = subKey;
+    if (catPath.length) f.cat = catPath.join(">");
     if (city) f.city = city;
     if (statusOpen) f.open = true;
     if (stockFilter) f.stock = stockFilter;
     if (sortMode && sortMode !== "recommended") f.sort = sortMode;
     return f;
   };
-  const hasSaveableFilter = Boolean(priceRange) || minCommission > 0 || Boolean(catKey) || Boolean(city) || statusOpen || Boolean(stockFilter) || sortMode !== "recommended";
+  const hasSaveableFilter = Boolean(priceRange) || minCommission > 0 || catPath.length > 0 || Boolean(city) || statusOpen || Boolean(stockFilter) || sortMode !== "recommended";
   // Sunucuya GÖNDERİLMEYEN (yalnızca istemcide uygulanan) filtreler. Bunlar aktifken
   // sunucu-sayfalama güvenilmez (getirilen sayfa tümden elenebilir) → "daha fazla yükle"
   // ölü görünür. Bu durumda sunucu-sayfalama butonu gizlenip ipucu gösterilir.
-  const clientOnlyActive = minCommission > 0 || Boolean(catKey) || Boolean(stockFilter) || onlyVerified || Object.keys(attrFilters).length > 0 || Object.keys(numRange).length > 0;
+  const clientOnlyActive = minCommission > 0 || catPath.length > 0 || Boolean(stockFilter) || onlyVerified || Object.keys(attrFilters).length > 0 || Object.keys(numRange).length > 0;
   const isCurrentSaved = savedSearches.some((s) => (s.q ?? "").toLocaleLowerCase("tr-TR") === queryText.toLocaleLowerCase("tr-TR") && JSON.stringify(s.f ?? {}) === JSON.stringify(currentFilters()));
   const applySaved = (s: SavedSearch) => {
     const f = s.f ?? {};
     setPriceRange(typeof f.price === "string" ? f.price : "");
     setMinCommission(typeof f.comm === "number" ? f.comm : 0);
-    setCatKey(typeof f.cat === "string" ? f.cat : "");
-    setSubKey(typeof f.sub === "string" ? f.sub : "");
+    setCatPath(typeof f.cat === "string" ? f.cat.split(">").filter(Boolean) : []);
     setCity(typeof f.city === "string" ? f.city : "");
     setStatusOpen(f.open === true);
     setStockFilter(typeof f.stock === "string" ? f.stock : "");
@@ -229,7 +239,7 @@ export default function ExploreScreen() {
     router.setParams({ q: s.q || undefined });
   };
 
-  const hasPanelFilter = provinceId != null || Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter) || Boolean(catKey);
+  const hasPanelFilter = provinceId != null || Boolean(city) || minCommission > 0 || statusOpen || Boolean(priceRange) || Boolean(stockFilter) || catPath.length > 0;
 
   // q girildiyse temel set sunucu sonuclari (tum katalog); degilse yuklu katalog.
   const baseListings = serverResults ?? marketplaceListings;
@@ -378,35 +388,36 @@ export default function ExploreScreen() {
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <MaterialCommunityIcons name="tune-variant" size={16} color={colors.primaryDark} />
         <Text style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{translateCopy("Kategoriye göre filtrele", language)}</Text>
-        {catKey ? <Pressable onPress={clearCatFilter} hitSlop={8}><Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text></Pressable> : null}
+        {catPath.length > 0 ? <Pressable onPress={clearCatFilter} hitSlop={8}><Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text></Pressable> : null}
       </View>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 8 }}>
-        {topCategories().map((n) => {
-          const on = catKey === n.key;
-          return (
-            <Pressable key={n.key} onPress={() => selectCat(n.key)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-              <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
-            </Pressable>
-          );
-        })}
-      </ScrollView>
-      {catKey && subNodes.length > 0 ? (
+      {/* Breadcrumb: Tümü > Emlak > Konut > … (tıklayınca o seviyeye dön) */}
+      {pathNodes.length > 0 ? (
+        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+          <Pressable onPress={clearCatFilter} hitSlop={6}><Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tümü", language)}</Text></Pressable>
+          {pathNodes.map((n, i) => (
+            <View key={n.key} style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+              <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
+              <Pressable onPress={() => crumbTo(i)} hitSlop={6}><Text style={{ color: i === pathNodes.length - 1 ? colors.primaryDark : colors.muted, fontSize: 12, fontWeight: i === pathNodes.length - 1 ? "900" : "800" }}>{translateCopy(n.label, language)}</Text></Pressable>
+            </View>
+          ))}
+        </View>
+      ) : null}
+      {/* Seçilebilir seviye: yol boşsa ana kategoriler, değilse mevcut düğümün altları */}
+      {(catPath.length === 0 || drillOptions.length > 0) ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 8 }}>
-          <Pressable onPress={() => setSubKey("")} style={{ alignItems: "center", backgroundColor: !subKey ? colors.primarySoft : colors.surface, borderColor: !subKey ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 }}>
-            <Text style={{ color: !subKey ? colors.primaryDark : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Tümü", language)}</Text>
-          </Pressable>
-          {subNodes.map((c) => {
-            const on = subKey === c.key;
+          {(catPath.length === 0 ? topCategories() : drillOptions).map((n) => {
+            const on = catPath.length === 0 && catNode?.key === n.key;
+            const drilled = catPath.length > 0;
             return (
-              <Pressable key={c.key} onPress={() => selectSub(c.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primaryDark : colors.surface, borderColor: on ? colors.primaryDark : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 11, paddingVertical: 6 }}>
-                {on ? <MaterialCommunityIcons name="check" size={12} color="#FFFFFF" /> : null}
-                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(c.label, language)}</Text>
+              <Pressable key={n.key} onPress={() => (drilled ? drillTo(n.key) : selectTop(n.key))} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
+                {(n.children?.length ?? 0) > 0 ? <MaterialCommunityIcons name="chevron-right" size={13} color={on ? "#FFFFFF" : colors.subtle} /> : null}
               </Pressable>
             );
           })}
         </ScrollView>
       ) : null}
-      {catKey ? (
+      {catPath.length > 0 ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
           {catNums.map((nf) => (
             <View key={nf.key} style={{ gap: 4, minWidth: 160 }}>
@@ -745,14 +756,6 @@ export default function ExploreScreen() {
           statusOpen={statusOpen}
           onStatusOpen={setStatusOpen}
           onClear={() => { setCity(""); setMinCommission(0); setPriceRange(""); setStockFilter(""); setStatusOpen(false); clearCatFilter(); }}
-          catKey={catKey}
-          onSelectCat={selectCat}
-          catFacets={catFacets}
-          catNums={catNums}
-          attrFilters={attrFilters}
-          onToggleAttr={toggleAttr}
-          numRange={numRange}
-          onNum={setNum}
           width={isWideWeb ? panelWidth : Math.max(0, width - padding * 2)}
         />
       ) : null}
@@ -876,14 +879,6 @@ function FilterPanel({
   statusOpen,
   onStatusOpen,
   onClear,
-  catKey,
-  onSelectCat,
-  catFacets,
-  catNums,
-  attrFilters,
-  onToggleAttr,
-  numRange,
-  onNum,
   width
 }: {
   cities: string[];
@@ -896,14 +891,6 @@ function FilterPanel({
   statusOpen: boolean;
   onStatusOpen: (v: boolean) => void;
   onClear: () => void;
-  catKey: string;
-  onSelectCat: (key: string) => void;
-  catFacets: FieldDef[];
-  catNums: Array<{ key: string; label: string; suffix?: string }>;
-  attrFilters: Record<string, string[]>;
-  onToggleAttr: (key: string, val: string) => void;
-  numRange: Record<string, { min: string; max: string }>;
-  onNum: (key: string, side: "min" | "max", v: string) => void;
   width: number;
 }) {
   const { language } = useLanguage();
@@ -922,7 +909,7 @@ function FilterPanel({
     if (mn && mx && Number(mn) > Number(mx)) { onPriceRange(`${mx}-${mn}`); return; }
     onPriceRange(`${mn}-${mx}`);
   };
-  const hasFilter = Boolean(city) || minCommission > 0 || Boolean(priceRange) || statusOpen || Boolean(catKey);
+  const hasFilter = Boolean(city) || minCommission > 0 || Boolean(priceRange) || statusOpen;
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 18, padding: 16, width }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -934,50 +921,6 @@ function FilterPanel({
           </Pressable>
         ) : null}
       </View>
-
-      {/* Kategori-özel filtre: üst kategori seç → şemadan sayısal aralık + facet gelir. */}
-      <View style={{ gap: 8 }}>
-        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Kategori", language)}</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-          {topCategories().map((n) => {
-            const on = catKey === n.key;
-            return (
-              <Pressable key={n.key} onPress={() => onSelectCat(n.key)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 }}>
-                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      </View>
-      {catKey ? (
-        <>
-          {catNums.map((nf) => (
-            <View key={nf.key} style={{ gap: 6 }}>
-              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy(nf.label, language)}{nf.suffix ? ` (${nf.suffix})` : ""}</Text>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => onNum(nf.key, "min", v)} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 10 }} />
-                <Text style={{ color: colors.muted }}>—</Text>
-                <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => onNum(nf.key, "max", v)} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 40, paddingHorizontal: 10 }} />
-              </View>
-            </View>
-          ))}
-          {catFacets.map((f) => (
-            <View key={f.key} style={{ gap: 6 }}>
-              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy(f.label, language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                {(f.options ?? []).map((opt) => {
-                  const on = (attrFilters[f.key] ?? []).includes(opt);
-                  return (
-                    <Pressable key={opt} onPress={() => onToggleAttr(f.key, opt)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 }}>
-                      <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 11, fontWeight: "800" }}>{translateCopy(opt, language)}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
-          ))}
-        </>
-      ) : null}
 
       <View style={{ gap: 8 }}>
         <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Durum", language)}</Text>
