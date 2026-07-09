@@ -31,7 +31,7 @@ function AField({ field, value, onChange }: { field: FieldDef; value: AttrValue 
   return (
     <View style={{ flexBasis: wide ? "100%" : 220, flexGrow: 1, gap: 6, minWidth: 0 }}>
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>
-        {field.label}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} ${translateCopy("seçili", language)}` : ""}
+        {field.label}{field.required ? <Text style={{ color: colors.accent }}> *</Text> : null}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} ${translateCopy("seçili", language)}` : ""}
       </Text>
       {field.type === "multiselect" ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>

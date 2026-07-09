@@ -274,6 +274,11 @@ export function DesktopCreateFlow() {
       setStep(1);
       return;
     }
+    // Savunmacı yayın-anı kontrolü: adım-navigasyonu atlansa/draft bozulsa bile
+    // eksik foto/konum/komisyonlu ilan yayınlanmasın (canNext'e ek güvenlik).
+    if (images.length === 0) { setError("En az bir fotoğraf ekle."); setStep(3); return; }
+    if (!loc.provinceId) { setError("İl seçmelisin."); setStep(2); return; }
+    if (!(Number(commissionValue) > 0)) { setError("Komisyon değeri sıfırdan büyük olmalı."); setStep(4); return; }
 
     setPublishing(true);
     try {

@@ -1443,7 +1443,7 @@ export function describeAttributes(attributes?: Record<string, string | number |
     if (key.startsWith("_")) continue; // _leaf/_root iç kullanım
     if (val === undefined || val === null || val === "") continue;
     if (Array.isArray(val) && val.length === 0) continue;
-    if (["title", "description", "price", "listingType"].includes(key)) continue;
+    if (["title", "description", "price"].includes(key)) continue;
     const def = FIELD_LABELS[key];
     const value = Array.isArray(val)
       ? val.join(", ")

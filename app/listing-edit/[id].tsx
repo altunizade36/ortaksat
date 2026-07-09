@@ -9,15 +9,18 @@ import { Alert } from "@/lib/alert";
 
 import { AttributeFields } from "@/components/attribute-fields";
 import { colors } from "@/components/colors";
+import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
-import { listingCategories } from "@/lib/categories";
 import { CategoryPicker as TreeCategoryPicker } from "@/components/category-picker";
 import { getFormSchema, resolveFormKey, type CategoryNode } from "@/lib/category-tree";
+import { type CurrencyCode } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadListingImage } from "@/lib/live-service";
+import { formatLocation, getProvince, type AddressVisibility } from "@/lib/locations";
 import type { CommissionType, Listing, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { parseTrPrice } from "@/lib/validation";
 
 type ContactMethod = Listing["contactMethod"];
 
@@ -53,7 +56,12 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [partnershipMode, setPartnershipMode] = useState<PartnershipMode>(listing.partnershipMode);
   const [category, setCategory] = useState(listing.category);
   const [catPath, setCatPath] = useState<CategoryNode[]>([]);
-  const [location, setLocation] = useState(listing.location);
+  const [currency, setCurrency] = useState<CurrencyCode>((listing.currency as CurrencyCode) ?? "TRY");
+  const [bonusAmount, setBonusAmount] = useState(listing.bonusAmount ? String(listing.bonusAmount) : "");
+  const [bonusQuota, setBonusQuota] = useState(listing.bonusQuota ? String(listing.bonusQuota) : "");
+  // Yapısal konum (create ile aynı): il/ilçe korunur; boş metin-alan bug'ı giderildi.
+  const [loc, setLoc] = useState<LocationValue>({ provinceId: listing.provinceId ?? undefined, districtId: listing.districtId ?? undefined });
+  const [visibility] = useState<AddressVisibility>((listing.addressVisibility as AddressVisibility) ?? "neighborhood");
   const [stockCount, setStockCount] = useState(`${listing.stockCount}`);
   const [minPartnerRating, setMinPartnerRating] = useState(`${listing.minPartnerRating}`);
   const [commissionDueDays, setCommissionDueDays] = useState(`${listing.commissionDueDays}`);
@@ -113,7 +121,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   }
 
   async function submit() {
-    const parsedPrice = Number(price);
+    const parsedPrice = parseTrPrice(price); // "1.500.000" gibi TR biçimini doğru okur (Number NaN veriyordu)
     const parsedCommission = Number(commissionValue);
     const parsedStock = Number(stockCount);
     const parsedMinRating = Number(minPartnerRating);
@@ -168,6 +176,26 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       return;
     }
 
+    // Zorunlu kategori özelliklerini create ile aynı şekilde doğrula (edit'te eksikti).
+    if (attrSchema) {
+      const missing = attrSchema.fields.filter((f) => {
+        if (!f.required || f.key === "title" || f.key === "description" || f.key === "price") return false;
+        const val = attrValues[f.key];
+        if (Array.isArray(val)) return val.length === 0;
+        return !String(val ?? "").trim();
+      });
+      if (missing.length) {
+        Alert.alert(translateCopy("Eksik zorunlu alan", language), `${translateCopy("Şu alanları doldur:", language)} ${missing.map((f) => f.label).join(", ")}`);
+        return;
+      }
+    }
+
+    // Yapısal konumdan metni kur (il/ilçe korunur); serbest metin bug'ı giderildi.
+    const locText = formatLocation(loc, visibility) || getProvince(loc.provinceId)?.name || listing.location || "Türkiye";
+    const bonusNum = Number(bonusAmount);
+    const quotaNum = Number(bonusQuota);
+    const hasBonus = bonusNum > 0 && quotaNum > 0;
+
     setSaving(true);
     const uploadedImage = isLiveAccount ? await uploadListingImage(image.trim() || fallbackImage, currentUser.id) : image.trim();
     const uploadedAssets = isLiveAccount
@@ -186,7 +214,13 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       partnershipMode,
       attributes: builtAttrs,
       category: category.trim() || "Genel",
-      location: location.trim() || "Türkiye",
+      location: locText,
+      provinceId: loc.provinceId,
+      districtId: loc.districtId,
+      addressVisibility: visibility,
+      currency,
+      bonusAmount: hasBonus ? bonusNum : undefined,
+      bonusQuota: hasBonus ? quotaNum : undefined,
       image: uploadedImage || listing.image,
       stockCount: Math.max(0, parsedStock),
       minPartnerRating: Number.isFinite(parsedMinRating) ? parsedMinRating : 0,
@@ -267,7 +301,11 @@ function ListingEditForm({ listing }: { listing: Listing }) {
             </View>
             <TreeCategoryPicker value={catPath} onChange={(p) => { setCatPath(p); if (p.length) setCategory(p[p.length - 1].label); }} />
           </View>
-          <Field label="Konum" value={location} onChangeText={setLocation} />
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Konum", language)}</Text>
+            <LocationSelector value={loc} onChange={setLoc} />
+            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{formatLocation(loc, visibility) || translateCopy("İl/ilçe seçildikçe konum güncellenir.", language)}</Text>
+          </View>
         </Card>
 
         {attrSchema ? (
@@ -286,6 +324,18 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           </Text>
           <Segmented options={[["rate", "Yüzde"], ["fixed", "Sabit"]]} value={commissionType} onChange={(value) => setCommissionType(value as CommissionType)} />
           <Field label="Komisyon" value={commissionValue} onChangeText={setCommissionValue} keyboardType="numeric" />
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Para birimi", language)}</Text>
+            <Segmented options={[["TRY", "₺ TL"], ["USD", "$ USD"], ["EUR", "€ EUR"]]} value={currency} onChange={(value) => setCurrency(value as CurrencyCode)} />
+          </View>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <View style={{ flex: 1 }}>
+              <Field label="Başlangıç bonusu (ops.)" value={bonusAmount} onChangeText={setBonusAmount} keyboardType="numeric" />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Field label="Bonus kontenjanı" value={bonusQuota} onChangeText={setBonusQuota} keyboardType="numeric" />
+            </View>
+          </View>
           <View style={{ flexDirection: "row", gap: 10 }}>
             <View style={{ flex: 1 }}>
               <Field label="Min. puan" value={minPartnerRating} onChangeText={setMinPartnerRating} keyboardType="numeric" />
@@ -344,49 +394,6 @@ function ListingEditForm({ listing }: { listing: Listing }) {
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-function CategoryPicker({ onChange, value }: { value: string; onChange: (value: string) => void }) {
-  const { language } = useLanguage();
-  return (
-    <View style={{ gap: 8 }}>
-      <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>
-        {translateCopy("Kategori", language)}
-      </Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        {listingCategories.map((item) => {
-          const active = item.key === value;
-
-          return (
-            <Pressable
-              key={item.key}
-              onPress={() => onChange(item.key)}
-              style={({ pressed }) => ({
-                alignItems: "center",
-                backgroundColor: active ? colors.primary : colors.surface,
-                borderColor: active ? colors.primary : colors.line,
-                borderRadius: 8,
-                borderWidth: 1,
-                flexBasis: "31%",
-                flexGrow: 1,
-                gap: 6,
-                justifyContent: "center",
-                minHeight: 72,
-                opacity: pressed ? 0.72 : 1,
-                paddingHorizontal: 8,
-                paddingVertical: 10
-              })}
-            >
-              <MaterialCommunityIcons name={item.icon} size={20} color={active ? "#FFFFFF" : colors.primary} />
-              <Text adjustsFontSizeToFit minimumFontScale={0.82} numberOfLines={2} style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "900", lineHeight: 15, textAlign: "center" }}>
-                {translateCopy(item.label, language)}
-              </Text>
-            </Pressable>
-          );
-        })}
-      </View>
-    </View>
   );
 }
 
