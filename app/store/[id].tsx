@@ -32,7 +32,7 @@ export default function StoreScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
-  const { currentUser, findUser, listings, partnerships, leads, reports, reviews, sales, startConversation, reportUser } = useStore();
+  const { currentUser, findUser, listings, partnerships, leads, reports, reviews, sales, startConversation, reportUser, isFollowing, toggleFollow } = useStore();
 
   async function handleReportSeller() {
     if (!seller || isOwnStore) return;
@@ -134,6 +134,19 @@ export default function StoreScreen() {
     setRevealedPhone(p);
   }
 
+  const following = seller ? isFollowing(seller.id) : false;
+  function handleFollow() {
+    if (!seller || isOwnStore) return;
+    if (currentUser.id === "anon") {
+      Alert.alert(translateCopy("Giriş gerekli", language), translateCopy("Mağazayı takip etmek için giriş yapmalısın.", language), [
+        { text: translateCopy("Vazgeç", language), style: "cancel" },
+        { text: translateCopy("Giriş yap", language), onPress: () => router.push("/auth") }
+      ]);
+      return;
+    }
+    toggleFollow(seller.id);
+  }
+
   if (!seller) {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 12 }}>
@@ -201,9 +214,19 @@ export default function StoreScreen() {
                     <MaterialCommunityIcons name="lightning-bolt" size={15} color={colors.muted} />
                     <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>%{seller.responseRate} {translateCopy("yanıt", language)}</Text>
                   </View>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                    <MaterialCommunityIcons name="account-heart-outline" size={15} color={colors.muted} />
+                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{seller.followerCount} {translateCopy("takipçi", language)}</Text>
+                  </View>
                 </View>
               </View>
               <View style={{ flexDirection: "row", gap: 10, paddingTop: 6 }}>
+                {!isOwnStore ? (
+                  <Pressable onPress={handleFollow} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: following ? colors.surfaceAlt : colors.primary, borderColor: following ? colors.primary : colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}>
+                    <MaterialCommunityIcons name={following ? "account-heart" : "account-heart-outline"} size={17} color={following ? colors.primary : "#FFFFFF"} />
+                    <Text style={{ color: following ? colors.primary : "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy(following ? "Takiptesin" : "Takip Et", language)}</Text>
+                  </Pressable>
+                ) : null}
                 {isOwnStore ? (
                   <Link href="/create" asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="plus" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Yeni ilan", language)}</Text></Pressable></Link>
                 ) : (
@@ -454,9 +477,15 @@ export default function StoreScreen() {
 
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Metric label={t("activeListing")} value={`${activeListings.length}`} />
-          <Metric label={t("sellerTrust")} value={`%${trust?.seller.score ?? 0}`} />
+          <Metric label={translateCopy("Takipçi", language)} value={`${seller.followerCount}`} />
           <Metric label={t("earning")} value={money(totalCommission)} />
         </View>
+        {!isOwnStore ? (
+          <Pressable onPress={handleFollow} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: following ? colors.surfaceAlt : colors.primary, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
+            <MaterialCommunityIcons name={following ? "account-heart" : "account-heart-outline"} size={18} color={following ? colors.primary : "#FFFFFF"} />
+            <Text style={{ color: following ? colors.primary : "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy(following ? "Takiptesin" : "Takip Et", language)}</Text>
+          </Pressable>
+        ) : null}
 
         {hasPartnerActivity ? (
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 8, padding: 12 }}>

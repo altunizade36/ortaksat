@@ -15,6 +15,7 @@ export const users: User[] = [
     rating: 4.8,
     listingCount: 2,
     successfulSales: 18,
+    followerCount: 14,
     responseRate: 96
   },
   {
@@ -29,6 +30,7 @@ export const users: User[] = [
     rating: 4.7,
     listingCount: 12,
     successfulSales: 43,
+    followerCount: 26,
     responseRate: 91
   },
   {
@@ -43,6 +45,7 @@ export const users: User[] = [
     rating: 4.9,
     listingCount: 6,
     successfulSales: 27,
+    followerCount: 18,
     responseRate: 88
   },
   {
@@ -57,6 +60,7 @@ export const users: User[] = [
     rating: 4.6,
     listingCount: 1,
     successfulSales: 11,
+    followerCount: 10,
     responseRate: 84
   },
 ];

@@ -26,6 +26,7 @@ export type User = {
   rating: number;
   listingCount: number;
   successfulSales: number;
+  followerCount: number;
   responseRate: number;
   role?: UserRole;
   status?: "active" | "suspended" | "deleted";

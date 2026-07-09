@@ -22,6 +22,9 @@ import {
   deleteFavorite,
   ensureProfile,
   createSupportTicketLive,
+  followSellerLive,
+  unfollowSellerLive,
+  loadMyFollowsLive,
   insertFavorite,
   insertLead,
   insertListing,
@@ -270,6 +273,9 @@ type AppStore = {
   approvePartnership: (partnershipId: string) => void;
   rejectPartnership: (partnershipId: string, reason?: string) => void;
   toggleFavorite: (listingId: string) => void;
+  followedSellerIds: string[];
+  isFollowing: (sellerId: string) => boolean;
+  toggleFollow: (sellerId: string) => void;
   startConversation: (listingId: string, receiverId: string, body?: string) => Conversation | undefined;
   sendMessage: (listingId: string, receiverId: string, body: string) => void;
   sendConversationMessage: (conversationId: string, body: string, attachment?: { url: string; type: "image" | "file"; name?: string }) => void;
@@ -350,6 +356,7 @@ function userFromAuth(id: string, phone?: string | null, name?: string | null): 
     rating: 0,
     listingCount: 0,
     successfulSales: 0,
+    followerCount: 0,
     responseRate: 0,
     role: "user"
   };
@@ -374,6 +381,7 @@ const ANON_USER: User = {
   rating: 0,
   listingCount: 0,
   successfulSales: 0,
+  followerCount: 0,
   responseRate: 0
 };
 
@@ -395,6 +403,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [orders, setOrders] = useState(isSupabaseConfigured ? [] : initialOrders);
   const [reviews, setReviews] = useState(isSupabaseConfigured ? [] : initialReviews);
   const [favorites, setFavorites] = useState(isSupabaseConfigured ? [] : initialFavorites);
+  const [followedSellerIds, setFollowedSellerIds] = useState<string[]>([]);
   const [conversations, setConversations] = useState(isSupabaseConfigured ? [] : initialConversations);
   const [messages, setMessages] = useState(isSupabaseConfigured ? [] : initialMessages);
   const [notifications, setNotifications] = useState(isSupabaseConfigured ? [] : initialNotifications);
@@ -433,6 +442,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
     setConversations([]);
     setMessages([]);
     setFavorites([]);
+    setFollowedSellerIds([]);
     setPartnerships([]);
     setLeads([]);
     setSales([]);
@@ -570,7 +580,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
               verifiedInstagram: Boolean(data.verified_instagram),
               rating: Number(data.rating ?? 0),
               listingCount: 0,
-              successfulSales: 0,
+              successfulSales: Number(data.successful_sales ?? 0),
+              followerCount: Number(data.follower_count ?? 0),
               responseRate: data.response_rate ?? 0,
               role: data.role ?? "user",
               status: (data.status as User["status"]) ?? "active",
@@ -582,8 +593,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
       await ensureProfile(profile);
       const account = await loadAccountSnapshot(profile.id);
       const suggestions = await loadSuggestions();
+      const myFollows = await loadMyFollowsLive(profile.id);
       if (!mounted) return;
       setAuthUser(profile);
+      setFollowedSellerIds(myFollows);
       // Kategori/konum önerileri (RLS: kendi + admin hepsi) — kalıcı yüklensin.
       setCategorySuggestions(suggestions.categorySuggestions);
       setLocationSuggestions(suggestions.locationSuggestions);
@@ -1000,6 +1013,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
             rating: 5,
             listingCount: 0,
             successfulSales: 0,
+            followerCount: 0,
             responseRate: 100
           };
           setMockAccounts((m) => ({ ...m, [cleanEmail]: { password: input.password, user: mockUser } }));
@@ -1736,6 +1750,26 @@ export function StoreProvider({ children }: PropsWithChildren) {
           )
         );
         if (liveUser) void insertFavorite(listingId, currentUser.id, favoriteId, savedPrice);
+      },
+      followedSellerIds,
+      isFollowing(sellerId) {
+        return followedSellerIds.includes(sellerId);
+      },
+      toggleFollow(sellerId) {
+        if (!isAuthenticated) { setAuthError("Mağaza takibi için giriş yapmalısın."); return; }
+        if (sellerId === currentUser.id) return;
+        const following = followedSellerIds.includes(sellerId);
+        // İyimser güncelleme: takip listesi + satıcının followerCount'u (kart/başlık) anında.
+        const bumpFollower = (delta: number) => setUsers((items) => items.map((u) => (u.id === sellerId ? { ...u, followerCount: Math.max(0, u.followerCount + delta) } : u)));
+        if (following) {
+          setFollowedSellerIds((ids) => ids.filter((id) => id !== sellerId));
+          bumpFollower(-1);
+          if (liveUser) persistCritical(unfollowSellerLive(sellerId), () => { setFollowedSellerIds((ids) => (ids.includes(sellerId) ? ids : [...ids, sellerId])); bumpFollower(1); }, "Takip bırakılamadı. Bağlantını kontrol edip tekrar dene.");
+        } else {
+          setFollowedSellerIds((ids) => (ids.includes(sellerId) ? ids : [...ids, sellerId]));
+          bumpFollower(1);
+          if (liveUser) persistCritical(followSellerLive(sellerId), () => { setFollowedSellerIds((ids) => ids.filter((id) => id !== sellerId)); bumpFollower(-1); }, "Takip edilemedi. Bağlantını kontrol edip tekrar dene.");
+        }
       },
       startConversation(listingId, receiverId, body) {
         return createOrReuseConversation(listingId, receiverId, body);

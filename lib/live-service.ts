@@ -49,6 +49,27 @@ export async function logReferralClick(listingId: string | undefined, partnershi
   if (error) console.warn("Referral click log failed", error);
 }
 
+/** Mağaza takibi (follows). follower_count trigger ile güncellenir. */
+export async function followSellerLive(sellerId: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return false;
+  const { error } = await supabase.from("follows").insert({ follower_id: auth.user.id, seller_id: sellerId });
+  return !error;
+}
+export async function unfollowSellerLive(sellerId: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { data: auth } = await supabase.auth.getUser();
+  if (!auth.user) return false;
+  const { error } = await supabase.from("follows").delete().eq("follower_id", auth.user.id).eq("seller_id", sellerId);
+  return !error;
+}
+export async function loadMyFollowsLive(userId: string): Promise<string[]> {
+  if (!supabase) return [];
+  const { data } = await supabase.from("follows").select("seller_id").eq("follower_id", userId);
+  return ((data ?? []) as Array<{ seller_id: string }>).map((r) => r.seller_id);
+}
+
 /** Ortagin ortakliklarinin tiklama sayilarini dondurur (partnershipId -> adet). */
 export async function loadClickCounts(partnershipIds: string[]): Promise<Record<string, number>> {
   if (!supabase || partnershipIds.length === 0) return {};
