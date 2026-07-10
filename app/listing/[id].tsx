@@ -833,22 +833,6 @@ export default function ListingDetailScreen() {
         {/* Etkileşimli kazanç hesaplayıcı */}
         {!isOwner && !isDemo ? <EarningsCalculator listing={currentListing} isDemo={isDemo} onJoin={handleJoin} /> : null}
 
-        {/* Ortak satış nasıl işler? — tek, konsolide süreç bölümü */}
-        <Card>
-          <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ortak satış nasıl işler?", language)}</Text>
-          <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 8, padding: 12 }}>
-            <Bullet icon="handshake-outline" text={partnershipModeDescription(currentListing.partnershipMode)} tone="info" />
-            <Bullet icon="link-variant" text="Onay sonrası sana özel paylaşım bağlantısı açılır; alıcı talebi doğru ortağa bağlanır." tone="info" />
-            <Bullet icon="cash-check" text="Satıcı satışı onaylar, iade penceresi biter, komisyon uygulama dışında ödenir; iki taraf da takip eder." tone="info" />
-          </View>
-          {currentListing.partnerRules.slice(0, 4).map((rule) => <Bullet key={rule} icon="shield-check-outline" text={rule} tone="success" />)}
-          <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
-            {translateCopy("Min. ortak puanı", language)} {currentListing.minPartnerRating}+ · {translateCopy("Komisyon vadesi", language)} {currentListing.commissionDueDays} {translateCopy("gün", language)} · {translateCopy("İade", language)} {currentListing.returnWindowDays} {translateCopy("gün", language)}
-          </Text>
-        </Card>
-
-        <PartnerSaleTimeline listing={currentListing} partnershipStatus={partnership?.status} />
-
         <AgreementCard listing={currentListing} partnership={partnership} />
 
         {partnership?.status === "active" ? (
@@ -901,7 +885,11 @@ export default function ListingDetailScreen() {
             <SpecRow label="Konum" value={currentListing.location} />
             <SpecRow label="Stok" value={`${currentListing.stockCount} ${translateCopy("adet", language)}`} />
             <SpecRow label="Komisyon" value={currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : moneyIn(commission, currentListing.currency)} />
+            <SpecRow label="Ortak kazancı" value={moneyIn(commission, currentListing.currency)} />
             <SpecRow label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı"} />
+            {currentListing.minPartnerRating > 0 ? <SpecRow label="Min. ortak puanı" value={`${currentListing.minPartnerRating}+`} /> : null}
+            <SpecRow label="Komisyon vadesi" value={`${currentListing.commissionDueDays} ${translateCopy("gün", language)}`} />
+            <SpecRow label="İade süresi" value={`${currentListing.returnWindowDays} ${translateCopy("gün", language)}`} />
             <SpecRow label="İletişim" value={contactLabel(currentListing.contactMethod)} />
           </Accordion>
           <Accordion title={translateCopy("Teslimat ve iade", language)} icon="truck-outline">
@@ -1066,64 +1054,6 @@ function contactLabel(method: "whatsapp" | "phone" | "message") {
   if (method === "whatsapp") return "WhatsApp ile iletişim";
   if (method === "phone") return "Satıcıyı ara";
   return "Mesaj gönder";
-}
-
-function partnershipModeDescription(mode: Listing["partnershipMode"]) {
-  if (mode === "open") return "Bu ürün anında ortaklığa açık; başvurunca bağlantın hemen hazır olur.";
-  if (mode === "approval") return "Bu üründe satıcı onayı gerekir; satıcı başvurunu görür, uygun bulursa ortaklık açılır.";
-  return "Bu ürün davetli ortaklığa açık; satıcı sadece seçtiği ortaklarla çalışır.";
-}
-
-function PartnerSaleTimeline({ listing, partnershipStatus }: { listing: Listing; partnershipStatus?: PartnershipStatus }) {
-  const { language } = useLanguage();
-  const steps = [
-    {
-      active: true,
-      icon: "store-plus-outline" as const,
-      title: "İlan yayında",
-      body: `${listing.stockCount} ${translateCopy("stok", language)} · ${commissionText(listing)}`
-    },
-    {
-      active: partnershipStatus === "pending" || partnershipStatus === "active",
-      icon: "account-check-outline" as const,
-      title: partnershipStatus === "active" ? "Ortaklık onaylandı" : partnershipStatus === "pending" ? "Onay bekliyor" : "Ortaklık başvurusu",
-      body: listing.partnershipMode === "open" ? "Anında bağlantı açılır." : "Satıcı uygun ortağı onaylar."
-    },
-    {
-      active: partnershipStatus === "active",
-      icon: "share-variant-outline" as const,
-      title: "Paylaşım ve talep",
-      body: "Alıcı linkten gelirse talep doğru ortağa bağlanır."
-    },
-    {
-      active: false,
-      icon: "cash-check" as const,
-      title: "Komisyon kapanışı",
-      body: `${listing.returnWindowDays} ${translateCopy("gün iade", language)} · ${listing.commissionDueDays} ${translateCopy("gün ödeme vadesi", language)}`
-    }
-  ];
-
-  return (
-    <Card>
-      <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ortak satış akışı", language)}</Text>
-      <View style={{ gap: 8 }}>
-        {steps.map((step, index) => (
-          <View key={step.title} style={{ alignItems: "flex-start", flexDirection: "row", gap: 9 }}>
-            <View style={{ alignItems: "center", gap: 4 }}>
-              <View style={{ alignItems: "center", backgroundColor: step.active ? colors.primary : colors.surfaceAlt, borderColor: step.active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 30, justifyContent: "center", width: 30 }}>
-                <MaterialCommunityIcons name={step.icon} size={16} color={step.active ? "#FFFFFF" : colors.muted} />
-              </View>
-              {index < steps.length - 1 ? <View style={{ backgroundColor: colors.line, height: 20, width: 2 }} /> : null}
-            </View>
-            <View style={{ flex: 1, gap: 2, paddingTop: 3 }}>
-              <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy(step.title, language)}</Text>
-              <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 12, fontWeight: "800", lineHeight: 17 }}>{translateCopy(step.body, language)}</Text>
-            </View>
-          </View>
-        ))}
-      </View>
-    </Card>
-  );
 }
 
 function RelatedListingsSection({
