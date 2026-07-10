@@ -779,6 +779,16 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
         <Metric label="Satış" value={`${listingSales.length}`} />
         <Metric label="Kazanç" value={money(earned)} />
       </View>
+      {/* Dönüşüm hunisi: tıklama → talep → satış (oranlarla). */}
+      {clickCount > 0 || listingLeads.length > 0 ? (
+        <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 10, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 8 }}>
+          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{clickCount} {translateCopy("tıklama", language)}</Text>
+          <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
+          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{listingLeads.length} {translateCopy("talep", language)}{clickCount > 0 ? ` (%${Math.round((listingLeads.length / clickCount) * 100)})` : ""}</Text>
+          <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
+          <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{listingSales.length} {translateCopy("satış", language)}{listingLeads.length > 0 ? ` (%${Math.round((listingSales.length / listingLeads.length) * 100)})` : ""}</Text>
+        </View>
+      ) : null}
 
       {listingLeads.length > 0 ? <SectionTitle title="Gelen talepler" action="Benim bağlantım" /> : null}
       {listingLeads.map((lead) => (
