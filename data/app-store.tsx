@@ -17,6 +17,7 @@ import {
 import { logActivity } from "@/lib/audit";
 import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@/lib/auth-links";
 import { registerFavoriteToggle, syncFavorites } from "@/lib/favorites-cache";
+import { syncSavedForUser } from "@/lib/saved-searches";
 import { commissionAmount, effectiveCommissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
 import {
   deleteFavorite,
@@ -621,6 +622,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       const alreadyLoaded = loadedAccountUserRef.current === profile.id;
       if (alreadyLoaded) return;
       loadedAccountUserRef.current = profile.id;
+      void syncSavedForUser(profile.id); // kayıtlı aramaları sunucuyla senkronla (cihazlar arası)
       // Hesap verisi + öneriler + takipler: her biri BAĞIMSIZ dirençli — biri patlasa diğerleri yüklenir.
       const [account, suggestions, myFollows] = await Promise.all([
         loadAccountSnapshot(profile.id).catch(() => null),
@@ -678,6 +680,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setAuthUser(null);
         setEmailVerified(false);
         loadedAccountUserRef.current = null; // çıkış → sonraki giriş hesap-özetini yeniden yüklesin
+        void syncSavedForUser(null); // kayıtlı aramaları temizle (paylaşılan tarayıcı gizliliği)
         // Oturum başka bir yolla kapandıysa (token süresi, başka sekmede çıkış) da
         // özel veriyi temizle → sonraki kullanıcıya sızmasın.
         resetPrivateState();
