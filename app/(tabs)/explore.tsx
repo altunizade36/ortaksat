@@ -4,12 +4,14 @@ import Head from "expo-router/head";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
+import { BrandFilter } from "@/components/brand-filter";
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { listingCategories } from "@/lib/categories";
 import { getFormSchema, matchCategoryByName, resolveFormKey, topCategories, type CategoryNode, type FieldDef } from "@/lib/category-tree";
+import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
@@ -26,14 +28,8 @@ import { useStore } from "@/lib/use-store";
 type FeedFilter = "all" | "open" | "hot" | "new" | "commission";
 type SortMode = "recommended" | "priceAsc" | "priceDesc" | "commission" | "new";
 
-// Kategori-filtre sayısal aralık alanları (m²/km/yıl) + kategori eşleşme etiketleri.
-const EXPLORE_NUM_FILTERS: Array<{ key: string; label: string; suffix?: string }> = [
-  { key: "grossM2", label: "m²" }, { key: "m2", label: "m²" }, { key: "netM2", label: "m² (net)" },
-  { key: "km", label: "Kilometre", suffix: "km" }, { key: "year", label: "Yıl" },
-  { key: "salon", label: "Salon sayısı" }, { key: "bathrooms", label: "Banyo sayısı" }, { key: "floorCount", label: "Kat sayısı" },
-  { key: "dues", label: "Aidat", suffix: "₺" }, { key: "rentalIncome", label: "Kira getirisi", suffix: "₺" },
-  { key: "workHours", label: "Çalışma saati", suffix: "saat" }, { key: "engineHours", label: "Motor saati", suffix: "saat" }
-];
+// Kategori-filtre sayısal aralık alanları (m²/km/yıl) — paylaşılan tek kaynak.
+const EXPLORE_NUM_FILTERS = NUM_RANGE_FILTERS;
 function collectDescendantLabels(node: CategoryNode): string[] {
   const out: string[] = [node.label];
   for (const c of node.children ?? []) out.push(...collectDescendantLabels(c));
@@ -1346,48 +1342,6 @@ function formatPriceLabel(value: string): string | null {
   return null;
 }
 // Aranabilir çoklu-seçim marka filtresi (Sahibinden marka arama kutusu gibi).
-// Marka seçenekleri facet sınırını aştığında (araba ~74, telefon 22…) kullanılır.
-function BrandFilter({ label, options, selected, onToggle, language }: { label: string; options: string[]; selected: string[]; onToggle: (b: string) => void; language: "tr" | "en" }) {
-  const [q, setQ] = useState("");
-  const needle = q.trim().toLocaleLowerCase("tr-TR");
-  const shown = (needle ? options.filter((o) => o.toLocaleLowerCase("tr-TR").includes(needle)) : options).slice(0, 60);
-  return (
-    <View style={{ gap: 6, width: "100%" }}>
-      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>
-        {translateCopy(label, language)}{selected.length ? ` · ${selected.length} ${translateCopy("seçili", language)}` : ""}
-      </Text>
-      <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 38, paddingHorizontal: 9 }}>
-        <MaterialCommunityIcons name="magnify" size={16} color={colors.muted} />
-        <TextInput value={q} onChangeText={setQ} placeholder={`${translateCopy(label, language)} ${translateCopy("ara…", language)}`} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13, minHeight: 38 }} />
-        {q ? <Pressable onPress={() => setQ("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable> : null}
-      </View>
-      {selected.length ? (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-          {selected.map((b) => (
-            <Pressable key={b} onPress={() => onToggle(b)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 4 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>{b}</Text>
-              <MaterialCommunityIcons name="close" size={12} color="#FFFFFF" />
-            </Pressable>
-          ))}
-        </View>
-      ) : null}
-      <View style={{ maxHeight: 150 }}>
-        <ScrollView showsVerticalScrollIndicator style={{ maxHeight: 150 }} contentContainerStyle={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-          {shown.map((o) => {
-            const on = selected.includes(o);
-            return (
-              <Pressable key={o} onPress={() => onToggle(o)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 4 }}>
-                <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 11, fontWeight: "800" }}>{o}</Text>
-              </Pressable>
-            );
-          })}
-          {shown.length === 0 ? <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", padding: 6 }}>{translateCopy("Sonuç yok", language)}</Text> : null}
-        </ScrollView>
-      </View>
-    </View>
-  );
-}
-
 function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: string) => void }) {
   const { language } = useLanguage();
   const [open, setOpen] = useState(false);

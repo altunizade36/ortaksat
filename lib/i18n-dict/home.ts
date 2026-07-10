@@ -55,6 +55,8 @@ export const homeDict: Record<string, string> = {
   "Öne çıkan ilanlar": "Featured listings",
   "Stokta olanlar": "In stock",
   "Yeni ilanlar (7 gün)": "New listings (7 days)",
+  "özellikleri": "attributes",
+  "Detaylı filtreler için soldan kategori seçin": "Pick a category on the left for detailed filters",
   "sonuç bulundu": "results found",
   "Ürünleri ortak sat, komisyon kazan. Güvenli, hızlı, kazançlı.": "Sell products with partners and earn commission. Safe, fast, profitable.",
   "Ortak Satışa Katıl": "Join Partner Selling",

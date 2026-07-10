@@ -3,11 +3,13 @@ import { Link, useRouter, type Href } from "expo-router";
 import { memo, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
+import { BrandFilter } from "@/components/brand-filter";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
-import type { CategoryNode } from "@/lib/category-tree";
+import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
+import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
 import { commissionAmount, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
@@ -61,6 +63,9 @@ export function HomeDesktop() {
   const [minCommission, setMinCommission] = useState(0);
   const [inStock, setInStock] = useState(false);
   const [onlyNew, setOnlyNew] = useState(false);
+  // Kategori-özel facet (Yakıt/Isıtma/İç Özellik…) + sayısal aralık (m²/km/yıl…) — Keşfet paritesi.
+  const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
+  const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>({});
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
   const [visibleCount, setVisibleCount] = useState(18);
   const [recentIds, setRecentIds] = useState<string[]>([]);
@@ -73,6 +78,28 @@ export function HomeDesktop() {
 
   // Seçili kategorinin (ve tüm alt kategorilerinin) etiket kümesi.
   const catLabelSet = useMemo(() => (selectedNode ? new Set(descendantLabels(selectedNode).map((s) => s.toLocaleLowerCase("tr-TR"))) : null), [selectedNode]);
+
+  // Kategori-özel filtre: seçili düğümün şemasından facet + sayısal alanlar (Keşfet ile aynı mantık).
+  const catSchema = useMemo(() => (selectedNode ? getFormSchema(resolveFormKey([selectedNode])) : undefined), [selectedNode]);
+  const catFacets = useMemo<FieldDef[]>(() => (catSchema ? catSchema.fields.filter((f) => {
+    const n = f.options?.length ?? 0;
+    if (f.key === "seller") return false;
+    if (f.key === "brand" && f.type === "select" && n > 16) return false; // marka ayrı aranabilir filtreye
+    if (f.type === "select") return n >= 2 && n <= 80;
+    if (f.type === "multiselect") return n >= 2 && n <= 80;
+    return false;
+  }) : []), [catSchema]);
+  const catBrandField = useMemo<FieldDef | undefined>(() => (catSchema ? catSchema.fields.find((f) => f.key === "brand" && f.type === "select" && (f.options?.length ?? 0) > 16) : undefined), [catSchema]);
+  const catNums = useMemo(() => {
+    if (!catSchema) return [] as Array<{ key: string; label: string; suffix?: string }>;
+    const keys = new Set(catSchema.fields.map((f) => f.key));
+    const seen = new Set<string>();
+    return NUM_RANGE_FILTERS.filter((f) => keys.has(f.key) && !seen.has(f.label) && (seen.add(f.label), true));
+  }, [catSchema]);
+  const toggleAttr = (key: string, val: string) => setAttrFilters((s) => { const cur = s[key] ?? []; const next = cur.includes(val) ? cur.filter((x) => x !== val) : [...cur, val]; const copy = { ...s }; if (next.length) copy[key] = next; else delete copy[key]; return copy; });
+  const setNum = (key: string, side: "min" | "max", v: string) => setNumRange((s) => ({ ...s, [key]: { min: s[key]?.min ?? "", max: s[key]?.max ?? "", [side]: v } }));
+  // Kategori değişince facet/sayısal seçimler kategoriye özel olduğundan sıfırlanır.
+  useEffect(() => { setAttrFilters({}); setNumRange({}); }, [selectedNode?.key]);
   const matchesCat = (l: Listing) => {
     if (!catLabelSet) return true;
     const c = l.category.toLocaleLowerCase("tr-TR").trim();
@@ -94,10 +121,30 @@ export function HomeDesktop() {
       if (minCommission && commissionAmount(l) < minCommission) return false;
       if (inStock && l.stockCount <= 0) return false;
       if (onlyNew && !(Date.parse(l.createdAt ?? "") > Date.now() - 7 * 86400000)) return false;
+      // Kategori-özel facet eşleşmesi (Yakıt=Dizel…): ilan attribute'u seçili değerlerden biriyse geçer.
+      for (const key of Object.keys(attrFilters)) {
+        const want = attrFilters[key];
+        const have = l.attributes?.[key];
+        const ok = Array.isArray(have) ? have.some((v) => want.includes(String(v))) : want.includes(String(have ?? ""));
+        if (!ok) return false;
+      }
+      // Sayısal aralık (m²/km/yıl…): değer yoksa eler; değer=0 geçerlidir ("yok" ≠ "0").
+      for (const nf of catNums) {
+        const r = numRange[nf.key];
+        const mn = r?.min?.trim() ? Number(r.min) : null;
+        const mx = r?.max?.trim() ? Number(r.max) : null;
+        if (mn === null && mx === null) continue;
+        const raw = l.attributes?.[nf.key] ?? (nf.key === "grossM2" ? l.attributes?.m2 : undefined);
+        if (raw === undefined || raw === null || raw === "") return false;
+        const val = Number(raw);
+        if (!Number.isFinite(val)) return false;
+        if (mn !== null && val < mn) return false;
+        if (mx !== null && val > mx) return false;
+      }
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, catLabelSet, pMin, pMax, locFilter, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew]);
+  }, [active, catLabelSet, pMin, pMax, locFilter, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew, attrFilters, numRange, catNums]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -112,14 +159,14 @@ export function HomeDesktop() {
   const grid = sorted.slice(0, visibleCount);
 
   // Filtre/sıralama değişince baştan göster.
-  useEffect(() => { setVisibleCount(18); }, [selectedNode, pMin, pMax, locFilter, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew, sortMode]);
+  useEffect(() => { setVisibleCount(18); }, [selectedNode, pMin, pMax, locFilter, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew, sortMode, attrFilters, numRange]);
 
   const topCats = categoryTree.filter((c) => c.label !== "Diğer");
   const popular = topCats.slice(0, 12);
   // Ortak-satış modeli: en çok kazandıran (en yüksek komisyonlu) fırsatlar.
   const topEarn = useMemo(() => [...active].filter((l) => commissionAmount(l) > 0).sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [active]);
-  const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (locFilter ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0) + (minCommission ? 1 : 0) + (inStock ? 1 : 0) + (onlyNew ? 1 : 0);
-  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLocFilter(""); setOnlyOpen(false); setOnlyFeatured(false); setMinCommission(0); setInStock(false); setOnlyNew(false); };
+  const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (locFilter ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0) + (minCommission ? 1 : 0) + (inStock ? 1 : 0) + (onlyNew ? 1 : 0) + Object.keys(attrFilters).length + Object.keys(numRange).length;
+  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLocFilter(""); setOnlyOpen(false); setOnlyFeatured(false); setMinCommission(0); setInStock(false); setOnlyNew(false); setAttrFilters({}); setNumRange({}); };
   const COMMISSION_PRESETS: Array<[number, string]> = [[500, "500 ₺+"], [1000, "1.000 ₺+"], [2500, "2.500 ₺+"], [5000, "5.000 ₺+"]];
   const PRICE_PRESETS: Array<[string, string, string]> = [["0", "1000", "0 - 1.000 ₺"], ["1000", "5000", "1.000 - 5.000 ₺"], ["5000", "25000", "5.000 - 25.000 ₺"], ["25000", "100000", "25.000 - 100.000 ₺"], ["100000", "", "100.000 ₺ +"]];
   const SORTS: Array<[typeof sortMode, string]> = [["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"], ["commission", "Kazanç"]];
@@ -253,6 +300,55 @@ export function HomeDesktop() {
             <SwitchRow label={translateCopy("Stokta olanlar", language)} on={inStock} onPress={() => setInStock((v) => !v)} />
             <SwitchRow label={translateCopy("Yeni ilanlar (7 gün)", language)} on={onlyNew} onPress={() => setOnlyNew((v) => !v)} />
           </View>
+
+          {/* Kategori-özel filtreler (Keşfet paritesi): kategori seçilince şemasından
+              sayısal aralık (m²/km/yıl…) + facet (Yakıt/Isıtma/İç Özellik…) gelir. */}
+          {!selectedNode ? (
+            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 11, paddingVertical: 9 }}>
+              <MaterialCommunityIcons name="filter-plus-outline" size={15} color={colors.muted} />
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Detaylı filtreler için soldan kategori seçin", language)}</Text>
+            </View>
+          ) : (catNums.length > 0 || catFacets.length > 0 || catBrandField) ? (
+            <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 12, paddingTop: 12 }}>
+              <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "900" }}>{translateCopy(selectedNode.label, language)} {translateCopy("özellikleri", language)}</Text>
+              {catBrandField ? (
+                <BrandFilter label={catBrandField.label} options={catBrandField.options ?? []} selected={attrFilters.brand ?? []} onToggle={(b) => toggleAttr("brand", b)} language={language} />
+              ) : null}
+              {catNums.map((nf) => (
+                <View key={nf.key} style={{ gap: 5 }}>
+                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(nf.label, language)}{nf.suffix ? ` (${nf.suffix})` : ""}</Text>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                    <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 12.5, minHeight: 38, minWidth: 0, paddingHorizontal: 8, textAlign: "center" }} />
+                    <Text style={{ color: colors.subtle }}>—</Text>
+                    <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 12.5, minHeight: 38, minWidth: 0, paddingHorizontal: 8, textAlign: "center" }} />
+                  </View>
+                </View>
+              ))}
+              {catFacets.map((f) => {
+                const opts = f.options ?? [];
+                const selected = attrFilters[f.key] ?? [];
+                // Çok seçenekli facet (İç Özellikler, Muhit, renk…) → aranabilir kutu; azsa çip.
+                if (opts.length > 12) {
+                  return <BrandFilter key={f.key} label={f.label} options={opts} selected={selected} onToggle={(v) => toggleAttr(f.key, v)} language={language} />;
+                }
+                return (
+                  <View key={f.key} style={{ gap: 5 }}>
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(f.label, language)}{selected.length ? ` · ${selected.length}` : ""}</Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                      {opts.map((opt) => {
+                        const on = selected.includes(opt);
+                        return (
+                          <Pressable key={opt} onPress={() => toggleAttr(f.key, opt)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 4 }}>
+                            <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 11, fontWeight: "800" }}>{translateCopy(opt, language)}</Text>
+                          </Pressable>
+                        );
+                      })}
+                    </View>
+                  </View>
+                );
+              })}
+            </View>
+          ) : null}
 
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, paddingVertical: 11 }}>
             <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{filtered.length} {translateCopy("sonuç bulundu", language)}</Text>
