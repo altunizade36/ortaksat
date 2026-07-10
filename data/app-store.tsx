@@ -1561,7 +1561,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setLeads((items) => items.map((l) => (l.id === leadId ? lead : l)));
           setListings((items) => items.map((l) => (l.id === listing.id ? listing : l)));
         }, "Satış kaydı oluşturulamadı. Bağlantını kontrol edip tekrar dene.");
-        if (liveUser) void updateListingInventoryLive(updatedListing);
+        // Stok düşümü artık record_sale RPC'sinde (atomik) — ayrı yazım YOK (çift düşüm olmasın).
         return sale;
       },
       // Doğrudan satış: ortak referans linkiyle gelen alıcı WhatsApp/elden satın
@@ -1622,7 +1622,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setOrders((items) => items.filter((o) => o.id !== order.id));
           setListings((items) => items.map((l) => (l.id === listing.id ? listing : l)));
         }, "Satış kaydı oluşturulamadı. Bağlantını kontrol edip tekrar dene.");
-        if (liveUser) void updateListingInventoryLive(updatedListing);
+        // Stok düşümü artık record_sale RPC'sinde (atomik) — ayrı yazım YOK (çift düşüm olmasın).
         return sale;
       },
       joinListing(listingId, input) {

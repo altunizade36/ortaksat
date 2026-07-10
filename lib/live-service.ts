@@ -648,45 +648,29 @@ export async function updateLeadStatusLive(lead: Lead) {
   if (error) console.warn("Supabase lead update failed", error);
 }
 
-export async function insertSaleFromLead(sale: Sale, listing: Listing): Promise<boolean> {
+// Atomik: order + commission + stok düşümü + lead-dönüşümü TEK RPC/transaction'da.
+// Eskiden 3 ayrı yazımdı; commission başarısız olunca yetim order + yanlış stok kalıyordu.
+// RPC ayrıca sahiplik/stok/aktiflik doğrulamasını sunucuda yapar. `listing` param'ı artık
+// kullanılmıyor (RPC DB'den okur) ama çağrı yerleri değişmesin diye korunuyor.
+export async function insertSaleFromLead(sale: Sale, _listing: Listing): Promise<boolean> {
   if (!supabase) return true;
-
-  const orderId = makeUuid();
-  const orderError = (await supabase.from("orders").insert({
-    id: orderId,
-    listing_id: listing.id,
-    seller_id: listing.ownerId,
-    partnership_id: sale.partnershipId,
-    amount: sale.amount,
-    status: "confirmed"
-  })).error;
-
-  if (orderError) {
-    console.warn("Supabase order insert failed", orderError);
-    return false;
-  }
-
-  const commissionError = (await supabase.from("commissions").insert({
-    id: sale.id,
-    order_id: orderId,
-    listing_id: sale.listingId,
-    partnership_id: sale.partnershipId,
-    lead_id: sale.leadId ?? null, // doğrudan satışta lead yok → null (kolon nullable)
-    amount: sale.commissionAmount,
-    sale_amount: sale.amount,
-    quantity: sale.quantity ?? 1,
-    buyer_name: sale.buyerName ?? null,
-    delivery_status: sale.deliveryStatus ?? "confirmed",
-    return_until: sale.returnUntil ?? null,
-    status: sale.status,
-    approved_at: sale.approvedAt ?? null,
-    paid_at: sale.paidAt ?? null,
-    seller_marked_paid_at: sale.sellerMarkedPaidAt ?? null,
-    partner_confirmed_paid_at: sale.partnerConfirmedPaidAt ?? null,
-    payout_note: sale.payoutNote ?? null
-  })).error;
-
-  if (commissionError) { console.warn("Supabase commission insert failed", commissionError); return false; }
+  const { error } = await supabase.rpc("record_sale", {
+    p_commission_id: sale.id,
+    p_order_id: makeUuid(),
+    p_listing_id: sale.listingId,
+    p_partnership_id: sale.partnershipId,
+    p_lead_id: sale.leadId ?? null,
+    p_commission_amount: sale.commissionAmount,
+    p_sale_amount: sale.amount,
+    p_quantity: sale.quantity ?? 1,
+    p_buyer_name: sale.buyerName ?? null,
+    p_delivery_status: sale.deliveryStatus ?? "confirmed",
+    p_return_until: sale.returnUntil ?? null,
+    p_status: sale.status,
+    p_approved_at: sale.approvedAt ?? null,
+    p_payout_note: sale.payoutNote ?? null
+  });
+  if (error) { console.warn("Supabase record_sale RPC failed", error); return false; }
   return true;
 }
 
