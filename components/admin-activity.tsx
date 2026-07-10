@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { money } from "@/lib/format";
@@ -23,8 +23,9 @@ export type AdminAnalytics = {
   listings_new_7d: number;
   commissions_total: number;
   commissions_paid: number;
-  gmv: number;
-  paid_gmv: number;
+  gmv: number; // GERÇEK GMV = sum(orders.amount) (satış/ürün değeri), komisyon DEĞİL
+  commission_amount: number; // sum(commissions.amount) — kaydedilen toplam komisyon
+  commission_paid_amount: number; // ödenen komisyon
   partnerships_total: number;
   partnerships_active: number;
   partnerships_pending: number;
@@ -75,7 +76,7 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
   useEffect(() => {
     void load();
     // Sekme gizliyken poll etme (gereksiz RPC yükü). visibilitychange ile duraklat/sürdür.
-    const start = () => { if (!timer.current) timer.current = setInterval(() => void load(), 15_000); };
+    const start = () => { if (!timer.current) timer.current = setInterval(() => void load(), 30_000); };
     const stop = () => { if (timer.current) { clearInterval(timer.current); timer.current = null; } };
     const onVis = () => { if (typeof document !== "undefined" && document.visibilityState === "hidden") stop(); else { void load(); start(); } };
     start();
@@ -113,8 +114,8 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
   // Site-geneli sunucu-gerçek toplamlar (istemci-cap'i yok).
   const siteCards: StatTileProps[] = [
     { icon: "storefront-outline", label: "Aktif ilan", value: fmt(data.listings_active), sub: `${fmt(data.listings_total)} toplam · +${fmt(data.listings_new_7d)} bu hafta`, tint: colors.primarySoft, color: colors.primaryDark },
-    { icon: "cash-multiple", label: "Toplam GMV", value: money(data.gmv), sub: `${money(data.paid_gmv)} ödenen`, tint: colors.goldSoft, color: "#B7791F" },
-    { icon: "receipt-text-outline", label: "Komisyon kaydı", value: fmt(data.commissions_total), sub: `${fmt(data.commissions_paid)} ödendi`, tint: colors.infoSoft, color: colors.info },
+    { icon: "cash-multiple", label: "Toplam GMV", value: money(data.gmv), sub: `${fmt(data.orders_total)} sipariş — satış değeri`, tint: colors.goldSoft, color: "#B7791F" },
+    { icon: "receipt-text-outline", label: "Komisyon (₺)", value: money(data.commission_amount), sub: `${money(data.commission_paid_amount)} ödendi · ${fmt(data.commissions_total)} kayıt`, tint: colors.infoSoft, color: colors.info },
     { icon: "handshake-outline", label: "Aktif ortaklık", value: fmt(data.partnerships_active), sub: `${fmt(data.partnerships_total)} toplam · ${fmt(data.partnerships_pending)} bekliyor`, tint: colors.violetSoft, color: colors.violet }
   ];
   // Moderasyon kuyruğu (durum renkleri — ikon+etiket).
@@ -164,9 +165,10 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
           <LegendDot color={SERIES.signups} label="Yeni kayıt" />
           <LegendDot color={SERIES.listings} label="Yeni ilan" />
         </View>
-        <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 6, height: 148 }}>
+        {/* Yatay kaydırılabilir: 14 gün × 3 çubuk dar (mobil) admin genişliğinde taşmasın. */}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "flex-end", flexDirection: "row", gap: 8, height: 148, paddingRight: 4 }}>
           {data.days.map((d) => (
-            <View key={d.day} style={{ alignItems: "center", flex: 1, gap: 6, justifyContent: "flex-end" }}>
+            <View key={d.day} style={{ alignItems: "center", gap: 6, justifyContent: "flex-end", width: 34 }}>
               <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 2, height: 108, justifyContent: "center" }}>
                 <Bar value={d.active} max={maxBar} color={SERIES.active} />
                 <Bar value={d.signups} max={maxBar} color={SERIES.signups} />
@@ -175,7 +177,7 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
               <Text style={{ color: colors.subtle, fontSize: 9.5, fontWeight: "800" }}>{dayNum(d.day)}</Text>
             </View>
           ))}
-        </View>
+        </ScrollView>
       </View>
 
       {/* Top kategoriler (aktif ilan sayısına göre) */}
@@ -200,7 +202,7 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
         <View style={{ backgroundColor: colors.infoSoft, borderRadius: 12, gap: 4, padding: 14 }}>
           <Text style={{ color: colors.info, fontSize: 13, fontWeight: "900" }}>Henüz canlı aktivite yok</Text>
           <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>
-            Bu alan GERÇEK sunucu verisiyle çalışır (sahte sayaç yok). Kullanıcılar siteye girip gezdikçe, ilan/satış oldukça değerler burada canlanır. Panel 15 saniyede bir kendini tazeler.
+            Bu alan GERÇEK sunucu verisiyle çalışır (sahte sayaç yok). Kullanıcılar siteye girip gezdikçe, ilan/satış oldukça değerler burada canlanır. Panel 30 saniyede bir kendini tazeler.
           </Text>
         </View>
       ) : null}

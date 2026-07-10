@@ -320,7 +320,7 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "users" ? (
-          <Panel title="Kullanıcılar" sub={`${shownUsers.length} aktif kullanıcı${deletedUserCount ? ` · ${deletedUserCount} silinmiş (gizli)` : ""}${canManageUsers ? " · rol, durum, doğrulama, bildirim" : ""}`}>
+          <Panel title="Kullanıcılar" sub={`${analytics ? `${fmtN(analytics.total_users)} toplam kayıtlı (sunucu) · ` : ""}${shownUsers.length} yüklü${deletedUserCount ? ` · ${deletedUserCount} silinmiş (gizli)` : ""}${canManageUsers ? " · rol, durum, doğrulama" : ""}`}>
             <AdminSearch value={userQuery} onChange={setUserQuery} placeholder="İsim, rol veya durum ara…" />
             <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
               <FilterChips value={userFilter} onChange={setUserFilter} options={[
@@ -475,7 +475,7 @@ function AdminScreenInner() {
               </Table>
             </Panel>
           ) : null}
-          <Panel title="İlanlar" sub={`${activeListings.length} aktif · ${pendingReview.length} incelemede · ${listings.length} toplam${lq ? ` · ${shownListings.length} sonuç` : ""}`}>
+          <Panel title="İlanlar" sub={`${fmtN(analytics?.listings_active ?? activeListings.length)} aktif · ${fmtN(analytics?.listings_pending ?? pendingReview.length)} incelemede · ${fmtN(analytics?.listings_total ?? listings.length)} toplam${analytics && analytics.listings_total > listings.length ? ` (${listings.length} yüklü örnek)` : ""}${lq ? ` · ${shownListings.length} sonuç` : ""}`}>
             <AdminSearch value={listingQuery} onChange={setListingQuery} placeholder="Başlık, kategori, sahip veya durum ara…" />
             <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
               <FilterChips value={listingFilter} onChange={setListingFilter} options={[
@@ -798,9 +798,9 @@ function AdminScreenInner() {
               <Stat icon="check-decagram" tint={colors.primarySoft} color={colors.primaryDark} value={`${users.filter((u) => u.verifiedPhone || u.verifiedIdentity).length}`} title="Doğrulanmış (yüklü)" />
               <Stat icon="star" tint={colors.goldSoft} color={colors.gold} value={`${listings.filter((l) => l.featured).length}`} title="Öne çıkan (yüklü)" />
               <Stat icon="map-marker" tint={colors.infoSoft} color={colors.info} value={`${new Set(activeListings.map((l) => l.location)).size}`} title="Şehir (yüklü)" />
-              <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(analytics ? Math.max(0, analytics.gmv - analytics.paid_gmv) : unpaidCommission)} title="Bekleyen komisyon" />
+              <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(analytics ? Math.max(0, analytics.commission_amount - analytics.commission_paid_amount) : unpaidCommission)} title="Bekleyen komisyon" />
             </View>
-            <Panel title="Aylık İlan Grafiği" sub="Son 12 ay — yayınlanan ilan (gerçek veri)">
+            <Panel title="Aylık İlan Grafiği" sub="Son 12 ay — yüklü kayıtlardan (sunucu-toplam için Canlı Panel)">
               <BarChart data={chartData} labels={chartLabels} />
             </Panel>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
@@ -976,8 +976,8 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
   const totalUsers = analytics?.total_users ?? usersN;
   const totalListings = analytics?.listings_total ?? listingsN;
   const activeListings = analytics?.listings_active ?? activeN;
-  const gmvTotal = analytics ? analytics.gmv : commission;
-  const gmvUnpaid = analytics ? Math.max(0, analytics.gmv - analytics.paid_gmv) : unpaidCommission;
+  const gmvTotal = analytics ? analytics.gmv : commission; // GERÇEK GMV (orders); önizlemede istemci komisyonuna düşer
+  const commissionUnpaid = analytics ? Math.max(0, analytics.commission_amount - analytics.commission_paid_amount) : unpaidCommission;
   const salesRecords = analytics?.commissions_total ?? salesN;
   const pendingListings = analytics?.listings_pending ?? pendingN;
   const openReports = analytics?.open_reports ?? reportsN;
@@ -1051,7 +1051,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
         <Stat icon="check-decagram" tint={colors.successSoft} color={colors.success} value={fmtN(activeListings)} title="Yayındaki İlan" helper={`%${publishRate} yayın oranı`} onPress={() => setSection("listings")} />
         <Stat icon="message-text" tint={colors.primarySoft} color={colors.primaryDark} value={`${messagesN}`} title="Mesaj (yüklü)" helper={`${leads.length} talep kaydı`} onPress={() => setSection("messages")} />
         <Stat icon="cart-check" tint={colors.successSoft} color={colors.success} value={fmtN(salesRecords)} title="Komisyon Kaydı" helper={analytics ? `${fmtN(analytics.commissions_paid)} ödendi` : `%${conversionRate} dönüşüm`} onPress={() => setSection("commissions")} />
-        <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(gmvUnpaid)} title="Bekleyen Komisyon" helper={`${disputedN} anlaşmazlık`} onPress={() => setSection("commissions")} />
+        <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(commissionUnpaid)} title="Bekleyen Komisyon" helper={`${disputedN} anlaşmazlık`} onPress={() => setSection("commissions")} />
       </View>
 
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
@@ -1061,10 +1061,10 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
           </Panel>
           <Panel title="Operasyon Sağlığı" sub="Günlük kontrol için kritik oranlar">
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-              <HealthCard label="Yayın oranı" value={`%${publishRate}`} detail={`${activeN}/${listingsN || 0} ilan yayında`} tone={publishRate >= 70 ? "success" : publishRate >= 40 ? "warning" : "accent"} />
+              <HealthCard label="Yayın oranı" value={`%${publishRate}`} detail={`${fmtN(activeListings)}/${fmtN(totalListings)} ilan yayında`} tone={publishRate >= 70 ? "success" : publishRate >= 40 ? "warning" : "accent"} />
               <HealthCard label="Açık iş yükü" value={`${openWork}`} detail="İnceleme bekleyen toplam kayıt" tone={openWork === 0 ? "success" : openWork < 5 ? "warning" : "accent"} />
               <HealthCard label="Şikayet çözümü" value={`%${reportResolutionRate}`} detail={`${resolvedReports}/${reports.length || 0} kayıt kapanmış`} tone={reportResolutionRate >= 85 ? "success" : reportResolutionRate >= 55 ? "warning" : "accent"} />
-              <HealthCard label="Komisyon riski" value={money(unpaidCommission)} detail={`${disputedN} anlaşmazlık var`} tone={disputedN ? "accent" : unpaidCommission ? "warning" : "success"} />
+              <HealthCard label="Komisyon riski" value={money(commissionUnpaid)} detail={`${disputedN} anlaşmazlık var`} tone={disputedN ? "accent" : commissionUnpaid ? "warning" : "success"} />
             </View>
           </Panel>
           <Panel title="Gerçek Veri Grafikleri" sub="İlan durumu, kategori yoğunluğu ve satış hunisi mevcut kayıtlardan hesaplanır">
