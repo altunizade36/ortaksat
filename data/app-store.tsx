@@ -17,7 +17,7 @@ import {
 import { logActivity } from "@/lib/audit";
 import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@/lib/auth-links";
 import { registerFavoriteToggle, syncFavorites } from "@/lib/favorites-cache";
-import { commissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
+import { commissionAmount, effectiveCommissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
 import {
   deleteFavorite,
   ensureProfile,
@@ -45,6 +45,7 @@ import {
   updateListingStockPriceLive,
   updateListingInventoryLive,
   updatePartnershipStatus,
+  setPartnershipCommissionLive,
   updateReportStatusLive,
   updateProfileLive,
   savePreferencesLive,
@@ -117,6 +118,7 @@ type NewListingInput = Pick<
   | "currency"
   | "commissionType"
   | "commissionValue"
+  | "commissionTiers"
   | "bonusAmount"
   | "bonusQuota"
   | "category"
@@ -276,6 +278,7 @@ type AppStore = {
   approvePartnership: (partnershipId: string) => void;
   rejectPartnership: (partnershipId: string, reason?: string) => void;
   endPartnership: (partnershipId: string, mode?: "blocked" | "cancelled") => void;
+  setPartnershipCommission: (partnershipId: string, type?: "rate" | "fixed", value?: number) => void;
   toggleFavorite: (listingId: string) => void;
   followedSellerIds: string[];
   isFollowing: (sellerId: string) => boolean;
@@ -1371,6 +1374,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const updatedListing: Listing = {
           ...listing,
           ...input,
+          // Düzenleme formu kademeli komisyonu sağlamıyorsa mevcut kademeleri KORU (silme).
+          commissionTiers: input.commissionTiers ?? listing.commissionTiers,
           title: displayText(input.title),
           description: repairTurkishText(input.description),
           salesPitch: input.salesPitch.map(repairTurkishText),
@@ -1522,7 +1527,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // ortağın iptal-olmayan önceki satış sayısı kotanın altındaysa bu satışa bonus eklenir.
         const priorPartnerSales = sales.filter((s) => s.partnershipId === lead.partnershipId && s.status !== "cancelled").length;
         const bonusApplied = (listing.bonusAmount ?? 0) > 0 && (listing.bonusQuota ?? 0) > 0 && priorPartnerSales < (listing.bonusQuota ?? 0) ? Math.round(listing.bonusAmount ?? 0) : 0;
-        const baseCommission = listing.commissionType === "rate" ? Math.round((amount * listing.commissionValue) / 100) : commissionAmount(listing) * quantity;
+        // Efektif komisyon: per-ortak override > kademeli oran > ilan varsayılanı.
+        const baseCommission = effectiveCommissionAmount(listing, partnership, priorPartnerSales, amount, quantity);
         const sale: Sale = {
           id: newId("s", liveUser),
           listingId: listing.id,
@@ -1585,7 +1591,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // Başlangıç bonusu (ilk bonusQuota satış) — createSaleFromLead ile aynı mantık.
         const priorPartnerSales = sales.filter((s) => s.partnershipId === partnership.id && s.status !== "cancelled").length;
         const bonusApplied = (listing.bonusAmount ?? 0) > 0 && (listing.bonusQuota ?? 0) > 0 && priorPartnerSales < (listing.bonusQuota ?? 0) ? Math.round(listing.bonusAmount ?? 0) : 0;
-        const baseCommission = listing.commissionType === "rate" ? Math.round((amount * listing.commissionValue) / 100) : commissionAmount(listing) * quantity;
+        // Efektif komisyon: per-ortak override > kademeli oran > ilan varsayılanı.
+        const baseCommission = effectiveCommissionAmount(listing, partnership, priorPartnerSales, amount, quantity);
         const sale: Sale = {
           id: newId("s", liveUser),
           listingId: listing.id,
@@ -1772,6 +1779,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setPartnerships((items) => items.map((p) => (p.id === partnershipId ? partnership : p)));
           setListings((items) => items.map((l) => (l.id === partnership.listingId ? { ...l, partnerCount: l.partnerCount + 1 } : l)));
         }, "Ortaklık güncellenemedi. Bağlantını kontrol edip tekrar dene.");
+      },
+      // Satıcı bu ortağa ÖZEL komisyon belirler (ilan varsayılanını ezer). type yoksa temizler.
+      setPartnershipCommission(partnershipId, type, value) {
+        const partnership = partnerships.find((item) => item.id === partnershipId);
+        const listing = partnership ? listings.find((item) => item.id === partnership.listingId) : undefined;
+        if (!partnership || !listing || (listing.ownerId !== currentUser.id && !staff)) return;
+        const set = type && typeof value === "number" && value > 0;
+        const nextType = set ? type : undefined;
+        const nextValue = set ? Math.round(value as number) : undefined;
+        const prev = { commissionOverrideType: partnership.commissionOverrideType, commissionOverrideValue: partnership.commissionOverrideValue };
+        setPartnerships((items) => items.map((p) => (p.id === partnershipId ? { ...p, commissionOverrideType: nextType, commissionOverrideValue: nextValue } : p)));
+        if (liveUser) persistCritical(setPartnershipCommissionLive(partnershipId, nextType ?? null, nextValue ?? null), () => {
+          setPartnerships((items) => items.map((p) => (p.id === partnershipId ? { ...p, ...prev } : p)));
+        }, "Komisyon güncellenemedi. Bağlantını kontrol edip tekrar dene.");
       },
       toggleFavorite(listingId) {
         if (!isAuthenticated) { setAuthError("Favorilere eklemek için giriş yapmalısın."); return; }

@@ -20,6 +20,7 @@ type PublicListingCardRow = {
   demo?: boolean | null;
   commission_type: Listing["commissionType"];
   commission_value: number | string;
+  commission_tiers?: Array<{ min?: number | string; minSales?: number | string; rate?: number | string }> | null;
   bonus_amount?: number | string | null;
   bonus_quota?: number | string | null;
   category: string;
@@ -155,6 +156,9 @@ function mapListing(row: PublicListingCardRow): Listing {
     demo: Boolean(row.demo),
     commissionType: row.commission_type,
     commissionValue: toNumber(row.commission_value),
+    commissionTiers: Array.isArray(row.commission_tiers)
+      ? row.commission_tiers.map((t) => ({ minSales: toNumber(t.minSales ?? t.min ?? 0), rate: toNumber(t.rate ?? 0) })).filter((t) => t.rate > 0).sort((a, b) => a.minSales - b.minSales)
+      : undefined,
     bonusAmount: row.bonus_amount != null ? toNumber(row.bonus_amount) : undefined,
     bonusQuota: row.bonus_quota != null ? toNumber(row.bonus_quota) : undefined,
     category,
@@ -533,7 +537,9 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       reachEstimate: toNumber(row.reach_estimate),
       rejectionReason: row.rejection_reason ?? undefined,
       approvedAt: row.approved_at?.slice(0, 10),
-      createdAt: row.created_at.slice(0, 10)
+      createdAt: row.created_at.slice(0, 10),
+      commissionOverrideType: row.commission_override_type ?? undefined,
+      commissionOverrideValue: row.commission_override_value != null ? toNumber(row.commission_override_value) : undefined
     })),
     leads: (leadsResult.data ?? []).map((row) => ({
       id: row.id,

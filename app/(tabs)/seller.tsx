@@ -9,6 +9,7 @@ import { Alert } from "@/lib/alert";
 import { colors } from "@/components/colors";
 import { ReasonModal } from "@/components/reason-modal";
 import { RecordSaleModal } from "@/components/record-sale-modal";
+import { CommissionOverrideModal } from "@/components/commission-override-modal";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { QuickStart } from "@/components/quick-start";
@@ -85,7 +86,8 @@ function SellerScreenInner() {
     updateListingStatus,
     updateListingInventory,
     updateSaleStatus,
-    recordBatchPayout
+    recordBatchPayout,
+    setPartnershipCommission
   } = useStore();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
@@ -95,6 +97,7 @@ function SellerScreenInner() {
   const isWideWeb = useIsWideWeb();
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
   const [saleTarget, setSaleTarget] = useState<{ partnershipId: string; partnerName: string; price: number; currency?: string; commissionType: "rate" | "fixed"; commissionValue: number; leadId?: string } | null>(null);
+  const [commissionTarget, setCommissionTarget] = useState<{ partnershipId: string; partnerName: string; currency?: string; defaultLabel: string; currentType?: "rate" | "fixed"; currentValue?: number } | null>(null);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   // Grafik yalnız istemcide (new Date) render edilsin — SSG hydration uyuşmazlığı olmasın.
   const [mounted, setMounted] = useState(false);
@@ -688,6 +691,9 @@ function SellerScreenInner() {
                           <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
                             <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{partnerName}</Text>
                             <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>★ {partner?.rating ?? 0} · {clickCounts[p.id] ?? 0} {translateCopy("tıklama", language)} · {pLeads} {translateCopy("talep", language)} · {pSales.length} {translateCopy("satış", language)}</Text>
+                            {p.commissionOverrideType && p.commissionOverrideValue ? (
+                              <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("Özel komisyon", language)}: {p.commissionOverrideType === "rate" ? `%${p.commissionOverrideValue}` : moneyIn(p.commissionOverrideValue, listing.currency)}</Text>
+                            ) : null}
                           </View>
                           {pOwed > 0 ? (
                             <View style={{ alignItems: "flex-end" }}>
@@ -703,6 +709,13 @@ function SellerScreenInner() {
                           >
                             <MaterialCommunityIcons name="cash-plus" size={15} color="#FFFFFF" />
                             <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(canSell ? "Satış ekle" : (listing.stockCount <= 0 ? "Stok yok" : "İlan pasif"), language)}</Text>
+                          </Pressable>
+                          <Pressable
+                            onPress={() => setCommissionTarget({ partnershipId: p.id, partnerName, currency: listing.currency, defaultLabel: listing.commissionType === "rate" ? `%${listing.commissionValue}` : moneyIn(listing.commissionValue, listing.currency), currentType: p.commissionOverrideType, currentValue: p.commissionOverrideValue })}
+                            style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
+                          >
+                            <MaterialCommunityIcons name="cash-edit" size={15} color={colors.primaryDark} />
+                            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Komisyon", language)}</Text>
                           </Pressable>
                           {pPayable > 0 ? (
                             <Pressable
@@ -806,6 +819,17 @@ function SellerScreenInner() {
         icon="account-cancel-outline"
         onClose={() => setRejectTargetId(null)}
         onSubmit={(reason) => { if (rejectTargetId) rejectPartnership(rejectTargetId, reason); setRejectTargetId(null); }}
+      />
+      <CommissionOverrideModal
+        visible={commissionTarget !== null}
+        partnerName={commissionTarget?.partnerName ?? ""}
+        currency={commissionTarget?.currency}
+        defaultLabel={commissionTarget?.defaultLabel ?? ""}
+        currentType={commissionTarget?.currentType}
+        currentValue={commissionTarget?.currentValue}
+        onClose={() => setCommissionTarget(null)}
+        onSubmit={(type, value) => { if (commissionTarget) setPartnershipCommission(commissionTarget.partnershipId, type, value); }}
+        onClear={() => { if (commissionTarget) setPartnershipCommission(commissionTarget.partnershipId); }}
       />
       <RecordSaleModal
         visible={saleTarget !== null}

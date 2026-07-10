@@ -56,6 +56,9 @@ export type Listing = {
   demo?: boolean;
   commissionType: CommissionType;
   commissionValue: number;
+  // Kademeli komisyon (yalnız rate): ortağın o ilandaki kümülatif satış sayısına göre oran.
+  // min'e göre artan sıralı; uygulanan = min <= satışSayısı olan en yüksek tier.
+  commissionTiers?: Array<{ minSales: number; rate: number }>;
   // Teşvik bonusu: ilk `bonusQuota` satışı yapan ortaklara komisyona ek olarak
   // `bonusAmount` (ilan para birimi) ödenir. Satıcının taahhüdüdür; platform tutmaz.
   bonusAmount?: number;
@@ -103,6 +106,9 @@ export type Partnership = {
   rejectionReason?: string;
   approvedAt?: string;
   createdAt: string;
+  // Satıcının bu ortağa ÖZEL komisyonu (ilan varsayılanını ezer). İkisi de tanımlıysa uygulanır.
+  commissionOverrideType?: CommissionType;
+  commissionOverrideValue?: number;
 };
 
 export type Lead = {

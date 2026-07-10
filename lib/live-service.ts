@@ -330,6 +330,7 @@ export async function insertListing(listing: Listing): Promise<boolean> {
     price: listing.price,
     commission_type: listing.commissionType,
     commission_value: listing.commissionValue,
+    commission_tiers: listing.commissionTiers && listing.commissionTiers.length ? listing.commissionTiers : null,
     bonus_amount: listing.bonusAmount ?? null,
     bonus_quota: listing.bonusQuota ?? null,
     category: listing.category,
@@ -571,6 +572,17 @@ export async function loadPartnerLeaderboardLive(limit = 10): Promise<PublicLead
   }));
 }
 
+// Per-ortak komisyon override (satıcı = ilan sahibi; partnerships UPDATE RLS'i sahibe izinli).
+export async function setPartnershipCommissionLive(partnershipId: string, type: "rate" | "fixed" | null, value: number | null): Promise<boolean> {
+  if (!supabase) return true;
+  const { error } = await supabase.from("partnerships").update({
+    commission_override_type: type,
+    commission_override_value: value
+  }).eq("id", partnershipId);
+  if (error) { console.warn("Supabase commission override update failed", error); return false; }
+  return true;
+}
+
 export async function updatePartnershipStatus(partnership: Partnership): Promise<boolean> {
   if (!supabase) return true;
   const { error } = await supabase
@@ -767,6 +779,7 @@ export async function updateListingLive(listing: Listing) {
       price: listing.price,
       commission_type: listing.commissionType,
       commission_value: listing.commissionValue,
+      commission_tiers: listing.commissionTiers && listing.commissionTiers.length ? listing.commissionTiers : null,
       bonus_amount: listing.bonusAmount ?? null,
       bonus_quota: listing.bonusQuota ?? null,
       category: listing.category,

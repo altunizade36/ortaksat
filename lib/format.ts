@@ -1,4 +1,4 @@
-import type { Listing } from "@/lib/types";
+import type { Listing, Partnership } from "@/lib/types";
 import { defaultCurrency, deviceLocale, localize } from "@/lib/locale";
 
 const formatter = new Intl.NumberFormat(deviceLocale, {
@@ -59,6 +59,33 @@ export function commissionAmount(listing: Listing) {
   }
 
   return listing.commissionValue;
+}
+
+/** Kademeli komisyonda uygulanan oran: min <= priorSales olan en yüksek tier; yoksa baz oran. */
+export function tierRate(tiers: Array<{ minSales: number; rate: number }> | undefined, baseRate: number, priorSales: number): number {
+  if (!tiers || tiers.length === 0) return baseRate;
+  let rate = baseRate;
+  for (const t of [...tiers].sort((a, b) => a.minSales - b.minSales)) {
+    if (priorSales >= t.minSales) rate = t.rate;
+  }
+  return rate;
+}
+
+/**
+ * Bir satış için EFEKTİF komisyon (öncelik sırası): 1) per-ortak override, 2) kademeli
+ * (rate) oran (ortağın o ilandaki kümülatif satışına göre), 3) ilan varsayılanı.
+ */
+export function effectiveCommissionAmount(listing: Listing, partnership: Partnership | undefined, priorSales: number, amount: number, quantity: number): number {
+  const qty = Math.max(1, Math.floor(quantity || 1));
+  if (partnership?.commissionOverrideType && typeof partnership.commissionOverrideValue === "number") {
+    return partnership.commissionOverrideType === "rate"
+      ? Math.round((amount * partnership.commissionOverrideValue) / 100)
+      : Math.round(partnership.commissionOverrideValue * qty);
+  }
+  if (listing.commissionType === "rate") {
+    return Math.round((amount * tierRate(listing.commissionTiers, listing.commissionValue, priorSales)) / 100);
+  }
+  return Math.round(listing.commissionValue * qty);
 }
 
 export function shareUrl(listing: Listing, refCode: string) {

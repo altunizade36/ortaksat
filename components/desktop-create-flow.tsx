@@ -87,6 +87,8 @@ export function DesktopCreateFlow() {
   const [commissionValue, setCommissionValue] = useState("15");
   const [bonusAmount, setBonusAmount] = useState("");
   const [bonusQuota, setBonusQuota] = useState("");
+  // Kademeli komisyon (yalnız yüzde): ortağın kümülatif satışına göre artan oran satırları.
+  const [tiers, setTiers] = useState<Array<{ minSales: string; rate: string }>>([]);
   const [partnershipMode, setPartnershipMode] = useState<PartnershipMode>("approval");
   const [partnerNote, setPartnerNote] = useState("");
   const [contactMethod, setContactMethod] = useState<"message" | "whatsapp" | "phone">("message");
@@ -405,6 +407,9 @@ export function DesktopCreateFlow() {
         currency,
         commissionType,
         commissionValue: Number(commissionValue) || 0,
+        commissionTiers: commissionType === "rate"
+          ? tiers.map((tr) => ({ minSales: Math.max(0, Math.floor(Number(tr.minSales) || 0)), rate: Math.max(0, Math.min(90, Number(tr.rate) || 0)) })).filter((tr) => tr.rate > 0).sort((a, b) => a.minSales - b.minSales)
+          : undefined,
         bonusAmount: Number(bonusAmount) > 0 && Number(bonusQuota) > 0 ? Number(bonusAmount) : undefined,
         bonusQuota: Number(bonusAmount) > 0 && Number(bonusQuota) > 0 ? Number(bonusQuota) : undefined,
         partnershipMode,
@@ -707,6 +712,38 @@ export function DesktopCreateFlow() {
                 </View>
               </View>
             </View>
+
+            {/* Kademeli komisyon (yalnız yüzde): hacimle artan oran — ortakları çok satmaya teşvik. */}
+            {commissionType === "rate" ? (
+              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                  <MaterialCommunityIcons name="stairs-up" size={16} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Kademeli komisyon (opsiyonel)", language)}</Text>
+                </View>
+                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Ortağın bu ilandaki kümülatif satışı arttıkça oran yükselsin. Örn: 5. satıştan sonra %12, 20. satıştan sonra %15. Boş bırakırsan tek oran geçerli.", language)}</Text>
+                {tiers.map((tr, i) => (
+                  <View key={i} style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Satıştan sonra", language)}</Text>
+                      <TextInput value={tr.minSales} onChangeText={(v) => setTiers((s) => s.map((x, j) => (j === i ? { ...x, minSales: v } : x)))} keyboardType="numeric" placeholder="5" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 44, paddingHorizontal: 12 }} />
+                    </View>
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Oran (%)", language)}</Text>
+                      <TextInput value={tr.rate} onChangeText={(v) => setTiers((s) => s.map((x, j) => (j === i ? { ...x, rate: v } : x)))} keyboardType="numeric" placeholder="12" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 44, paddingHorizontal: 12 }} />
+                    </View>
+                    <Pressable onPress={() => setTiers((s) => s.filter((_, j) => j !== i))} hitSlop={8} accessibilityRole="button" style={{ paddingBottom: 11 }}>
+                      <MaterialCommunityIcons name="close-circle" size={22} color={colors.muted} />
+                    </Pressable>
+                  </View>
+                ))}
+                {tiers.length < 4 ? (
+                  <Pressable onPress={() => setTiers((s) => [...s, { minSales: "", rate: "" }])} accessibilityRole="button" style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 9 }}>
+                    <MaterialCommunityIcons name="plus" size={15} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Kademe ekle", language)}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
 
             <View style={{ gap: 6 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortaklık kabul şekli", language)}</Text>
