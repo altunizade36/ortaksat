@@ -48,7 +48,7 @@ export function EarningsCalculator({ listing, isDemo, onJoin }: { listing: Listi
         <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 10 }}>
           <MaterialCommunityIcons name="rocket-launch" size={17} color={colors.warning} />
           <Text style={{ color: colors.warning, flex: 1, fontSize: 12, fontWeight: "800", lineHeight: 16 }}>
-            {translateCopy("İlk", language)} {listing.bonusQuota} {translateCopy("satışa özel", language)} <Text style={{ fontWeight: "900" }}>+{moneyIn(bonus, listing.currency)}</Text> {translateCopy("başlangıç bonusu — erken ortaklara.", language)}
+            {translateCopy("Senin ilk", language)} {listing.bonusQuota} {translateCopy("satışına özel", language)} <Text style={{ fontWeight: "900" }}>+{moneyIn(bonus, listing.currency)}</Text> {translateCopy("başlangıç bonusu.", language)}
           </Text>
         </View>
       ) : null}

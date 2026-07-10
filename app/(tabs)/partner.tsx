@@ -697,7 +697,10 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
             {partnership.shareChannel || t("channelMissing")} · {partnership.reachEstimate ?? 0} {t("reach")}
           </Text>
         </View>
-        <StatusPill label={partnership.status === "active" ? "Aktif" : partnership.status === "pending" ? "Bekliyor" : "Reddedildi"} tone={partnership.status === "active" ? "success" : "warning"} />
+        <StatusPill
+          label={partnership.status === "active" ? "Aktif" : partnership.status === "pending" ? "Bekliyor" : partnership.status === "rejected" ? "Reddedildi" : partnership.status === "blocked" ? "Kapatıldı" : partnership.status === "completed" ? "Tamamlandı" : "Sonlandırıldı"}
+          tone={partnership.status === "active" ? "success" : partnership.status === "pending" ? "warning" : "neutral"}
+        />
       </View>
 
       {partnership.status === "active" ? (
@@ -728,9 +731,20 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
           <PrimaryButton icon="refresh" onPress={() => actions.reapply(listing.id)}>{translateCopy("Tekrar başvur", language)}</PrimaryButton>
           <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
         </View>
-      ) : (
+      ) : partnership.status === "pending" ? (
         <View style={{ gap: 8 }}>
           <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>{t("partnerApprovalPendingNote")} {partnership.note}</Text>
+          <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
+        </View>
+      ) : (
+        <View style={{ gap: 8 }}>
+          <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, gap: 4, padding: 12 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+              <MaterialCommunityIcons name="account-off-outline" size={16} color={colors.muted} />
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy(partnership.status === "blocked" ? "Ortaklık kapatıldı" : partnership.status === "completed" ? "Ortaklık tamamlandı" : "Ortaklık sonlandırıldı", language)}</Text>
+            </View>
+            <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{translateCopy(partnership.status === "blocked" ? "Bu ortaklık satıcı tarafından kapatıldı; paylaşım linkin artık aktif değil." : "Bu ortaklık sona erdi; paylaşım linkin artık lead getirmez.", language)}</Text>
+          </View>
           <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
         </View>
       )}

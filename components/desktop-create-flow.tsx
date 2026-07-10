@@ -683,7 +683,7 @@ export function DesktopCreateFlow() {
               )}
               {Number(bonusAmount) > 0 && Number(bonusQuota) > 0 && priceNum > 0 ? (
                 <Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "800" }}>
-                  {translateCopy("Bonus dahil ilk", language)} {Number(bonusQuota)} {translateCopy("satışta ortak toplam", language)}: {moneyIn((perSaleCommission + Number(bonusAmount)) * Number(bonusQuota), currency)}
+                  {translateCopy("Bonus dahil ilk", language)} {Number(bonusQuota)} {translateCopy("satışta HER ORTAK toplam", language)}: {moneyIn((perSaleCommission + Number(bonusAmount)) * Number(bonusQuota), currency)}
                 </Text>
               ) : null}
               <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("Ortaksat para tutmaz; ödeme satıcı ile ortak arasında yapılır. Rakamlar bilgilendirme amaçlıdır.", language)}</Text>
@@ -695,7 +695,7 @@ export function DesktopCreateFlow() {
                 <MaterialCommunityIcons name="rocket-launch-outline" size={16} color={colors.primaryDark} />
                 <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Hızlı başlangıç bonusu (opsiyonel)", language)}</Text>
               </View>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("İlk satışları yapan ortaklara komisyonun üstüne ek ödül taahhüt et — ilanın öne çıkar, ortaklar daha hızlı harekete geçer.", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Her ortağın ilk satışlarına komisyonun üstüne ek ödül taahhüt et — ilanın öne çıkar, ortaklar daha hızlı harekete geçer. Bonus her ortak için ayrı geçerlidir.", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                 <View style={{ flex: 1, minWidth: 150 }}>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>{translateCopy("Bonus tutarı", language)} ({CURRENCIES.find((c) => c.code === currency)?.symbol ?? "₺"})</Text>

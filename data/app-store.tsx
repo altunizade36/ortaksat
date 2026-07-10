@@ -1515,9 +1515,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const quantity = Math.max(1, Math.floor(input?.quantity ?? 1));
         const amount = Number.isFinite(input?.amount) && Number(input?.amount) > 0 ? Number(input?.amount) : listing.price * quantity;
         const returnUntil = new Date(Date.now() + listing.returnWindowDays * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
-        // Başlangıç bonusu: ilanın ilk `bonusQuota` satışına ek `bonusAmount` (satıcı taahhüdü,
-        // reklamı yapılıyordu ama komisyona hiç eklenmiyordu — sahte vaat). İptal olmayan
-        // önceki satış sayısı kotanın altındaysa bu satışa bonus eklenir.
+        // Başlangıç bonusu: HER ORTAĞIN ilk `bonusQuota` satışına ek `bonusAmount` (satıcı
+        // taahhüdü — reklamı yapılıyordu ama komisyona hiç eklenmiyordu, sahte vaattı). Bu
+        // ortağın iptal-olmayan önceki satış sayısı kotanın altındaysa bu satışa bonus eklenir.
         const priorPartnerSales = sales.filter((s) => s.partnershipId === lead.partnershipId && s.status !== "cancelled").length;
         const bonusApplied = (listing.bonusAmount ?? 0) > 0 && (listing.bonusQuota ?? 0) > 0 && priorPartnerSales < (listing.bonusQuota ?? 0) ? Math.round(listing.bonusAmount ?? 0) : 0;
         const baseCommission = listing.commissionType === "rate" ? Math.round((amount * listing.commissionValue) / 100) : commissionAmount(listing) * quantity;

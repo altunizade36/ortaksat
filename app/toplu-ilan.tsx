@@ -197,7 +197,7 @@ function BulkUploadInner() {
           locationNote: undefined,
           image: cover,
           stockCount: r.stock,
-          minPartnerRating: 4,
+          minPartnerRating: 0,
           commissionDueDays: 3,
           returnWindowDays: 7,
           partnerRules: ["Komisyon sadece onaylı satış kaydında oluşur."],

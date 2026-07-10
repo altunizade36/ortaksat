@@ -210,5 +210,19 @@ export const extraDict: Record<string, string> = {
   "satış daha": "more sales",
   "En üst seviyedesin — teşekkürler!": "You're at the top tier — thank you!",
   "Bonus dahil": "Bonus included",
-  "Tekrar başvur": "Apply again"
+  "Tekrar başvur": "Apply again",
+  // Sonlandırılan ortaklık + bonus (ortak-başına) netleştirme
+  "Kapatıldı": "Closed",
+  "Tamamlandı": "Completed",
+  "Sonlandırıldı": "Ended",
+  "Ortaklık kapatıldı": "Partnership closed",
+  "Ortaklık tamamlandı": "Partnership completed",
+  "Ortaklık sonlandırıldı": "Partnership ended",
+  "Bu ortaklık satıcı tarafından kapatıldı; paylaşım linkin artık aktif değil.": "This partnership was closed by the seller; your share link is no longer active.",
+  "Bu ortaklık sona erdi; paylaşım linkin artık lead getirmez.": "This partnership has ended; your share link no longer brings leads.",
+  "Senin ilk": "Your first",
+  "satışına özel": "sales get",
+  "başlangıç bonusu.": "start bonus.",
+  "satışta HER ORTAK toplam": "sales, EACH PARTNER earns",
+  "Her ortağın ilk satışlarına komisyonun üstüne ek ödül taahhüt et — ilanın öne çıkar, ortaklar daha hızlı harekete geçer. Bonus her ortak için ayrı geçerlidir.": "Commit an extra reward on top of commission for each partner's first sales — your listing stands out and partners act faster. The bonus applies separately per partner."
 };
