@@ -28,28 +28,33 @@ test("kayıt tamamlanır → kod ekranı gelir (takılmaz) + hesap DB'de oluşur
   await page.waitForTimeout(300);
   await page.screenshot({ path: "e2e-artifacts/register-filled.png", fullPage: true });
 
-  // Kayıt Ol — DİKKAT: "Kayıt Ol" hem sekme hem gönder butonu; gönder butonu
-  // (sekmeden sonra, formun altında) SON eşleşmedir.
+  // Kayıt Ol — DİKKAT: "Kayıt Ol" hem sekme hem gönder butonu; gönder butonu SON eşleşmedir.
   const t0 = Date.now();
   await page.getByText("Kayıt Ol", { exact: true }).last().click();
 
-  // KRİTİK (Round-2 #2): buton "Kayıt açılıyor…" halinde SONSUZA DEK TAKILMAMALI.
-  // Kabul: (a) kod ekranı ("E-postanı doğrula"), VEYA (b) GoTrue e-posta hız
-  // sınırı nedeniyle net hata (yine takılma yok — asıl bug buydu).
+  // Autoconfirm AÇIK (mailer_autoconfirm=true): kayıt session'ı ANINDA döndürür → otomatik giriş
+  // → /hosgeldin veya / yönlendirmesi (KOD EKRANI YOK, e-posta yok, hiçbir limite takılmaz).
+  // Eski akış (kod ekranı) da kabul edilir. ASLA "Çok sık denediniz" ile bloklanmamalı.
   const codeScreen = page.getByText("E-postanı doğrula").first();
   const rateLimited = page.getByText(/çok sık|biraz sonra|kayıt yapılamadı/i).first();
-  await expect(codeScreen.or(rateLimited)).toBeVisible({ timeout: 40_000 });
-  const gotCode = await codeScreen.isVisible();
-  console.log(`[register] ${((Date.now() - t0) / 1000).toFixed(1)}s: ${gotCode ? "KOD EKRANI geldi ✓" : "hız-sınırı hatası (takılma yok) ✓"}`);
+  await Promise.race([
+    page.waitForURL((u) => !u.pathname.startsWith("/auth"), { timeout: 40_000 }).catch(() => {}),
+    codeScreen.waitFor({ state: "visible", timeout: 40_000 }).catch(() => {}),
+    rateLimited.waitFor({ state: "visible", timeout: 40_000 }).catch(() => {})
+  ]);
+  const loggedIn = !new URL(page.url()).pathname.startsWith("/auth");
+  const gotCode = await codeScreen.isVisible().catch(() => false);
+  const blocked = await rateLimited.isVisible().catch(() => false);
+  console.log(`[register] ${((Date.now() - t0) / 1000).toFixed(1)}s: loggedIn=${loggedIn} code=${gotCode} blocked=${blocked}`);
   await page.screenshot({ path: "e2e-artifacts/register-result.png", fullPage: true });
 
+  expect(blocked, "kayıt rate-limit/hata ile bloklanmamalı (autoconfirm sonrası)").toBe(false);
+  expect(loggedIn || gotCode, "kayıt başarılı olmalı: otomatik giriş VEYA kod ekranı").toBe(true);
   const stuck = await page.getByText(/Kayıt açılıyor/i).count();
   expect(stuck, "buton 'Kayıt açılıyor…' halinde takılı kalmamalı").toBe(0);
 
-  if (gotCode) {
-    await page.waitForTimeout(1200);
-    const uid = await getUserId(email);
-    expect(uid, "kayıt olan hesap auth.users'ta bulunmalı").toBeTruthy();
-    await confirmUser(email);
-  }
+  await page.waitForTimeout(1200);
+  const uid = await getUserId(email);
+  expect(uid, "kayıt olan hesap auth.users'ta bulunmalı").toBeTruthy();
+  if (gotCode) await confirmUser(email);
 });
