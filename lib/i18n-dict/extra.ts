@@ -252,6 +252,7 @@ export const extraDict: Record<string, string> = {
   "Çalışma saati": "Working hours",
   "Kabin": "Cabin",
   // Yorum yanıtı + faydalı oyu
+  "Şu an yapılamadı, tekrar dene": "Couldn't do that right now, try again",
   "Satıcı yanıtı": "Seller reply",
   "Faydalı": "Helpful",
   "Yanıtla": "Reply",

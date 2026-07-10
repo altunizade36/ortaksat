@@ -33,7 +33,9 @@ export default function StoreScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
-  const { currentUser, findUser, listings, partnerships, leads, reports, reviews, sales, startConversation, reportUser, isFollowing, toggleFollow } = useStore();
+  const { currentUser, findUser, listings, partnerships, leads, reports, reviews, sales, startConversation, reportUser, isFollowing, toggleFollow, backendMode } = useStore();
+  // Girişli mi? (helpful oyu için: anon → /auth; girişli + geçici hata → yönlendirme YOK)
+  const isAuthed = backendMode === "supabase" && !!currentUser?.id && currentUser.id.includes("-");
 
   async function handleReportSeller() {
     if (!seller || isOwnStore) return;
@@ -86,6 +88,9 @@ export default function StoreScreen() {
   // giriş yapan kullanıcının YAZDIĞI yorumları tutuyor). Böylece ziyaretçi de
   // satıcının aldığı gerçek değerlendirmeleri görür.
   const [fetchedReviews, setFetchedReviews] = useState<Review[]>([]);
+  // ReviewCard yanıt/oy sonrası kaynağı günceller → tab değişip geri gelince (remount) stale
+  // prop yerine güncel değer seed'lenir (eskiden yanıt/oy görünüşte kayboluyordu).
+  const patchReview = (rid: string, patch: Partial<Review>) => setFetchedReviews((rs) => rs.map((r) => (r.id === rid ? { ...r, ...patch } : r)));
   useEffect(() => {
     let alive = true;
     if (id) void fetchReviewsForUser(id).then((r) => { if (alive) setFetchedReviews(r); });
@@ -377,7 +382,7 @@ export default function StoreScreen() {
                   {reviewsAboutSeller.length === 0 ? (
                     <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
                   ) : reviewsAboutSeller.map((r) => (
-                    <ReviewCard key={r.id} review={r} reviewerName={findUser(r.reviewerId)?.name} isSeller={isOwnStore} language={language} />
+                    <ReviewCard key={r.id} review={r} reviewerName={findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} language={language} />
                   ))}
                 </View>
               ) : null}
@@ -607,26 +612,11 @@ export default function StoreScreen() {
         {reviewsAboutSeller.length === 0 ? (
           <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
         ) : (
-          reviewsAboutSeller.map((r) => {
-            const reviewer = findUser(r.reviewerId);
-            return (
-              <View key={r.id} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 7, padding: 13 }}>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
-                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
-                    <MaterialCommunityIcons name="account" size={18} color={colors.primaryDark} />
-                  </View>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{reviewer?.name ?? translateCopy("Kullanıcı", language)}</Text>
-                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{shortDate(r.createdAt)}</Text>
-                  </View>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 1 }}>
-                    {[1, 2, 3, 4, 5].map((n) => <MaterialCommunityIcons key={n} name={n <= r.rating ? "star" : "star-outline"} size={13} color={colors.gold} />)}
-                  </View>
-                </View>
-                <Text selectable style={{ color: colors.ink, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{r.comment}</Text>
-              </View>
-            );
-          })
+          // Mobilde de paylaşılan ReviewCard: satıcı yanıtı + faydalı oyu masaüstüyle eşit (eskiden
+          // mobil satır bunları HİÇ göstermiyordu → satıcı yanıtları mobil ziyaretçiye görünmezdi).
+          reviewsAboutSeller.map((r) => (
+            <ReviewCard key={r.id} review={r} reviewerName={findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} language={language} />
+          ))
         )}
       </View>
     </ScrollView>
@@ -809,7 +799,7 @@ function isImageAvatar(value: string) {
 }
 
 // Yorum kartı: puan/yorum + satıcı yanıtı (yalnız satıcı yazar) + "Faydalı" oyu (girişli kullanıcı).
-function ReviewCard({ review, reviewerName, isSeller, language }: { review: Review; reviewerName?: string; isSeller: boolean; language: "tr" | "en" }) {
+function ReviewCard({ review, reviewerName, isSeller, authed, onPatch, language }: { review: Review; reviewerName?: string; isSeller: boolean; authed?: boolean; onPatch?: (id: string, patch: Partial<Review>) => void; language: "tr" | "en" }) {
   const router = useRouter();
   const [savedReply, setSavedReply] = useState(review.sellerReply);
   const [editing, setEditing] = useState(false);
@@ -817,21 +807,31 @@ function ReviewCard({ review, reviewerName, isSeller, language }: { review: Revi
   const [saving, setSaving] = useState(false);
   const [helpful, setHelpful] = useState(review.helpfulCount ?? 0);
   const [voting, setVoting] = useState(false);
+  const [voteErr, setVoteErr] = useState(false);
+  // Kaynak prop güncellenince (onPatch sonrası / yeniden fetch) yerel durumu senkronize et —
+  // tab değişip geri dönünce (remount) stale değer seed'lenmesin.
+  useEffect(() => { setSavedReply(review.sellerReply); }, [review.sellerReply]);
+  useEffect(() => { setHelpful(review.helpfulCount ?? 0); }, [review.helpfulCount]);
 
   const submitReply = async () => {
     if (saving) return;
     setSaving(true);
-    const ok = await replyToReviewLive(review.id, draft.trim());
+    const text = draft.trim();
+    const ok = await replyToReviewLive(review.id, text);
     setSaving(false);
-    if (ok) { setSavedReply(draft.trim() || undefined); setEditing(false); }
+    if (ok) { setSavedReply(text || undefined); setEditing(false); onPatch?.(review.id, { sellerReply: text || undefined }); }
   };
   const vote = async () => {
     if (voting) return;
+    // Girişsizse doğrudan girişe yönlendir (RPC'yi çağırıp null'ı "giriş yok" sanmak yerine).
+    if (authed === false) { router.push("/auth"); return; }
     setVoting(true);
+    setVoteErr(false);
     const n = await toggleReviewHelpfulLive(review.id);
     setVoting(false);
-    if (n == null) { router.push("/auth"); return; } // anon/oturum yok → giriş
+    if (n == null) { setVoteErr(true); return; } // GEÇİCİ hata (ağ/RPC) — girişli kullanıcıyı /auth'a ATMA
     setHelpful(n);
+    onPatch?.(review.id, { helpfulCount: n });
   };
 
   return (
@@ -871,6 +871,7 @@ function ReviewCard({ review, reviewerName, isSeller, language }: { review: Revi
             <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{savedReply ? translateCopy("Yanıtı düzenle", language) : translateCopy("Yanıtla", language)}</Text>
           </Pressable>
         ) : null}
+        {voteErr ? <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700" }}>{translateCopy("Şu an yapılamadı, tekrar dene", language)}</Text> : null}
       </View>
 
       {editing && isSeller ? (

@@ -428,6 +428,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
   // Katalog sayfalama (sunucu tarafli). mpOffsetRef = simdiye kadar cekilen
   // katalog ilan sayisi; hasMore = daha var mi; loadingMore = yukleme kilidi.
   const mpOffsetRef = useRef(0);
+  // refreshMarketplace ile loadMore yarışını engelleyen kuşak sayacı: refresh sayacı artırır,
+  // uçuştaki loadMore sonucu kuşak değiştiyse yok sayılır (offset kayması/boşluk önlenir).
+  const mpGenRef = useRef(0);
+  // Hesap-özeti hangi kullanıcı için yüklendi: aynı kullanıcı için (TOKEN_REFRESHED, çift
+  // INITIAL_SESSION) 10 tabloyu YENİDEN yükleyip iyi veriyi ezmeyi önler.
+  const loadedAccountUserRef = useRef<string | null>(null);
   const [marketplaceHasMore, setMarketplaceHasMore] = useState(isSupabaseConfigured);
   const [marketplaceLoadingMore, setMarketplaceLoadingMore] = useState(false);
   // İlk ilan yüklemesi sürerken skeleton göstermek için (yalnız canlı modda).
@@ -607,8 +613,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
       setAuthUser(profile);
       setBackendMode("supabase");
       setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
-      // Hesap verisi + öneriler + takipler: her biri BAĞIMSIZ dirençli — biri patlasa diğerleri yüklenir,
-      // ve hiçbiri auth'u bozmaz.
+      // OLAY-KAPISI: hesap-özetini (10 tablo) yalnız kullanıcı DEĞİŞTİĞİNDE / ilk yüklemede çek.
+      // Aynı kullanıcı için tekrar (TOKEN_REFRESHED ~saatlik, mount'ta çift INITIAL_SESSION)
+      // yeniden yükleme, bir dilim timeout/hata ile [] dönünce açık sohbet/satış gibi İYİ veriyi
+      // EZİYORDU. Realtime + optimistic yazımlar veriyi zaten güncel tutar. Senkron claim →
+      // mount'taki eşzamanlı iki çağrı da dedup edilir.
+      const alreadyLoaded = loadedAccountUserRef.current === profile.id;
+      if (alreadyLoaded) return;
+      loadedAccountUserRef.current = profile.id;
+      // Hesap verisi + öneriler + takipler: her biri BAĞIMSIZ dirençli — biri patlasa diğerleri yüklenir.
       const [account, suggestions, myFollows] = await Promise.all([
         loadAccountSnapshot(profile.id).catch(() => null),
         loadSuggestions().catch(() => ({ categorySuggestions: [], locationSuggestions: [] })),
@@ -630,6 +643,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setMessages(account.messages);
         setNotifications(account.notifications);
         setReports(account.reports);
+      } else {
+        // Toplam hata (ağ) → hiç veri yüklenmedi; ref'i sıfırla ki sonraki auth olayı yeniden denesin
+        // (ezme riski yok: ortada ezilecek yüklenmiş veri yok).
+        loadedAccountUserRef.current = null;
       }
     }
 
@@ -660,6 +677,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       } else {
         setAuthUser(null);
         setEmailVerified(false);
+        loadedAccountUserRef.current = null; // çıkış → sonraki giriş hesap-özetini yeniden yüklesin
         // Oturum başka bir yolla kapandıysa (token süresi, başka sekmede çıkış) da
         // özel veriyi temizle → sonraki kullanıcıya sızmasın.
         resetPrivateState();
@@ -2232,9 +2250,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (mpOffsetRef.current >= MP_MAX) { setMarketplaceHasMore(false); return; }
         setMarketplaceLoadingMore(true);
         const PAGE = 60;
+        const gen = mpGenRef.current; // refresh/retry bu sayacı artırırsa uçuştaki sonucu yok say
         void loadMarketplacePage(mpOffsetRef.current, PAGE)
           .then((page) => {
-            if (!page) return;
+            if (!page || mpGenRef.current !== gen) return; // araya refresh girdi → offset kaymasını önle
             mpOffsetRef.current += page.listings.length;
             if (page.listings.length < PAGE || mpOffsetRef.current >= MP_MAX) setMarketplaceHasMore(false);
             if (page.listings.length) {
@@ -2257,6 +2276,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       // yükleme — sahte gecikme/karıştırma yok). Önizleme modunda no-op.
       async refreshMarketplace() {
         if (!isSupabaseConfigured) return;
+        mpGenRef.current += 1; // uçuştaki loadMore'u geçersiz kıl (yarış/offset kayması önlenir)
         const snapshot = await loadMarketplaceSnapshot();
         if (!snapshot) return;
         setMarketplaceLoadFailed(false);
@@ -2269,6 +2289,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       // tekrar aç, snapshot'ı yeniden çek; yine başarısızsa fail durumunu koru.
       async retryMarketplace() {
         if (!isSupabaseConfigured) return;
+        mpGenRef.current += 1; // uçuştaki loadMore'u geçersiz kıl
         setMarketplaceInitialLoading(true);
         setMarketplaceLoadFailed(false);
         try {

@@ -84,7 +84,19 @@ const authStorage = hasBrowserStorage
 // istek sonsuza kadar asılı kalıp UI'ı dondurmasın — 15sn sonra iptal → sorgu hatası →
 // çağıran retry/empty UI'ına düşer. Çağıranın kendi AbortSignal'ı (ör. arama iptali) korunur.
 const REQUEST_TIMEOUT_MS = 15000;
+function reqUrl(input: RequestInfo | URL): string {
+  if (typeof input === "string") return input;
+  if (input instanceof URL) return input.href;
+  try { return (input as Request).url ?? ""; } catch { return ""; }
+}
 function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  // MUAFİYET: Storage yüklemeleri (fotoğraf/video) yavaş uplink'te 15sn'yi kolayca aşar;
+  // timeout onları iptal edince yükleme yerel blob:/file: URI'ye düşüp KIRIK görsel olarak
+  // kaydediliyordu (yalnız yükleyen görür, herkese kırık). Yükleme/storage yollarını
+  // timeout'tan muaf tut (kullanıcı-başlatımlı, kendi UI'ında iptal edilebilir). 15sn yalnız
+  // veri/auth sorgularına uygulanır (sonsuz-spinner koruması yalnız orada gerekli).
+  const u = reqUrl(input);
+  if (u.includes("/storage/v1/")) return fetch(input, init);
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
   const outer = init?.signal;
