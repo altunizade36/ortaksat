@@ -313,6 +313,14 @@ const KONUT_IC_OZELLIK = ["Ankastre Fırın", "Ankastre Ocak", "Davlumbaz", "Bul
 const KONUT_SITE_OZELLIK = ["Açık Otopark", "Kapalı Otopark", "Misafir Otoparkı", "Elektrikli Araç Şarjı", "Asansör", "Yük Asansörü", "Jeneratör", "Su Deposu", "Hidrofor", "7/24 Güvenlik", "Güvenlik Kamerası", "Kartlı Giriş", "Parmak İzi Giriş", "Kapıcı", "Resepsiyon", "Concierge", "Çocuk Parkı", "Kreş", "Basketbol Sahası", "Futbol Sahası", "Tenis Kortu", "Fitness Salonu", "Pilates/Yoga", "Açık Havuz", "Kapalı Havuz", "Çocuk Havuzu", "Sauna", "Hamam", "Spa", "Kafeterya", "Market", "Kuaför", "Yürüyüş Parkuru", "Bisiklet Yolu", "Peyzaj Alanı", "Süs Havuzu", "Kamelya", "Barbekü Alanı", "Ortak Bahçe", "Hobi Bahçesi", "Evcil Hayvan Alanı", "Yangın Merdiveni", "Acil Toplanma Alanı"];
 const MANZARA_OPTS = ["Deniz", "Boğaz", "Göl", "Nehir", "Baraj", "Orman", "Dağ", "Doğa", "Park", "Bahçe", "Havuz", "Şehir", "Cadde", "Meydan", "Marina", "Kale", "Tarihi Yapı", "Vadi", "Tarla", "Bağ", "Zeytinlik", "Yok"];
 const CEPHE_OPTS = ["Kuzey", "Güney", "Doğu", "Batı", "Kuzeydoğu", "Kuzeybatı", "Güneydoğu", "Güneybatı"];
+// Sahibinden-vari emlak "Özellikler" gridleri (çok-seçim). Detay sayfasında çip olarak,
+// create/edit'te seçilebilir, kategori facet'inde (kapasite sınırı elverdiğince) filtrelenebilir.
+const EMLAK_IC_OZELLIK = ["ADSL / Fiber İnternet", "Ahşap Doğrama", "Akıllı Ev", "Alarm (Hırsız)", "Alarm (Yangın)", "Alüminyum Doğrama", "Amerikan Kapı", "Amerikan Mutfak", "Ankastre Fırın", "Barbekü", "Beyaz Eşya", "Boyalı", "Bulaşık Makinesi", "Buzdolabı", "Çamaşır Kurutma Makinesi", "Çamaşır Makinesi", "Çamaşır Odası", "Çelik Kapı", "Duşakabin", "Duvar Kağıdı", "Ebeveyn Banyosu", "Fırın", "Giyinme Odası", "Görüntülü Diyafon", "Gömme Dolap", "Hilton Banyo", "Isıcam", "Jakuzi", "Kartonpiyer", "Kiler", "Klima", "Laminat Zemin", "Membran", "Mobilya", "Mutfak (Ankastre)", "Panjur / Jaluzi", "Parke Zemin", "PVC Doğrama", "Seramik Zemin", "Set Üstü Ocak", "Spot Aydınlatma", "Şofben", "Termosifon", "Vestiyer", "Yüz Tanıma & Parmak İzi"];
+const EMLAK_DIS_OZELLIK = ["Araç Şarj İstasyonu", "24 Saat Güvenlik", "Apartman Görevlisi", "Buhar Odası", "Çocuk Oyun Parkı", "Hamam", "Hidrofor", "Isı Yalıtımı", "Jeneratör", "Kablo TV", "Kamera Sistemi", "Kapıcı", "Köpek Parkı", "Kreş", "Müştemilat", "Sauna", "Siding", "Spor Alanı", "Su Deposu", "Tenis Kortu", "Uydu", "Yangın Merdiveni", "Yüzme Havuzu (Açık)", "Yüzme Havuzu (Kapalı)"];
+const EMLAK_MUHIT = ["Alışveriş Merkezi", "Belediye", "Cami", "Market", "Cemevi", "Denize Sıfır", "Eczane", "Eğlence Merkezi", "Göle Sıfır", "Hastane", "İbadethane", "İlkokul", "İtfaiye", "Kilise", "Lise", "Park", "Plaj", "Polis Merkezi", "Sağlık Ocağı", "Semt Pazarı", "Spor Salonu", "Şehir Merkezi", "Üniversite"];
+const EMLAK_ULASIM = ["Anayol", "Boğaz Köprüleri", "Cadde", "Deniz Otobüsü", "Dolmuş", "E-5", "Havaalanı", "İskele", "Marmaray", "Metro", "Metrobüs", "Minibüs", "Otobüs Durağı", "Sahil", "TEM", "Tramvay", "Tren İstasyonu"];
+const EMLAK_KONUT_TIPI = ["Ara Kat", "Ara Kat Dubleks", "Bahçe Dubleks", "Bahçe Katı", "Çatı Dubleks", "Dubleks", "En Üst Kat", "Forleks", "Giriş Katı", "Müstakil", "Teras Dubleks", "Tripleks", "Villa Tipi", "Yüksek Giriş"];
+const EMLAK_ENGELLI = ["Araç Park Yeri", "Engelli Uygun Asansör", "Engelli Uygun Banyo", "Engelli Uygun Mutfak", "Engelli Uygun Park", "Geniş Koridor", "Giriş / Rampa", "Priz / Elektrik Anahtarı", "Tutamak / Korkuluk", "Tuvalet", "Yaşlıya Uygun"];
 const ULASIM_OPTS = ["Metro", "Metrobüs", "Marmaray", "Tramvay", "Banliyö", "Otobüs", "Minibüs", "Dolmuş", "Taksi Durağı", "Havalimanı", "Otoyol", "TEM", "E-5", "Köprü", "İskele", "Marina", "Teleferik"];
 const CEVRE_OPTS = ["AVM", "Market", "Süpermarket", "Fırın", "Pazar", "Eczane", "Hastane", "Sağlık Ocağı", "Veteriner", "Anaokulu", "İlkokul", "Ortaokul", "Lise", "Üniversite", "Cami", "Park", "Spor Salonu", "Kütüphane", "Belediye", "Banka", "ATM", "Polis Merkezi", "İtfaiye", "Postane"];
 const ENERJI_SINIF = ["A+++", "A++", "A+", "A", "B", "C", "D", "E", "F", "G", "Belirtilmemiş"];
@@ -459,6 +467,12 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "deposit", label: "Depozito (kiralıkta)", type: "number", suffix: "₺" },
       { key: "facade", label: "Cephe / yön", type: "multiselect", options: CEPHE_OPTS },
       { key: "view", label: "Manzara", type: "multiselect", options: MANZARA_OPTS },
+      { key: "housingType", label: "Konut tipi", type: "multiselect", options: EMLAK_KONUT_TIPI },
+      { key: "interiorFeatures", label: "İç özellikler", type: "multiselect", options: EMLAK_IC_OZELLIK },
+      { key: "exteriorFeatures", label: "Dış özellikler", type: "multiselect", options: EMLAK_DIS_OZELLIK },
+      { key: "neighborhood", label: "Muhit / çevre", type: "multiselect", options: EMLAK_MUHIT },
+      { key: "transport", label: "Ulaşım", type: "multiselect", options: EMLAK_ULASIM },
+      { key: "accessibility", label: "Engelliye / yaşlıya uygun", type: "multiselect", options: EMLAK_ENGELLI },
       { key: "parking", label: "Otopark", type: "select", options: ["Açık Otopark", "Kapalı Otopark", "Açık & Kapalı", "Yok"] },
       { key: "elevator", label: "Asansör var mı?", type: "bool" },
       { key: "security", label: "Güvenlik var mı?", type: "bool" },
@@ -487,7 +501,13 @@ export const formSchemas: Record<string, FormSchema> = {
   isyeri: {
     key: "isyeri",
     title: "İş yeri bilgileri",
-    fields: [...ISYERI_CORE, { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m" }, ETIKET_FIELD, F.desc]
+    fields: [...ISYERI_CORE, { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m" },
+      { key: "interiorFeatures", label: "İç özellikler", type: "multiselect", options: EMLAK_IC_OZELLIK },
+      { key: "exteriorFeatures", label: "Dış özellikler", type: "multiselect", options: EMLAK_DIS_OZELLIK },
+      { key: "neighborhood", label: "Muhit / çevre", type: "multiselect", options: EMLAK_MUHIT },
+      { key: "transport", label: "Ulaşım", type: "multiselect", options: EMLAK_ULASIM },
+      { key: "accessibility", label: "Engelliye / yaşlıya uygun", type: "multiselect", options: EMLAK_ENGELLI },
+      ETIKET_FIELD, F.desc]
   },
   isyeriRestoran: {
     key: "isyeriRestoran",
