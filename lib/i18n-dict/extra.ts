@@ -197,5 +197,17 @@ export const extraDict: Record<string, string> = {
   "ile ortaklığı sonlandırmak istiyor musun? Paylaşım linki artık lead getirmez. Kötüye kullanım varsa Engelle'yi seç.": "— do you want to end this partnership? Their share link will stop bringing leads. Choose Block for abuse.",
   "borç": "owed",
   "Sattım — satıcıya bildir": "I sold it — notify seller",
-  "Satışını satıcı sisteme ekleyince komisyonun başlar. Referans linkinle satış yaptıysan buradan satıcıya bildir.": "Your commission starts once the seller records your sale. If you sold via your referral link, notify the seller here."
+  "Satışını satıcı sisteme ekleyince komisyonun başlar. Referans linkinle satış yaptıysan buradan satıcıya bildir.": "Your commission starts once the seller records your sale. If you sold via your referral link, notify the seller here.",
+  // Ortak seviyeleri (gamification)
+  "Başlangıç": "Starter",
+  "Bronz Ortak": "Bronze Partner",
+  "Gümüş Ortak": "Silver Partner",
+  "Altın Ortak": "Gold Partner",
+  "Elmas Ortak": "Diamond Partner",
+  "başarılı satış": "successful sales",
+  "kazanç": "earned",
+  "için": "for",
+  "satış daha": "more sales",
+  "En üst seviyedesin — teşekkürler!": "You're at the top tier — thank you!",
+  "Bonus dahil": "Bonus included"
 };

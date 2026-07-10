@@ -15,6 +15,7 @@ import { DisputeModal } from "@/components/dispute-modal";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { MiniBarChart } from "@/components/mini-bar-chart";
 import { PartnerLeaderboard } from "@/components/partner-leaderboard";
+import { PartnerTier } from "@/components/partner-tier";
 import { QuickStart } from "@/components/quick-start";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
@@ -436,6 +437,7 @@ function PartnerScreenInner() {
             {mounted && myBroughtLeads.length > 0 ? (
               <MiniBarChart data={leadSeries} title={translateCopy("Son 14 gün · getirdiğin talep", language)} totalLabel={`${myBroughtLeads.length} ${translateCopy("talep", language)}`} />
             ) : null}
+            <PartnerTier sales={mySales} />
             <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
