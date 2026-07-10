@@ -539,6 +539,15 @@ export async function partnerJoinLive(partnership: Partnership, inviteCode?: str
   return true;
 }
 
+// Toplu ödeme kaydı: bir ortağın (ops. tek ilan) borçlu komisyonlarını tek işlemde
+// seller_paid yapar + payout kaydı oluşturur (record_payout RPC). Platform para tutmaz.
+export async function recordPayoutLive(partnerId: string, listingId: string | null): Promise<boolean> {
+  if (!supabase) return true;
+  const { error } = await supabase.rpc("record_payout", { p_partner_id: partnerId, p_listing_id: listingId, p_note: null });
+  if (error) { console.warn("Supabase record_payout RPC failed", error); return false; }
+  return true;
+}
+
 export async function insertPartnership(partnership: Partnership): Promise<boolean> {
   if (!supabase) return true;
   const { error } = await supabase.from("partnerships").insert({

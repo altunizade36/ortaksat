@@ -69,6 +69,7 @@ import {
   updateUserStatusLive,
   updateUserVerificationLive,
   updateSaleStatusLive,
+  recordPayoutLive,
   insertCategorySuggestion,
   insertLocationSuggestion,
   updateCategorySuggestionStatusLive,
@@ -301,6 +302,7 @@ type AppStore = {
   adminNotifyUser: (userId: string, title: string, body: string) => void;
   adminBroadcast: (title: string, body: string) => void;
   updateSaleStatus: (saleId: string, status: SaleStatus, reason?: string) => void;
+  recordBatchPayout: (partnerId: string, listingId?: string) => void;
   findConversation: (id: string) => Conversation | undefined;
   findListing: (id: string) => Listing | undefined;
   findUser: (id: string) => User | undefined;
@@ -2076,6 +2078,26 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (liveUser && updatedSale && sale) persistCritical(updateSaleStatusLive(updatedSale), () => {
           setSales((items) => items.map((item) => (item.id === saleId ? sale : item)));
         }, "Durum güncellemesi kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
+      },
+      recordBatchPayout(partnerId, listingId) {
+        // Satıcı, bir ortağın (ops. tek ilan) BORÇLU komisyonlarını TEK toplu ödeme kaydıyla
+        // seller_paid yapar (uygulama-dışı ödeme kaydı). Ortak yine "Ödemeyi Aldım" ile kapatır.
+        const owed = sales.filter((s) => {
+          const part = partnerships.find((p) => p.id === s.partnershipId);
+          const l = listings.find((item) => item.id === s.listingId);
+          return part?.partnerId === partnerId && l?.ownerId === currentUser.id
+            && (!listingId || s.listingId === listingId)
+            && (s.status === "return_pending" || s.status === "approved");
+        });
+        if (owed.length === 0) { setAuthError("Bu ortağa ödenecek (borçlu) komisyon yok."); return; }
+        const prev = owed.map((s) => ({ id: s.id, status: s.status }));
+        const owedIds = new Set(owed.map((s) => s.id));
+        setSales((items) => items.map((s) => owedIds.has(s.id) ? { ...s, status: "seller_paid" as const, sellerMarkedPaidAt: today(), payoutNote: "Satıcı toplu ödeme kaydetti (uygulama dışı). Ortak onayı bekleniyor." } : s));
+        setAuthError(undefined);
+        notify(partnerId, "payout", "Komisyon ödemesi bildirildi", `${owed.length} satış için satıcı ödeme yaptığını bildirdi. Ödemeyi aldıysan onayla.`, listingId ? { listingId } : undefined);
+        if (liveUser) persistCritical(recordPayoutLive(partnerId, listingId ?? null), () => {
+          setSales((items) => items.map((s) => { const p = prev.find((x) => x.id === s.id); return p ? { ...s, status: p.status } : s; }));
+        }, "Toplu ödeme kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
       },
       platformSettings,
       emailVerified,

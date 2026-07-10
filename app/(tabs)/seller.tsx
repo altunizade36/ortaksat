@@ -84,7 +84,8 @@ function SellerScreenInner() {
     updateLeadStatus,
     updateListingStatus,
     updateListingInventory,
-    updateSaleStatus
+    updateSaleStatus,
+    recordBatchPayout
   } = useStore();
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
@@ -712,6 +713,15 @@ function SellerScreenInner() {
                             <MaterialCommunityIcons name="cash-plus" size={15} color="#FFFFFF" />
                             <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(canSell ? "Satış ekle" : (listing.stockCount <= 0 ? "Stok yok" : "İlan pasif"), language)}</Text>
                           </Pressable>
+                          {pOwed > 0 ? (
+                            <Pressable
+                              onPress={() => Alert.alert(translateCopy("Toplu ödeme kaydet", language), `${partnerName} — ${moneyIn(pOwed, listing.currency)} ${translateCopy("tutarındaki borçlu komisyonları ödediğini kaydet? Ortak onayınca kapanır. OrtakSat para tutmaz; ödeme aranızda yapılır.", language)}`, [{ text: t("cancel"), style: "cancel" }, { text: translateCopy("Ödedim, kaydet", language), onPress: () => recordBatchPayout(p.partnerId, listing.id) }])}
+                              style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
+                            >
+                              <MaterialCommunityIcons name="cash-check" size={15} color={colors.success} />
+                              <Text style={{ color: colors.success, fontSize: 12, fontWeight: "900" }}>{translateCopy("Ödeme kaydet", language)}</Text>
+                            </Pressable>
+                          ) : null}
                           <Pressable
                             onPress={() => openConversation(listing.id, p.partnerId, `${displayText(listing.title)} ortaklığın hakkında konuşalım.`)}
                             style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
