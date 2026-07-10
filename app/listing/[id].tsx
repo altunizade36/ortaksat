@@ -70,6 +70,7 @@ export default function ListingDetailScreen() {
     findListing,
     findPartnership,
     findUser,
+    isAuthenticated,
     isFavorite,
     joinListing,
     reportListing,
@@ -282,6 +283,8 @@ export default function ListingDetailScreen() {
 
   function handleJoin() {
     if (isDemo) return demoBlocked();
+    // Anonim kullanıcı: alert'te tıkanmak yerine girişe yönlendir (dönüşte bu ilana gelir).
+    if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; }
     // Davetli katılım ön-onaylıdır → başvuru notu istenmez. Onaylı (başvuru) ilanlarda
     // not zorunlu — satıcı gerçek gerekçeyi görsün.
     if (currentListing.partnershipMode !== "open" && !validInvite && !applicationNote.trim()) {

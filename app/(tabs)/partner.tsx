@@ -62,7 +62,7 @@ export default function PartnerScreen() {
 }
 
 function PartnerScreenInner() {
-  const { canReviewSale, createSaleReview, currentUser, findUser, joinListing, leads, listings, partnerships, sales, startConversation, updateLeadStatus, updateSaleStatus, users } = useStore();
+  const { canReviewSale, createSaleReview, currentUser, findUser, isAuthenticated, joinListing, leads, listings, partnerships, sales, startConversation, updateLeadStatus, updateSaleStatus, users } = useStore();
   const { language, t } = useLanguage();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
@@ -157,6 +157,8 @@ function PartnerScreenInner() {
   }, [rankedOpportunities, oppCommission, oppSort]);
 
   function onJoin(listingId: string) {
+    // Anonim: girişe yönlendir (dönüşte ilana gelir) — alert'te tıkanma yok.
+    if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${listingId}` } }); return; }
     const listing = listings.find((l) => l.id === listingId);
     // Onay/davet modu: satıcı gerçek başvuru bilgisi görmeli — uydurma sabit metin
     // GÖNDERME. Kullanıcıyı ilan detayındaki gerçek başvuru formuna yönlendir

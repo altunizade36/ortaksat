@@ -551,6 +551,26 @@ export async function recordPayoutLive(partnerId: string, listingId: string | nu
 // insertPartnership KALDIRILDI: ortaklık katılımı artık yalnız partner_join RPC ile
 // (sunucu-doğrulamalı). Doğrudan, sertleştirilmemiş insert yolu bırakılmadı.
 
+// Herkese açık ortak liderlik tablosu (RLS'ten bağımsız agregat view). Boş dönerse
+// (cold-start / önizleme) çağıran istemci-agregasyonuna düşer.
+export type PublicLeaderRow = { partnerId: string; fullName: string; verifiedIdentity: boolean; confirmedSales: number; paidEarned: number };
+export async function loadPartnerLeaderboardLive(limit = 10): Promise<PublicLeaderRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("partner_leaderboard_public")
+    .select("partner_id, full_name, verified_identity, confirmed_sales, paid_earned")
+    .order("confirmed_sales", { ascending: false })
+    .limit(limit);
+  if (error) { console.warn("Supabase leaderboard load failed", error); return []; }
+  return (data ?? []).map((r) => ({
+    partnerId: String(r.partner_id),
+    fullName: String(r.full_name ?? ""),
+    verifiedIdentity: Boolean(r.verified_identity),
+    confirmedSales: Number(r.confirmed_sales ?? 0),
+    paidEarned: Number(r.paid_earned ?? 0)
+  }));
+}
+
 export async function updatePartnershipStatus(partnership: Partnership): Promise<boolean> {
   if (!supabase) return true;
   const { error } = await supabase

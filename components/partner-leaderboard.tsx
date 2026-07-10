@@ -1,15 +1,16 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { loadPartnerLeaderboardLive, type PublicLeaderRow } from "@/lib/live-service";
 import type { Partnership, Sale, User } from "@/lib/types";
 
-type Rank = { user: User; sales: number; earned: number };
+type Rank = { id: string; name: string; avatar: string; rating: number; sales: number; earned: number };
 
 const MEDAL: Record<number, { color: string; icon: "trophy" | "medal" }> = {
   0: { color: "#D4AF37", icon: "trophy" },
@@ -34,11 +35,26 @@ export function PartnerLeaderboard({
 }) {
   const router = useRouter();
   const { language } = useLanguage();
+  // Herkese açık liderlik (RLS-bağımsız agregat view). Boşsa istemci-agregasyonuna düşer.
+  const [publicRows, setPublicRows] = useState<PublicLeaderRow[]>([]);
+  useEffect(() => {
+    let alive = true;
+    void loadPartnerLeaderboardLive(8).then((rows) => { if (alive) setPublicRows(rows); });
+    return () => { alive = false; };
+  }, []);
 
   const ranks = useMemo<Rank[]>(() => {
+    if (publicRows.length > 0) {
+      return publicRows
+        .map((row) => {
+          const u = users.find((x) => x.id === row.partnerId);
+          return { id: row.partnerId, name: u?.name || row.fullName || "Ortak", avatar: u?.avatar ?? "", rating: u?.rating ?? 0, sales: row.confirmedSales, earned: row.paidEarned };
+        })
+        .sort((a, b) => b.sales - a.sales || b.earned - a.earned)
+        .slice(0, 8);
+    }
+    // İstemci-agregasyonu (önizleme / henüz veri gelmemişken). Yalnız hak edilen sayılır.
     const psToPartner = new Map(partnerships.map((p) => [p.id, p.partnerId]));
-    // Yalnızca gerçekten hak edilen komisyon "kazanç" sayılır; iptal/anlaşmazlık/
-    // iade-bekleyen/onay-bekleyen satışlar dahil edilmez (önceden hepsi sayılıyordu).
     const EARNED = new Set<Sale["status"]>(["approved", "seller_paid", "paid"]);
     const agg = new Map<string, { sales: number; earned: number }>();
     for (const sale of sales) {
@@ -53,12 +69,12 @@ export function PartnerLeaderboard({
     return [...agg.entries()]
       .map(([userId, v]) => {
         const user = users.find((u) => u.id === userId);
-        return user ? { user, sales: v.sales, earned: v.earned } : null;
+        return user ? { id: user.id, name: user.name, avatar: user.avatar, rating: user.rating, sales: v.sales, earned: v.earned } : null;
       })
       .filter((r): r is Rank => r !== null)
       .sort((a, b) => b.earned - a.earned || b.sales - a.sales)
       .slice(0, 8);
-  }, [partnerships, sales, users]);
+  }, [publicRows, partnerships, sales, users]);
 
   if (ranks.length === 0) return null;
 
@@ -72,28 +88,28 @@ export function PartnerLeaderboard({
 
       {ranks.map((r, i) => {
         const medal = MEDAL[i];
-        const isMe = r.user.id === highlightUserId;
+        const isMe = r.id === highlightUserId;
         return (
           <Pressable
-            key={r.user.id}
-            onPress={() => router.push({ pathname: "/store/[id]", params: { id: r.user.id } })}
+            key={r.id}
+            onPress={() => router.push({ pathname: "/store/[id]", params: { id: r.id } })}
             accessibilityRole="button"
-            accessibilityLabel={`${r.user.name} ${translateCopy("ortak profilini aç", language)}`}
+            accessibilityLabel={`${r.name} ${translateCopy("ortak profilini aç", language)}`}
             style={{ alignItems: "center", backgroundColor: isMe ? colors.primarySoft : colors.surfaceAlt, borderColor: isMe ? colors.primary : "transparent", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 11, padding: 10 }}
           >
             <View style={{ alignItems: "center", justifyContent: "center", width: 26 }}>
               {medal ? <MaterialCommunityIcons name={medal.icon} size={20} color={medal.color} /> : <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "900" }}>{i + 1}</Text>}
             </View>
-            {isImageAvatar(r.user.avatar) ? (
-              <Image source={{ uri: r.user.avatar }} contentFit="cover" style={{ borderRadius: 10, height: 40, width: 40 }} />
+            {isImageAvatar(r.avatar) ? (
+              <Image source={{ uri: r.avatar }} contentFit="cover" style={{ borderRadius: 10, height: 40, width: 40 }} />
             ) : (
               <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
-                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{r.user.avatar || r.user.name.slice(0, 2)}</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{r.avatar || r.name.slice(0, 2)}</Text>
               </View>
             )}
             <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{r.user.name}{isMe ? translateCopy(" (sen)", language) : ""}</Text>
-              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{r.sales} {translateCopy("satış", language)} · ⭐ {r.user.rating}</Text>
+              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{r.name}{isMe ? translateCopy(" (sen)", language) : ""}</Text>
+              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{r.sales} {translateCopy("satış", language)}{r.rating ? ` · ⭐ ${r.rating}` : ""}</Text>
             </View>
             <View style={{ alignItems: "flex-end", gap: 1 }}>
               <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{money(r.earned)}</Text>
