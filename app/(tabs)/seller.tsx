@@ -94,7 +94,7 @@ function SellerScreenInner() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const isWideWeb = useIsWideWeb();
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
-  const [saleTarget, setSaleTarget] = useState<{ partnershipId: string; partnerName: string; price: number; currency?: string; commissionType: "rate" | "fixed"; commissionValue: number } | null>(null);
+  const [saleTarget, setSaleTarget] = useState<{ partnershipId: string; partnerName: string; price: number; currency?: string; commissionType: "rate" | "fixed"; commissionValue: number; leadId?: string } | null>(null);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   // Grafik yalnız istemcide (new Date) render edilsin — SSG hydration uyuşmazlığı olmasın.
   const [mounted, setMounted] = useState(false);
@@ -184,21 +184,6 @@ function SellerScreenInner() {
     return sellerPriority(b, myLeads, mySales, partnerships) - sellerPriority(a, myLeads, mySales, partnerships);
   });
 
-  function convertLead(leadId: string) {
-    const sale = createSaleFromLead(leadId);
-    if (!sale) {
-      Alert.alert(t("saleCreateFailed"), t("saleCreateFailedBody"));
-      return;
-    }
-    Alert.alert(t("saleApproved"), t("saleApprovedBody"));
-  }
-
-  function confirmConvertLead(leadId: string) {
-    Alert.alert(translateCopy("Satışa Çevir", language), t("convertLeadConfirmBody"), [
-      { text: t("cancel"), style: "cancel" },
-      { text: translateCopy("Satışa Çevir", language), onPress: () => convertLead(leadId) }
-    ]);
-  }
 
   function confirmRejectPartnership(partnershipId: string) {
     setRejectTargetId(partnershipId);
@@ -665,7 +650,7 @@ function SellerScreenInner() {
                       return (
                         <View style={{ flexDirection: "row", gap: 8 }}>
                           <View style={{ flex: 1 }}>
-                            <PrimaryButton tone={converted || !canConvert ? "soft" : "primary"} onPress={() => (converted || !canConvert ? undefined : confirmConvertLead(lead.id))}>
+                            <PrimaryButton tone={converted || !canConvert ? "soft" : "primary"} onPress={() => (converted || !canConvert ? undefined : setSaleTarget({ partnershipId: lead.partnershipId, partnerName: findUser(partnership?.partnerId ?? "")?.name ?? translateCopy("Ortak", language), price: listing.price, currency: listing.currency, commissionType: listing.commissionType, commissionValue: listing.commissionValue, leadId: lead.id }))}>
                               {label}
                             </PrimaryButton>
                           </View>
@@ -824,7 +809,14 @@ function SellerScreenInner() {
         commissionType={saleTarget?.commissionType ?? "rate"}
         commissionValue={saleTarget?.commissionValue ?? 0}
         onClose={() => setSaleTarget(null)}
-        onSubmit={(amount, quantity) => { if (saleTarget) recordSaleForPartner(saleTarget.partnershipId, { amount, quantity }); setSaleTarget(null); }}
+        onSubmit={(amount, quantity) => {
+          if (saleTarget) {
+            // Lead'den satış → miktar/tutar girilebilir (eskiden daima price×1 idi, yanlıştı).
+            if (saleTarget.leadId) createSaleFromLead(saleTarget.leadId, { amount, quantity });
+            else recordSaleForPartner(saleTarget.partnershipId, { amount, quantity });
+          }
+          setSaleTarget(null);
+        }}
       />
     </ScrollView>
   );
