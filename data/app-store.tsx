@@ -31,7 +31,7 @@ import {
   insertConversation,
   insertMessage,
   insertNotification,
-  insertPartnership,
+  partnerJoinLive,
   insertReport,
   insertReview,
   insertSaleFromLead,
@@ -1679,7 +1679,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
           } else {
             notify(listing.ownerId, "application", "Yeni ortak başvurusu", `${currentUser.name}, ${listing.title} ilanına yeniden başvurdu.`, { listingId: listing.id, partnershipId: reopened.id });
           }
-          if (liveUser) persistCritical(updatePartnershipStatus(reopened), () => {
+          // Reopen ORTAK tarafından yapılır; partnerships UPDATE RLS'i yalnız sahibe izin
+          // verir → SUNUCU RPC'si (partner_join) reddedileni yeniden açar + invite doğrular.
+          if (liveUser) persistCritical(partnerJoinLive(reopened, input?.inviteCode), () => {
             setPartnerships((items) => items.map((p) => (p.id === existing.id ? existing : p)));
             if (reopenStatus === "active") setListings((items) => items.map((l) => (l.id === listingId ? { ...l, partnerCount: Math.max(0, l.partnerCount - 1) } : l)));
           }, "Başvuru güncellenemedi. Bağlantını kontrol edip tekrar dene.");
@@ -1712,7 +1714,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         } else {
           notify(listing.ownerId, "application", "Yeni ortak başvurusu", `${currentUser.name}, ${listing.title} ilanına başvurdu.`, { listingId: listing.id, partnershipId: partnership.id });
         }
-        if (liveUser) persistCritical(insertPartnership(partnership), () => {
+        // Katılım SUNUCU RPC'siyle: invite kodu SQL'de doğrulanır, onay modu 'pending'e
+        // düşer (istemci hilesi geçmez), açık mod anında aktif. Trigger doğrudan-POST bypass'ı kapatır.
+        if (liveUser) persistCritical(partnerJoinLive(partnership, input?.inviteCode), () => {
           setPartnerships((items) => items.filter((p) => p.id !== partnership.id));
           if (status === "active") setListings((items) => items.map((l) => (l.id === listingId ? { ...l, partnerCount: Math.max(0, l.partnerCount - 1) } : l)));
         }, "Ortaklık kaydedilemedi. Bağlantını kontrol edip tekrar dene.");

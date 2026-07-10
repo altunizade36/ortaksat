@@ -519,6 +519,26 @@ export async function uploadProfileAvatar(uri: string, userId: string) {
   return supabase.storage.from("profile-avatars").getPublicUrl(path).data.publicUrl;
 }
 
+// Ortaklık katılımı SUNUCU-doğrulamalı RPC üzerinden: invite kodu SQL'de doğrulanır,
+// onay modu 'pending' yapılır, reddedilen yeniden açılır. Doğrudan insert/update RLS'e
+// takılan (ortak UPDATE yapamaz) reopen'ı da çözer. Yeni + reopen için tek yol.
+export async function partnerJoinLive(partnership: Partnership, inviteCode?: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { error } = await supabase.rpc("partner_join", {
+    p_partnership_id: partnership.id,
+    p_listing_id: partnership.listingId,
+    p_ref_code: partnership.refCode,
+    p_invite_code: inviteCode ?? null,
+    p_note: partnership.note ?? "",
+    p_share_channel: partnership.shareChannel ?? "",
+    p_audience: partnership.audience ?? "",
+    p_platform_handle: partnership.platformHandle ?? "",
+    p_reach: partnership.reachEstimate ?? 0
+  });
+  if (error) { console.warn("Supabase partner_join RPC failed", error); return false; }
+  return true;
+}
+
 export async function insertPartnership(partnership: Partnership): Promise<boolean> {
   if (!supabase) return true;
   const { error } = await supabase.from("partnerships").insert({
