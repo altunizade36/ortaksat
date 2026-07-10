@@ -225,6 +225,7 @@ export const extraDict: Record<string, string> = {
   "Ödedim, kaydet": "I paid — record",
   "tutarındaki borçlu komisyonları ödediğini kaydet? Ortak onayınca kapanır. OrtakSat para tutmaz; ödeme aranızda yapılır.": "record that you paid the owed commissions of this amount? It closes once the partner confirms. OrtakSat holds no money; payment is between you two.",
   "Bu ortağa ödenecek (borçlu) komisyon yok.": "No owed commissions to pay this partner.",
+  "İhtilaflı komisyon": "Disputed commission",
   "Senin ilk": "Your first",
   "satışına özel": "sales get",
   "başlangıç bonusu.": "start bonus.",

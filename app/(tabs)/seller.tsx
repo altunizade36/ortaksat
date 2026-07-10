@@ -147,6 +147,8 @@ function SellerScreenInner() {
   const isOwedSale = saleIsOwed;
   const openCommission = mySales.filter(isOwedSale).reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const paidCommission = mySales.filter((sale) => sale.status === "paid").reduce((sum, sale) => sum + sale.commissionAmount, 0);
+  // Anlaşmazlıktaki (disputed) komisyonlar "açık"tan düşülür ama gizlenmemeli — ayrı tile.
+  const disputedCommission = mySales.filter((sale) => sale.status === "disputed").reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const newLeads = myLeads.filter((lead) => lead.status === "new");
   const contactedLeads = myLeads.filter((lead) => lead.status === "contacted");
   const convertedLeads = myLeads.filter((lead) => lead.status === "converted");
@@ -289,6 +291,7 @@ function SellerScreenInner() {
           <KpiCard icon="storefront-outline" label={translateCopy("Aktif ilan", language)} value={`${myListings.filter((listing) => listing.status === "active").length}`} />
           <KpiCard icon="cash-clock" label={translateCopy("Açık komisyon", language)} value={money(openCommission)} tone={openCommission > 0 ? "warn" : undefined} />
           <KpiCard icon="cash-check" label={translateCopy("Ödenen komisyon", language)} value={money(paidCommission)} tone="ok" />
+          {disputedCommission > 0 ? <KpiCard icon="alert-octagon-outline" label={translateCopy("İhtilaflı komisyon", language)} value={money(disputedCommission)} tone="warn" /> : null}
           <KpiCard icon="account-plus-outline" label={translateCopy("Bekleyen başvuru", language)} value={`${myApplications.length}`} tone={myApplications.length ? "warn" : undefined} />
           <KpiCard icon="account-clock-outline" label={translateCopy("Yeni talep", language)} value={`${newLeads.length}`} tone={newLeads.length ? "warn" : undefined} />
           <KpiCard icon="chart-line" label={translateCopy("Dönüşüm", language)} value={`%${totalConversionRate}`} />
