@@ -871,6 +871,23 @@ export const formSchemas: Record<string, FormSchema> = {
       F.price, F.takas, F.desc
     ]
   },
+  // Traktör & tarım aracı: motor gücü/çalışma saati/çekiş/kabin.
+  traktor: {
+    key: "traktor",
+    title: "Traktör / tarım aracı bilgileri",
+    fields: [
+      F.title, F.marka, F.model,
+      { key: "vehicleType", label: "Tip", type: "select", options: ["Traktör", "Biçerdöver", "Çapa Makinesi", "Balya Makinesi", "Pulluk", "Römork", "İlaçlama Makinesi", "Süt Sağım Makinesi", "Diğer Tarım Ekipmanı"] },
+      { key: "year", label: "Yıl", type: "number" },
+      { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp" },
+      { key: "workHours", label: "Çalışma saati", type: "number", suffix: "saat" },
+      { key: "traction", label: "Çekiş", type: "select", options: ["2WD (Arkadan İtiş)", "4WD (Çift Çeker)"] },
+      { key: "cabin", label: "Kabin", type: "select", options: ["Kabinli", "Kabinsiz", "Gölgelikli"] },
+      { key: "damage", label: "Durum", type: "select", options: ["Çalışır / Sorunsuz", "Bakım Gerektirir", "Parça / Hurda"] },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Bayiden"] },
+      F.price, F.takas, VASITA_ETIKET_FIELD, F.desc
+    ]
+  },
   yedekParca: {
     key: "yedekParca",
     title: "Parça / aksesuar bilgileri",
@@ -1227,6 +1244,7 @@ export const categoryTree: CategoryNode[] = [
     node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Elektrikli Bisiklet", "Elektrikli Motosiklet", "Hoverboard", "Segway", "Elektrikli Golf Aracı"], "vasitaGenel"), "vasitaGenel"),
     node("Klasik & Koleksiyon Araçlar", leaves(["Klasik Otomobil", "Klasik Motosiklet", "Antika Araç", "Restorasyonluk Araç", "Amerikan Klasik", "Anadol / Murat / Şahin", "Jeep & Willys"], "otomobil"), "otomobil"),
     node("Engelli Araçları", leaves(["Engelli Otomobil (ÖTV'siz)", "Adaptasyonlu Araç", "Engelli Scooter", "Akülü Sandalye"], "vasitaGenel"), "vasitaGenel"),
+    node("Traktör & Tarım Araçları", brandModelNodes(["New Holland", "Massey Ferguson", "John Deere", "Case IH", "Fiat", "Ford", "Deutz-Fahr", "Kubota", "Same", "Landini", "Tümosan", "Erkunt", "Başak", "TürkTraktör", "Hattat", "Claas", "Valtra", "Diğer"], {}, "traktor"), "traktor"),
     leaf("Hasarlı & Pert Araçlar", "otomobil"),
     leaf("Kiralık Araçlar", "vasitaGenel")
   ], "vasitaGenel", IMG("1503376780353-7e6692767b70")),
