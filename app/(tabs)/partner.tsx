@@ -127,7 +127,9 @@ function PartnerScreenInner() {
   }).sort(focusFirst);
 
   // Ortaklık fırsatları: başkalarının TÜM aktif ilanları (herkese açık, global).
-  const joinedIds = new Set(myPartnerships.map((p) => p.listingId));
+  // Reddedilenler HARİÇ: reddedilen bir başvuru fırsat listesinde "Ortak" (pasif) gösterip
+  // tekrar başvuruyu engelliyordu; joinListing yeniden-açmayı destekliyor.
+  const joinedIds = new Set(myPartnerships.filter((p) => p.status !== "rejected").map((p) => p.listingId));
   // "Sadece davetle" ilanlar fırsat listesinde gösterilmez — bunlara yalnızca
   // satıcının paylaştığı davet linkiyle ortak olunabilir.
   const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id && l.partnershipMode !== "invite");
@@ -220,7 +222,8 @@ function PartnerScreenInner() {
     claimSale,
     updateLeadStatus,
     updateSaleStatus,
-    dispute: (saleId: string) => setDisputeSaleId(saleId)
+    dispute: (saleId: string) => setDisputeSaleId(saleId),
+    reapply: onJoin
   };
   const renderPartnershipCard = (partnership: Partnership) => {
     const listing = listings.find((item) => item.id === partnership.listingId);
@@ -662,6 +665,7 @@ type PartnershipCardActions = {
   updateLeadStatus: (leadId: string, status: LeadStatus) => void;
   updateSaleStatus: (saleId: string, status: SaleStatus, reason?: string) => void;
   dispute: (saleId: string) => void;
+  reapply: (listingId: string) => void;
 };
 
 // Ortak ortaklık kartı — hem mobil liste hem masaüstü "Aktif/Bekleyen" sekmesinde
@@ -721,6 +725,7 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
             </View>
             <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{displayText(partnership.rejectionReason || "Satıcı bu başvuruyu uygun görmedi.")}</Text>
           </View>
+          <PrimaryButton icon="refresh" onPress={() => actions.reapply(listing.id)}>{translateCopy("Tekrar başvur", language)}</PrimaryButton>
           <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
         </View>
       ) : (

@@ -209,5 +209,6 @@ export const extraDict: Record<string, string> = {
   "için": "for",
   "satış daha": "more sales",
   "En üst seviyedesin — teşekkürler!": "You're at the top tier — thank you!",
-  "Bonus dahil": "Bonus included"
+  "Bonus dahil": "Bonus included",
+  "Tekrar başvur": "Apply again"
 };

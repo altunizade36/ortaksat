@@ -51,8 +51,10 @@ const intentLabels: Record<PurchaseIntent, string> = {
 };
 
 export default function ListingDetailScreen() {
-  const params = useLocalSearchParams<{ id: string; ref?: string; p?: string; "ortak-davet"?: string }>();
+  const params = useLocalSearchParams<{ id: string; ref?: string; p?: string; "ortak-davet"?: string; apply?: string }>();
   const id = (Array.isArray(params.id) ? params.id[0] : params.id) ?? "";
+  // Ortak panelinden "başvur" derin-linki (?apply=1): başvuru formunu göze getir/odakla.
+  const wantsApply = (Array.isArray(params.apply) ? params.apply[0] : params.apply) === "1";
   const inviteParam = Array.isArray(params["ortak-davet"]) ? params["ortak-davet"][0] : params["ortak-davet"];
   // Ortak referans kodu: ?ref= veya kısa ?p= (varsa). Landing dışı akışta da yakalanır.
   const refParam = (Array.isArray(params.ref) ? params.ref[0] : params.ref) || (Array.isArray(params.p) ? params.p[0] : params.p) || "";
@@ -727,6 +729,7 @@ export default function ListingDetailScreen() {
                       placeholder={translateCopy("Kısaca anlat: kime, nerede ve nasıl ulaştıracaksın?", language)}
                       placeholderTextColor={colors.subtle}
                       multiline
+                      autoFocus={wantsApply}
                       style={{ backgroundColor: colors.surface, borderColor: applicationNote.trim() ? colors.line : colors.warning, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 64, padding: 10, textAlignVertical: "top" }}
                     />
                   </View>

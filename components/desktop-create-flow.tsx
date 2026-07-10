@@ -417,7 +417,9 @@ export function DesktopCreateFlow() {
         locationNote: loc.neighborhood?.trim() || undefined,
         image: cover,
         stockCount: Math.max(1, Math.floor(parseTrPrice(String(values.stock ?? "")) || 1)),
-        minPartnerRating: 4,
+        // Varsayılan 4 idi → 1–3.9 puanlı ortakları engelliyordu (soğuk-başlangıçta
+        // ortak arzını kısıyordu). 0 = herkes ortak olabilir; satıcı isterse sonradan yükseltir.
+        minPartnerRating: 0,
         commissionDueDays: 3,
         returnWindowDays: 7,
         partnerRules: [...boolLines, partnerNote.trim()].filter(Boolean).length ? [...boolLines, partnerNote.trim()].filter(Boolean) : ["Komisyon sadece onaylı satış kaydında oluşur."],
