@@ -5,7 +5,7 @@ import { Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, 
 
 import { Alert } from "@/lib/alert";
 
-import { AdminActivity } from "@/components/admin-activity";
+import { AdminActivity, type AdminAnalytics } from "@/components/admin-activity";
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { EmptyState } from "@/components/ui";
@@ -86,6 +86,11 @@ const SALE_TONE: Record<SaleStatus, { tint: string; color: string; label: string
   disputed: { tint: colors.accentSoft, color: colors.accent, label: "İtiraz" }
 };
 
+// Büyük sayıları binlik ayraçla biçimle (tabular hizalama için).
+function fmtN(n: number): string {
+  return new Intl.NumberFormat("tr-TR").format(Math.round(Number.isFinite(n) ? n : 0));
+}
+
 // Son 12 ay — gerçek veri: yayınlanan ilanların aya göre dağılımı.
 function monthlyListingChart(listings: Array<{ createdAt: string }>): { data: number[]; labels: string[] } {
   const MON = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
@@ -160,6 +165,9 @@ function AdminScreenInner() {
   const [section, setSection] = useState<Section>("dashboard");
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [audit, setAudit] = useState<{ logs: AuditEntry[]; rateHits: number } | null>(null);
+  // Sunucu-gerçek analitik (AdminActivity 15sn'de bir çeker + onData ile buraya verir) → Dashboard/stats
+  // KPI'ları istemci-cap'li dizilerden DEĞİL bu tek kaynaktan besler (çelişen toplamlar giderilir).
+  const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
 
   useEffect(() => {
     fetchAdminAudit().then(setAudit).catch(() => setAudit(null));
@@ -300,12 +308,13 @@ function AdminScreenInner() {
 
         {section === "dashboard" ? (
           <View style={{ gap: 18 }}>
-          <AdminActivity />
+          <AdminActivity onData={setAnalytics} />
           <Dashboard
             usersN={liveUsers.length} listingsN={listings.length} salesN={sales.length} commission={totalCommission}
             activeN={activeListings.length} pendingN={pendingReview.length} reportsN={pendingReports} partnershipsN={pendingPartnerships} messagesN={messages.length}
             disputedN={disputedSalesN} unpaidCommission={unpaidCommission} pendingCat={pendingCat} pendingLoc={pendingLoc}
             listings={listings} users={users} sales={sales} partnerships={partnerships} reports={reports} findUser={findUser} notifications={notifications} leads={leads} setSection={setSection}
+            analytics={analytics}
           />
           </View>
         ) : null}
@@ -780,16 +789,16 @@ function AdminScreenInner() {
         {section === "stats" ? (
           <View style={{ gap: 16 }}>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-              <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={`${users.length}`} title="Kullanıcı" />
-              <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={`${activeListings.length}`} title="Aktif ilan" />
-              <Stat icon="handshake" tint={colors.violetSoft} color={colors.violet} value={`${partnerships.length}`} title="Ortaklık" />
-              <Stat icon="cart-check" tint={colors.successSoft} color={colors.success} value={`${sales.length}`} title="Satış" />
-              <Stat icon="account-clock" tint={colors.goldSoft} color={colors.gold} value={`${leads.length}`} title="Talep" />
-              <Stat icon="cash-multiple" tint={colors.successSoft} color={colors.success} value={money(totalCommission)} title="Komisyon (kayıt)" />
-              <Stat icon="check-decagram" tint={colors.primarySoft} color={colors.primaryDark} value={`${users.filter((u) => u.verifiedPhone || u.verifiedIdentity).length}`} title="Doğrulanmış üye" />
-              <Stat icon="star" tint={colors.goldSoft} color={colors.gold} value={`${listings.filter((l) => l.featured).length}`} title="Öne çıkan ilan" />
-              <Stat icon="map-marker" tint={colors.infoSoft} color={colors.info} value={`${new Set(activeListings.map((l) => l.location)).size}`} title="Şehir" />
-              <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(unpaidCommission)} title="Bekleyen komisyon" />
+              <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={fmtN(analytics?.total_users ?? users.length)} title="Kullanıcı" />
+              <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={fmtN(analytics?.listings_active ?? activeListings.length)} title="Aktif ilan" />
+              <Stat icon="handshake" tint={colors.violetSoft} color={colors.violet} value={fmtN(analytics?.partnerships_total ?? partnerships.length)} title="Ortaklık" />
+              <Stat icon="cart-check" tint={colors.successSoft} color={colors.success} value={fmtN(analytics?.commissions_total ?? sales.length)} title="Komisyon kaydı" />
+              <Stat icon="account-clock" tint={colors.goldSoft} color={colors.gold} value={`${leads.length}`} title="Talep (yüklü)" />
+              <Stat icon="cash-multiple" tint={colors.successSoft} color={colors.success} value={money(analytics ? analytics.gmv : totalCommission)} title="Toplam GMV" />
+              <Stat icon="check-decagram" tint={colors.primarySoft} color={colors.primaryDark} value={`${users.filter((u) => u.verifiedPhone || u.verifiedIdentity).length}`} title="Doğrulanmış (yüklü)" />
+              <Stat icon="star" tint={colors.goldSoft} color={colors.gold} value={`${listings.filter((l) => l.featured).length}`} title="Öne çıkan (yüklü)" />
+              <Stat icon="map-marker" tint={colors.infoSoft} color={colors.info} value={`${new Set(activeListings.map((l) => l.location)).size}`} title="Şehir (yüklü)" />
+              <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(analytics ? Math.max(0, analytics.gmv - analytics.paid_gmv) : unpaidCommission)} title="Bekleyen komisyon" />
             </View>
             <Panel title="Aylık İlan Grafiği" sub="Son 12 ay — yayınlanan ilan (gerçek veri)">
               <BarChart data={chartData} labels={chartLabels} />
@@ -959,13 +968,27 @@ type DashProps = {
   sales: ReturnType<typeof useStore>["sales"]; partnerships: ReturnType<typeof useStore>["partnerships"]; reports: ReturnType<typeof useStore>["reports"];
   notifications: ReturnType<typeof useStore>["notifications"]; leads: ReturnType<typeof useStore>["leads"];
   setSection: (s: Section) => void;
+  analytics?: AdminAnalytics | null;
 };
-function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, reportsN, partnershipsN, messagesN, disputedN, unpaidCommission, pendingCat, pendingLoc, listings, users, sales, partnerships, reports, findUser, notifications, leads, setSection }: DashProps) {
+function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, reportsN, partnershipsN, messagesN, disputedN, unpaidCommission, pendingCat, pendingLoc, listings, users, sales, partnerships, reports, findUser, notifications, leads, setSection, analytics }: DashProps) {
+  // SUNUCU-GERÇEK toplamlar (admin_live_analytics RPC) — istemci-cap'li (≤1000) dizilerden DEĞİL.
+  // Böylece dashboard sayıları AdminActivity ile TUTARLI ve ölçekte DOĞRU. analytics yoksa (önizleme) prop'a düşer.
+  const totalUsers = analytics?.total_users ?? usersN;
+  const totalListings = analytics?.listings_total ?? listingsN;
+  const activeListings = analytics?.listings_active ?? activeN;
+  const gmvTotal = analytics ? analytics.gmv : commission;
+  const gmvUnpaid = analytics ? Math.max(0, analytics.gmv - analytics.paid_gmv) : unpaidCommission;
+  const salesRecords = analytics?.commissions_total ?? salesN;
+  const pendingListings = analytics?.listings_pending ?? pendingN;
+  const openReports = analytics?.open_reports ?? reportsN;
+  const pendingPartners = analytics?.partnerships_pending ?? partnershipsN;
+  const catQ = analytics?.cat_suggestions ?? pendingCat;
+  const locQ = analytics?.loc_suggestions ?? pendingLoc;
   const recentUsers = users.slice().filter((u) => u.status !== "deleted").slice(-5).reverse();
   const recentListings = sortByDate(listings, "createdAt").slice(0, 6);
   const chart = monthlyListingChart(listings);
-  const openWork = pendingN + reportsN + partnershipsN + disputedN + pendingCat + pendingLoc;
-  const publishRate = listingsN ? Math.round((activeN / listingsN) * 100) : 0;
+  const openWork = pendingListings + openReports + pendingPartners + disputedN + catQ + locQ;
+  const publishRate = totalListings ? Math.round((activeListings / totalListings) * 100) : 0;
   const conversionRate = leads.length ? Math.round((salesN / leads.length) * 100) : 0;
   const listingStatusData = listingStatusStats(listings);
   const categoryData = topCategoryStats(listings, 7);
@@ -984,10 +1007,10 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
     ...recentListings.map((l) => ({ icon: "file-document-outline" as const, tone: l.status === "pending_review" ? colors.warning : colors.success, title: l.title, meta: `${listingStatusLabel(l.status)} · ${l.createdAt}` }))
   ].slice(0, 7);
   const priorities = [
-    { label: "Onay bekleyen ilan", value: pendingN, icon: "clock-alert-outline" as const, tone: colors.warning, go: "listings" as Section, helper: "Yayına alınmayı bekliyor" },
-    { label: "Açık şikayet", value: reportsN, icon: "flag-outline" as const, tone: colors.accent, go: "complaints" as Section, helper: "Kullanıcı güveni için öncelikli" },
-    { label: "Ortaklık talebi", value: partnershipsN, icon: "handshake-outline" as const, tone: colors.violet, go: "partnerships" as Section, helper: "Satıcı onayı bekliyor" },
-    { label: "Öneri kuyruğu", value: pendingCat + pendingLoc, icon: "shape-plus" as const, tone: colors.info, go: pendingCat ? "categories" as Section : "locations" as Section, helper: "Kategori ve konum önerileri" }
+    { label: "Onay bekleyen ilan", value: pendingListings, icon: "clock-alert-outline" as const, tone: colors.warning, go: "listings" as Section, helper: "Yayına alınmayı bekliyor" },
+    { label: "Açık şikayet", value: openReports, icon: "flag-outline" as const, tone: colors.accent, go: "complaints" as Section, helper: "Kullanıcı güveni için öncelikli" },
+    { label: "Ortaklık talebi", value: pendingPartners, icon: "handshake-outline" as const, tone: colors.violet, go: "partnerships" as Section, helper: "Satıcı onayı bekliyor" },
+    { label: "Öneri kuyruğu", value: catQ + locQ, icon: "shape-plus" as const, tone: colors.info, go: catQ ? "categories" as Section : "locations" as Section, helper: "Kategori ve konum önerileri" }
   ];
 
   return (
@@ -1011,7 +1034,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
           </View>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             <HeroMetric label="Yayın oranı" value={`%${publishRate}`} icon="chart-donut" />
-            <HeroMetric label="Toplam komisyon kaydı" value={money(commission)} icon="cash-multiple" />
+            <HeroMetric label="Toplam GMV" value={money(gmvTotal)} icon="cash-multiple" />
             <HeroMetric label="Talep/satış dönüşümü" value={`%${conversionRate}`} icon="trending-up" />
             <HeroMetric label="Mesaj hacmi" value={`${messagesN}`} icon="forum-outline" />
           </View>
@@ -1023,12 +1046,12 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
       </View>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-        <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={`${usersN}`} title="Toplam Kullanıcı" helper={`${recentUsers.length} son kayıt gösteriliyor`} onPress={() => setSection("users")} />
-        <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={`${listingsN}`} title="Toplam İlan" helper={`${activeN} yayında`} onPress={() => setSection("listings")} />
-        <Stat icon="check-decagram" tint={colors.successSoft} color={colors.success} value={`${activeN}`} title="Yayındaki İlan" helper={`%${publishRate} yayın oranı`} onPress={() => setSection("listings")} />
-        <Stat icon="message-text" tint={colors.primarySoft} color={colors.primaryDark} value={`${messagesN}`} title="Toplam Mesaj" helper={`${leads.length} talep kaydı`} onPress={() => setSection("messages")} />
-        <Stat icon="cart-check" tint={colors.successSoft} color={colors.success} value={`${salesN}`} title="Satış Kaydı" helper={`%${conversionRate} talep dönüşümü`} onPress={() => setSection("commissions")} />
-        <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(unpaidCommission)} title="Bekleyen Komisyon" helper={`${disputedN} anlaşmazlık`} onPress={() => setSection("commissions")} />
+        <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={fmtN(totalUsers)} title="Toplam Kullanıcı" helper={analytics ? `${fmtN(analytics.new_7d)} bu hafta yeni` : `${recentUsers.length} son kayıt`} onPress={() => setSection("users")} />
+        <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={fmtN(totalListings)} title="Toplam İlan" helper={`${fmtN(activeListings)} yayında`} onPress={() => setSection("listings")} />
+        <Stat icon="check-decagram" tint={colors.successSoft} color={colors.success} value={fmtN(activeListings)} title="Yayındaki İlan" helper={`%${publishRate} yayın oranı`} onPress={() => setSection("listings")} />
+        <Stat icon="message-text" tint={colors.primarySoft} color={colors.primaryDark} value={`${messagesN}`} title="Mesaj (yüklü)" helper={`${leads.length} talep kaydı`} onPress={() => setSection("messages")} />
+        <Stat icon="cart-check" tint={colors.successSoft} color={colors.success} value={fmtN(salesRecords)} title="Komisyon Kaydı" helper={analytics ? `${fmtN(analytics.commissions_paid)} ödendi` : `%${conversionRate} dönüşüm`} onPress={() => setSection("commissions")} />
+        <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(gmvUnpaid)} title="Bekleyen Komisyon" helper={`${disputedN} anlaşmazlık`} onPress={() => setSection("commissions")} />
       </View>
 
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
