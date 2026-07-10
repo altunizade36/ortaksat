@@ -2222,14 +2222,21 @@ export function StoreProvider({ children }: PropsWithChildren) {
       marketplaceInitialLoading,
       marketplaceLoadFailed,
       loadMoreMarketplace() {
+        // BELLEK/DOM KORUMASI: sanallaştırma olmadan sonsuz kaydırma diziyi+düğümleri sınırsız
+        // büyütüp sekmeyi dondurur/çökertir (milyonlarca ilanda). Bellekte tutulan katalog
+        // ~MP_MAX ile sınırlı; sınıra gelince kullanıcı filtre/arama ile daraltır (Sahibinden'de
+        // de sonsuz değil sayfalı gezinti vardır). Arama/filtre sunucu-taraflı olduğundan derinliğe
+        // erişim kaybolmaz — yalnız tek seferde bellekte tutulan pencere sınırlıdır.
+        const MP_MAX = 600;
         if (!isSupabaseConfigured || !marketplaceHasMore || marketplaceLoadingMore) return;
+        if (mpOffsetRef.current >= MP_MAX) { setMarketplaceHasMore(false); return; }
         setMarketplaceLoadingMore(true);
         const PAGE = 60;
         void loadMarketplacePage(mpOffsetRef.current, PAGE)
           .then((page) => {
             if (!page) return;
             mpOffsetRef.current += page.listings.length;
-            if (page.listings.length < PAGE) setMarketplaceHasMore(false);
+            if (page.listings.length < PAGE || mpOffsetRef.current >= MP_MAX) setMarketplaceHasMore(false);
             if (page.listings.length) {
               setListings((items) => {
                 const seen = new Set(items.map((l) => l.id));
@@ -2243,6 +2250,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
               });
             }
           })
+          .catch(() => { /* ağ hatası: mevcut liste korunur, spinner finally'de kapanır */ })
           .finally(() => setMarketplaceLoadingMore(false));
       },
       // Pull-to-refresh: ilk katalog snapshot'ını yeniden çeker (gerçek yeniden
