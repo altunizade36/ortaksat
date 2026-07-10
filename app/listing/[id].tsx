@@ -352,6 +352,8 @@ export default function ListingDetailScreen() {
       const tel = sellerPhone.replace(/[^0-9+]/g, "");
       if (tel && await openUrlSafe(`tel:${tel}`)) return;
     }
+    // Uygulama-içi mesaja düşmeden önce anonim ise girişe yönlendir (hayalet konuşma yok).
+    if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; }
     const fallbackMessage = `${currentListing.title} ilanı için bilgi almak istiyorum. Fiyat, stok ve teslimat detayları güncel mi?`;
     const conversation = startConversation(currentListing.id, owner.id, message.trim() || fallbackMessage);
     setMessage("");

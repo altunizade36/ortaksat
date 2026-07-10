@@ -30,9 +30,9 @@ const partnerGroup: MenuGroup = {
     { label: "Komisyon kazan", href: "/(tabs)/partner" },
     { label: "Teklif gönder", href: "/(tabs)/partner" },
     { label: "Ortaklık taleplerim", href: "/(tabs)/partner" },
-    { label: "Kazançlarım", href: "/(tabs)/partner" },
+    { label: "Kazançlarım", href: "/earnings" },
     { label: "Satış takibi", href: "/(tabs)/seller" },
-    { label: "Ortak satış eğitimleri", href: "/trust" },
+    { label: "Ortak satış eğitimleri", href: "/nasil-calisir" },
     { label: "Davet et kazan", href: "/(tabs)/partner" }
   ]
 };
