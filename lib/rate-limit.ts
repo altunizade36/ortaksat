@@ -9,14 +9,18 @@ import { supabase } from "@/lib/supabase";
 
 type Action = "listing_create" | "message_send" | "signup" | "signin" | "password_reset" | "support_ticket" | "report";
 
+// Limitler kullanıcı isteğiyle GEVŞETİLDİ (Sahibinden/Hepsiburada tarzı sınırsız-hisset):
+// bunlar CİHAZ/KULLANICI-başına anti-spam tavanıdır (global değil; binlerce farklı kişiyi
+// engellemez). Meşru kullanıcı asla çarpmayacak kadar yüksek; yalnız aşırı bot-suistimalini
+// (tek cihazdan binlerce) durdurur. Sorun çıkarsa değer düşürülür.
 const POLICY: Record<Action, { max: number; windowSeconds: number }> = {
-  listing_create: { max: 8, windowSeconds: 3600 },
-  message_send: { max: 30, windowSeconds: 60 },
-  signup: { max: 5, windowSeconds: 3600 },
-  signin: { max: 8, windowSeconds: 300 },
-  password_reset: { max: 4, windowSeconds: 3600 },
-  support_ticket: { max: 5, windowSeconds: 3600 },
-  report: { max: 12, windowSeconds: 3600 }
+  listing_create: { max: 300, windowSeconds: 3600 },
+  message_send: { max: 120, windowSeconds: 60 },
+  signup: { max: 100, windowSeconds: 3600 },
+  signin: { max: 60, windowSeconds: 300 },
+  password_reset: { max: 20, windowSeconds: 3600 },
+  support_ticket: { max: 30, windowSeconds: 3600 },
+  report: { max: 60, windowSeconds: 3600 }
 };
 
 // İstemci içi hafıza (uygulama açıkken). Cihaz yeniden başlarsa sıfırlanır; asıl koruma sunucuda.
