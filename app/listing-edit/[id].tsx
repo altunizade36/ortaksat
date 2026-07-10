@@ -59,6 +59,8 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [currency, setCurrency] = useState<CurrencyCode>((listing.currency as CurrencyCode) ?? "TRY");
   const [bonusAmount, setBonusAmount] = useState(listing.bonusAmount ? String(listing.bonusAmount) : "");
   const [bonusQuota, setBonusQuota] = useState(listing.bonusQuota ? String(listing.bonusQuota) : "");
+  // Kademeli komisyon (yalnız yüzde) — mevcut kademelerden yüklenir.
+  const [tiers, setTiers] = useState<Array<{ minSales: string; rate: string }>>((listing.commissionTiers ?? []).map((tr) => ({ minSales: String(tr.minSales), rate: String(tr.rate) })));
   // Yapısal konum (create ile aynı): il/ilçe korunur; boş metin-alan bug'ı giderildi.
   const [loc, setLoc] = useState<LocationValue>({ provinceId: listing.provinceId ?? undefined, districtId: listing.districtId ?? undefined });
   const [visibility, setVisibility] = useState<AddressVisibility>((listing.addressVisibility as AddressVisibility) ?? "neighborhood");
@@ -216,6 +218,9 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       price: parsedPrice,
       commissionType,
       commissionValue: parsedCommission,
+      commissionTiers: commissionType === "rate"
+        ? tiers.map((tr) => ({ minSales: Math.max(0, Math.floor(Number(tr.minSales) || 0)), rate: Math.max(0, Math.min(90, Number(tr.rate) || 0)) })).filter((tr) => tr.rate > 0).sort((a, b) => a.minSales - b.minSales)
+        : undefined,
       partnershipMode,
       attributes: builtAttrs,
       category: category.trim() || "Genel",
@@ -339,6 +344,26 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           </Text>
           <Segmented options={[["rate", "Yüzde"], ["fixed", "Sabit"]]} value={commissionType} onChange={(value) => setCommissionType(value as CommissionType)} />
           <Field label="Komisyon" value={commissionValue} onChangeText={setCommissionValue} keyboardType="numeric" />
+          {/* Kademeli komisyon (yalnız yüzde): hacimle artan oran. */}
+          {commissionType === "rate" ? (
+            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Kademeli komisyon (opsiyonel)", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Ortağın bu ilandaki kümülatif satışı arttıkça oran yükselsin. Boş → tek oran.", language)}</Text>
+              {tiers.map((tr, i) => (
+                <View key={i} style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
+                  <View style={{ flex: 1 }}><Field label="Satıştan sonra" value={tr.minSales} onChangeText={(v) => setTiers((s) => s.map((x, j) => (j === i ? { ...x, minSales: v } : x)))} keyboardType="numeric" /></View>
+                  <View style={{ flex: 1 }}><Field label="Oran (%)" value={tr.rate} onChangeText={(v) => setTiers((s) => s.map((x, j) => (j === i ? { ...x, rate: v } : x)))} keyboardType="numeric" /></View>
+                  <Pressable onPress={() => setTiers((s) => s.filter((_, j) => j !== i))} hitSlop={8} style={{ paddingBottom: 14 }}><MaterialCommunityIcons name="close-circle" size={22} color={colors.muted} /></Pressable>
+                </View>
+              ))}
+              {tiers.length < 4 ? (
+                <Pressable onPress={() => setTiers((s) => [...s, { minSales: "", rate: "" }])} style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 9 }}>
+                  <MaterialCommunityIcons name="plus" size={15} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Kademe ekle", language)}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          ) : null}
           <View style={{ gap: 6 }}>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Para birimi", language)}</Text>
             <Segmented options={[["TRY", "₺ TL"], ["USD", "$ USD"], ["EUR", "€ EUR"]]} value={currency} onChange={(value) => setCurrency(value as CurrencyCode)} />

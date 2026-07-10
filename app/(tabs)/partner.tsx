@@ -19,7 +19,7 @@ import { PartnerTier } from "@/components/partner-tier";
 import { QuickStart } from "@/components/quick-start";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
-import { commissionAmount, commissionText, listingShareTemplates, money, moneyIn, shareUrl } from "@/lib/format";
+import { commissionAmount, commissionText, effectiveCommissionAmount, listingShareTemplates, money, moneyIn, shareUrl } from "@/lib/format";
 import { loadClickCounts } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
@@ -689,6 +689,10 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
   const templates = listingShareTemplates(listing, url);
   const earned = listingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const sellerPaidCount = listingSales.filter((sale) => sale.status === "seller_paid").length;
+  // Bu ortağın KİŞİSEL efektif komisyonu (override / kademeli / varsayılan) — bir satış, liste fiyatı.
+  const priorSales = listingSales.filter((sale) => sale.status !== "cancelled").length;
+  const myCommission = effectiveCommissionAmount(listing, partnership, priorSales, listing.price, 1);
+  const hasPersonalRate = Boolean(partnership.commissionOverrideType) || (listing.commissionType === "rate" && !!listing.commissionTiers?.length);
   return (
     <Card>
       <View style={{ flexDirection: "row", gap: 10 }}>
@@ -707,6 +711,13 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
 
       {partnership.status === "active" ? (
         <>
+          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 9 }}>
+            <MaterialCommunityIcons name="cash-multiple" size={17} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800" }}>
+              {translateCopy(hasPersonalRate ? "Sana özel komisyon" : "Bu satıştan komisyonun", language)}
+            </Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{moneyIn(myCommission, listing.currency)}</Text>
+          </View>
           <Text selectable style={{ color: colors.info, fontSize: 13, lineHeight: 19 }}>{url}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}><PrimaryButton tone="secondary" onPress={() => actions.copy("Satış bağlantısı", url)}>Kopyala</PrimaryButton></View>
