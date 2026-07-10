@@ -54,7 +54,15 @@ export function WebFooter() {
   const { t, language } = useLanguage();
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
+  const [newsletterErr, setNewsletterErr] = useState(false);
   const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
+  // Sonucu BEKLE + sonuca göre dallan (eskiden fire-and-forget → başarısızlıkta bile "kaydedildi" gösteriyordu).
+  const submitNewsletter = async () => {
+    if (!emailValid) return;
+    setNewsletterErr(false);
+    const res = await subscribeNewsletterLive(email.trim());
+    if (res?.ok) setSubscribed(true); else setNewsletterErr(true);
+  };
   const columns: Array<{ heading: string; links: Array<{ label: string; href: Href }> }> = [
     {
       heading: "Pazaryeri",
@@ -153,15 +161,18 @@ export function WebFooter() {
                   autoComplete="email"
                   textContentType="emailAddress"
                   {...({ name: "newsletter_email", "aria-label": translateCopy("Bülten için e-posta adresin", language), inputMode: "email" } as Record<string, unknown>)}
-                  onSubmitEditing={() => { if (emailValid) { const e = email; setSubscribed(true); void subscribeNewsletterLive(e); } }}
+                  onSubmitEditing={() => { void submitNewsletter(); }}
                   returnKeyType="go"
                   style={{ backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.25)", borderRadius: 10, borderWidth: 1, color: "#FFFFFF", flex: 1, fontSize: 14, fontWeight: "600", height: 44, paddingHorizontal: 14 }}
                 />
-                <Pressable disabled={!emailValid} onPress={() => { const e = email; setSubscribed(true); void subscribeNewsletterLive(e); }} style={{ alignItems: "center", backgroundColor: emailValid ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
+                <Pressable disabled={!emailValid} onPress={() => { void submitNewsletter(); }} style={{ alignItems: "center", backgroundColor: emailValid ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
                   <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Abone Ol", language)}</Text>
                 </Pressable>
               </View>
             )}
+            {newsletterErr && !subscribed ? (
+              <Text style={{ color: "#FFE0E0", fontSize: 12, fontWeight: "700" }}>{translateCopy("Abonelik kaydedilemedi, birazdan tekrar dene.", language)}</Text>
+            ) : null}
           </View>
         </View>
         {columns.map((column) => (

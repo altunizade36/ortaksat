@@ -821,7 +821,7 @@ export default function ListingDetailScreen() {
             </View>
             <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
               <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{owner?.name ?? translateCopy("Satıcı", language)}</Text>
-              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>%{ownerTrust?.score ?? 0} {translateCopy("güven", language)} · %{owner?.responseRate ?? 0} {translateCopy("yanıt", language)}</Text>
+              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isDemo ? translateCopy("Örnek vitrin satıcısı", language) : `%${ownerTrust?.score ?? 0} ${translateCopy("güven", language)} · %${owner?.responseRate ?? 0} ${translateCopy("yanıt", language)}`}</Text>
             </View>
             <Link href={{ pathname: "/store/[id]", params: { id: currentListing.ownerId } }} asChild>
               <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("Mağazayı aç", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}>

@@ -578,7 +578,11 @@ function SellerScreenInner() {
               </View>
               <View style={{ flexBasis: "47%", flexGrow: 1 }}>
                 {listing.status === "pending_review" ? (
-                  <PrimaryButton tone="soft" icon="clock-outline" onPress={() => undefined}>İncelemede</PrimaryButton>
+                  // Aksiyon değil, DURUM: tıklanabilir buton değil, statik rozet (eskiden ölü onPress).
+                  <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", minHeight: 42, paddingHorizontal: 12 }}>
+                    <MaterialCommunityIcons name="clock-outline" size={16} color={colors.muted} />
+                    <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("İncelemede", language)}</Text>
+                  </View>
                 ) : (
                   <PrimaryButton tone={listing.status === "active" ? "secondary" : "soft"} icon={listing.status === "active" ? "pause" : "play"} onPress={() => updateListingStatus(listing.id, listing.status === "active" ? "paused" : "active")}>
                     {listing.status === "active" ? "Pasife Al" : "Aktifleştir"}

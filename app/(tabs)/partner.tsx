@@ -78,9 +78,14 @@ function PartnerScreenInner() {
   const [oppSort, setOppSort] = useState<"recommended" | "commission" | "stock" | "rating" | "new">("recommended");
   const [oppVisible, setOppVisible] = useState(8);
   // Bildirim derin-linki (?focus=<listingId>): ilgili ortaklığı "Aktif" sekmesinde öne al.
-  const params = useLocalSearchParams<{ focus?: string }>();
+  // Menü derin-linki (?tab=pending|active|earning|links): ilgili sekmeyi aç.
+  const params = useLocalSearchParams<{ focus?: string; tab?: string }>();
   const focusId = Array.isArray(params.focus) ? params.focus[0] : params.focus;
+  const tabParam = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   useEffect(() => { if (focusId) setTab("active"); }, [focusId]);
+  useEffect(() => {
+    if (tabParam && ["all", "pending", "active", "earning", "links"].includes(tabParam)) setTab(tabParam as typeof tab);
+  }, [tabParam]);
   const focusFirst = (a: { listingId: string }, b: { listingId: string }) => (focusId ? (a.listingId === focusId ? -1 : b.listingId === focusId ? 1 : 0) : 0);
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
@@ -964,10 +969,12 @@ function PanelFilterChip({ active, icon, label, onPress }: { active?: boolean; i
 
 function GuvenBadge({ rating }: { rating: number }) {
   const { language } = useLanguage();
-  const level = rating >= 4.7 ? { label: "Yüksek", color: colors.success, bg: colors.successSoft } : rating >= 4.3 ? { label: "Orta", color: colors.gold, bg: colors.goldSoft } : { label: "Düşük", color: colors.muted, bg: colors.surfaceAlt };
+  // Puanı olmayan satıcı "Düşük güven" DEĞİL "Yeni"dir (yeni/demo satıcıya haksız damga vurmayı önler).
+  const level = rating <= 0 ? { label: "Yeni", color: colors.primaryDark, bg: colors.primarySoft } : rating >= 4.7 ? { label: "Yüksek", color: colors.success, bg: colors.successSoft } : rating >= 4.3 ? { label: "Orta", color: colors.gold, bg: colors.goldSoft } : { label: "Düşük", color: colors.muted, bg: colors.surfaceAlt };
+  const icon = rating <= 0 ? "sprout-outline" as const : "shield-check" as const;
   return (
     <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: level.bg, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-      <MaterialCommunityIcons name="shield-check" size={12} color={level.color} />
+      <MaterialCommunityIcons name={icon} size={12} color={level.color} />
       <Text style={{ color: level.color, fontSize: 11, fontWeight: "900" }}>{translateCopy(level.label, language)}</Text>
     </View>
   );
@@ -991,7 +998,7 @@ function OppRow({ listing, owner, joined, onJoin, onDetail }: { listing: Listing
           <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{owner?.name ?? translateCopy("Satıcı", language)}</Text>
           {owner?.verifiedPhone || owner?.verifiedIdentity ? <MaterialCommunityIcons name="check-decagram" size={12} color={colors.primary} /> : null}
         </View>
-        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>★ {owner?.rating ?? 0}</Text>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{(owner?.rating ?? 0) > 0 ? `★ ${owner?.rating}` : translateCopy("Yeni satıcı", language)}</Text>
       </View>
       <View style={{ flex: 0.9 }}>
         <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{listing.commissionType === "rate" ? `%${listing.commissionValue}` : money(commissionAmount(listing))}</Text>

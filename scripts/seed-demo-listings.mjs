@@ -1,7 +1,7 @@
 // 100+ örnek/vitrin ilanı (demo=true). Her ürüne KENDI ürün tipine göre görsel:
 // LoremFlickr'dan anahtar kelimeyle eşleşen görsel çözülür (302 -> stabil cache
 // URL'i), HTTP 200 doğrulanır, benzersiz saklanır (lock ile). Böylece başlık ve
-// görsel uyuşur, bir foto bir kez kullanılır. Sahibi "Canlı Test Satıcı".
+// görsel uyuşur, bir foto bir kez kullanılır. Sahibi "OrtakSat Vitrin" (demo/vitrin satıcısı).
 import pg from "pg";
 import crypto from "node:crypto";
 

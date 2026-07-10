@@ -25,15 +25,17 @@ const partnerGroup: MenuGroup = {
   title: "Ortak Satış Merkezi",
   icon: "handshake-outline",
   tone: "partner",
+  // Her ortak-satış etiketi AYRI, gerçek bir hedefe gider (eskiden 4'ü aynı /partner'a
+  // düşüyordu; "Teklif gönder"/"Davet et kazan" var olmayan özellik vaat ediyordu).
   children: [
     { label: "Ortak satış ilanları", href: "/(tabs)/explore" },
-    { label: "Komisyon kazan", href: "/(tabs)/partner" },
-    { label: "Teklif gönder", href: "/(tabs)/partner" },
-    { label: "Ortaklık taleplerim", href: "/(tabs)/partner" },
+    { label: "Fırsatları keşfet", href: { pathname: "/(tabs)/partner", params: { tab: "all" } } as unknown as Href },
+    { label: "Ortaklık taleplerim", href: { pathname: "/(tabs)/partner", params: { tab: "pending" } } as unknown as Href },
+    { label: "Aktif ortaklıklarım", href: { pathname: "/(tabs)/partner", params: { tab: "active" } } as unknown as Href },
+    { label: "Paylaşım bağlantılarım", href: { pathname: "/(tabs)/partner", params: { tab: "links" } } as unknown as Href },
     { label: "Kazançlarım", href: "/earnings" },
     { label: "Satış takibi", href: "/(tabs)/seller" },
-    { label: "Ortak satış eğitimleri", href: "/nasil-calisir" },
-    { label: "Davet et kazan", href: "/(tabs)/partner" }
+    { label: "Ortak satış eğitimleri", href: "/nasil-calisir" }
   ]
 };
 

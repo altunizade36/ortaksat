@@ -133,11 +133,11 @@ function ProfileScreenInner() {
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 18 }}>
               <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900", marginBottom: 4 }}>{translateCopy("Hesap özeti", language)}</Text>
-              <MenuRow icon="storefront-outline" label="İlanlarım" detail={`${activeListings.length} aktif · ${pausedListings.length} duraklatılmış`} value={`${myListings.length}`} />
-              <MenuRow icon="handshake-outline" label="Ortaklıklarım" detail={`${activePartnerships.length} aktif · ${pendingPartnerships.length} bekliyor`} value={`${myPartnerships.length}`} />
+              <MenuRow icon="storefront-outline" label="İlanlarım" detail={`${activeListings.length} aktif · ${pausedListings.length} duraklatılmış`} value={`${myListings.length}`} href="/(tabs)/seller" />
+              <MenuRow icon="handshake-outline" label="Ortaklıklarım" detail={`${activePartnerships.length} aktif · ${pendingPartnerships.length} bekliyor`} value={`${myPartnerships.length}`} href="/(tabs)/partner" />
               <MenuRow icon="star-outline" label="Değerlendirmeler" detail={`${reviewsAboutMe.length} hakkımda · ${reviewsByMe.length} yazdığım`} value={`${reviewsAboutMe.length + reviewsByMe.length}`} />
-              <MenuRow icon="heart-outline" label="Favoriler" detail="Kaydedilen ilanlar" value={`${myFavorites.length}`} />
-              <MenuRow icon="chat-outline" label="Görüşmeler" detail="Alıcı, satıcı ve ortak mesajları" value={`${myConversations.length}`} />
+              <MenuRow icon="heart-outline" label="Favoriler" detail="Kaydedilen ilanlar" value={`${myFavorites.length}`} href="/favorites" />
+              <MenuRow icon="chat-outline" label="Görüşmeler" detail="Alıcı, satıcı ve ortak mesajları" value={`${myConversations.length}`} href="/(tabs)/messages" />
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
@@ -256,7 +256,8 @@ function ProfileScreenInner() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
           <Shortcut href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} icon="store-search-outline" label={translateCopy("Mağazam", language)} />
           <Shortcut href="/auth" icon="account-switch-outline" label={t("switchAccounts")} />
-          <Shortcut href="/auth" icon="login" label={t("signInRegister")} />
+          {/* Girişli (canlı) hesapta "Giriş Yap / Kayıt Ol" gösterme — gereksiz/kafa karıştırıcı. */}
+          {!isLiveAccount ? <Shortcut href="/auth" icon="login" label={t("signInRegister")} /> : null}
           <Shortcut href="/legal" icon="face-agent" label={t("customerService")} />
           <Shortcut href="/favorites" icon="bookmark-outline" label={t("savedItems")} />
         </View>
