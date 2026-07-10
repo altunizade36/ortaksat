@@ -402,11 +402,29 @@ function PartnerScreenInner() {
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
                 <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{tabs.find((x) => x.key === tab)?.label}</Text>
                 {tab === "links" ? (
-                  activePartnerships.length === 0 ? <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Aktif ortaklık bağlantın yok.", language)}</Text> :
-                  activePartnerships.map((p) => {
-                    const l = listings.find((x) => x.id === p.listingId);
-                    return l ? <ShareRow key={p.id} title={l.title} url={shareUrl(l, p.refCode)} onCopy={() => void copyText("Bağlantı", shareUrl(l, p.refCode))} /> : null;
-                  })
+                  <>
+                    {/* Herkese açık ortak vitrini: tüm aktif promosyon ilanları tek paylaşılabilir sayfada. */}
+                    <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 8, padding: 12 }}>
+                      <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                        <MaterialCommunityIcons name="storefront-outline" size={17} color={colors.primaryDark} />
+                        <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Herkese açık vitrinim", language)}</Text>
+                      </View>
+                      <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Önerdiğin tüm ilanlar tek sayfada. Bu bağlantıyı paylaş; buradan gelen talep/işlemler sana yazılır.", language)}</Text>
+                      <View style={{ flexDirection: "row", gap: 8 }}>
+                        <View style={{ flex: 1 }}>
+                          <PrimaryButton href={{ pathname: "/ortak/[id]", params: { id: currentUser.id } }} icon="open-in-new">{translateCopy("Vitrini aç", language)}</PrimaryButton>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <PrimaryButton tone="secondary" icon="link-variant" onPress={() => void copyText("Vitrin", `https://www.ortaksat.com/ortak/${currentUser.id}`)}>{translateCopy("Bağlantıyı kopyala", language)}</PrimaryButton>
+                        </View>
+                      </View>
+                    </View>
+                    {activePartnerships.length === 0 ? <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Aktif ortaklık bağlantın yok.", language)}</Text> :
+                    activePartnerships.map((p) => {
+                      const l = listings.find((x) => x.id === p.listingId);
+                      return l ? <ShareRow key={p.id} title={l.title} url={shareUrl(l, p.refCode)} onCopy={() => void copyText("Bağlantı", shareUrl(l, p.refCode))} /> : null;
+                    })}
+                  </>
                 ) : (tab === "earning" ? mySales : tab === "active" ? activePartnerships : pendingPartnerships).length === 0 ? (
                   <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Henüz kayıt yok.", language)}</Text>
                 ) : (

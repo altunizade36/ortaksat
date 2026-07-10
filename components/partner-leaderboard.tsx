@@ -92,9 +92,9 @@ export function PartnerLeaderboard({
         return (
           <Pressable
             key={r.id}
-            onPress={() => router.push({ pathname: "/store/[id]", params: { id: r.id } })}
+            onPress={() => router.push({ pathname: "/ortak/[id]", params: { id: r.id } })}
             accessibilityRole="button"
-            accessibilityLabel={`${r.name} ${translateCopy("ortak profilini aç", language)}`}
+            accessibilityLabel={`${r.name} ${translateCopy("ortak vitrinini aç", language)}`}
             style={{ alignItems: "center", backgroundColor: isMe ? colors.primarySoft : colors.surfaceAlt, borderColor: isMe ? colors.primary : "transparent", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 11, padding: 10 }}
           >
             <View style={{ alignItems: "center", justifyContent: "center", width: 26 }}>

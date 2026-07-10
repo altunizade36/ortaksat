@@ -224,6 +224,19 @@ function SellerScreenInner() {
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
   }
 
+  // Platform dışı satışını yapan satıcı ilanı tek tuşla "Satıldı" işaretler (yayından kalkar,
+  // istenirse tekrar aktifleştirilir). Talep/satış varsa uyarır ama engellemez.
+  function confirmMarkSold(listingId: string) {
+    Alert.alert(
+      translateCopy("Satıldı olarak işaretle", language),
+      translateCopy("İlan \"Satıldı\" olarak işaretlenir ve yayından kaldırılır. İstediğinde tek tuşla tekrar aktifleştirebilirsin.", language),
+      [
+        { text: t("cancel"), style: "cancel" },
+        { text: translateCopy("Satıldı", language), onPress: () => updateListingStatus(listingId, "sold") }
+      ]
+    );
+  }
+
   function confirmEndPartnership(partnershipId: string, partnerName: string) {
     Alert.alert(
       translateCopy("Ortaklığı sonlandır", language),
@@ -592,6 +605,11 @@ function SellerScreenInner() {
               <View style={{ flexBasis: "47%", flexGrow: 1 }}>
                 <PrimaryButton href={`/listing/${listing.id}`} tone="secondary" icon="eye-outline">Detay</PrimaryButton>
               </View>
+              {listing.status === "active" || listing.status === "paused" ? (
+                <View style={{ flexBasis: "47%", flexGrow: 1 }}>
+                  <PrimaryButton tone="soft" icon="check-circle-outline" onPress={() => confirmMarkSold(listing.id)}>Satıldı</PrimaryButton>
+                </View>
+              ) : null}
               <View style={{ flexBasis: "47%", flexGrow: 1 }}>
                 <PrimaryButton tone="danger" icon="trash-can-outline" onPress={() => confirmRemoveListing(listing.id)}>Kaldır</PrimaryButton>
               </View>

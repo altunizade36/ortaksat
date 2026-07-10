@@ -18,6 +18,13 @@ const TIERS: Array<{ key: string; label: string; min: number; icon: keyof typeof
 
 const CONFIRMED: Sale["status"][] = ["approved", "seller_paid", "paid"];
 
+// Onaylı satış SAYISINDAN seviye (Sale[] elde olmayan herkese-açık yüzeyler için, ör. ortak vitrini).
+export function tierFromCount(count: number) {
+  let idx = 0;
+  for (let i = 0; i < TIERS.length; i += 1) if (count >= TIERS[i].min) idx = i;
+  return TIERS[idx];
+}
+
 export function PartnerTier({ sales }: { sales: Sale[] }) {
   const { language } = useLanguage();
   const confirmed = sales.filter((s) => CONFIRMED.includes(s.status));

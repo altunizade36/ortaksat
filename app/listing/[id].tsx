@@ -820,7 +820,11 @@ export default function ListingDetailScreen() {
               <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{(owner?.name ?? "S").slice(0, 1).toLocaleUpperCase("tr-TR")}</Text>
             </View>
             <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{owner?.name ?? translateCopy("Satıcı", language)}</Text>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
+                <Text numberOfLines={1} style={{ color: colors.ink, flexShrink: 1, fontSize: 14, fontWeight: "900" }}>{owner?.name ?? translateCopy("Satıcı", language)}</Text>
+                {!isDemo && (owner?.verifiedPhone || owner?.verifiedIdentity) ? <MaterialCommunityIcons name="check-decagram" size={14} color={colors.primary} /> : null}
+                {!isDemo && owner?.rating ? <Text style={{ color: colors.gold, fontSize: 12, fontWeight: "800" }}>★ {owner.rating.toFixed(1)}</Text> : null}
+              </View>
               <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isDemo ? translateCopy("Örnek vitrin satıcısı", language) : `%${ownerTrust?.score ?? 0} ${translateCopy("güven", language)} · %${owner?.responseRate ?? 0} ${translateCopy("yanıt", language)}`}</Text>
             </View>
             <Link href={{ pathname: "/store/[id]", params: { id: currentListing.ownerId } }} asChild>

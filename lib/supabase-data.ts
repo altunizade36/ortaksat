@@ -647,3 +647,38 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
   };
 }
 
+// Herkese açık ortak vitrini: bir ortağın aktif promosyon ilanları + her biri için ref_code.
+// partner_public_shop/profile SECURITY DEFINER fonksiyonları RLS'i güvenle aşar (yalnız public alan).
+export type PartnerShopProfile = { partnerId: string; fullName: string; verifiedIdentity: boolean; verifiedPhone: boolean; confirmedSales: number; activePartnerships: number };
+export type PartnerShopItem = { listing: Listing; refCode: string; partnershipId: string };
+export async function loadPartnerShopLive(partnerId: string): Promise<{ profile: PartnerShopProfile | null; items: PartnerShopItem[] }> {
+  if (!supabase || !partnerId) return { profile: null, items: [] };
+  const [shopRes, profRes] = await Promise.all([
+    supabase.rpc("partner_public_shop", { p_id: partnerId }),
+    supabase.rpc("partner_public_profile", { p_id: partnerId })
+  ]);
+  const rows = (shopRes.data ?? []) as Array<{ listing_id: string; ref_code: string; partnership_id: string }>;
+  const ids = rows.map((r) => r.listing_id);
+  let cards: Listing[] = [];
+  if (ids.length) {
+    const { data } = await supabase.from("listing_public_cards").select("*").in("id", ids);
+    cards = ((data ?? []) as PublicListingCardRow[]).map(mapListing);
+  }
+  const byId = new Map(cards.map((c) => [c.id, c]));
+  const items: PartnerShopItem[] = rows
+    .map((r) => ({ listing: byId.get(r.listing_id), refCode: String(r.ref_code ?? ""), partnershipId: String(r.partnership_id ?? "") }))
+    .filter((x): x is PartnerShopItem => Boolean(x.listing));
+  const p = (profRes.data ?? [])[0] as Record<string, unknown> | undefined;
+  const profile: PartnerShopProfile | null = p
+    ? {
+        partnerId: String(p.partner_id),
+        fullName: String(p.full_name ?? ""),
+        verifiedIdentity: Boolean(p.verified_identity),
+        verifiedPhone: Boolean(p.verified_phone),
+        confirmedSales: Number(p.confirmed_sales ?? 0),
+        activePartnerships: Number(p.active_partnerships ?? 0)
+      }
+    : null;
+  return { profile, items };
+}
+
