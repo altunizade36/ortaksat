@@ -879,8 +879,27 @@ export async function fetchReviewsForUser(userId: string): Promise<Review[]> {
     rating: row.rating,
     comment: row.comment,
     type: row.type ?? "product",
-    createdAt: (row.created_at ?? "").slice(0, 10)
+    createdAt: (row.created_at ?? "").slice(0, 10),
+    sellerReply: row.seller_reply ?? undefined,
+    sellerReplyAt: row.seller_reply_at ?? undefined,
+    helpfulCount: Number(row.helpful_count ?? 0)
   }));
+}
+
+// Satıcı yorumuna yanıt yazar/günceller (RPC: yalnız yorumun hakkında olduğu kişi).
+export async function replyToReviewLive(reviewId: string, reply: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { error } = await supabase.rpc("reply_to_review", { p_review_id: reviewId, p_reply: reply });
+  if (error) { console.warn("reply_to_review failed", error); return false; }
+  return true;
+}
+
+// "Faydalı" oyunu aç/kapat (RPC toggle); güncel sayacı döndürür (null=hata).
+export async function toggleReviewHelpfulLive(reviewId: string): Promise<number | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("toggle_review_helpful", { p_review_id: reviewId });
+  if (error) { console.warn("toggle_review_helpful failed", error); return null; }
+  return Number(data ?? 0);
 }
 
 export async function insertConversation(conversation: Conversation) {

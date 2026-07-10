@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -19,7 +19,7 @@ import { openUrlSafe } from "@/lib/link";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
-import { fetchReviewsForUser } from "@/lib/live-service";
+import { fetchReviewsForUser, replyToReviewLive, toggleReviewHelpfulLive } from "@/lib/live-service";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { Listing, Review } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -376,26 +376,9 @@ export default function StoreScreen() {
                   {reviewsAboutSeller.length > 0 ? <ReviewSummary reviews={reviewsAboutSeller} rating={seller.rating} language={language} /> : null}
                   {reviewsAboutSeller.length === 0 ? (
                     <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
-                  ) : reviewsAboutSeller.map((r) => {
-                    const reviewer = findUser(r.reviewerId);
-                    return (
-                      <View key={r.id} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 16 }}>
-                        <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-                          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 38, justifyContent: "center", width: 38 }}>
-                            <MaterialCommunityIcons name="account" size={20} color={colors.primaryDark} />
-                          </View>
-                          <View style={{ flex: 1, minWidth: 0 }}>
-                            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{reviewer?.name ?? translateCopy("Kullanıcı", language)}</Text>
-                            <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{shortDate(r.createdAt)}</Text>
-                          </View>
-                          <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
-                            {[1, 2, 3, 4, 5].map((n) => <MaterialCommunityIcons key={n} name={n <= r.rating ? "star" : "star-outline"} size={15} color={colors.gold} />)}
-                          </View>
-                        </View>
-                        <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 20 }}>{r.comment}</Text>
-                      </View>
-                    );
-                  })}
+                  ) : reviewsAboutSeller.map((r) => (
+                    <ReviewCard key={r.id} review={r} reviewerName={findUser(r.reviewerId)?.name} isSeller={isOwnStore} language={language} />
+                  ))}
                 </View>
               ) : null}
 
@@ -823,4 +806,93 @@ function DeskAboutRow({ icon, label, value }: { icon: keyof typeof MaterialCommu
 
 function isImageAvatar(value: string) {
   return value.startsWith("http://") || value.startsWith("https://") || value.startsWith("file:");
+}
+
+// Yorum kartı: puan/yorum + satıcı yanıtı (yalnız satıcı yazar) + "Faydalı" oyu (girişli kullanıcı).
+function ReviewCard({ review, reviewerName, isSeller, language }: { review: Review; reviewerName?: string; isSeller: boolean; language: "tr" | "en" }) {
+  const router = useRouter();
+  const [savedReply, setSavedReply] = useState(review.sellerReply);
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(review.sellerReply ?? "");
+  const [saving, setSaving] = useState(false);
+  const [helpful, setHelpful] = useState(review.helpfulCount ?? 0);
+  const [voting, setVoting] = useState(false);
+
+  const submitReply = async () => {
+    if (saving) return;
+    setSaving(true);
+    const ok = await replyToReviewLive(review.id, draft.trim());
+    setSaving(false);
+    if (ok) { setSavedReply(draft.trim() || undefined); setEditing(false); }
+  };
+  const vote = async () => {
+    if (voting) return;
+    setVoting(true);
+    const n = await toggleReviewHelpfulLive(review.id);
+    setVoting(false);
+    if (n == null) { router.push("/auth"); return; } // anon/oturum yok → giriş
+    setHelpful(n);
+  };
+
+  return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 16 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 38, justifyContent: "center", width: 38 }}>
+          <MaterialCommunityIcons name="account" size={20} color={colors.primaryDark} />
+        </View>
+        <View style={{ flex: 1, minWidth: 0 }}>
+          <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{reviewerName ?? translateCopy("Kullanıcı", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{shortDate(review.createdAt)}</Text>
+        </View>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
+          {[1, 2, 3, 4, 5].map((n) => <MaterialCommunityIcons key={n} name={n <= review.rating ? "star" : "star-outline"} size={15} color={colors.gold} />)}
+        </View>
+      </View>
+      <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 20 }}>{review.comment}</Text>
+
+      {savedReply ? (
+        <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, borderLeftColor: colors.primary, borderLeftWidth: 3, gap: 3, marginTop: 2, padding: 11 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
+            <MaterialCommunityIcons name="storefront-outline" size={13} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Satıcı yanıtı", language)}</Text>
+          </View>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{savedReply}</Text>
+        </View>
+      ) : null}
+
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8, marginTop: 2 }}>
+        <Pressable onPress={vote} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, opacity: pressed ? 0.7 : 1, paddingHorizontal: 11, paddingVertical: 6 })}>
+          <MaterialCommunityIcons name="thumb-up-outline" size={14} color={colors.muted} />
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Faydalı", language)}{helpful > 0 ? ` · ${helpful}` : ""}</Text>
+        </Pressable>
+        {isSeller ? (
+          <Pressable onPress={() => { setDraft(savedReply ?? ""); setEditing((e) => !e); }} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 5, opacity: pressed ? 0.7 : 1, paddingHorizontal: 4, paddingVertical: 6 })}>
+            <MaterialCommunityIcons name="reply-outline" size={15} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{savedReply ? translateCopy("Yanıtı düzenle", language) : translateCopy("Yanıtla", language)}</Text>
+          </Pressable>
+        ) : null}
+      </View>
+
+      {editing && isSeller ? (
+        <View style={{ gap: 8, marginTop: 2 }}>
+          <TextInput
+            value={draft}
+            onChangeText={setDraft}
+            multiline
+            placeholder={translateCopy("Yanıtın… (nazik ve yapıcı olun)", language)}
+            placeholderTextColor={colors.subtle}
+            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13, minHeight: 64, padding: 10, textAlignVertical: "top" }}
+          />
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <Pressable onPress={submitReply} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 9 })}>
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{saving ? translateCopy("Kaydediliyor…", language) : translateCopy("Yanıtı kaydet", language)}</Text>
+            </Pressable>
+            <Pressable onPress={() => setEditing(false)} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
+    </View>
+  );
 }

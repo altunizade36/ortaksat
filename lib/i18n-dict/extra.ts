@@ -251,6 +251,13 @@ export const extraDict: Record<string, string> = {
   "Engelliye / yaşlıya uygun": "Accessible",
   "Çalışma saati": "Working hours",
   "Kabin": "Cabin",
+  // Yorum yanıtı + faydalı oyu
+  "Satıcı yanıtı": "Seller reply",
+  "Faydalı": "Helpful",
+  "Yanıtla": "Reply",
+  "Yanıtı düzenle": "Edit reply",
+  "Yanıtın… (nazik ve yapıcı olun)": "Your reply… (be kind and constructive)",
+  "Yanıtı kaydet": "Save reply",
   // Site güçlendirme turu
   "Örnek vitrin satıcısı": "Showcase demo seller",
   "Abonelik kaydedilemedi, birazdan tekrar dene.": "Couldn't save your subscription, please try again shortly.",

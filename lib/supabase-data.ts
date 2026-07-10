@@ -592,7 +592,10 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       rating: row.rating,
       comment: row.comment,
       type: row.type ?? "product",
-      createdAt: row.created_at.slice(0, 10)
+      createdAt: row.created_at.slice(0, 10),
+      sellerReply: row.seller_reply ?? undefined,
+      sellerReplyAt: row.seller_reply_at ?? undefined,
+      helpfulCount: Number(row.helpful_count ?? 0)
     })),
     favorites: (favoritesResult.data ?? []).map((row) => ({
       id: row.id,

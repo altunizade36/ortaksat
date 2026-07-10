@@ -165,6 +165,9 @@ export type Review = {
   comment: string;
   type?: ReviewType;
   createdAt: string;
+  sellerReply?: string;
+  sellerReplyAt?: string;
+  helpfulCount?: number;
 };
 
 export type Favorite = {
