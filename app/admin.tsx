@@ -1015,11 +1015,11 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
 
   return (
     <View style={{ gap: 18 }}>
-      <View style={{ backgroundColor: "#0A5C44", borderRadius: 18, overflow: "hidden" }}>
+      <View style={{ backgroundColor: "#0A5C44", borderRadius: 18, overflow: "hidden", shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 20 }}>
         <View style={{ gap: 18, padding: 22 }}>
           <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16, justifyContent: "space-between" }}>
             <View style={{ flex: 1, gap: 6, minWidth: 260 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 28, fontWeight: "900", lineHeight: 34 }}>Yönetim Merkezi</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 28, fontWeight: "900", letterSpacing: -0.6, lineHeight: 34 }}>Yönetim Merkezi</Text>
               <Text style={{ color: "rgba(255,255,255,0.78)", fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 680 }}>
                 İlan onayı, kullanıcı güvenliği, ortaklık talepleri ve gelir kayıtlarını tek ekrandan izle. Öncelikli işler aşağıda otomatik öne çıkarılır.
               </Text>
@@ -1027,7 +1027,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
             <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.18)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 10 }}>
               <MaterialCommunityIcons name={openWork ? "alert-circle-outline" : "check-decagram-outline"} size={20} color="#FFFFFF" />
               <View>
-                <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900" }}>{openWork}</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 19, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.3 }}>{openWork}</Text>
                 <Text style={{ color: "rgba(255,255,255,0.72)", fontSize: 11.5, fontWeight: "700" }}>açık iş</Text>
               </View>
             </View>
@@ -1153,16 +1153,16 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
 
 function Stat({ icon, tint, color, value, title, helper, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; helper?: string; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 166, flexGrow: 1, gap: 9, maxWidth: 300, minHeight: 106, minWidth: 0, padding: 15 })}>
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 166, flexGrow: 1, gap: 9, maxWidth: 300, minHeight: 106, minWidth: 0, padding: 15, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, transform: [{ translateY: pressed && onPress ? -1 : 0 }] })}>
       <View style={{ alignItems: "flex-start", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
-        <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
+        <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 11, height: 40, justifyContent: "center", width: 40 }}>
           <MaterialCommunityIcons name={icon} size={20} color={color} />
         </View>
         {onPress ? <MaterialCommunityIcons name="arrow-top-right" size={16} color={colors.subtle} /> : null}
       </View>
-      <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{value}</Text>
+      <Text style={{ color: colors.ink, fontSize: 23, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.4 }}>{value}</Text>
       <View style={{ gap: 2 }}>
-        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{title}</Text>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900", letterSpacing: 0.1 }}>{title}</Text>
         {helper ? <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{helper}</Text> : null}
       </View>
     </Pressable>
@@ -1174,7 +1174,7 @@ function HeroMetric({ label, value, icon }: { label: string; value: string; icon
     <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.18)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, minWidth: 190, paddingHorizontal: 13, paddingVertical: 11 }}>
       <MaterialCommunityIcons name={icon} size={19} color="#FFFFFF" />
       <View style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{value}</Text>
+        <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 15.5, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.2 }}>{value}</Text>
         <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.72)", fontSize: 11, fontWeight: "700" }}>{label}</Text>
       </View>
     </View>
@@ -1184,14 +1184,14 @@ function HeroMetric({ label, value, icon }: { label: string; value: string; icon
 function PriorityCard({ label, value, helper, icon, tone, onPress }: { label: string; value: number; helper: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; tone: string; onPress: () => void }) {
   const empty = value === 0;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed ? tone : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 260, flexGrow: 1, minWidth: 0, opacity: pressed ? 0.86 : 1, padding: 16 })}>
+    <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed ? tone : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 260, flexGrow: 1, minWidth: 0, opacity: pressed ? 0.92 : 1, padding: 16, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: empty ? 0.04 : 0.07, shadowRadius: 10, transform: [{ translateY: pressed ? -1 : 0 }] })}>
       <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 12 }}>
         <View style={{ alignItems: "center", backgroundColor: empty ? colors.successSoft : `${tone}22`, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
           <MaterialCommunityIcons name={empty ? "check-circle-outline" : icon} size={21} color={empty ? colors.success : tone} />
         </View>
         <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-            <Text style={{ color: empty ? colors.success : tone, fontSize: 22, fontWeight: "900" }}>{value}</Text>
+            <Text style={{ color: empty ? colors.success : tone, fontSize: 22, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.4 }}>{value}</Text>
             <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{label}</Text>
           </View>
           <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{empty ? "Şu an işlem beklemiyor" : helper}</Text>
@@ -1430,9 +1430,9 @@ function RankList({ rows, emptyText }: { rows: Array<{ label: string; value: str
 
 function Panel({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
       <View style={{ gap: 2 }}>
-        <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{title}</Text>
+        <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900", letterSpacing: -0.2 }}>{title}</Text>
         {sub ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{sub}</Text> : null}
       </View>
       {children}
@@ -1443,8 +1443,8 @@ function Panel({ title, sub, children }: { title: string; sub?: string; children
 function Table({ head, cols, children }: { head: string[]; cols: number[]; children: ReactNode }) {
   return (
     <View>
-      <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingBottom: 8 }}>
-        {head.map((h, i) => <Text key={h} style={{ color: colors.muted, flex: cols[i], fontSize: 10.5, fontWeight: "800", textAlign: i === head.length - 1 ? "right" : "left" }}>{h}</Text>)}
+      <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1.5, flexDirection: "row", paddingBottom: 9 }}>
+        {head.map((h, i) => <Text key={h} style={{ color: colors.subtle, flex: cols[i], fontSize: 10, fontWeight: "900", letterSpacing: 0.6, textAlign: i === head.length - 1 ? "right" : "left", textTransform: "uppercase" }}>{h}</Text>)}
       </View>
       {children}
     </View>

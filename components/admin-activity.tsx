@@ -224,7 +224,7 @@ function dayNum(iso: string): string {
 type StatTileProps = { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; sub: string; tint: string; color: string; live?: boolean };
 function StatTile({ icon, label, value, sub, tint, color, live }: StatTileProps) {
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: live ? colors.success : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 180, flexGrow: 1, gap: 8, minWidth: 148, padding: 16 }}>
+    <View style={{ backgroundColor: colors.surface, borderColor: live ? colors.success : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 180, flexGrow: 1, gap: 8, minWidth: 148, padding: 16, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: live ? 0.1 : 0.06, shadowRadius: 10 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
           <MaterialCommunityIcons name={icon} size={18} color={color} />
