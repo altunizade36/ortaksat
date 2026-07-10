@@ -25,7 +25,7 @@ import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
-import type { LeadSource, Listing, PurchaseIntent, Sale, SaleStatus, User } from "@/lib/types";
+import type { Lead, LeadSource, LeadStatus, Listing, Partnership, PurchaseIntent, Sale, SaleStatus, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 import { WebContainer } from "@/components/web-container";
 
@@ -210,6 +210,35 @@ function PartnerScreenInner() {
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
   }
 
+  // Ortaklık kartı aksiyonları (hem mobil hem masaüstü aynı kartı kullanır).
+  const partnershipActions: PartnershipCardActions = {
+    copy: copyText,
+    whatsapp: openWhatsapp,
+    share: sharePartnership,
+    messageSeller,
+    claimSale,
+    updateLeadStatus,
+    updateSaleStatus,
+    dispute: (saleId: string) => setDisputeSaleId(saleId)
+  };
+  const renderPartnershipCard = (partnership: Partnership) => {
+    const listing = listings.find((item) => item.id === partnership.listingId);
+    if (!listing) return null;
+    return (
+      <PartnershipCard
+        key={partnership.id}
+        listing={listing}
+        partnership={partnership}
+        listingLeads={leads.filter((lead) => lead.partnershipId === partnership.id)}
+        listingSales={mySales.filter((sale) => sale.partnershipId === partnership.id)}
+        clickCount={clickCounts[partnership.id] ?? 0}
+        canReviewSale={canReviewSale}
+        createSaleReview={createSaleReview}
+        actions={partnershipActions}
+      />
+    );
+  };
+
   if (isWideWeb) {
     const oppCategoryOptions = Array.from(new Set(allOpportunities.map((l) => l.category))).sort((a, b) => a.localeCompare(b, "tr"));
     const oppCityOptions = Array.from(new Set(allOpportunities.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr"));
@@ -388,10 +417,7 @@ function PartnerScreenInner() {
                           </View>
                         );
                       })
-                    : (tab === "active" ? activePartnerships : pendingPartnerships).map((p) => {
-                        const l = listings.find((x) => x.id === p.listingId);
-                        return <OppMiniRow key={p.id} title={l?.title ?? translateCopy("Ürün", language)} image={l?.image} right={l ? commissionText(l) : ""} sub={p.status === "active" ? "Aktif" : "Bekliyor"} />;
-                      }))
+                    : (tab === "active" ? activePartnerships : pendingPartnerships).map(renderPartnershipCard))
                 )}
               </View>
             )}
@@ -614,151 +640,7 @@ function PartnerScreenInner() {
       {myPartnerships.length === 0 ? <QuickStart role="partner" /> : null}
       {myPartnerships.length > 0 && visiblePartnerships.length === 0 ? <EmptyState title={t("noResults")} body={t("partnerNoResultBody")} /> : null}
 
-      {visiblePartnerships.map((partnership) => {
-        const listing = listings.find((item) => item.id === partnership.listingId);
-        if (!listing) return null;
-        const listingLeads = leads.filter((lead) => lead.partnershipId === partnership.id);
-        const listingSales = mySales.filter((sale) => sale.partnershipId === partnership.id);
-        const earned = listingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
-        const url = shareUrl(listing, partnership.refCode);
-        const templates = listingShareTemplates(listing, url);
-        const sellerPaidCount = listingSales.filter((sale) => sale.status === "seller_paid").length;
-
-        return (
-          <Card key={partnership.id}>
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <Image source={{ uri: listing.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 8, height: 74, width: 74 }} />
-              <View style={{ flex: 1, gap: 6 }}>
-                <Text selectable numberOfLines={2} style={{ color: colors.ink, fontSize: 18, fontWeight: "900", lineHeight: 22 }}>{listing.title}</Text>
-                <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 12, lineHeight: 17 }}>
-                  {partnership.shareChannel || t("channelMissing")} · {partnership.reachEstimate ?? 0} {t("reach")}
-                </Text>
-              </View>
-              <StatusPill label={partnership.status === "active" ? "Aktif" : partnership.status === "pending" ? "Bekliyor" : "Reddedildi"} tone={partnership.status === "active" ? "success" : "warning"} />
-            </View>
-
-            {partnership.status === "active" ? (
-              <>
-                <Text selectable style={{ color: colors.info, fontSize: 13, lineHeight: 19 }}>{url}</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-                    <PrimaryButton tone="secondary" onPress={() => copyText("Satış bağlantısı", url)}>Kopyala</PrimaryButton>
-                  </View>
-                  <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-                    <PrimaryButton tone="soft" onPress={() => openWhatsapp(listing.id, partnership.refCode)}>WhatsApp</PrimaryButton>
-                  </View>
-                  <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-                    <PrimaryButton onPress={() => sharePartnership(listing.id, partnership.refCode)}>Paylaş</PrimaryButton>
-                  </View>
-                </View>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  <View style={{ flexBasis: "48%", flexGrow: 1 }}>
-                    <PrimaryButton tone="secondary" onPress={() => copyText("Instagram açıklaması", templates.instagram)}>Instagram Metni</PrimaryButton>
-                  </View>
-                  <View style={{ flexBasis: "48%", flexGrow: 1 }}>
-                    <PrimaryButton tone="secondary" onPress={() => copyText("TikTok açıklaması", templates.tiktok)}>TikTok Metni</PrimaryButton>
-                  </View>
-                </View>
-                <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => messageSeller(listing.id, listing.ownerId, listing.title)}>
-                  Satıcıya mesaj yaz
-                </PrimaryButton>
-                {/* Satışı ortak bildirir → satıcı sisteme ekler (satışları yalnız satıcı ekler). */}
-                <PrimaryButton tone="soft" icon="cash-check" onPress={() => claimSale(listing.id, listing.ownerId, listing.title)}>
-                  Sattım — satıcıya bildir
-                </PrimaryButton>
-                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
-                  {translateCopy("Satışını satıcı sisteme ekleyince komisyonun başlar. Referans linkinle satış yaptıysan buradan satıcıya bildir.", language)}
-                </Text>
-              </>
-            ) : partnership.status === "rejected" ? (
-              <View style={{ gap: 8 }}>
-                <View style={{ backgroundColor: colors.warningSoft, borderColor: colors.line, borderRadius: 10, borderWidth: 1, gap: 4, padding: 12 }}>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                    <MaterialCommunityIcons name="account-cancel-outline" size={16} color={colors.warning} />
-                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Başvuru reddedildi", language)}</Text>
-                  </View>
-                  <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{displayText(partnership.rejectionReason || "Satıcı bu başvuruyu uygun görmedi.")}</Text>
-                </View>
-                <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => messageSeller(listing.id, listing.ownerId, listing.title)}>
-                  Satıcıya mesaj yaz
-                </PrimaryButton>
-              </View>
-            ) : (
-              <View style={{ gap: 8 }}>
-                <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
-                  {t("partnerApprovalPendingNote")} {partnership.note}
-                </Text>
-                <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => messageSeller(listing.id, listing.ownerId, listing.title)}>
-                  Satıcıya mesaj yaz
-                </PrimaryButton>
-              </View>
-            )}
-
-            <PartnerActionBand
-              active={partnership.status === "active"}
-              leadCount={listingLeads.length}
-              sellerPaidCount={sellerPaidCount}
-              onCopy={() => copyText("Satış bağlantısı", url)}
-              onShare={() => sharePartnership(listing.id, partnership.refCode)}
-            />
-
-            <SectionTitle title="Performans" />
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Metric label="Tıklama" value={`${clickCounts[partnership.id] ?? 0}`} />
-              <Metric label="Talep" value={`${listingLeads.length}`} />
-            </View>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Metric label="Satış" value={`${listingSales.length}`} />
-              <Metric label="Kazanç" value={money(earned)} />
-            </View>
-
-            {listingLeads.length > 0 ? <SectionTitle title="Gelen talepler" action="Benim bağlantım" /> : null}
-            {listingLeads.map((lead) => (
-              <View key={lead.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 6, padding: 12 }}>
-                <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{lead.buyerName} · {lead.buyerPhone}</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  <StatusPill label={lead.status === "converted" ? "Satışa döndü" : lead.status === "interested" ? "İlgileniyor" : lead.status === "contacted" ? "İletişimde" : lead.status === "lost" ? "Kayıp" : "Yeni"} tone={lead.status === "converted" ? "success" : "info"} />
-                  <StatusPill label={sourceLabels[lead.source]} />
-                  <StatusPill label={intentLabels[lead.intent]} tone={lead.intent === "hot" ? "warning" : "info"} />
-                </View>
-                <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{lead.note}</Text>
-                {/* Ortak kendi hunisini takip eder: durum ilerlet (satışa çevirmeyi satıcı yapar). */}
-                {lead.status !== "converted" ? (
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                    {([["contacted", "İletişimde"], ["interested", "İlgileniyor"], ["lost", "Kayıp"]] as const).map(([st, lbl]) => {
-                      const on = lead.status === st;
-                      return (
-                        <Pressable key={st} onPress={() => updateLeadStatus(lead.id, st)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 }}>
-                          <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
-                ) : null}
-              </View>
-            ))}
-
-            {listingSales.length > 0 ? <SectionTitle title="Komisyonlar" /> : null}
-            {listingSales.map((sale) => (
-              <View key={sale.id} style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 10, paddingTop: 12 }}>
-                <View style={{ flexDirection: "row", gap: 10 }}>
-                  <Metric label="Satış" value={money(sale.amount)} />
-                  <Metric label="Komisyon" value={money(sale.commissionAmount)} />
-                </View>
-                <View style={{ flexDirection: "row", gap: 10 }}>
-                  <Metric label="Adet" value={`${sale.quantity ?? 1}`} />
-                  <Metric label="İade sonu" value={sale.returnUntil ?? "-"} />
-                </View>
-                <StatusPill label={saleLabels[sale.status]} tone={sale.status === "paid" ? "success" : "warning"} />
-                {sale.payoutNote ? <Text selectable style={{ color: sale.status === "disputed" ? colors.accent : colors.muted, fontSize: 13, lineHeight: 19 }}>{sale.payoutNote}</Text> : null}
-                {sale.status === "seller_paid" || sale.status === "disputed" ? <PrimaryButton tone="soft" onPress={() => updateSaleStatus(sale.id, "paid")}>{sale.status === "disputed" ? "Çözüldü · Ödemeyi Aldım" : "Ödemeyi Aldım"}</PrimaryButton> : null}
-                {sale.status !== "paid" && sale.status !== "cancelled" && sale.status !== "disputed" ? <PrimaryButton tone="secondary" onPress={() => setDisputeSaleId(sale.id)}>Anlaşmazlık Bildir</PrimaryButton> : null}
-                <ReviewPrompt sale={sale} canReviewSale={canReviewSale} createSaleReview={createSaleReview} />
-              </View>
-            ))}
-          </Card>
-        );
-      })}
+      {visiblePartnerships.map(renderPartnershipCard)}
       </WebContainer>
       <DisputeModal
         visible={disputeSaleId !== null}
@@ -766,6 +648,149 @@ function PartnerScreenInner() {
         onSubmit={(reason) => { if (disputeSaleId) updateSaleStatus(disputeSaleId, "disputed", reason); setDisputeSaleId(null); }}
       />
     </ScrollView>
+  );
+}
+
+type PartnershipCardActions = {
+  copy: (label: string, text: string) => void;
+  whatsapp: (listingId: string, refCode: string) => void;
+  share: (listingId: string, refCode: string) => void;
+  messageSeller: (listingId: string, sellerId: string, title: string) => void;
+  claimSale: (listingId: string, sellerId: string, title: string) => void;
+  updateLeadStatus: (leadId: string, status: LeadStatus) => void;
+  updateSaleStatus: (saleId: string, status: SaleStatus, reason?: string) => void;
+  dispute: (saleId: string) => void;
+};
+
+// Ortak ortaklık kartı — hem mobil liste hem masaüstü "Aktif/Bekleyen" sekmesinde
+// AYNI zengin araç seti (paylaşım linki, WhatsApp/IG/TikTok şablonları, satıcıya mesaj,
+// "sattım bildir", performans metrikleri, gelen talepler, komisyon defteri). Masaüstünde
+// eskiden yalnız minik satır (OppMiniRow) vardı — parite sağlandı.
+function PartnershipCard({ listing, partnership, listingLeads, listingSales, clickCount, canReviewSale, createSaleReview, actions }: {
+  listing: Listing;
+  partnership: Partnership;
+  listingLeads: Lead[];
+  listingSales: Sale[];
+  clickCount: number;
+  canReviewSale: (saleId: string) => boolean;
+  createSaleReview: (saleId: string, rating: number, comment: string) => unknown;
+  actions: PartnershipCardActions;
+}) {
+  const { language, t } = useLanguage();
+  const url = shareUrl(listing, partnership.refCode);
+  const templates = listingShareTemplates(listing, url);
+  const earned = listingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
+  const sellerPaidCount = listingSales.filter((sale) => sale.status === "seller_paid").length;
+  return (
+    <Card>
+      <View style={{ flexDirection: "row", gap: 10 }}>
+        <Image source={{ uri: listing.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 8, height: 74, width: 74 }} />
+        <View style={{ flex: 1, gap: 6 }}>
+          <Text selectable numberOfLines={2} style={{ color: colors.ink, fontSize: 18, fontWeight: "900", lineHeight: 22 }}>{listing.title}</Text>
+          <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 12, lineHeight: 17 }}>
+            {partnership.shareChannel || t("channelMissing")} · {partnership.reachEstimate ?? 0} {t("reach")}
+          </Text>
+        </View>
+        <StatusPill label={partnership.status === "active" ? "Aktif" : partnership.status === "pending" ? "Bekliyor" : "Reddedildi"} tone={partnership.status === "active" ? "success" : "warning"} />
+      </View>
+
+      {partnership.status === "active" ? (
+        <>
+          <Text selectable style={{ color: colors.info, fontSize: 13, lineHeight: 19 }}>{url}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <View style={{ flexBasis: "31%", flexGrow: 1 }}><PrimaryButton tone="secondary" onPress={() => actions.copy("Satış bağlantısı", url)}>Kopyala</PrimaryButton></View>
+            <View style={{ flexBasis: "31%", flexGrow: 1 }}><PrimaryButton tone="soft" onPress={() => actions.whatsapp(listing.id, partnership.refCode)}>WhatsApp</PrimaryButton></View>
+            <View style={{ flexBasis: "31%", flexGrow: 1 }}><PrimaryButton onPress={() => actions.share(listing.id, partnership.refCode)}>Paylaş</PrimaryButton></View>
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <View style={{ flexBasis: "48%", flexGrow: 1 }}><PrimaryButton tone="secondary" onPress={() => actions.copy("Instagram açıklaması", templates.instagram)}>Instagram Metni</PrimaryButton></View>
+            <View style={{ flexBasis: "48%", flexGrow: 1 }}><PrimaryButton tone="secondary" onPress={() => actions.copy("TikTok açıklaması", templates.tiktok)}>TikTok Metni</PrimaryButton></View>
+          </View>
+          <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
+          <PrimaryButton tone="soft" icon="cash-check" onPress={() => actions.claimSale(listing.id, listing.ownerId, listing.title)}>Sattım — satıcıya bildir</PrimaryButton>
+          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Satışını satıcı sisteme ekleyince komisyonun başlar. Referans linkinle satış yaptıysan buradan satıcıya bildir.", language)}</Text>
+        </>
+      ) : partnership.status === "rejected" ? (
+        <View style={{ gap: 8 }}>
+          <View style={{ backgroundColor: colors.warningSoft, borderColor: colors.line, borderRadius: 10, borderWidth: 1, gap: 4, padding: 12 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+              <MaterialCommunityIcons name="account-cancel-outline" size={16} color={colors.warning} />
+              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Başvuru reddedildi", language)}</Text>
+            </View>
+            <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{displayText(partnership.rejectionReason || "Satıcı bu başvuruyu uygun görmedi.")}</Text>
+          </View>
+          <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
+        </View>
+      ) : (
+        <View style={{ gap: 8 }}>
+          <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>{t("partnerApprovalPendingNote")} {partnership.note}</Text>
+          <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
+        </View>
+      )}
+
+      <PartnerActionBand
+        active={partnership.status === "active"}
+        leadCount={listingLeads.length}
+        sellerPaidCount={sellerPaidCount}
+        onCopy={() => actions.copy("Satış bağlantısı", url)}
+        onShare={() => actions.share(listing.id, partnership.refCode)}
+      />
+
+      <SectionTitle title="Performans" />
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <Metric label="Tıklama" value={`${clickCount}`} />
+        <Metric label="Talep" value={`${listingLeads.length}`} />
+      </View>
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <Metric label="Satış" value={`${listingSales.length}`} />
+        <Metric label="Kazanç" value={money(earned)} />
+      </View>
+
+      {listingLeads.length > 0 ? <SectionTitle title="Gelen talepler" action="Benim bağlantım" /> : null}
+      {listingLeads.map((lead) => (
+        <View key={lead.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 6, padding: 12 }}>
+          <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{lead.buyerName} · {lead.buyerPhone}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            <StatusPill label={lead.status === "converted" ? "Satışa döndü" : lead.status === "interested" ? "İlgileniyor" : lead.status === "contacted" ? "İletişimde" : lead.status === "lost" ? "Kayıp" : "Yeni"} tone={lead.status === "converted" ? "success" : "info"} />
+            <StatusPill label={sourceLabels[lead.source]} />
+            <StatusPill label={intentLabels[lead.intent]} tone={lead.intent === "hot" ? "warning" : "info"} />
+          </View>
+          <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{lead.note}</Text>
+          {lead.status !== "converted" ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {([["contacted", "İletişimde"], ["interested", "İlgileniyor"], ["lost", "Kayıp"]] as const).map(([st, lbl]) => {
+                const on = lead.status === st;
+                return (
+                  <Pressable key={st} onPress={() => actions.updateLeadStatus(lead.id, st)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 }}>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          ) : null}
+        </View>
+      ))}
+
+      {listingSales.length > 0 ? <SectionTitle title="Komisyonlar" /> : null}
+      {listingSales.map((sale) => (
+        <View key={sale.id} style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 10, paddingTop: 12 }}>
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <Metric label="Satış" value={money(sale.amount)} />
+            <Metric label="Komisyon" value={money(sale.commissionAmount)} />
+          </View>
+          {sale.bonusApplied ? <StatusPill label={`${translateCopy("Bonus dahil", language)} +${money(sale.bonusApplied)}`} tone="success" /> : null}
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            <Metric label="Adet" value={`${sale.quantity ?? 1}`} />
+            <Metric label="İade sonu" value={sale.returnUntil ?? "-"} />
+          </View>
+          <StatusPill label={saleLabels[sale.status]} tone={sale.status === "paid" ? "success" : "warning"} />
+          {sale.payoutNote ? <Text selectable style={{ color: sale.status === "disputed" ? colors.accent : colors.muted, fontSize: 13, lineHeight: 19 }}>{sale.payoutNote}</Text> : null}
+          {sale.status === "seller_paid" || sale.status === "disputed" ? <PrimaryButton tone="soft" onPress={() => actions.updateSaleStatus(sale.id, "paid")}>{sale.status === "disputed" ? "Çözüldü · Ödemeyi Aldım" : "Ödemeyi Aldım"}</PrimaryButton> : null}
+          {sale.status !== "paid" && sale.status !== "cancelled" && sale.status !== "disputed" ? <PrimaryButton tone="secondary" onPress={() => actions.dispute(sale.id)}>Anlaşmazlık Bildir</PrimaryButton> : null}
+          <ReviewPrompt sale={sale} canReviewSale={canReviewSale} createSaleReview={createSaleReview} />
+        </View>
+      ))}
+    </Card>
   );
 }
 
