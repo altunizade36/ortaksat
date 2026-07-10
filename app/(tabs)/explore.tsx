@@ -8,7 +8,7 @@ import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { inferListingSubcategory, listingCategories } from "@/lib/categories";
+import { listingCategories } from "@/lib/categories";
 import { getFormSchema, matchCategoryByName, resolveFormKey, topCategories, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -188,16 +188,17 @@ export default function ExploreScreen() {
   // tokens memoize edilir: activeListings useMemo bağımlılığı; her render'da yeni dizi
   // kimliği memo'yu geçersizleştirip ağır scoreListing'i tekrar koşturuyordu.
   const tokens = useMemo(() => searchKey(params.q ?? "").split(" ").filter(Boolean), [params.q]);
-  const gap = isWideWeb ? 14 : 8;
+  // Instagram-keşfeti tarzı: mobilde 3, masaüstünde 4 sütun; sıkı boşluk, karesi-ye yakın tile.
+  const gap = isWideWeb ? 12 : 6;
   const padding = isWideWeb ? 20 : 12;
   const panelWidth = 260;
   // İçerik standart 1280 genişlikte ortalanır; grid hesabı da bu genişliğe göre.
   const contentW = Math.min(width, 1280);
   const gridArea = isWideWeb ? contentW - padding * 2 - panelWidth - 20 : contentW - padding * 2;
-  const grid = responsiveGrid({ available: gridArea, gap, minCardWidth: isWideWeb ? 190 : 160 });
+  const grid = responsiveGrid({ available: gridArea, gap, minCardWidth: isWideWeb ? 205 : 104, maxColumns: 4 });
   const columns = grid.columns;
   const tileSize = grid.cardWidth;
-  const tileHeight = Math.min(isWideWeb ? 320 : 258, Math.round(tileSize * 1.22));
+  const tileHeight = Math.min(isWideWeb ? 300 : 210, Math.round(tileSize * (isWideWeb ? 1.12 : 1.16)));
 
   const marketplaceListings = useMemo(() => {
     const visible = listings.filter((listing) => listing.status !== "draft" && listing.status !== "rejected" && listing.status !== "sold");
@@ -1502,7 +1503,8 @@ function ExploreTileBase({ height, item, language, onPress, order, size, t }: { 
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
   const status = getExploreStatus(item, listing, featured, conversionScore, t);
   const commission = commissionAmount(listing);
-  const subcategory = inferListingSubcategory(listing);
+  // İlanın GERÇEK kategorisi (eski sezgisel inferListingSubcategory kamera→"Araç elektroniği" gibi yanlış eşliyordu).
+  const subcategory = displayText(listing.category);
 
   return (
     <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.line, borderColor: "rgba(16,24,40,0.08)", borderRadius: 8, borderWidth: 1, height, opacity: pressed ? 0.82 : 1, overflow: "hidden", width: size })}>
