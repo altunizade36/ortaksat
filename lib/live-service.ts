@@ -548,24 +548,8 @@ export async function recordPayoutLive(partnerId: string, listingId: string | nu
   return true;
 }
 
-export async function insertPartnership(partnership: Partnership): Promise<boolean> {
-  if (!supabase) return true;
-  const { error } = await supabase.from("partnerships").insert({
-    id: partnership.id,
-    listing_id: partnership.listingId,
-    partner_id: partnership.partnerId,
-    ref_code: partnership.refCode,
-    status: partnership.status,
-    note: partnership.note,
-    share_channel: partnership.shareChannel ?? null,
-    audience: partnership.audience ?? null,
-    platform_handle: partnership.platformHandle ?? null,
-    reach_estimate: partnership.reachEstimate ?? 0,
-    approved_at: partnership.approvedAt ?? null
-  });
-  if (error) { console.warn("Supabase partnership insert failed", error); return false; }
-  return true;
-}
+// insertPartnership KALDIRILDI: ortaklık katılımı artık yalnız partner_join RPC ile
+// (sunucu-doğrulamalı). Doğrudan, sertleştirilmemiş insert yolu bırakılmadı.
 
 export async function updatePartnershipStatus(partnership: Partnership): Promise<boolean> {
   if (!supabase) return true;

@@ -678,6 +678,9 @@ function SellerScreenInner() {
                     const pLeads = listingLeads.filter((l) => l.partnershipId === p.id).length;
                     const pSales = listingSales.filter((s) => s.partnershipId === p.id);
                     const pOwed = pSales.filter(saleIsOwed).reduce((sum, s) => sum + s.commissionAmount, 0);
+                    // Toplu ödeme YALNIZ return_pending/approved komisyonları kapatır (seller_paid
+                    // hariç — o zaten ortağın onayını bekliyor). Buton/tutar bu ödenebilir kümeden.
+                    const pPayable = pSales.filter((s) => s.status === "return_pending" || s.status === "approved").reduce((sum, s) => sum + s.commissionAmount, 0);
                     const partnerName = partner?.name ?? translateCopy("Ortak", language);
                     return (
                       <View key={p.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 8, padding: 10 }}>
@@ -701,9 +704,9 @@ function SellerScreenInner() {
                             <MaterialCommunityIcons name="cash-plus" size={15} color="#FFFFFF" />
                             <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(canSell ? "Satış ekle" : (listing.stockCount <= 0 ? "Stok yok" : "İlan pasif"), language)}</Text>
                           </Pressable>
-                          {pOwed > 0 ? (
+                          {pPayable > 0 ? (
                             <Pressable
-                              onPress={() => Alert.alert(translateCopy("Toplu ödeme kaydet", language), `${partnerName} — ${moneyIn(pOwed, listing.currency)} ${translateCopy("tutarındaki borçlu komisyonları ödediğini kaydet? Ortak onayınca kapanır. OrtakSat para tutmaz; ödeme aranızda yapılır.", language)}`, [{ text: t("cancel"), style: "cancel" }, { text: translateCopy("Ödedim, kaydet", language), onPress: () => recordBatchPayout(p.partnerId, listing.id) }])}
+                              onPress={() => Alert.alert(translateCopy("Toplu ödeme kaydet", language), `${partnerName} — ${moneyIn(pPayable, listing.currency)} ${translateCopy("tutarındaki borçlu komisyonları ödediğini kaydet? Ortak onayınca kapanır. OrtakSat para tutmaz; ödeme aranızda yapılır.", language)}`, [{ text: t("cancel"), style: "cancel" }, { text: translateCopy("Ödedim, kaydet", language), onPress: () => recordBatchPayout(p.partnerId, listing.id) }])}
                               style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
                             >
                               <MaterialCommunityIcons name="cash-check" size={15} color={colors.success} />
