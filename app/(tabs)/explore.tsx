@@ -28,7 +28,11 @@ type SortMode = "recommended" | "priceAsc" | "priceDesc" | "commission" | "new";
 
 // Kategori-filtre sayısal aralık alanları (m²/km/yıl) + kategori eşleşme etiketleri.
 const EXPLORE_NUM_FILTERS: Array<{ key: string; label: string; suffix?: string }> = [
-  { key: "grossM2", label: "m²" }, { key: "m2", label: "m²" }, { key: "km", label: "Kilometre", suffix: "km" }, { key: "year", label: "Yıl" }
+  { key: "grossM2", label: "m²" }, { key: "m2", label: "m²" }, { key: "netM2", label: "m² (net)" },
+  { key: "km", label: "Kilometre", suffix: "km" }, { key: "year", label: "Yıl" },
+  { key: "salon", label: "Salon sayısı" }, { key: "bathrooms", label: "Banyo sayısı" }, { key: "floorCount", label: "Kat sayısı" },
+  { key: "dues", label: "Aidat", suffix: "₺" }, { key: "rentalIncome", label: "Kira getirisi", suffix: "₺" },
+  { key: "workHours", label: "Çalışma saati", suffix: "saat" }, { key: "engineHours", label: "Motor saati", suffix: "saat" }
 ];
 function collectDescendantLabels(node: CategoryNode): string[] {
   const out: string[] = [node.label];
@@ -229,8 +233,10 @@ export default function ExploreScreen() {
     const n = f.options?.length ?? 0;
     if (f.key === "seller") return false;
     if (f.key === "brand" && f.type === "select" && n > 16) return false; // marka ayrı aranabilir filtreye
-    if (f.type === "select") return n >= 2 && n <= 16;
-    if (f.type === "multiselect") return n >= 2 && n <= 24;
+    // Büyük listeler (İç Özellikler 46, CAR_COLORS…) artık düşmüyor: 12+ seçenekli facet
+    // aranabilir/kaydırılabilir kutuda render edilir. Üst sınır 80.
+    if (f.type === "select") return n >= 2 && n <= 80;
+    if (f.type === "multiselect") return n >= 2 && n <= 80;
     return false;
   }) : []), [catSchema]);
   // Aranabilir bağımsız marka filtresi: seçenek sayısı facet sınırını (16) aşan
@@ -301,6 +307,17 @@ export default function ExploreScreen() {
   if (statusOpen) activeChips.push({ key: "open", label: "Ortak satışa açık", onRemove: () => setStatusOpen(false) });
   if (catPath.length) activeChips.push({ key: "cat", label: catPath[catPath.length - 1], onRemove: clearCatFilter });
   if (sortMode !== "recommended") activeChips.push({ key: "sort", label: `Sırala: ${SORT_LABELS[sortMode]}`, onRemove: () => setSortMode("recommended") });
+  // Kategori-özel facet (Yakıt=Dizel…) + sayısal aralık (Km 0–100000) seçimleri de
+  // kaldırılabilir çip olarak görünsün (eskiden yalnız panelde vardı, geri alması zordu).
+  for (const [key, vals] of Object.entries(attrFilters)) {
+    for (const v of vals) activeChips.push({ key: `attr-${key}-${v}`, label: v, onRemove: () => toggleAttr(key, v) });
+  }
+  for (const [key, r] of Object.entries(numRange)) {
+    if (r?.min?.trim() || r?.max?.trim()) {
+      const nf = EXPLORE_NUM_FILTERS.find((f) => f.key === key);
+      activeChips.push({ key: `num-${key}`, label: `${translateCopy(nf?.label ?? key, language)}: ${r.min || "0"}–${r.max || "∞"}`, onRemove: () => setNumRange((s) => { const c = { ...s }; delete c[key]; return c; }) });
+    }
+  }
 
   // q girildiyse temel set sunucu sonuclari (tum katalog); degilse yuklu katalog.
   const baseListings = serverResults ?? marketplaceListings;
@@ -559,21 +576,30 @@ export default function ExploreScreen() {
               </View>
             </View>
           ))}
-          {catFacets.map((f) => (
-            <View key={f.key} style={{ gap: 4, minWidth: 160 }}>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(f.label, language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-                {(f.options ?? []).slice(0, 14).map((opt) => {
-                  const on = (attrFilters[f.key] ?? []).includes(opt);
-                  return (
-                    <Pressable key={opt} onPress={() => toggleAttr(f.key, opt)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 4 }}>
-                      <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 11, fontWeight: "800" }}>{translateCopy(opt, language)}</Text>
-                    </Pressable>
-                  );
-                })}
+          {catFacets.map((f) => {
+            const opts = f.options ?? [];
+            const selected = attrFilters[f.key] ?? [];
+            // Çok seçenekli facet (İç Özellikler, Muhit, renk…) → aranabilir/kaydırılabilir
+            // kutu (BrandFilter deseni); azsa tüm seçenekler çip olarak (artık KIRPILMIYOR).
+            if (opts.length > 12) {
+              return <BrandFilter key={f.key} label={f.label} options={opts} selected={selected} onToggle={(v) => toggleAttr(f.key, v)} language={language} />;
+            }
+            return (
+              <View key={f.key} style={{ gap: 4, minWidth: 160 }}>
+                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(f.label, language)}{selected.length ? ` · ${selected.length}` : ""}</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                  {opts.map((opt) => {
+                    const on = selected.includes(opt);
+                    return (
+                      <Pressable key={opt} onPress={() => toggleAttr(f.key, opt)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 4 }}>
+                        <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 11, fontWeight: "800" }}>{translateCopy(opt, language)}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
               </View>
-            </View>
-          ))}
+            );
+          })}
         </View>
       ) : null}
     </View>
@@ -1332,7 +1358,7 @@ function BrandFilter({ label, options, selected, onToggle, language }: { label: 
       </Text>
       <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 38, paddingHorizontal: 9 }}>
         <MaterialCommunityIcons name="magnify" size={16} color={colors.muted} />
-        <TextInput value={q} onChangeText={setQ} placeholder={translateCopy("Marka ara…", language)} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13, minHeight: 38 }} />
+        <TextInput value={q} onChangeText={setQ} placeholder={`${translateCopy(label, language)} ${translateCopy("ara…", language)}`} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13, minHeight: 38 }} />
         {q ? <Pressable onPress={() => setQ("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable> : null}
       </View>
       {selected.length ? (
@@ -1355,7 +1381,7 @@ function BrandFilter({ label, options, selected, onToggle, language }: { label: 
               </Pressable>
             );
           })}
-          {shown.length === 0 ? <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", padding: 6 }}>{translateCopy("Marka bulunamadı", language)}</Text> : null}
+          {shown.length === 0 ? <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", padding: 6 }}>{translateCopy("Sonuç yok", language)}</Text> : null}
         </ScrollView>
       </View>
     </View>

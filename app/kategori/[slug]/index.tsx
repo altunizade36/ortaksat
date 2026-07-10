@@ -102,15 +102,20 @@ export default function CategoryLandingScreen() {
     return schema.fields.filter((f) => {
       const n = f.options?.length ?? 0;
       if (f.key === "seller") return false;
-      if (f.type === "select") return n >= 2 && n <= 16;
-      if (f.type === "multiselect") return n >= 2 && n <= 24;
+      // Büyük listeler de facet olur (kaydırılabilir çip alanı); üst sınır 60.
+      if (f.type === "select") return n >= 2 && n <= 60;
+      if (f.type === "multiselect") return n >= 2 && n <= 60;
       return false;
     });
   }, [trail]);
 
-  // Kategoride bulunan sayısal-aralık alanları (m² / km / yıl). Aynı etiket bir kez.
+  // Kategoride bulunan sayısal-aralık alanları. Aynı etiket bir kez.
   const NUM_FILTERS: Array<{ key: string; label: string; suffix?: string }> = [
-    { key: "grossM2", label: "m²" }, { key: "m2", label: "m²" }, { key: "km", label: "Kilometre", suffix: "km" }, { key: "year", label: "Yıl" }
+    { key: "grossM2", label: "m²" }, { key: "m2", label: "m²" }, { key: "netM2", label: "m² (net)" },
+    { key: "km", label: "Kilometre", suffix: "km" }, { key: "year", label: "Yıl" },
+    { key: "salon", label: "Salon sayısı" }, { key: "bathrooms", label: "Banyo sayısı" }, { key: "floorCount", label: "Kat sayısı" },
+    { key: "dues", label: "Aidat", suffix: "₺" }, { key: "rentalIncome", label: "Kira getirisi", suffix: "₺" },
+    { key: "workHours", label: "Çalışma saati", suffix: "saat" }, { key: "engineHours", label: "Motor saati", suffix: "saat" }
   ];
   const numFields = useMemo(() => {
     if (!trail) return [] as typeof NUM_FILTERS;
