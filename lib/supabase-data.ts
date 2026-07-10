@@ -363,9 +363,9 @@ export async function loadMarketplaceSnapshot(): Promise<MarketplaceSnapshot | n
   const listings = ((listingsResult.data ?? []) as PublicListingCardRow[]).map(mapListing);
   const users = ((profilesResult.data ?? []) as ProfileRow[]).map(mapProfile);
 
-  if (listings.length === 0 || users.length === 0) {
-    return null;
-  }
+  // NOT: sıfır satır HATA DEĞİLDİR — yeni/boş katalog geçerli bir durumdur. Yalnız gerçek
+  // `.error` (yukarıda) null döner → "bağlantı hatası" ekranı yalnız gerçekten kopukken çıkar;
+  // boş katalogda gerçek "ilk ilanı sen ver" empty-state'i gösterilir.
 
   const listingCounts = listings.reduce<Record<string, number>>((acc, listing) => {
     acc[listing.ownerId] = (acc[listing.ownerId] ?? 0) + 1;
@@ -470,7 +470,9 @@ export async function searchListings(params: {
 export async function loadAccountSnapshot(userId: string): Promise<AccountSnapshot | null> {
   if (!supabase) return null;
 
-  const { data: ownedListings } = await supabase.from("listings").select("id").eq("owner_id", userId);
+  // LİMİT ŞART: aksi halde 100k ilanlı satıcı 100k id'yi `.in(...)` sorgu-string'ine gömer →
+  // URL/statement sınırı aşılır, giriş takılır. Hesap-özeti join'leri için en yeni 1000 yeterli.
+  const { data: ownedListings } = await supabase.from("listings").select("id").eq("owner_id", userId).order("created_at", { ascending: false }).limit(1000);
   const ownedListingIds = (ownedListings ?? []).map((item) => item.id as string);
 
   const [
@@ -518,10 +520,10 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
     notificationsResult.error ??
     reportsResult.error;
 
-  if (firstError) {
-    console.warn("Supabase account load failed", firstError);
-    return null;
-  }
+  // DİRENÇLİ: tek bir tablo (ör. reports RLS, migration sonrası eksik kolon) hata verse bile
+  // DİĞER hesap verisi (mesaj/favori/satış…) yüklensin. Eskiden ilk hata her şeyi null'lıyordu
+  // → kullanıcı "her şey boş" görüyordu. Artık her sonuç kendi `.data ?? []` ile map'lenir.
+  if (firstError) console.warn("Supabase account load partial failure", firstError);
 
   return {
     partnerships: (partnershipsResult.data ?? []).map((row) => ({

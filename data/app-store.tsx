@@ -599,17 +599,26 @@ export function StoreProvider({ children }: PropsWithChildren) {
             }
           : fallback;
 
-      await ensureProfile(profile);
-      const account = await loadAccountSnapshot(profile.id);
-      const suggestions = await loadSuggestions();
-      const myFollows = await loadMyFollowsLive(profile.id);
+      await ensureProfile(profile).catch(() => {});
       if (!mounted) return;
+      // AUTH'U ÖNCE ATA: hesap-özeti (10 tablo) yavaş yüklenirken ya da bir tablosu hata
+      // verirken kullanıcı "misafir" görünmesin / oturumu kaybolmuş sanılmasın. Eskiden
+      // setAuthUser 4 zincirli await SONRASINDA çağrılıyordu; biri patlarsa auth hiç kurulmuyordu.
       setAuthUser(profile);
+      setBackendMode("supabase");
+      setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
+      // Hesap verisi + öneriler + takipler: her biri BAĞIMSIZ dirençli — biri patlasa diğerleri yüklenir,
+      // ve hiçbiri auth'u bozmaz.
+      const [account, suggestions, myFollows] = await Promise.all([
+        loadAccountSnapshot(profile.id).catch(() => null),
+        loadSuggestions().catch(() => ({ categorySuggestions: [], locationSuggestions: [] })),
+        loadMyFollowsLive(profile.id).catch(() => [] as string[])
+      ]);
+      if (!mounted) return;
       setFollowedSellerIds(myFollows);
       // Kategori/konum önerileri (RLS: kendi + admin hepsi) — kalıcı yüklensin.
       setCategorySuggestions(suggestions.categorySuggestions);
       setLocationSuggestions(suggestions.locationSuggestions);
-      setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
       if (account) {
         setPartnerships(account.partnerships);
         setLeads(account.leads);
@@ -622,7 +631,6 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setNotifications(account.notifications);
         setReports(account.reports);
       }
-      setBackendMode("supabase");
     }
 
     supabase.auth.getSession().then(({ data, error }) => {
@@ -631,11 +639,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
         if (user.app_metadata?.provider === "google") void recordGoogleConsentOnce(user.id);
-        void loadProfile(user.id, user.phone, user.user_metadata?.full_name);
+        void loadProfile(user.id, user.phone, user.user_metadata?.full_name).catch((e) => console.warn("loadProfile failed", e));
       } else if (mounted) {
         setAuthUser(null);
         setEmailVerified(false);
       }
+      if (mounted) setAuthReady(true);
+    }).catch((e) => {
+      // Ağ reddinde (getSession fetch timeout/kopuk) authReady askıda kalmasın → UI kilitlenmesin.
+      console.warn("getSession failed", e);
       if (mounted) setAuthReady(true);
     });
 
@@ -644,7 +656,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
         if (user.app_metadata?.provider === "google") void recordGoogleConsentOnce(user.id);
-        void loadProfile(user.id, user.phone, user.user_metadata?.full_name);
+        void loadProfile(user.id, user.phone, user.user_metadata?.full_name).catch((e) => console.warn("loadProfile failed", e));
       } else {
         setAuthUser(null);
         setEmailVerified(false);

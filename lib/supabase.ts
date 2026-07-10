@@ -80,8 +80,24 @@ const authStorage = hasBrowserStorage
   ? (typeof window.sessionStorage !== "undefined" ? rememberAwareWebStorage : AsyncStorage)
   : undefined;
 
+// Ağ isteklerine üst zaman sınırı: takılı/kara-delik bağlantıda (mobil, captive portal)
+// istek sonsuza kadar asılı kalıp UI'ı dondurmasın — 15sn sonra iptal → sorgu hatası →
+// çağıran retry/empty UI'ına düşer. Çağıranın kendi AbortSignal'ı (ör. arama iptali) korunur.
+const REQUEST_TIMEOUT_MS = 15000;
+function fetchWithTimeout(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+  const outer = init?.signal;
+  if (outer) {
+    if (outer.aborted) ctrl.abort();
+    else outer.addEventListener("abort", () => ctrl.abort(), { once: true });
+  }
+  return fetch(input, { ...init, signal: ctrl.signal }).finally(() => clearTimeout(timer));
+}
+
 export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabasePublishableKey!, {
+      global: { fetch: fetchWithTimeout },
       auth: {
         autoRefreshToken: hasBrowserStorage,
         storage: authStorage,
