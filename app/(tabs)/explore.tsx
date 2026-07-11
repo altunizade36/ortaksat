@@ -2,7 +2,8 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Modal, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { BrandFilter } from "@/components/brand-filter";
 import { colors } from "@/components/colors";
@@ -180,6 +181,7 @@ export default function ExploreScreen() {
     { key: "new", label: t("newest"), icon: "clock-outline" }
   ];
   const isWideWeb = useIsWideWeb();
+  const insets = useSafeAreaInsets();
   // Hidrasyon güvenliği: SSG'de genişlik bilinmez → isWideWeb dalı sunucu/istemci
   // arasında uyuşmayıp React #418 üretiyordu. Mount'a kadar deterministik kabuk
   // göster (home ile aynı desen), sonra gerçek düzene geç.
@@ -568,9 +570,9 @@ export default function ExploreScreen() {
             <View key={nf.key} style={{ gap: 4, minWidth: 160 }}>
               <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(nf.label, language)}{nf.suffix ? ` (${nf.suffix})` : ""}</Text>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 38, paddingHorizontal: 9 }} />
+                <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minWidth: 0, minHeight: 38, paddingHorizontal: 9 }} />
                 <Text style={{ color: colors.muted }}>—</Text>
-                <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 38, paddingHorizontal: 9 }} />
+                <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minWidth: 0, minHeight: 38, paddingHorizontal: 9 }} />
               </View>
             </View>
           ))}
@@ -904,28 +906,54 @@ export default function ExploreScreen() {
       style={{ backgroundColor: colors.surface }}
     >
       <View style={isWideWeb ? { flexDirection: "row", gap: 20, paddingHorizontal: padding, paddingTop: 6, alignItems: "flex-start" } : undefined}>
-      {isWideWeb || showMobileFilters ? (
+      {isWideWeb ? (
         <FilterPanel
-          cities={cities}
-          city={city}
-          onCity={setCity}
-          minCommission={minCommission}
-          onMinCommission={setMinCommission}
-          priceRange={priceRange}
-          onPriceRange={setPriceRange}
-          statusOpen={statusOpen}
-          onStatusOpen={setStatusOpen}
+          cities={cities} city={city} onCity={setCity}
+          minCommission={minCommission} onMinCommission={setMinCommission}
+          priceRange={priceRange} onPriceRange={setPriceRange}
+          statusOpen={statusOpen} onStatusOpen={setStatusOpen}
           onClear={() => { setCity(""); setMinCommission(0); setPriceRange(""); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); router.setParams({ province: undefined, district: undefined }); clearCatFilter(); }}
-          width={isWideWeb ? panelWidth : Math.max(0, width - padding * 2)}
-          mobile={!isWideWeb}
-          provinceId={provinceId}
-          districtId={districtId}
+          width={panelWidth} mobile={false}
+          provinceId={provinceId} districtId={districtId}
           onLocation={(v) => router.setParams({ province: v.provinceId != null ? getProvince(v.provinceId)?.slug : undefined, district: v.districtId != null ? getDistrict(v.districtId)?.slug : undefined })}
-          stockFilter={stockFilter}
-          onStockFilter={setStockFilter}
-          onlyVerified={onlyVerified}
-          onOnlyVerified={setOnlyVerified}
+          stockFilter={stockFilter} onStockFilter={setStockFilter}
+          onlyVerified={onlyVerified} onOnlyVerified={setOnlyVerified}
         />
+      ) : null}
+      {/* Mobil: profesyonel alt-sayfa (bottom-sheet) modal — içeriği aşağı itmez. */}
+      {!isWideWeb ? (
+        <Modal visible={showMobileFilters} transparent animationType="slide" onRequestClose={() => setShowMobileFilters(false)}>
+          <View style={{ backgroundColor: "rgba(6,26,32,0.5)", flex: 1, justifyContent: "flex-end" }}>
+            <Pressable accessibilityLabel={translateCopy("Kapat", language)} onPress={() => setShowMobileFilters(false)} style={{ flex: 1 }} />
+            <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: "88%", overflow: "hidden" }}>
+              <View style={{ alignItems: "center", paddingTop: 10 }}>
+                <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 5, width: 42 }} />
+              </View>
+              <Pressable accessibilityLabel={translateCopy("Kapat", language)} hitSlop={10} onPress={() => setShowMobileFilters(false)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 32, justifyContent: "center", position: "absolute", right: 14, top: 12, width: 32, zIndex: 5 }}>
+                <MaterialCommunityIcons name="close" size={19} color={colors.ink} />
+              </Pressable>
+              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8, paddingHorizontal: 14, paddingTop: 12 }}>
+                <FilterPanel
+                  cities={cities} city={city} onCity={setCity}
+                  minCommission={minCommission} onMinCommission={setMinCommission}
+                  priceRange={priceRange} onPriceRange={setPriceRange}
+                  statusOpen={statusOpen} onStatusOpen={setStatusOpen}
+                  onClear={() => { setCity(""); setMinCommission(0); setPriceRange(""); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); router.setParams({ province: undefined, district: undefined }); clearCatFilter(); }}
+                  width={Math.max(0, width - 28)} mobile
+                  provinceId={provinceId} districtId={districtId}
+                  onLocation={(v) => router.setParams({ province: v.provinceId != null ? getProvince(v.provinceId)?.slug : undefined, district: v.districtId != null ? getDistrict(v.districtId)?.slug : undefined })}
+                  stockFilter={stockFilter} onStockFilter={setStockFilter}
+                  onlyVerified={onlyVerified} onOnlyVerified={setOnlyVerified}
+                />
+              </ScrollView>
+              <View style={{ borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingBottom: insets.bottom + 12, paddingHorizontal: 14, paddingTop: 12 }}>
+                <Pressable onPress={() => setShowMobileFilters(false)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flex: 1, justifyContent: "center", paddingVertical: 14 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{productListings.length} {translateCopy("sonucu göster", language)}</Text>
+                </Pressable>
+              </View>
+            </View>
+          </View>
+        </Modal>
       ) : null}
       <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
       <View style={{ gap: 7, paddingBottom: 8, paddingHorizontal: isWideWeb ? 0 : padding, paddingTop: isWideWeb ? 0 : 6 }}>
@@ -1161,7 +1189,7 @@ function FilterPanel({
             keyboardType="number-pad"
             placeholder={translateCopy("En az", language)}
             placeholderTextColor={colors.subtle}
-            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 42, paddingHorizontal: 10 }}
+            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 42, minWidth: 0, paddingHorizontal: 10 }}
           />
           <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>—</Text>
           <TextInput
@@ -1171,7 +1199,7 @@ function FilterPanel({
             placeholder={translateCopy("En çok", language)}
             placeholderTextColor={colors.subtle}
             onSubmitEditing={applyPrice}
-            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 42, paddingHorizontal: 10 }}
+            style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, height: 42, minWidth: 0, paddingHorizontal: 10 }}
           />
           <Pressable onPress={applyPrice} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 42, justifyContent: "center", paddingHorizontal: 14 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Uygula", language)}</Text>

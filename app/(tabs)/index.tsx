@@ -5,7 +5,7 @@ import { Mascot } from "@/components/brand/Mascot";
 import { useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
 import { HomeDesktop } from "@/components/home-desktop";
@@ -22,6 +22,7 @@ import { commissionAmount, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
+import { parseTrPrice } from "@/lib/validation";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
@@ -40,6 +41,15 @@ export default function HomeScreen() {
   const query = params.q ?? "";
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sortMode, setSortMode] = useState<SortMode>("featured");
+  // Gelişmiş filtre (keşfet ile aynı mantık): fiyat aralığı, min komisyon, stok, anında ortaklık.
+  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const [priceMin, setPriceMin] = useState("");
+  const [priceMax, setPriceMax] = useState("");
+  const [minComm, setMinComm] = useState(0);
+  const [onlyOpenPartner, setOnlyOpenPartner] = useState(false);
+  const [onlyInStock, setOnlyInStock] = useState(false);
+  const hasAdvanced = Boolean(priceMin || priceMax || minComm > 0 || onlyOpenPartner || onlyInStock);
+  const clearAdvanced = () => { setPriceMin(""); setPriceMax(""); setMinComm(0); setOnlyOpenPartner(false); setOnlyInStock(false); };
   const [refreshing, setRefreshing] = useState(false);
   const [gridWidth, setGridWidth] = useState(0);
   const [visibleCount, setVisibleCount] = useState(INITIAL_HOME_ITEMS);
@@ -90,6 +100,8 @@ export default function HomeScreen() {
 
   const filteredListings = useMemo(() => {
     const tokens = searchKey(query).split(" ").filter(Boolean);
+    const pMin = priceMin ? parseTrPrice(priceMin) : 0;
+    const pMax = priceMax ? parseTrPrice(priceMax) : Infinity;
 
     return activeListings
       .filter((listing) => {
@@ -98,6 +110,14 @@ export default function HomeScreen() {
         if (filter === "open") return listing.partnershipMode === "open";
         if (filter === "highCommission") return commissionAmount(listing) >= Math.max(250, maxCommission * 0.6);
         if (filter === "lowStock") return listing.stockCount <= 5;
+        return true;
+      })
+      .filter((listing) => {
+        // Gelişmiş filtreler (quick-filter üstüne biner).
+        if (listing.price < pMin || listing.price > pMax) return false;
+        if (minComm > 0 && commissionAmount(listing) < minComm) return false;
+        if (onlyOpenPartner && listing.partnershipMode !== "open") return false;
+        if (onlyInStock && listing.stockCount <= 0) return false;
         return true;
       })
       .map((listing) => {
@@ -117,12 +137,12 @@ export default function HomeScreen() {
         return momentumScore(b.listing) - momentumScore(a.listing);
       })
       .map((item) => item.listing);
-  }, [activeListings, filter, findUser, maxCommission, maxMomentum, query, shuffleSeed, sortMode]);
+  }, [activeListings, filter, findUser, maxCommission, maxMomentum, minComm, onlyInStock, onlyOpenPartner, priceMax, priceMin, query, shuffleSeed, sortMode]);
   const visibleListings = filteredListings.slice(0, visibleCount);
 
   useEffect(() => {
     setVisibleCount(INITIAL_HOME_ITEMS);
-  }, [filter, query, sortMode]);
+  }, [filter, query, sortMode, priceMin, priceMax, minComm, onlyOpenPartner, onlyInStock]);
 
   function showMore() {
     if (visibleCount < filteredListings.length) {
@@ -283,12 +303,96 @@ export default function HomeScreen() {
                 <FilterChip key={item.key} label={item.label} icon={item.icon} active={item.key === filter} onPress={() => setFilter(item.key)} />
               ))}
             </ScrollView>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
-              {(Object.keys(sortLabels) as SortMode[]).map((item) => (
-                <SortChip key={item} active={sortMode === item} label={sortLabels[item]} onPress={() => setSortMode(item)} />
-              ))}
-            </ScrollView>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }} style={{ flex: 1 }}>
+                {(Object.keys(sortLabels) as SortMode[]).map((item) => (
+                  <SortChip key={item} active={sortMode === item} label={sortLabels[item]} onPress={() => setSortMode(item)} />
+                ))}
+              </ScrollView>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel={translateCopy("Gelişmiş filtre", language)}
+                onPress={() => setAdvancedOpen((v) => !v)}
+                style={{ alignItems: "center", backgroundColor: advancedOpen || hasAdvanced ? colors.primary : colors.surface, borderColor: hasAdvanced ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 8 }}
+              >
+                <MaterialCommunityIcons name="tune-variant" size={15} color={advancedOpen || hasAdvanced ? "#FFFFFF" : colors.primaryDark} />
+                <Text style={{ color: advancedOpen || hasAdvanced ? "#FFFFFF" : colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Filtrele", language)}</Text>
+                {hasAdvanced ? <View style={{ backgroundColor: advancedOpen ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 7, width: 7 }} /> : null}
+              </Pressable>
+            </View>
           </View>
+
+          {advancedOpen ? (
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <MaterialCommunityIcons name="tune-variant" size={18} color={colors.primaryDark} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{translateCopy("Gelişmiş filtre", language)}</Text>
+                {hasAdvanced ? (
+                  <Pressable accessibilityRole="button" onPress={clearAdvanced} hitSlop={8}>
+                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+              {/* Fiyat aralığı */}
+              <View style={{ gap: 7 }}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Fiyat aralığı (TL)", language)}</Text>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                  <TextInput
+                    value={priceMin}
+                    onChangeText={setPriceMin}
+                    keyboardType="numeric"
+                    placeholder={translateCopy("En az", language)}
+                    placeholderTextColor={colors.subtle}
+                    style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }}
+                  />
+                  <Text style={{ color: colors.subtle, fontSize: 14, fontWeight: "800" }}>—</Text>
+                  <TextInput
+                    value={priceMax}
+                    onChangeText={setPriceMax}
+                    keyboardType="numeric"
+                    placeholder={translateCopy("En çok", language)}
+                    placeholderTextColor={colors.subtle}
+                    style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }}
+                  />
+                </View>
+              </View>
+              {/* Min komisyon */}
+              <View style={{ gap: 7 }}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En az komisyon", language)}</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {[0, 250, 500, 1000].map((amt) => (
+                    <Pressable
+                      key={amt}
+                      accessibilityRole="button"
+                      onPress={() => setMinComm(amt)}
+                      style={{ backgroundColor: minComm === amt ? colors.primary : colors.surfaceAlt, borderColor: minComm === amt ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 }}
+                    >
+                      <Text style={{ color: minComm === amt ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{amt === 0 ? translateCopy("Tümü", language) : `${money(amt)}+`}</Text>
+                    </Pressable>
+                  ))}
+                </View>
+              </View>
+              {/* Anahtarlar */}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setOnlyOpenPartner((v) => !v)}
+                  style={{ alignItems: "center", backgroundColor: onlyOpenPartner ? colors.primarySoft : colors.surfaceAlt, borderColor: onlyOpenPartner ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}
+                >
+                  <MaterialCommunityIcons name={onlyOpenPartner ? "check-circle" : "flash-outline"} size={15} color={onlyOpenPartner ? colors.primaryDark : colors.muted} />
+                  <Text style={{ color: onlyOpenPartner ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Anında ortaklık", language)}</Text>
+                </Pressable>
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => setOnlyInStock((v) => !v)}
+                  style={{ alignItems: "center", backgroundColor: onlyInStock ? colors.primarySoft : colors.surfaceAlt, borderColor: onlyInStock ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}
+                >
+                  <MaterialCommunityIcons name={onlyInStock ? "check-circle" : "package-variant-closed"} size={15} color={onlyInStock ? colors.primaryDark : colors.muted} />
+                  <Text style={{ color: onlyInStock ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Stokta olanlar", language)}</Text>
+                </Pressable>
+              </View>
+            </View>
+          ) : null}
 
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 19, fontWeight: "900" }}>{t("marketListings")}</Text>
