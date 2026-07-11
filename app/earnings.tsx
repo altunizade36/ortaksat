@@ -271,7 +271,7 @@ function EarningsScreenInner() {
         <MiniStat label={translateCopy("Tahsil edilecek", language)} value={money(pendingCommission)} />
         <MiniStat label={translateCopy("Tahsil edilen", language)} value={money(paidCommission)} />
       </View>
-      {txns.length === 0 ? <EmptyState title={translateCopy("Henüz kazanç yok", language)} body={translateCopy("Ortak satış yaptıkça komisyonların burada görünecek.", language)} /> : null}
+      {txns.length === 0 ? <EmptyState title={translateCopy("Henüz kazanç yok", language)} body={translateCopy("Ortak satış yaptıkça komisyonların burada görünecek.", language)} mascot="idea" /> : null}
       {txns.map((t) => {
         const meta = STATUS_META[t.status];
         return (

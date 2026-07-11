@@ -358,7 +358,7 @@ export default function CategoryLandingScreen() {
           <MarketplaceRetry onRetry={retryMarketplace} />
         ) : items.length === 0 ? (
           band || onlyOpen || Object.keys(attrFilters).length || numActiveCount ? (
-            <EmptyState title={translateCopy("Filtreye uyan ilan yok", language)} body={translateCopy("Filtreleri gevşetmeyi dene ya da farklı bir kategoriye göz at.", language)} />
+            <EmptyState title={translateCopy("Filtreye uyan ilan yok", language)} body={translateCopy("Filtreleri gevşetmeyi dene ya da farklı bir kategoriye göz at.", language)} mascot="thinking" />
           ) : (
             <View style={{ backgroundColor: colors.primarySoft, borderRadius: 16, gap: 12, padding: 20 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>

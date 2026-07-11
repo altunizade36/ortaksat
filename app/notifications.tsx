@@ -192,7 +192,7 @@ function NotificationsScreenInner() {
         <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
           <View style={{ flex: 1, gap: 16, minWidth: 0 }}>
             {filtered.length === 0 ? (
-              <EmptyState title={translateCopy("Bildirim yok", language)} body={translateCopy("Bu filtreye uygun bildirim bulunmuyor. Yeni hareketler burada görünecek.", language)} />
+              <EmptyState title={translateCopy("Bildirim yok", language)} body={translateCopy("Bu filtreye uygun bildirim bulunmuyor. Yeni hareketler burada görünecek.", language)} mascot="mobile" />
             ) : null}
             {groups.map((g) => {
               const items = filtered.filter((n) => n.group === g);
@@ -385,7 +385,7 @@ function NotificationsScreenInner() {
         ))}
       </Card>
 
-      {visibleNotifications.length === 0 ? <EmptyState title={mutedCount > 0 ? translateCopy("Görünür bildirim yok", language) : translateCopy("Bildirim yok", language)} body={mutedCount > 0 ? translateCopy("Bazı türleri kapattın. Görmek için yukarıdan aç.", language) : translateCopy("Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek.", language)} action={mutedCount > 0 ? undefined : { label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} /> : null}
+      {visibleNotifications.length === 0 ? <EmptyState title={mutedCount > 0 ? translateCopy("Görünür bildirim yok", language) : translateCopy("Bildirim yok", language)} body={mutedCount > 0 ? translateCopy("Bazı türleri kapattın. Görmek için yukarıdan aç.", language) : translateCopy("Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek.", language)} action={mutedCount > 0 ? undefined : { label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="mobile" /> : null}
 
       {visibleNotifications.map((notification) => {
         const href = hrefForMeta(notification.metadata, notification.type);
