@@ -5,7 +5,7 @@ import { Link, useLocalSearchParams, type Href } from "expo-router";
 
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 
 import { openUrlSafe } from "@/lib/link";
 
@@ -14,6 +14,7 @@ import { AuthRequired } from "@/components/auth-gate";
 import { EmptyState } from "@/components/ui";
 import { commissionAmount, localToday, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { uploadMessageAttachment } from "@/lib/live-service";
 import { fetchSellerPhone } from "@/lib/supabase-data";
 import { useTypingIndicator } from "@/lib/use-typing";
@@ -93,7 +94,8 @@ function scanMessageRisk(text: string) {
 }
 
 function MessagesScreenInner() {
-  const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, partnerships, sales, sendConversationMessage } = useStore();
+  const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, partnerships, refreshUserData, sales, sendConversationMessage } = useStore();
+  const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const { t, language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const contentWidth = useContentWidth();
@@ -551,7 +553,7 @@ function MessagesScreenInner() {
         </View>
       </View>
 
-      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       {myConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noConversation")} body={t("noConversationBody")} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="mobile" /></View> : null}
       {myConversations.length > 0 && visibleConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noResults")} body={t("searchOrFilterAgain")} mascot="thinking" /></View> : null}
 

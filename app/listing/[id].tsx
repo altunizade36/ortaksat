@@ -33,7 +33,7 @@ import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
 import { insertReferralLead, logReferralClick, resolveReferralLink } from "@/lib/live-service";
 import { getRefAttribution, saveRefAttribution } from "@/lib/referral";
 import { isSupabaseConfigured } from "@/lib/supabase";
-import { getRecent, pushRecent } from "@/lib/recent";
+import { getRecent, pushRecent, subscribeRecent } from "@/lib/recent";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { LeadSource, Listing, PurchaseIntent, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -95,7 +95,7 @@ export default function ListingDetailScreen() {
   const [applicationHandle, setApplicationHandle] = useState("");
   const [applicationReach, setApplicationReach] = useState("");
   const [recentIds, setRecentIds] = useState<string[]>([]);
-  useEffect(() => { setRecentIds(getRecent()); }, [id]);
+  useEffect(() => { setRecentIds(getRecent()); return subscribeRecent(setRecentIds); }, [id]);
   const [revealedPhone, setRevealedPhone] = useState<string | null>(null);
   const [revealingPhone, setRevealingPhone] = useState(false);
   const [buyerName, setBuyerName] = useState("");

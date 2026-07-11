@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -14,6 +14,7 @@ import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { haptic } from "@/lib/haptics";
 import { fetchSellerPhone } from "@/lib/supabase-data";
 import { openUrlSafe } from "@/lib/link";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
@@ -33,7 +34,7 @@ export default function StoreScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
-  const { currentUser, findUser, listings, partnerships, leads, reports, reviews, sales, startConversation, reportUser, isFollowing, toggleFollow, backendMode } = useStore();
+  const { currentUser, findUser, listings, partnerships, leads, reports, reviews, sales, startConversation, reportUser, isFollowing, toggleFollow, backendMode, refreshMarketplace } = useStore();
   // Girişli mi? (helpful oyu için: anon → /auth; girişli + geçici hata → yönlendirme YOK)
   const isAuthed = backendMode === "supabase" && !!currentUser?.id && currentUser.id.includes("-");
 
@@ -103,9 +104,18 @@ export default function StoreScreen() {
     return Array.from(map.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   }, [reviews, fetchedReviews, id]);
 
-  function refresh() {
+  async function refresh() {
     setRefreshing(true);
-    setTimeout(() => setRefreshing(false), 420);
+    try {
+      await Promise.all([
+        refreshMarketplace(),
+        id ? fetchReviewsForUser(id).then((r) => setFetchedReviews(r)) : Promise.resolve()
+      ]);
+    } catch {
+      // sessiz
+    } finally {
+      setRefreshing(false);
+    }
   }
 
   function messageSeller() {
@@ -137,6 +147,7 @@ export default function StoreScreen() {
       ]);
       return;
     }
+    haptic.light();
     setRevealingPhone(true);
     const p = await fetchSellerPhone(seller.id);
     setRevealingPhone(false);
@@ -154,6 +165,7 @@ export default function StoreScreen() {
       ]);
       return;
     }
+    haptic.selection();
     toggleFollow(seller.id);
   }
 
@@ -460,8 +472,10 @@ export default function StoreScreen() {
   }
 
   return (
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
     <ScrollView
       contentInsetAdjustmentBehavior="automatic"
+      keyboardShouldPersistTaps="handled"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
       contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 104 }}
     >
@@ -620,6 +634,7 @@ export default function StoreScreen() {
         )}
       </View>
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

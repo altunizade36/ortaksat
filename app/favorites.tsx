@@ -1,6 +1,6 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
@@ -9,6 +9,7 @@ import { EmptyState, PrimaryButton } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { responsiveGrid, useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey } from "@/lib/locale";
@@ -22,7 +23,8 @@ function FavoritesScreenInner() {
   const { language } = useLanguage();
   const { width } = useWindowDimensions();
   const isWideWeb = useIsWideWeb();
-  const { currentUser, favorites, findUser, listings } = useStore();
+  const { currentUser, favorites, findUser, listings, refreshUserData } = useStore();
+  const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const [query, setQuery] = useState("");
   const [favTab, setFavTab] = useState<"all" | "open" | "highcomm" | "near" | "recent">("all");
   const [sortMode, setSortMode] = useState<"new" | "priceAsc" | "priceDesc" | "commission">("new");
@@ -192,7 +194,7 @@ function FavoritesScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 8, height: 46, justifyContent: "center", width: 46 }}>
           <MaterialCommunityIcons name="heart" size={22} color={colors.accent} />

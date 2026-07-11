@@ -3,7 +3,7 @@ import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
 import { openUrlSafe } from "@/lib/link";
@@ -24,6 +24,7 @@ import { commissionAmount, commissionText, effectiveCommissionAmount, listingSha
 import { haptic } from "@/lib/haptics";
 import { loadClickCounts } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey } from "@/lib/locale";
@@ -64,7 +65,8 @@ export default function PartnerScreen() {
 }
 
 function PartnerScreenInner() {
-  const { canReviewSale, createSaleReview, currentUser, findUser, isAuthenticated, joinListing, leads, listings, partnerships, sales, startConversation, updateLeadStatus, updateSaleStatus, users } = useStore();
+  const { canReviewSale, createSaleReview, currentUser, findUser, isAuthenticated, joinListing, leads, listings, partnerships, refreshMarketplace, refreshUserData, sales, startConversation, updateLeadStatus, updateSaleStatus, users } = useStore();
+  const { refreshing, onRefresh } = useNativeRefresh(() => Promise.all([refreshMarketplace(), refreshUserData()]));
   const { language, t } = useLanguage();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
@@ -569,7 +571,7 @@ function PartnerScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <WebContainer max={1280} padding={0} style={{ gap: 14 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>

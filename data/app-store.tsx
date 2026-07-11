@@ -214,6 +214,9 @@ type AppStore = {
   marketplaceLoadFailed: boolean;
   loadMoreMarketplace: () => void;
   refreshMarketplace: () => Promise<void>;
+  // Kullanıcıya özel verileri (ortaklık/lead/satış/sipariş/yorum/favori/mesaj/bildirim) yeniden çeker.
+  // Native pull-to-refresh için: refreshMarketplace yalnız katalog; bu ise hesap-özetini tazeler.
+  refreshUserData: () => Promise<void>;
   retryMarketplace: () => Promise<void>;
   // Kritik akış yazımı canlıda başarısız olduğunda dolan görünür hata (UI Alert gösterir).
   syncError: string | null;
@@ -2306,6 +2309,22 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setListings(snapshot.listings);
         mpOffsetRef.current = snapshot.listings.length;
         setMarketplaceHasMore(snapshot.listings.length >= 90);
+      },
+      async refreshUserData() {
+        const uid = currentUser?.id;
+        if (!isSupabaseConfigured || !uid) return;
+        const account = await loadAccountSnapshot(uid).catch(() => null);
+        if (!account) return;
+        setPartnerships(account.partnerships);
+        setLeads(account.leads);
+        setSales(account.sales);
+        setOrders(account.orders);
+        setReviews((items) => [...account.reviews, ...items.filter((item) => item.reviewerId !== uid)]);
+        setFavorites(account.favorites);
+        setConversations(account.conversations);
+        setMessages(account.messages);
+        setNotifications(account.notifications);
+        setReports(account.reports);
       },
       // İlk yükleme başarısızsa "Yeniden dene" düğmesinin çağırdığı retry: skeleton'ı
       // tekrar aç, snapshot'ı yeniden çek; yine başarısızsa fail durumunu koru.

@@ -42,14 +42,19 @@ export default function RootLayout() {
 
 function RootStack() {
   const { t } = useLanguage();
+  const { marketplaceInitialLoading } = useStore();
 
-  // İlk render'dan sonra açılış ekranını gizle (beyaz-flaş/erken-boş-durum yok). Web'de no-op.
-  // Not: SDK 56 edge-to-edge modunda alt sistem çubuğu şeffaftır; safe-area insets ile yönetilir.
+  // Açılış ekranını, sabit süre yerine STORE İLK YÜKLEMESİ bitince gizle → soğuk açılışta
+  // hidrasyonsuz/boş ilk kare görünmez. Ağ takılırsa 2.5sn güvenlik zamanlayıcısı yine gizler.
   useEffect(() => {
     if (Platform.OS === "web") return;
-    const id = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 80);
-    return () => clearTimeout(id);
-  }, []);
+    const fallback = setTimeout(() => SplashScreen.hideAsync().catch(() => {}), 2500);
+    if (!marketplaceInitialLoading) {
+      clearTimeout(fallback);
+      SplashScreen.hideAsync().catch(() => {});
+    }
+    return () => clearTimeout(fallback);
+  }, [marketplaceInitialLoading]);
 
   return (
     <View nativeID="app-shell" style={{ flex: 1 }}>

@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Clipboard from "expo-clipboard";
 import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ScrollView, Text, View, useWindowDimensions } from "react-native";
@@ -9,6 +8,7 @@ import { ListingCard } from "@/components/listing-card";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { Seo } from "@/components/seo";
 import { tierFromCount } from "@/components/partner-tier";
+import { shareOrCopy } from "@/lib/share";
 import { EmptyState, PrimaryButton } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { PAGE_MAX_WIDTH } from "@/components/web-container";
@@ -60,9 +60,14 @@ function Inner() {
   const gap = 10;
   const cardWidth = responsiveGrid({ available: inner, gap, minCardWidth: isWideWeb ? 205 : 168, minColumns: isWideWeb ? 4 : 2 }).cardWidth;
 
-  // expo-clipboard: hem web hem native'de çalışır (navigator.clipboard native'de undefined → sessiz no-op idi).
+  // Native'de OS paylaşım tabakası (Share sheet), web'de navigator.share → panoya düşer.
   const copyShop = async () => {
-    try { await Clipboard.setStringAsync(shopUrl); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* pano erişimi yok */ }
+    const res = await shareOrCopy({
+      title: `${name} — Ortak Vitrini`,
+      message: `${name} vitrinine göz at:`,
+      url: shopUrl
+    });
+    if (res === "copied") { setCopied(true); setTimeout(() => setCopied(false), 1600); }
   };
 
   return (
@@ -101,7 +106,7 @@ function Inner() {
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <View style={{ flex: 1 }}>
-              <PrimaryButton icon={copied ? "check" : "link-variant"} tone="secondary" onPress={() => void copyShop()}>{copied ? translateCopy("Kopyalandı", language) : translateCopy("Vitrin bağlantısını kopyala", language)}</PrimaryButton>
+              <PrimaryButton icon={copied ? "check" : "share-variant"} tone="secondary" onPress={() => void copyShop()}>{copied ? translateCopy("Kopyalandı", language) : translateCopy("Vitrini paylaş", language)}</PrimaryButton>
             </View>
           </View>
         </View>

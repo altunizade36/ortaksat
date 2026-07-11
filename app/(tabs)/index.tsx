@@ -12,7 +12,7 @@ import { HomeDesktop } from "@/components/home-desktop";
 import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SkeletonGrid } from "@/components/skeleton";
-import { getRecent } from "@/lib/recent";
+import { getRecent, subscribeRecent } from "@/lib/recent";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState } from "@/components/ui";
 import type { CategoryNode } from "@/lib/category-tree";
@@ -62,7 +62,7 @@ export default function HomeScreen() {
   useEffect(() => { setMountedGate(true); }, []);
   // Son gezilen ilanlar (localStorage, istemci-only — SSG hydration güvenli).
   const [recentIds, setRecentIds] = useState<string[]>([]);
-  useEffect(() => { setRecentIds(getRecent()); }, []);
+  useEffect(() => { setRecentIds(getRecent()); return subscribeRecent(setRecentIds); }, []);
   const quickFilters: Array<{ key: FilterKey; label: string; icon: IconName }> = useMemo(() => [
     { key: "all", label: t("all"), icon: "view-grid" },
     { key: "trending", label: t("trend"), icon: "fire" },

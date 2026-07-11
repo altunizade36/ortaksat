@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
@@ -10,6 +10,7 @@ import { Card, EmptyState } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { displayText } from "@/lib/text";
@@ -38,7 +39,8 @@ function saleDate(s: { paidAt?: string; approvedAt?: string; createdAt?: string 
 
 function EarningsScreenInner() {
   const { language } = useLanguage();
-  const { currentUser, findListing, partnerships, sales } = useStore();
+  const { currentUser, findListing, partnerships, refreshUserData, sales } = useStore();
+  const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const isWideWeb = useIsWideWeb();
   const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
 
@@ -261,7 +263,7 @@ function EarningsScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <View style={{ gap: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{translateCopy("Kazançlarım", language)}</Text>
         <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{translateCopy("Ortak satış komisyonların. Ödeme satıcıyla aranızda yapılır; Ortaksat para tutmaz.", language)}</Text>

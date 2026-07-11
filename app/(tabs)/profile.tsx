@@ -1,7 +1,7 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import { Link, type Href } from "expo-router";
-import { Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { ProfileStrength } from "@/components/profile-strength";
@@ -10,6 +10,8 @@ import { Card, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { haptic } from "@/lib/haptics";
+import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { compactNumber } from "@/lib/locale";
@@ -22,7 +24,8 @@ function isImageAvatar(value: string) {
 }
 
 function ProfileScreenInner() {
-  const { backendMode, conversations, currentUser, favorites, leads, listings, messages, notifications, partnerships, reports, reviews, sales, signOut } = useStore();
+  const { backendMode, conversations, currentUser, favorites, leads, listings, messages, notifications, partnerships, refreshUserData, reports, reviews, sales, signOut } = useStore();
+  const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const { language, t } = useLanguage();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id);
@@ -200,7 +203,7 @@ function ProfileScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <WebContainer max={1280} padding={0} style={{ gap: 12 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
@@ -262,7 +265,7 @@ function ProfileScreenInner() {
           <Shortcut href="/favorites" icon="bookmark-outline" label={t("savedItems")} />
         </View>
         <Pressable
-          onPress={() => void signOut()}
+          onPress={() => { haptic.selection(); void signOut(); }}
           style={({ pressed }) => ({
             alignItems: "center",
             backgroundColor: isLiveAccount ? colors.accentSoft : colors.surfaceAlt,

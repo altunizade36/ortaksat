@@ -2,7 +2,7 @@
 import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -17,6 +17,8 @@ import { MiniBarChart } from "@/components/mini-bar-chart";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { haptic } from "@/lib/haptics";
+import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { loadClickCounts } from "@/lib/live-service";
 import { searchKey } from "@/lib/locale";
 import { parseTrPrice } from "@/lib/validation";
@@ -87,8 +89,11 @@ function SellerScreenInner() {
     updateListingInventory,
     updateSaleStatus,
     recordBatchPayout,
-    setPartnershipCommission
+    setPartnershipCommission,
+    refreshMarketplace,
+    refreshUserData
   } = useStore();
+  const { refreshing, onRefresh } = useNativeRefresh(() => Promise.all([refreshMarketplace(), refreshUserData()]));
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -283,7 +288,8 @@ function SellerScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
+    <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <WebContainer max={1280} padding={0} style={{ gap: 14 }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
@@ -486,7 +492,7 @@ function SellerScreenInner() {
                 {partnerTrust ? <StatusPill label={partnerTrust.label} tone={partnerTrust.score >= 70 ? "success" : "warning"} /> : null}
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   <View style={{ flex: 1 }}>
-                    <PrimaryButton tone="soft" onPress={() => approvePartnership(application.id)}>Kabul Et</PrimaryButton>
+                    <PrimaryButton tone="soft" onPress={() => { haptic.success(); approvePartnership(application.id); }}>Kabul Et</PrimaryButton>
                   </View>
                   <View style={{ flex: 1 }}>
                     <PrimaryButton tone="secondary" onPress={() => confirmRejectPartnership(application.id)}>Reddet</PrimaryButton>
@@ -864,6 +870,7 @@ function SellerScreenInner() {
         onSubmit={(amount, quantity) => {
           if (saleTarget) {
             // Lead'den satış → miktar/tutar girilebilir (eskiden daima price×1 idi, yanlıştı).
+            haptic.success();
             if (saleTarget.leadId) createSaleFromLead(saleTarget.leadId, { amount, quantity });
             else recordSaleForPartner(saleTarget.partnershipId, { amount, quantity });
           }
@@ -871,6 +878,7 @@ function SellerScreenInner() {
         }}
       />
     </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 

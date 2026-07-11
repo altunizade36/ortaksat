@@ -1,13 +1,14 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter, type Href } from "expo-router";
 import { useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import type { NotificationMeta, NotificationType } from "@/lib/types";
@@ -47,7 +48,8 @@ export default function NotificationsScreen() {
 
 function NotificationsScreenInner() {
   const { language } = useLanguage();
-  const { conversations, currentUser, listings, markNotificationRead, notifications, partnerships, savePreferences, setEmailNotifications } = useStore();
+  const { conversations, currentUser, listings, markNotificationRead, notifications, partnerships, refreshUserData, savePreferences, setEmailNotifications } = useStore();
+  const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
 
@@ -324,7 +326,7 @@ function NotificationsScreenInner() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, maxWidth: 920, marginHorizontal: "auto", padding: 12, paddingBottom: 96, width: "100%" }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, maxWidth: 920, marginHorizontal: "auto", padding: 12, paddingBottom: 96, width: "100%" }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 8, height: 50, justifyContent: "center", width: 50 }}>
