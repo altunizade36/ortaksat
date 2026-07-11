@@ -21,7 +21,7 @@ import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { useKeyboardInset } from "@/lib/use-keyboard-inset";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey, shortDate } from "@/lib/locale";
-import type { Conversation, Lead, Message, Partnership, Sale, User } from "@/lib/types";
+import type { Message } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 const CHAT_RISK_WORDS = [
@@ -399,101 +399,6 @@ function chatDayHeader(day: string, language: "tr" | "en") {
   return `${String(d.getDate()).padStart(2, "0")} ${months[d.getMonth()]} ${d.getFullYear()}`;
 }
 
-function buildChatContext({
-  conversation,
-  currentUserId,
-  findUser,
-  leads,
-  messages,
-  partnerships,
-  sales,
-  language
-}: {
-  conversation: Conversation;
-  currentUserId: string;
-  findUser: (id: string) => User | undefined;
-  leads: Lead[];
-  messages: Message[];
-  partnerships: Partnership[];
-  sales: Sale[];
-  language: "tr" | "en";
-}) {
-  const conversationMessages = messages.filter((item) => item.conversationId === conversation.id);
-  const latestMessage = conversationMessages.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-  const otherId = conversation.participantIds.find((item) => item !== currentUserId);
-  const partnership =
-    (conversation.partnerId ? partnerships.find((item) => item.id === conversation.partnerId || item.partnerId === conversation.partnerId) : undefined) ??
-    partnerships.find((item) => item.listingId === conversation.listingId && (item.partnerId === otherId || item.partnerId === currentUserId));
-  const relatedLeads = partnership ? leads.filter((item) => item.partnershipId === partnership.id) : leads.filter((item) => item.listingId === conversation.listingId);
-  const lead = relatedLeads.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
-  const relatedSales = partnership ? sales.filter((item) => item.partnershipId === partnership.id) : sales.filter((item) => item.listingId === conversation.listingId);
-  const openSales = relatedSales.filter((item) => item.status !== "paid" && item.status !== "cancelled");
-  const partnerUser = partnership ? findUser(partnership.partnerId) : undefined;
-  const status = translateCopy(openSales[0] ? saleStatusText(openSales[0].status) : lead ? leadStatusText(lead.status) : inferMessageStatus(latestMessage?.body), language);
-  const source = partnership
-    ? `${partnerUser?.name ?? translateCopy("Ortak", language)} ${language === "en" ? "partner link" : "ortak bağlantısı"}`
-    : lead
-      ? `${leadSourceText(lead.source)} ${language === "en" ? "request" : "talebi"}`
-      : translateCopy("Doğrudan ürün mesajı", language);
-  const channel = lead ? `${translateCopy("Kanal", language)}: ${leadSourceText(lead.source)}` : `${translateCopy("Kanal", language)}: ${translateCopy("Mesaj", language)}`;
-  const currentRole = currentUserId === conversation.sellerId ? "Satıcı" : partnership?.partnerId === currentUserId ? "Ortak" : "Alıcı";
-  const otherRole = otherId === conversation.sellerId ? "Satıcı" : partnership?.partnerId === otherId ? "Ortak" : "Alıcı";
-  const roleLabel = translateCopy(currentRole === "Satıcı" ? "Satıcı görüşmesi" : currentRole === "Ortak" ? "Ortak görüşmesi" : "Alıcı görüşmesi", language);
-  const otherRoleLabel = `${translateCopy(otherRole, language)}: ${findUser(otherId ?? "")?.name ?? translateCopy("Kullanıcı", language)}`;
-  const needsAction = Boolean(
-    conversationMessages.some((item) => item.receiverId === currentUserId && !item.read) ||
-      lead?.status === "new" ||
-      lead?.status === "interested" ||
-      openSales.length > 0
-  );
-
-  return {
-    channel,
-    leadCount: relatedLeads.length,
-    needsAction,
-    openCommission: openSales.length,
-    otherRoleLabel,
-    roleLabel,
-    saleCount: relatedSales.length,
-    source,
-    status
-  };
-}
-
-function leadStatusText(status: string) {
-  if (status === "new") return "Yeni talep";
-  if (status === "contacted") return "Arandı";
-  if (status === "interested") return "İlgileniyor";
-  if (status === "converted") return "Satışa döndü";
-  if (status === "lost") return "Kayıp";
-  return "Talep takibi";
-}
-
-function leadSourceText(source: string) {
-  if (source === "whatsapp") return "WhatsApp";
-  if (source === "instagram") return "Instagram";
-  if (source === "web") return "Web form";
-  if (source === "phone") return "Telefon";
-  return "Mesaj";
-}
-
-function inferMessageStatus(body?: string) {
-  const key = searchKey(body ?? "");
-  if (key.includes("stok")) return "Stok sordu";
-  if (key.includes("fiyat") || key.includes("ucret")) return "Fiyat sordu";
-  if (key.includes("kargo") || key.includes("teslim")) return "Teslimat sordu";
-  if (key.includes("odeme") || key.includes("komisyon")) return "Ödeme konuşuluyor";
-  return "Satış konuşması";
-}
-
-function saleStatusText(status: string) {
-  if (status === "return_pending") return "İade süresi bekleniyor";
-  if (status === "approved") return "Komisyon onaylandı";
-  if (status === "seller_paid") return "Ödeme onayı bekliyor";
-  if (status === "disputed") return "Anlaşmazlık var";
-  if (status === "cancelled") return "Satış iptal";
-  return "Satış takibi";
-}
 
 function contextSeedForReplies(messages: Message[]) {
   const last = messages[messages.length - 1]?.body ?? "";

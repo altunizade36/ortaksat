@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useState } from "react";
 import { Text, View } from "react-native";
-import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Polyline, Rect, Stop, Text as SvgText } from "react-native-svg";
+import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Polyline, Stop, Text as SvgText } from "react-native-svg";
 
 import { colors } from "@/components/colors";
 
@@ -173,7 +173,6 @@ export function LineAreaChart({ points, color = CAT[0], height = 190, width = 56
 
 // ---- TREEMAP (referans: kategori dağılımı — flex-tabanlı, renkli dikdörtgenler) ----
 export function Treemap({ data, height = 180 }: { data: Array<{ label: string; value: number; color?: string }>; height?: number }) {
-  const total = data.reduce((s, d) => s + Math.max(0, d.value), 0) || 1;
   // Basit satır-tabanlı squarify: değerlere göre ağırlıklı 2 satır.
   const sorted = [...data].sort((a, b) => b.value - a.value).slice(0, 6);
   const half = Math.ceil(sorted.length / 2);

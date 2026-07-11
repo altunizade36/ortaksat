@@ -1425,30 +1425,6 @@ function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: st
   );
 }
 
-function CountdownBadge() {
-  const [remaining, setRemaining] = useState("");
-  useEffect(() => {
-    function tick() {
-      const now = new Date();
-      const end = new Date(now);
-      end.setHours(23, 59, 59, 999);
-      const diff = Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000));
-      const h = String(Math.floor(diff / 3600)).padStart(2, "0");
-      const m = String(Math.floor((diff % 3600) / 60)).padStart(2, "0");
-      const s = String(diff % 60).padStart(2, "0");
-      setRemaining(`${h}:${m}:${s}`);
-    }
-    tick();
-    const id = setInterval(tick, 1000);
-    return () => clearInterval(id);
-  }, []);
-  return (
-    <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-      <MaterialCommunityIcons name="clock-outline" size={12} color={colors.accent} />
-      <Text style={{ color: colors.accent, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{remaining}</Text>
-    </View>
-  );
-}
 
 function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner?: User; showStock?: boolean }) {
   void owner;

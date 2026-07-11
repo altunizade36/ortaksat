@@ -1,7 +1,6 @@
 import { Image } from "expo-image";
 import { View, type ViewStyle } from "react-native";
 
-import { colors } from "@/components/colors";
 import { useIsWideWeb } from "@/lib/layout";
 import { MASCOT_ALT, mascotSrc, type MascotName } from "@/lib/mascots";
 

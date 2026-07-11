@@ -971,7 +971,7 @@ type DashProps = {
   setSection: (s: Section) => void;
   analytics?: AdminAnalytics | null;
 };
-function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, reportsN, partnershipsN, messagesN, disputedN, unpaidCommission, pendingCat, pendingLoc, listings, users, sales, partnerships, reports, findUser, notifications, leads, setSection, analytics }: DashProps) {
+function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, reportsN, partnershipsN, messagesN, disputedN, unpaidCommission, pendingCat, pendingLoc, listings, users, sales, partnerships, reports, notifications, leads, setSection, analytics }: DashProps) {
   // SUNUCU-GERÇEK toplamlar (admin_live_analytics RPC) — istemci-cap'li (≤1000) dizilerden DEĞİL.
   // Böylece dashboard sayıları AdminActivity ile TUTARLI ve ölçekte DOĞRU. analytics yoksa (önizleme) prop'a düşer.
   const totalUsers = analytics?.total_users ?? usersN;

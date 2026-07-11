@@ -72,11 +72,6 @@ export default function CategoriesPage() {
   const popular = catData.slice().sort((a, b) => b.count - a.count || b.subCount - a.subCount).slice(0, 8);
   const quickChips = tops.slice(0, 8).map((c) => ({ key: c.key, label: c.label, shortLabel: c.label }));
 
-  const steps: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; body: string }> = [
-    { icon: "tag-plus-outline", title: "İlanını oluştur", body: "Ürününü kategorisiyle yayınla; ücretsiz." },
-    { icon: "account-multiple-outline", title: "Ortak & alıcı bul", body: "İlgilenenler seninle mesajdan iletişime geçer." },
-    { icon: "handshake-outline", title: "Kendi aranızda anlaşın", body: "OrtakSat ödeme/kargo işlemez; taraflar doğrudan anlaşır." }
-  ];
 
   function search() {
     router.push({ pathname: "/explore", params: query.trim() ? { q: query.trim() } : undefined });

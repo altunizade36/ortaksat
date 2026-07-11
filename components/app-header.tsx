@@ -1,5 +1,4 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Image } from "expo-image";
 import { Link, usePathname, useRouter, type Href } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
@@ -9,12 +8,10 @@ import { colors } from "@/components/colors";
 import { GlobalSearchBar } from "@/components/global-search-bar";
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
 import { HeaderActions } from "@/components/header-actions";
-import { Brand3DMark } from "@/components/three-d-showcase";
+import { BrandMark } from "@/components/brand/brand-mark";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
-
-const mascot = require("../assets/mascot.png");
 
 type NavItem = { href: Href; label: string; match: (path: string) => boolean; caret?: boolean };
 
@@ -67,7 +64,7 @@ export function AppHeader() {
           ) : null}
           <Link href="/" asChild>
             <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-              <Brand3DMark size={38} />
+              <BrandMark size={40} />
               <View style={{ gap: 1 }}>
                 <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 22, fontWeight: "900" }}>ortaksat</Text>
                 <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{t("appSlogan")}</Text>
@@ -134,7 +131,6 @@ export function AppHeader() {
     >
       <MaintenanceBanner />
       <View style={{ alignItems: "center", flexDirection: "row", minHeight: 48, overflow: "hidden" }}>
-        <Image source={mascot} contentFit="contain" style={{ height: 72, opacity: 0.09, position: "absolute", right: -14, top: -8, width: 72 }} />
         {showBack ? (
           <Pressable
             accessibilityLabel={translateCopy("Geri", language)}
@@ -161,7 +157,7 @@ export function AppHeader() {
         {!showBack ? <View style={{ marginRight: 8, zIndex: 2 }}><MobileNavMenu /></View> : null}
         <Link href="/" asChild>
           <Pressable style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minWidth: 0 }}>
-            <Brand3DMark size={40} />
+            <BrandMark size={42} />
             <View style={{ gap: 1, minWidth: 0 }}>
               <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 21, fontWeight: "900", letterSpacing: 0 }}>
                 ortaksat
@@ -402,40 +398,3 @@ function AccountMenu() {
   );
 }
 
-function DesktopTopBar() {
-  const { language } = useLanguage();
-  const trust: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
-    { icon: "shield-check", label: "Anlaşma şartları kayıt altında" },
-    { icon: "swap-horizontal", label: "Şeffaf süreç" },
-    { icon: "account-check", label: "Doğrulanmış satıcılar" },
-    { icon: "message-text-outline", label: "İlan üzerinden iletişim" }
-  ];
-  const right: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href }> = [
-    { icon: "lifebuoy", label: "Yardım", href: "/legal" },
-    { icon: "package-variant-closed", label: "İlan Takibi", href: "/partner" }
-  ];
-  return (
-    <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, flexDirection: "row", gap: 20, paddingHorizontal: 32, paddingVertical: 7 }}>
-      {trust.map((item) => (
-        <View key={item.label} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-          <MaterialCommunityIcons name={item.icon} size={13} color="rgba(255,255,255,0.85)" />
-          <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600" }}>{translateCopy(item.label, language)}</Text>
-        </View>
-      ))}
-      <View style={{ flex: 1 }} />
-      {right.map((item) => (
-        <Link key={item.label} href={item.href} asChild>
-          <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
-            <MaterialCommunityIcons name={item.icon} size={13} color="rgba(255,255,255,0.85)" />
-            <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600" }}>{translateCopy(item.label, language)}</Text>
-          </Pressable>
-        </Link>
-      ))}
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
-        <MaterialCommunityIcons name="web" size={13} color="rgba(255,255,255,0.85)" />
-        <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600" }}>{translateCopy("Türkçe / ₺", language)}</Text>
-        <MaterialCommunityIcons name="chevron-down" size={14} color="rgba(255,255,255,0.7)" />
-      </View>
-    </View>
-  );
-}

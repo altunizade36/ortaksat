@@ -34,7 +34,7 @@ import { getRefAttribution, saveRefAttribution } from "@/lib/referral";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { getRecent, pushRecent } from "@/lib/recent";
 import { calculateUserTrustScores } from "@/lib/trust-score";
-import type { LeadSource, Listing, PartnershipStatus, PurchaseIntent, User } from "@/lib/types";
+import type { LeadSource, Listing, PurchaseIntent, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 const sourceLabels: Record<LeadSource, string> = {

@@ -22,7 +22,6 @@ import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
-type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 // Bir kategori düğümünün tüm alt etiketleri (hiyerarşik filtre için).
 function descendantLabels(node: CategoryNode, out: string[] = []): string[] {
@@ -30,23 +29,6 @@ function descendantLabels(node: CategoryNode, out: string[] = []): string[] {
   for (const ch of node.children ?? []) descendantLabels(ch, out);
   return out;
 }
-
-// Hero'da gerçek görseller (ikon değil). public/hero -> ortaksat.com/hero
-// Yeni klasör (hero2) — eski /hero/ dosyaları CDN/tarayıcıda önbelleğe takıldığı
-// için taze URL'ler kullanılır. Merkez "deal" = ayakta anlaşma/tokalaşma görseli.
-const HERO = (n: string) => `https://www.ortaksat.com/hero2/${n}.jpg`;
-// SABİT tanıtım kümesi — merkez tokalaşma (anlaşma) fotoğrafı + çevresinde sabit
-// ürün görselleri. Bilerek statiktir; canlı ilanlardan çekilmez, değişmez.
-// Merkez karta göre SABİT piksel offset'leri (dx,dy) — ekran genişliğinden bağımsız,
-// binmeyen dengeli elips halka. Kart ~132x116; daireler 44px.
-const HERO_FLOAT: Array<{ img: string; dx: number; dy: number }> = [
-  { img: "headphones", dx: -100, dy: -66 },
-  { img: "laptop", dx: 100, dy: -66 },
-  { img: "watch", dx: -110, dy: 6 },
-  { img: "camera", dx: 110, dy: 6 },
-  { img: "plant", dx: -88, dy: 76 },
-  { img: "chair", dx: 88, dy: 76 }
-];
 
 export function HomeDesktop() {
   const { language } = useLanguage();

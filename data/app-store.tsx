@@ -18,7 +18,7 @@ import { logActivity } from "@/lib/audit";
 import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@/lib/auth-links";
 import { registerFavoriteToggle, syncFavorites } from "@/lib/favorites-cache";
 import { syncSavedForUser } from "@/lib/saved-searches";
-import { commissionAmount, effectiveCommissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
+import { effectiveCommissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
 import {
   deleteFavorite,
   ensureProfile,
@@ -99,7 +99,6 @@ import type {
   PlatformSettings,
   Report,
   Review,
-  ReviewType,
   Sale,
   SaleStatus,
   SuggestionStatus,
