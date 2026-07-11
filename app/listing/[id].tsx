@@ -117,6 +117,8 @@ export default function ListingDetailScreen() {
   const [attributedPartnershipId, setAttributedPartnershipId] = useState<string | null>(null);
   const refCapturedFor = useRef<string>(""); // aynı ref'i aynı ilan için tekrar çözme/loglama kilidi
   const contactLeadDone = useRef(false); // iletişimde tek bir atıf-lead üret
+  // Ortak panelinden "Ortak ol" ile gelince (apply=1): ortaklık aksiyonunu ekrana kaydır.
+  const joinAnchorRef = useRef<View>(null);
   const router = useRouter();
 
   // Lightbox açıkken web'de klavye: ← → gezinme, Esc kapatma.
@@ -280,6 +282,17 @@ export default function ListingDetailScreen() {
     .map((rid) => listings.find((l) => l.id === rid))
     .filter((l): l is Listing => Boolean(l) && l!.status === "active" && l!.id !== currentListing.id)
     .slice(0, 10);
+
+  // apply=1 ile gelindiyse ortaklık aksiyonunu göze getir (web'de yumuşak kaydır) —
+  // "ortak ol'a bastım ama tuş yok" karışıklığını giderir; kullanıcı doğrudan CTA'ya iner.
+  useEffect(() => {
+    if (!wantsApply || Platform.OS !== "web" || isOwner) return;
+    const t = setTimeout(() => {
+      const node = joinAnchorRef.current as unknown as { scrollIntoView?: (o: object) => void } | null;
+      node?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    }, 550);
+    return () => clearTimeout(t);
+  }, [wantsApply, isOwner]);
 
   function handleJoin() {
     if (isDemo) return demoBlocked();
@@ -666,7 +679,8 @@ export default function ListingDetailScreen() {
             <Metric label={translateCopy("Komisyon vadesi", language)} value={`${currentListing.commissionDueDays} ${translateCopy("gün", language)}`} />
           </View>
 
-          {/* Durum-duyarlı ana aksiyon */}
+          {/* Durum-duyarlı ana aksiyon (apply=1 ile buraya kaydırılır) */}
+          <View ref={joinAnchorRef} />
           {isOwner ? (
             <View style={{ gap: 8 }}>
               <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: currentListing.id } }} icon="pencil-outline">{translateCopy("İlanı Düzenle", language)}</PrimaryButton>

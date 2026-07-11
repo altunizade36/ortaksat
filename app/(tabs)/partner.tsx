@@ -9,6 +9,7 @@ import { Alert } from "@/lib/alert";
 import { openUrlSafe } from "@/lib/link";
 import { shareOrCopy } from "@/lib/share";
 
+import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";
 import { DisputeModal } from "@/components/dispute-modal";
@@ -137,7 +138,10 @@ function PartnerScreenInner() {
   const joinedIds = new Set(myPartnerships.filter((p) => p.status !== "rejected").map((p) => p.listingId));
   // "Sadece davetle" ilanlar fırsat listesinde gösterilmez — bunlara yalnızca
   // satıcının paylaştığı davet linkiyle ortak olunabilir.
-  const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id && l.partnershipMode !== "invite");
+  // ÖRNEK/vitrin (demo) ilanlar ortaklığa KAPALI (joinListing engeller) → fırsat listesinden
+  // de çıkarılır; aksi halde "Ortak ol" → çıkmaz ("örnek ilan, ortaklık kapalı"). Gerçek ürünler
+  // eklendiğinde burada görünür ve çalışır.
+  const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id && l.partnershipMode !== "invite" && !l.demo);
   // Mobil liste (filtre paneli yok): en iyi fırsatlar önce — doğrulanmış/öne çıkan, sonra komisyon.
   const rankedOpportunities = useMemo(() => allOpportunities.slice().sort((a, b) => {
     const av = (a.featured ? 2 : 0) + ((findUser(a.ownerId)?.verifiedIdentity || findUser(a.ownerId)?.verifiedPhone) ? 1 : 0);
@@ -385,18 +389,25 @@ function PartnerScreenInner() {
                     </Pressable>
                   ) : null}
                 </View>
-                <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingBottom: 8 }}>
-                  <Text style={{ color: colors.muted, flex: 2.4, fontSize: 12, fontWeight: "800" }}>{translateCopy("Ürün", language)}</Text>
-                  <Text style={{ color: colors.muted, flex: 1.4, fontSize: 12, fontWeight: "800" }}>{translateCopy("Satıcı", language)}</Text>
-                  <Text style={{ color: colors.muted, flex: 0.9, fontSize: 12, fontWeight: "800" }}>{translateCopy("Komisyon", language)}</Text>
-                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum", language)}</Text>
-                  <Text style={{ color: colors.muted, flex: 0.9, fontSize: 12, fontWeight: "800" }}>{translateCopy("Kalan Stok", language)}</Text>
-                  <Text style={{ color: colors.muted, flex: 0.8, fontSize: 12, fontWeight: "800" }}>{translateCopy("Güven", language)}</Text>
-                  <View style={{ width: 150 }} />
-                </View>
-                {opportunities.slice(0, oppVisible).map((listing) => (
-                  <OppRow key={listing.id} listing={listing} owner={findUser(listing.ownerId)} joined={joinedIds.has(listing.id)} onJoin={() => onJoin(listing.id)} onDetail={() => router.push(`/listing/${listing.id}`)} />
-                ))}
+                <HowPartnerWorks language={language} />
+                {opportunities.length === 0 ? (
+                  <NoOpportunities language={language} />
+                ) : (
+                  <>
+                    <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingBottom: 8 }}>
+                      <Text style={{ color: colors.muted, flex: 2.4, fontSize: 12, fontWeight: "800" }}>{translateCopy("Ürün", language)}</Text>
+                      <Text style={{ color: colors.muted, flex: 1.4, fontSize: 12, fontWeight: "800" }}>{translateCopy("Satıcı", language)}</Text>
+                      <Text style={{ color: colors.muted, flex: 0.9, fontSize: 12, fontWeight: "800" }}>{translateCopy("Komisyon", language)}</Text>
+                      <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum", language)}</Text>
+                      <Text style={{ color: colors.muted, flex: 0.9, fontSize: 12, fontWeight: "800" }}>{translateCopy("Kalan Stok", language)}</Text>
+                      <Text style={{ color: colors.muted, flex: 0.8, fontSize: 12, fontWeight: "800" }}>{translateCopy("Güven", language)}</Text>
+                      <View style={{ width: 150 }} />
+                    </View>
+                    {opportunities.slice(0, oppVisible).map((listing) => (
+                      <OppRow key={listing.id} listing={listing} owner={findUser(listing.ownerId)} joined={joinedIds.has(listing.id)} onJoin={() => onJoin(listing.id)} onDetail={() => router.push(`/listing/${listing.id}`)} />
+                    ))}
+                  </>
+                )}
               </View>
             ) : (
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
@@ -614,7 +625,10 @@ function PartnerScreenInner() {
               );
             })}
           </ScrollView>
-          {mobileOpportunities.length === 0 ? (
+          <HowPartnerWorks language={language} />
+          {allOpportunities.length === 0 ? (
+            <NoOpportunities language={language} />
+          ) : mobileOpportunities.length === 0 ? (
             <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700", paddingVertical: 10 }}>{translateCopy("Bu filtreye uyan fırsat yok. Komisyon eşiğini düşür.", language)}</Text>
           ) : null}
           {mobileOpportunities.slice(0, oppVisible).map((listing) => {
@@ -994,6 +1008,52 @@ function GuvenBadge({ rating }: { rating: number }) {
     <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: level.bg, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
       <MaterialCommunityIcons name={icon} size={12} color={level.color} />
       <Text style={{ color: level.color, fontSize: 11, fontWeight: "900" }}>{translateCopy(level.label, language)}</Text>
+    </View>
+  );
+}
+
+// "3 adımda ortak ol" — akışı net anlatır (kullanıcı "mantığı çözemedik" dedi).
+function HowPartnerWorks({ language }: { language: "tr" | "en" }) {
+  const steps: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; n: string; title: string; body: string }> = [
+    { icon: "cursor-default-click-outline", n: "1", title: "Ürüne ortak ol", body: "Beğendiğin ürünün yanındaki “Ortak ol”a bas — anında ortaklık (açık modda) ya da satıcı onayı." },
+    { icon: "link-variant", n: "2", title: "Paylaşım linkini al", body: "Ortak olunca sana özel referans bağlantın oluşur; “Bağlantılarım”da görürsün." },
+    { icon: "cash-multiple", n: "3", title: "Paylaş & komisyon kazan", body: "Linki paylaş; satış olursa komisyonun panelinde kayda geçer, satıcı sana öder." }
+  ];
+  return (
+    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, marginBottom: 14, padding: 14 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+        <MaterialCommunityIcons name="handshake-outline" size={17} color={colors.primaryDark} />
+        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("3 adımda nasıl ortak olunur?", language)}</Text>
+      </View>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+        {steps.map((s) => (
+          <View key={s.n} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 200, flexGrow: 1, gap: 6, minWidth: 160, padding: 12 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 9, height: 32, justifyContent: "center", width: 32 }}>
+                <MaterialCommunityIcons name={s.icon} size={17} color={colors.primaryDark} />
+              </View>
+              <Text style={{ color: colors.subtle, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{s.n}</Text>
+            </View>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy(s.title, language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy(s.body, language)}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  );
+}
+
+// Gerçek (ortaklığa açık) ürün yokken dürüst boş-durum — çıkmaz veren örnek ilanlar yerine.
+function NoOpportunities({ language }: { language: "tr" | "en" }) {
+  return (
+    <View style={{ alignItems: "center", gap: 12, paddingHorizontal: 12, paddingVertical: 20 }}>
+      <Mascot name="thinking" size={150} />
+      <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900", textAlign: "center" }}>{translateCopy("Şu an ortaklığa açık ürün yok", language)}</Text>
+      <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19, maxWidth: 460, textAlign: "center" }}>{translateCopy("Platform yeni büyüyor. Satıcılar ürünlerini ortak satışa açtıkça buraya gerçek fırsatlar düşer ve tek tıkla ortak olabilirsin. Sen de kendi ürününü ekleyip ortaklara açabilirsin.", language)}</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
+        <PrimaryButton href="/explore" icon="compass-outline">{translateCopy("Ürünleri keşfet", language)}</PrimaryButton>
+        <PrimaryButton href="/create" tone="secondary" icon="store-plus-outline">{translateCopy("Kendi ürününü ekle", language)}</PrimaryButton>
+      </View>
     </View>
   );
 }
