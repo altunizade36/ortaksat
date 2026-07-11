@@ -10,7 +10,7 @@
     "ios": {
       "bundleIdentifier": "com.ortaksat.app",
       "buildNumber": "1",
-      "supportsTablet": false,
+      "supportsTablet": true,
       "associatedDomains": [
         "applinks:ortaksat.com"
       ],
