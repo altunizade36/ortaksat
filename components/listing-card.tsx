@@ -259,7 +259,7 @@ function isNewListing(value: string) {
 
 function StatusBadge({ label, tone }: { label: string; tone: StatusTone }) {
   const backgroundColor =
-    tone === "success" ? "rgba(0,134,111,0.96)" : tone === "accent" ? "rgba(229,75,75,0.96)" : tone === "info" ? "rgba(49,87,213,0.96)" : tone === "gold" ? "rgba(202,138,4,0.97)" : "rgba(17,24,39,0.78)";
+    tone === "success" ? "rgba(14,165,183,0.96)" : tone === "accent" ? "rgba(239,68,68,0.96)" : tone === "info" ? "rgba(37,99,235,0.96)" : tone === "gold" ? "rgba(202,138,4,0.97)" : "rgba(15,23,42,0.78)";
 
   return (
     <View style={{ alignSelf: "flex-start", backgroundColor, borderRadius: 999, maxWidth: "72%", paddingHorizontal: 10, paddingVertical: 5 }}>

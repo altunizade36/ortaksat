@@ -218,23 +218,24 @@ input, textarea, [role="search"] { outline: none !important; }
 input:focus, textarea:focus, input:focus-visible, textarea:focus-visible { outline: none !important; box-shadow: none !important; }
 [role="search"]:focus-within { border-color: rgba(14,165,183,0.55) !important; box-shadow: 0 0 0 3px rgba(14,165,183,0.12) !important; }
 
-/* Make pressables feel interactive on web */
+/* Make pressables feel interactive on web — premium turkuaz his */
 [role="button"], a { cursor: pointer; }
-[role="button"] { transition: transform .12s ease, filter .12s ease, box-shadow .15s ease; }
+[role="button"] { transition: transform .14s cubic-bezier(.2,.7,.3,1), filter .14s ease, box-shadow .18s ease; }
 @media (hover: hover) {
-  [role="button"]:hover { filter: brightness(1.03); }
+  [role="button"]:hover { filter: brightness(1.035); box-shadow: 0 6px 18px rgba(14,165,183,0.16); }
+  [role="button"]:active { filter: brightness(0.98); box-shadow: none; }
 }
 
-/* Listing cards lift on hover (data-card set via RNW dataSet) */
-[data-card="listing"] {
-  transition: transform .18s cubic-bezier(.2,.7,.3,1), box-shadow .18s ease, border-color .18s ease;
+/* Kartlar hover'da zarifçe kalkar + turkuaz gölge (data-card RNW dataSet ile: listing/category/blog) */
+[data-card] {
+  transition: transform .2s cubic-bezier(.2,.7,.3,1), box-shadow .2s ease, border-color .18s ease;
   will-change: transform;
 }
 @media (hover: hover) {
-  [data-card="listing"]:hover {
+  [data-card]:hover {
     transform: translateY(-5px);
-    box-shadow: 0 18px 36px rgba(16,24,40,0.16) !important;
-    border-color: rgba(14,165,183,0.45) !important;
+    box-shadow: 0 16px 34px rgba(14,165,183,0.20) !important;
+    border-color: rgba(14,165,183,0.55) !important;
   }
 }
 
@@ -255,7 +256,7 @@ input:focus, textarea:focus, input:focus-visible, textarea:focus-visible { outli
 [data-pulse] { animation: os-pulse 1.8s ease-in-out infinite; }
 
 @media (prefers-reduced-motion: reduce) {
-  [data-reveal], [data-pulse], [data-card="listing"] { animation: none !important; transition: none !important; }
+  [data-reveal], [data-pulse], [data-card] { animation: none !important; transition: none !important; }
 }
 
 /* Desktop landing hero background */

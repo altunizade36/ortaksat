@@ -123,7 +123,7 @@ export function AppHeader() {
     <View
       style={{
         backgroundColor: colors.primarySoft,
-        borderBottomColor: "rgba(0,134,111,0.12)",
+        borderBottomColor: "rgba(14,165,183,0.12)",
         borderBottomWidth: 1,
         gap: 7,
         paddingBottom: 8,
