@@ -260,6 +260,7 @@ export const extraDict: Record<string, string> = {
   "Yanıtın… (nazik ve yapıcı olun)": "Your reply… (be kind and constructive)",
   "Yanıtı kaydet": "Save reply",
   // Site güçlendirme turu
+  "İlanı gör": "View listing",
   "Örnek vitrin satıcısı": "Showcase demo seller",
   "Abonelik kaydedilemedi, birazdan tekrar dene.": "Couldn't save your subscription, please try again shortly.",
   // Filtre geliştirmeleri

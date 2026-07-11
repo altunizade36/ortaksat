@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { Link, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
@@ -59,10 +60,9 @@ function Inner() {
   const gap = 10;
   const cardWidth = responsiveGrid({ available: inner, gap, minCardWidth: isWideWeb ? 205 : 168, minColumns: isWideWeb ? 4 : 2 }).cardWidth;
 
-  const copyShop = () => {
-    if (typeof navigator !== "undefined" && navigator.clipboard) {
-      navigator.clipboard.writeText(shopUrl).then(() => { setCopied(true); setTimeout(() => setCopied(false), 1600); }).catch(() => {});
-    }
+  // expo-clipboard: hem web hem native'de çalışır (navigator.clipboard native'de undefined → sessiz no-op idi).
+  const copyShop = async () => {
+    try { await Clipboard.setStringAsync(shopUrl); setCopied(true); setTimeout(() => setCopied(false), 1600); } catch { /* pano erişimi yok */ }
   };
 
   return (
@@ -101,7 +101,7 @@ function Inner() {
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <View style={{ flex: 1 }}>
-              <PrimaryButton icon={copied ? "check" : "link-variant"} tone="secondary" onPress={copyShop}>{copied ? translateCopy("Kopyalandı", language) : translateCopy("Vitrin bağlantısını kopyala", language)}</PrimaryButton>
+              <PrimaryButton icon={copied ? "check" : "link-variant"} tone="secondary" onPress={() => void copyShop()}>{copied ? translateCopy("Kopyalandı", language) : translateCopy("Vitrin bağlantısını kopyala", language)}</PrimaryButton>
             </View>
           </View>
         </View>

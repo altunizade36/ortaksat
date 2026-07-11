@@ -47,20 +47,19 @@ export default function TrustScreen() {
   if (isWideWeb) {
     const resolvedCount = ownReports.filter((r) => r.status === "resolved" || r.status === "rejected").length;
     const scoreLabel = trust.overall >= 85 ? translateCopy("Mükemmel", language) : trust.overall >= 70 ? translateCopy("Yüksek", language) : trust.overall >= 50 ? translateCopy("Orta", language) : translateCopy("Geliştirilmeli", language);
+    // Yalnız GERÇEK, veriye-dayalı doğrulamalar (hardcoded/sahte rozet yok: eski E-posta on:true,
+    // IBAN/Adres on:false hiç yanmayan rozetler kaldırıldı).
     const badges: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; on: boolean }> = [
       { icon: "phone-check", label: translateCopy("Telefon", language), on: currentUser.verifiedPhone },
-      { icon: "email-check-outline", label: translateCopy("E-posta", language), on: true },
       { icon: "card-account-details-outline", label: translateCopy("Kimlik", language), on: currentUser.verifiedIdentity },
-      { icon: "bank-outline", label: "IBAN", on: false },
-      { icon: "map-marker-check-outline", label: translateCopy("Adres", language), on: false }
+      { icon: "instagram", label: "Instagram", on: Boolean(currentUser.verifiedInstagram) }
     ];
-    // Gerçek verilerden türetilen dağılım (sabit/sahte değer yok).
+    // Gerçek verilerden türetilen dağılım (sabit/sahte değer YOK — eski %100 sabit "E-posta" satırı kaldırıldı).
     const complaintScore = openReports.length === 0 ? 100 : Math.max(40, 100 - openReports.length * 15);
     const distribution: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: number; weight: number }> = [
-      { icon: "phone-check", label: translateCopy("Telefon Doğrulama", language), value: currentUser.verifiedPhone ? 100 : 0, weight: 20 },
-      { icon: "email-check-outline", label: translateCopy("E-posta Doğrulama", language), value: 100, weight: 15 },
-      { icon: "card-account-details-outline", label: translateCopy("Kimlik Doğrulama", language), value: currentUser.verifiedIdentity ? 100 : 0, weight: 25 },
-      { icon: "lightning-bolt-outline", label: translateCopy("Yanıt Hızı", language), value: currentUser.responseRate, weight: 20 },
+      { icon: "phone-check", label: translateCopy("Telefon Doğrulama", language), value: currentUser.verifiedPhone ? 100 : 0, weight: 25 },
+      { icon: "card-account-details-outline", label: translateCopy("Kimlik Doğrulama", language), value: currentUser.verifiedIdentity ? 100 : 0, weight: 30 },
+      { icon: "lightning-bolt-outline", label: translateCopy("Yanıt Hızı", language), value: currentUser.responseRate, weight: 25 },
       { icon: "emoticon-happy-outline", label: translateCopy("Şikayet Kaydı Durumu", language), value: complaintScore, weight: 20 }
     ];
     // Gerçek durumdan üretilen güven sinyalleri.
@@ -85,7 +84,7 @@ export default function TrustScreen() {
 
     // Yalnızca gerçek şikayet/inceleme kayıtları — örnek/sahte kayıt yok.
     const allRows = ownReports.map((r) => ({
-      id: `#SR-${r.id}`, type: r.reason, listing: (r.listingId ? findListing(r.listingId)?.title : undefined) ?? translateCopy("İlan / kullanıcı", language), party: r.reporterId === currentUser.id ? translateCopy("Sen", language) : translateCopy("Karşı taraf", language), status: r.status, date: r.createdAt
+      id: `#SR-${r.id}`, listingId: r.listingId ?? undefined, type: r.reason, listing: (r.listingId ? findListing(r.listingId)?.title : undefined) ?? translateCopy("İlan / kullanıcı", language), party: r.reporterId === currentUser.id ? translateCopy("Sen", language) : translateCopy("Karşı taraf", language), status: r.status, date: r.createdAt
     }));
     const rows = allRows.filter((r) => filter === "open" ? (r.status === "open" || r.status === "reviewing") : filter === "resolved" ? (r.status === "resolved" || r.status === "rejected") : true);
 
@@ -199,7 +198,11 @@ export default function TrustScreen() {
                     </View>
                   </View>
                   <View style={{ alignItems: "flex-end", flex: 1 }}>
-                    <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Görüntüle", language)}</Text>
+                    {r.listingId ? (
+                      <Link href={`/listing/${r.listingId}`} asChild>
+                        <Pressable accessibilityRole="link"><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("İlanı gör", language)}</Text></Pressable>
+                      </Link>
+                    ) : <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>—</Text>}
                   </View>
                 </View>
               ))}

@@ -579,8 +579,9 @@ function HomeCardBase({ listing, favorited, onFav, onOpen }: { listing: Listing;
             <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Ortak Satışa", language)}</Text>
           </View>
           {listing.demo ? (
-            <View style={{ backgroundColor: "#F5C518", borderRadius: 6, position: "absolute", right: 44, top: 12, paddingHorizontal: 6, paddingVertical: 2 }}>
-              <Text style={{ color: "#1A1A00", fontSize: 9, fontWeight: "900" }}>{translateCopy("ÖRNEK", language)}</Text>
+            <View style={{ alignItems: "center", backgroundColor: "rgba(245,197,24,0.96)", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", left: 10, top: 12, shadowColor: "#000000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 3 }}>
+              <MaterialCommunityIcons name="eye-outline" size={10} color="#1A1A00" />
+              <Text style={{ color: "#1A1A00", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.4 }}>{translateCopy("ÖRNEK", language)}</Text>
             </View>
           ) : null}
           <Pressable accessibilityRole="button" accessibilityState={{ selected: favorited }} accessibilityLabel={favorited ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)} onPress={onFav} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 10, width: 30 }}>

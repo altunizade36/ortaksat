@@ -90,7 +90,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
               shadowRadius: 18
             }}
           >
-            <View style={{ aspectRatio: 1, backgroundColor: colors.line, overflow: "hidden", width: "100%" }}>
+            <View style={{ aspectRatio: 1, backgroundColor: colors.surfaceAlt, overflow: "hidden", width: "100%" }}>
               <SafeRemoteImage
                 uri={imageUri}
                 fallbackUri={listing.fallbackCategoryImage}
@@ -102,14 +102,17 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
                 alt={imageAlt}
                 accessibilityLabel={imageAlt}
               />
-              {listing.demo ? (
-                <View style={{ alignItems: "center", backgroundColor: "#F5C518", flexDirection: "row", gap: 5, justifyContent: "center", left: 0, position: "absolute", right: 0, top: 0, paddingVertical: 3, zIndex: 3 }}>
-                  <MaterialCommunityIcons name="eye-outline" size={12} color="#1A1A00" />
-                  <Text style={{ color: "#1A1A00", fontSize: 10.5, fontWeight: "900", letterSpacing: 0.5 }}>{translateCopy("ÖRNEK İLAN · yalnızca gösterim", language)}</Text>
-                </View>
-              ) : null}
-              <View style={{ position: "absolute", top: listing.demo ? 26 : 10, left: 10, right: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
-                <StatusBadge label={statusLabel} tone={statusTone} />
+              {/* Demo ilan: tam-genişlik sarı uyarı çubuğu yerine zarif köşe "ÖRNEK" pili
+                  (dürüst — detay sayfasında tam açıklama banner'ı var; feed gerçek pazar gibi durur). */}
+              <View style={{ position: "absolute", top: 10, left: 10, right: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+                {listing.demo ? (
+                  <View style={{ alignItems: "center", backgroundColor: "rgba(245,197,24,0.96)", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3, shadowColor: "#000000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 3 }}>
+                    <MaterialCommunityIcons name="eye-outline" size={10} color="#1A1A00" />
+                    <Text style={{ color: "#1A1A00", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.4 }}>{translateCopy("ÖRNEK", language)}</Text>
+                  </View>
+                ) : (
+                  <StatusBadge label={statusLabel} tone={statusTone} />
+                )}
                 <View style={{ backgroundColor: "rgba(255,255,255,0.94)", borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 }}>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 10, fontWeight: "900" }}>
                     {translateCopy(rootCat || getCategoryShortLabel(listing.category), language)}
