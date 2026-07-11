@@ -1,5 +1,11 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createClient } from "@supabase/supabase-js";
+import { Platform } from "react-native";
+
+// Native (iOS/Android): AsyncStorage GERÇEK kalıcı depodur → oturum persist + auto-refresh
+// AÇIK olmalı. Önceki config native'i "tarayıcı yok = depolama yok" sanıp persistSession'ı
+// KAPATIYORDU → giriş yapılıp uygulama kapanınca oturum kayboluyor/çalışmıyordu.
+const isNativeApp = Platform.OS === "ios" || Platform.OS === "android";
 
 const supabaseUrl = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const supabasePublishableKey =
@@ -76,9 +82,11 @@ const rememberAwareWebStorage = {
   }
 };
 
-const authStorage = hasBrowserStorage
-  ? (typeof window.sessionStorage !== "undefined" ? rememberAwareWebStorage : AsyncStorage)
-  : undefined;
+const authStorage = isNativeApp
+  ? AsyncStorage
+  : hasBrowserStorage
+    ? (typeof window.sessionStorage !== "undefined" ? rememberAwareWebStorage : AsyncStorage)
+    : undefined;
 
 // Ağ isteklerine üst zaman sınırı: takılı/kara-delik bağlantıda (mobil, captive portal)
 // istek sonsuza kadar asılı kalıp UI'ı dondurmasın — 15sn sonra iptal → sorgu hatası →
@@ -111,9 +119,9 @@ export const supabase = isSupabaseConfigured
   ? createClient(supabaseUrl!, supabasePublishableKey!, {
       global: { fetch: fetchWithTimeout },
       auth: {
-        autoRefreshToken: hasBrowserStorage,
+        autoRefreshToken: isNativeApp || hasBrowserStorage,
         storage: authStorage,
-        persistSession: hasBrowserStorage,
+        persistSession: isNativeApp || hasBrowserStorage,
         // Web'de Google/OAuth dönüşünde URL'deki #access_token'ı işleyip oturumu
         // kurar. SSR (window yok) sırasında kapalı kalır.
         detectSessionInUrl: hasBrowserStorage,

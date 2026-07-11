@@ -1,4 +1,6 @@
 ﻿import { createContext, PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
+import { Platform } from "react-native";
+import * as WebBrowser from "expo-web-browser";
 
 import {
   conversations as initialConversations,
@@ -1154,11 +1156,13 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setAuthError("Google ile giriş yalnızca canlı (Supabase) modda çalışır.");
           return false;
         }
+        const isWebEnv = Platform.OS === "web";
         // Web'de tarayıcı Google'a yönlenir, dönüşte onAuthStateChange oturumu yakalar.
-        const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth";
-        const { error } = await supabase.auth.signInWithOAuth({
+        // Native'de otomatik yönlenme YOK → URL'yi expo-web-browser ile aç, dönüşü işle.
+        const redirectTo = isWebEnv && typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth";
+        const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",
-          options: { redirectTo }
+          options: { redirectTo, skipBrowserRedirect: !isWebEnv }
         });
         if (error) {
           // Sağlayıcı Supabase'de etkin değilse anlaşılır mesaj göster.
@@ -1168,6 +1172,19 @@ export function StoreProvider({ children }: PropsWithChildren) {
               : error.message
           );
           return false;
+        }
+        // Native: tarayıcı oturumunu aç (auth session) ve dönen URL'deki token'ları işle.
+        if (!isWebEnv) {
+          if (!data?.url) { setAuthError("Google bağlantısı açılamadı, lütfen tekrar dene."); return false; }
+          try {
+            const res = await WebBrowser.openAuthSessionAsync(data.url, redirectTo);
+            if (res.type !== "success" || !res.url) return false; // kullanıcı iptal etti — sessiz
+            const ok = await handleSupabaseAuthUrl(res.url);
+            if (!ok) { setAuthError("Google oturumu tamamlanamadı, lütfen tekrar dene."); return false; }
+          } catch {
+            setAuthError("Google ile bağlantı kurulamadı, lütfen tekrar dene.");
+            return false;
+          }
         }
         setAuthError(undefined);
         return true;

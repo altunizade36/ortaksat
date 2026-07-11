@@ -2,6 +2,7 @@ import Head from "expo-router/head";
 import { Stack } from "expo-router/stack";
 import * as SplashScreen from "expo-splash-screen";
 import { StatusBar } from "expo-status-bar";
+import * as WebBrowser from "expo-web-browser";
 import { useEffect } from "react";
 import { Platform, View } from "react-native";
 import { SafeAreaProvider } from "react-native-safe-area-context";
@@ -24,6 +25,8 @@ export { RouteErrorBoundary as ErrorBoundary };
 if (Platform.OS !== "web") {
   SplashScreen.preventAutoHideAsync().catch(() => {});
 }
+// Google/OAuth tarayıcı oturumunun düzgün tamamlanması için (expo-web-browser önerisi).
+WebBrowser.maybeCompleteAuthSession();
 
 export default function RootLayout() {
   return (
