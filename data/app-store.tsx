@@ -1016,15 +1016,18 @@ export function StoreProvider({ children }: PropsWithChildren) {
           return true;
         }
         const { data, error } = await supabase.auth.signInWithPassword({
-          email: email.trim(),
+          email: email.trim().toLowerCase(),
           password
         });
         setAuthError(translateAuthError(error?.message));
         if (data.user) {
           const profile = userFromAuth(data.user.id, data.user.phone, data.user.user_metadata?.full_name ?? data.user.email);
-          await ensureProfile(profile);
+          // Oturumu ANINDA aç (yönlendirme beklemesin). Profil upsert'i ARKA PLANDA —
+          // eskiden `await ensureProfile` ağ takılırsa giriş butonu sonsuza donuyordu.
+          // Auth-state dinleyicisi (loadProfile) zaten profili + hesap-özetini yükler.
           setAuthUser(profile);
           setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
+          void ensureProfile(profile).catch(() => {});
           void logActivity("sign_in", { userId: profile.id });
         }
         return !error;
@@ -1091,15 +1094,25 @@ export function StoreProvider({ children }: PropsWithChildren) {
         });
         setAuthError(translateAuthError(error?.message));
         if (data.session?.user) {
+          // Otomatik onay açık: yeni kayıt anında oturum döndürür → hemen giriş yap.
           const profile = userFromAuth(data.session.user.id, data.session.user.phone, displayName);
-          await ensureProfile(profile);
-          await Promise.all(LEGAL_DOCUMENT_TYPES.map((documentType) => recordLegalConsentLive(profile.id, documentType)));
+          // Oturumu ANINDA aç; profil upsert + yasal onay kaydı ARKA PLANDA (bloklamaz →
+          // "Kayıt açılıyor…" donması yok). ensureProfile bitince yasal onaylar yazılır (FK sırası).
           setAuthUser(profile);
           setUsers((items) => [profile, ...items.filter((item) => item.id !== profile.id)]);
+          void ensureProfile(profile)
+            .then(() => Promise.all(LEGAL_DOCUMENT_TYPES.map((documentType) => recordLegalConsentLive(profile.id, documentType))))
+            .catch(() => {});
           void logActivity("sign_up", { userId: profile.id });
+        } else if (data.user && Array.isArray(data.user.identities) && data.user.identities.length === 0) {
+          // Supabase e-posta sızıntı koruması: bu e-posta ZATEN KAYITLI (gizli yanıt —
+          // oturum yok, hata yok). Kod ekranı gösterme (otomatik-onay açıkken kod GELMEZ) →
+          // kullanıcıyı net biçimde girişe/şifre-sıfırlamaya yönlendir.
+          setAuthError("Bu e-posta ile zaten bir hesap var. Lütfen giriş yap ya da 'Şifremi unuttum' ile sıfırla.");
+          return false;
         } else if (!error) {
-          // Oturum dönmedi = Supabase "Confirm signup" açık. Kullanıcıya e-posta
-          // KODU gitti; kod ekranına geçilir (link beklemek/uygulama değiştirmek yok).
+          // Oturum dönmedi ama kullanıcı yeni (nadiren: e-posta onayı manuel açıksa) →
+          // e-postaya KOD gitti, kod ekranına geç.
           setPendingVerifyEmail(cleanEmail);
         }
         return !error;
