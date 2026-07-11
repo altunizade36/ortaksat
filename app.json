@@ -23,7 +23,7 @@
       "package": "com.ortaksat.app",
       "versionCode": 1,
       "adaptiveIcon": {
-        "backgroundColor": "#F6F7F9",
+        "backgroundColor": "#ECFEFF",
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundImage": "./assets/android-icon-background.png",
         "monochromeImage": "./assets/android-icon-monochrome.png"
@@ -61,7 +61,7 @@
         {
           "image": "./assets/splash-icon.png",
           "resizeMode": "contain",
-          "backgroundColor": "#F6F7F9"
+          "backgroundColor": "#FFFFFF"
         }
       ],
       "expo-localization",
