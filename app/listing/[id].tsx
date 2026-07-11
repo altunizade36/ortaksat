@@ -640,14 +640,15 @@ export default function ListingDetailScreen() {
             );
           })()}
 
-          <Text selectable style={{ color: colors.ink, fontSize: 28, fontWeight: "900" }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
+          {/* Fiyat sayfanın en güçlü öğesi olmalı (ürün sayfası) — komisyon kutusu daha hafif. */}
+          <Text selectable style={{ color: colors.ink, fontSize: 33, fontWeight: "900", letterSpacing: -0.5 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
 
-          {/* Ortak kazancı vurgusu — modelimizin çekirdeği */}
-          <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 14, borderWidth: 1, gap: 4, padding: 13 }}>
+          {/* Ortak kazancı — modelin çekirdeği ama fiyattan daha hafif görsel ağırlıkta (kenarlıksız). */}
+          <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 4, padding: 12 }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-              <MaterialCommunityIcons name="cash-multiple" size={17} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "900", letterSpacing: 0.3 }}>{translateCopy("ORTAK KAZANCI", language)}</Text>
-              <Text style={{ color: colors.primaryDark, fontSize: 20, fontWeight: "900" }}>{moneyIn(commission, currentListing.currency)}</Text>
+              <MaterialCommunityIcons name="cash-multiple" size={16} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.3 }}>{translateCopy("ORTAK KAZANCI", language)}</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 17, fontWeight: "900" }}>{moneyIn(commission, currentListing.currency)}</Text>
             </View>
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy("Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.", language)}</Text>
           </View>

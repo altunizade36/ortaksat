@@ -12,7 +12,7 @@ import { colors } from "@/components/colors";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { modelsForSchema, deriveFieldsFromPath, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
+import { modelsForSchema, deriveFieldsFromPath, describeAttributes, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { CURRENCIES, moneyIn, type CurrencyCode } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { formatLocation, getProvince } from "@/lib/locations";
@@ -253,7 +253,11 @@ export function DesktopCreateFlow() {
   const nextBlockReason = (): string | null => {
     if (step === 0) return path.length ? null : translateCopy("Devam etmek için bir kategori seç.", language);
     if (step === 1) {
-      if (missingFields.length) return `${translateCopy("Zorunlu alanları doldur", language)}: ${missingFields.map((f) => f.label).slice(0, 3).join(", ")}`;
+      if (missingFields.length) {
+        const shown = missingFields.slice(0, 4).map((f) => f.label).join(", ");
+        const rest = missingFields.length - 4;
+        return `${translateCopy("Zorunlu alanları doldur", language)}: ${shown}${rest > 0 ? ` +${rest} ${translateCopy("alan daha", language)}` : ""}`;
+      }
       const t = String(values.title ?? leafLabel).trim();
       if (t.length < LIMITS.title.min) return `${translateCopy("Başlık en az", language)} ${LIMITS.title.min} ${translateCopy("karakter olmalı", language)}.`;
       const descReq = schema?.fields.some((f) => f.key === "description" && f.required);
@@ -545,7 +549,7 @@ export function DesktopCreateFlow() {
 
               {titleField ? (
                 <FormSection title="İlan başlığı" icon="format-title" hint="Kısa, net ve aranan kelimelerle eşleşen bir başlık yaz.">
-                  {renderField(titleField)}
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(titleField)}</View>
                 </FormSection>
               ) : null}
 
@@ -581,7 +585,7 @@ export function DesktopCreateFlow() {
 
               {descField ? (
                 <FormSection title="Açıklama" icon="text-box-outline" hint="Ürünü detaylı anlat; ne kadar açık yazarsan o kadar güven verirsin.">
-                  {renderField(descField)}
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(descField)}</View>
                 </FormSection>
               ) : null}
             </View>
@@ -667,7 +671,9 @@ export function DesktopCreateFlow() {
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   {(["rate", "fixed"] as const).map((tp) => {
                     const on = commissionType === tp;
-                    return <Pressable key={tp} onPress={() => setCommissionType(tp)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 11 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800", textAlign: "center" }}>{tp === "rate" ? translateCopy("Yüzde (%)", language) : translateCopy("Sabit (₺)", language)}</Text></Pressable>;
+                    // Tip değişince değeri sıfırla: "%15" iken "Sabit"e geçip "15 ₺" gibi
+                    // anlamsız bir komisyonun yayınlanmasını önler.
+                    return <Pressable key={tp} onPress={() => { if (tp !== commissionType) { setCommissionType(tp); setCommissionValue(tp === "rate" ? "15" : ""); } }} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 11 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800", textAlign: "center" }}>{tp === "rate" ? translateCopy("Yüzde (%)", language) : translateCopy("Sabit (₺)", language)}</Text></Pressable>;
                   })}
                 </View>
               </View>
@@ -725,6 +731,27 @@ export function DesktopCreateFlow() {
               <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("Ortaksat para tutmaz; ödeme satıcı ile ortak arasında yapılır. Rakamlar bilgilendirme amaçlıdır.", language)}</Text>
             </View>
 
+            {/* ÖNEMLİ kararlar önce: ortaklık kabul şekli + iletişim (opsiyonel bonus/kademe SONRA). */}
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortaklık kabul şekli", language)}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {([["open", "Herkese açık (anında ortak)"], ["approval", "Başvuru onayı gerekir"], ["invite", "Sadece davetle"]] as const).map(([k, lbl]) => {
+                  const on = partnershipMode === k;
+                  return <Pressable key={k} onPress={() => setPartnershipMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
+                })}
+              </View>
+            </View>
+
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("İletişim tercihi", language)}</Text>
+              <View style={{ flexDirection: "row", gap: 8 }}>
+                {([["message", "Mesaj"], ["whatsapp", "WhatsApp"], ["phone", "Telefon"]] as const).map(([k, lbl]) => {
+                  const on = contactMethod === k;
+                  return <Pressable key={k} onPress={() => setContactMethod(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}><MaterialCommunityIcons name={k === "whatsapp" ? "whatsapp" : k === "phone" ? "phone" : "message-text-outline"} size={15} color={on ? "#FFFFFF" : colors.primary} /><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
+                })}
+              </View>
+            </View>
+
             {/* Teşvik bonusu (opsiyonel): ilk N satışa komisyon üstüne ek ödül. */}
             <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
@@ -775,27 +802,6 @@ export function DesktopCreateFlow() {
                 ) : null}
               </View>
             ) : null}
-
-            <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortaklık kabul şekli", language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {([["open", "Herkese açık (anında ortak)"], ["approval", "Başvuru onayı gerekir"], ["invite", "Sadece davetle"]] as const).map(([k, lbl]) => {
-                  const on = partnershipMode === k;
-                  return <Pressable key={k} onPress={() => setPartnershipMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
-                })}
-              </View>
-            </View>
-
-
-            <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("İletişim tercihi", language)}</Text>
-              <View style={{ flexDirection: "row", gap: 8 }}>
-                {([["message", "Mesaj"], ["whatsapp", "WhatsApp"], ["phone", "Telefon"]] as const).map(([k, lbl]) => {
-                  const on = contactMethod === k;
-                  return <Pressable key={k} onPress={() => setContactMethod(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}><MaterialCommunityIcons name={k === "whatsapp" ? "whatsapp" : k === "phone" ? "phone" : "message-text-outline"} size={15} color={on ? "#FFFFFF" : colors.primary} /><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
-                })}
-              </View>
-            </View>
 
             <View style={{ gap: 6 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortak satıcıya özel açıklama (opsiyonel)", language)}</Text>
@@ -851,6 +857,33 @@ export function DesktopCreateFlow() {
                 {missingFields.length ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>Eksik zorunlu alan: {missingFields.map((f) => f.label).join(", ")}</Text> : <Text style={{ color: colors.success, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("✓ Tüm zorunlu alanlar dolu", language)}</Text>}
               </View>
             </View>
+
+            {/* Girilen özelliklerin özeti — kullanıcı yayından önce ne girdiğini görsün
+                (Sahibinden önizlemesi gibi: km/yıl/m²/oda vb. + açıklama). */}
+            {(() => {
+              const specs = describeAttributes(values).filter((r) => !r.items);
+              const descText = String(values.description ?? "").trim();
+              if (!specs.length && !descText) return null;
+              return (
+                <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden" }}>
+                  <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 14, paddingVertical: 10 }}>
+                    <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("İlan bilgileri (özet)", language)}</Text>
+                  </View>
+                  {specs.map((row, i) => (
+                    <View key={row.label} style={{ backgroundColor: i % 2 === 1 ? colors.surface : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 8 }}>
+                      <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(row.label, language)}</Text>
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", textAlign: "right" }}>{translateCopy(row.value, language)}</Text>
+                    </View>
+                  ))}
+                  {descText ? (
+                    <View style={{ borderTopColor: colors.line, borderTopWidth: specs.length ? 1 : 0, gap: 4, padding: 14 }}>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Açıklama", language)}</Text>
+                      <Text numberOfLines={6} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{descText}</Text>
+                    </View>
+                  ) : null}
+                </View>
+              );
+            })()}
 
             {/* Paylaşım önizlemesi — yayınlandığında ortakların kullanacağı hazır metinler. */}
             <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, padding: 14 }}>
