@@ -553,11 +553,40 @@ export function DesktopCreateFlow() {
                 </FormSection>
               ) : null}
 
-              {specFields.length ? (
-                <FormSection title={schema.title} icon="clipboard-list-outline" hint="* işaretli alanlar zorunludur.">
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{specFields.map(renderField)}</View>
-                </FormSection>
-              ) : null}
+              {specFields.length ? (() => {
+                const hasGroups = specFields.some((f) => f.group);
+                if (!hasGroups) {
+                  return (
+                    <FormSection title={schema.title} icon="clipboard-list-outline" hint="* işaretli alanlar zorunludur.">
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{specFields.map(renderField)}</View>
+                    </FormSection>
+                  );
+                }
+                // Alt-başlıklara böl (Sahibinden gibi): group'a göre sırayı koruyarak
+                // grupla; group'suz alanlar "Diğer bilgiler"e düşer.
+                const buckets: Array<{ name: string; fields: FieldDef[] }> = [];
+                for (const f of specFields) {
+                  const g = f.group || "Diğer bilgiler";
+                  let bkt = buckets.find((x) => x.name === g);
+                  if (!bkt) { bkt = { name: g, fields: [] }; buckets.push(bkt); }
+                  bkt.fields.push(f);
+                }
+                return (
+                  <FormSection title={schema.title} icon="clipboard-list-outline" hint="* işaretli alanlar zorunludur.">
+                    <View style={{ gap: 20 }}>
+                      {buckets.map((bkt) => (
+                        <View key={bkt.name} style={{ gap: 11 }}>
+                          <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                            <View style={{ backgroundColor: colors.primary, borderRadius: 2, height: 14, width: 3 }} />
+                            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy(bkt.name, language)}</Text>
+                          </View>
+                          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{bkt.fields.map(renderField)}</View>
+                        </View>
+                      ))}
+                    </View>
+                  </FormSection>
+                );
+              })() : null}
 
               {multiFields.length ? (
                 <FormSection title="Donanım & Özellikler" icon="star-outline" hint="Ürünün öne çıkan özelliklerini işaretle — alıcının güvenini artırır.">

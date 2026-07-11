@@ -256,6 +256,9 @@ export default function ListingDetailScreen() {
     .filter((item) => item.ownerId === currentListing.ownerId && item.id !== currentListing.id && item.status === "active")
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     .slice(0, 8);
+  // Satıcı güven sinyalleri (Sahibinden tarzı): aktif ilan sayısı + tamamlanan satış.
+  const sellerActiveCount = owner ? listings.filter((item) => item.ownerId === owner.id && item.status === "active").length : 0;
+  const sellerSales = owner?.successfulSales ?? 0;
   // Benzerlik: aynı kategori + başlık/etiket örtüşmesi + YAPISAL ÖZELLİKLER
   // (fiyat yakınlığı, ilan tipi, oda, m², konum) + popülerlik. Emlakta güçlü eşleşme.
   const meTerms = new Set(tokenize(`${currentListing.title} ${currentListing.tags.join(" ")}`));
@@ -521,9 +524,9 @@ export default function ListingDetailScreen() {
         <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{currentListing.title}</Text>
       </View>
       {isDemo ? (
-        <View style={{ alignItems: "center", backgroundColor: "#FEF7DC", borderColor: "#F5C518", borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, marginHorizontal: isWideWeb ? 0 : 12, padding: 13 }}>
-          <View style={{ alignItems: "center", backgroundColor: "#F5C518", borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
-            <MaterialCommunityIcons name="eye-outline" size={19} color="#1A1A00" />
+        <View style={{ alignItems: "center", backgroundColor: colors.goldSoft, borderColor: colors.gold, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, marginHorizontal: isWideWeb ? 0 : 12, padding: 13 }}>
+          <View style={{ alignItems: "center", backgroundColor: colors.gold, borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
+            <MaterialCommunityIcons name="eye-outline" size={19} color={colors.goldInk} />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>
             <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Örnek (vitrin) ilan", language)}</Text>
@@ -844,6 +847,14 @@ export default function ListingDetailScreen() {
                 {!isDemo && owner?.rating ? <Text style={{ color: colors.gold, fontSize: 12, fontWeight: "800" }}>★ {owner.rating.toFixed(1)}</Text> : null}
               </View>
               <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isDemo ? translateCopy("Örnek vitrin satıcısı", language) : `%${ownerTrust?.score ?? 0} ${translateCopy("güven", language)} · %${owner?.responseRate ?? 0} ${translateCopy("yanıt", language)}`}</Text>
+              {!isDemo ? (
+                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 1 }}>
+                  <MaterialCommunityIcons name="storefront-outline" size={11} color={colors.subtle} />
+                  <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>
+                    {sellerActiveCount} {translateCopy("aktif ilan", language)}{sellerSales > 0 ? ` · ${sellerSales} ${translateCopy("tamamlanan satış", language)}` : ""}
+                  </Text>
+                </View>
+              ) : null}
             </View>
             <Link href={{ pathname: "/store/[id]", params: { id: currentListing.ownerId } }} asChild>
               <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("Mağazayı aç", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}>

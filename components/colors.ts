@@ -22,5 +22,28 @@ export const colors = {
   violet: "#7C5CFC",
   violetSoft: "#EFE8FF",
   gold: "#F2A900",
-  goldSoft: "#FFF3D1"
+  goldSoft: "#FFF3D1",
+  goldInk: "#7A5200"     // gold-soft zemin üstünde okunur koyu ton (rozet/etiket metni)
 };
+
+// ---- Tasarım ölçekleri (birörnek "bitmiş" görünüm için) --------------------
+// Köşe yarıçapı: 3 temel değer + hap. Yeni bileşenlerde ham sayı yerine bunları kullan.
+export const radius = {
+  sm: 10,    // input / küçük öğe
+  md: 14,    // kart / bölüm kutusu
+  lg: 18,    // büyük panel
+  pill: 999  // hap / rozet / yuvarlak düğme
+} as const;
+
+// Tipografi ölçeği (px). Fiyat/başlık büyük, gövde orta, etiket küçük — 900 ağırlığı
+// yalnız fiyat/başlıklara; gövde 600-700. Yeni metinlerde bu ölçeğe bağlan.
+export const text = {
+  hero: 30,   // fiyat / ana vurgu
+  h1: 22,     // sayfa başlığı
+  h2: 18,     // bölüm başlığı
+  h3: 16,     // alt başlık
+  body: 14,   // gövde metni
+  small: 13,  // ikincil metin
+  label: 12,  // etiket / alan başlığı
+  micro: 11   // rozet / ipucu
+} as const;
