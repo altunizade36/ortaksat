@@ -467,23 +467,10 @@ export function LanguageProvider({ children }: PropsWithChildren) {
   const [language, setLanguageState] = useState<AppLanguage>("tr");
 
   useEffect(() => {
-    let mounted = true;
-    // Kayıtlı tercih varsa onu uygula. YOKSA cihaz/tarayıcı dilini otomatik
-    // algıla: İngilizce ise İngilizce'ye geç. Bu YALNIZCA mount SONRASI (client)
-    // çalışır — statik export HTML'i ve ilk render "tr" kalır, böylece arama
-    // motorları siteyi Türkçe indeksler (SEO); yabancı ziyaretçi ise anında
-    // İngilizce görür.
-    AsyncStorage.getItem(STORAGE_KEY).then((value) => {
-      if (!mounted) return;
-      const next = value === "tr" || value === "en" ? value : detectDeviceLanguage();
-      setActiveLanguage(next);
-      setLanguageState(next);
-    }).catch(() => {
-      if (mounted) { const d = detectDeviceLanguage(); setActiveLanguage(d); setLanguageState(d); }
-    });
-    return () => {
-      mounted = false;
-    };
+    // Dil ŞİMDİLİK DAİMA Türkçe. İngilizce arayüz gizlendi (buton/otomatik-algılama yok);
+    // EN çeviri kodu duruyor, sonra açılacak. Cihaz İngilizce olsa bile TR gösterilir.
+    setActiveLanguage("tr");
+    setLanguageState("tr");
   }, []);
 
   // Web: <html lang>'i seçili dile göre güncelle + locale yardımcılarını (tarih/sayı)

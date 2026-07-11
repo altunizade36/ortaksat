@@ -23,7 +23,7 @@ function isImageAvatar(value: string) {
 
 function ProfileScreenInner() {
   const { backendMode, conversations, currentUser, favorites, leads, listings, messages, notifications, partnerships, reports, reviews, sales, signOut } = useStore();
-  const { language, setLanguage, t, useDeviceLanguage } = useLanguage();
+  const { language, t } = useLanguage();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id);
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
@@ -286,17 +286,6 @@ function ProfileScreenInner() {
         </Pressable>
       </Card>
 
-      <Card>
-        <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{t("languageSettings")}</Text>
-        <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 19 }}>
-          {t("languageHelp")}
-        </Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          <LanguageButton active={language === "tr"} icon="translate" label={t("turkish")} onPress={() => void setLanguage("tr")} />
-          <LanguageButton active={language === "en"} icon="alphabetical-variant" label={t("english")} onPress={() => void setLanguage("en")} />
-          <LanguageButton icon="cellphone-cog" label={t("deviceLanguage")} onPress={() => void useDeviceLanguage()} />
-        </View>
-      </Card>
 
       <TrustRoleCard icon="storefront-outline" title={t("sellerTrust")} score={trust.seller} />
       <TrustRoleCard icon="handshake-outline" title={t("partnerTrust")} score={trust.partner} />
@@ -348,31 +337,6 @@ function ProfileScreenInner() {
   );
 }
 
-function LanguageButton({ active, icon, label, onPress }: { active?: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void }) {
-  const { language } = useLanguage();
-  return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        alignItems: "center",
-        backgroundColor: active ? colors.primary : colors.surfaceAlt,
-        borderColor: active ? colors.primary : colors.line,
-        borderRadius: 999,
-        borderWidth: 1,
-        flexDirection: "row",
-        gap: 7,
-        minHeight: 42,
-        opacity: pressed ? 0.72 : 1,
-        paddingHorizontal: 12
-      })}
-    >
-      <MaterialCommunityIcons name={icon} size={17} color={active ? "#FFFFFF" : colors.primary} />
-      <Text selectable adjustsFontSizeToFit minimumFontScale={0.82} numberOfLines={1} style={{ color: active ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 13, fontWeight: "900" }}>
-        {translateCopy(label, language)}
-      </Text>
-    </Pressable>
-  );
-}
 
 function TrustRoleCard({ icon, score, title }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; score: RoleTrustScore; title: string }) {
   const { language } = useLanguage();

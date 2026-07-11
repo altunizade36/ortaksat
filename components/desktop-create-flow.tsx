@@ -26,7 +26,7 @@ import { useStore } from "@/lib/use-store";
 import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 
 const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon & Ortak Satış", "Önizleme & Yayınla"];
-const MAX_PHOTOS = 12; // ilan başına görsel üst sınırı (rakip pazaryerleriyle uyumlu)
+const MAX_PHOTOS = 5; // ilan başına görsel üst sınırı (şimdilik 1–5). Yükleme otomatik 1600px'e ölçekler + JPEG sıkıştırır (kullanıcı formatla uğraşmaz).
 const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
 
 // Kategoriye göre önerilen komisyon aralığı (%). Yüksek-tutarlı kategoriler (emlak/
@@ -581,7 +581,7 @@ export function DesktopCreateFlow() {
         {step === 3 ? (
           <View style={{ gap: 14 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Fotoğraflar", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En az 1, en fazla 12 görsel ekle. İlk görsel kapak olur. Gerçek fotoğraflı ilanlar çok daha fazla görüntülenir.", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En az 1, en fazla 5 görsel ekle. İlk görsel kapak olur. Fotoğraflar otomatik ölçeklenir — format/boyutla uğraşmana gerek yok.", language)}</Text>
             <Pressable onPress={() => void pickFromGallery()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 11 }}>
               <MaterialCommunityIcons name="image-multiple-outline" size={17} color={colors.primaryDark} />
               <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Galeriden / cihazdan seç", language)}</Text>

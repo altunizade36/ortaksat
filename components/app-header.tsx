@@ -109,7 +109,6 @@ export function AppHeader() {
             );
           })}
           <View style={{ flex: 1, minWidth: 8 }} />
-          <LanguageToggle />
         </View>
       </View>
     );
@@ -168,7 +167,6 @@ export function AppHeader() {
             </View>
           </Pressable>
         </Link>
-        <View style={{ marginRight: 6, zIndex: 2 }}><LanguageToggle compact /></View>
         <HeaderActions />
       </View>
       <GlobalSearchBar />
@@ -177,27 +175,6 @@ export function AppHeader() {
 }
 
 // Görünür TR/EN dil değiştirici — yabancı ziyaretçi ana sayfada anında bulabilsin.
-function LanguageToggle({ compact }: { compact?: boolean }) {
-  const { language, setLanguage } = useLanguage();
-  return (
-    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", overflow: "hidden" }}>
-      {(["tr", "en"] as const).map((lng) => {
-        const active = language === lng;
-        return (
-          <Pressable
-            key={lng}
-            accessibilityRole="button"
-            accessibilityLabel={lng === "en" ? "Switch to English" : "Türkçe'ye geç"}
-            onPress={() => void setLanguage(lng)}
-            style={{ backgroundColor: active ? colors.primary : "transparent", paddingHorizontal: compact ? 9 : 11, paddingVertical: compact ? 5 : 6 }}
-          >
-            <Text style={{ color: active ? "#FFFFFF" : colors.muted, fontSize: 11.5, fontWeight: "900" }}>{lng.toUpperCase()}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
 
 function MaintenanceBanner() {
   const { language } = useLanguage();
