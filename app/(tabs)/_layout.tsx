@@ -6,6 +6,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppHeader } from "@/components/app-header";
 import { colors } from "@/components/colors";
+import { haptic } from "@/lib/haptics";
 import { useLanguage } from "@/lib/i18n";
 
 type TabKey = "index" | "explore" | "create-action" | "partner" | "menu";
@@ -121,11 +122,11 @@ export default function TabsLayout() {
         }
       }}
     >
-      <Tabs.Screen name="index" options={{ title: t("home"), tabBarLabel: t("home"), tabBarIcon: tabIcon("index") }} />
-      <Tabs.Screen name="explore" options={{ title: t("explore"), tabBarLabel: t("explore"), tabBarIcon: tabIcon("explore") }} />
-      <Tabs.Screen name="create-action" options={{ title: t("createListing"), tabBarLabel: () => null, tabBarIcon: tabIcon("create-action") }} />
-      <Tabs.Screen name="partner" options={{ title: t("partnerSales"), tabBarLabel: t("partnerSales"), tabBarIcon: tabIcon("partner") }} />
-      <Tabs.Screen name="menu" options={{ title: t("menu"), tabBarLabel: t("menu"), tabBarIcon: tabIcon("menu") }} />
+      <Tabs.Screen name="index" options={{ title: t("home"), tabBarLabel: t("home"), tabBarIcon: tabIcon("index") }} listeners={{ tabPress: () => haptic.selection() }} />
+      <Tabs.Screen name="explore" options={{ title: t("explore"), tabBarLabel: t("explore"), tabBarIcon: tabIcon("explore") }} listeners={{ tabPress: () => haptic.selection() }} />
+      <Tabs.Screen name="create-action" options={{ title: t("createListing"), tabBarLabel: () => null, tabBarIcon: tabIcon("create-action") }} listeners={{ tabPress: () => haptic.selection() }} />
+      <Tabs.Screen name="partner" options={{ title: t("partnerSales"), tabBarLabel: t("partnerSales"), tabBarIcon: tabIcon("partner") }} listeners={{ tabPress: () => haptic.selection() }} />
+      <Tabs.Screen name="menu" options={{ title: t("menu"), tabBarLabel: t("menu"), tabBarIcon: tabIcon("menu") }} listeners={{ tabPress: () => haptic.selection() }} />
       <Tabs.Screen name="notifications-tab" options={{ href: null }} />
       <Tabs.Screen name="explore-feed/[id]" options={{ href: null, headerShown: false, tabBarStyle: { display: "none" } }} />
       <Tabs.Screen name="seller" options={{ href: null }} />

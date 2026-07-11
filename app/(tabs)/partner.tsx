@@ -21,6 +21,7 @@ import { QuickStart } from "@/components/quick-start";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, effectiveCommissionAmount, listingShareTemplates, money, moneyIn, shareUrl } from "@/lib/format";
+import { haptic } from "@/lib/haptics";
 import { loadClickCounts } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
@@ -179,6 +180,7 @@ function PartnerScreenInner() {
     // Açık mod: başvuru gerekmez, anında ortak ol.
     const result = joinListing(listingId);
     const ok = Boolean(result);
+    if (ok) haptic.success(); else haptic.warning();
     Alert.alert(
       translateCopy(ok ? (result?.status === "active" ? "Ortaklık aktif" : "Başvuru gönderildi") : "İşlem yapılamadı", language),
       translateCopy(ok ? (result?.status === "active" ? "Paylaşım bağlantın hazır." : "Satıcı onayından sonra bağlantın açılır.") : "Kendi ilanına ortak olamazsın, giriş yapman gerekir veya ilan aktif değil.", language)

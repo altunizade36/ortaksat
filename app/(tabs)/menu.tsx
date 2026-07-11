@@ -1,7 +1,10 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import Constants from "expo-constants";
 import { Link, type Href } from "expo-router";
 import { useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+
+const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 
 import { colors } from "@/components/colors";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
@@ -135,6 +138,12 @@ function MenuScreenInner() {
       {visibleGroups.map((group) => (
         <AccordionCard key={group.title} expanded={open === group.title} group={group} language={language} onPress={() => setOpen(open === group.title ? "" : group.title)} />
       ))}
+
+      {/* Uygulama sürümü — destek/güncelleme için. */}
+      <View style={{ alignItems: "center", gap: 3, paddingBottom: 10, paddingTop: 14 }}>
+        <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "800" }}>OrtakSat v{APP_VERSION}</Text>
+        <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>© 2026 OrtakSat · Aracı platform</Text>
+      </View>
       </WebContainer>
     </ScrollView>
   );

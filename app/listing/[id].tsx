@@ -25,6 +25,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { SafetyNote } from "@/components/safety-note";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingInviteCode, moneyIn, partnerInviteUrl, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
+import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
@@ -313,9 +314,11 @@ export default function ListingDetailScreen() {
       inviteCode: validInvite ? (inviteParam ?? "") : ""
     });
     if (!result) {
+      haptic.warning();
       Alert.alert(translateCopy("İşlem yapılamadı", language), translateCopy(authError ?? "Kendi ilanına ortak olamazsın veya ilan aktif olmayabilir.", language));
       return;
     }
+    haptic.success();
     Alert.alert(translateCopy(result.status === "active" ? "Ortaklık aktif" : "Başvuru gönderildi", language), translateCopy(result.status === "active" ? "Paylaşım bağlantın hazır." : "Satıcı kabul edince bağlantın aktif olacak.", language));
   }
 

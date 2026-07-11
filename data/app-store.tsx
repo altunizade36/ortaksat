@@ -17,6 +17,7 @@ import {
 import { logActivity } from "@/lib/audit";
 import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@/lib/auth-links";
 import { registerFavoriteToggle, syncFavorites } from "@/lib/favorites-cache";
+import { haptic } from "@/lib/haptics";
 import { syncSavedForUser } from "@/lib/saved-searches";
 import { effectiveCommissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
 import {
@@ -1828,6 +1829,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       },
       toggleFavorite(listingId) {
         if (!isAuthenticated) { setAuthError("Favorilere eklemek için giriş yapmalısın."); return; }
+        haptic.light();
         const existing = favorites.find((item) => item.listingId === listingId && item.userId === currentUser.id);
         if (existing) {
           setFavorites((items) => items.filter((item) => item.id !== existing.id));
@@ -1879,6 +1881,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (isSuspended) return;
         const trimmed = body.trim();
         if (!trimmed && !attachment) return;
+        haptic.light();
         const conversation = conversations.find((item) => item.id === conversationId);
         if (!conversation || conversation.status !== "open") return;
         const receiverId = conversation.participantIds.find((id) => id !== currentUser.id);

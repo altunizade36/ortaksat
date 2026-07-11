@@ -5,6 +5,7 @@ import { Pressable, Text, View } from "react-native";
 
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
+import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { MascotName } from "@/lib/mascots";
 
@@ -45,7 +46,7 @@ export function PrimaryButton({ children, onPress, href, tone = "primary", icon 
 
   const button = (
     <Pressable
-      onPress={onPress}
+      onPress={onPress ? () => { haptic.light(); onPress(); } : undefined}
       style={({ pressed }) => ({
         alignItems: "center",
         backgroundColor,
