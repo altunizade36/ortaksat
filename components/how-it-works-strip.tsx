@@ -18,7 +18,7 @@ const TRUST = ["Doğrulanmış satıcılar", "Şeffaf komisyon", "Ücretsiz üye
 export function HowItWorksStrip() {
   const { language } = useLanguage();
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 16, padding: 20, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 14 }}>
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 16, padding: 20, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 14 }}>
       <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
         <View style={{ gap: 2, minWidth: 200 }}>
           <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900", letterSpacing: -0.3 }}>{translateCopy("3 Adımda OrtakSat", language)}</Text>

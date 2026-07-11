@@ -225,7 +225,7 @@ function AdminScreenInner() {
     <View style={{ backgroundColor: colors.background, flex: 1, flexDirection: isWideWeb ? "row" : "column", minHeight: "100%" }}>
       {/* Sidebar */}
       {isWideWeb ? (
-        <View style={{ backgroundColor: "#0A5C44", height: viewportHeight, width: 264 }}>
+        <View style={{ backgroundColor: "#0B7285", height: viewportHeight, width: 264 }}>
           <View style={{ borderBottomColor: "rgba(255,255,255,0.1)", borderBottomWidth: 1, gap: 12, paddingBottom: 14, paddingHorizontal: 18, paddingTop: 20 }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
               <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
@@ -239,7 +239,7 @@ function AdminScreenInner() {
             {/* Admin kimliği */}
             <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.08)", borderRadius: 10, flexDirection: "row", gap: 9, paddingHorizontal: 10, paddingVertical: 8 }}>
               <View style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 999, height: 28, justifyContent: "center", width: 28 }}>
-                <Text style={{ color: "#0A5C44", fontSize: 12, fontWeight: "900" }}>{(currentUser.name || "A").slice(0, 1).toLocaleUpperCase("tr-TR")}</Text>
+                <Text style={{ color: "#0B7285", fontSize: 12, fontWeight: "900" }}>{(currentUser.name || "A").slice(0, 1).toLocaleUpperCase("tr-TR")}</Text>
               </View>
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>{currentUser.name || "Yönetici"}</Text>
@@ -279,7 +279,7 @@ function AdminScreenInner() {
           </View>
         </View>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: "#0A5C44", maxHeight: 56 }} contentContainerStyle={{ alignItems: "center", gap: 6, paddingHorizontal: 10 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ backgroundColor: "#0B7285", maxHeight: 56 }} contentContainerStyle={{ alignItems: "center", gap: 6, paddingHorizontal: 10 }}>
           <Link href="/" asChild>
             <Pressable style={{ alignItems: "center", borderColor: "rgba(255,255,255,0.3)", borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
               <MaterialCommunityIcons name="storefront-outline" size={15} color="#FFFFFF" />
@@ -1016,7 +1016,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
 
   return (
     <View style={{ gap: 18 }}>
-      <View style={{ backgroundColor: "#0A5C44", borderRadius: 18, overflow: "hidden", shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 20 }}>
+      <View style={{ backgroundColor: "#0B7285", borderRadius: 18, overflow: "hidden", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 20 }}>
         <View style={{ gap: 18, padding: 22 }}>
           <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16, justifyContent: "space-between" }}>
             <View style={{ flex: 1, gap: 6, minWidth: 260 }}>
@@ -1157,7 +1157,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
 
 function Stat({ icon, tint, color, value, title, helper, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; helper?: string; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 166, flexGrow: 1, gap: 9, maxWidth: 300, minHeight: 106, minWidth: 0, padding: 15, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, transform: [{ translateY: pressed && onPress ? -1 : 0 }] })}>
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 166, flexGrow: 1, gap: 9, maxWidth: 300, minHeight: 106, minWidth: 0, padding: 15, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, transform: [{ translateY: pressed && onPress ? -1 : 0 }] })}>
       <View style={{ alignItems: "flex-start", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
         <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 11, height: 40, justifyContent: "center", width: 40 }}>
           <MaterialCommunityIcons name={icon} size={20} color={color} />
@@ -1188,7 +1188,7 @@ function HeroMetric({ label, value, icon }: { label: string; value: string; icon
 function PriorityCard({ label, value, helper, icon, tone, onPress }: { label: string; value: number; helper: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; tone: string; onPress: () => void }) {
   const empty = value === 0;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed ? tone : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 260, flexGrow: 1, minWidth: 0, opacity: pressed ? 0.92 : 1, padding: 16, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: empty ? 0.04 : 0.07, shadowRadius: 10, transform: [{ translateY: pressed ? -1 : 0 }] })}>
+    <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed ? tone : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 260, flexGrow: 1, minWidth: 0, opacity: pressed ? 0.92 : 1, padding: 16, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: empty ? 0.04 : 0.07, shadowRadius: 10, transform: [{ translateY: pressed ? -1 : 0 }] })}>
       <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 12 }}>
         <View style={{ alignItems: "center", backgroundColor: empty ? colors.successSoft : `${tone}22`, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
           <MaterialCommunityIcons name={empty ? "check-circle-outline" : icon} size={21} color={empty ? colors.success : tone} />
@@ -1365,7 +1365,7 @@ function ExportButton({ label = "CSV indir", filename, headers, rows }: { label?
 // Sıralı dağılım listesi (satıcı/ortak/kategori/şehir) — etiket + değer + oran çubuğu.
 function Panel({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
       <View style={{ gap: 2 }}>
         <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900", letterSpacing: -0.2 }}>{title}</Text>
         {sub ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{sub}</Text> : null}

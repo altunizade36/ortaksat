@@ -10,7 +10,7 @@
   "lang": "tr",
   "dir": "ltr",
   "background_color": "#F4F6F8",
-  "theme_color": "#00866F",
+  "theme_color": "#0EA5B7",
   "categories": ["shopping", "business"],
   "shortcuts": [
     { "name": "İlan Ver", "short_name": "İlan Ver", "url": "/create", "description": "Yeni ilan oluştur" },

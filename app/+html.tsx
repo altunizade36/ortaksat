@@ -17,7 +17,7 @@ export default function Root({ children }: PropsWithChildren) {
           name="viewport"
           content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover"
         />
-        <meta name="theme-color" content="#00866F" />
+        <meta name="theme-color" content="#0EA5B7" />
 
         <title>ortaksat — Ortak satışla kazan</title>
         <meta
@@ -170,10 +170,10 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 }
 #boot-splash .bs-inner { display: flex; flex-direction: column; align-items: center; gap: 20px; }
 #boot-splash .bs-logo { font-size: 26px; font-weight: 900; letter-spacing: -0.3px; color: #0F172A; }
-#boot-splash .bs-logo span { color: #00866F; }
+#boot-splash .bs-logo span { color: #0EA5B7; }
 #boot-splash .bs-spin {
   width: 30px; height: 30px; border-radius: 999px;
-  border: 3px solid rgba(0,134,111,0.18); border-top-color: #00866F;
+  border: 3px solid rgba(14,165,183,0.18); border-top-color: #0EA5B7;
   animation: bs-rot .7s linear infinite;
 }
 @keyframes bs-rot { to { transform: rotate(360deg); } }
@@ -205,10 +205,10 @@ body {
 
 /* Polished custom scrollbar on desktop */
 @media (min-width: 760px) {
-  * { scrollbar-width: thin; scrollbar-color: rgba(0,134,111,0.35) transparent; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(14,165,183,0.35) transparent; }
   *::-webkit-scrollbar { width: 10px; height: 10px; }
-  *::-webkit-scrollbar-thumb { background: rgba(0,134,111,0.30); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
-  *::-webkit-scrollbar-thumb:hover { background: rgba(0,134,111,0.50); background-clip: content-box; }
+  *::-webkit-scrollbar-thumb { background: rgba(14,165,183,0.30); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(14,165,183,0.50); background-clip: content-box; }
   *::-webkit-scrollbar-track { background: transparent; }
 }
 
@@ -216,7 +216,7 @@ body {
    Arama kutusuna içine tıklanınca yumuşak yeşil bir kenarlık ver. */
 input, textarea, [role="search"] { outline: none !important; }
 input:focus, textarea:focus, input:focus-visible, textarea:focus-visible { outline: none !important; box-shadow: none !important; }
-[role="search"]:focus-within { border-color: rgba(0,134,111,0.55) !important; box-shadow: 0 0 0 3px rgba(0,134,111,0.12) !important; }
+[role="search"]:focus-within { border-color: rgba(14,165,183,0.55) !important; box-shadow: 0 0 0 3px rgba(14,165,183,0.12) !important; }
 
 /* Make pressables feel interactive on web */
 [role="button"], a { cursor: pointer; }
@@ -234,7 +234,7 @@ input:focus, textarea:focus, input:focus-visible, textarea:focus-visible { outli
   [data-card="listing"]:hover {
     transform: translateY(-5px);
     box-shadow: 0 18px 36px rgba(16,24,40,0.16) !important;
-    border-color: rgba(0,134,111,0.45) !important;
+    border-color: rgba(14,165,183,0.45) !important;
   }
 }
 
@@ -263,6 +263,6 @@ input:focus, textarea:focus, input:focus-visible, textarea:focus-visible { outli
   background:
     radial-gradient(700px 380px at 92% -30%, rgba(229,75,75,0.30), transparent 60%),
     radial-gradient(600px 360px at 0% 120%, rgba(255,255,255,0.14), transparent 55%),
-    linear-gradient(135deg, #00866F 0%, #075E54 100%) !important;
+    linear-gradient(135deg, #0EA5B7 0%, #0891B2 100%) !important;
 }
 `;

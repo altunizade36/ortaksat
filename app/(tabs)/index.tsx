@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter, type Href } from "expo-router";
 import { useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
@@ -185,8 +186,8 @@ export default function HomeScreen() {
         </>
       ) : (
         <>
-          {/* Kompakt yeşil hero (mobil) — web ile tutarlı: tokalaşma + ürün kümesi */}
-          <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 16, flexDirection: "row", gap: 10, overflow: "hidden", padding: 16 }}>
+          {/* Kompakt turkuaz hero (mobil) — web ile tutarlı: tokalaşma + ürün kümesi */}
+          <LinearGradient colors={["#14B8C4", "#0EA5B7", "#0891B2"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ alignItems: "center", borderRadius: 16, flexDirection: "row", gap: 10, overflow: "hidden", padding: 16 }}>
             <View style={{ flex: 1, gap: 10, minWidth: 0 }}>
               <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 19, fontWeight: "900", lineHeight: 24 }}>{translateCopy("Ortak alın, ", language)}<Text style={{ color: colors.gold }}>{translateCopy("kazancınızı katlayın!", language)}</Text></Text>
               <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Ürününü ortaklar paylaşsın, satışta komisyon kazan.", language)}</Text>
@@ -206,7 +207,7 @@ export default function HomeScreen() {
               </View>
             </View>
             <MobileHeroCluster />
-          </View>
+          </LinearGradient>
           <CategoryShowcase categoryTree={categoryTree} isWideWeb={false} />
 
           {/* 3 Adımda OrtakSat — gerçek/görsel nasıl-çalışır + güven şeridi (mobil ilk-izlenim) */}

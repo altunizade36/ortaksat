@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter, type Href } from "expo-router";
 import { memo, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
@@ -361,7 +362,7 @@ export function HomeDesktop() {
       <View style={{ flex: 1, gap: 18, minWidth: 0 }}>
         {/* Hero + istatistikler */}
         <View style={{ alignItems: "stretch", flexDirection: "row", gap: 16 }}>
-          <View style={{ backgroundColor: colors.primary, borderRadius: 18, flex: 1, flexDirection: "row", minWidth: 0, overflow: "hidden", paddingHorizontal: 22, paddingVertical: 18 }}>
+          <LinearGradient colors={["#14B8C4", "#0EA5B7", "#0891B2"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 18, flex: 1, flexDirection: "row", minWidth: 0, overflow: "hidden", paddingHorizontal: 22, paddingVertical: 18 }}>
             <View style={{ flex: 1.4, gap: 10, justifyContent: "center", minWidth: 0 }}>
               <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 21, fontWeight: "900", lineHeight: 26 }}>
                 {translateCopy("Ortak alın, ", language)}<Text style={{ color: colors.gold }}>{translateCopy("kazancınızı katlayın!", language)}</Text>
@@ -388,16 +389,16 @@ export function HomeDesktop() {
                 maxWidth ile ürünler karttan uzaklaşmaz; ring dengeli durur. */}
             <View style={{ alignItems: "center", alignSelf: "center", flex: 0.9, justifyContent: "center", minHeight: 210, minWidth: 0, position: "relative", width: "100%" }}>
               <View style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 999, height: 150, position: "absolute", width: 150 }} />
-              <View style={{ borderColor: "#FFFFFF", borderRadius: 16, borderWidth: 3, height: 116, overflow: "hidden", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.26, shadowRadius: 16, width: 132 }}>
+              <View style={{ borderColor: "#FFFFFF", borderRadius: 16, borderWidth: 3, height: 116, overflow: "hidden", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.26, shadowRadius: 16, width: 132 }}>
                 <SafeRemoteImage uri={HERO("deal")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
               </View>
               {HERO_FLOAT.map((f) => (
-                <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 46, left: "50%", marginLeft: f.dx - 23, marginTop: f.dy - 23, overflow: "hidden", position: "absolute", shadowColor: "#0A3D30", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.22, shadowRadius: 8, top: "50%", width: 46 }}>
+                <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 46, left: "50%", marginLeft: f.dx - 23, marginTop: f.dy - 23, overflow: "hidden", position: "absolute", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.22, shadowRadius: 8, top: "50%", width: 46 }}>
                   <SafeRemoteImage uri={HERO(f.img)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
                 </View>
               ))}
             </View>
-          </View>
+          </LinearGradient>
 
         </View>
 

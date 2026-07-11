@@ -134,14 +134,14 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
 
       {/* Renkli KPI kartları — canlı kullanıcı */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-        <KpiDeltaTile label="Şu an aktif" value={data.live_now} live icon="access-point" tint="#0F9D66" accent="#0A7A50" sub="Son 5 dakikada" />
+        <KpiDeltaTile label="Şu an aktif" value={data.live_now} live icon="access-point" tint="#0EA5B7" accent="#0B7285" sub="Son 5 dakikada" />
         <KpiDeltaTile label="Bugün aktif" value={data.active_today} icon="account-clock-outline" tint="#17B3B3" accent="#128F8F" sub="Günlük aktif kullanıcı" />
         <KpiDeltaTile label="Toplam kayıtlı" value={data.total_users} icon="account-group" tint="#2C82F6" accent="#1E63C8" sub={`${fmt(data.confirmed_users)} doğrulanmış`} />
         <KpiDeltaTile label="Bu hafta yeni" value={data.new_7d} delta={data.new_today} icon="account-plus-outline" tint="#7C5CFC" accent="#5E3FE0" sub={`Bugün +${fmt(data.new_today)}`} />
       </View>
       {/* Renkli KPI kartları — site geneli (sunucu-gerçek) */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-        <KpiDeltaTile label="Aktif ilan" value={data.listings_active} icon="storefront-outline" tint="#0F9D66" accent="#0A7A50" sub={`${fmt(data.listings_total)} toplam · +${fmt(data.listings_new_7d)} bu hafta`} />
+        <KpiDeltaTile label="Aktif ilan" value={data.listings_active} icon="storefront-outline" tint="#0EA5B7" accent="#0B7285" sub={`${fmt(data.listings_total)} toplam · +${fmt(data.listings_new_7d)} bu hafta`} />
         <KpiDeltaTile label="Toplam GMV" value={data.gmv} money icon="cash-multiple" tint="#E0A81E" accent="#B7791F" sub={`${fmt(data.orders_total)} sipariş — satış değeri`} />
         <KpiDeltaTile label="Komisyon (₺)" value={data.commission_amount} money icon="receipt-text-outline" tint="#2C82F6" accent="#1E63C8" sub={`${money(data.commission_paid_amount)} ödendi`} />
         <KpiDeltaTile label="Aktif ortaklık" value={data.partnerships_active} icon="handshake-outline" tint="#7C5CFC" accent="#5E3FE0" sub={`${fmt(data.partnerships_total)} toplam · ${fmt(data.partnerships_pending)} bekliyor`} />
@@ -163,11 +163,11 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
 
       {/* Grafikler: 14-gün aktif trendi (çizgi+alan) + ilan durumu (donut) */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-        <View onLayout={(e) => setLineW(Math.max(240, Math.round(e.nativeEvent.layout.width) - 36))} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 420, flexGrow: 2, gap: 12, minWidth: 300, padding: 18, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+        <View onLayout={(e) => setLineW(Math.max(240, Math.round(e.nativeEvent.layout.width) - 36))} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 420, flexGrow: 2, gap: 12, minWidth: 300, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Son 14 gün — aktif kullanıcı</Text>
           <LineAreaChart points={activeTrend} width={lineW} color={CAT[0]} />
         </View>
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 300, flexGrow: 1, gap: 12, minWidth: 260, padding: 18, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 300, flexGrow: 1, gap: 12, minWidth: 260, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>İlan durumu</Text>
           {statusDonut.length ? <DonutChart data={statusDonut} size={150} centerTop={fmt(data.listings_total)} centerBottom="toplam ilan" /> : <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Henüz ilan yok.</Text>}
         </View>
@@ -175,7 +175,7 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
 
       {/* Top kategoriler (aktif ilan sayısına göre) */}
       {catBars.length > 0 ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>En çok ilan olan kategoriler</Text>
           <HBarChart data={catBars} />
         </View>
