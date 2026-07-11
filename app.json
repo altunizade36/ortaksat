@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "ortaksat",
+    "name": "OrtakSat",
     "slug": "ortaksat-mobile",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -77,9 +77,9 @@
       "output": "static"
     },
     "extra": {
-      "privacyUrl": "https://ortaksat.com/privacy",
-      "supportUrl": "https://ortaksat.com/support",
-      "termsUrl": "https://ortaksat.com/terms",
+      "privacyUrl": "https://www.ortaksat.com/gizlilik-politikasi",
+      "supportUrl": "https://www.ortaksat.com/iletisim",
+      "termsUrl": "https://www.ortaksat.com/kullanim-sartlari",
       "eas": {
         "projectId": "replace-after-eas-init"
       }

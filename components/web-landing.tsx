@@ -103,10 +103,10 @@ export function WebFooter() {
     {
       heading: "Yasal",
       links: [
-        { label: "Kullanım Şartları", href: "/legal?doc=kullanim" },
-        { label: "Gizlilik Politikası", href: "/legal?doc=gizlilik" },
-        { label: "KVKK", href: "/legal?doc=kvkk" },
-        { label: "Çerez Politikası", href: "/legal?doc=cerez" }
+        { label: "Kullanım Şartları", href: "/kullanim-sartlari" },
+        { label: "Gizlilik Politikası", href: "/gizlilik-politikasi" },
+        { label: "KVKK", href: "/kvkk" },
+        { label: "Çerez Politikası", href: "/cerez-politikasi" }
       ]
     }
   ];
