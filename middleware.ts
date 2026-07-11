@@ -6,9 +6,13 @@
 // deterministik üretilir; ilan başlığı Supabase'ten çekilir.
 
 import categoryMap from "./data/category-og-map.json";
-import cityMap from "./data/city-og-map.json";
 
-export const config = { matcher: ["/listing/:id*", "/kategori/:path*", "/store/:id*"] };
+// NOT: /kategori/* MATCHER'DAN ÇIKARILDI (2026-07-12). Kategori/şehir sayfaları artık
+// statik export'ta TAM SEO'ya sahip (benzersiz title + canonical + BreadcrumbList +
+// CollectionPage + FAQPage JSON-LD; bkz scripts/seo-static.mjs). Middleware Googlebot'a
+// bunları ZAYIF/minimal HTML ile eziyordu → statik zengin HTML'i görsün diye kaldırıldı.
+// İlan (/listing) ve mağaza (/store) DİNAMİKTİR (statik içerik yok) → middleware şart.
+export const config = { matcher: ["/listing/:id*", "/store/:id*"] };
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || "https://akyzzdwbzgsnhdircuce.supabase.co";
 const SUPABASE_KEY =
@@ -19,15 +23,23 @@ const SUPABASE_KEY =
 const CRAWLER = /facebookexternalhit|Facebot|Twitterbot|WhatsApp|Slackbot|TelegramBot|LinkedInBot|Discordbot|Pinterest|redditbot|Googlebot|bingbot|Applebot|vkShare|SkypeUriPreview/i;
 
 const CATEGORY_MAP = categoryMap as Record<string, string>;
-const CITY_MAP = cityMap as Record<string, string>;
+// Kategori adı → slug (breadcrumb linki için). categoryMap slug→ad; tersini kur.
+const CAT_NAME_TO_SLUG: Record<string, string> = {};
+for (const [slug, name] of Object.entries(CATEGORY_MAP)) if (!(name in CAT_NAME_TO_SLUG)) CAT_NAME_TO_SLUG[name] = slug;
 const OG_COVER = "https://www.ortaksat.com/og-cover.png";
 
 function esc(s: string): string {
   return String(s || "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c] as string));
 }
 
-function page(title: string, desc: string, image: string, pageUrl: string, ogType: string): Response {
+// JSON-LD'yi <script> içinde güvenli göm (</script> enjeksiyonunu engelle).
+function ld(obj: unknown): string {
+  return `<script type="application/ld+json">${JSON.stringify(obj).replace(/<\/(script)/gi, "<\\/$1")}</script>`;
+}
+
+function page(title: string, desc: string, image: string, pageUrl: string, ogType: string, extraHead = "", bodyHtml = ""): Response {
   const t = esc(title), d = esc(desc), img = esc(image), u = esc(pageUrl);
+  const body = bodyHtml || `<a href="${u}">${t}</a>`;
   const html = `<!DOCTYPE html><html lang="tr"><head><meta charset="utf-8" />
 <title>${t}</title>
 <meta name="description" content="${d}" />
@@ -42,26 +54,61 @@ function page(title: string, desc: string, image: string, pageUrl: string, ogTyp
 <meta name="twitter:title" content="${t}" />
 <meta name="twitter:description" content="${d}" />
 <meta name="twitter:image" content="${img}" />
-</head><body><a href="${u}">${t}</a></body></html>`;
+${extraHead}</head><body>${body}</body></html>`;
   return new Response(html, { headers: { "content-type": "text/html; charset=utf-8", "cache-control": "public, max-age=600" } });
 }
 
 async function listingResponse(id: string): Promise<Response | undefined> {
   if (!id || !SUPABASE_KEY) return;
-  const api = `${SUPABASE_URL}/rest/v1/listing_public_cards?id=eq.${encodeURIComponent(id)}&select=title,description,price,image_url&limit=1`;
+  const api = `${SUPABASE_URL}/rest/v1/listing_public_cards?id=eq.${encodeURIComponent(id)}&select=title,description,price,image_url,category,stock_count,currency,commission_tl,review_count&limit=1`;
   const res = await fetch(api, { headers: { apikey: SUPABASE_KEY, authorization: `Bearer ${SUPABASE_KEY}` } });
   if (!res.ok) return;
-  const rows = (await res.json()) as Array<{ title: string; description: string; price: number; image_url: string | null }>;
+  const rows = (await res.json()) as Array<{ title: string; description: string; price: number; image_url: string | null; category: string | null; stock_count: number | null; currency: string | null; commission_tl: number | null; review_count: number | null }>;
   const l = rows && rows[0];
   if (!l) return;
-  const price = Number(l.price || 0).toLocaleString("tr-TR");
-  return page(
-    `${l.title} — OrtakSat`,
-    `₺${price}. ${(l.description || "").replace(/\s+/g, " ")}`.slice(0, 180),
-    l.image_url || OG_COVER,
-    `https://www.ortaksat.com/listing/${id}`,
-    "product"
-  );
+  const url = `https://www.ortaksat.com/listing/${id}`;
+  const image = l.image_url || OG_COVER;
+  const currency = l.currency || "TRY";
+  const priceStr = Number(l.price || 0).toLocaleString("tr-TR");
+  const commTl = Number(l.commission_tl || 0);
+  const commissionHint = commTl > 0 ? ` Ortak ol, ₺${commTl.toLocaleString("tr-TR")} komisyon kazan.` : "";
+  const title = `${l.title} — ₺${priceStr} | OrtakSat`;
+  const desc = `₺${priceStr}.${commissionHint} ${(l.description || "").replace(/\s+/g, " ")}`.trim().slice(0, 185);
+  const inStock = (l.stock_count ?? 1) > 0;
+
+  // Product + Offer JSON-LD (Google fiyat/stok zengin sonucu) + BreadcrumbList.
+  const product: Record<string, unknown> = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: l.title,
+    description: (l.description || "").replace(/\s+/g, " ").slice(0, 500),
+    image,
+    ...(l.category ? { category: l.category } : {}),
+    offers: {
+      "@type": "Offer",
+      price: Number(l.price || 0),
+      priceCurrency: currency,
+      availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      url,
+      seller: { "@type": "Organization", name: "OrtakSat" }
+    }
+  };
+  const catSlug = l.category ? CAT_NAME_TO_SLUG[l.category] : undefined;
+  const crumbEls: Array<Record<string, unknown>> = [{ "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://www.ortaksat.com/" }];
+  if (catSlug && l.category) crumbEls.push({ "@type": "ListItem", position: 2, name: l.category, item: `https://www.ortaksat.com/kategori/${catSlug}` });
+  crumbEls.push({ "@type": "ListItem", position: crumbEls.length + 1, name: l.title, item: url });
+  const breadcrumb = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: crumbEls };
+
+  // Facebook/Pinterest ürün kartı fiyat etiketleri.
+  const priceOg = `<meta property="product:price:amount" content="${Number(l.price || 0)}" /><meta property="product:price:currency" content="${esc(currency)}" /><meta property="og:price:amount" content="${Number(l.price || 0)}" /><meta property="og:price:currency" content="${esc(currency)}" /><meta property="product:availability" content="${inStock ? "in stock" : "out of stock"}" />`;
+
+  // Gerçek indekslenebilir gövde (JS render'a bağlı kalmadan içerik). Crawler bunu okur.
+  const crumbHtml = catSlug && l.category
+    ? `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › <a href="https://www.ortaksat.com/kategori/${esc(catSlug)}">${esc(l.category)}</a> › ${esc(l.title)}</nav>`
+    : `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › ${esc(l.title)}</nav>`;
+  const body = `${crumbHtml}<h1>${esc(l.title)}</h1><p><strong>₺${esc(priceStr)}</strong>${commTl > 0 ? ` · Ortak ol, ₺${esc(commTl.toLocaleString("tr-TR"))} komisyon kazan` : ""}${inStock ? "" : " · Stokta yok"}</p><p>${esc((l.description || "").replace(/\s+/g, " ").slice(0, 400))}</p>${image !== OG_COVER ? `<img src="${esc(image)}" alt="${esc(l.title)}" width="600" />` : ""}<p><a href="${esc(url)}">İlanı OrtakSat'ta görüntüle →</a></p>`;
+
+  return page(title, desc, image, url, "product", `${priceOg}${ld(product)}${ld(breadcrumb)}`, body);
 }
 
 async function storeResponse(id: string): Promise<Response | undefined> {
@@ -81,28 +128,6 @@ async function storeResponse(id: string): Promise<Response | undefined> {
   );
 }
 
-function categoryResponse(catSlug: string, citySlugRaw: string | undefined): Response | undefined {
-  const cat = CATEGORY_MAP[catSlug];
-  if (!cat) return; // bilinmeyen kategori → uygulamaya geç
-  const city = citySlugRaw ? CITY_MAP[citySlugRaw] : undefined;
-  if (city) {
-    return page(
-      `${city}'da Komisyonla ${cat} İlanları | OrtakSat`,
-      `${city} için ${cat} kategorisinde ortak satış ilanları. Komisyonlu ${cat.toLocaleLowerCase("tr-TR")} fırsatlarını keşfet, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`,
-      OG_COVER,
-      `https://www.ortaksat.com/kategori/${catSlug}/${citySlugRaw}`,
-      "website"
-    );
-  }
-  return page(
-    `${cat} ilanları — Ortak satış | OrtakSat`,
-    `${cat} kategorisinde komisyonlu ortak satış ilanları. Ürününü paylaş, ortakların kendi kitlesine satsın, birlikte kazanın. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`,
-    OG_COVER,
-    `https://www.ortaksat.com/kategori/${catSlug}`,
-    "website"
-  );
-}
-
 export default async function middleware(request: Request): Promise<Response | undefined> {
   try {
     const ua = request.headers.get("user-agent") || "";
@@ -113,9 +138,6 @@ export default async function middleware(request: Request): Promise<Response | u
 
     if (parts[0] === "listing") {
       return await listingResponse(parts[parts.length - 1] || "");
-    }
-    if (parts[0] === "kategori" && parts[1]) {
-      return categoryResponse(parts[1], parts[2]);
     }
     if (parts[0] === "store" && parts[1]) {
       return await storeResponse(parts[1]);
