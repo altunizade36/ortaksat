@@ -10,7 +10,7 @@ export const colors = {
   line: "#D8F3F6",         // turkuaz kenarlık
   primary: "#0EA5B7",      // ana turkuaz
   primaryDark: "#0B7285",  // koyu turkuaz
-  primarySoft: "#CCFBF1",  // açık turkuaz (soft yüzey/chip)
+  primarySoft: "#B8E8DE",  // açık turkuaz (soft yüzey/chip) — göz yormayan sakin ton
   accent: "#EF4444",       // hata/tehlike (kırmızı)
   accentSoft: "#FEE4E2",
   warning: "#F59E0B",
