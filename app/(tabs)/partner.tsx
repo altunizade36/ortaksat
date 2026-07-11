@@ -351,6 +351,39 @@ function PartnerScreenInner() {
           </View>
         </View>
 
+        {/* Yeni ortak (hiç ortaklığı/satışı yok): sıfır-değerli panel yerine 5 adımlı onboarding. */}
+        {myPartnerships.length === 0 && mySales.length === 0 ? (
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 18, borderWidth: 1, gap: 14, padding: 20 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+              <Mascot name="idea" size={46} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("5 adımda ortak kazancı", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Sermaye ve stok gerekmez. Komisyon yalnızca doğrulanan sonuçta hak edilir.", language)}</Text>
+              </View>
+            </View>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+              {[
+                { n: 1, i: "compass-outline" as const, t: "Sana uygun fırsatı bul", d: "Kategorine ve kitlene uygun ilanları filtrele." },
+                { n: 2, i: "file-check-outline" as const, t: "Ortaklık şartlarını kabul et", d: "Komisyon oranı, süre ve izinli kanallar sabitlenir." },
+                { n: 3, i: "link-variant" as const, t: "Özel bağlantını paylaş", d: "Sana özel referans linkini kitlenle paylaş." },
+                { n: 4, i: "chart-line" as const, t: "Tıklama ve talepleri izle", d: "Yönlendirmelerin ve talepler panelinde görünür." },
+                { n: 5, i: "cash-check" as const, t: "Doğrulanan sonuçtan kazan", d: "Satış/talep doğrulanınca komisyonun hak edilir." }
+              ].map((s) => (
+                <View key={s.n} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 200, flexGrow: 1, gap: 6, minWidth: 0, padding: 13 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                    <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 24, justifyContent: "center", width: 24 }}>
+                      <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{s.n}</Text>
+                    </View>
+                    <MaterialCommunityIcons name={s.i} size={16} color={colors.primaryDark} />
+                  </View>
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy(s.t, language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{translateCopy(s.d, language)}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
+
         <LegalNote />
 
         {/* Tabs */}

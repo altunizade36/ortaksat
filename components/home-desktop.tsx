@@ -345,27 +345,31 @@ export function HomeDesktop() {
         {/* Hero + istatistikler */}
         <View style={{ alignItems: "stretch", flexDirection: "row", gap: 16 }}>
           <LinearGradient colors={["#14B8C4", "#0EA5B7", "#0891B2"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 18, flex: 1, flexDirection: "row", minWidth: 0, overflow: "hidden", paddingHorizontal: 22, paddingVertical: 18 }}>
-            <View style={{ flex: 1.4, gap: 10, justifyContent: "center", minWidth: 0 }}>
+            <View style={{ flex: 1.5, gap: 11, justifyContent: "center", minWidth: 0 }}>
               <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 21, fontWeight: "900", lineHeight: 26 }}>
-                {translateCopy("Ortak alın, ", language)}<Text style={{ color: colors.gold }}>{translateCopy("kazancınızı katlayın!", language)}</Text>
+                {translateCopy("Ortak satış pazaryeri — ", language)}<Text style={{ color: colors.gold }}>{translateCopy("iki taraf da kazanır", language)}</Text>
               </Text>
-              <Text numberOfLines={2} style={{ color: "rgba(255,255,255,0.9)", fontSize: 12.5, fontWeight: "600", lineHeight: 17, maxWidth: 380 }}>
-                {translateCopy("Ürünleri ortak sat, komisyon kazan. Güvenli, hızlı, kazançlı.", language)}
-              </Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9, marginTop: 2 }}>
-                <Link href="/create" asChild>
-                  <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
+              {/* İKİ AYRI KULLANICI YOLU (satıcı / ortak) — mesaj netliği */}
+              <Link href="/create" asChild>
+                <Pressable style={({ pressed }) => ({ backgroundColor: "#FFFFFF", borderRadius: 12, gap: 3, opacity: pressed ? 0.92 : 1, paddingHorizontal: 14, paddingVertical: 11 })}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
                     <MaterialCommunityIcons name="store-plus-outline" size={16} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("İlan Ver", language)}</Text>
-                  </Pressable>
-                </Link>
-                <Link href="/partner" asChild>
-                  <Pressable style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.5)", borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 8 }}>
+                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Satıcıyım · Ürünümü Ortak Satışa Aç", language)}</Text>
+                    <MaterialCommunityIcons name="arrow-right" size={16} color={colors.primaryDark} />
+                  </View>
+                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{translateCopy("Ürününü ortaklarla daha geniş kitleye ulaştır; yalnızca sonuç aldığında belirlediğin komisyonu öde.", language)}</Text>
+                </Pressable>
+              </Link>
+              <Link href="/partner" asChild>
+                <Pressable style={({ pressed }) => ({ backgroundColor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.45)", borderRadius: 12, borderWidth: 1, gap: 3, opacity: pressed ? 0.92 : 1, paddingHorizontal: 14, paddingVertical: 11 })}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
                     <MaterialCommunityIcons name="handshake-outline" size={16} color="#FFFFFF" />
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortak Satışa Katıl", language)}</Text>
-                  </Pressable>
-                </Link>
-              </View>
+                    <Text style={{ color: "#FFFFFF", flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ortağım · Kazanç Fırsatlarını İncele", language)}</Text>
+                    <MaterialCommunityIcons name="arrow-right" size={16} color="#FFFFFF" />
+                  </View>
+                  <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{translateCopy("Ürünleri paylaş; doğrulanan satış veya taleplerden komisyon kazan. Sermaye ve stok gerekmez.", language)}</Text>
+                </Pressable>
+              </Link>
             </View>
             {/* OrtakSat maskotu (başparmak yukarı) — açık daire arkalıkta, tam gövde önde. */}
             <View style={{ alignItems: "center", alignSelf: "center", flex: 0.9, justifyContent: "center", minHeight: 210, minWidth: 0, position: "relative", width: "100%" }}>
