@@ -97,7 +97,6 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
                 style={{ height: "100%", width: "100%" }}
                 contentFit="cover"
                 transition={160}
-                loading="lazy"
                 priority="low"
                 alt={imageAlt}
                 accessibilityLabel={imageAlt}

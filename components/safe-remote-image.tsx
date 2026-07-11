@@ -30,7 +30,6 @@ export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, onError
         recyclingKey={(failed ? fallbackUri : uri) ?? undefined}
         cachePolicy="memory-disk"
         placeholderContentFit="cover"
-        loading={props.loading ?? "lazy"}
         priority={props.priority ?? "low"}
         onLoadStart={() => {
           setLoading(true);
