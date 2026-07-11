@@ -121,6 +121,17 @@ export default function ListingDetailScreen() {
   const joinAnchorRef = useRef<View>(null);
   const router = useRouter();
 
+  // apply=1 ile gelindiyse ortaklık aksiyonunu göze getir (web'de yumuşak kaydır) — "ortak ol'a
+  // bastım ama tuş yok" karışıklığını giderir. NOT: hook, erken-return'lerden ÖNCE olmalı (kural).
+  useEffect(() => {
+    if (!wantsApply || Platform.OS !== "web") return;
+    const t = setTimeout(() => {
+      const node = joinAnchorRef.current as unknown as { scrollIntoView?: (o: object) => void } | null;
+      node?.scrollIntoView?.({ behavior: "smooth", block: "start" });
+    }, 600);
+    return () => clearTimeout(t);
+  }, [wantsApply]);
+
   // Lightbox açıkken web'de klavye: ← → gezinme, Esc kapatma.
   useEffect(() => {
     if (!lightbox || Platform.OS !== "web" || typeof window === "undefined") return;
@@ -282,17 +293,6 @@ export default function ListingDetailScreen() {
     .map((rid) => listings.find((l) => l.id === rid))
     .filter((l): l is Listing => Boolean(l) && l!.status === "active" && l!.id !== currentListing.id)
     .slice(0, 10);
-
-  // apply=1 ile gelindiyse ortaklık aksiyonunu göze getir (web'de yumuşak kaydır) —
-  // "ortak ol'a bastım ama tuş yok" karışıklığını giderir; kullanıcı doğrudan CTA'ya iner.
-  useEffect(() => {
-    if (!wantsApply || Platform.OS !== "web" || isOwner) return;
-    const t = setTimeout(() => {
-      const node = joinAnchorRef.current as unknown as { scrollIntoView?: (o: object) => void } | null;
-      node?.scrollIntoView?.({ behavior: "smooth", block: "start" });
-    }, 550);
-    return () => clearTimeout(t);
-  }, [wantsApply, isOwner]);
 
   function handleJoin() {
     if (isDemo) return demoBlocked();
