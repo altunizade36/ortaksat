@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useState } from "react";
 import { Text, View } from "react-native";
 import Svg, { Circle, Defs, G, Line, LinearGradient, Path, Polyline, Rect, Stop, Text as SvgText } from "react-native-svg";
 
@@ -10,7 +11,7 @@ import { colors } from "@/components/colors";
 // Kategorik palet — SABİT sıra (asla döngüsel değil). Marka-hizalı, birbirinden ayrık.
 export const CAT = ["#0F9D66", "#7C5CFC", "#E0A81E", "#2C82F6", "#E4572E", "#17B3B3", "#D6409F", "#6B7280"];
 
-const money = (n: number) => (n >= 1_000_000 ? `₺${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `₺${(n / 1000).toFixed(n >= 100_000 ? 0 : 1)}B` : `₺${Math.round(n)}`);
+export const money = (n: number) => (n >= 1_000_000 ? `₺${(n / 1_000_000).toFixed(1)}M` : n >= 1000 ? `₺${(n / 1000).toFixed(n >= 100_000 ? 0 : 1)}B` : `₺${Math.round(n)}`);
 const fmt = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 10_000 ? `${(n / 1000).toFixed(0)}B` : new Intl.NumberFormat("tr-TR").format(Math.round(n)));
 
 // ---- Renkli KPI kutusu: değer + delta (+/-) + ikon (referans dashboard tarzı) ----
@@ -196,22 +197,34 @@ export function Treemap({ data, height = 180 }: { data: Array<{ label: string; v
   );
 }
 
-// ---- Yatay bar (ranked) ----
-export function HBarChart({ data }: { data: Array<{ label: string; value: number; color?: string }> }) {
+// ---- Yatay bar (ranked). rank: sıra numarası göster; valueFmt: değer biçimi (ör. para) ----
+export function HBarChart({ data, valueFmt, rank }: { data: Array<{ label: string; value: number; color?: string }>; valueFmt?: (n: number) => string; rank?: boolean }) {
   const max = Math.max(1, ...data.map((d) => d.value));
+  const vf = valueFmt ?? fmt;
   return (
     <View style={{ gap: 9 }}>
       {data.map((d, i) => (
-        <View key={d.label} style={{ gap: 4 }}>
-          <View style={{ flexDirection: "row" }}>
+        <View key={`${d.label}-${i}`} style={{ gap: 4 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+            {rank ? <Text style={{ color: colors.subtle, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "900", width: 14 }}>{i + 1}</Text> : null}
             <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{d.label}</Text>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{fmt(d.value)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{vf(d.value)}</Text>
           </View>
-          <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 9, overflow: "hidden" }}>
+          <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 9, marginLeft: rank ? 21 : 0, overflow: "hidden" }}>
             <View style={{ backgroundColor: d.color ?? CAT[i % CAT.length], borderRadius: 999, height: 9, width: `${Math.max(3, Math.round((d.value / max) * 100))}%` }} />
           </View>
         </View>
       ))}
+    </View>
+  );
+}
+
+// ---- Kendini ölçen (responsive) çizgi+alan sarmalayıcı — width'i onLayout'tan alır ----
+export function ResponsiveLineArea(props: { points: Array<{ label: string; value: number }>; color?: string; height?: number; valueFmt?: (n: number) => string }) {
+  const [w, setW] = useState(0);
+  return (
+    <View onLayout={(e) => setW(Math.round(e.nativeEvent.layout.width))} style={{ width: "100%" }}>
+      {w > 0 ? <LineAreaChart {...props} width={w} /> : <View style={{ height: props.height ?? 190 }} />}
     </View>
   );
 }

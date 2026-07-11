@@ -7,6 +7,7 @@ import { Alert } from "@/lib/alert";
 
 import { AdminActivity, type AdminAnalytics } from "@/components/admin-activity";
 import { AuthRequired } from "@/components/auth-gate";
+import { DonutChart, HBarChart, ResponsiveLineArea, Treemap, money as fmtMoney } from "@/components/charts";
 import { colors } from "@/components/colors";
 import { EmptyState } from "@/components/ui";
 import { money } from "@/lib/format";
@@ -800,28 +801,28 @@ function AdminScreenInner() {
               <Stat icon="map-marker" tint={colors.infoSoft} color={colors.info} value={`${new Set(activeListings.map((l) => l.location)).size}`} title="Şehir (yüklü)" />
               <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(analytics ? Math.max(0, analytics.commission_amount - analytics.commission_paid_amount) : unpaidCommission)} title="Bekleyen komisyon" />
             </View>
-            <Panel title="Aylık İlan Grafiği" sub="Son 12 ay — yüklü kayıtlardan (sunucu-toplam için Canlı Panel)">
-              <BarChart data={chartData} labels={chartLabels} />
+            <Panel title="Aylık İlan Trendi" sub="Son 12 ay — yüklü kayıtlardan (sunucu-toplam için Canlı Panel)">
+              <ResponsiveLineArea points={chartData.map((v, i) => ({ label: chartLabels[i] ?? `${i + 1}`, value: v }))} color={colors.primary} height={210} />
             </Panel>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
               <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
                 <Panel title="En Çok İlanı Olan Satıcılar" sub="Aktif ilan sayısına göre ilk 6">
-                  <RankList rows={topSellers} emptyText="Henüz satıcı verisi yok." />
+                  {topSellers.length === 0 ? <EmptyState title="Veri yok" body="Henüz satıcı verisi yok." /> : <HBarChart rank data={topSellers.map((r) => ({ label: r.label, value: r.count }))} valueFmt={(n) => `${Math.round(n)} ilan`} />}
                 </Panel>
               </View>
               <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
                 <Panel title="En Çok Kazanan Ortaklar" sub="Kayıtlı komisyona göre ilk 6">
-                  <RankList rows={topPartners} emptyText="Henüz komisyon kaydı yok." />
+                  {topPartners.length === 0 ? <EmptyState title="Veri yok" body="Henüz komisyon kaydı yok." /> : <HBarChart rank data={topPartners.map((r) => ({ label: r.label, value: r.count }))} valueFmt={fmtMoney} />}
                 </Panel>
               </View>
               <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
                 <Panel title="Kategori Dağılımı" sub="Aktif ilana göre ilk 8 kategori">
-                  <RankList rows={catDist} emptyText="Aktif ilan yok." />
+                  {catDist.length === 0 ? <EmptyState title="Veri yok" body="Aktif ilan yok." /> : <Treemap data={catDist.map((r) => ({ label: r.label, value: r.count }))} height={190} />}
                 </Panel>
               </View>
               <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
                 <Panel title="Şehir Dağılımı" sub="Aktif ilana göre ilk 8 şehir">
-                  <RankList rows={cityDist} emptyText="Aktif ilan yok." />
+                  {cityDist.length === 0 ? <EmptyState title="Veri yok" body="Aktif ilan yok." /> : <HBarChart rank data={cityDist.map((r) => ({ label: r.label, value: r.count }))} valueFmt={(n) => `${Math.round(n)}`} />}
                 </Panel>
               </View>
             </View>
@@ -1057,7 +1058,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
         <View style={{ flex: 2, gap: 16, minWidth: 300 }}>
           <Panel title="Aylık İlan Performansı" sub="Son 12 ay — gerçek ilan verisi">
-            <BarChart data={chart.data} labels={chart.labels} />
+            <ResponsiveLineArea points={chart.data.map((v, i) => ({ label: chart.labels[i] ?? `${i + 1}`, value: v }))} color={colors.primary} height={210} />
           </Panel>
           <Panel title="Operasyon Sağlığı" sub="Günlük kontrol için kritik oranlar">
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
@@ -1068,19 +1069,22 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
             </View>
           </Panel>
           <Panel title="Gerçek Veri Grafikleri" sub="İlan durumu, kategori yoğunluğu ve satış hunisi mevcut kayıtlardan hesaplanır">
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-              <View style={{ flex: 1, minWidth: 240 }}>
-                <SegmentChart title="İlan Durumu" total={listings.length} data={listingStatusData} />
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
+              <View style={{ flex: 1, gap: 8, minWidth: 260 }}>
+                <ChartHeading title="İlan Durumu" meta={`${fmtN(listings.length)} kayıt`} />
+                {listingStatusData.every((d) => d.value === 0) ? <EmptyState title="Veri yok" body="Henüz ilan yok." /> : <DonutChart data={listingStatusData} centerTop={fmtN(listings.length)} centerBottom="ilan" />}
               </View>
-              <View style={{ flex: 1, minWidth: 240 }}>
-                <HorizontalBars title="Kategori Dağılımı" data={categoryData} emptyLabel="Kategori verisi yok" />
+              <View style={{ flex: 1, gap: 8, minWidth: 260 }}>
+                <ChartHeading title="Kategori Dağılımı" meta={`ilk ${categoryData.length}`} />
+                {categoryData.length === 0 ? <EmptyState title="Veri yok" body="Kategori verisi yok." /> : <HBarChart data={categoryData} />}
               </View>
             </View>
-            <View style={{ marginTop: 12 }}>
+            <View style={{ marginTop: 14 }}>
               <FunnelChart data={funnelData} />
             </View>
-            <View style={{ marginTop: 12 }}>
-              <SegmentChart title="Komisyon/Satış Durumu" total={sales.length} data={saleStatusData} />
+            <View style={{ gap: 8, marginTop: 14 }}>
+              <ChartHeading title="Komisyon/Satış Durumu" meta={`${fmtN(sales.length)} kayıt`} />
+              {saleStatusData.every((d) => d.value === 0) ? <EmptyState title="Veri yok" body="Henüz komisyon kaydı yok." /> : <DonutChart data={saleStatusData} centerTop={fmtN(sales.length)} centerBottom="kayıt" />}
             </View>
           </Panel>
           <Panel title="Son Eklenen İlanlar" sub="En yeni kayıtlar ve yayın durumları">
@@ -1224,60 +1228,11 @@ function HealthCard({ label, value, detail, tone }: { label: string; value: stri
 
 type ChartDatum = { label: string; value: number; color: string };
 
-function SegmentChart({ title, total, data }: { title: string; total: number; data: ChartDatum[] }) {
-  const visible = data.filter((d) => d.value > 0);
+function ChartHeading({ title, meta }: { title: string; meta?: string }) {
   return (
-    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 14 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
-        <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{title}</Text>
-        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{total} kayıt</Text>
-      </View>
-      {visible.length === 0 ? (
-        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>Henüz veri yok.</Text>
-      ) : (
-        <>
-          <View style={{ borderRadius: 999, flexDirection: "row", height: 12, overflow: "hidden", width: "100%" }}>
-            {visible.map((d) => (
-              <View key={d.label} style={{ backgroundColor: d.color, flex: Math.max(d.value, 0.5) }} />
-            ))}
-          </View>
-          <View style={{ gap: 8 }}>
-            {visible.map((d) => {
-              const rate = total ? Math.round((d.value / total) * 100) : 0;
-              return (
-                <View key={d.label} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                  <View style={{ backgroundColor: d.color, borderRadius: 999, height: 8, width: 8 }} />
-                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700" }}>{d.label}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{d.value} · %{rate}</Text>
-                </View>
-              );
-            })}
-          </View>
-        </>
-      )}
-    </View>
-  );
-}
-
-function HorizontalBars({ title, data, emptyLabel }: { title: string; data: ChartDatum[]; emptyLabel: string }) {
-  const max = Math.max(...data.map((d) => d.value), 1);
-  return (
-    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 14 }}>
+    <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
       <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{title}</Text>
-      {data.length === 0 ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{emptyLabel}</Text> : null}
-      <View style={{ gap: 10 }}>
-        {data.map((d) => (
-          <View key={d.label} style={{ gap: 5 }}>
-            <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
-              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "800" }}>{d.label}</Text>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{d.value}</Text>
-            </View>
-            <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 8, overflow: "hidden" }}>
-              <View style={{ backgroundColor: d.color, borderRadius: 999, height: "100%", width: `${Math.max(6, Math.round((d.value / max) * 100))}%` }} />
-            </View>
-          </View>
-        ))}
-      </View>
+      {meta ? <Text style={{ color: colors.muted, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>{meta}</Text> : null}
     </View>
   );
 }
@@ -1408,26 +1363,6 @@ function ExportButton({ label = "CSV indir", filename, headers, rows }: { label?
 }
 
 // Sıralı dağılım listesi (satıcı/ortak/kategori/şehir) — etiket + değer + oran çubuğu.
-function RankList({ rows, emptyText }: { rows: Array<{ label: string; value: string; count: number; max: number }>; emptyText: string }) {
-  if (rows.length === 0) return <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{emptyText}</Text>;
-  return (
-    <View style={{ gap: 9 }}>
-      {rows.map((r, i) => (
-        <View key={`${r.label}-${i}`} style={{ gap: 4 }}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-            <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "900", width: 16 }}>{i + 1}</Text>
-            <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", minWidth: 0 }}>{r.label}</Text>
-            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{r.value}</Text>
-          </View>
-          <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 6, marginLeft: 24, overflow: "hidden" }}>
-            <View style={{ backgroundColor: colors.primary, height: "100%", width: `${Math.max(4, Math.round((r.count / (r.max || 1)) * 100))}%` }} />
-          </View>
-        </View>
-      ))}
-    </View>
-  );
-}
-
 function Panel({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
@@ -1697,61 +1632,6 @@ function AdminSearch({ value, onChange, placeholder }: { value: string; onChange
       <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
       <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 13, minHeight: 38, paddingVertical: 6 }} />
       {value ? <Pressable accessibilityRole="button" accessibilityLabel="Aramayı temizle" onPress={() => onChange("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable> : null}
-    </View>
-  );
-}
-
-function BarChart({ data, labels }: { data: number[]; labels?: string[] }) {
-  const max = Math.max(...data, 1);
-  const total = data.reduce((sum, v) => sum + v, 0);
-  const avg = data.length ? Math.round(total / data.length) : 0;
-  const PLOT = 150; // grafik yüksekliği (px)
-  const gridVals = [max, Math.round(max * 0.5), 0];
-  return (
-    <View style={{ gap: 14 }}>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        <MiniStat label="Toplam" value={`${total}`} />
-        <MiniStat label="Aylık ort." value={`${avg}`} />
-        <MiniStat label="Tepe ay" value={`${max}`} />
-      </View>
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, padding: 16 }}>
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          {/* Y ekseni etiketleri */}
-          <View style={{ height: PLOT, justifyContent: "space-between", paddingBottom: 2 }}>
-            {gridVals.map((g, gi) => (
-              <Text key={gi} style={{ color: colors.subtle, fontSize: 9.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>{g}</Text>
-            ))}
-          </View>
-          {/* Grafik alanı: ızgara çizgileri + çubuklar */}
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <View style={{ height: PLOT, position: "relative" }}>
-              {/* yatay ızgara çizgileri */}
-              {[0, 0.5, 1].map((f, fi) => (
-                <View key={fi} style={{ backgroundColor: colors.line, height: 1, left: 0, position: "absolute", right: 0, top: f * (PLOT - 1), opacity: 0.6 }} />
-              ))}
-              {/* çubuklar (tabana oturur, üstü yuvarlak) */}
-              <View style={{ alignItems: "flex-end", bottom: 0, flexDirection: "row", gap: 6, left: 0, position: "absolute", right: 0 }}>
-                {data.map((v, i) => {
-                  const on = v === max && max > 0;
-                  const h = v > 0 ? Math.max(4, Math.round((v / max) * PLOT)) : 0;
-                  return (
-                    <View key={i} style={{ alignItems: "center", flex: 1, gap: 3, justifyContent: "flex-end", minWidth: 0 }}>
-                      {v > 0 ? <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 9.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{v}</Text> : null}
-                      <View style={{ backgroundColor: on ? colors.primary : colors.primarySoft, borderTopLeftRadius: 5, borderTopRightRadius: 5, height: h, width: "100%" }} />
-                    </View>
-                  );
-                })}
-              </View>
-            </View>
-            {/* X ekseni etiketleri */}
-            <View style={{ flexDirection: "row", gap: 6, marginTop: 6 }}>
-              {data.map((v, i) => (
-                <Text key={i} numberOfLines={1} style={{ color: v === max && max > 0 ? colors.primaryDark : colors.subtle, flex: 1, fontSize: 9.5, fontWeight: "800", textAlign: "center" }}>{labels ? labels[i] : i + 1}</Text>
-              ))}
-            </View>
-          </View>
-        </View>
-      </View>
     </View>
   );
 }
