@@ -229,6 +229,42 @@ export function ResponsiveLineArea(props: { points: Array<{ label: string; value
   );
 }
 
+// ---- HUNİ (ortak-satış hunisi): daralan yatay barlar + adım-adım dönüşüm % ----
+export function FunnelChart({ data }: { data: Array<{ label: string; value: number; color?: string }> }) {
+  const max = Math.max(1, ...data.map((d) => d.value));
+  return (
+    <View style={{ gap: 11 }}>
+      {data.map((d, i) => {
+        const w = Math.max(8, Math.round((d.value / max) * 100));
+        const prev = i === 0 ? d.value : data[i - 1].value;
+        const rate = prev ? Math.round((d.value / prev) * 100) : 100;
+        const color = d.color ?? CAT[i % CAT.length];
+        return (
+          <View key={`${d.label}-${i}`} style={{ gap: 5 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "space-between" }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 7, minWidth: 0 }}>
+                <View style={{ backgroundColor: color, borderRadius: 3, height: 10, width: 10 }} />
+                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{d.label}</Text>
+              </View>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                {i > 0 ? (
+                  <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 }}>
+                    <Text style={{ color: colors.muted, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>%{rate}</Text>
+                  </View>
+                ) : null}
+                <Text style={{ color: colors.ink, fontSize: 13, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{fmt(d.value)}</Text>
+              </View>
+            </View>
+            <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 7, height: 14, overflow: "hidden" }}>
+              <View style={{ backgroundColor: color, borderRadius: 7, height: "100%", width: `${w}%` }} />
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 function Legend({ color, label }: { color: string; label: string }) {
   return (
     <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>

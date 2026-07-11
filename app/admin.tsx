@@ -7,7 +7,7 @@ import { Alert } from "@/lib/alert";
 
 import { AdminActivity, type AdminAnalytics } from "@/components/admin-activity";
 import { AuthRequired } from "@/components/auth-gate";
-import { DonutChart, HBarChart, ResponsiveLineArea, Treemap, money as fmtMoney } from "@/components/charts";
+import { DonutChart, FunnelChart, HBarChart, ResponsiveLineArea, Treemap, money as fmtMoney } from "@/components/charts";
 import { colors } from "@/components/colors";
 import { EmptyState } from "@/components/ui";
 import { money } from "@/lib/format";
@@ -1079,7 +1079,8 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
                 {categoryData.length === 0 ? <EmptyState title="Veri yok" body="Kategori verisi yok." /> : <HBarChart data={categoryData} />}
               </View>
             </View>
-            <View style={{ marginTop: 14 }}>
+            <View style={{ gap: 8, marginTop: 14 }}>
+              <ChartHeading title="Ortak Satış Hunisi" meta="ilan → satış" />
               <FunnelChart data={funnelData} />
             </View>
             <View style={{ gap: 8, marginTop: 14 }}>
@@ -1233,36 +1234,6 @@ function ChartHeading({ title, meta }: { title: string; meta?: string }) {
     <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
       <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{title}</Text>
       {meta ? <Text style={{ color: colors.muted, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>{meta}</Text> : null}
-    </View>
-  );
-}
-
-function FunnelChart({ data }: { data: ChartDatum[] }) {
-  const max = Math.max(...data.map((d) => d.value), 1);
-  return (
-    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 14 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <MaterialCommunityIcons name="filter-variant" size={17} color={colors.primaryDark} />
-        <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Ortak Satış Hunisi</Text>
-      </View>
-      <View style={{ gap: 9 }}>
-        {data.map((d, i) => {
-          const width = Math.max(12, Math.round((d.value / max) * 100));
-          const prev = i === 0 ? d.value : data[i - 1].value;
-          const rate = prev ? Math.round((d.value / prev) * 100) : 0;
-          return (
-            <View key={d.label} style={{ gap: 5 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
-                <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{d.label}</Text>
-                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{d.value}{i > 0 ? ` · önceki adıma göre %${rate}` : ""}</Text>
-              </View>
-              <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 12, overflow: "hidden" }}>
-                <View style={{ backgroundColor: d.color, borderRadius: 999, height: "100%", width: `${width}%` }} />
-              </View>
-            </View>
-          );
-        })}
-      </View>
     </View>
   );
 }
