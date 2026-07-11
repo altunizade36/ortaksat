@@ -3,7 +3,7 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { CategoryPicker } from "@/components/category-picker";
@@ -510,53 +510,83 @@ export function DesktopCreateFlow() {
       <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, padding: 22 }}>
         {step === 0 ? <CategoryPicker value={path} onChange={(p) => { setPath(p); if (p.length) setStep(1); }} /> : null}
 
-        {step === 1 && schema ? (
-          <View style={{ gap: 16 }}>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{schema.title}</Text>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{leafLabel} için gerekli alanlar. * işaretliler zorunlu.</Text>
-            {/* Seçilen kategori yolu — kullanıcı ne seçtiğini görür + tek tıkla değiştirir. */}
-            {path.length ? (
-              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, paddingHorizontal: 12, paddingVertical: 9 }}>
-                <MaterialCommunityIcons name="tag-multiple-outline" size={15} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{path.map((p) => translateCopy(p.label, language)).join(" › ")}</Text>
-                <Pressable onPress={() => setStep(0)} accessibilityRole="button" accessibilityLabel={translateCopy("Kategoriyi değiştir", language)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 4 }}>
-                  <MaterialCommunityIcons name="pencil-outline" size={13} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
-                </Pressable>
-              </View>
-            ) : null}
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-              {schema.fields.map((f) => {
-                // Model alanı: marka seçiliyse ve markanın modelleri biliniyorsa bağımlı select.
-                if (f.key === "model") {
-                  // Şema-bağlamlı model listesi: otomobilde araba modelleri, motosiklette
-                  // moto modelleri (union sızıntısı yok).
-                  const models = modelsForSchema(schema.key, String(values.brand ?? ""));
-                  if (models.length) {
-                    const dep: FieldDef = { ...f, type: "select", options: [...models, "Diğer"] };
-                    return <DField key={f.key} field={dep} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
-                  }
-                }
-                return <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
-              })}
+        {step === 1 && schema ? (() => {
+          // Sahibinden tarzı gruplama: alanları rolüne göre bölümlere ayır (şema
+          // değişmeden). Başlık → Özellikler → Donanım (multiselect) → Fiyat → Açıklama.
+          const titleField = schema.fields.find((f) => f.key === "title");
+          const priceField = schema.fields.find((f) => f.key === "price");
+          const descField = schema.fields.find((f) => f.key === "description");
+          const multiFields = schema.fields.filter((f) => f.type === "multiselect" && f !== titleField);
+          const specFields = schema.fields.filter((f) => f !== titleField && f !== priceField && f !== descField && f.type !== "multiselect");
+          const renderField = (f: FieldDef) => {
+            // Model alanı: marka seçiliyse markaya bağımlı model listesi.
+            if (f.key === "model") {
+              const models = modelsForSchema(schema.key, String(values.brand ?? ""));
+              if (models.length) {
+                const dep: FieldDef = { ...f, type: "select", options: [...models, "Diğer"] };
+                return <DField key={f.key} field={dep} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
+              }
+            }
+            return <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
+          };
+          return (
+            <View style={{ gap: 22 }}>
+              {/* Seçilen kategori yolu — kullanıcı ne seçtiğini görür + tek tıkla değiştirir. */}
+              {path.length ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, paddingHorizontal: 12, paddingVertical: 9 }}>
+                  <MaterialCommunityIcons name="tag-multiple-outline" size={15} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{path.map((p) => translateCopy(p.label, language)).join(" › ")}</Text>
+                  <Pressable onPress={() => setStep(0)} accessibilityRole="button" accessibilityLabel={translateCopy("Kategoriyi değiştir", language)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 4 }}>
+                    <MaterialCommunityIcons name="pencil-outline" size={13} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+
+              {titleField ? (
+                <FormSection title="İlan başlığı" icon="format-title" hint="Kısa, net ve aranan kelimelerle eşleşen bir başlık yaz.">
+                  {renderField(titleField)}
+                </FormSection>
+              ) : null}
+
+              {specFields.length ? (
+                <FormSection title={schema.title} icon="clipboard-list-outline" hint="* işaretli alanlar zorunludur.">
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{specFields.map(renderField)}</View>
+                </FormSection>
+              ) : null}
+
+              {multiFields.length ? (
+                <FormSection title="Donanım & Özellikler" icon="star-outline" hint="Ürünün öne çıkan özelliklerini işaretle — alıcının güvenini artırır.">
+                  <View style={{ gap: 18 }}>{multiFields.map(renderField)}</View>
+                </FormSection>
+              ) : null}
+
+              <FormSection title="Fiyat" icon="cash-multiple" hint="Üst sınır yok. Nokta binlik ayırıcıdır (örn. 1.500.000).">
+                {priceField ? <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(priceField)}</View> : null}
+                <View style={{ gap: 8, marginTop: priceField ? 12 : 0 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Para birimi", language)}</Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                    {CURRENCIES.map((c) => {
+                      const on = currency === c.code;
+                      return (
+                        <Pressable key={c.code} onPress={() => setCurrency(c.code)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 15, paddingVertical: 9 }}>
+                          <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 15, fontWeight: "900" }}>{c.symbol}</Text>
+                          <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{c.label}</Text>
+                        </Pressable>
+                      );
+                    })}
+                  </View>
+                </View>
+              </FormSection>
+
+              {descField ? (
+                <FormSection title="Açıklama" icon="text-box-outline" hint="Ürünü detaylı anlat; ne kadar açık yazarsan o kadar güven verirsin.">
+                  {renderField(descField)}
+                </FormSection>
+              ) : null}
             </View>
-            <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Para birimi", language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {CURRENCIES.map((c) => {
-                  const on = currency === c.code;
-                  return (
-                    <Pressable key={c.code} onPress={() => setCurrency(c.code)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 15, paddingVertical: 9 }}>
-                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 15, fontWeight: "900" }}>{c.symbol}</Text>
-                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{c.label}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("Fiyatı istediğin tutarda gir; üst sınır yok. Nokta binlik ayırıcıdır (örn. 1.500.000).", language)}</Text>
-            </View>
-          </View>
-        ) : null}
+          );
+        })() : null}
 
         {step === 2 ? (
           <View style={{ gap: 16 }}>
@@ -907,6 +937,26 @@ export function DesktopCreateFlow() {
           </Pressable>
         )}
       </View>
+    </View>
+  );
+}
+
+// Sahibinden tarzı bölüm başlığı — ilan formunu mantıklı gruplara ayırır
+// (25+ alanı düz bir yığın yerine: Başlık · Özellikler · Donanım · Fiyat · Açıklama).
+function FormSection({ title, hint, icon, children }: { title: string; hint?: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; children: ReactNode }) {
+  const { language } = useLanguage();
+  return (
+    <View style={{ gap: 12 }}>
+      <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 3, paddingBottom: 9 }}>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 28, justifyContent: "center", width: 28 }}>
+            <MaterialCommunityIcons name={icon} size={16} color={colors.primaryDark} />
+          </View>
+          <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{translateCopy(title, language)}</Text>
+        </View>
+        {hint ? <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", marginLeft: 36 }}>{translateCopy(hint, language)}</Text> : null}
+      </View>
+      {children}
     </View>
   );
 }
