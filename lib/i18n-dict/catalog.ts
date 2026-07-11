@@ -24,7 +24,7 @@ export const catalogDict: Record<string, string> = {
 
   // app/create.tsx
   "İlan vermek için giriş yapın": "Sign in to post a listing",
-  "Ücretsiz hesap aç, ürününü yüzlerce ortağa ulaştır. Gezmeye giriş gerekmez; ilan vermek için gerekir.": "Create a free account and reach hundreds of partners with your product. Browsing needs no sign-in; posting a listing does.",
+  "Ücretsiz hesap aç, ürününü ortaklara ulaştır. Gezmeye giriş gerekmez; ilan vermek için gerekir.": "Create a free account and reach partners with your product. Browsing needs no sign-in; posting a listing does.",
   "Hesabın askıya alındı": "Your account is suspended",
   "Hesabın askıda olduğu için ilan veremezsin. İşlem yapabilmek için Yasal & Destek üzerinden bizimle iletişime geçebilirsin.": "You can't post a listing while your account is suspended. Contact us via Legal & Support to proceed.",
   "E-posta doğrulaması gerekli": "Email verification required",

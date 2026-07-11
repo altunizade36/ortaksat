@@ -3,8 +3,10 @@ import { Link, type Href } from "expo-router";
 import { PropsWithChildren } from "react";
 import { Pressable, Text, View } from "react-native";
 
+import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import type { MascotName } from "@/lib/mascots";
 
 type ButtonProps = PropsWithChildren<{
   onPress?: () => void;
@@ -115,7 +117,7 @@ export function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function EmptyState({ title, body, action }: { title: string; body: string; action?: { label: string; href?: Href; onPress?: () => void; icon?: keyof typeof MaterialCommunityIcons.glyphMap } }) {
+export function EmptyState({ title, body, action, mascot }: { title: string; body: string; action?: { label: string; href?: Href; onPress?: () => void; icon?: keyof typeof MaterialCommunityIcons.glyphMap }; mascot?: MascotName }) {
   const { language } = useLanguage();
   const cta = action ? (
     <Pressable
@@ -129,13 +131,16 @@ export function EmptyState({ title, body, action }: { title: string; body: strin
   ) : null;
   return (
     <Card>
-      <Text selectable style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>
-        {translateCopy(title, language)}
-      </Text>
-      <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
-        {translateCopy(body, language)}
-      </Text>
-      {action?.href ? <Link href={action.href} asChild>{cta}</Link> : cta}
+      <View style={{ alignItems: "center", gap: 10 }}>
+        {mascot ? <Mascot name={mascot} size={168} /> : null}
+        <Text selectable style={{ color: colors.ink, fontSize: 17, fontWeight: "900", textAlign: mascot ? "center" : "left" }}>
+          {translateCopy(title, language)}
+        </Text>
+        <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20, textAlign: mascot ? "center" : "left" }}>
+          {translateCopy(body, language)}
+        </Text>
+        {action?.href ? <Link href={action.href} asChild>{cta}</Link> : cta}
+      </View>
     </Card>
   );
 }

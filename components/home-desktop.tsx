@@ -5,6 +5,7 @@ import { memo, useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { BrandFilter } from "@/components/brand-filter";
+import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { HowItWorksStrip } from "@/components/how-it-works-strip";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -385,18 +386,9 @@ export function HomeDesktop() {
                 </Link>
               </View>
             </View>
-            {/* Kompakt görsel küme: yeşil daire + ortaklık fotoğrafı + ürünler.
-                maxWidth ile ürünler karttan uzaklaşmaz; ring dengeli durur. */}
+            {/* OrtakSat maskotu (başparmak yukarı) — açık daire arkalıkta, tam gövde önde. */}
             <View style={{ alignItems: "center", alignSelf: "center", flex: 0.9, justifyContent: "center", minHeight: 210, minWidth: 0, position: "relative", width: "100%" }}>
-              <View style={{ backgroundColor: "rgba(255,255,255,0.15)", borderRadius: 999, height: 150, position: "absolute", width: 150 }} />
-              <View style={{ borderColor: "#FFFFFF", borderRadius: 16, borderWidth: 3, height: 116, overflow: "hidden", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 8 }, shadowOpacity: 0.26, shadowRadius: 16, width: 132 }}>
-                <SafeRemoteImage uri={HERO("deal")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-              </View>
-              {HERO_FLOAT.map((f) => (
-                <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 46, left: "50%", marginLeft: f.dx - 23, marginTop: f.dy - 23, overflow: "hidden", position: "absolute", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.22, shadowRadius: 8, top: "50%", width: 46 }}>
-                  <SafeRemoteImage uri={HERO(f.img)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-                </View>
-              ))}
+              <Mascot name="success" size={228} priority panel panelColor="#F0FDFF" />
             </View>
           </LinearGradient>
 

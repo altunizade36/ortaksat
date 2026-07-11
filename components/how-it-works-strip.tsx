@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, type Href } from "expo-router";
 import { Pressable, Text, View } from "react-native";
 
+import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 
@@ -20,9 +21,12 @@ export function HowItWorksStrip() {
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 16, padding: 20, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.05, shadowRadius: 14 }}>
       <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
-        <View style={{ gap: 2, minWidth: 200 }}>
-          <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900", letterSpacing: -0.3 }}>{translateCopy("3 Adımda OrtakSat", language)}</Text>
-          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Sat, ortak ol, kazan — hepsi tek platformda, ücretsiz.", language)}</Text>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 12, minWidth: 200 }}>
+          <Mascot name="laptop" size={64} />
+          <View style={{ gap: 2, flexShrink: 1 }}>
+            <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900", letterSpacing: -0.3 }}>{translateCopy("3 Adımda OrtakSat", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Sat, ortak ol, kazan — hepsi tek platformda, ücretsiz.", language)}</Text>
+          </View>
         </View>
         <Link href={"/nasil-calisir" as Href} asChild>
           <Pressable accessibilityRole="link" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, opacity: pressed ? 0.85 : 1, paddingHorizontal: 13, paddingVertical: 8 })}>

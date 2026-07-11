@@ -1,6 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter, type Href } from "expo-router";
+import { Mascot } from "@/components/brand/Mascot";
 import { useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useMemo, useRef, useState } from "react";
@@ -316,7 +317,7 @@ export default function HomeScreen() {
                 </Link>
               </View>
             ) : (
-              <EmptyState title={t("noResults")} body={t("noResultsBody")} />
+              <EmptyState title={t("noResults")} body={t("noResultsBody")} mascot="thinking" />
             )
           ) : null}
 
@@ -589,31 +590,11 @@ function FilterChip({ active, icon, label, onPress }: { active?: boolean; icon: 
   );
 }
 
-// Mobil hero görsel kümesi — web ile tutarlı: tokalaşma (anlaşma) + sabit ürünler.
-const MHERO = (n: string) => `https://www.ortaksat.com/hero2/${n}.jpg`;
-// Ürün daireleri kutu İÇİNDE (0..84) konumlanır — negatif offset yok, böylece
-// kartın overflow:hidden'ı hiçbir şeyi kırpmaz. Tokalaşma ortada, ürünler köşelerde.
-const MHERO_FLOAT: Array<{ img: string; top: number; left: number }> = [
-  { img: "headphones", top: 0, left: 0 },
-  { img: "watch", top: 84, left: 0 },
-  { img: "plant", top: 84, left: 84 }
-];
-
+// Mobil hero — OrtakSat maskotu (başparmak yukarı), açık daire arkalıkta.
 function MobileHeroCluster() {
   return (
-    <View style={{ height: 118, position: "relative", width: 118 }}>
-      {/* Yumuşak halka (ortalanmış) */}
-      <View style={{ backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 98, left: 10, position: "absolute", top: 10, width: 98 }} />
-      {/* Tokalaşma/anlaşma görseli — ortalanmış kare çerçeve */}
-      <View style={{ borderColor: "#FFFFFF", borderRadius: 16, borderWidth: 2.5, height: 84, left: 17, overflow: "hidden", position: "absolute", top: 17, width: 84 }}>
-        <SafeRemoteImage uri={MHERO("deal")} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-      </View>
-      {/* Sabit ürünler — köşelerde, tümü kutu içinde (kırpılmaz) */}
-      {MHERO_FLOAT.map((f) => (
-        <View key={f.img} style={{ backgroundColor: "#FFFFFF", borderColor: colors.primarySoft, borderRadius: 999, borderWidth: 1.5, height: 34, left: f.left, overflow: "hidden", position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.18, shadowRadius: 4, top: f.top, width: 34 }}>
-          <SafeRemoteImage uri={MHERO(f.img)} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-        </View>
-      ))}
+    <View style={{ alignItems: "center", height: 128, justifyContent: "center", width: 128 }}>
+      <Mascot name="success" size={124} priority panel panelColor="#F0FDFF" />
     </View>
   );
 }
