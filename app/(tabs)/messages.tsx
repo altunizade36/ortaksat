@@ -406,8 +406,8 @@ function MessagesScreenInner() {
                             {m.body ? <Text style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 19, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingTop: m.attachmentType === "image" ? 5 : 0 }}>{m.body}</Text> : null}
                             {lastOfGroup ? (
                               <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingBottom: m.attachmentType === "image" ? 4 : 0 }}>
-                                <Text style={{ color: mine ? "#DFF7EF" : colors.subtle, fontSize: 10, fontWeight: "700" }}>{msgTime(m.createdAt)}</Text>
-                                {mine ? <MaterialCommunityIcons name={m.read ? "check-all" : "check"} size={13} color={m.read ? "#DFF7EF" : "rgba(255,255,255,0.7)"} /> : null}
+                                <Text style={{ color: mine ? "#E6FBF7" : colors.subtle, fontSize: 10, fontWeight: "700" }}>{msgTime(m.createdAt)}</Text>
+                                {mine ? <MaterialCommunityIcons name={m.read ? "check-all" : "check"} size={13} color={m.read ? "#E6FBF7" : "rgba(255,255,255,0.7)"} /> : null}
                               </View>
                             ) : null}
                           </View>

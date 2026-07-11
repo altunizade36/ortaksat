@@ -115,12 +115,12 @@ export function AppHeader() {
     );
   }
 
-  // --- Mobile / native header ---
+  // --- Mobile / native header --- (temiz beyaz üst bar; normal web sitesi görünümü)
   return (
     <View
       style={{
-        backgroundColor: colors.primarySoft,
-        borderBottomColor: "rgba(14,165,183,0.12)",
+        backgroundColor: colors.surface,
+        borderBottomColor: colors.line,
         borderBottomWidth: 1,
         gap: 7,
         paddingBottom: 8,

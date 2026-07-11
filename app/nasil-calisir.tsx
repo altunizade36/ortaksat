@@ -4,8 +4,10 @@ import Head from "expo-router/head";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { Accordion } from "@/components/accordion";
+import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { ContentPageView } from "@/components/content-page-view";
+import { HowItWorksStrip } from "@/components/how-it-works-strip";
 import { WebTrustStrip, WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
@@ -91,7 +93,7 @@ function HowItWorksStatic() {
       {/* Hero */}
       <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: isWideWeb ? "row" : "column", gap: 24, paddingHorizontal: 32, paddingVertical: 32 }}>
         <View style={{ alignItems: "center", flex: 1, justifyContent: "center", minWidth: 0 }}>
-          <NetworkVisual />
+          <Mascot name="laptop" size={240} priority panel panelColor="#FFFFFF" />
         </View>
         <View style={{ alignItems: isWideWeb ? "center" : "flex-start", flex: 1.1, gap: 14, minWidth: 0 }}>
           <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 32, fontWeight: "900", lineHeight: 38, textAlign: isWideWeb ? "center" : "left" }}>{translateCopy("OrtakSat nasıl çalışır?", language)}</Text>
@@ -112,6 +114,9 @@ function HowItWorksStatic() {
           </View>
         </View>
       </View>
+
+      {/* 3 Adımda OrtakSat — ana sayfadan buraya taşındı (gerçek akış + güven + CTA) */}
+      <HowItWorksStrip />
 
       {/* Three roles */}
       <View style={{ gap: 16 }}>
@@ -217,31 +222,3 @@ function RoleColumn({ role, index }: { role: Role; index: number }) {
   );
 }
 
-function NetworkVisual() {
-  const avatars = [
-    { color: colors.info, top: 0, left: 60 },
-    { color: colors.accent, top: 40, left: 0 },
-    { color: colors.violet, top: 110, left: 30 },
-    { color: colors.primary, top: 90, left: 150 }
-  ];
-  return (
-    <View style={{ height: 180, width: 230 }}>
-      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 18, borderWidth: 2, height: 92, justifyContent: "center", left: 70, position: "absolute", top: 44, width: 92 }}>
-        <MaterialCommunityIcons name="sofa-single-outline" size={44} color={colors.primary} />
-      </View>
-      {[
-        { icon: "percent" as const, top: 30, left: 175, bg: colors.primary },
-        { icon: "chart-line" as const, top: 120, left: 180, bg: colors.primary }
-      ].map((b) => (
-        <View key={b.icon} style={{ alignItems: "center", backgroundColor: b.bg, borderRadius: 999, height: 30, justifyContent: "center", left: b.left, position: "absolute", top: b.top, width: 30 }}>
-          <MaterialCommunityIcons name={b.icon} size={16} color="#FFFFFF" />
-        </View>
-      ))}
-      {avatars.map((a, i) => (
-        <View key={i} style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderColor: a.color, borderRadius: 999, borderWidth: 2, height: 40, justifyContent: "center", left: a.left, position: "absolute", top: a.top, width: 40 }}>
-          <MaterialCommunityIcons name="account" size={22} color={a.color} />
-        </View>
-      ))}
-    </View>
-  );
-}

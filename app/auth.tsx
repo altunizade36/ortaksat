@@ -5,6 +5,7 @@ import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, Tex
 
 import { Link } from "expo-router";
 
+import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";
 import { PasswordStrengthMeter } from "@/components/password-strength-meter";
@@ -392,12 +393,7 @@ export default function AuthScreen() {
           {/* Branded hero */}
           <View style={{ backgroundColor: colors.primaryDark, borderRadius: 20, flexDirection: "row", gap: 18, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 24 }}>
             <View style={{ flex: 1, gap: 8, justifyContent: "center", minWidth: 0 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-                <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
-                  <MaterialCommunityIcons name="handshake" size={24} color="#FFFFFF" />
-                </View>
-                <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{translateCopy("OrtakSat'a hoş geldin", language)}</Text>
-              </View>
+              <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{translateCopy("OrtakSat'a hoş geldin", language)}</Text>
               <Text style={{ color: "rgba(255,255,255,0.88)", fontSize: 14.5, fontWeight: "600", lineHeight: 21, maxWidth: 560 }}>{translateCopy("Ücretsiz hesap aç; ilan ver, ortak satışla kazan, alıcılarla güvenle iletişim kur. Gezmek için giriş gerekmez — hesabını sadece işlem yaparken kullanırsın.", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 4 }}>
                 {[
@@ -412,10 +408,8 @@ export default function AuthScreen() {
                 ))}
               </View>
             </View>
-            <View style={{ alignItems: "center", justifyContent: "center", width: 96 }}>
-              <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 999, height: 84, justifyContent: "center", width: 84 }}>
-                <MaterialCommunityIcons name="account-circle-outline" size={48} color="#FFFFFF" />
-              </View>
+            <View style={{ alignItems: "center", justifyContent: "center", width: 108 }}>
+              <Mascot name="success" size={104} panel panelColor="#F0FDFF" />
             </View>
           </View>
 

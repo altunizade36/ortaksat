@@ -1,13 +1,12 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Tabs } from "expo-router";
 import type { ColorValue } from "react-native";
-import { View } from "react-native";
+import { Platform, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AppHeader } from "@/components/app-header";
 import { colors } from "@/components/colors";
 import { useLanguage } from "@/lib/i18n";
-import { useIsWideWeb } from "@/lib/layout";
 
 type TabKey = "index" | "explore" | "create-action" | "partner" | "menu";
 
@@ -73,8 +72,9 @@ function tabIcon(name: TabKey) {
 export default function TabsLayout() {
   const insets = useSafeAreaInsets();
   const { t } = useLanguage();
-  // On desktop web the bottom tab bar is hidden in favor of the header nav.
-  const isWideWeb = useIsWideWeb();
+  // Web'de (masaüstü VE mobil tarayıcı) alt tab bar GİZLİ — normal web sitesi gibi üstteki
+  // header + hamburger menü ile gezinilir. Alt bar yalnız native mobil uygulamada kalır.
+  const isWeb = Platform.OS === "web";
 
   return (
     <Tabs
@@ -101,7 +101,7 @@ export default function TabsLayout() {
           lineHeight: 12,
           marginTop: 2
         },
-        tabBarStyle: isWideWeb ? { display: "none" } : {
+        tabBarStyle: isWeb ? { display: "none" } : {
           backgroundColor: colors.surface,
           borderColor: "rgba(16,24,40,0.08)",
           borderRadius: 26,
