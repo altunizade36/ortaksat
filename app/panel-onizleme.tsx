@@ -21,11 +21,11 @@ export default function PanelPreview() {
       <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>Panel Grafik Önizleme</Text>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-        <KpiDeltaTile label="Toplam GMV" value={401412} money icon="cash-multiple" delta={21} tint="#0F9D66" accent="#0A7A50" />
-        <KpiDeltaTile label="Net Komisyon" value={68908} money icon="chart-line" delta={8} tint="#2C82F6" accent="#1E63C8" />
-        <KpiDeltaTile label="Aktif Kullanıcı" value={3117} icon="account-group" delta={24} tint="#7C5CFC" accent="#5E3FE0" />
-        <KpiDeltaTile label="Yeni İlan" value={1233} icon="storefront-outline" delta={-12} tint="#E0A81E" accent="#B7791F" />
-        <KpiDeltaTile label="Açık Talep" value={382} icon="account-clock-outline" delta={35} tint="#E4572E" accent="#C43E1A" />
+        <KpiDeltaTile label="Şu an aktif" value={14} live icon="access-point" tint="#0F9D66" accent="#0A7A50" sub="Son 5 dakikada" />
+        <KpiDeltaTile label="Toplam GMV" value={401412} money icon="cash-multiple" tint="#E0A81E" accent="#B7791F" sub="284 sipariş — satış değeri" />
+        <KpiDeltaTile label="Komisyon (₺)" value={68908} money icon="receipt-text-outline" tint="#2C82F6" accent="#1E63C8" sub="₺42.100 ödendi" />
+        <KpiDeltaTile label="Aktif Kullanıcı" value={3117} icon="account-group" delta={24} tint="#7C5CFC" accent="#5E3FE0" sub="2.980 doğrulanmış" />
+        <KpiDeltaTile label="Yeni İlan" value={1233} icon="storefront-outline" delta={-12} tint="#17B3B3" accent="#128F8F" sub="14.302 toplam" />
       </View>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>

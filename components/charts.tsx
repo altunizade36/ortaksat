@@ -14,16 +14,21 @@ const money = (n: number) => (n >= 1_000_000 ? `₺${(n / 1_000_000).toFixed(1)}
 const fmt = (n: number) => (n >= 1_000_000 ? `${(n / 1_000_000).toFixed(1)}M` : n >= 10_000 ? `${(n / 1000).toFixed(0)}B` : new Intl.NumberFormat("tr-TR").format(Math.round(n)));
 
 // ---- Renkli KPI kutusu: değer + delta (+/-) + ikon (referans dashboard tarzı) ----
-export function KpiDeltaTile({ label, value, delta, icon, tint, accent, money: isMoney }: { label: string; value: number | string; delta?: number; icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; accent: string; money?: boolean }) {
+export function KpiDeltaTile({ label, value, delta, icon, tint, accent, money: isMoney, sub, live }: { label: string; value: number | string; delta?: number; icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; accent: string; money?: boolean; sub?: string; live?: boolean }) {
   const v = typeof value === "number" ? (isMoney ? money(value) : fmt(value)) : value;
   const up = (delta ?? 0) >= 0;
   return (
-    <View style={{ backgroundColor: tint, borderRadius: 16, flexBasis: 150, flexGrow: 1, gap: 10, minWidth: 140, overflow: "hidden", padding: 15 }}>
+    <View style={{ backgroundColor: tint, borderRadius: 16, flexBasis: 158, flexGrow: 1, gap: 9, minWidth: 146, overflow: "hidden", padding: 15, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.14, shadowRadius: 10 }}>
       <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
         <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.22)", borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
           <MaterialCommunityIcons name={icon} size={18} color="#FFFFFF" />
         </View>
-        {delta !== undefined ? (
+        {live ? (
+          <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.25)", borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+            <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 6, width: 6 }} />
+            <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>CANLI</Text>
+          </View>
+        ) : delta !== undefined ? (
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.22)", borderRadius: 999, flexDirection: "row", gap: 2, paddingHorizontal: 7, paddingVertical: 2 }}>
             <MaterialCommunityIcons name={up ? "arrow-up" : "arrow-down"} size={12} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{up ? "+" : ""}{delta}</Text>
@@ -31,7 +36,10 @@ export function KpiDeltaTile({ label, value, delta, icon, tint, accent, money: i
         ) : null}
       </View>
       <Text style={{ color: "#FFFFFF", fontSize: 25, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.6 }}>{v}</Text>
-      <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.9)", fontSize: 12, fontWeight: "800" }}>{label}</Text>
+      <View style={{ gap: 1 }}>
+        <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{label}</Text>
+        {sub ? <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.82)", fontSize: 11, fontWeight: "700" }}>{sub}</Text> : null}
+      </View>
       <View style={{ backgroundColor: accent, borderRadius: 999, bottom: 0, height: 4, left: 0, position: "absolute", right: 0 }} />
     </View>
   );

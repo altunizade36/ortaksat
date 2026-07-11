@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useMemo, useRef, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { useEffect, useRef, useState } from "react";
+import { Pressable, Text, View } from "react-native";
 
+import { CAT, DonutChart, HBarChart, KpiDeltaTile, LineAreaChart } from "@/components/charts";
 import { colors } from "@/components/colors";
 import { money } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
@@ -37,8 +38,6 @@ export type AdminAnalytics = {
   top_categories: CatPoint[] | null;
 };
 
-// Grafik seri renkleri — kategorik SABİT sıra (dataviz): aktif=yeşil, kayıt=mor, ilan=altın.
-const SERIES = { active: colors.primary, signups: colors.violet, listings: colors.gold };
 
 /**
  * Admin Canlı Panel — GERÇEK sunucu verisiyle (admin_live_analytics RPC). İstemci-cap'li
@@ -51,6 +50,7 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatedAt, setUpdatedAt] = useState<string>("");
+  const [lineW, setLineW] = useState(560); // çizgi grafiği responsive genişliği (onLayout ile ölçülür)
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const onDataRef = useRef(onData);
   onDataRef.current = onData;
@@ -85,9 +85,6 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const maxBar = useMemo(() => Math.max(1, ...(data?.days ?? []).flatMap((d) => [d.active, d.signups, d.listings])), [data]);
-  const maxCat = useMemo(() => Math.max(1, ...((data?.top_categories ?? []).map((c) => c.n))), [data]);
-
   if (loading && !data) {
     return <View style={{ padding: 24 }}><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Canlı panel yükleniyor…</Text></View>;
   }
@@ -104,29 +101,25 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
   }
   if (!data) return null;
 
-  // Canlı kullanıcı kartları (server-true presence).
-  const liveCards: StatTileProps[] = [
-    { icon: "access-point", label: "Şu an aktif", value: String(data.live_now), sub: "Son 5 dakikada", tint: colors.successSoft, color: colors.success, live: true },
-    { icon: "account-clock-outline", label: "Bugün aktif", value: String(data.active_today), sub: "Günlük aktif kullanıcı", tint: colors.primarySoft, color: colors.primaryDark },
-    { icon: "account-group", label: "Toplam kayıtlı", value: fmt(data.total_users), sub: `${fmt(data.confirmed_users)} doğrulanmış`, tint: colors.infoSoft, color: colors.info },
-    { icon: "account-plus-outline", label: "Bu hafta yeni", value: fmt(data.new_7d), sub: `Bugün +${fmt(data.new_today)}`, tint: colors.violetSoft, color: colors.violet }
-  ];
-  // Site-geneli sunucu-gerçek toplamlar (istemci-cap'i yok).
-  const siteCards: StatTileProps[] = [
-    { icon: "storefront-outline", label: "Aktif ilan", value: fmt(data.listings_active), sub: `${fmt(data.listings_total)} toplam · +${fmt(data.listings_new_7d)} bu hafta`, tint: colors.primarySoft, color: colors.primaryDark },
-    { icon: "cash-multiple", label: "Toplam GMV", value: money(data.gmv), sub: `${fmt(data.orders_total)} sipariş — satış değeri`, tint: colors.goldSoft, color: "#B7791F" },
-    { icon: "receipt-text-outline", label: "Komisyon (₺)", value: money(data.commission_amount), sub: `${money(data.commission_paid_amount)} ödendi · ${fmt(data.commissions_total)} kayıt`, tint: colors.infoSoft, color: colors.info },
-    { icon: "handshake-outline", label: "Aktif ortaklık", value: fmt(data.partnerships_active), sub: `${fmt(data.partnerships_total)} toplam · ${fmt(data.partnerships_pending)} bekliyor`, tint: colors.violetSoft, color: colors.violet }
-  ];
   // Moderasyon kuyruğu (durum renkleri — ikon+etiket).
   const queue = [
-    { icon: "clipboard-clock-outline" as const, label: "İnceleme bekleyen", n: data.listings_pending, color: colors.warning, tint: colors.warningSoft ?? colors.goldSoft },
+    { icon: "clipboard-clock-outline" as const, label: "İnceleme bekleyen", n: data.listings_pending, color: colors.warning, tint: colors.warningSoft },
     { icon: "flag-outline" as const, label: "Açık şikayet", n: data.open_reports, color: colors.accent, tint: colors.accentSoft },
     { icon: "shape-plus-outline" as const, label: "Kategori önerisi", n: data.cat_suggestions, color: colors.info, tint: colors.infoSoft },
     { icon: "map-marker-plus-outline" as const, label: "Konum önerisi", n: data.loc_suggestions, color: colors.info, tint: colors.infoSoft }
   ].filter((q) => q.n > 0);
 
   const allZero = data.days.every((d) => d.active === 0 && d.signups === 0 && d.listings === 0) && data.live_now === 0;
+
+  // Grafik verileri (gerçek analitik)
+  const statusDonut = [
+    { label: "Yayında", value: data.listings_active, color: CAT[0] },
+    { label: "İncelemede", value: data.listings_pending, color: CAT[2] },
+    { label: "Duraklatılmış", value: data.listings_paused, color: CAT[7] },
+    { label: "Satıldı", value: data.listings_sold, color: CAT[3] }
+  ].filter((d) => d.value > 0);
+  const activeTrend = data.days.map((d) => ({ label: d.day.slice(8, 10), value: d.active }));
+  const catBars = (data.top_categories ?? []).slice(0, 6).map((c) => ({ label: c.category, value: c.n }));
 
   return (
     <View style={{ gap: 16 }}>
@@ -139,9 +132,20 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
         </View>
       </View>
 
-      {/* Canlı kullanıcı + site toplamları */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>{liveCards.map((c) => <StatTile key={c.label} {...c} />)}</View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>{siteCards.map((c) => <StatTile key={c.label} {...c} />)}</View>
+      {/* Renkli KPI kartları — canlı kullanıcı */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+        <KpiDeltaTile label="Şu an aktif" value={data.live_now} live icon="access-point" tint="#0F9D66" accent="#0A7A50" sub="Son 5 dakikada" />
+        <KpiDeltaTile label="Bugün aktif" value={data.active_today} icon="account-clock-outline" tint="#17B3B3" accent="#128F8F" sub="Günlük aktif kullanıcı" />
+        <KpiDeltaTile label="Toplam kayıtlı" value={data.total_users} icon="account-group" tint="#2C82F6" accent="#1E63C8" sub={`${fmt(data.confirmed_users)} doğrulanmış`} />
+        <KpiDeltaTile label="Bu hafta yeni" value={data.new_7d} delta={data.new_today} icon="account-plus-outline" tint="#7C5CFC" accent="#5E3FE0" sub={`Bugün +${fmt(data.new_today)}`} />
+      </View>
+      {/* Renkli KPI kartları — site geneli (sunucu-gerçek) */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+        <KpiDeltaTile label="Aktif ilan" value={data.listings_active} icon="storefront-outline" tint="#0F9D66" accent="#0A7A50" sub={`${fmt(data.listings_total)} toplam · +${fmt(data.listings_new_7d)} bu hafta`} />
+        <KpiDeltaTile label="Toplam GMV" value={data.gmv} money icon="cash-multiple" tint="#E0A81E" accent="#B7791F" sub={`${fmt(data.orders_total)} sipariş — satış değeri`} />
+        <KpiDeltaTile label="Komisyon (₺)" value={data.commission_amount} money icon="receipt-text-outline" tint="#2C82F6" accent="#1E63C8" sub={`${money(data.commission_paid_amount)} ödendi`} />
+        <KpiDeltaTile label="Aktif ortaklık" value={data.partnerships_active} icon="handshake-outline" tint="#7C5CFC" accent="#5E3FE0" sub={`${fmt(data.partnerships_total)} toplam · ${fmt(data.partnerships_pending)} bekliyor`} />
+      </View>
 
       {/* Moderasyon kuyruğu (yalnız iş varsa) */}
       {queue.length > 0 ? (
@@ -157,44 +161,23 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
         </View>
       ) : null}
 
-      {/* 14 günlük trend (aktif / kayıt / ilan) */}
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 18 }}>
-        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-          <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>Son 14 gün</Text>
-          <LegendDot color={SERIES.active} label="Aktif" />
-          <LegendDot color={SERIES.signups} label="Yeni kayıt" />
-          <LegendDot color={SERIES.listings} label="Yeni ilan" />
+      {/* Grafikler: 14-gün aktif trendi (çizgi+alan) + ilan durumu (donut) */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+        <View onLayout={(e) => setLineW(Math.max(240, Math.round(e.nativeEvent.layout.width) - 36))} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 420, flexGrow: 2, gap: 12, minWidth: 300, padding: 18, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Son 14 gün — aktif kullanıcı</Text>
+          <LineAreaChart points={activeTrend} width={lineW} color={CAT[0]} />
         </View>
-        {/* Yatay kaydırılabilir: 14 gün × 3 çubuk dar (mobil) admin genişliğinde taşmasın. */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "flex-end", flexDirection: "row", gap: 8, height: 148, paddingRight: 4 }}>
-          {data.days.map((d) => (
-            <View key={d.day} style={{ alignItems: "center", gap: 6, justifyContent: "flex-end", width: 34 }}>
-              <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 2, height: 108, justifyContent: "center" }}>
-                <Bar value={d.active} max={maxBar} color={SERIES.active} />
-                <Bar value={d.signups} max={maxBar} color={SERIES.signups} />
-                <Bar value={d.listings} max={maxBar} color={SERIES.listings} />
-              </View>
-              <Text style={{ color: colors.subtle, fontSize: 9.5, fontWeight: "800" }}>{dayNum(d.day)}</Text>
-            </View>
-          ))}
-        </ScrollView>
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 300, flexGrow: 1, gap: 12, minWidth: 260, padding: 18, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>İlan durumu</Text>
+          {statusDonut.length ? <DonutChart data={statusDonut} size={150} centerTop={fmt(data.listings_total)} centerBottom="toplam ilan" /> : <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Henüz ilan yok.</Text>}
+        </View>
       </View>
 
       {/* Top kategoriler (aktif ilan sayısına göre) */}
-      {data.top_categories && data.top_categories.length > 0 ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 11, padding: 18 }}>
+      {catBars.length > 0 ? (
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>En çok ilan olan kategoriler</Text>
-          {data.top_categories.map((c) => (
-            <View key={c.category} style={{ gap: 4 }}>
-              <View style={{ flexDirection: "row" }}>
-                <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{c.category}</Text>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{fmt(c.n)}</Text>
-              </View>
-              <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 8, overflow: "hidden" }}>
-                <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: 8, width: `${Math.max(3, Math.round((c.n / maxCat) * 100))}%` }} />
-              </View>
-            </View>
-          ))}
+          <HBarChart data={catBars} />
         </View>
       ) : null}
 
@@ -217,49 +200,4 @@ function fmt(n: number): string {
   if (n >= 10_000) return `${(n / 1000).toFixed(1).replace(".0", "")}B`;
   return new Intl.NumberFormat("tr-TR").format(n);
 }
-function dayNum(iso: string): string {
-  return iso.slice(8, 10); // gün numarası (14 gün için kısa)
-}
 
-type StatTileProps = { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: string; sub: string; tint: string; color: string; live?: boolean };
-function StatTile({ icon, label, value, sub, tint, color, live }: StatTileProps) {
-  return (
-    <View style={{ backgroundColor: colors.surface, borderColor: live ? colors.success : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 180, flexGrow: 1, gap: 8, minWidth: 148, padding: 16, shadowColor: "#0A2E22", shadowOffset: { width: 0, height: 2 }, shadowOpacity: live ? 0.1 : 0.06, shadowRadius: 10 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
-          <MaterialCommunityIcons name={icon} size={18} color={color} />
-        </View>
-        {live ? (
-          <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-            <View style={{ backgroundColor: colors.success, borderRadius: 999, height: 7, width: 7 }} />
-            <Text style={{ color: colors.success, fontSize: 10, fontWeight: "900" }}>CANLI</Text>
-          </View>
-        ) : null}
-      </View>
-      <Text style={{ color: colors.ink, fontSize: 26, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{value}</Text>
-      <View style={{ gap: 1 }}>
-        <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
-        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{sub}</Text>
-      </View>
-    </View>
-  );
-}
-
-function Bar({ value, max, color }: { value: number; max: number; color: string }) {
-  const h = Math.max(value > 0 ? 5 : 2, Math.round((value / max) * 108));
-  return (
-    <View style={{ alignItems: "center", gap: 3, justifyContent: "flex-end" }}>
-      {value > 0 ? <Text style={{ color: colors.subtle, fontSize: 8.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{value}</Text> : null}
-      <View style={{ backgroundColor: value > 0 ? color : colors.line, borderTopLeftRadius: 4, borderTopRightRadius: 4, height: h, width: 9 }} />
-    </View>
-  );
-}
-
-function LegendDot({ color, label }: { color: string; label: string }) {
-  return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
-      <View style={{ backgroundColor: color, borderRadius: 3, height: 10, width: 10 }} />
-      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{label}</Text>
-    </View>
-  );
-}
