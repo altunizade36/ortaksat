@@ -109,7 +109,8 @@ export default function CityCategoryScreen() {
   }
 
   const title = `${cityName}'da Komisyonla ${node.label} İlanları | OrtakSat`;
-  const desc = `${cityName} için ${node.label} kategorisinde ${items.length} ortak satış ilanı. ${cityName}'da komisyonlu ${node.label.toLocaleLowerCase("tr-TR")} ürünlerini keşfet, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
+  // SEO açıklaması evergreen — ilan SAYISI YAZMA (SSG bake'te 0'dır, "0 ilan" arama sonucunu boş gösterir).
+  const desc = `${cityName}'da komisyonlu ${node.label.toLocaleLowerCase("tr-TR")} ürünlerini keşfet. ${cityName} için ${node.label} kategorisindeki ortak satış ilanlarını incele, ürününü ortak satışla sattır, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
   const url = `https://www.ortaksat.com/kategori/${slug}/${wantedCity}`;
   const otherCities = SEO_CITY_SLUGS.filter((c) => c !== wantedCity);
   // BreadcrumbList — Ana Sayfa › Kategoriler › {Kategori} › {Şehir}.

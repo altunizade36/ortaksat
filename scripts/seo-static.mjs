@@ -199,20 +199,226 @@ function patch(file, meta) {
   return true;
 }
 
-// lib/blog.ts'ten slug + title + excerpt çıkar (statik blog SEO'su).
+// lib/blog.ts'ten slug + title + excerpt + author + date + image çıkar (statik blog SEO'su).
+// Blok-tabanlı: her `slug:` ile bir sonrakine kadarki metinden alanları tek tek çeker
+// (bazı alanlar eksik olsa da yazı atlanmaz).
+const TR_MONTHS = { ocak: "01", "şubat": "02", subat: "02", mart: "03", nisan: "04", "mayıs": "05", mayis: "05", haziran: "06", temmuz: "07", "ağustos": "08", agustos: "08", "eylül": "09", eylul: "09", "ekim": "10", "kasım": "11", kasim: "11", "aralık": "12", aralik: "12" };
+function trDateToIso(s) {
+  if (!s) return null;
+  const m = String(s).trim().match(/^(\d{1,2})\s+([A-Za-zçÇğĞıİöÖşŞüÜ]+)\s+(\d{4})$/);
+  if (!m) return null;
+  const mo = TR_MONTHS[m[2].toLocaleLowerCase("tr-TR")];
+  if (!mo) return null;
+  return `${m[3]}-${mo}-${String(m[1]).padStart(2, "0")}`;
+}
+const unesc = (s) => (s == null ? s : s.replace(/\\"/g, '"'));
+function field(block, key, re) {
+  const m = block.match(re);
+  return m ? unesc(m[1]) : null;
+}
 function blogPosts() {
   try {
     const src = fs.readFileSync(path.join(__dirname, "..", "lib", "blog.ts"), "utf8");
     const posts = [];
-    const re = /slug:\s*"([^"]+)"[\s\S]{0,400}?title:\s*"((?:[^"\\]|\\.)*)"[\s\S]{0,600}?excerpt:\s*"((?:[^"\\]|\\.)*)"/g;
-    let m;
-    while ((m = re.exec(src))) {
-      posts.push({ slug: m[1], title: m[2].replace(/\\"/g, '"'), excerpt: m[3].replace(/\\"/g, '"') });
+    const slugRe = /slug:\s*"([^"]+)"/g;
+    const marks = [];
+    let sm;
+    while ((sm = slugRe.exec(src))) marks.push({ slug: sm[1], idx: sm.index });
+    for (let i = 0; i < marks.length; i++) {
+      const block = src.slice(marks[i].idx, i + 1 < marks.length ? marks[i + 1].idx : marks[i].idx + 4000);
+      const title = field(block, "title", /title:\s*"((?:[^"\\]|\\.)*)"/);
+      const excerpt = field(block, "excerpt", /excerpt:\s*"((?:[^"\\]|\\.)*)"/);
+      if (!title || !excerpt) continue;
+      posts.push({
+        slug: marks[i].slug,
+        title,
+        excerpt,
+        author: field(block, "author", /author:\s*"((?:[^"\\]|\\.)*)"/) || "OrtakSat Editör Ekibi",
+        date: field(block, "date", /date:\s*"([^"]+)"/),
+        imageId: field(block, "image", /image:\s*img\("([^"]+)"\)/)
+      });
     }
     return posts;
   } catch {
     return [];
   }
+}
+
+// Blog yazısı için BlogPosting + BreadcrumbList JSON-LD (tek <script>'te dizi olarak).
+function blogArticleLd(p) {
+  const url = `${BASE}/blog/${p.slug}`;
+  const iso = trDateToIso(p.date);
+  const image = p.imageId ? `https://images.unsplash.com/photo-${p.imageId}?w=1200&q=80&auto=format&fit=crop` : OG_IMG;
+  const article = {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    headline: p.title,
+    description: p.excerpt,
+    image,
+    author: { "@type": "Organization", name: p.author, url: BASE },
+    publisher: { "@type": "Organization", name: "OrtakSat", logo: { "@type": "ImageObject", url: `${BASE}/icon.png` } },
+    mainEntityOfPage: { "@type": "WebPage", "@id": url },
+    inLanguage: "tr-TR",
+    ...(iso ? { datePublished: iso, dateModified: iso } : {})
+  };
+  const crumbs = {
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: [
+      { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: `${BASE}/` },
+      { "@type": "ListItem", position: 2, name: "Blog", item: `${BASE}/blog` },
+      { "@type": "ListItem", position: 3, name: p.title, item: url }
+    ]
+  };
+  return JSON.stringify([article, crumbs]);
+}
+
+// --- Dinamik landing sayfaları (kategori + şehir): expo-router/head data-rh
+// etiketlerini TEK VE TEMİZ hale getir + yapısal veri (Breadcrumb/CollectionPage/FAQ)
+// enjekte et. Bu ~176 sayfa (56 kategori + ~120 şehir) SEO'nun en büyük fırsatı:
+// önceden generic dublike <title>/description ile çıkıyorlardı. ---
+
+// HTML entity'lerini düz metne çöz — data-rh değerleri zaten HTML-escaped'dir;
+// escText/escAttr yeniden encode edeceği için önce çözmezsek çift-encode olur
+// (ör. "İstanbul&#x27;da" → "İstanbul&amp;#x27;da").
+function decodeEntities(s) {
+  return s == null ? s : s
+    .replace(/&#x27;/gi, "'").replace(/&#39;/g, "'").replace(/&apos;/gi, "'")
+    .replace(/&quot;/gi, '"').replace(/&lt;/gi, "<").replace(/&gt;/gi, ">")
+    .replace(/&amp;/gi, "&"); // &amp; EN SON (aksi halde &amp;#x27; yanlış çözülür)
+}
+
+// react-helmet (expo-router/head) data-rh etiketinden gerçek/hesaplanmış değeri çek (entity çözülmüş).
+function extractRh(html, re) {
+  const m = html.match(re);
+  return m ? decodeEntities(m[1]) : null;
+}
+
+// Bir dinamik sayfanın TÜM SEO head'ini yeniden yaz: dublike title/desc/og temizle,
+// tek temiz set + canonical + robots(index) + JSON-LD dizisi enjekte et.
+function rewriteSeoHead(fp, { title, description, canonicalUrl, jsonld }) {
+  if (!fs.existsSync(fp)) return false;
+  let html = fs.readFileSync(fp, "utf8");
+
+  // 1) Tüm <title>…</title> (generic + data-rh) ve ilgili meta/canonical'ları SİL.
+  html = html.replace(/<title\b[^>]*>[\s\S]*?<\/title>/gi, "");
+  html = html.replace(/<meta\b[^>]*\bname="description"[^>]*>/gi, "");
+  html = html.replace(/<meta\b[^>]*\bproperty="og:(?:title|description|url)"[^>]*>/gi, "");
+  html = html.replace(/<meta\b[^>]*\bname="twitter:(?:title|description|image|card)"[^>]*>/gi, "");
+  html = html.replace(/<link\b[^>]*\brel="canonical"[^>]*>/gi, "");
+
+  // 2) Tek temiz SEO bloğu kur.
+  const block = [
+    `<title>${escText(title)}</title>`,
+    `<meta name="description" content="${escAttr(description)}"/>`,
+    `<link rel="canonical" href="${escAttr(canonicalUrl)}"/>`,
+    `<meta name="robots" content="index, follow"/>`,
+    `<meta property="og:title" content="${escAttr(title)}"/>`,
+    `<meta property="og:description" content="${escAttr(description)}"/>`,
+    `<meta property="og:url" content="${escAttr(canonicalUrl)}"/>`,
+    `<meta name="twitter:card" content="summary_large_image"/>`,
+    `<meta name="twitter:title" content="${escAttr(title)}"/>`,
+    `<meta name="twitter:description" content="${escAttr(description)}"/>`,
+    `<meta name="twitter:image" content="${escAttr(OG_IMG)}"/>`,
+    ...jsonld.map((j) => `<script type="application/ld+json">${j}</script>`)
+  ].join("");
+
+  html = html.replace(/<\/head>/i, `${block}</head>`);
+  fs.writeFileSync(fp, html, "utf8");
+  return true;
+}
+
+const RH_TITLE = /<title data-rh="true">([^<]*)<\/title>/i;
+const RH_DESC = /<meta data-rh="true" name="description" content="([^"]*)"/i;
+
+function breadcrumbLd(items) {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "BreadcrumbList",
+    itemListElement: items.map((it, i) => ({ "@type": "ListItem", position: i + 1, name: it.name, item: it.url }))
+  });
+}
+function collectionLd(name, description, url, crumbs) {
+  return JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "CollectionPage",
+    name,
+    description,
+    url,
+    isPartOf: { "@type": "WebSite", name: "OrtakSat", url: BASE },
+    breadcrumb: { "@type": "BreadcrumbList", itemListElement: crumbs.map((it, i) => ({ "@type": "ListItem", position: i + 1, name: it.name, item: it.url })) }
+  });
+}
+function catFaqLd(label) {
+  const faq = [
+    [`${label} ilanları OrtakSat'ta nasıl satılır?`, "İlanını ücretsiz eklersin ve komisyon oranını kendin belirlersin. Ortaklar ürününü kendi takipçisiyle paylaşır; satış olursa komisyonu anlaştığın kanaldan doğrudan ortağa ödersin. Ödeme ve teslimat alıcı ile satıcı arasında yapılır."],
+    [`${label} kategorisinde komisyon oranını kim belirler?`, "İlanı açan satıcı belirler — yüzde (%) veya sabit tutar (₺) olarak. Ortak, paylaşmadan önce kazancını ilanda net görür."],
+    [`OrtakSat ${label.toLocaleLowerCase("tr-TR")} alım satımında ödeme veya kargo yapar mı?`, "Hayır. OrtakSat aracı bir ilan ve eşleşme platformudur; para tutmaz, kargo yapmaz. Ödeme ve teslimatı alıcı ile satıcı kendi arasında yapar."],
+    [`${label} ürününü ortak olarak nasıl paylaşırım?`, "Ürüne ortak olursun ve sana özel bir referans linki oluşur. Bu linki Instagram, TikTok veya WhatsApp'ta paylaşırsın; linkten gelen alıcı satın alırsa komisyon senin olur."]
+  ];
+  return JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) });
+}
+
+// slug → okunur etiket (data-rh yoksa yedek). Örn "cep-telefonu" → "Cep Telefonu".
+function slugToLabel(slug) {
+  return slug.split("-").map((w) => (w ? w[0].toLocaleUpperCase("tr-TR") + w.slice(1) : w)).join(" ");
+}
+
+function patchCategoryHub(fp, slug) {
+  const html = fs.readFileSync(fp, "utf8");
+  const rhTitle = extractRh(html, RH_TITLE);
+  const label = rhTitle ? rhTitle.replace(/ ilanları — Ortak satış \| OrtakSat$/, "").trim() : slugToLabel(slug);
+  const title = rhTitle || `${label} ilanları — Ortak satış | OrtakSat`;
+  const description = extractRh(html, RH_DESC) || `${label} kategorisindeki ortak satış ilanlarını keşfet. Komisyonlu ürünleri incele, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
+  const url = `${BASE}/kategori/${slug}`;
+  const crumbs = [
+    { name: "Ana Sayfa", url: `${BASE}/` },
+    { name: "Kategoriler", url: `${BASE}/kategoriler` },
+    { name: label, url }
+  ];
+  return rewriteSeoHead(fp, { title, description, canonicalUrl: url, jsonld: [breadcrumbLd(crumbs), collectionLd(title, description, url, crumbs), catFaqLd(label)] });
+}
+
+function patchCityPage(fp, slug, citySlug) {
+  const html = fs.readFileSync(fp, "utf8");
+  const rhTitle = extractRh(html, RH_TITLE);
+  let city = slugToLabel(citySlug), label = slugToLabel(slug);
+  const m = rhTitle && rhTitle.match(/^(.*?)['’]da Komisyonla (.*?) İlanları \| OrtakSat$/);
+  if (m) { city = m[1]; label = m[2]; }
+  const title = rhTitle || `${city}'da Komisyonla ${label} İlanları | OrtakSat`;
+  const description = extractRh(html, RH_DESC) || `${city}'da komisyonlu ${label.toLocaleLowerCase("tr-TR")} ürünlerini keşfet. ${city} için ${label} kategorisindeki ortak satış ilanlarını incele, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
+  const url = `${BASE}/kategori/${slug}/${citySlug}`;
+  const crumbs = [
+    { name: "Ana Sayfa", url: `${BASE}/` },
+    { name: "Kategoriler", url: `${BASE}/kategoriler` },
+    { name: label, url: `${BASE}/kategori/${slug}` },
+    { name: `${city} ${label}`, url }
+  ];
+  return rewriteSeoHead(fp, { title, description, canonicalUrl: url, jsonld: [breadcrumbLd(crumbs), collectionLd(title, description, url, crumbs)] });
+}
+
+// Export yapısı: kategori/<slug>/index.html = HUB, kategori/<slug>/<sehir>.html = şehir.
+// (kategori/[slug] ve kategori/[slug].html dinamik fallback şablonlarıdır → atla.)
+function patchDynamicSeo() {
+  const katDir = path.join(DIST, "kategori");
+  if (!fs.existsSync(katDir)) return { hubs: 0, cities: 0 };
+  let hubs = 0, cities = 0;
+
+  for (const slug of fs.readdirSync(katDir)) {
+    if (slug.startsWith("[")) continue; // [slug] / [slug].html fallback şablonları
+    const sub = path.join(katDir, slug);
+    if (!fs.statSync(sub).isDirectory()) continue;
+    for (const f of fs.readdirSync(sub)) {
+      if (!f.endsWith(".html")) continue;
+      const fp = path.join(sub, f);
+      if (f === "index.html") {
+        if (patchCategoryHub(fp, slug)) hubs++;
+      } else {
+        if (patchCityPage(fp, slug, f.replace(/\.html$/, ""))) cities++;
+      }
+    }
+  }
+  return { hubs, cities };
 }
 
 export function patchSeo() {
@@ -223,8 +429,10 @@ export function patchSeo() {
   let blogN = 0;
   for (const p of blogPosts()) {
     const title = `${p.title} | OrtakSat Blog`;
-    if (patch(path.join("blog", `${p.slug}.html`), { title, description: p.excerpt, canonical: `/blog/${p.slug}` })) blogN++;
+    if (patch(path.join("blog", `${p.slug}.html`), { title, description: p.excerpt, canonical: `/blog/${p.slug}`, jsonld: blogArticleLd(p) })) blogN++;
   }
 
-  console.log(`post-export: SEO meta yazıldı — ${n} statik rota + ${blogN} blog yazısı`);
+  const dyn = patchDynamicSeo();
+
+  console.log(`post-export: SEO meta yazıldı — ${n} statik rota + ${blogN} blog yazısı + ${dyn.hubs} kategori + ${dyn.cities} şehir sayfası`);
 }

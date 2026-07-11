@@ -195,8 +195,10 @@ export default function CategoryLandingScreen() {
 
   const cardWidth = responsiveGrid({ available: Math.min(layoutWidth, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
   const title = node ? `${node.label} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
+  // SEO açıklaması: SABİT/evergreen — ilan SAYISI YAZMA. SSG bake'te sayı 0'dır ve
+  // "0 ortak satış ilanı" arama sonucunda sayfayı boş/değersiz gösterirdi.
   const desc = node
-    ? `${node.label} kategorisinde ${items.length} ortak satış ilanı. Komisyonlu ürünleri keşfet, ortak ol, kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`
+    ? `${node.label} kategorisindeki ortak satış ilanlarını keşfet. Komisyonlu ürünleri incele, ürününü ortak satışla daha çok kişiye ulaştır, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`
     : "OrtakSat kategori sayfası.";
   const url = `https://www.ortaksat.com/kategori/${slug}`;
 
