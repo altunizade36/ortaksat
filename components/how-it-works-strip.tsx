@@ -8,7 +8,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 // Gerçek, görsel "nasıl çalışır + neden güvenli" şeridi — ilk-izlenim + dönüşüm için.
 // Sahte veri/rakam YOK; yalnız modelin gerçek akışı + gerçek güven noktaları. CTA'lar çalışır.
 const STEPS: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; n: string; title: string; body: string; tint: string; color: string }> = [
-  { icon: "compass-outline", n: "1", title: "Keşfet veya İlan Ver", body: "Binlerce ürünü gez ya da kendi ürününü ücretsiz yayınla.", tint: colors.primarySoft, color: colors.primaryDark },
+  { icon: "compass-outline", n: "1", title: "Keşfet veya İlan Ver", body: "Ürünleri keşfet ya da kendi ürününü ücretsiz yayınla.", tint: colors.primarySoft, color: colors.primaryDark },
   { icon: "handshake-outline", n: "2", title: "Ortak Ol & Paylaş", body: "Beğendiğin ürüne ortak ol, paylaşım bağlantınla müşteri getir.", tint: colors.violetSoft, color: colors.violet },
   { icon: "cash-multiple", n: "3", title: "Komisyon Kazan", body: "Her satışta komisyonunu kazan — anlaşma ve talepler sistemde kayıt altında.", tint: colors.goldSoft, color: "#B7791F" }
 ];

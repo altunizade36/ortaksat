@@ -24,7 +24,7 @@ function AboutScreenStatic() {
         },
         {
           heading: translateCopy("Neden ortaksat?", language),
-          body: translateCopy("Tek bir ürünü yüzlerce ortağın ağına taşıyarak erişimini büyütürsün. Reklam bütçesi yerine sonuç bazlı komisyon ödersin: sadece satış olduğunda ödeme yaparsın.", language)
+          body: translateCopy("Tek bir ürünü ortak ağına taşıyarak erişimini büyütürsün. Reklam bütçesi yerine sonuç bazlı komisyon ödersin: sadece satış olduğunda ödeme yaparsın.", language)
         },
         {
           heading: translateCopy("İletişim", language),
