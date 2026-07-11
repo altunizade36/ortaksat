@@ -335,7 +335,15 @@ export default function ExploreFeedScreen() {
 
 function FeedMediaView({ item }: { item: FeedMedia }) {
   if (item.type === "video") return <VideoPlayer uri={item.uri} />;
-  return <Image source={{ uri: item.uri }} style={{ height: "100%", width: "100%" }} contentFit="cover" />;
+  // Instagram tarzı: bulanık dolgu arka plan (siyah bar yerine yumuşak zemin) + ürünün
+  // TAMAMI net görünür (contain → kırpma/aşırı-zoom yok, çerçeve nettir). Web+mobil+web-mobil.
+  return (
+    <View style={{ height: "100%", width: "100%" }}>
+      <Image source={{ uri: item.uri }} style={{ bottom: 0, left: 0, position: "absolute", right: 0, top: 0 }} contentFit="cover" blurRadius={Platform.OS === "web" ? 24 : 40} />
+      <View style={{ backgroundColor: "rgba(6,26,32,0.42)", bottom: 0, left: 0, position: "absolute", right: 0, top: 0 }} />
+      <Image source={{ uri: item.uri }} style={{ height: "100%", width: "100%" }} contentFit="contain" transition={140} />
+    </View>
+  );
 }
 
 function VideoPlayer({ uri }: { uri: string }) {
