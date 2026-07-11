@@ -1,5 +1,5 @@
 ﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -13,7 +13,9 @@ import { responsiveGrid, useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey } from "@/lib/locale";
 import { matchesQuery } from "@/lib/search";
-import type { Listing } from "@/lib/types";
+import { isSupabaseConfigured } from "@/lib/supabase";
+import { fetchListingsByIds } from "@/lib/supabase-data";
+import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 function FavoritesScreenInner() {
@@ -30,8 +32,33 @@ function FavoritesScreenInner() {
   const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 3 }).cardWidth;
   const tokens = searchKey(query).split(" ").filter(Boolean);
   const myFavs = favorites.filter((favorite) => favorite.userId === currentUser.id);
+
+  // Bellek penceresi (MP_MAX=600) dışında kalan favori ilanları sunucudan getir → favori
+  // sessizce kaybolmaz. Yüklü listelerde bulunanlar için sunucuya gidilmez.
+  const [extraListings, setExtraListings] = useState<Map<string, Listing>>(new Map());
+  const [extraUsers, setExtraUsers] = useState<Map<string, User>>(new Map());
+  const fetchedRef = useRef<Set<string>>(new Set());
+  const favIdsKey = myFavs.map((f) => f.listingId).sort().join(",");
+  useEffect(() => {
+    if (!isSupabaseConfigured) return;
+    const inMemory = new Set(listings.map((l) => l.id));
+    const missing = myFavs.map((f) => f.listingId).filter((id) => !inMemory.has(id) && !fetchedRef.current.has(id));
+    if (missing.length === 0) return;
+    missing.forEach((id) => fetchedRef.current.add(id));
+    let alive = true;
+    fetchListingsByIds(missing).then((res) => {
+      if (!alive || !res) return;
+      if (res.listings.length) setExtraListings((m) => { const n = new Map(m); res.listings.forEach((l) => n.set(l.id, l)); return n; });
+      if (res.users.length) setExtraUsers((m) => { const n = new Map(m); res.users.forEach((u) => n.set(u.id, u)); return n; });
+    }).catch(() => {});
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [favIdsKey, listings.length]);
+
+  const resolveListing = (id: string): Listing | undefined => listings.find((l) => l.id === id) ?? extraListings.get(id);
+  const resolveOwner = (ownerId: string): User | undefined => findUser(ownerId) ?? extraUsers.get(ownerId);
   const favoriteListings = myFavs
-    .map((favorite) => listings.find((listing) => listing.id === favorite.listingId))
+    .map((favorite) => resolveListing(favorite.listingId))
     .filter(Boolean);
   // Fiyat düşüşü/artışı göstergesi (spec 75): favoriye eklenen fiyat ile şu anki fiyat.
   const savedPriceById = new Map(myFavs.map((f) => [f.listingId, f.savedPrice]));
@@ -135,7 +162,7 @@ function FavoritesScreenInner() {
               <EmptyState title={translateCopy("Favori yok", language)} body={translateCopy("Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin.", language)} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} />
             ) : (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-                {filtered.map((listing) => <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} />)}
+                {filtered.map((listing) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} />)}
               </View>
             )}
           </View>
@@ -228,7 +255,7 @@ function FavoritesScreenInner() {
 
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap }}>
         {visibleListings.map((listing) =>
-          listing ? <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} /> : null
+          listing ? <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} /> : null
         )}
       </View>
       <PrimaryButton href="/(tabs)/explore" tone="secondary">{translateCopy("Keşfete dön", language)}</PrimaryButton>

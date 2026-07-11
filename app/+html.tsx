@@ -165,7 +165,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 #boot-splash {
   position: fixed; inset: 0; z-index: 99999;
   display: flex; align-items: center; justify-content: center;
-  background: #F4F6F8;
+  background: #F0FDFF;
   transition: opacity .38s ease;
 }
 #boot-splash .bs-inner { display: flex; flex-direction: column; align-items: center; gap: 20px; }
@@ -187,7 +187,7 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
-  background: #F4F6F8;
+  background: #F0FDFF;
   min-height: 100vh;
   min-height: 100dvh; /* iOS adres çubuğu açılıp kapanınca içerik zıplamaz/kesilmez */
 }
@@ -200,7 +200,7 @@ body {
   min-height: 100vh;
   min-height: 100dvh;
   margin: 0;
-  background: #F4F6F8;
+  background: #F0FDFF;
 }
 
 /* Polished custom scrollbar on desktop */
@@ -210,6 +210,16 @@ body {
   *::-webkit-scrollbar-thumb { background: rgba(14,165,183,0.30); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
   *::-webkit-scrollbar-thumb:hover { background: rgba(14,165,183,0.50); background-clip: content-box; }
   *::-webkit-scrollbar-track { background: transparent; }
+}
+
+/* Web sanallaştırma: ekran DIŞI ilan kartlarının layout/paint'ini tarayıcı atlar
+   (content-visibility:auto → off-screen'de contain:size). Dış sarmalayıcının width'i
+   açık (px) olduğundan yalnız yükseklik intrinsic'ten gelir; contain-intrinsic-size:auto
+   ilk render'dan sonra kartın GERÇEK boyutunu hatırlar (kaydırma zıplaması yok). Tek kural,
+   tüm kart yüzeylerini (explore/home/index/store/ortak/favoriler) kapsar; native yok sayar. */
+[data-vcard] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 340px;
 }
 
 /* Doğal odak: tarayıcının çirkin kare focus çerçevesini kaldır.

@@ -73,7 +73,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
   const etiketler = Array.isArray(listing.attributes?.etiketler) ? (listing.attributes!.etiketler as string[]).slice(0, 2) : [];
 
   return (
-    <View style={{ width }}>
+    <View dataSet={{ vcard: "1" }} style={{ width }}>
       <Link href={`/listing/${listing.id}`} asChild>
         <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1, width: "100%" })}>
           <View

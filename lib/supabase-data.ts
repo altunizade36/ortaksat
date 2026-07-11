@@ -467,6 +467,25 @@ export async function searchListings(params: {
   return { listings, users };
 }
 
+// Belirli ID'lerdeki herkese-açık ilan kartlarını sunucudan getirir (favoriler gibi
+// bellek-penceresi [MP_MAX] dışında kalabilecek ilanlar için). listing_public_cards
+// yalnız AKTİF ilanları içerir (feed ile parite; satılan/duraklatılan favori görünmez).
+export async function fetchListingsByIds(ids: string[]): Promise<{ listings: Listing[]; users: User[] } | null> {
+  if (!supabase) return null;
+  const uniq = Array.from(new Set(ids.filter(Boolean)));
+  if (uniq.length === 0) return { listings: [], users: [] };
+  // .in() sorgu-string'i şişmesin: en fazla 300 id (favori penceresi için fazlasıyla yeterli).
+  const capped = uniq.slice(0, 300);
+  const { data, error } = await supabase.from("listing_public_cards").select("*").in("id", capped);
+  if (error) return null;
+  const listings = ((data ?? []) as PublicListingCardRow[]).map(mapListing);
+  if (listings.length === 0) return { listings: [], users: [] };
+  const ownerIds = Array.from(new Set(listings.map((l) => l.ownerId)));
+  const { data: profileData } = await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).in("id", ownerIds);
+  const users = ((profileData ?? []) as ProfileRow[]).map(mapProfile);
+  return { listings, users };
+}
+
 export async function loadAccountSnapshot(userId: string): Promise<AccountSnapshot | null> {
   if (!supabase) return null;
 
