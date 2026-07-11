@@ -188,17 +188,19 @@ export default function ExploreScreen() {
   // tokens memoize edilir: activeListings useMemo bağımlılığı; her render'da yeni dizi
   // kimliği memo'yu geçersizleştirip ağır scoreListing'i tekrar koşturuyordu.
   const tokens = useMemo(() => searchKey(params.q ?? "").split(" ").filter(Boolean), [params.q]);
-  // Instagram-keşfeti tarzı: mobilde 3, masaüstünde 4 sütun; sıkı boşluk, karesi-ye yakın tile.
-  const gap = isWideWeb ? 12 : 6;
+  // Mobilde temiz 2-sütun ürün-kartı grid'i (görsel üstte + okunur beyaz metin altta);
+  // masaüstü zaten ListingCard kullanır. Sıkışık overlay-reel yerine premium kart.
+  const gap = isWideWeb ? 12 : 10;
   const padding = isWideWeb ? 20 : 12;
   const panelWidth = 260;
   // İçerik standart 1280 genişlikte ortalanır; grid hesabı da bu genişliğe göre.
   const contentW = Math.min(width, 1280);
   const gridArea = isWideWeb ? contentW - padding * 2 - panelWidth - 20 : contentW - padding * 2;
-  const grid = responsiveGrid({ available: gridArea, gap, minCardWidth: isWideWeb ? 205 : 104, maxColumns: 4 });
+  const grid = responsiveGrid({ available: gridArea, gap, minCardWidth: isWideWeb ? 205 : 158, maxColumns: isWideWeb ? 4 : 2 });
   const columns = grid.columns;
   const tileSize = grid.cardWidth;
-  const tileHeight = Math.min(isWideWeb ? 300 : 210, Math.round(tileSize * (isWideWeb ? 1.12 : 1.16)));
+  // Kart yüksekliği: kare görsel (tileSize) + okunur metin bölümü (~112px).
+  const tileHeight = tileSize + 112;
 
   const marketplaceListings = useMemo(() => {
     const visible = listings.filter((listing) => listing.status !== "draft" && listing.status !== "rejected" && listing.status !== "sold");
@@ -1463,39 +1465,37 @@ function ExploreTileBase({ height, item, language, onPress, order, size, t }: { 
   const subcategory = displayText(listing.category);
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.line, borderColor: "rgba(16,24,40,0.08)", borderRadius: 8, borderWidth: 1, height, opacity: pressed ? 0.82 : 1, overflow: "hidden", width: size })}>
-      <SafeRemoteImage uri={item.type === "video" ? item.poster : item.uri} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
-      <View style={{ backgroundColor: item.type === "video" ? "rgba(0,0,0,0.28)" : "rgba(0,0,0,0.14)", bottom: 0, left: 0, position: "absolute", right: 0, top: 0 }} />
-      {item.type === "video" ? (
-        <View style={{ alignItems: "center", justifyContent: "center", left: 0, position: "absolute", right: 0, top: height * 0.34 }}>
-          <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", width: 30 }}>
-            <MaterialCommunityIcons name="play" size={19} color={colors.primaryDark} />
-          </View>
+    <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height, opacity: pressed ? 0.92 : 1, overflow: "hidden", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, width: size })}>
+      {/* Görsel (kare, temiz zemin — dama-tahtası yok) */}
+      <View style={{ backgroundColor: colors.surfaceAlt, height: size, overflow: "hidden", width: "100%" }}>
+        <SafeRemoteImage uri={item.type === "video" ? item.poster : item.uri} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
+        <View style={{ left: 8, position: "absolute", right: 8, top: 8 }}>
+          <StatusLabel icon={status.icon} label={status.label} tone={status.tone} />
         </View>
-      ) : null}
-
-      <View style={{ left: 8, position: "absolute", right: 8, top: 8 }}>
-        <StatusLabel icon={status.icon} label={status.label} tone={status.tone} />
+        {item.type === "video" ? (
+          <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, bottom: 8, height: 30, justifyContent: "center", position: "absolute", right: 8, width: 30 }}>
+            <MaterialCommunityIcons name="play" size={18} color={colors.primaryDark} />
+          </View>
+        ) : null}
       </View>
-
-      <View style={{ backgroundColor: "rgba(0,0,0,0.58)", borderRadius: 8, bottom: 7, gap: 4, left: 7, paddingHorizontal: 8, paddingVertical: 7, position: "absolute", right: 7 }}>
-        <Text numberOfLines={2} style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900", lineHeight: 16, minHeight: 32 }}>
+      {/* Okunur metin bölümü (beyaz, alt) */}
+      <View style={{ flex: 1, gap: 3, paddingHorizontal: 9, paddingVertical: 8 }}>
+        <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", lineHeight: 16, minHeight: 32 }}>
           {displayText(listing.title)}
         </Text>
-        <Text numberOfLines={1} style={{ color: "#D8FFF6", fontSize: 10, fontWeight: "900" }}>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>
           {translateCopy(subcategory, language)}
         </Text>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-          <Text adjustsFontSizeToFit minimumFontScale={0.76} numberOfLines={1} style={{ color: "#FFFFFF", flex: 1, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-            {money(listing.price)}
-          </Text>
-          <Text adjustsFontSizeToFit minimumFontScale={0.76} numberOfLines={1} style={{ color: "#BFF3E7", flex: 1.2, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900", textAlign: "right" }}>
-            {t("earning")}: {money(commission)}
-          </Text>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "space-between" }}>
+          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{money(listing.price)}</Text>
+          <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{displayText(listing.location)}</Text>
         </View>
-        <View style={{ gap: 2 }}>
-          <InfoRow icon="map-marker" label={`${displayText(listing.location)} / ${listing.stockCount} ${t("stock")}`} />
-        </View>
+        {commission > 0 ? (
+          <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 7, flexDirection: "row", gap: 4, paddingHorizontal: 7, paddingVertical: 3 }}>
+            <MaterialCommunityIcons name="cash-multiple" size={12} color={colors.primaryDark} />
+            <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{t("earning")} {money(commission)}</Text>
+          </View>
+        ) : null}
       </View>
     </Pressable>
   );
@@ -1533,23 +1533,12 @@ function ExploreStat({ icon, label, value }: { icon: keyof typeof MaterialCommun
 }
 
 function StatusLabel({ icon, label, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone: "primary" | "dark" | "warning" }) {
-  const backgroundColor = tone === "primary" ? "rgba(0,135,111,0.96)" : tone === "warning" ? "rgba(183,121,31,0.96)" : "rgba(17,24,39,0.78)";
+  const backgroundColor = tone === "primary" ? "rgba(14,165,183,0.96)" : tone === "warning" ? "rgba(245,158,11,0.97)" : "rgba(15,23,42,0.78)";
 
   return (
     <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor, borderRadius: 999, flexDirection: "row", gap: 4, justifyContent: "center", maxWidth: "100%", minHeight: 24, paddingHorizontal: 9 }}>
       <MaterialCommunityIcons name={icon} size={11} color="#FFFFFF" />
       <Text adjustsFontSizeToFit minimumFontScale={0.74} numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: 10, fontWeight: "900" }}>
-        {label}
-      </Text>
-    </View>
-  );
-}
-
-function InfoRow({ icon, label, strong }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; strong?: boolean }) {
-  return (
-    <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: strong ? "rgba(0,135,111,0.92)" : "rgba(255,255,255,0.18)", borderRadius: 999, flexDirection: "row", gap: 4, maxWidth: "100%", minHeight: 20, paddingHorizontal: 7 }}>
-      <MaterialCommunityIcons name={icon} size={10} color="#FFFFFF" />
-      <Text adjustsFontSizeToFit minimumFontScale={0.72} numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: 10, fontWeight: "900" }}>
         {label}
       </Text>
     </View>
