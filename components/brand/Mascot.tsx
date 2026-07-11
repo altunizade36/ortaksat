@@ -2,7 +2,8 @@ import { Image } from "expo-image";
 import { View, type ViewStyle } from "react-native";
 
 import { useIsWideWeb } from "@/lib/layout";
-import { MASCOT_ALT, mascotSrc, type MascotName } from "@/lib/mascots";
+import { mascotSource } from "@/lib/mascot-source";
+import { MASCOT_ALT, type MascotName } from "@/lib/mascots";
 
 // OrtakSat maskot bileşeni. Görseller şeffaf zeminli; turkuaz alanlarda `panel` ile
 // açık bir daire arkalık gösterilir (kullanıcı isteği: maskot beyaz/#F0FDFF daire içinde).
@@ -25,7 +26,7 @@ export function Mascot({
   const wide = useIsWideWeb();
   const img = (
     <Image
-      source={{ uri: mascotSrc(name, wide) }}
+      source={mascotSource(name, wide)}
       style={{ height: size, width: size }}
       contentFit="contain"
       priority={priority ? "high" : "normal"}

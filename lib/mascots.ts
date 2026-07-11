@@ -1,8 +1,7 @@
 // OrtakSat maskot kaydı — 8 poz, her biri belirli bir bağlam için (bkz Mascot.tsx).
 // Görseller public/assets/mascot/ altında WebP (1024 masaüstü, 512 mobil), şeffaf zeminli.
+// Kaynak çözümü platforma göre: web → mascot-source.ts (URI), native → mascot-source.native.ts (require).
 export type MascotName = "success" | "mobile" | "package" | "approved" | "thinking" | "laptop" | "idea" | "heart";
-
-const BASE = "/assets/mascot";
 
 export const MASCOT_ALT: Record<MascotName, string> = {
   success: "OrtakSat maskotu başparmak kaldırıyor",
@@ -14,6 +13,3 @@ export const MASCOT_ALT: Record<MascotName, string> = {
   idea: "OrtakSat maskotu fikir buldu",
   heart: "OrtakSat maskotu kalp tutuyor"
 };
-
-// Masaüstünde 1024, mobilde 512 sürümünü ver.
-export const mascotSrc = (name: MascotName, wide: boolean) => `${BASE}/webp-${wide ? 1024 : 512}/${name}.webp`;
