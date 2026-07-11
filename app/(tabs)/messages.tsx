@@ -375,7 +375,7 @@ function MessagesScreenInner() {
                 </View>
 
                 <ScrollView ref={deskScrollRef} scrollEventThrottle={16} onScroll={(e) => { const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent; deskNearBottomRef.current = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120; }} onContentSizeChange={() => { if (deskNearBottomRef.current) deskScrollRef.current?.scrollToEnd({ animated: false }); }} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-start", padding: 22 }}>
-                  {activeMessages.length === 0 ? <EmptyState title={translateCopy("Henüz mesaj yok", language)} body={translateCopy("İlk mesajı yaz ve konuşmayı başlat.", language)} /> : null}
+                  {activeMessages.length === 0 ? <EmptyState title={translateCopy("Henüz mesaj yok", language)} body={translateCopy("İlk mesajı yaz ve konuşmayı başlat.", language)} mascot="mobile" /> : null}
                   {activeMessages.map((m, i) => {
                     const mine = m.senderId === currentUser.id;
                     const showDay = i === 0 || msgDay(m.createdAt) !== msgDay(activeMessages[i - 1].createdAt);
@@ -552,8 +552,8 @@ function MessagesScreenInner() {
       </View>
 
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 28 : 96 }}>
-      {myConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noConversation")} body={t("noConversationBody")} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} /></View> : null}
-      {myConversations.length > 0 && visibleConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noResults")} body={t("searchOrFilterAgain")} /></View> : null}
+      {myConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noConversation")} body={t("noConversationBody")} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="mobile" /></View> : null}
+      {myConversations.length > 0 && visibleConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noResults")} body={t("searchOrFilterAgain")} mascot="thinking" /></View> : null}
 
       {visibleConversations.map((conversation) => {
         const listing = findListing(conversation.listingId);

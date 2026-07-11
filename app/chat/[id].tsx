@@ -271,7 +271,7 @@ function ChatScreenInner() {
         contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, justifyContent: conversationMessages.length === 0 ? "center" : "flex-start", padding: 12, paddingBottom: 16 }}
       >
         {conversationMessages.length === 0 ? (
-          <EmptyState title={language === "en" ? "No messages yet" : "Henüz mesaj yok"} body={language === "en" ? "Write the first message and start the conversation." : "İlk mesajı yaz ve konuşmayı başlat."} />
+          <EmptyState title={language === "en" ? "No messages yet" : "Henüz mesaj yok"} body={language === "en" ? "Write the first message and start the conversation." : "İlk mesajı yaz ve konuşmayı başlat."} mascot="mobile" />
         ) : null}
         {conversationMessages.map((message, i) => {
           const mine = message.senderId === currentUser.id;

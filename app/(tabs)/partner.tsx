@@ -668,7 +668,7 @@ function PartnerScreenInner() {
       </Card>
 
       {myPartnerships.length === 0 ? <QuickStart role="partner" /> : null}
-      {myPartnerships.length > 0 && visiblePartnerships.length === 0 ? <EmptyState title={t("noResults")} body={t("partnerNoResultBody")} /> : null}
+      {myPartnerships.length > 0 && visiblePartnerships.length === 0 ? <EmptyState title={t("noResults")} body={t("partnerNoResultBody")} mascot="thinking" /> : null}
 
       {visiblePartnerships.map(renderPartnershipCard)}
       </WebContainer>

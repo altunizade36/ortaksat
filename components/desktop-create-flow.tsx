@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { CategoryPicker } from "@/components/category-picker";
+import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
@@ -780,7 +781,13 @@ export function DesktopCreateFlow() {
 
         {step === 5 ? (
           <View style={{ gap: 14 }}>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Önizleme & Yayınla", language)}</Text>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+              <Mascot name="approved" size={56} />
+              <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Önizleme & Yayınla", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Her şey hazır! Son bir kez göz at ve yayınla.", language)}</Text>
+              </View>
+            </View>
             <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
               <View style={{ borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden", width: 280 }}>
                 <View style={{ backgroundColor: colors.line, height: 170, width: "100%" }}><SafeRemoteImage uri={coverImage} style={{ height: "100%", width: "100%" }} contentFit="cover" /></View>

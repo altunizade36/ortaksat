@@ -4,6 +4,7 @@ import Head from "expo-router/head";
 import { useState, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
+import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { subscribeNewsletterLive } from "@/lib/live-service";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -67,9 +68,12 @@ export default function BlogPage() {
         <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
         <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>Blog</Text>
       </View>
-      <View style={{ gap: 4 }}>
-        <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900" }}>OrtakSat Blog</Text>
-        <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>Ortak satış, e-ticaret ve girişimcilik üzerine rehberler, ipuçları ve ilham veren içerikler.</Text>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
+        <Mascot name="idea" size={72} />
+        <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
+          <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900" }}>OrtakSat Blog</Text>
+          <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600" }}>Ortak satış, e-ticaret ve girişimcilik üzerine rehberler, ipuçları ve ilham veren içerikler.</Text>
+        </View>
       </View>
 
       <View style={{ alignItems: "flex-start", flexDirection: isWideWeb ? "row" : "column", gap: 20 }}>

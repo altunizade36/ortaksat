@@ -507,7 +507,7 @@ function SellerScreenInner() {
 
       {myListings.length === 0 ? <QuickStart role="seller" /> : null}
       {myListings.length > 0 && visibleListings.length === 0 ? (
-        <EmptyState title={t("noResults")} body={t("sellerNoResultBody")} />
+        <EmptyState title={t("noResults")} body={t("sellerNoResultBody")} mascot="thinking" />
       ) : null}
 
       {visibleListings.map((listing) => {
