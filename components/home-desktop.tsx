@@ -5,6 +5,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { BrandFilter } from "@/components/brand-filter";
 import { colors } from "@/components/colors";
+import { HowItWorksStrip } from "@/components/how-it-works-strip";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
@@ -455,6 +456,9 @@ export function HomeDesktop() {
             </ScrollView>
           </View>
         ) : null}
+
+        {/* 3 Adımda OrtakSat — gerçek/görsel nasıl-çalışır + güven şeridi (ilk-izlenim + dönüşüm) */}
+        <HowItWorksStrip />
 
         {/* Popüler kategoriler */}
         <View style={{ gap: 10 }}>

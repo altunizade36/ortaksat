@@ -7,6 +7,7 @@ import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshCo
 
 import { colors } from "@/components/colors";
 import { HomeDesktop } from "@/components/home-desktop";
+import { HowItWorksStrip } from "@/components/how-it-works-strip";
 import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SkeletonGrid } from "@/components/skeleton";
@@ -207,6 +208,9 @@ export default function HomeScreen() {
             <MobileHeroCluster />
           </View>
           <CategoryShowcase categoryTree={categoryTree} isWideWeb={false} />
+
+          {/* 3 Adımda OrtakSat — gerçek/görsel nasıl-çalışır + güven şeridi (mobil ilk-izlenim) */}
+          <HowItWorksStrip />
 
           {/* En çok kazandıran fırsatlar (mobil şerit) */}
           {topEarn.length > 0 ? (
