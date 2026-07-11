@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { Tabs } from "expo-router";
 import type { ColorValue } from "react-native";
 import { Platform, View } from "react-native";
@@ -29,30 +30,36 @@ const activeIcons: Record<TabKey, keyof typeof MaterialCommunityIcons.glyphMap> 
 
 function tabIcon(name: TabKey) {
   return ({ color, focused }: { color: ColorValue; focused: boolean }) => {
+    // Merkez "İlan Ver" — premium yükseltilmiş gradient FAB (bar'ın üstüne taşar).
     if (name === "create-action") {
       return (
-        <View
-          style={{
-            alignItems: "center",
-            backgroundColor: focused ? colors.primaryDark : colors.primary,
-            borderColor: "#FFFFFF",
-            borderRadius: 22,
-            borderWidth: 5,
-            height: 58,
-            justifyContent: "center",
-            marginBottom: 8,
-            shadowColor: colors.primaryDark,
-            shadowOffset: { width: 0, height: 10 },
-            shadowOpacity: 0.22,
-            shadowRadius: 16,
-            width: 58
-          }}
-        >
-          <MaterialCommunityIcons name={focused ? activeIcons[name] : tabIcons[name]} size={25} color="#FFFFFF" />
+        <View style={{ alignItems: "center", height: 58, justifyContent: "center", marginBottom: 22, width: 58 }}>
+          <LinearGradient
+            colors={focused ? ["#0EA5B7", "#0891B2"] : ["#14B8C4", "#0891B2"]}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={{
+              alignItems: "center",
+              borderColor: colors.surface,
+              borderRadius: 20,
+              borderWidth: 4,
+              height: 58,
+              justifyContent: "center",
+              shadowColor: "#0891B2",
+              shadowOffset: { width: 0, height: 8 },
+              shadowOpacity: 0.4,
+              shadowRadius: 14,
+              width: 58,
+              ...(Platform.OS === "android" ? { elevation: 10 } : null)
+            }}
+          >
+            <MaterialCommunityIcons name="plus" size={30} color="#FFFFFF" />
+          </LinearGradient>
         </View>
       );
     }
 
+    // Diğer sekmeler — aktifken yumuşak turkuaz hap arkalık + dolu ikon.
     return (
       <View
         style={{
@@ -61,10 +68,10 @@ function tabIcon(name: TabKey) {
           borderRadius: 999,
           height: 34,
           justifyContent: "center",
-          width: 42
+          width: 46
         }}
       >
-        <MaterialCommunityIcons name={focused ? activeIcons[name] : tabIcons[name]} size={22} color={String(color)} />
+        <MaterialCommunityIcons name={focused ? activeIcons[name] : tabIcons[name]} size={focused ? 23 : 22} color={String(color)} />
       </View>
     );
   };
@@ -90,35 +97,37 @@ export default function TabsLayout() {
           fontWeight: "900"
         },
         tabBarHideOnKeyboard: true,
-        tabBarInactiveTintColor: colors.ink,
+        tabBarInactiveTintColor: colors.subtle,
         tabBarItemStyle: {
-          height: 66,
-          paddingTop: 5
+          height: 64,
+          paddingTop: 6
         },
         tabBarLabelPosition: "below-icon",
         tabBarLabelStyle: {
           fontSize: 10,
-          fontWeight: "900",
+          fontWeight: "800",
+          letterSpacing: 0.1,
           lineHeight: 12,
-          marginTop: 2
+          marginTop: 3
         },
         tabBarStyle: isWeb ? { display: "none" } : {
           backgroundColor: colors.surface,
-          borderColor: "rgba(16,24,40,0.08)",
-          borderRadius: 26,
+          borderColor: colors.line,
+          borderRadius: 28,
           borderTopWidth: 1,
           borderWidth: 1,
-          bottom: Math.max(insets.bottom, 10),
-          height: 74,
-          left: 12,
+          bottom: Math.max(insets.bottom, 12),
+          height: 70,
+          left: 14,
           paddingBottom: 8,
-          paddingTop: 8,
+          paddingTop: 9,
           position: "absolute",
-          right: 12,
-          shadowColor: "#101828",
-          shadowOffset: { width: 0, height: 14 },
-          shadowOpacity: 0.15,
-          shadowRadius: 22
+          right: 14,
+          shadowColor: "#0B3A44",
+          shadowOffset: { width: 0, height: 12 },
+          shadowOpacity: 0.16,
+          shadowRadius: 24,
+          ...(Platform.OS === "android" ? { elevation: 12 } : null)
         }
       }}
     >
