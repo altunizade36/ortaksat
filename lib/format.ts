@@ -75,12 +75,21 @@ export function tierRate(tiers: Array<{ minSales: number; rate: number }> | unde
  * Bir satış için EFEKTİF komisyon (öncelik sırası): 1) per-ortak override, 2) kademeli
  * (rate) oran (ortağın o ilandaki kümülatif satışına göre), 3) ilan varsayılanı.
  */
+// Öncelik: satıcı per-ortak override > KİLİTLİ agreed snapshot (Faz 3) > canlı ilan.
+// Böylece satıcı ilanı sonradan düzenlese de MEVCUT ortağın komisyonu değişmez.
+// (Sunucu tarafı otorite: partnerships.agreed_* trigger ile ilandan kilitlenir; DB
+//  compute_agreed_commission fonksiyonu aynı mantığı sunucuda uygular.)
 export function effectiveCommissionAmount(listing: Listing, partnership: Partnership | undefined, priorSales: number, amount: number, quantity: number): number {
   const qty = Math.max(1, Math.floor(quantity || 1));
   if (partnership?.commissionOverrideType && typeof partnership.commissionOverrideValue === "number") {
     return partnership.commissionOverrideType === "rate"
       ? Math.round((amount * partnership.commissionOverrideValue) / 100)
       : Math.round(partnership.commissionOverrideValue * qty);
+  }
+  if (partnership?.agreedCommissionType && typeof partnership.agreedCommissionValue === "number") {
+    return partnership.agreedCommissionType === "rate"
+      ? Math.round((amount * tierRate(partnership.agreedCommissionTiers, partnership.agreedCommissionValue, priorSales)) / 100)
+      : Math.round(partnership.agreedCommissionValue * qty);
   }
   if (listing.commissionType === "rate") {
     return Math.round((amount * tierRate(listing.commissionTiers, listing.commissionValue, priorSales)) / 100);

@@ -111,6 +111,15 @@ export type Partnership = {
   // Satıcının bu ortağa ÖZEL komisyonu (ilan varsayılanını ezer). İkisi de tanımlıysa uygulanır.
   commissionOverrideType?: CommissionType;
   commissionOverrideValue?: number;
+  // Faz 3: ortak katılınca KİLİTLENEN şartlar. Satıcı ilanı sonradan düzenlese de bu ortağın
+  // anlaşması değişmez (komisyon bu snapshot'tan hesaplanır). Eski ortaklıklarda tanımsız → canlı ilana düşer.
+  agreedCommissionType?: CommissionType;
+  agreedCommissionValue?: number;
+  agreedCommissionTiers?: Array<{ minSales: number; rate: number }>;
+  agreedAttributionWindowDays?: number;
+  agreedReturnWindowDays?: number;
+  agreedCommissionDueDays?: number;
+  agreedAt?: string;
 };
 
 export type Lead = {

@@ -562,7 +562,14 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       approvedAt: row.approved_at?.slice(0, 10),
       createdAt: row.created_at.slice(0, 10),
       commissionOverrideType: row.commission_override_type ?? undefined,
-      commissionOverrideValue: row.commission_override_value != null ? toNumber(row.commission_override_value) : undefined
+      commissionOverrideValue: row.commission_override_value != null ? toNumber(row.commission_override_value) : undefined,
+      agreedCommissionType: row.agreed_commission_type ?? undefined,
+      agreedCommissionValue: row.agreed_commission_value != null ? toNumber(row.agreed_commission_value) : undefined,
+      agreedCommissionTiers: row.agreed_commission_tiers ?? undefined,
+      agreedAttributionWindowDays: row.agreed_attribution_window_days ?? undefined,
+      agreedReturnWindowDays: row.agreed_return_window_days ?? undefined,
+      agreedCommissionDueDays: row.agreed_commission_due_days ?? undefined,
+      agreedAt: row.agreed_at?.slice(0, 10)
     })),
     leads: (leadsResult.data ?? []).map((row) => ({
       id: row.id,

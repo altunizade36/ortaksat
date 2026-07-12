@@ -25,6 +25,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { SafetyNote } from "@/components/safety-note";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingInviteCode, moneyIn, partnerInviteUrl, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
+import { categoryConversion } from "@/lib/conversion";
 import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
@@ -657,6 +658,19 @@ export default function ListingDetailScreen() {
               <Text style={{ color: colors.primaryDark, fontSize: 17, fontWeight: "900" }}>{moneyIn(commission, currentListing.currency)}</Text>
             </View>
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy("Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.", language)}</Text>
+            {/* Faz 4: kategori-bazlı dönüşüm olayı — komisyon HANGİ olayda hak edilir. */}
+            {(() => {
+              const conv = categoryConversion(currentListing.category);
+              return (
+                <View style={{ alignItems: "flex-start", backgroundColor: colors.surface, borderRadius: 9, flexDirection: "row", gap: 7, marginTop: 4, padding: 9 }}>
+                  <MaterialCommunityIcons name={conv.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={15} color={colors.primaryDark} style={{ marginTop: 1 }} />
+                  <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                    <Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Komisyon şu olayda hak edilir", language)}: {translateCopy(conv.event, language)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy(conv.hint, language)}</Text>
+                  </View>
+                </View>
+              );
+            })()}
           </View>
 
           {/* İlan Bilgileri (Sahibinden tarzı) — kategoriye özel skaler özellikler,
@@ -718,6 +732,14 @@ export default function ListingDetailScreen() {
                 <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · paylaşım bağlantın hazır", language)}</Text>
               </View>
               {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
+              {partnership?.agreedAt ? (
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                  <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "700" }}>
+                    {translateCopy("Komisyon şartların ortak olduğun anda kilitlendi — satıcı ilanı düzenlese de değişmez.", language)}
+                  </Text>
+                </View>
+              ) : null}
             </View>
           ) : partnership?.status === "pending" ? (
             <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>

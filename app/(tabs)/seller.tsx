@@ -19,6 +19,7 @@ import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { haptic } from "@/lib/haptics";
 import { shareOrCopy } from "@/lib/share";
+import { categoryConversion } from "@/lib/conversion";
 import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { loadClickCounts } from "@/lib/live-service";
 import { searchKey } from "@/lib/locale";
@@ -737,7 +738,7 @@ function SellerScreenInner() {
                             style={({ pressed }) => ({ alignItems: "center", backgroundColor: canSell ? colors.primary : colors.line, borderRadius: 8, flexDirection: "row", flexGrow: 1, gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
                           >
                             <MaterialCommunityIcons name="cash-plus" size={15} color="#FFFFFF" />
-                            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(canSell ? "Satış ekle" : (listing.stockCount <= 0 ? "Stok yok" : "İlan pasif"), language)}</Text>
+                            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy(canSell ? categoryConversion(listing.category).sellerVerb : (listing.stockCount <= 0 ? "Stok yok" : "İlan pasif"), language)}</Text>
                           </Pressable>
                           <Pressable
                             onPress={() => setCommissionTarget({ partnershipId: p.id, partnerName, currency: listing.currency, defaultLabel: listing.commissionType === "rate" ? `%${listing.commissionValue}` : moneyIn(listing.commissionValue, listing.currency), currentType: p.commissionOverrideType, currentValue: p.commissionOverrideValue })}

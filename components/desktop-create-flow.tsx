@@ -14,6 +14,7 @@ import { LocationSelector, type LocationValue } from "@/components/location-sele
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { modelsForSchema, deriveFieldsFromPath, describeAttributes, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { CURRENCIES, moneyIn, type CurrencyCode } from "@/lib/format";
+import { categoryConversion } from "@/lib/conversion";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { formatLocation, getProvince } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
@@ -699,6 +700,19 @@ export function DesktopCreateFlow() {
         {step === 4 ? (
           <View style={{ gap: 16 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Komisyon & Ortak Satış", language)}</Text>
+            {/* Faz 4: bu kategoride komisyon HANGİ olayda hak edilir. */}
+            {(() => {
+              const conv = categoryConversion(leafLabel);
+              return (
+                <View style={{ alignItems: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 9, padding: 12 }}>
+                  <MaterialCommunityIcons name={conv.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={17} color={colors.primaryDark} style={{ marginTop: 1 }} />
+                  <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Komisyon şu olayda hak edilir", language)}: {translateCopy(conv.event, language)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{translateCopy(conv.hint, language)}</Text>
+                  </View>
+                </View>
+              );
+            })()}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
               <View style={{ flex: 1, gap: 6, minWidth: 200 }}>
                 <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Komisyon tipi", language)}</Text>
