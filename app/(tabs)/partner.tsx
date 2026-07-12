@@ -809,6 +809,15 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
             </Text>
             <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{moneyIn(myCommission, listing.currency)}</Text>
           </View>
+          {/* Faz 3: ortağa kilitli-şartlar güvencesi. */}
+          {partnership.agreedAt ? (
+            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 9, paddingVertical: 6 }}>
+              <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>
+                {translateCopy("Komisyon şartların kilitli — satıcı ilanı düzenlese de değişmez", language)} · {translateCopy("atıf", language)} {partnership.agreedAttributionWindowDays ?? listing.attributionWindowDays} {translateCopy("gün", language)}
+              </Text>
+            </View>
+          ) : null}
           <Text selectable style={{ color: colors.info, fontSize: 13, lineHeight: 19 }}>{url}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}><PrimaryButton tone="secondary" onPress={() => actions.copy("Satış bağlantısı", url)}>Kopyala</PrimaryButton></View>
