@@ -59,7 +59,7 @@ async function measure(page: Page, label: string) {
   d.bloated.forEach((b) => console.log("     ŞİŞKİN: " + b));
 }
 
-const TERMS = ["satılık daire", "ofis", "buzdolabı", "koltuk", "laptop", "iphone", "bisiklet", "traktör", "ayakkabı", "kamera"];
+const TERMS = ["fren balata", "yedek parça", "boya badana", "matematik", "bakıcı", "köpek", "logo tasarım", "temizlik"];
 
 test("YAPRAK ARAMA: gerçekten forma inip donanım bölümü + şişme denetimi", async ({ page }) => {
   await page.setViewportSize({ width: VW, height: 844 });

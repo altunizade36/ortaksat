@@ -435,6 +435,17 @@ const GENEL_ETIKET = ["Sıfır", "Az Kullanılmış", "Garantili", "Faturalı", 
 const GENEL_ETIKET_FIELD: FieldDef = { key: "etiketler", label: "İlan etiketleri", type: "multiselect", options: GENEL_ETIKET };
 const URUN_OZELLIK = ["Garantili", "Faturalı", "Kutusunda", "Aksesuarları Tam", "Şarj Aleti / Adaptör Dahil", "Kılıf / Kap Dahil", "Ekran Koruyucu", "Servis Bakımlı"];
 const URUN_OZELLIK_FIELD: FieldDef = { key: "urunOzellik", label: "Ürün özellikleri / dahil olanlar", type: "multiselect", options: URUN_OZELLIK };
+// --- Zayıf şemaları güçlendiren ortak seçenekler (yedek parça / hizmet / iş / ders / hayvan / yardımcı) ---
+const PARCA_ETIKET = ["Orijinal", "Sıfır", "Garantili", "Faturalı", "Az Kullanılmış", "Kutusunda", "Montaj Dahil", "Ücretsiz Kargo", "Takasa Uygun", "Acil"];
+const PARCA_KONUM = ["Fark etmez", "Ön", "Arka", "Sağ", "Sol", "Ön Sağ", "Ön Sol", "Arka Sağ", "Arka Sol", "Üst", "Alt", "İç", "Dış"];
+const PARCA_ORIGIN = ["Orijinal (OEM)", "Muadil / Eşdeğer", "Yan Sanayi", "Çıkma (Orijinal)", "Yenilenmiş (Refurbished)"];
+const HIZMET_KAPSAM = ["Ücretsiz Keşif", "Malzeme Dahil", "İşçilik Garantili", "Acil / 7-24", "Hafta Sonu Çalışır", "Fatura Kesilir", "Sigortalı Ekip", "Sözleşmeli", "Nakliye Dahil", "Temizlik Dahil"];
+const HIZMET_ODEME = ["Nakit", "Havale / EFT", "Kredi Kartı", "Kapıda Ödeme", "Taksitli"];
+const IS_YAN_HAK = ["Yemek Kartı", "Yol / Servis", "Özel Sağlık Sigortası", "Prim / Bonus", "Esnek Mesai", "Uzaktan Çalışma", "Eğitim Desteği", "Bilgisayar / Telefon", "Yıllık İzin +", "Kreş Desteği"];
+const DERS_SINAV = ["YKS / TYT-AYT", "LGS", "KPSS", "ALES", "DGS", "YDS / YÖKDİL", "IELTS", "TOEFL", "SAT", "Okul Dersleri", "Sınav Yok"];
+const HAYVAN_UYGUN = ["Çocuklu Eve Uygun", "Apartman Dairesine Uygun", "Bahçeli Ev Gerekir", "Diğer Hayvanlarla Uyumlu", "Deneyimli Sahip Arıyor", "Sadece Ev İçi", "Alerjik Dostu"];
+const YARDIMCI_GOREV = ["Çocuk Bakımı", "Yaşlı Bakımı", "Hasta Bakımı", "Ev Temizliği", "Yemek Yapma", "Ütü / Çamaşır", "Alışveriş", "Şoförlük", "Bahçe Bakımı", "Evcil Hayvan Bakımı"];
+
 const MODA_SEZON: FieldDef = { key: "sezon", label: "Sezon", type: "select", options: ["İlkbahar / Yaz", "Sonbahar / Kış", "4 Mevsim"] };
 const MODA_DESEN: FieldDef = { key: "desen", label: "Desen", type: "select", options: ["Düz", "Çizgili", "Kareli", "Çiçekli", "Desenli", "Baskılı", "Ekose"] };
 const MODA_KESIM: FieldDef = { key: "kesim", label: "Kalıp / kesim", type: "select", options: ["Slim Fit", "Regular Fit", "Oversize", "Skinny", "Straight", "Bol Kesim"] };
@@ -911,16 +922,38 @@ export const formSchemas: Record<string, FormSchema> = {
       F.price, F.takas, VASITA_ETIKET_FIELD, F.desc
     ]
   },
+  // EN BÜYÜK KATEGORİ (1393 yaprak) — eskiden yalnız 10 alanla sığ kalıyordu.
+  // Parça aramasında belirleyici olan alanlar (parça no, uyumluluk, konum) eklendi.
   yedekParca: {
     key: "yedekParca",
     title: "Parça / aksesuar bilgileri",
     fields: [
       F.title,
-      { key: "compatBrand", label: "Uyumlu marka", type: "text" },
-      { key: "compatModel", label: "Uyumlu model", type: "text" },
+      { key: "partNo", label: "Parça numarası (OEM)", type: "text", group: "Parça Bilgileri", placeholder: "ör. 1K0615301AA" },
+      { key: "partBrand", label: "Parça markası", type: "text", group: "Parça Bilgileri", placeholder: "ör. Bosch, Valeo, Mann" },
+      { key: "origin", label: "Parça tipi", type: "select", required: true, group: "Parça Bilgileri", options: PARCA_ORIGIN },
+      { key: "partPosition", label: "Takıldığı konum", type: "select", group: "Parça Bilgileri", options: PARCA_KONUM },
+      { key: "packQty", label: "Paket içeriği (adet)", type: "number", group: "Parça Bilgileri" },
+
+      { key: "compatBrand", label: "Uyumlu marka", type: "text", required: true, group: "Uyumluluk" },
+      { key: "compatModel", label: "Uyumlu model", type: "text", required: true, group: "Uyumluluk" },
+      { key: "compatYear", label: "Uyumlu yıl aralığı", type: "text", group: "Uyumluluk", placeholder: "ör. 2012-2018" },
+      { key: "compatEngine", label: "Uyumlu motor / hacim", type: "text", group: "Uyumluluk", placeholder: "ör. 1.6 TDI" },
+      { key: "compatBody", label: "Uyumlu kasa tipi", type: "text", group: "Uyumluluk", placeholder: "ör. Sedan, HB" },
+
       F.durum,
-      { key: "origin", label: "Orijinal / yan sanayi", type: "select", options: ["Orijinal", "Yan Sanayi", "Çıkma"] },
-      F.garanti, F.stok, F.price, F.kargo, F.desc
+      F.garanti,
+      { key: "warrantyMonths", label: "Garanti süresi (ay)", type: "number", group: "Durum & Garanti" },
+      F.fatura,
+      { key: "returnable", label: "İade / değişim kabul", type: "bool", group: "Durum & Garanti" },
+
+      { key: "installService", label: "Montaj hizmeti var mı?", type: "bool", group: "Satış & Teslimat" },
+      F.stok,
+      F.price,
+      F.pazarlik,
+      F.kargo,
+      { key: "etiketler", label: "İlan etiketleri", type: "multiselect", options: PARCA_ETIKET },
+      F.desc
     ]
   },
   alisverisGenel: {
@@ -1056,12 +1089,23 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Hizmet bilgileri",
     fields: [
       { key: "title", label: "Hizmet başlığı", type: "text", required: true },
-      { key: "serviceType", label: "Hizmet tipi", type: "select", required: true, options: ["Yerinde", "Uzaktan", "Randevulu"] },
-      { key: "priceType", label: "Fiyat tipi", type: "select", required: true, options: ["Sabit", "Saatlik", "Proje bazlı", "Teklif al"] },
-      { key: "price", label: "Başlangıç fiyatı", type: "number", suffix: "₺" },
-      { key: "experience", label: "Deneyim (yıl)", type: "number" },
-      { key: "certificate", label: "Sertifika var mı?", type: "bool" },
-      { key: "workHours", label: "Çalışma saatleri", type: "text" },
+      { key: "serviceType", label: "Hizmet tipi", type: "select", required: true, group: "Hizmet Bilgileri", options: ["Yerinde", "Uzaktan", "Randevulu", "Atölyede"] },
+      { key: "serviceArea", label: "Hizmet bölgesi", type: "text", group: "Hizmet Bilgileri", placeholder: "ör. İstanbul Avrupa Yakası" },
+      { key: "teamSize", label: "Ekip büyüklüğü", type: "select", group: "Hizmet Bilgileri", options: ["Tek kişi", "2-3 kişi", "4-10 kişi", "10+ kişi"] },
+      { key: "workHours", label: "Çalışma saatleri", type: "text", group: "Hizmet Bilgileri" },
+      { key: "emergency", label: "Acil / 7-24 servis", type: "bool", group: "Hizmet Bilgileri" },
+
+      { key: "priceType", label: "Fiyat tipi", type: "select", required: true, group: "Fiyat & Ödeme", options: ["Sabit", "Saatlik", "Günlük", "Metrekare başı", "Proje bazlı", "Teklif al"] },
+      { key: "price", label: "Başlangıç fiyatı", type: "number", suffix: "₺", group: "Fiyat & Ödeme" },
+      { key: "freeQuote", label: "Ücretsiz keşif / teklif", type: "bool", group: "Fiyat & Ödeme" },
+      { key: "payment", label: "Ödeme yöntemi", type: "select", group: "Fiyat & Ödeme", options: HIZMET_ODEME },
+
+      { key: "experience", label: "Deneyim (yıl)", type: "number", group: "Güven & Garanti" },
+      { key: "certificate", label: "Sertifika / belge var mı?", type: "bool", group: "Güven & Garanti" },
+      { key: "insured", label: "Sigortalı ekip", type: "bool", group: "Güven & Garanti" },
+      { key: "warrantyMonths", label: "İşçilik garantisi (ay)", type: "number", group: "Güven & Garanti" },
+
+      { key: "serviceScope", label: "Hizmet kapsamı", type: "multiselect", options: HIZMET_KAPSAM },
       F.desc
     ]
   },
@@ -1070,13 +1114,22 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Ders bilgileri",
     fields: [
       { key: "title", label: "Ders başlığı", type: "text", required: true },
-      { key: "branch", label: "Branş", type: "text", required: true },
-      { key: "level", label: "Eğitim seviyesi", type: "select", options: ["İlkokul", "Ortaokul", "Lise", "Üniversite", "Yetişkin"] },
-      { key: "format", label: "Ders şekli", type: "select", required: true, options: ["Online", "Yüz yüze", "Hibrit"] },
-      { key: "price", label: "Saatlik ücret", type: "number", suffix: "₺" },
-      { key: "experience", label: "Deneyim (yıl)", type: "number" },
-      { key: "graduation", label: "Mezuniyet / sertifika", type: "text" },
-      { key: "availability", label: "Uygun günler", type: "text" },
+      { key: "branch", label: "Branş", type: "text", required: true, group: "Ders Bilgileri" },
+      { key: "level", label: "Eğitim seviyesi", type: "select", group: "Ders Bilgileri", options: ["Okul Öncesi", "İlkokul", "Ortaokul", "Lise", "Üniversite", "Yetişkin"] },
+      { key: "format", label: "Ders şekli", type: "select", required: true, group: "Ders Bilgileri", options: ["Online", "Yüz yüze", "Hibrit"] },
+      { key: "lessonType", label: "Ders tipi", type: "select", group: "Ders Bilgileri", options: ["Birebir", "Grup (2-4)", "Grup (5+)"] },
+      { key: "duration", label: "Ders süresi", type: "select", group: "Ders Bilgileri", options: ["30 dk", "45 dk", "60 dk", "90 dk", "120 dk"] },
+
+      { key: "price", label: "Saatlik ücret", type: "number", suffix: "₺", group: "Ücret & Program" },
+      { key: "packageAvailable", label: "Paket / abonelik var mı?", type: "bool", group: "Ücret & Program" },
+      { key: "trialLesson", label: "Ücretsiz deneme dersi", type: "bool", group: "Ücret & Program" },
+      { key: "availability", label: "Uygun günler / saatler", type: "text", group: "Ücret & Program" },
+
+      { key: "experience", label: "Deneyim (yıl)", type: "number", group: "Eğitmen" },
+      { key: "graduation", label: "Mezuniyet / sertifika", type: "text", group: "Eğitmen" },
+      { key: "materials", label: "Materyal / kaynak sağlanır", type: "bool", group: "Eğitmen" },
+
+      { key: "examPrep", label: "Sınav hazırlık", type: "multiselect", options: DERS_SINAV },
       F.desc
     ]
   },
@@ -1085,12 +1138,22 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "İş ilanı bilgileri",
     fields: [
       { key: "title", label: "Pozisyon adı", type: "text", required: true },
-      { key: "company", label: "Şirket adı", type: "text" },
-      { key: "workType", label: "Çalışma tipi", type: "select", required: true, options: ["Tam Zamanlı", "Yarı Zamanlı", "Freelance", "Staj", "Uzaktan"] },
-      { key: "salary", label: "Maaş aralığı", type: "text" },
-      { key: "experience", label: "Deneyim seviyesi", type: "select", options: ["Deneyimsiz", "1-3 yıl", "3-5 yıl", "5+ yıl"] },
-      { key: "education", label: "Eğitim seviyesi", type: "select", options: ["Fark etmez", "Lise", "Önlisans", "Lisans", "Yüksek Lisans"] },
-      { key: "benefits", label: "Yan haklar", type: "text" },
+      { key: "company", label: "Şirket adı", type: "text", group: "Pozisyon" },
+      { key: "department", label: "Departman", type: "text", group: "Pozisyon" },
+      { key: "workType", label: "Çalışma tipi", type: "select", required: true, group: "Pozisyon", options: ["Tam Zamanlı", "Yarı Zamanlı", "Freelance", "Staj", "Dönemsel / Proje"] },
+      { key: "workModel", label: "Çalışma modeli", type: "select", required: true, group: "Pozisyon", options: ["Ofiste", "Hibrit", "Tamamen Uzaktan"] },
+      { key: "positionLevel", label: "Pozisyon seviyesi", type: "select", group: "Pozisyon", options: ["Stajyer", "Uzman Yardımcısı", "Uzman", "Kıdemli Uzman", "Takım Lideri", "Müdür", "Direktör"] },
+
+      { key: "salary", label: "Maaş aralığı", type: "text", group: "Ücret & Haklar", placeholder: "ör. 45.000 - 60.000 ₺" },
+      { key: "benefits", label: "Yan haklar (serbest metin)", type: "text", group: "Ücret & Haklar" },
+
+      { key: "experience", label: "Deneyim seviyesi", type: "select", group: "Aranan Nitelikler", options: ["Deneyimsiz", "1-3 yıl", "3-5 yıl", "5-10 yıl", "10+ yıl"] },
+      { key: "education", label: "Eğitim seviyesi", type: "select", group: "Aranan Nitelikler", options: ["Fark etmez", "Lise", "Önlisans", "Lisans", "Yüksek Lisans", "Doktora"] },
+      { key: "languages", label: "Yabancı dil", type: "text", group: "Aranan Nitelikler", placeholder: "ör. İngilizce (iyi)" },
+      { key: "military", label: "Askerlik durumu", type: "select", group: "Aranan Nitelikler", options: ["Fark etmez", "Yapılmış", "Muaf", "Tecilli"] },
+      { key: "license", label: "Ehliyet", type: "select", group: "Aranan Nitelikler", options: ["Gerekmez", "B", "C", "D", "E", "SRC"] },
+
+      { key: "benefitList", label: "Sunulan yan haklar", type: "multiselect", options: IS_YAN_HAK },
       F.desc
     ]
   },
@@ -1099,10 +1162,22 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Yardımcı / bakım talebi",
     fields: [
       { key: "title", label: "Aranan kişi / hizmet", type: "text", required: true },
-      { key: "workType", label: "Çalışma şekli", type: "select", required: true, options: ["Yatılı", "Gündüzlü", "Saatlik", "Part-time"] },
-      { key: "schedule", label: "Gün / saat bilgisi", type: "text" },
-      { key: "salary", label: "Maaş / ücret", type: "number", suffix: "₺" },
-      { key: "experience", label: "Deneyim beklentisi", type: "text" },
+      { key: "careType", label: "Bakım / iş tipi", type: "select", required: true, group: "Talep", options: ["Çocuk Bakımı", "Yaşlı Bakımı", "Hasta Bakımı", "Ev İşleri", "Temizlik", "Yemek", "Şoförlük", "Bahçe / Tadilat"] },
+      { key: "workType", label: "Çalışma şekli", type: "select", required: true, group: "Talep", options: ["Yatılı", "Gündüzlü", "Saatlik", "Part-time", "Hafta Sonu"] },
+      { key: "schedule", label: "Gün / saat bilgisi", type: "text", group: "Talep" },
+      { key: "personCount", label: "Bakılacak kişi sayısı", type: "number", group: "Talep" },
+      { key: "ageRange", label: "Yaş aralığı (bakılacak)", type: "text", group: "Talep", placeholder: "ör. 3-6 yaş" },
+
+      { key: "salary", label: "Maaş / ücret", type: "number", suffix: "₺", group: "Ücret & Şartlar" },
+      { key: "salaryType", label: "Ücret tipi", type: "select", group: "Ücret & Şartlar", options: ["Aylık", "Haftalık", "Günlük", "Saatlik"] },
+      { key: "insurance", label: "Sigorta yapılacak", type: "bool", group: "Ücret & Şartlar" },
+
+      { key: "experience", label: "Deneyim beklentisi", type: "text", group: "Aranan Nitelikler" },
+      { key: "reference", label: "Referans şart", type: "bool", group: "Aranan Nitelikler" },
+      { key: "driving", label: "Ehliyet şart", type: "bool", group: "Aranan Nitelikler" },
+      { key: "language", label: "Dil beklentisi", type: "text", group: "Aranan Nitelikler" },
+
+      { key: "duties", label: "Beklenen görevler", type: "multiselect", options: YARDIMCI_GOREV },
       F.desc
     ]
   },
@@ -1111,13 +1186,22 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Hayvan ilanı bilgileri",
     fields: [
       { key: "title", label: "İlan başlığı", type: "text", required: true },
-      { key: "adType", label: "İlan tipi", type: "select", required: true, options: ["Sahiplendirme", "Ürün satışı", "Hizmet", "Kayıp ilanı"] },
-      { key: "species", label: "Tür", type: "text", required: true },
-      { key: "breed", label: "Irk", type: "text" },
-      { key: "age", label: "Yaş", type: "text" },
-      { key: "gender", label: "Cinsiyet", type: "select", options: ["Erkek", "Dişi", "Belirtilmemiş"] },
-      { key: "vaccine", label: "Aşı durumu", type: "select", options: ["Tam", "Eksik", "Yok"] },
+      { key: "adType", label: "İlan tipi", type: "select", required: true, group: "Hayvan Bilgileri", options: ["Sahiplendirme", "Ürün satışı", "Hizmet", "Kayıp ilanı"] },
+      { key: "species", label: "Tür", type: "text", required: true, group: "Hayvan Bilgileri" },
+      { key: "breed", label: "Irk", type: "text", group: "Hayvan Bilgileri" },
+      { key: "age", label: "Yaş", type: "text", group: "Hayvan Bilgileri" },
+      { key: "gender", label: "Cinsiyet", type: "select", group: "Hayvan Bilgileri", options: ["Erkek", "Dişi", "Belirtilmemiş"] },
+      { key: "size", label: "Boyut", type: "select", group: "Hayvan Bilgileri", options: ["Mini", "Küçük", "Orta", "Büyük", "Dev"] },
+
+      { key: "vaccine", label: "Aşı durumu", type: "select", group: "Sağlık & Belge", options: ["Tam", "Eksik", "Yok"] },
+      { key: "neutered", label: "Kısırlaştırma", type: "select", group: "Sağlık & Belge", options: ["Kısırlaştırıldı", "Kısırlaştırılmadı", "Uygun değil"] },
+      { key: "microchip", label: "Mikroçip takılı", type: "bool", group: "Sağlık & Belge" },
+      { key: "healthReport", label: "Sağlık raporu var", type: "bool", group: "Sağlık & Belge" },
+      { key: "pedigree", label: "Pedigri / şecere belgesi", type: "bool", group: "Sağlık & Belge" },
+      { key: "training", label: "Eğitim durumu", type: "select", group: "Sağlık & Belge", options: ["Eğitimsiz", "Tuvalet eğitimli", "Temel itaat", "İleri eğitim"] },
+
       { key: "price", label: "Ücret (varsa)", type: "number", suffix: "₺" },
+      { key: "suitableFor", label: "Uygun olduğu ortam", type: "multiselect", options: HAYVAN_UYGUN },
       F.desc
     ]
   },
@@ -1127,11 +1211,17 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Talep bilgileri",
     fields: [
       F.title,
-      { key: "wanted", label: "Aradığın ürün/hizmet", type: "text", required: true, placeholder: "Ne arıyorsun?" },
-      { key: "budgetMin", label: "Bütçe (en az)", type: "number", suffix: "₺" },
-      { key: "budgetMax", label: "Bütçe (en çok)", type: "number", suffix: "₺" },
-      { key: "prefs", label: "Tercih edilen özellikler", type: "textarea", placeholder: "Marka, model, durum, konum vb." },
-      { key: "urgency", label: "Aciliyet", type: "select", options: ["Acil", "Bu hafta", "Bu ay", "Fark etmez"] },
+      { key: "wanted", label: "Aradığın ürün/hizmet", type: "text", required: true, group: "Aradığın", placeholder: "Ne arıyorsun?" },
+      { key: "wantedBrand", label: "Tercih edilen marka/model", type: "text", group: "Aradığın" },
+      { key: "wantedCondition", label: "İstenen durum", type: "select", group: "Aradığın", options: ["Fark etmez", "Sıfır", "İkinci el", "Yenilenmiş"] },
+      { key: "quantity", label: "Adet", type: "number", group: "Aradığın" },
+      { key: "prefs", label: "Tercih edilen özellikler", type: "textarea", group: "Aradığın", placeholder: "Marka, model, durum, konum vb." },
+
+      { key: "budgetMin", label: "Bütçe (en az)", type: "number", suffix: "₺", group: "Bütçe & Zaman" },
+      { key: "budgetMax", label: "Bütçe (en çok)", type: "number", suffix: "₺", group: "Bütçe & Zaman" },
+      { key: "urgency", label: "Aciliyet", type: "select", group: "Bütçe & Zaman", options: ["Acil", "Bu hafta", "Bu ay", "Fark etmez"] },
+      { key: "deliveryPref", label: "Teslim tercihi", type: "select", group: "Bütçe & Zaman", options: ["Kargo", "Elden teslim", "Fark etmez"] },
+      { key: "swapOffer", label: "Takas teklif edebilirim", type: "bool", group: "Bütçe & Zaman" },
       F.desc
     ]
   },
@@ -1141,12 +1231,20 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Dijital hizmet bilgileri",
     fields: [
       F.title,
-      { key: "serviceType", label: "Hizmet/ürün türü", type: "text", required: true, placeholder: "Web sitesi, logo, video kurgu…" },
+      { key: "serviceType", label: "Hizmet/ürün türü", type: "text", required: true, group: "Hizmet", placeholder: "Web sitesi, logo, video kurgu…" },
+      { key: "deliveryTime", label: "Teslim süresi", type: "select", required: true, group: "Hizmet", options: ["24 saat", "2-3 gün", "1 hafta", "2 hafta+", "Görüşülür"] },
+      { key: "revisions", label: "Revizyon sayısı", type: "select", group: "Hizmet", options: ["1", "2", "3", "Sınırsız", "Görüşülür"] },
+      { key: "tools", label: "Kullanılan araç / teknoloji", type: "text", group: "Hizmet", placeholder: "ör. Figma, React, Premiere" },
+      { key: "experience", label: "Deneyim (yıl)", type: "number", group: "Hizmet" },
+
       F.price,
-      { key: "deliveryTime", label: "Teslim süresi", type: "select", options: ["24 saat", "2-3 gün", "1 hafta", "2 hafta+", "Görüşülür"] },
-      { key: "revisions", label: "Revizyon sayısı", type: "select", options: ["1", "2", "3", "Sınırsız", "Görüşülür"] },
+      { key: "priceType", label: "Fiyat tipi", type: "select", group: "Fiyat & Teslim", options: ["Sabit", "Saatlik", "Paket", "Proje bazlı", "Teklif al"] },
+      { key: "deliveryMethod", label: "Dosya teslim şekli", type: "select", group: "Fiyat & Teslim", options: ["E-posta", "Bulut (link)", "Platform mesajı", "Görüşülür"] },
+      { key: "sourceFiles", label: "Kaynak dosyalar dahil", type: "bool", group: "Fiyat & Teslim" },
+      { key: "commercialUse", label: "Ticari kullanım hakkı", type: "bool", group: "Fiyat & Teslim" },
+      { key: "invoiceable", label: "Fatura kesilir", type: "bool", group: "Fiyat & Teslim" },
+
       { key: "portfolio", label: "Portfolyo linki", type: "text", placeholder: "Örnek çalışma bağlantısı (opsiyonel)" },
-      { key: "deliveryMethod", label: "Dosya teslim şekli", type: "select", options: ["E-posta", "Bulut (link)", "Platform mesajı", "Görüşülür"] },
       F.desc
     ]
   }
