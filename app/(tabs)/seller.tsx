@@ -319,6 +319,7 @@ function SellerScreenInner() {
           <KpiCard icon="account-plus-outline" label={translateCopy("Bekleyen başvuru", language)} value={`${myApplications.length}`} tone={myApplications.length ? "warn" : undefined} />
           <KpiCard icon="account-clock-outline" label={translateCopy("Yeni talep", language)} value={`${newLeads.length}`} tone={newLeads.length ? "warn" : undefined} />
           <KpiCard icon="chart-line" label={translateCopy("Dönüşüm", language)} value={`%${totalConversionRate}`} />
+          {mySales.some((s) => s.buyerConfirmToken) ? <KpiCard icon="account-check" label={translateCopy("Alıcı onaylı satış", language)} value={`${mySales.filter((s) => s.buyerConfirmedAt || s.buyerConfirmStatus === "confirmed").length}`} tone="ok" /> : null}
         </View>
         <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "800", lineHeight: 18 }}>
           {translateCopy(sellerHealth.detail, language)}

@@ -77,6 +77,25 @@ export default function BuyerConfirmScreen() {
             <Mascot name="success" size={92} />
             <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900", textAlign: "center" }}>{translateCopy("Teşekkürler, onaylandı!", language)}</Text>
             <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, textAlign: "center" }}>{translateCopy("Aldığını onayladın. Bu, ortağın komisyonunun doğrulanmasına yardımcı olur. İyi günlerde kullan!", language)}</Text>
+            {/* Alıcıyı platforma dönüştür: keşfet + ortak ol. */}
+            <View style={{ backgroundColor: colors.primarySoft, borderRadius: 14, gap: 10, marginTop: 6, padding: 16, width: "100%" }}>
+              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900", textAlign: "center" }}>{translateCopy("OrtakSat'ı keşfet", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17, textAlign: "center" }}>{translateCopy("Binlerce ürünü keşfet — ya da sen de ürünleri paylaşıp satıştan komisyon kazan. Ücretsiz.", language)}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                <Link href="/explore" asChild>
+                  <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexBasis: 130, flexGrow: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 11 }}>
+                    <MaterialCommunityIcons name="compass-outline" size={15} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Ürünleri keşfet", language)}</Text>
+                  </Pressable>
+                </Link>
+                <Link href="/partner" asChild>
+                  <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 11, borderWidth: 1, flexBasis: 130, flexGrow: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 11 }}>
+                    <MaterialCommunityIcons name="cash-multiple" size={15} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Ortak ol, kazan", language)}</Text>
+                  </Pressable>
+                </Link>
+              </View>
+            </View>
           </View>
         ) : result === "disputed" ? (
           <View style={{ alignItems: "center", gap: 12 }}>

@@ -123,6 +123,36 @@ function PartnerScreenInner() {
     }
     return out;
   }, [myBroughtLeads]);
+  // İçgörü hunisi (Faz "c"): Tıklama → Talep → Satış → Kazanç + dönüşüm oranları.
+  const funnelEarn = waiting + approved + paid;
+  const buyerConfirmedCount = mySales.filter((s) => s.buyerConfirmedAt || s.buyerConfirmStatus === "confirmed").length;
+  const funnelCard = (mounted && (totalClicks > 0 || mySales.length > 0 || myBroughtLeads.length > 0)) ? (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <MaterialCommunityIcons name="chart-timeline-variant" size={18} color={colors.primaryDark} />
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{translateCopy("Performansın", language)}</Text>
+        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{buyerConfirmedCount} {translateCopy("alıcı onaylı", language)}</Text>
+      </View>
+      <View style={{ alignItems: "stretch", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {[
+          { icon: "cursor-default-click-outline" as const, label: translateCopy("Tıklama", language), value: `${totalClicks}`, rate: null as string | null },
+          { icon: "phone-in-talk-outline" as const, label: translateCopy("Talep", language), value: `${myBroughtLeads.length}`, rate: totalClicks > 0 ? `%${Math.round((myBroughtLeads.length / totalClicks) * 100)}` : null },
+          { icon: "cart-check" as const, label: translateCopy("Satış", language), value: `${mySales.length}`, rate: myBroughtLeads.length > 0 ? `%${Math.round((mySales.length / myBroughtLeads.length) * 100)}` : null },
+          { icon: "cash-multiple" as const, label: translateCopy("Kazanç", language), value: money(funnelEarn), rate: null }
+        ].map((s, i) => (
+          <View key={s.label} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 130, flexGrow: 1, gap: 4, minWidth: 0, padding: 12 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+              <MaterialCommunityIcons name={s.icon} size={15} color={colors.primaryDark} />
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "800" }}>{s.label}</Text>
+              {s.rate ? <Text style={{ color: colors.success, fontSize: 10.5, fontWeight: "900" }}>{s.rate}</Text> : (i > 0 ? <MaterialCommunityIcons name="arrow-right" size={12} color={colors.subtle} /> : null)}
+            </View>
+            <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{s.value}</Text>
+          </View>
+        ))}
+      </View>
+    </View>
+  ) : null;
+
   const tokens = searchKey(query).split(" ").filter(Boolean);
   const visiblePartnerships = myPartnerships.filter((partnership) => {
     const listing = listings.find((item) => item.id === partnership.listingId);
@@ -383,6 +413,8 @@ function PartnerScreenInner() {
             </View>
           </View>
         ) : null}
+
+        {funnelCard}
 
         <LegalNote />
 
@@ -709,6 +741,8 @@ function PartnerScreenInner() {
           ) : null}
         </Card>
       ) : null}
+
+      {funnelCard}
 
       <Card>
         <SectionTitle title="Aktif ortaklıklarım" action={`${visiblePartnerships.length}`} />
