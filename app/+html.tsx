@@ -221,6 +221,12 @@ body {
   content-visibility: auto;
   contain-intrinsic-size: auto 340px;
 }
+/* Kart olmayan ağır satır listeleri (mesaj konuşmaları, kategori/tablo satırları) için
+   aynı off-screen atlama; satır yüksekliği ~88px tahmini (kaydırma zıplaması olmadan). */
+[data-vrow] {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 88px;
+}
 
 /* Doğal odak: tarayıcının çirkin kare focus çerçevesini kaldır.
    Arama kutusuna içine tıklanınca yumuşak yeşil bir kenarlık ver. */

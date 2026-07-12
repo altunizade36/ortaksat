@@ -29,6 +29,11 @@ function FavoritesScreenInner() {
   const [favTab, setFavTab] = useState<"all" | "open" | "highcomm" | "near" | "recent">("all");
   const [sortMode, setSortMode] = useState<"new" | "priceAsc" | "priceDesc" | "commission">("new");
   const [catFilter, setCatFilter] = useState<string | null>(null); // kenar çubuğundaki kategori listesinden
+  // Sanallaştırma penceresi: uzun favori listelerinde ilk PAGE kadar render edilir; native'de
+  // tüm kartların birden basılmasını önler (web'de data-vcard zaten off-screen paint'i atlar).
+  const PAGE = 24;
+  const [visibleCount, setVisibleCount] = useState(PAGE);
+  useEffect(() => { setVisibleCount(PAGE); }, [favTab, catFilter, sortMode, query]);
   const horizontalPadding = 12;
   const gap = 8;
   const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 3 }).cardWidth;
@@ -163,9 +168,17 @@ function FavoritesScreenInner() {
             {filtered.length === 0 ? (
               <EmptyState title={translateCopy("Favori yok", language)} body={translateCopy("Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin.", language)} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="heart" />
             ) : (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-                {filtered.map((listing) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} />)}
-              </View>
+              <>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+                  {filtered.slice(0, visibleCount).map((listing) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} />)}
+                </View>
+                {filtered.length > visibleCount ? (
+                  <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Daha fazla göster", language)} onPress={() => setVisibleCount((c) => c + PAGE * 2)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingHorizontal: 18, paddingVertical: 10 })}>
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Daha fazla göster", language)}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>({filtered.length - visibleCount})</Text>
+                  </Pressable>
+                ) : null}
+              </>
             )}
           </View>
 
@@ -256,10 +269,16 @@ function FavoritesScreenInner() {
       ) : null}
 
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap }}>
-        {visibleListings.map((listing) =>
+        {visibleListings.slice(0, visibleCount).map((listing) =>
           listing ? <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} /> : null
         )}
       </View>
+      {visibleListings.length > visibleCount ? (
+        <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Daha fazla göster", language)} onPress={() => setVisibleCount((c) => c + PAGE * 2)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingHorizontal: 18, paddingVertical: 11 })}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Daha fazla göster", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>({visibleListings.length - visibleCount})</Text>
+        </Pressable>
+      ) : null}
       <PrimaryButton href="/(tabs)/explore" tone="secondary">{translateCopy("Keşfete dön", language)}</PrimaryButton>
     </ScrollView>
   );

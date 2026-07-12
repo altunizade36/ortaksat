@@ -316,7 +316,7 @@ function MessagesScreenInner() {
                 const on = activeConversation?.id === conversation.id;
                 const ctx = buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t });
                 return (
-                  <Pressable key={conversation.id} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 12 })}>
+                  <Pressable key={conversation.id} dataSet={{ vrow: "1" }} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 12 })}>
                     {listing ? (
                       <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 48, width: 48 }} />
                     ) : (
@@ -570,7 +570,7 @@ function MessagesScreenInner() {
         const ctx = buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t });
         return (
           <Link key={conversation.id} href={{ pathname: "/chat/[id]", params: { id: conversation.id } }} asChild>
-            <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 12 })}>
+            <Pressable dataSet={{ vrow: "1" }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 12 })}>
               <View>
                 {listing ? (
                   <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 12, height: 56, width: 56 }} />
