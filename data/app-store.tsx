@@ -2076,12 +2076,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (hasHistory) {
           // Arşivle: her yerden gizlenir (archived public+panel'de saklı), satır+geçmiş korunur.
           setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status: "archived" as const } : item)));
-          if (liveUser) persistOrWarn(updateListingStatusLive({ ...listing, status: "archived" }), "İlan arşivlenemedi. Lütfen tekrar dene.");
+          // Aktif ortaklıkları sonlandır — ortak ölü referans linkiyle kalmasın (sunucuda
+          // remove_listing RPC'si aynısını yapar + ortağa bildirim düşer).
+          setPartnerships((items) =>
+            items.map((p) => (p.listingId === listingId && p.status === "active" ? { ...p, status: "cancelled" as const } : p))
+          );
         } else {
-          // Temiz ilan → gerçekten sil (sunucu FK ile karşılaşırsa arşive düşer).
+          // Temiz ilan → gerçekten silinir.
           setListings((items) => items.filter((item) => item.id !== listingId));
-          if (liveUser) persistOrWarn(removeListingLive(listingId).then((r) => r !== false), "İlan silinemedi. Lütfen tekrar dene.");
         }
+        // Her iki durumda da SUNUCU karar verir (remove_listing RPC): sil ya da arşivle+ortaklık kapat.
+        if (liveUser) persistOrWarn(removeListingLive(listingId).then((r) => r !== false), "İlan kaldırılamadı. Lütfen tekrar dene.");
       },
       setUserRole(userId, role) {
         const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";

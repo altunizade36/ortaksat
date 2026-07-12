@@ -187,22 +187,18 @@ export async function deleteListingLive(listingId: string): Promise<boolean> {
 }
 
 /**
- * Kullanıcı ilan silme — SUNUCU-OTORİTELİ delete-or-archive.
- * Önce gerçek DELETE dener. Komisyon/sipariş (FK NO ACTION, kod 23503) engellerse ilan
- * SİLİNEMEZ → bunun yerine status='archived' yapar (her yerden gizlenir, finansal geçmiş korunur).
- * Böylece istemci geçmişi bilmese bile para kayıtları asla kaybolmaz.
+ * Kullanıcı ilan silme — SUNUCU-OTORİTELİ delete-or-archive (remove_listing RPC).
+ * Karar tamamen sunucuda (atomik): geçmiş (komisyon/sipariş/ortaklık/talep) YOKSA ilan
+ * GERÇEKTEN silinir; VARSA arşivlenir + aktif ortaklıklar sonlandırılıp ortaklara bildirim gider.
+ * İstemcinin geçmişi bilmesine gerek yok → eksik yüklenmiş store yüzünden ortaklık/talep
+ * geçmişi CASCADE ile sessizce silinemez, komisyon FK'siyle de patlamaz.
  */
 export async function removeListingLive(listingId: string): Promise<"deleted" | "archived" | false> {
   if (!supabase) return "deleted"; // demo/live-değil: yerel silme yeterli
-  const del = await supabase.from("listings").delete().eq("id", listingId);
-  if (!del.error) return "deleted";
-  if (del.error.code === "23503") { // foreign_key_violation → komisyon/sipariş var → arşivle
-    const arch = await supabase.from("listings").update({ status: "archived" }).eq("id", listingId);
-    if (!arch.error) return "archived";
-    console.warn("Listing archive fallback failed", arch.error);
-    return false;
-  }
-  console.warn("Listing remove failed", del.error);
+  const { data, error } = await supabase.rpc("remove_listing", { p_listing_id: listingId });
+  if (error) { console.warn("Listing remove failed", error); return false; }
+  if (data === "deleted" || data === "archived") return data;
+  console.warn("Listing remove unexpected result", data);
   return false;
 }
 
