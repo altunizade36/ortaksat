@@ -18,6 +18,7 @@ import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } fro
 import { commissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { haptic } from "@/lib/haptics";
+import { shareOrCopy } from "@/lib/share";
 import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { loadClickCounts } from "@/lib/live-service";
 import { searchKey } from "@/lib/locale";
@@ -793,6 +794,30 @@ function SellerScreenInner() {
                   <Text selectable style={{ color: sale.status === "disputed" ? colors.accent : colors.muted, fontSize: 13, fontWeight: sale.status === "disputed" ? "800" : "400", lineHeight: 19 }}>
                     {sale.payoutNote}
                   </Text>
+                ) : null}
+                {/* Faz 2: alıcı-taraflı satış doğrulaması. Alıcı hesabından ya da linkle onaylar. */}
+                {sale.buyerConfirmedAt || sale.buyerConfirmStatus === "confirmed" ? (
+                  <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingVertical: 8 }}>
+                    <MaterialCommunityIcons name="check-decagram" size={15} color={colors.success} />
+                    <Text style={{ color: colors.success, fontSize: 12, fontWeight: "800" }}>{translateCopy("Alıcı satışı onayladı ✓", language)}</Text>
+                  </View>
+                ) : sale.buyerConfirmStatus === "disputed" ? (
+                  <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingVertical: 8 }}>
+                    <MaterialCommunityIcons name="alert-circle-outline" size={15} color={colors.warning} />
+                    <Text style={{ color: colors.warning, fontSize: 12, fontWeight: "800" }}>{translateCopy("Alıcı satışa itiraz etti", language)}</Text>
+                  </View>
+                ) : sale.buyerConfirmToken ? (
+                  <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, gap: 7, padding: 11 }}>
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                      <MaterialCommunityIcons name="account-check-outline" size={15} color={colors.primaryDark} />
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Alıcı onayı bekleniyor", language)}</Text>
+                    </View>
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{translateCopy("Bu linki alıcıyla paylaş; alıcı aldığını onaylayınca satış doğrulanır (iki taraflı güven).", language)}</Text>
+                    <Pressable onPress={() => void shareOrCopy({ title: translateCopy("OrtakSat satış onayı", language), message: translateCopy("Aldığın ürünü/hizmeti onayla:", language), url: `https://www.ortaksat.com/onay/${sale.buyerConfirmToken}` })} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 9 }}>
+                      <MaterialCommunityIcons name="share-variant-outline" size={14} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Alıcı onay linkini paylaş", language)}</Text>
+                    </Pressable>
+                  </View>
                 ) : null}
                 {sale.status === "paid" ? (
                   <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 8, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 9 }}>

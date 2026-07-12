@@ -39,6 +39,7 @@ import {
   insertReport,
   insertReview,
   insertSaleFromLead,
+  setBuyerConfirmToken,
   isLiveUser,
   makeUuid,
   markMessageReadLive,
@@ -346,6 +347,11 @@ function today() {
 
 function newId(prefix: string, live: boolean) {
   return live ? makeUuid() : `${prefix}-${Date.now()}`;
+}
+
+// Alıcı satış-onay linki için tahmin edilemez token (Faz 2). URL-güvenli, ~38 karakter.
+function makeConfirmToken() {
+  return makeUuid().replace(/-/g, "") + Math.random().toString(36).slice(2, 8);
 }
 
 function initials(name: string) {
@@ -1596,6 +1602,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const bonusApplied = (listing.bonusAmount ?? 0) > 0 && (listing.bonusQuota ?? 0) > 0 && priorPartnerSales < (listing.bonusQuota ?? 0) ? Math.round(listing.bonusAmount ?? 0) : 0;
         // Efektif komisyon: per-ortak override > kademeli oran > ilan varsayılanı.
         const baseCommission = effectiveCommissionAmount(listing, partnership, priorPartnerSales, amount, quantity);
+        const buyerConfirmToken = makeConfirmToken();
         const sale: Sale = {
           id: newId("s", liveUser),
           listingId: listing.id,
@@ -1610,7 +1617,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
           deliveryStatus: input?.deliveryStatus ?? "confirmed",
           returnUntil,
           approvedAt: listing.returnWindowDays > 0 ? undefined : today(),
-          payoutNote: `${listing.returnWindowDays} gün iade penceresi sonrası ${listing.commissionDueDays} gün içinde dış ödeme.`
+          payoutNote: `${listing.returnWindowDays} gün iade penceresi sonrası ${listing.commissionDueDays} gün içinde dış ödeme.`,
+          buyerConfirmToken,
+          buyerConfirmStatus: "awaiting"
         };
         const order: Order = {
           id: newId("o", liveUser),
@@ -1630,7 +1639,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const updatedListing: Listing = { ...listing, stockCount: nextStockCount, status: nextListingStatus };
         setListings((items) => items.map((item) => (item.id === listing.id ? updatedListing : item)));
         if (partnership) notify(partnership.partnerId, "sale", "Satış kaydı oluştu", `${listing.title} için komisyon kaydı iade penceresine alındı.${bonusApplied ? ` Başlangıç bonusu ${moneyIn(bonusApplied, listing.currency)} dahil.` : ""}`, { listingId: listing.id, partnershipId: partnership.id });
-        if (liveUser) persistCritical(insertSaleFromLead(sale, listing), () => {
+        if (liveUser) persistCritical(insertSaleFromLead(sale, listing).then((ok) => { if (ok) void setBuyerConfirmToken(sale.id, buyerConfirmToken); return ok; }), () => {
           setSales((items) => items.filter((s) => s.id !== sale.id));
           setOrders((items) => items.filter((o) => o.id !== order.id));
           setLeads((items) => items.map((l) => (l.id === leadId ? lead : l)));
@@ -1673,7 +1682,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
           deliveryStatus: input?.deliveryStatus ?? "confirmed",
           returnUntil,
           approvedAt: listing.returnWindowDays > 0 ? undefined : today(),
-          payoutNote: `Satıcı tarafından eklendi (doğrudan satış). ${listing.returnWindowDays} gün iade penceresi sonrası ${listing.commissionDueDays} gün içinde dış ödeme.`
+          payoutNote: `Satıcı tarafından eklendi (doğrudan satış). ${listing.returnWindowDays} gün iade penceresi sonrası ${listing.commissionDueDays} gün içinde dış ödeme.`,
+          buyerConfirmToken: makeConfirmToken(),
+          buyerConfirmStatus: "awaiting"
         };
         const order: Order = {
           id: newId("o", liveUser),
@@ -1693,7 +1704,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setListings((items) => items.map((item) => (item.id === listing.id ? updatedListing : item)));
         setAuthError(undefined);
         notify(partnership.partnerId, "sale", "Satış kaydı oluştu", `${listing.title} için satıcı doğrudan satış ekledi; komisyonun süreçte.${bonusApplied ? ` Başlangıç bonusu ${moneyIn(bonusApplied, listing.currency)} dahil.` : ""}`, { listingId: listing.id, partnershipId: partnership.id });
-        if (liveUser) persistCritical(insertSaleFromLead(sale, listing), () => {
+        if (liveUser) persistCritical(insertSaleFromLead(sale, listing).then((ok) => { if (ok && sale.buyerConfirmToken) void setBuyerConfirmToken(sale.id, sale.buyerConfirmToken); return ok; }), () => {
           setSales((items) => items.filter((s) => s.id !== sale.id));
           setOrders((items) => items.filter((o) => o.id !== order.id));
           setListings((items) => items.map((l) => (l.id === listing.id ? listing : l)));

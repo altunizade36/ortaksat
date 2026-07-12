@@ -592,7 +592,11 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       paidAt: row.paid_at?.slice(0, 10),
       sellerMarkedPaidAt: row.seller_marked_paid_at?.slice(0, 10),
       partnerConfirmedPaidAt: row.partner_confirmed_paid_at?.slice(0, 10),
-      payoutNote: row.payout_note ?? undefined
+      payoutNote: row.payout_note ?? undefined,
+      buyerConfirmToken: row.buyer_confirm_token ?? undefined,
+      buyerConfirmedAt: row.buyer_confirmed_at?.slice(0, 10),
+      buyerConfirmStatus: row.buyer_confirm_status ?? undefined,
+      buyerId: row.buyer_id ?? undefined
     })),
     orders: (ordersResult.data ?? []).map((row) => ({
       id: row.id,

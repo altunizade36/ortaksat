@@ -144,6 +144,11 @@ export type Sale = {
   sellerMarkedPaidAt?: string;
   partnerConfirmedPaidAt?: string;
   payoutNote?: string;
+  // Alıcı-taraflı doğrulama (Faz 2): tokenlı onay linki. Alıcı hesabından ya da link ile onaylar.
+  buyerConfirmToken?: string;
+  buyerConfirmedAt?: string;
+  buyerConfirmStatus?: "awaiting" | "confirmed" | "disputed";
+  buyerId?: string; // hesabı olan alıcı → uygulama-içi bildirim
 };
 
 export type Order = {

@@ -720,6 +720,14 @@ export async function insertSaleFromLead(sale: Sale, _listing: Listing): Promise
   return true;
 }
 
+// Faz 2: satış oluşturulduktan sonra alıcı-onay token'ını yaz (satıcı komisyonu RLS ile yönetir).
+export async function setBuyerConfirmToken(commissionId: string, token: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { error } = await supabase.from("commissions").update({ buyer_confirm_token: token, buyer_confirm_status: "awaiting" }).eq("id", commissionId);
+  if (error) { console.warn("Supabase buyer token set failed", error); return false; }
+  return true;
+}
+
 export async function updateSaleStatusLive(sale: Sale): Promise<boolean> {
   if (!supabase) return true;
   const { error } = await supabase

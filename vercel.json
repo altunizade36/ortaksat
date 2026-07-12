@@ -7,6 +7,7 @@
   "trailingSlash": false,
   "rewrites": [
     { "source": "/i/:slug", "destination": "/i/[slug]" },
+    { "source": "/onay/:token", "destination": "/onay/[token]" },
     { "source": "/blog/:slug", "destination": "/blog/[slug]" },
     { "source": "/listing/:id", "destination": "/listing/[id]" },
     { "source": "/kategori/:slug/:sehir", "destination": "/kategori/[slug]/[sehir]" },
