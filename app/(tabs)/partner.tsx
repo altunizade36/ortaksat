@@ -484,6 +484,23 @@ function PartnerScreenInner() {
                         return (
                           <View key={s.id} style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 10 }}>
                             <OppMiniRow title={l?.title ?? translateCopy("Ürün", language)} image={l?.image} right={money(s.commissionAmount)} sub={saleLabels[s.status]} />
+                            {/* Faz 2: alıcı-taraflı doğrulama durumu (ortak için güven sinyali). */}
+                            {s.buyerConfirmedAt || s.buyerConfirmStatus === "confirmed" ? (
+                              <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
+                                <MaterialCommunityIcons name="check-decagram" size={13} color={colors.success} />
+                                <Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Alıcı satışı onayladı", language)}</Text>
+                              </View>
+                            ) : s.buyerConfirmStatus === "disputed" ? (
+                              <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
+                                <MaterialCommunityIcons name="alert-circle-outline" size={13} color={colors.warning} />
+                                <Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Alıcı satışa itiraz etti", language)}</Text>
+                              </View>
+                            ) : s.buyerConfirmToken ? (
+                              <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
+                                <MaterialCommunityIcons name="account-clock-outline" size={13} color={colors.subtle} />
+                                <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Alıcı onayı bekleniyor", language)}</Text>
+                              </View>
+                            ) : null}
                             {s.status === "disputed" && s.payoutNote ? <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "700" }}>{s.payoutNote}</Text> : null}
                             {canConfirm || canDispute ? (
                               <View style={{ flexDirection: "row", gap: 8 }}>
@@ -902,6 +919,14 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
             <Metric label="İade sonu" value={sale.returnUntil ?? "-"} />
           </View>
           <StatusPill label={saleLabels[sale.status]} tone={sale.status === "paid" ? "success" : "warning"} />
+          {/* Faz 2: alıcı doğrulama durumu (güven sinyali). */}
+          {sale.buyerConfirmedAt || sale.buyerConfirmStatus === "confirmed" ? (
+            <StatusPill label={translateCopy("Alıcı onayladı ✓", language)} tone="success" />
+          ) : sale.buyerConfirmStatus === "disputed" ? (
+            <StatusPill label={translateCopy("Alıcı itiraz etti", language)} tone="warning" />
+          ) : sale.buyerConfirmToken ? (
+            <StatusPill label={translateCopy("Alıcı onayı bekleniyor", language)} tone="warning" />
+          ) : null}
           {sale.payoutNote ? <Text selectable style={{ color: sale.status === "disputed" ? colors.accent : colors.muted, fontSize: 13, lineHeight: 19 }}>{sale.payoutNote}</Text> : null}
           {sale.status === "seller_paid" || sale.status === "disputed" ? <PrimaryButton tone="soft" onPress={() => actions.updateSaleStatus(sale.id, "paid")}>{sale.status === "disputed" ? "Çözüldü · Ödemeyi Aldım" : "Ödemeyi Aldım"}</PrimaryButton> : null}
           {sale.status !== "paid" && sale.status !== "cancelled" && sale.status !== "disputed" ? <PrimaryButton tone="secondary" onPress={() => actions.dispute(sale.id)}>Anlaşmazlık Bildir</PrimaryButton> : null}
