@@ -179,6 +179,8 @@ function AdminScreenInner() {
   const pendingReview = listings.filter((l) => l.status === "pending_review");
   const totalCommission = sales.reduce((s, x) => s + x.commissionAmount, 0);
   const disputedSalesN = sales.filter((s) => s.status === "disputed").length;
+  const buyerConfirmedN = sales.filter((s) => s.buyerConfirmedAt || s.buyerConfirmStatus === "confirmed").length;
+  const buyerAwaitingN = sales.filter((s) => s.buyerConfirmToken && !s.buyerConfirmedAt && s.buyerConfirmStatus !== "confirmed" && s.buyerConfirmStatus !== "disputed").length;
   const unpaidCommission = sales.filter((s) => s.status !== "paid" && s.status !== "cancelled").reduce((a, s) => a + s.commissionAmount, 0);
   const pendingCat = categorySuggestions.filter((s) => s.status === "pending").length;
   const pendingLoc = locationSuggestions.filter((s) => s.status === "pending").length;
@@ -763,15 +765,23 @@ function AdminScreenInner() {
               </View>
             ) : null}
             {shownSales.length === 0 ? <EmptyState title="Kayıt yok" body="Bu filtreye uygun komisyon kaydı bulunmuyor." /> : null}
-            <Table head={["İLAN", "KOMİSYON", "ORTAKLIK", "DURUM", "ARABULUCULUK"]} cols={[2, 1, 1.3, 1, 1.5]}>
+            <Table head={["İLAN", "KOMİSYON", "ORTAKLIK", "ALICI ONAYI", "DURUM", "ARABULUCULUK"]} cols={[2, 1, 1.2, 1, 1, 1.4]}>
               {[...shownSales].sort((a, b) => (a.status === "disputed" ? -1 : 0) - (b.status === "disputed" ? -1 : 0)).map((s) => {
                 const listing = listings.find((l) => l.id === s.listingId);
                 const p = partnerships.find((x) => x.id === s.partnershipId);
+                const buyer = s.buyerConfirmedAt || s.buyerConfirmStatus === "confirmed"
+                  ? { label: "Onaylı ✓", color: colors.success }
+                  : s.buyerConfirmStatus === "disputed"
+                    ? { label: "İtiraz", color: colors.accent }
+                    : s.buyerConfirmToken
+                      ? { label: "Bekliyor", color: colors.muted }
+                      : { label: "—", color: colors.subtle };
                 return (
-                  <Row key={s.id} cols={[2, 1, 1.3, 1, 1.5]} cells={[
+                  <Row key={s.id} cols={[2, 1, 1.2, 1, 1, 1.4]} cells={[
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{listing?.title ?? s.listingId}</Text>,
                     <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{money(s.commissionAmount)}</Text>,
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{p ? findUser(p.partnerId)?.name : "—"}</Text>,
+                    <Text numberOfLines={1} style={{ color: buyer.color, fontSize: 11.5, fontWeight: "800" }}>{buyer.label}</Text>,
                     <View style={{ alignSelf: "flex-start", backgroundColor: SALE_TONE[s.status].tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: SALE_TONE[s.status].color, fontSize: 10.5, fontWeight: "900" }}>{SALE_TONE[s.status].label}</Text></View>,
                     s.status === "disputed" ? (
                       <View style={{ flexDirection: "row", gap: 10 }}>
@@ -800,6 +810,8 @@ function AdminScreenInner() {
               <Stat icon="star" tint={colors.goldSoft} color={colors.gold} value={`${listings.filter((l) => l.featured).length}`} title="Öne çıkan (yüklü)" />
               <Stat icon="map-marker" tint={colors.infoSoft} color={colors.info} value={`${new Set(activeListings.map((l) => l.location)).size}`} title="Şehir (yüklü)" />
               <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(analytics ? Math.max(0, analytics.commission_amount - analytics.commission_paid_amount) : unpaidCommission)} title="Bekleyen komisyon" />
+              <Stat icon="account-check" tint={colors.successSoft} color={colors.success} value={`${buyerConfirmedN}`} title="Alıcı onaylı satış" />
+              <Stat icon="account-clock-outline" tint={colors.goldSoft} color={colors.gold} value={`${buyerAwaitingN}`} title="Alıcı onayı bekleyen" />
             </View>
             <Panel title="Aylık İlan Trendi" sub="Son 12 ay — yüklü kayıtlardan (sunucu-toplam için Canlı Panel)">
               <ResponsiveLineArea points={chartData.map((v, i) => ({ label: chartLabels[i] ?? `${i + 1}`, value: v }))} color={colors.primary} height={210} />
