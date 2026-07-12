@@ -24,6 +24,8 @@ import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
 import { parseTrPrice } from "@/lib/validation";
 import type { Listing, User } from "@/lib/types";
+import { LocationSelector, type LocationValue } from "@/components/location-selector";
+import { matchesLocationFilter } from "@/lib/locations";
 import { useStore } from "@/lib/use-store";
 
 type SortMode = "featured" | "commission" | "newest";
@@ -48,8 +50,10 @@ export default function HomeScreen() {
   const [minComm, setMinComm] = useState(0);
   const [onlyOpenPartner, setOnlyOpenPartner] = useState(false);
   const [onlyInStock, setOnlyInStock] = useState(false);
-  const hasAdvanced = Boolean(priceMin || priceMax || minComm > 0 || onlyOpenPartner || onlyInStock);
-  const clearAdvanced = () => { setPriceMin(""); setPriceMax(""); setMinComm(0); setOnlyOpenPartner(false); setOnlyInStock(false); };
+  // Konum (81 il + ilçe) — keşfet/kategori ile aynı seçici; ana sayfada eksikti.
+  const [loc, setLoc] = useState<LocationValue>({});
+  const hasAdvanced = Boolean(priceMin || priceMax || minComm > 0 || onlyOpenPartner || onlyInStock || loc.provinceId != null);
+  const clearAdvanced = () => { setPriceMin(""); setPriceMax(""); setMinComm(0); setOnlyOpenPartner(false); setOnlyInStock(false); setLoc({}); };
   const [refreshing, setRefreshing] = useState(false);
   const [gridWidth, setGridWidth] = useState(0);
   const [visibleCount, setVisibleCount] = useState(INITIAL_HOME_ITEMS);
@@ -118,6 +122,7 @@ export default function HomeScreen() {
         if (minComm > 0 && commissionAmount(listing) < minComm) return false;
         if (onlyOpenPartner && listing.partnershipMode !== "open") return false;
         if (onlyInStock && listing.stockCount <= 0) return false;
+        if (!matchesLocationFilter(listing, loc.provinceId, loc.districtId)) return false;
         return true;
       })
       .map((listing) => {
@@ -137,12 +142,12 @@ export default function HomeScreen() {
         return momentumScore(b.listing) - momentumScore(a.listing);
       })
       .map((item) => item.listing);
-  }, [activeListings, filter, findUser, maxCommission, maxMomentum, minComm, onlyInStock, onlyOpenPartner, priceMax, priceMin, query, shuffleSeed, sortMode]);
+  }, [activeListings, filter, findUser, maxCommission, maxMomentum, minComm, onlyInStock, onlyOpenPartner, priceMax, priceMin, query, shuffleSeed, sortMode, loc.provinceId, loc.districtId]);
   const visibleListings = filteredListings.slice(0, visibleCount);
 
   useEffect(() => {
     setVisibleCount(INITIAL_HOME_ITEMS);
-  }, [filter, query, sortMode, priceMin, priceMax, minComm, onlyOpenPartner, onlyInStock]);
+  }, [filter, query, sortMode, priceMin, priceMax, minComm, onlyOpenPartner, onlyInStock, loc.provinceId, loc.districtId]);
 
   function showMore() {
     if (visibleCount < filteredListings.length) {
@@ -340,6 +345,11 @@ export default function HomeScreen() {
                     <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text>
                   </Pressable>
                 ) : null}
+              </View>
+              {/* Konum (81 il + ilçe) — keşfet/kategori ile aynı seçici. */}
+              <View style={{ gap: 7 }}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum (İl / İlçe)", language)}</Text>
+                <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
               </View>
               {/* Fiyat aralığı */}
               <View style={{ gap: 7 }}>

@@ -58,6 +58,36 @@ export function formatLocation(input: { provinceId?: number | null; districtId?:
   return parts.join(" / ");
 }
 
+/**
+ * İl/ilçe filtresi eşleştirmesi — TEK KAYNAK (explore, kategori, ana sayfa aynı mantığı kullanır).
+ * Yapısal id varsa kesin eşleşme; yoksa (eski/serbest-metin ilan) normalize metne düşer.
+ * Alt-metin eşleştirmesi tek başına yanıltıcı olduğu için (ör. "Van" ⊂ başka kelimeler)
+ * yalnız id yokken ve tam anahtar içeriyorsa kabul edilir.
+ */
+export function matchesLocationFilter(
+  listing: { location?: string; provinceId?: number | null; districtId?: number | null },
+  provinceId?: number | null,
+  districtId?: number | null
+): boolean {
+  if (provinceId != null) {
+    if (listing.provinceId != null) {
+      if (listing.provinceId !== provinceId) return false;
+    } else {
+      const provKey = locKey(getProvince(provinceId)?.name ?? "");
+      if (provKey && !locKey(listing.location ?? "").includes(provKey)) return false;
+    }
+  }
+  if (districtId != null) {
+    if (listing.districtId != null) {
+      if (listing.districtId !== districtId) return false;
+    } else {
+      const distKey = locKey(getDistrict(districtId)?.name ?? "");
+      if (distKey && !locKey(listing.location ?? "").includes(distKey)) return false;
+    }
+  }
+  return true;
+}
+
 /** Resolve a free-text legacy location string (e.g. "İstanbul") to a province id, for back-compat with mock listings. */
 export function resolveProvinceByName(name?: string | null): Province | undefined {
   if (!name) return undefined;

@@ -8,6 +8,7 @@ import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
 import { JsonLd } from "@/components/json-ld";
 import { ListingCard } from "@/components/listing-card";
+import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { EmptyState } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
@@ -18,6 +19,7 @@ import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, findProvince } from "@/lib/cities"
 import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid } from "@/lib/layout";
+import { getDistrict, getProvince, matchesLocationFilter } from "@/lib/locations";
 import { useStore } from "@/lib/use-store";
 
 function descendantLabels(node: CategoryNode): string[] {
@@ -83,6 +85,9 @@ export default function CategoryLandingScreen() {
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
   const [band, setBand] = useState<[number, number] | null>(null);
   const [onlyOpen, setOnlyOpen] = useState(false);
+  // Konum filtresi (81 il + ilçe) — keşfetteki LocationSelector'ın aynısı; kategori
+  // sayfalarında da il/ilçe daraltması yapılabilsin diye eklendi (eskiden yoktu).
+  const [loc, setLoc] = useState<LocationValue>({});
   // Kategoriye özel özellik filtreleri (İlan tipi, Oda, İmar, Tapu…): şemadaki
   // tekli-seçim (select) alanlar filtre çipi olur. Değerler OR'lanır.
   const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
@@ -154,6 +159,7 @@ export default function CategoryLandingScreen() {
     const activeAttrKeys = Object.keys(attrFilters);
     const out = listings.filter((l) => {
       if (l.status !== "active" || !matchCat(l.category)) return false;
+      if (!matchesLocationFilter(l, loc.provinceId, loc.districtId)) return false;
       if (band && (l.price < band[0] || l.price > band[1])) return false;
       if (onlyOpen && l.partnershipMode !== "open") return false;
       // Özellik filtreleri: her aktif alan için ilanın attribute değeri seçilenlerden
@@ -188,9 +194,9 @@ export default function CategoryLandingScreen() {
       return Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || commissionAmount(b) - commissionAmount(a);
     });
     return out;
-  }, [listings, node, band, onlyOpen, sortMode, attrFilters, numRange, numFields]);
+  }, [listings, node, band, onlyOpen, sortMode, attrFilters, numRange, numFields, loc.provinceId, loc.districtId]);
 
-  useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, numRange]);
+  useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, numRange, loc.provinceId, loc.districtId]);
   useEffect(() => { setAttrFilters({}); setNumRange({}); }, [slug]);
 
   const cardWidth = responsiveGrid({ available: Math.min(layoutWidth, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
@@ -315,6 +321,16 @@ export default function CategoryLandingScreen() {
             })}
           </ScrollView>
 
+          {/* Konum (81 il + ilçe) — keşfetle aynı seçici; kategori sayfasında eksikti. */}
+          <Accordion title={`Konum${loc.provinceId != null ? ` · ${[getProvince(loc.provinceId)?.name, getDistrict(loc.districtId)?.name].filter(Boolean).join(" / ")}` : ""}`} icon="map-marker-outline">
+            <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
+            {loc.provinceId != null ? (
+              <Pressable accessibilityRole="button" onPress={() => setLoc({})} style={{ alignSelf: "flex-start", marginTop: 8 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Konum filtresini temizle", language)}</Text>
+              </Pressable>
+            ) : null}
+          </Accordion>
+
           {/* Kategoriye özel özellik filtreleri (emlak: İlan tipi, Oda, İmar, Tapu…) */}
           {filterFields.length || numFields.length ? (
             <Accordion title={`Detaylı filtreler${Object.keys(attrFilters).length || numActiveCount ? ` · ${Object.values(attrFilters).reduce((a, v) => a + v.length, 0) + numActiveCount} seçili` : ""}`} icon="tune-variant">
@@ -359,7 +375,7 @@ export default function CategoryLandingScreen() {
           // Katalog hiç yüklenemedi → "kategoride ilan yok" yerine yeniden-dene.
           <MarketplaceRetry onRetry={retryMarketplace} />
         ) : items.length === 0 ? (
-          band || onlyOpen || Object.keys(attrFilters).length || numActiveCount ? (
+          band || onlyOpen || loc.provinceId != null || Object.keys(attrFilters).length || numActiveCount ? (
             <EmptyState title={translateCopy("Filtreye uyan ilan yok", language)} body={translateCopy("Filtreleri gevşetmeyi dene ya da farklı bir kategoriye göz at.", language)} mascot="thinking" />
           ) : (
             <View style={{ backgroundColor: colors.primarySoft, borderRadius: 16, gap: 12, padding: 20 }}>

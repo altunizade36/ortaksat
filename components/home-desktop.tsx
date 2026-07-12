@@ -11,7 +11,9 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
+import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
+import { matchesLocationFilter } from "@/lib/locations";
 import { commissionAmount, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
@@ -40,8 +42,9 @@ export function HomeDesktop() {
   const [expandedKey, setExpandedKey] = useState<string | null>(null);
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
-  const [locFilter, setLocFilter] = useState<string>("");
-  const [locOpen, setLocOpen] = useState(false);
+  // Konum: eskiden yalnız MEVCUT ilanlarda geçen şehirlerden (en fazla 60) seçilebiliyordu
+  // ve ilçe yoktu. Artık tüm 81 il + ilçe seçilebilir (keşfet/kategori ile aynı seçici).
+  const [loc, setLoc] = useState<LocationValue>({});
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [onlyFeatured, setOnlyFeatured] = useState(false);
   const [minCommission, setMinCommission] = useState(0);
@@ -56,7 +59,6 @@ export function HomeDesktop() {
   useEffect(() => { setRecentIds(getRecent()); }, []);
   const recentListings = useMemo(() => recentIds.map((id) => listings.find((l) => l.id === id)).filter((l): l is Listing => !!l && l.status === "active").slice(0, 8), [recentIds, listings]);
 
-  const locations = useMemo(() => Array.from(new Set(active.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")).slice(0, 60), [active]);
   const pMin = Number(priceMin.replace(/[^\d]/g, "")) || 0;
   const pMax = Number(priceMax.replace(/[^\d]/g, "")) || 0;
 
@@ -99,7 +101,7 @@ export function HomeDesktop() {
       if (!matchesCat(l)) return false;
       if (pMin && l.price < pMin) return false;
       if (pMax && l.price > pMax) return false;
-      if (locFilter && l.location !== locFilter) return false;
+      if (!matchesLocationFilter(l, loc.provinceId, loc.districtId)) return false;
       if (onlyOpen && l.partnershipMode !== "open") return false;
       if (onlyFeatured && !l.featured) return false;
       if (minCommission && commissionAmount(l) < minCommission) return false;
@@ -128,7 +130,7 @@ export function HomeDesktop() {
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, catLabelSet, pMin, pMax, locFilter, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew, attrFilters, numRange, catNums]);
+  }, [active, catLabelSet, pMin, pMax, loc.provinceId, loc.districtId, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew, attrFilters, numRange, catNums]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -143,14 +145,14 @@ export function HomeDesktop() {
   const grid = sorted.slice(0, visibleCount);
 
   // Filtre/sıralama değişince baştan göster.
-  useEffect(() => { setVisibleCount(18); }, [selectedNode, pMin, pMax, locFilter, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew, sortMode, attrFilters, numRange]);
+  useEffect(() => { setVisibleCount(18); }, [selectedNode, pMin, pMax, loc.provinceId, loc.districtId, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew, sortMode, attrFilters, numRange]);
 
   const topCats = categoryTree.filter((c) => c.label !== "Diğer");
   const popular = topCats.slice(0, 12);
   // Ortak-satış modeli: en çok kazandıran (en yüksek komisyonlu) fırsatlar.
   const topEarn = useMemo(() => [...active].filter((l) => commissionAmount(l) > 0).sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [active]);
-  const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (locFilter ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0) + (minCommission ? 1 : 0) + (inStock ? 1 : 0) + (onlyNew ? 1 : 0) + Object.keys(attrFilters).length + Object.keys(numRange).length;
-  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLocFilter(""); setOnlyOpen(false); setOnlyFeatured(false); setMinCommission(0); setInStock(false); setOnlyNew(false); setAttrFilters({}); setNumRange({}); };
+  const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (loc.provinceId != null ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0) + (minCommission ? 1 : 0) + (inStock ? 1 : 0) + (onlyNew ? 1 : 0) + Object.keys(attrFilters).length + Object.keys(numRange).length;
+  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLoc({}); setOnlyOpen(false); setOnlyFeatured(false); setMinCommission(0); setInStock(false); setOnlyNew(false); setAttrFilters({}); setNumRange({}); };
   const COMMISSION_PRESETS: Array<[number, string]> = [[500, "500 ₺+"], [1000, "1.000 ₺+"], [2500, "2.500 ₺+"], [5000, "5.000 ₺+"]];
   const PRICE_PRESETS: Array<[string, string, string]> = [["0", "1000", "0 - 1.000 ₺"], ["1000", "5000", "1.000 - 5.000 ₺"], ["5000", "25000", "5.000 - 25.000 ₺"], ["25000", "100000", "25.000 - 100.000 ₺"], ["100000", "", "100.000 ₺ +"]];
   const SORTS: Array<[typeof sortMode, string]> = [["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"], ["commission", "Kazanç"]];
@@ -238,28 +240,10 @@ export function HomeDesktop() {
             </View>
           </View>
 
-          {/* Konum: inline açılır (altta kalmaz, içeriği aşağı iter) */}
+          {/* Konum: tüm 81 il + ilçe (keşfet/kategori ile aynı LocationSelector) */}
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum", language)}</Text>
-            <Pressable onPress={() => setLocOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: locOpen ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 42, paddingHorizontal: 12 }}>
-              <MaterialCommunityIcons name="map-marker-outline" size={16} color={colors.primary} />
-              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{locFilter || translateCopy("Tüm Türkiye", language)}</Text>
-              <MaterialCommunityIcons name={locOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
-            </Pressable>
-            {locOpen ? (
-              <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, maxHeight: 220, overflow: "hidden" }}>
-                <ScrollView nestedScrollEnabled style={{ maxHeight: 220 }}>
-                  {["Tüm Türkiye", ...locations].map((o) => {
-                    const on = (locFilter || "Tüm Türkiye") === o;
-                    return (
-                      <Pressable key={o} onPress={() => { setLocFilter(o === "Tüm Türkiye" ? "" : o); setLocOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed || on ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 9 })}>
-                        <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: on ? "800" : "600" }}>{o === "Tüm Türkiye" ? translateCopy("Tüm Türkiye", language) : o}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </ScrollView>
-              </View>
-            ) : null}
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum (İl / İlçe)", language)}</Text>
+            <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
           </View>
 
           {/* Ortak kazancı (min komisyon) */}

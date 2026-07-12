@@ -20,7 +20,7 @@ import { searchKey } from "@/lib/locale";
 import { scoreListing } from "@/lib/search";
 import { useSavedSearches, type SavedFilters, type SavedSearch } from "@/lib/saved-searches";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
-import { districtsOfProvince, getDistrict, getProvince, locKey, provinces } from "@/lib/locations";
+import { districtsOfProvince, getDistrict, getProvince, locKey, matchesLocationFilter, provinces } from "@/lib/locations";
 import { searchListings } from "@/lib/supabase-data";
 import { displayText } from "@/lib/text";
 import type { Listing, User } from "@/lib/types";
@@ -329,16 +329,8 @@ export default function ExploreScreen() {
       if (city && listing.location !== city) return false;
       // Yapısal id varsa kesin eşleşme; yoksa (eski ilan) serbest metne düş.
       // Alt-metin eşleştirmesi tek başına yanıltıcıydı (ör. "Van" ⊂ başka metinler).
-      if (provinceId != null) {
-        if (listing.provinceId != null) {
-          if (listing.provinceId !== provinceId) return false;
-        } else if (provKey && !locKey(listing.location).includes(provKey)) return false;
-      }
-      if (districtId != null) {
-        if (listing.districtId != null) {
-          if (listing.districtId !== districtId) return false;
-        } else if (distKey && !locKey(listing.location).includes(distKey)) return false;
-      }
+      // Ortak yardımcı (lib/locations) — kategori ve ana sayfa da aynısını kullanır.
+      if (!matchesLocationFilter(listing, provinceId, districtId)) return false;
       if (minCommission > 0 && commissionAmount(listing) < minCommission) return false;
       if (priceRange) {
         const [mn, mx] = priceRange.split("-");
