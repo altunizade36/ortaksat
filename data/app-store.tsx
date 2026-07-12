@@ -58,6 +58,7 @@ import {
   recordLegalConsentLive,
   requestAccountDeletionLive,
   deleteListingLive,
+  removeListingLive,
   updateListingFeaturedLive,
   insertBulkNotifications,
   updateAnnouncementLive,
@@ -307,6 +308,7 @@ type AppStore = {
   updateListingInventory: (listingId: string, patch: { stockCount?: number; price?: number }) => void;
   setListingFeatured: (listingId: string, featured: boolean) => void;
   deleteListing: (listingId: string) => void;
+  removeListing: (listingId: string) => void;
   setUserRole: (userId: string, role: UserRole) => void;
   setUserStatus: (userId: string, status: NonNullable<User["status"]>) => void;
   setUserVerification: (userId: string, field: "verifiedPhone" | "verifiedIdentity", value: boolean) => void;
@@ -2059,6 +2061,27 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return;
         setListings((items) => items.filter((item) => item.id !== listingId));
         if (liveUser) persistOrWarn(deleteListingLive(listingId), "İlan silinemedi. Lütfen tekrar dene.");
+      },
+      // Kullanıcı ilan silme (sahip). Finansal/ilişki geçmişi olan ilan hard-delete EDİLMEZ →
+      // arşivlenir (gizlenir, geçmiş korunur). Temiz ilan gerçekten silinir. Sunucu da FK
+      // hatasında arşive düşer (removeListingLive) → istemci geçmişi eksik bilse bile para kaybı olmaz.
+      removeListing(listingId) {
+        const listing = listings.find((item) => item.id === listingId);
+        const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
+        if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return;
+        const hasHistory =
+          partnerships.some((p) => p.listingId === listingId) ||
+          leads.some((l) => l.listingId === listingId) ||
+          sales.some((s) => s.listingId === listingId);
+        if (hasHistory) {
+          // Arşivle: her yerden gizlenir (archived public+panel'de saklı), satır+geçmiş korunur.
+          setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status: "archived" as const } : item)));
+          if (liveUser) persistOrWarn(updateListingStatusLive({ ...listing, status: "archived" }), "İlan arşivlenemedi. Lütfen tekrar dene.");
+        } else {
+          // Temiz ilan → gerçekten sil (sunucu FK ile karşılaşırsa arşive düşer).
+          setListings((items) => items.filter((item) => item.id !== listingId));
+          if (liveUser) persistOrWarn(removeListingLive(listingId).then((r) => r !== false), "İlan silinemedi. Lütfen tekrar dene.");
+        }
       },
       setUserRole(userId, role) {
         const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";

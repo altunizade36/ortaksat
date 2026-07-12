@@ -88,6 +88,7 @@ function SellerScreenInner() {
     startConversation,
     updateLeadStatus,
     updateListingStatus,
+    removeListing,
     updateListingInventory,
     updateSaleStatus,
     recordBatchPayout,
@@ -118,7 +119,7 @@ function SellerScreenInner() {
     if (focusId) { setExpandedId(focusId); setFilter("all"); setQuery(""); }
   }, [focusId]);
 
-  const myListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status !== "rejected");
+  const myListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status !== "rejected" && listing.status !== "archived");
   const myListingIds = new Set(myListings.map((listing) => listing.id));
   const myPartnershipIds = partnerships.filter((partnership) => myListingIds.has(partnership.listingId)).map((partnership) => partnership.id);
   const partnershipIdsKey = myPartnershipIds.join(",");
@@ -209,18 +210,21 @@ function SellerScreenInner() {
   }
 
   function confirmRemoveListing(listingId: string) {
-    // Eskiden tek seçenek "rejected" idi ve ilan panelden geri alınamayacak şekilde
-    // kayboluyordu (tuzak). Artık geri alınabilir "Pasife Al" seçeneği burada sunulur.
+    // Tek net eylem: SİL. (Geçici gizleme için ayrı "Pasife Al" butonu zaten var — eskiden
+    // aynı diyalogda iki seçenek web'de sıralı confirm'e dönüşüp kafa karıştırıyordu.)
+    // removeListing: geçmişi olan ilanı ARŞİVLER (para/lead korunur), temiz ilanı GERÇEKTEN siler.
+    const listing = listings.find((l) => l.id === listingId);
+    const hasHistory = listing
+      ? partnerships.some((p) => p.listingId === listingId) || leads.some((l) => l.listingId === listingId) || sales.some((s) => s.listingId === listingId)
+      : false;
     Alert.alert(
-      translateCopy("İlanı kaldır", language),
-      translateCopy(
-        "\"Pasife Al\": ilan geçici gizlenir, istediğinde tek tuşla tekrar yayınlarsın. \"Kalıcı Kaldır\": ilan listenden çıkar, geri alınması için destek gerekir.",
-        language
-      ),
+      translateCopy("İlanı sil", language),
+      hasHistory
+        ? translateCopy("Bu ilanın talep/ortaklık/satış geçmişi var. İlan listenden kaldırılır ve arşivlenir; komisyon ve satış kayıtların korunur. Geçici gizlemek istersen bunun yerine \"Pasife Al\" kullan.", language)
+        : translateCopy("İlan kalıcı olarak silinir. Geçici olarak gizlemek istersen bunun yerine \"Pasife Al\" kullanabilirsin.", language),
       [
         { text: t("cancel"), style: "cancel" },
-        { text: translateCopy("Pasife Al", language), onPress: () => updateListingStatus(listingId, "paused") },
-        { text: translateCopy("Kalıcı Kaldır", language), style: "destructive", onPress: () => updateListingStatus(listingId, "rejected") }
+        { text: translateCopy(hasHistory ? "Kaldır ve arşivle" : "Kalıcı sil", language), style: "destructive", onPress: () => removeListing(listingId) }
       ]
     );
   }
@@ -620,7 +624,7 @@ function SellerScreenInner() {
                 </View>
               ) : null}
               <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-                <PrimaryButton tone="danger" icon="trash-can-outline" onPress={() => confirmRemoveListing(listing.id)}>Kaldır</PrimaryButton>
+                <PrimaryButton tone="danger" icon="trash-can-outline" onPress={() => confirmRemoveListing(listing.id)}>Sil</PrimaryButton>
               </View>
             </View>
 

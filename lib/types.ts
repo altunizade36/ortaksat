@@ -1,5 +1,5 @@
 ﻿export type CommissionType = "rate" | "fixed";
-export type ListingStatus = "draft" | "pending_review" | "active" | "paused" | "sold" | "rejected" | "expired";
+export type ListingStatus = "draft" | "pending_review" | "active" | "paused" | "sold" | "rejected" | "expired" | "archived";
 export type PartnershipMode = "open" | "approval" | "invite";
 export type PartnershipStatus = "active" | "pending" | "rejected" | "blocked" | "cancelled" | "completed";
 export type LeadStatus = "new" | "contacted" | "interested" | "converted" | "lost";

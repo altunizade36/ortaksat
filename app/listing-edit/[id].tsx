@@ -46,7 +46,7 @@ export default function ListingEditRoute() {
 function ListingEditForm({ listing }: { listing: Listing }) {
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, backendMode, currentUser, updateListing } = useStore();
+  const { authError, backendMode, currentUser, updateListing, removeListing, partnerships, leads, sales } = useStore();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const [title, setTitle] = useState(listing.title);
   const [description, setDescription] = useState(listing.description);
@@ -434,6 +434,33 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           <Segmented options={[["whatsapp", "WhatsApp"], ["message", "Mesaj"], ["phone", "Telefon"]]} value={contactMethod} onChange={(value) => setContactMethod(value as ContactMethod)} />
           <PrimaryButton icon="content-save-outline" onPress={() => void submit()}>
             {saving ? translateCopy("Kaydediliyor", language) : translateCopy("Değişiklikleri Kaydet", language)}
+          </PrimaryButton>
+        </Card>
+
+        {/* İlanı sil — düzenleme ekranından da erişilebilir (kullanıcı burada da bekliyor). */}
+        <Card>
+          <SectionTitle title={translateCopy("İlanı sil", language)} />
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>
+            {translateCopy("İlanı listenden kaldırır. Geçmişi (talep/ortaklık/satış) olan ilan arşivlenir, kayıtların korunur. Geçici gizlemek için satıcı panelinden \"Pasife Al\" kullan.", language)}
+          </Text>
+          <PrimaryButton
+            tone="danger"
+            icon="trash-can-outline"
+            onPress={() => {
+              const hasHistory = partnerships.some((p) => p.listingId === listing.id) || leads.some((l) => l.listingId === listing.id) || sales.some((s) => s.listingId === listing.id);
+              Alert.alert(
+                translateCopy("İlanı sil", language),
+                hasHistory
+                  ? translateCopy("Bu ilanın talep/ortaklık/satış geçmişi var. İlan kaldırılıp arşivlenir; komisyon ve satış kayıtların korunur.", language)
+                  : translateCopy("İlan kalıcı olarak silinir. Bu işlem geri alınamaz.", language),
+                [
+                  { text: translateCopy("Vazgeç", language), style: "cancel" },
+                  { text: translateCopy(hasHistory ? "Kaldır ve arşivle" : "Kalıcı sil", language), style: "destructive", onPress: () => { removeListing(listing.id); router.back(); } }
+                ]
+              );
+            }}
+          >
+            {translateCopy("İlanı sil", language)}
           </PrimaryButton>
         </Card>
       </ScrollView>

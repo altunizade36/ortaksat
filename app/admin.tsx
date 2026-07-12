@@ -1277,6 +1277,7 @@ function listingStatusLabel(status: string) {
   if (status === "paused") return "Duraklatıldı";
   if (status === "sold") return "Satıldı";
   if (status === "expired") return "Süresi doldu";
+  if (status === "archived") return "Arşivlendi";
   return status;
 }
 

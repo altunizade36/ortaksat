@@ -186,6 +186,26 @@ export async function deleteListingLive(listingId: string): Promise<boolean> {
   return true;
 }
 
+/**
+ * Kullanıcı ilan silme — SUNUCU-OTORİTELİ delete-or-archive.
+ * Önce gerçek DELETE dener. Komisyon/sipariş (FK NO ACTION, kod 23503) engellerse ilan
+ * SİLİNEMEZ → bunun yerine status='archived' yapar (her yerden gizlenir, finansal geçmiş korunur).
+ * Böylece istemci geçmişi bilmese bile para kayıtları asla kaybolmaz.
+ */
+export async function removeListingLive(listingId: string): Promise<"deleted" | "archived" | false> {
+  if (!supabase) return "deleted"; // demo/live-değil: yerel silme yeterli
+  const del = await supabase.from("listings").delete().eq("id", listingId);
+  if (!del.error) return "deleted";
+  if (del.error.code === "23503") { // foreign_key_violation → komisyon/sipariş var → arşivle
+    const arch = await supabase.from("listings").update({ status: "archived" }).eq("id", listingId);
+    if (!arch.error) return "archived";
+    console.warn("Listing archive fallback failed", arch.error);
+    return false;
+  }
+  console.warn("Listing remove failed", del.error);
+  return false;
+}
+
 /** Ekstra kategori ekle/guncelle (admin). key uniq -> upsert. */
 export async function saveCategoryLive(c: { id?: string; key: string; label: string; slug: string; image: string; subcategories: Array<{ label: string; slug: string }>; sortOrder: number; isActive: boolean }) {
   if (!supabase) return;
