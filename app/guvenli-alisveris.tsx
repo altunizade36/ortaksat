@@ -8,6 +8,7 @@ import { colors } from "@/components/colors";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { VERIFICATION_LEVELS, VERIFICATION_ROADMAP } from "@/lib/verification";
 import { useIsWideWeb } from "@/lib/layout";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
@@ -89,6 +90,37 @@ export default function SafeShoppingGuidePage() {
             <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>
               {translateCopy("OrtakSat yalnızca satıcı, ortak ve alıcıyı buluşturur. Ödeme, teslimat ve komisyon şartlarını taraflar kendi aralarında belirler — platform bu sürecin tarafı değildir ve garanti vermez. Bu yüzden ödemeyi ve teslimatı güvenli yürütmek senin elinde. Aşağıdaki adımlar bunun için.", language)}
             </Text>
+          </View>
+        </View>
+
+        {/* Doğrulama seviyeleri — "Doğrulanmış satıcı" ne demek, dürüstçe. */}
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: isWideWeb ? 22 : 16 }}>
+          <View style={{ gap: 3 }}>
+            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("\"Doğrulanmış satıcı\" ne anlama gelir?", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>{translateCopy("OrtakSat'ta doğrulama, satıcının kimliğini ve iletişimini teyit eden adımlardır. Bir satıcının profilinde YALNIZCA gerçekten tamamladığı doğrulamalar rozet olarak görünür.", language)}</Text>
+          </View>
+          <View style={{ gap: 10 }}>
+            {VERIFICATION_LEVELS.map((lvl) => (
+              <View key={lvl.key} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 8, height: 34, justifyContent: "center", width: 34 }}>
+                  <MaterialCommunityIcons name={lvl.icon as IconName} size={18} color={colors.success} />
+                </View>
+                <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                  <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy(lvl.label, language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy(lvl.desc, language)}</Text>
+                </View>
+              </View>
+            ))}
+          </View>
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 12 }}>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Henüz sunmadığımız seviyeler (yakında):", language)}</Text>
+            {VERIFICATION_ROADMAP.map((r) => (
+              <View key={r.label} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <MaterialCommunityIcons name={r.icon as IconName} size={15} color={colors.subtle} />
+                <Text style={{ color: colors.subtle, flex: 1, fontSize: 12, fontWeight: "700" }}>{translateCopy(r.label, language)} — {translateCopy(r.desc, language)}</Text>
+              </View>
+            ))}
+            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Bu seviyeler henüz uygulanmadığından hiçbir satıcıya bu rozetler atanmaz.", language)}</Text>
           </View>
         </View>
 

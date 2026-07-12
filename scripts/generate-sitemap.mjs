@@ -57,7 +57,10 @@ const STATIC = [
   ["/explore", "hourly", "0.9"],
   ["/kategoriler", "weekly", "0.8"],
   ...CATEGORY_SLUGS.map((s) => [`/kategori/${s}`, "daily", "0.75"]),
-  ...CITY_CATEGORY_PAGES,
+  // NOT: Şehir×kategori sayfaları (kategori/<cat>/<sehir>) sitemap'e YAZILMAZ.
+  // Gerçek ilan olmadan bunlar ince/yinelenen içerik (144 near-dup) → SEO riski.
+  // seo-static.mjs bu sayfalara noindex koyar. İlan geldikçe tekrar değerlendirilecek.
+  // (Referans için tutuldu: CITY_CATEGORY_PAGES)
   ["/create", "weekly", "0.8"],
   ["/partner", "weekly", "0.8"],
   ["/ortak-kazanc", "weekly", "0.7"],

@@ -26,6 +26,7 @@ import { SafetyNote } from "@/components/safety-note";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { commissionAmount, commissionText, listingInviteCode, moneyIn, partnerInviteUrl, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
 import { categoryConversion } from "@/lib/conversion";
+import { VerificationBadges } from "@/components/verification-badges";
 import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
@@ -880,6 +881,8 @@ export default function ListingDetailScreen() {
                   </Text>
                 </View>
               ) : null}
+              {/* Gerçek doğrulama rozetleri (yalnız kazanılanlar; şirket/banka gibi uygulanmayan gösterilmez). */}
+              {!isDemo ? <View style={{ marginTop: 5 }}><VerificationBadges user={owner} size="sm" /></View> : null}
             </View>
             <Link href={{ pathname: "/store/[id]", params: { id: currentListing.ownerId } }} asChild>
               <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("Mağazayı aç", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}>

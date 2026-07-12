@@ -296,13 +296,14 @@ function extractRh(html, re) {
 
 // Bir dinamik sayfanın TÜM SEO head'ini yeniden yaz: dublike title/desc/og temizle,
 // tek temiz set + canonical + robots(index) + JSON-LD dizisi enjekte et.
-function rewriteSeoHead(fp, { title, description, canonicalUrl, jsonld }) {
+function rewriteSeoHead(fp, { title, description, canonicalUrl, jsonld, noindex }) {
   if (!fs.existsSync(fp)) return false;
   let html = fs.readFileSync(fp, "utf8");
 
-  // 1) Tüm <title>…</title> (generic + data-rh) ve ilgili meta/canonical'ları SİL.
+  // 1) Tüm <title>…</title> (generic + data-rh) ve ilgili meta/canonical/robots'ları SİL.
   html = html.replace(/<title\b[^>]*>[\s\S]*?<\/title>/gi, "");
   html = html.replace(/<meta\b[^>]*\bname="description"[^>]*>/gi, "");
+  html = html.replace(/<meta\b[^>]*\bname="robots"[^>]*>/gi, "");
   html = html.replace(/<meta\b[^>]*\bproperty="og:(?:title|description|url)"[^>]*>/gi, "");
   html = html.replace(/<meta\b[^>]*\bname="twitter:(?:title|description|image|card)"[^>]*>/gi, "");
   html = html.replace(/<link\b[^>]*\brel="canonical"[^>]*>/gi, "");
@@ -312,7 +313,7 @@ function rewriteSeoHead(fp, { title, description, canonicalUrl, jsonld }) {
     `<title>${escText(title)}</title>`,
     `<meta name="description" content="${escAttr(description)}"/>`,
     `<link rel="canonical" href="${escAttr(canonicalUrl)}"/>`,
-    `<meta name="robots" content="index, follow"/>`,
+    `<meta name="robots" content="${noindex ? "noindex, follow" : "index, follow"}"/>`,
     `<meta property="og:title" content="${escAttr(title)}"/>`,
     `<meta property="og:description" content="${escAttr(description)}"/>`,
     `<meta property="og:url" content="${escAttr(canonicalUrl)}"/>`,
@@ -394,7 +395,9 @@ function patchCityPage(fp, slug, citySlug) {
     { name: label, url: `${BASE}/kategori/${slug}` },
     { name: `${city} ${label}`, url }
   ];
-  return rewriteSeoHead(fp, { title, description, canonicalUrl: url, jsonld: [breadcrumbLd(crumbs), collectionLd(title, description, url, crumbs)] });
+  // Şehir×kategori sayfaları gerçek ilan olmadan ince/yinelenen içerik → noindex
+  // (yine de follow: kategori hub'ına link akışı korunur). İlan geldikçe kaldırılacak.
+  return rewriteSeoHead(fp, { title, description, canonicalUrl: url, jsonld: [breadcrumbLd(crumbs), collectionLd(title, description, url, crumbs)], noindex: true });
 }
 
 // Export yapısı: kategori/<slug>/index.html = HUB, kategori/<slug>/<sehir>.html = şehir.
