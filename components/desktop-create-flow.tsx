@@ -596,7 +596,11 @@ export function DesktopCreateFlow() {
 
               {multiFields.length ? (
                 <FormSection title="Donanım & Özellikler" icon="star-outline" hint="Ürünün öne çıkan özelliklerini işaretle — alıcının güvenini artırır.">
-                  <View style={{ gap: 18 }}>{multiFields.map(renderField)}</View>
+                  {/* SATIR-sarmalı olmalı: DField kökü flexBasis:"100%"+flexGrow:1 taşır ve bu
+                      SÜTUN konteynerde flexBasis ANA EKSEN=YÜKSEKLİK olarak yorumlanıyordu →
+                      her multiselect tam-yükseklik kutuya şişip (1406px) sayfayı ~9640px'e
+                      çıkarıyor, altta dev beyaz boşluk bırakıyordu (mobil web şikayeti). */}
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>{multiFields.map(renderField)}</View>
                 </FormSection>
               ) : null}
 
