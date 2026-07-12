@@ -69,6 +69,7 @@ type DraftShape = {
   partnershipMode: PartnershipMode;
   partnerNote: string;
   contactMethod: "message" | "whatsapp" | "phone";
+  attributionWindow?: string;
 };
 
 export function DesktopCreateFlow() {
@@ -91,6 +92,8 @@ export function DesktopCreateFlow() {
   // Kademeli komisyon (yalnız yüzde): ortağın kümülatif satışına göre artan oran satırları.
   const [tiers, setTiers] = useState<Array<{ minSales: string; rate: string }>>([]);
   const [partnershipMode, setPartnershipMode] = useState<PartnershipMode>("approval");
+  // Atıf (referans) penceresi: ortak linkinin kaç gün geçerli olacağı (7/15/30/60).
+  const [attributionWindow, setAttributionWindow] = useState("30");
   const [partnerNote, setPartnerNote] = useState("");
   const [contactMethod, setContactMethod] = useState<"message" | "whatsapp" | "phone">("message");
   const [publishing, setPublishing] = useState(false);
@@ -199,11 +202,11 @@ export function DesktopCreateFlow() {
       savedAt: Date.now(), step,
       path: path.map((p) => ({ key: p.key, label: p.label, slug: p.slug, formKey: p.formKey, image: p.image })),
       values, images, loc, visibility, currency, commissionType, commissionValue,
-      bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod
+      bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow
     };
     const h = setTimeout(() => { void AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); }, 700);
     return () => clearTimeout(h);
-  }, [draftReady, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, step, publishing]);
+  }, [draftReady, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow, step, publishing]);
 
   const clearDraft = () => { setPendingDraft(null); void AsyncStorage.removeItem(DRAFT_KEY); };
 
@@ -222,6 +225,7 @@ export function DesktopCreateFlow() {
     setBonusAmount(d.bonusAmount ?? "");
     setBonusQuota(d.bonusQuota ?? "");
     if (d.partnershipMode) setPartnershipMode(d.partnershipMode);
+    if (d.attributionWindow) setAttributionWindow(String(d.attributionWindow));
     setPartnerNote(d.partnerNote ?? "");
     if (d.contactMethod) setContactMethod(d.contactMethod);
     setStep(typeof d.step === "number" ? d.step : 1);
@@ -432,6 +436,7 @@ export function DesktopCreateFlow() {
         minPartnerRating: 0,
         commissionDueDays: 3,
         returnWindowDays: 7,
+        attributionWindowDays: Number(attributionWindow) || 30,
         partnerRules: [...boolLines, partnerNote.trim()].filter(Boolean).length ? [...boolLines, partnerNote.trim()].filter(Boolean) : ["Komisyon sadece onaylı satış kaydında oluşur."],
         deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; Ortaksat para tutmaz.",
         contactMethod
@@ -769,6 +774,18 @@ export function DesktopCreateFlow() {
                   return <Pressable key={k} onPress={() => setPartnershipMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
                 })}
               </View>
+            </View>
+
+            {/* Atıf (referans) penceresi — ortak linkinin kaç gün geçerli olacağı. */}
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Atıf (referans) süresi", language)}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {["7", "15", "30", "60"].map((d) => {
+                  const on = attributionWindow === d;
+                  return <Pressable key={d} onPress={() => setAttributionWindow(d)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 15, paddingVertical: 8 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{d} {translateCopy("gün", language)}</Text></Pressable>;
+                })}
+              </View>
+              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("Ortak linkine tıklayan alıcı bu süre içinde iletişime geçerse satış ortağa atfedilir.", language)}</Text>
             </View>
 
             <View style={{ gap: 6 }}>

@@ -68,6 +68,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [minPartnerRating, setMinPartnerRating] = useState(`${listing.minPartnerRating}`);
   const [commissionDueDays, setCommissionDueDays] = useState(`${listing.commissionDueDays}`);
   const [returnWindowDays, setReturnWindowDays] = useState(`${listing.returnWindowDays}`);
+  const [attributionWindowDays, setAttributionWindowDays] = useState(`${listing.attributionWindowDays ?? 30}`);
   const [image, setImage] = useState(listing.image);
   const [deliveryNote, setDeliveryNote] = useState(listing.deliveryNote);
   const [tags, setTags] = useState(listing.tags.join(", "));
@@ -133,6 +134,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     const parsedMinRating = Number(minPartnerRating);
     const parsedCommissionDueDays = Number(commissionDueDays);
     const parsedReturnWindowDays = Number(returnWindowDays);
+    const parsedAttributionWindowDays = Number(attributionWindowDays);
     const salesPitch = pitch.split("\n").map((item) => item.trim()).filter(Boolean);
     const parsedRules = partnerRules.split("\n").map((item) => item.trim()).filter(Boolean);
     const parsedTags = tags.split(",").map((item) => item.trim()).filter(Boolean);
@@ -236,6 +238,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       minPartnerRating: Number.isFinite(parsedMinRating) ? parsedMinRating : 0,
       commissionDueDays: Number.isFinite(parsedCommissionDueDays) ? parsedCommissionDueDays : 3,
       returnWindowDays: Number.isFinite(parsedReturnWindowDays) ? parsedReturnWindowDays : 7,
+      attributionWindowDays: Number.isFinite(parsedAttributionWindowDays) && parsedAttributionWindowDays > 0 ? parsedAttributionWindowDays : 30,
       partnerRules: parsedRules.length > 0 ? parsedRules : ["Komisyon sadece onaylı satış kaydında oluşur."],
       deliveryNote: deliveryNote.trim() || "Teslimat satıcıyla alıcı arasında netleştirilir.",
       contactMethod
@@ -385,6 +388,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
             </View>
           </View>
           <Field label="İade bekleme günü" value={returnWindowDays} onChangeText={setReturnWindowDays} keyboardType="numeric" />
+          <Field label="Atıf (referans) süresi (gün)" value={attributionWindowDays} onChangeText={setAttributionWindowDays} keyboardType="numeric" />
           <Field label="Etiketler" value={tags} onChangeText={setTags} />
           <Field label="Satış argümanları" value={pitch} onChangeText={setPitch} multiline />
           <SectionTitle title={translateCopy("Hazır paylaşım metinleri", language)} action={translateCopy("Ortak kullanır", language)} />

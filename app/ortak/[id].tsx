@@ -44,7 +44,7 @@ function Inner() {
         setProfile(res.profile);
         setItems(res.items);
         // Vitrindeki her ilan için ref atfını sakla → normal kart tıklaması ortağa kredilenir.
-        res.items.forEach((it) => saveRefAttribution(it.listing.id, it.partnershipId, it.refCode));
+        res.items.forEach((it) => saveRefAttribution(it.listing.id, it.partnershipId, it.refCode, it.listing.attributionWindowDays));
         setLoading(false);
       })
       .catch(() => { if (alive) setLoading(false); });

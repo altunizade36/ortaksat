@@ -81,6 +81,8 @@ export type Listing = {
   minPartnerRating: number;
   commissionDueDays: number;
   returnWindowDays: number;
+  // Ortak referans linkinin geçerlilik (atıf) süresi — bu süre içinde gelen alıcı ortağa atfedilir.
+  attributionWindowDays: number;
   partnerRules: string[];
   partnerCount: number;
   leadCount: number;

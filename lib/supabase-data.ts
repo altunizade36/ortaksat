@@ -34,6 +34,7 @@ type PublicListingCardRow = {
   min_partner_rating: number | string | null;
   commission_due_days: number | null;
   return_window_days: number | null;
+  attribution_window_days: number | null;
   partner_rules: string[] | null;
   delivery_note: string | null;
   contact_method: Listing["contactMethod"];
@@ -176,6 +177,7 @@ function mapListing(row: PublicListingCardRow): Listing {
     minPartnerRating: toNumber(row.min_partner_rating),
     commissionDueDays: row.commission_due_days ?? 0,
     returnWindowDays: row.return_window_days ?? 0,
+    attributionWindowDays: row.attribution_window_days ?? 30,
     partnerRules: (row.partner_rules ?? []).map(repairTurkishText),
     partnerCount: toNumber(row.partner_count),
     leadCount: toNumber(row.lead_count),

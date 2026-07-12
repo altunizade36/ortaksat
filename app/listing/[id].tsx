@@ -186,7 +186,7 @@ export default function ListingDetailScreen() {
     const local = partnerships.find((p) => p.refCode === refParam && p.listingId === lst.id && p.status === "active");
     if (local) {
       refCapturedFor.current = captureKey;
-      saveRefAttribution(lst.id, local.id, refParam);
+      saveRefAttribution(lst.id, local.id, refParam, lst.attributionWindowDays);
       setAttributedPartnershipId(local.id);
       void logReferralClick(lst.id, local.id, refParam);
       return;
@@ -196,7 +196,7 @@ export default function ListingDetailScreen() {
       refCapturedFor.current = captureKey; // tekrar çözmeyi engelle
       void resolveReferralLink(lst.slug, refParam).then((res) => {
         if (!res?.partnershipId) return; // geçersiz/expired → sessizce yok say
-        saveRefAttribution(res.listingId || lst.id, res.partnershipId, refParam);
+        saveRefAttribution(res.listingId || lst.id, res.partnershipId, refParam, lst.attributionWindowDays);
         setAttributedPartnershipId(res.partnershipId);
         void logReferralClick(res.listingId || lst.id, res.partnershipId, refParam);
       });
@@ -349,6 +349,9 @@ export default function ListingDetailScreen() {
       const created = createLead({ listingId: currentListing.id, partnershipId: pid, buyerName, buyerPhone, source: sourceForLead, intent: "warm", note });
       if (created) contactLeadDone.current = true;
     } else if (isSupabaseConfigured) {
+      // Self-purchase guard (canlı): kullanıcı bu atfın ORTAĞIYSA (herhangi statüde) kendi
+      // linkinden lead/komisyon üretemesin. `local` yalnız aktif ortaklığı yakalıyordu.
+      if (partnerships.some((p) => p.id === pid && p.partnerId === currentUser.id)) return;
       contactLeadDone.current = true;
       void insertReferralLead({ listingId: currentListing.id, partnershipId: pid, buyerName, buyerPhone: buyerPhone || "-", note });
     }
@@ -928,6 +931,7 @@ export default function ListingDetailScreen() {
             {currentListing.minPartnerRating > 0 ? <SpecRow label="Min. ortak puanı" value={`${currentListing.minPartnerRating}+`} /> : null}
             <SpecRow label="Komisyon vadesi" value={`${currentListing.commissionDueDays} ${translateCopy("gün", language)}`} />
             <SpecRow label="İade süresi" value={`${currentListing.returnWindowDays} ${translateCopy("gün", language)}`} />
+            <SpecRow label="Atıf (referans) süresi" value={`${currentListing.attributionWindowDays} ${translateCopy("gün", language)}`} />
             <SpecRow label="İletişim" value={contactLabel(currentListing.contactMethod)} />
           </Accordion>
           <Accordion title={translateCopy("Teslimat ve iade", language)} icon="truck-outline">

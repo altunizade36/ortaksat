@@ -40,7 +40,7 @@ export default function ReferralLeadScreen() {
 
   // Yerel (önizleme/bellek) eşleşmede de atfı sakla — landing'den ilana geçişte korunur.
   useEffect(() => {
-    if (localListing && localPartnership && ref) saveRefAttribution(localListing.id, localPartnership.id, ref);
+    if (localListing && localPartnership && ref) saveRefAttribution(localListing.id, localPartnership.id, ref, localListing.attributionWindowDays);
   }, [localListing?.id, localPartnership?.id, ref]);
 
   useEffect(() => {

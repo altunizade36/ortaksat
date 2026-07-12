@@ -200,6 +200,7 @@ function BulkUploadInner() {
           minPartnerRating: 0,
           commissionDueDays: 3,
           returnWindowDays: 7,
+          attributionWindowDays: 30,
           partnerRules: ["Komisyon sadece onaylı satış kaydında oluşur."],
           deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; Ortaksat para tutmaz.",
           contactMethod: "message",

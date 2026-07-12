@@ -14,7 +14,12 @@ const KEY = "ortaksat_ref_v1";
 const TTL_MS = 30 * 24 * 60 * 60 * 1000;
 const MAX = 40;
 
-export type RefEntry = { partnershipId: string; refCode: string; ts: number };
+export type RefEntry = { partnershipId: string; refCode: string; ts: number; exp?: number };
+const DAY_MS = 24 * 60 * 60 * 1000;
+// Bir kaydın süresi doldu mu? İlan-bazlı `exp` varsa onu, yoksa eski 30g TTL'i kullan (geriye uyum).
+function isExpired(v: RefEntry, now: number): boolean {
+  return v.exp ? now > v.exp : now - v.ts >= TTL_MS;
+}
 type RefMap = Record<string, RefEntry>; // listingId -> entry
 
 // Native / storage olmadığında oturum süresince tutulan yedek.
@@ -46,14 +51,15 @@ function writeAll(map: RefMap): void {
 }
 
 /** Bir ilan için ortak referans atfını sakla. Eksik/geçersiz veri sessizce yok sayılır. */
-export function saveRefAttribution(listingId: string | undefined, partnershipId: string | undefined, refCode: string | undefined): void {
+export function saveRefAttribution(listingId: string | undefined, partnershipId: string | undefined, refCode: string | undefined, windowDays?: number): void {
   if (!listingId || !partnershipId || !refCode) return;
-  const map = readAll();
-  map[listingId] = { partnershipId, refCode, ts: Date.now() };
-  // TTL süresi geçenleri temizle + en yeni MAX kaydı tut.
   const now = Date.now();
+  const days = windowDays && windowDays > 0 ? windowDays : 30; // ilan-bazlı atıf penceresi (varsayılan 30g)
+  const map = readAll();
+  map[listingId] = { partnershipId, refCode, ts: now, exp: now + days * DAY_MS };
+  // Süresi geçenleri temizle + en yeni MAX kaydı tut.
   const fresh = Object.entries(map)
-    .filter(([, v]) => v && typeof v.ts === "number" && now - v.ts < TTL_MS)
+    .filter(([, v]) => v && typeof v.ts === "number" && !isExpired(v, now))
     .sort((a, b) => b[1].ts - a[1].ts)
     .slice(0, MAX);
   writeAll(Object.fromEntries(fresh));
@@ -65,7 +71,7 @@ export function getRefAttribution(listingId: string | undefined): RefEntry | nul
   const map = readAll();
   const entry = map[listingId];
   if (!entry || !entry.partnershipId || typeof entry.ts !== "number") return null;
-  if (Date.now() - entry.ts >= TTL_MS) {
+  if (isExpired(entry, Date.now())) {
     delete map[listingId];
     writeAll(map);
     return null;

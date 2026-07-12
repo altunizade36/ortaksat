@@ -136,6 +136,7 @@ type NewListingInput = Pick<
   | "minPartnerRating"
   | "commissionDueDays"
   | "returnWindowDays"
+  | "attributionWindowDays"
   | "partnerRules"
   | "deliveryNote"
   | "contactMethod"
