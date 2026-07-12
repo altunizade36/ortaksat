@@ -136,8 +136,8 @@ function PartnerScreenInner() {
       <View style={{ alignItems: "stretch", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {[
           { icon: "cursor-default-click-outline" as const, label: translateCopy("Tıklama", language), value: `${totalClicks}`, rate: null as string | null },
-          { icon: "phone-in-talk-outline" as const, label: translateCopy("Talep", language), value: `${myBroughtLeads.length}`, rate: totalClicks > 0 ? `%${Math.round((myBroughtLeads.length / totalClicks) * 100)}` : null },
-          { icon: "cart-check" as const, label: translateCopy("Satış", language), value: `${mySales.length}`, rate: myBroughtLeads.length > 0 ? `%${Math.round((mySales.length / myBroughtLeads.length) * 100)}` : null },
+          { icon: "phone-in-talk-outline" as const, label: translateCopy("Talep", language), value: `${myBroughtLeads.length}`, rate: totalClicks > 0 ? `%${Math.min(100, Math.round((myBroughtLeads.length / totalClicks) * 100))}` : null },
+          { icon: "cart-check" as const, label: translateCopy("Satış", language), value: `${mySales.length}`, rate: myBroughtLeads.length > 0 ? `%${Math.min(100, Math.round((mySales.length / myBroughtLeads.length) * 100))}` : null },
           { icon: "cash-multiple" as const, label: translateCopy("Kazanç", language), value: money(funnelEarn), rate: null }
         ].map((s, i) => (
           <View key={s.label} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 130, flexGrow: 1, gap: 4, minWidth: 0, padding: 12 }}>
@@ -320,8 +320,10 @@ function PartnerScreenInner() {
       return bv - av || commissionAmount(b) - commissionAmount(a);
     });
     const totalEarn = waiting + approved + paid;
-    const rateListings = opportunities.filter((l) => l.commissionType === "rate");
-    const avgCommissionPct = rateListings.length ? Math.round((rateListings.reduce((s, l) => s + l.commissionValue, 0) / rateListings.length) * 10) / 10 : 0;
+    // Ortalama komisyon oranı: sabit-₺ ilanlar da efektif oranla (komisyon/fiyat×100) dahil
+    // edilir; yoksa tüm fırsatlar sabit-₺ olduğunda KPI yanlışlıkla %0 görünüyordu.
+    const effRates = opportunities.map((l) => (l.commissionType === "rate" ? l.commissionValue : (l.price > 0 ? (l.commissionValue / l.price) * 100 : 0))).filter((r) => r > 0);
+    const avgCommissionPct = effRates.length ? Math.round((effRates.reduce((s, r) => s + r, 0) / effRates.length) * 10) / 10 : 0;
     const myLeadCount = leads.filter((lead) => myPartnerships.some((p) => p.id === lead.partnershipId)).length;
     // Gerçek tahsil oranı: kayıtlı toplam komisyonun ne kadarı ödendi (sahte hedef yok).
     const collectRate = totalEarn > 0 ? Math.min(100, Math.round((paid / totalEarn) * 100)) : 0;
@@ -918,9 +920,9 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 10, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 8 }}>
           <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{clickCount} {translateCopy("tıklama", language)}</Text>
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{listingLeads.length} {translateCopy("talep", language)}{clickCount > 0 ? ` (%${Math.round((listingLeads.length / clickCount) * 100)})` : ""}</Text>
+          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{listingLeads.length} {translateCopy("talep", language)}{clickCount > 0 ? ` (%${Math.min(100, Math.round((listingLeads.length / clickCount) * 100))})` : ""}</Text>
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-          <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{listingSales.length} {translateCopy("satış", language)}{listingLeads.length > 0 ? ` (%${Math.round((listingSales.length / listingLeads.length) * 100)})` : ""}</Text>
+          <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{listingSales.length} {translateCopy("satış", language)}{listingLeads.length > 0 ? ` (%${Math.min(100, Math.round((listingSales.length / listingLeads.length) * 100))})` : ""}</Text>
         </View>
       ) : null}
 

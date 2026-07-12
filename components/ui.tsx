@@ -46,6 +46,8 @@ export function PrimaryButton({ children, onPress, href, tone = "primary", icon 
 
   const button = (
     <Pressable
+      accessibilityRole={href ? "link" : "button"}
+      accessibilityLabel={typeof children === "string" ? translateCopy(children, language) : undefined}
       onPress={onPress ? () => { haptic.light(); onPress(); } : undefined}
       style={({ pressed }) => ({
         alignItems: "center",
@@ -168,6 +170,9 @@ export function Chip({ label, active, onPress }: { label: string; active?: boole
   const { language } = useLanguage();
   return (
     <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!active }}
+      accessibilityLabel={translateCopy(label, language)}
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center",

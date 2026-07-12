@@ -244,7 +244,7 @@ export default function HomeScreen() {
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("En Çok Kazandıran Fırsatlar", language)}</Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
                 {topEarn.map((l) => (
-                  <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
+                  <Pressable key={l.id} accessibilityRole="button" accessibilityLabel={l.title} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, overflow: "hidden", width: 140 }}>
                     <View style={{ height: 90, width: "100%" }}>
                       <SafeRemoteImage uri={l.image} alt={l.title} accessibilityLabel={l.title} style={{ height: 90, width: "100%" }} contentFit="cover" />
                       <View style={{ backgroundColor: colors.gold, borderRadius: 6, left: 7, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 7 }}>

@@ -61,6 +61,8 @@ export function GlobalSearchBar() {
           onBlur={() => setTimeout(() => setFocused(false), 180)}
           onSubmitEditing={() => submitSearch()}
           blurOnSubmit
+          accessibilityRole="search"
+          accessibilityLabel={t("searchPlaceholder")}
           placeholder={t("searchPlaceholder")}
           placeholderTextColor={colors.muted}
           returnKeyType="search"

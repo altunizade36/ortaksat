@@ -6,7 +6,7 @@ export const colors = {
   surfaceAlt: "#F0FBFC",   // hafif turkuaz tint (ikincil yüzey)
   ink: "#0F172A",          // başlık yazısı
   muted: "#64748B",        // açıklama yazısı
-  subtle: "#94A3B8",       // en soluk yazı
+  subtle: "#6B7A8C",       // en soluk yazı — WCAG için koyulaştırıldı (#94A3B8 ≈2.4:1 kalıyordu; şimdi ~4.3:1)
   line: "#D8F3F6",         // turkuaz kenarlık
   primary: "#0EA5B7",      // ana turkuaz
   primaryDark: "#0B7285",  // koyu turkuaz

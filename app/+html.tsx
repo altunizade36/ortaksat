@@ -225,7 +225,10 @@ body {
 /* Doğal odak: tarayıcının çirkin kare focus çerçevesini kaldır.
    Arama kutusuna içine tıklanınca yumuşak yeşil bir kenarlık ver. */
 input, textarea, [role="search"] { outline: none !important; }
-input:focus, textarea:focus, input:focus-visible, textarea:focus-visible { outline: none !important; box-shadow: none !important; }
+/* Fare ile tıklamada temiz (çerçeve yok); KLAVYE ile gezinmede (:focus-visible)
+   erişilebilir turkuaz odak halkası — erişilebilirlik için görünür odak şart. */
+input:focus, textarea:focus { outline: none !important; box-shadow: none !important; }
+input:focus-visible, textarea:focus-visible { outline: none !important; box-shadow: 0 0 0 3px rgba(14,165,183,0.35) !important; }
 [role="search"]:focus-within { border-color: rgba(14,165,183,0.55) !important; box-shadow: 0 0 0 3px rgba(14,165,183,0.12) !important; }
 
 /* Make pressables feel interactive on web — premium turkuaz his */

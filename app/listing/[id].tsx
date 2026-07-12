@@ -189,8 +189,9 @@ export default function ListingDetailScreen() {
     if (local) {
       refCapturedFor.current = captureKey;
       saveRefAttribution(lst.id, local.id, refParam, lst.attributionWindowDays);
-      setAttributedPartnershipId(local.id);
-      void logReferralClick(lst.id, local.id, refParam);
+      // First-touch: saklanan atıf orijinal ortakta kalmış olabilir → lead kredisini ONDAN al.
+      setAttributedPartnershipId(getRefAttribution(lst.id)?.partnershipId ?? local.id);
+      void logReferralClick(lst.id, local.id, refParam); // tıklama yine kaydedilir (yeni linkin ölçümü)
       return;
     }
     // 2) Canlı: referral_public_links üzerinden çöz (yalnız aktif ortaklıklar görünür).
@@ -199,7 +200,7 @@ export default function ListingDetailScreen() {
       void resolveReferralLink(lst.slug, refParam).then((res) => {
         if (!res?.partnershipId) return; // geçersiz/expired → sessizce yok say
         saveRefAttribution(res.listingId || lst.id, res.partnershipId, refParam, lst.attributionWindowDays);
-        setAttributedPartnershipId(res.partnershipId);
+        setAttributedPartnershipId(getRefAttribution(lst.id)?.partnershipId ?? res.partnershipId);
         void logReferralClick(res.listingId || lst.id, res.partnershipId, refParam);
       });
     }
@@ -1043,7 +1044,7 @@ export default function ListingDetailScreen() {
                 <MaterialCommunityIcons name="flag-outline" size={22} color={colors.accent} />
               </View>
               <Text style={{ color: colors.ink, flex: 1, fontSize: 17, fontWeight: "900" }}>{translateCopy("İlanı bildir", language)}</Text>
-              <Pressable onPress={() => setReportOpen(false)} hitSlop={8}><MaterialCommunityIcons name="close" size={22} color={colors.muted} /></Pressable>
+              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kapat", language)} onPress={() => setReportOpen(false)} hitSlop={8}><MaterialCommunityIcons name="close" size={22} color={colors.muted} /></Pressable>
             </View>
             <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Bu ilanda bir sorun mu var? Nedenini seç; moderasyon ekibi inceler.", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>

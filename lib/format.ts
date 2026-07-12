@@ -81,20 +81,23 @@ export function tierRate(tiers: Array<{ minSales: number; rate: number }> | unde
 //  compute_agreed_commission fonksiyonu aynı mantığı sunucuda uygular.)
 export function effectiveCommissionAmount(listing: Listing, partnership: Partnership | undefined, priorSales: number, amount: number, quantity: number): number {
   const qty = Math.max(1, Math.floor(quantity || 1));
+  const amt = Number.isFinite(amount) ? Math.max(0, amount) : 0; // NaN/negatif satış tutarı → 0
+  // Sonuç ASLA NaN/negatif dönmesin (bozuk override/tier verisi para modelini kirletmesin).
+  const safe = (n: number) => (Number.isFinite(n) ? Math.max(0, Math.round(n)) : 0);
   if (partnership?.commissionOverrideType && typeof partnership.commissionOverrideValue === "number") {
     return partnership.commissionOverrideType === "rate"
-      ? Math.round((amount * partnership.commissionOverrideValue) / 100)
-      : Math.round(partnership.commissionOverrideValue * qty);
+      ? safe((amt * partnership.commissionOverrideValue) / 100)
+      : safe(partnership.commissionOverrideValue * qty);
   }
   if (partnership?.agreedCommissionType && typeof partnership.agreedCommissionValue === "number") {
     return partnership.agreedCommissionType === "rate"
-      ? Math.round((amount * tierRate(partnership.agreedCommissionTiers, partnership.agreedCommissionValue, priorSales)) / 100)
-      : Math.round(partnership.agreedCommissionValue * qty);
+      ? safe((amt * tierRate(partnership.agreedCommissionTiers, partnership.agreedCommissionValue, priorSales)) / 100)
+      : safe(partnership.agreedCommissionValue * qty);
   }
   if (listing.commissionType === "rate") {
-    return Math.round((amount * tierRate(listing.commissionTiers, listing.commissionValue, priorSales)) / 100);
+    return safe((amt * tierRate(listing.commissionTiers, listing.commissionValue, priorSales)) / 100);
   }
-  return Math.round(listing.commissionValue * qty);
+  return safe(listing.commissionValue * qty);
 }
 
 export function shareUrl(listing: Listing, refCode: string) {

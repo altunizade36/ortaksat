@@ -63,7 +63,7 @@ export function AppHeader() {
             </Pressable>
           ) : null}
           <Link href="/" asChild>
-            <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+            <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("OrtakSat ana sayfa", language)} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <BrandMark size={40} />
               <View style={{ gap: 1 }}>
                 <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 22, fontWeight: "900" }}>ortaksat</Text>
@@ -155,7 +155,7 @@ export function AppHeader() {
         ) : null}
         {!showBack ? <View style={{ marginRight: 8, zIndex: 2 }}><MobileNavMenu /></View> : null}
         <Link href="/" asChild>
-          <Pressable style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minWidth: 0 }}>
+          <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("OrtakSat ana sayfa", language)} style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minWidth: 0 }}>
             <BrandMark size={42} />
             <View style={{ gap: 1, minWidth: 0 }}>
               <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 21, fontWeight: "900", letterSpacing: 0 }}>
@@ -307,7 +307,7 @@ function AccountMenu() {
 
   return (
     <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
-      <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: open ? colors.primarySoft : colors.surface, borderColor: open ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 7 }}>
+      <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Hesabım", language)} accessibilityState={{ expanded: open }} onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: open ? colors.primarySoft : colors.surface, borderColor: open ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 12, paddingVertical: 7 }}>
         <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 26, justifyContent: "center", width: 26 }}>
           <MaterialCommunityIcons name="account" size={17} color={colors.primaryDark} />
           {hasUnread && !open ? <View style={{ backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1, height: 10, position: "absolute", right: -2, top: -2, width: 10 }} /> : null}
@@ -317,7 +317,7 @@ function AccountMenu() {
       </Pressable>
       {open ? (
         <>
-          <Pressable onPress={() => setOpen(false)} style={{ bottom: -3000, left: -3000, position: "absolute", right: -3000, top: -3000, zIndex: 900 }} />
+          <Pressable accessibilityElementsHidden importantForAccessibility="no-hide-descendants" aria-hidden onPress={() => setOpen(false)} style={{ bottom: -3000, left: -3000, position: "absolute", right: -3000, top: -3000, zIndex: 900 }} />
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden", position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 16 }, shadowOpacity: 0.18, shadowRadius: 30, top: 50, width: 268, zIndex: 1000 }}>
             {/* Başlık */}
             <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, flexDirection: "row", gap: 11, paddingHorizontal: 15, paddingVertical: 13 }}>

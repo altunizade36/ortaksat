@@ -59,7 +59,9 @@ export default function ReferralLeadScreen() {
         // normal ilan detayına geçse bile ortak bağlantısı kaybolmasın.
         if (result?.partnershipId) {
           void logReferralClick(result.listingId, result.partnershipId, ref);
-          saveRefAttribution(result.listingId, result.partnershipId, ref);
+          // İlan-bazlı atıf penceresini onurlandır: uzak sonuçta yoksa yerel ilandan al (yoksa 30 varsayılan).
+          const localWin = listings.find((l) => l.id === result.listingId)?.attributionWindowDays;
+          saveRefAttribution(result.listingId, result.partnershipId, ref, localWin);
         }
       }
     }

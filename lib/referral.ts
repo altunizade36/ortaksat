@@ -56,7 +56,14 @@ export function saveRefAttribution(listingId: string | undefined, partnershipId:
   const now = Date.now();
   const days = windowDays && windowDays > 0 ? windowDays : 30; // ilan-bazlı atıf penceresi (varsayılan 30g)
   const map = readAll();
-  map[listingId] = { partnershipId, refCode, ts: now, exp: now + days * DAY_MS };
+  // İLK-DOKUNUŞ (first-touch) politikası: geçerli (süresi dolmamış) bir atıf varsa ve onu
+  // FARKLI bir ortak taşıyorsa, sonradan gelen ortak bu atfı ÇALAMAZ (haksız kredi engellenir).
+  // Aynı ortak yeniden dokunursa ya da eski atıf süresi geçmişse pencere tazelenir/yenilenir.
+  const existing = map[listingId];
+  const stolenAttempt = existing && !isExpired(existing, now) && existing.partnershipId !== partnershipId;
+  if (!stolenAttempt) {
+    map[listingId] = { partnershipId, refCode, ts: now, exp: now + days * DAY_MS };
+  }
   // Süresi geçenleri temizle + en yeni MAX kaydı tut.
   const fresh = Object.entries(map)
     .filter(([, v]) => v && typeof v.ts === "number" && !isExpired(v, now))

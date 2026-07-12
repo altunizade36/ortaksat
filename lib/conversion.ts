@@ -38,18 +38,28 @@ function rootLabelOf(category: string): string {
 }
 
 // Kök kategori → dönüşüm tipi. Eşleşmeyen her şey "sale" (ürün).
+// Yalnız ÇÖZÜLEN KÖK etiketine bakılır (ham leaf'e DEĞİL) — aksi halde substring
+// yanlış-pozitifleri olur: "Fotoğraf" içindeki "oto" vasıta sanılıp lead sınıflanıyordu.
 const ROOT_TYPE: Array<[RegExp, ConversionType]> = [
   [/emlak/i, "lead"],
-  [/vas[ıi]ta|ara[çc]|oto|motosiklet|ticari/i, "lead"],
+  [/vas[ıi]ta/i, "lead"],
   [/ustalar|hizmet/i, "appointment"],
   [/[öo]zel ders|e[ğg]itim|kurs/i, "appointment"],
-  [/i[şs] [ıi]lan/i, "appointment"]
+  [/i[şs] [ıi]lan/i, "appointment"],
+  [/yard[ıi]mc[ıi] aray/i, "appointment"]
+];
+
+// Kök çözülemezse (nadir) ham etikete güvenli, KELİME-SINIRLI yedek eşleme
+// (\boto → "Otomobil" evet, "Fotoğraf" hayır).
+const RAW_FALLBACK: Array<[RegExp, ConversionType]> = [
+  [/\boto(mobil| |$)|motosiklet|\bara[çc]\b/i, "lead"]
 ];
 
 export function categoryConversion(category: string | undefined): ConversionInfo {
   const root = category ? rootLabelOf(category) : "";
   let type: ConversionType = "sale";
-  for (const [re, t] of ROOT_TYPE) if (re.test(root) || (category && re.test(category))) { type = t; break; }
+  for (const [re, t] of ROOT_TYPE) if (re.test(root)) { type = t; break; }
+  if (type === "sale" && !root && category) for (const [re, t] of RAW_FALLBACK) if (re.test(category)) { type = t; break; }
 
   if (type === "lead") {
     return {
