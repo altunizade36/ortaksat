@@ -100,6 +100,8 @@ function SellerScreenInner() {
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  // Kullanıcının ELLE kapattığı ilanlar (oto-açılmayı ezer).
+  const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
   // Toplu işlem: seçili ilan kimlikleri (Trendyol tarzı çoklu seçim).
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const isWideWeb = useIsWideWeb();
@@ -536,7 +538,14 @@ function SellerScreenInner() {
         const nextAction = sellerNextAction(listing, listingLeads, listingSales, pendingPartners);
         const hasSaleForLead = (leadId: string) => listingSales.some((sale) => sale.leadId === leadId);
 
-        const isExpanded = expandedId === listing.id;
+        // AKSİYON GEREKTİREN İLAN KENDİLİĞİNDEN AÇILIR.
+        // Sorun: "Ortaklar" ve "Talep/randevu kaydet" (satış kaydetme) butonu bu KATLANIR
+        // bölümün içindeydi ve varsayılan KAPALI idi → ortağı/talebi olan satıcı satışı nasıl
+        // kaydedeceğini bulamıyordu (para akışının en kritik adımı görünmez kalıyordu).
+        // Artık aktif ortak, gelen talep veya bekleyen başvuru varsa bölüm AÇIK gelir;
+        // kullanıcı yine elle kapatabilir (expandedId ile açıkça kapatılmışsa ona saygı duyulur).
+        const needsAttention = activePartners > 0 || listingLeads.length > 0 || pendingPartners > 0;
+        const isExpanded = collapsedIds.has(listing.id) ? false : expandedId === listing.id || needsAttention;
         const unpaidTotal = unpaidListingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
         return (
           <Card key={listing.id}>
@@ -630,7 +639,20 @@ function SellerScreenInner() {
 
             {/* Talep & ödeme yönetimi: katlanır (varsayılan kapalı) */}
             {listingLeads.length > 0 || listingSales.length > 0 || activePartners > 0 ? (
-              <Pressable onPress={() => setExpandedId(isExpanded ? null : listing.id)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 11 }}>
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  if (isExpanded) {
+                    // Kapat: oto-açılmış olabilir → açıkça "kapatıldı" diye işaretle.
+                    setCollapsedIds((s2) => new Set(s2).add(listing.id));
+                    setExpandedId(null);
+                  } else {
+                    setCollapsedIds((s2) => { const n = new Set(s2); n.delete(listing.id); return n; });
+                    setExpandedId(listing.id);
+                  }
+                }}
+                style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 11 }}
+              >
                 <MaterialCommunityIcons name="clipboard-list-outline" size={18} color={colors.primaryDark} />
                 <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "800" }}>{translateCopy("Talep & ödeme yönetimi", language)} — {activePartners} {translateCopy("ortak", language)} · {listingLeads.length} {translateCopy("talep", language)} · {listingSales.length} {translateCopy("satış", language)}</Text>
                 <MaterialCommunityIcons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
