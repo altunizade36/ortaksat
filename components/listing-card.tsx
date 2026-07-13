@@ -122,8 +122,11 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
 
             <View style={{ gap: 8, padding: 12 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                <MaterialCommunityIcons name={getCategoryIcon(listing.category)} size={12} color={colors.primaryDark} />
-                <Text numberOfLines={1} selectable style={{ color: colors.primaryDark, flex: 1, fontSize: 11, fontWeight: "800", letterSpacing: 0.3, textTransform: "uppercase" }}>
+                {/* Kategori bir ETİKET, başlık değil: eskiden turkuaz+kalın+uppercase olduğu için
+                    başlıkla görsel olarak yarışıyordu. Sessizleştirildi (muted, ince, küçük) →
+                    hiyerarşi netleşti: başlık > fiyat > kazanç > kategori. */}
+                <MaterialCommunityIcons name={getCategoryIcon(listing.category)} size={11} color={colors.subtle} />
+                <Text numberOfLines={1} selectable style={{ color: colors.muted, flex: 1, fontSize: 10.5, fontWeight: "700", letterSpacing: 0.4, textTransform: "uppercase" }}>
                   {translateCopy(leafCat, language)}
                 </Text>
               </View>
@@ -179,39 +182,50 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
                 </View>
               </View>
 
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                {hasRating ? (
-                  <>
-                    <MaterialCommunityIcons name="star" size={13} color={colors.gold} />
-                    <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "800" }}>
-                      {rating.toFixed(1)}
+              {/* Satıcı sinyali + konum: eskiden HEPSİ tek satırdaydı; 177px'lik kartta konum
+                  "…" olup kırpılıyordu ("Yeni satıcı · … ✓ 1 satış" gibi bozuk görünüm).
+                  Artık 2 satır: (1) satıcı güveni, (2) konum. Bilgi aynı, okunurluk net. */}
+              <View style={{ gap: 3 }}>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                  {hasRating ? (
+                    <>
+                      <MaterialCommunityIcons name="star" size={13} color={colors.gold} />
+                      <Text numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "800" }}>
+                        {rating.toFixed(1)}
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <MaterialCommunityIcons name="sprout-outline" size={13} color={colors.info} />
+                      <Text numberOfLines={1} style={{ color: colors.info, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Yeni satıcı", language)}</Text>
+                    </>
+                  )}
+                  {isVerified ? <MaterialCommunityIcons name="check-decagram" size={13} color={colors.primary} /> : null}
+                  <View style={{ flex: 1 }} />
+                  {sellerSales > 0 ? (
+                    <>
+                      <MaterialCommunityIcons name="check-circle" size={13} color={colors.success} />
+                      <Text numberOfLines={1} selectable style={{ color: colors.success, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "800" }}>
+                        {compactNumber(sellerSales)} {translateCopy("satış", language)}
+                      </Text>
+                    </>
+                  ) : (
+                    <>
+                      <MaterialCommunityIcons name="account-group-outline" size={13} color={colors.subtle} />
+                      <Text numberOfLines={1} selectable style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>
+                        {compactNumber(listing.partnerCount)} {translateCopy("ortak", language)}
+                      </Text>
+                    </>
+                  )}
+                </View>
+                {displayText(listing.location) ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+                    <MaterialCommunityIcons name="map-marker-outline" size={12} color={colors.subtle} />
+                    <Text numberOfLines={1} selectable style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "700" }}>
+                      {displayText(listing.location)}
                     </Text>
-                  </>
-                ) : (
-                  <>
-                    <MaterialCommunityIcons name="sprout-outline" size={13} color={colors.info} />
-                    <Text numberOfLines={1} style={{ color: colors.info, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Yeni satıcı", language)}</Text>
-                  </>
-                )}
-                {isVerified ? <MaterialCommunityIcons name="check-decagram" size={13} color={colors.primary} /> : null}
-                <Text numberOfLines={1} selectable style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "700" }}>
-                  {" · "}{displayText(listing.location)}
-                </Text>
-                {sellerSales > 0 ? (
-                  <>
-                    <MaterialCommunityIcons name="check-circle" size={13} color={colors.success} />
-                    <Text numberOfLines={1} selectable style={{ color: colors.success, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "800" }}>
-                      {compactNumber(sellerSales)} {translateCopy("satış", language)}
-                    </Text>
-                  </>
-                ) : (
-                  <>
-                    <MaterialCommunityIcons name="account-group-outline" size={13} color={colors.subtle} />
-                    <Text numberOfLines={1} selectable style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>
-                      {compactNumber(listing.partnerCount)} {translateCopy("ortak", language)}
-                    </Text>
-                  </>
-                )}
+                  </View>
+                ) : null}
               </View>
 
               <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 2, minHeight: 38, paddingHorizontal: 8 }}>

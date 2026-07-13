@@ -18,7 +18,7 @@ import { getCategoryIcon } from "@/lib/categories";
 import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, findProvince } from "@/lib/cities";
 import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid } from "@/lib/layout";
+import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince, matchesLocationFilter } from "@/lib/locations";
 import { useStore } from "@/lib/use-store";
 
@@ -74,6 +74,7 @@ export default function CategoryLandingScreen() {
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const isWideWeb = useIsWideWeb();
   // Hidrasyon güvenliği: SSG'de gerçek genişlik yok → cardWidth sunucu/istemci
   // arasında uyuşmayıp React #418 üretiyordu. Mount'a kadar sabit genişlik kullan
   // (içerik SEO için render edilmeye devam eder), sonra gerçek genişliğe geç.
@@ -240,7 +241,11 @@ export default function CategoryLandingScreen() {
   });
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, paddingBottom: 40, paddingTop: 14 }}>
+    // MOBİL: WebContainer dar ekranda ŞEFFAF geçiş yapar (padding uygulamaz), ama kart
+    // genişliği layoutWidth-24 ile (12+12 padding varmış gibi) hesaplanıyordu → kartlar
+    // sol kenara YAPIŞIP kırpılıyor, sağda 24px boş kalıyordu. Dar ekranda padding'i
+    // ScrollView veriyor (geniş ekranda WebContainer verdiği için 0 bırakılır).
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, paddingBottom: 40, paddingHorizontal: isWideWeb ? 0 : 12, paddingTop: 14 }}>
       <Head>
         <title>{title}</title>
         <meta name="description" content={desc} />
