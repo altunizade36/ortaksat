@@ -113,7 +113,7 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [manual, setManual] = useState(false);
-  const { ref: nbAnchorRef, rect: nbAnchorRect, measure: measureNb } = useAnchor();
+  const { ref: nbAnchorRef, rect: nbAnchorRect, measure: measureNb } = useAnchor(open);
 
   useEffect(() => {
     let active = true;
@@ -202,7 +202,7 @@ function ComboBox({
   // çapalanmış bir katmanda (Modal/portal) açılır. Böylece sayfayı AŞAĞI İTMEZ ve
   // `overflow:hidden` olan kart/panel içinde KIRPILMAZ ("il/ilçe görünmüyor" sorunu).
   // Eski çözüm sayfayı listeye kaydırmaktı — istenmeyen davranış buydu.
-  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor();
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor(open);
   const openList = () => { if (disabled) return; measure(); setQuery(""); setOpen(true); };
 
   return (

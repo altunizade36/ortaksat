@@ -1423,7 +1423,7 @@ function FilterDropdown({ label, value, options, onSelect, searchable }: { label
   }
   // ÇAPALI KATMAN: eskiden ebeveyne göre absolute'du → `overflow:hidden` kapsayıcıda
   // kırpılıyor, zIndex savaşına giriyor ve ekran altında taşabiliyordu.
-  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor();
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor(open);
   return (
     <View>
       <View ref={anchorRef} collapsable={false} onLayout={measure}>
@@ -1518,7 +1518,7 @@ function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: st
     setOpen(false);
   }
   // ÇAPALI KATMAN (ebeveyne-absolute → kırpılma/taşma sorunu giderildi).
-  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor();
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor(open);
   return (
     <View>
       <View ref={anchorRef} collapsable={false} onLayout={measure}>

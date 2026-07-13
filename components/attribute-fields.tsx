@@ -84,7 +84,7 @@ function ASelect({ value, options, onChange }: { value: string; options: string[
   // absolute'a kaydıramadığı için "seçenekler hiç görünmüyordu". Artık portal
   // (Modal) içinde tetikleyicinin ölçülen ekran konumuna çapalanır — kırpılamaz,
   // düzeni itmez, altta yer yoksa yukarı açılır.
-  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor();
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor(open);
   return (
     <View>
       <View ref={anchorRef} collapsable={false} onLayout={measure}>

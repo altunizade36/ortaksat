@@ -6,6 +6,7 @@ import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput,
 import { Alert } from "@/lib/alert";
 
 import { Accordion } from "@/components/accordion";
+import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
@@ -282,25 +283,26 @@ function DeskField({ label, value, onChangeText, multiline, placeholder }: { lab
 
 function DeskSelect({ label, value, options, onSelect }: { label: string; value: string; options: string[]; onSelect: (v: string) => void }) {
   const [open, setOpen] = useState(false);
+  // ÇAPALI KATMAN (ebeveyne-absolute → kırpılma/taşma giderildi).
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor(open);
   return (
-    <View style={{ gap: 6, position: "relative", zIndex: open ? 1000 : 1 }}>
+    <View style={{ gap: 6 }}>
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
-      <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
-        <Text style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "700" }}>{value}</Text>
-        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
-      </Pressable>
-      {open ? (
-        <>
-          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 900 }} />
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, left: 0, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.16, shadowRadius: 20, top: 74, zIndex: 1000 }}>
-            {options.map((o) => (
-              <Pressable key={o} onPress={() => { onSelect(o); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed || o === value ? colors.surfaceAlt : "transparent", paddingHorizontal: 12, paddingVertical: 10 })}>
-                <Text style={{ color: o === value ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: o === value ? "800" : "600" }}>{o}</Text>
-              </Pressable>
-            ))}
-          </View>
-        </>
-      ) : null}
+      <View ref={anchorRef} collapsable={false} onLayout={measure}>
+        <Pressable onPress={() => { if (open) { setOpen(false); return; } measure(); setOpen(true); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
+          <Text style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "700" }}>{value}</Text>
+          <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+        </Pressable>
+      </View>
+      <AnchoredDropdown visible={open} anchor={anchorRect} onClose={() => setOpen(false)} maxHeight={300} minWidth={200}>
+        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+          {options.map((o) => (
+            <Pressable key={o} onPress={() => { onSelect(o); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed || o === value ? colors.surfaceAlt : "transparent", paddingHorizontal: 12, paddingVertical: 10 })}>
+              <Text style={{ color: o === value ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: o === value ? "800" : "600" }}>{o}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </AnchoredDropdown>
     </View>
   );
 }

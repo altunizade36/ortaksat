@@ -1220,7 +1220,7 @@ function DSelect({ label, value, options, onChange, placeholder }: { label: stri
   // her şeyi AŞAĞI İTİYORDU; kutu ekranın altındaysa liste görünür alanın dışında
   // kalıyordu (çözüm "sayfayı listeye kaydır"dı — istenmeyen davranış). Artık ticari
   // sitelerdeki gibi tetikleyicinin ÜSTÜNDE katman olarak açılır; yer yoksa yukarı açar.
-  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor();
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor(open);
   const searchable = options.length >= 12;
   const shown = searchable && query.trim()
     ? options.filter((o) => o.toLocaleLowerCase("tr-TR").includes(query.toLocaleLowerCase("tr-TR").trim()))

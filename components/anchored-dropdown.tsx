@@ -1,5 +1,5 @@
-import { useCallback, useRef, useState } from "react";
-import { Modal, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { Modal, Platform, Pressable, StyleSheet, View, useWindowDimensions } from "react-native";
 import type { ViewStyle } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -9,8 +9,12 @@ export type AnchorRect = { x: number; y: number; width: number; height: number }
 /**
  * Tetikleyicinin ekrandaki konumunu ölçer. Açılır listeyi buna göre çapalarız.
  * measureInWindow hem native'de hem react-native-web'de çalışır.
+ *
+ * `active` (liste açık mı): açıkken sayfa KAYDIRILIRSA veya pencere boyutu değişirse
+ * çapa yeniden ölçülür → katman tetikleyiciyle birlikte hareket eder. Aksi halde liste
+ * sabit ekran koordinatında kalıp kutudan KOPUYOR ("açılınca kayma" sorunu).
  */
-export function useAnchor() {
+export function useAnchor(active = false) {
   const ref = useRef<View>(null);
   const [rect, setRect] = useState<AnchorRect | null>(null);
   const measure = useCallback(() => {
@@ -19,6 +23,24 @@ export function useAnchor() {
       if (width > 0 || height > 0) setRect({ x, y, width, height });
     });
   }, []);
+
+  useEffect(() => {
+    if (!active || Platform.OS !== "web" || typeof window === "undefined") return;
+    let frame = 0;
+    const onMove = () => {
+      cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(measure);
+    };
+    // capture:true → iç ScrollView'ların kaydırmasını da yakala.
+    window.addEventListener("scroll", onMove, true);
+    window.addEventListener("resize", onMove);
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener("scroll", onMove, true);
+      window.removeEventListener("resize", onMove);
+    };
+  }, [active, measure]);
+
   return { ref, rect, measure };
 }
 

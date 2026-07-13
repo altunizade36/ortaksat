@@ -10,6 +10,7 @@ import { openUrlSafe } from "@/lib/link";
 import { shareOrCopy } from "@/lib/share";
 
 import { Mascot } from "@/components/brand/Mascot";
+import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { colors } from "@/components/colors";
 import { StarRatingInput } from "@/components/star-rating-input";
 import { Seo } from "@/components/seo";
@@ -1251,30 +1252,30 @@ function PanelDropdown({ label, value, options, onSelect }: { label: string; val
   const [open, setOpen] = useState(false);
   const selected = options.find((o) => o.value === value);
   const active = value !== "" && value !== 0;
+  // ÇAPALI KATMAN: ebeveyne-absolute liste `overflow:hidden` kart içinde kırpılıyor,
+  // kart alttaysa ekran dışına taşıyordu. Artık portal + tetikleyiciye çapalı.
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor(open);
   return (
-    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
-      <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
-        <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: active ? "900" : "700" }}>{translateCopy(active && selected ? selected.label : label, language)}</Text>
-        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={14} color={colors.muted} />
-      </Pressable>
-      {open ? (
-        <>
-          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 900 }} />
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, left: 0, maxHeight: 300, minWidth: 190, paddingVertical: 6, position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 40, zIndex: 1000 }}>
-            <ScrollView style={{ maxHeight: 288 }} keyboardShouldPersistTaps="handled">
-              {options.map((opt) => {
-                const isSel = opt.value === value;
-                return (
-                  <Pressable key={`${opt.value}`} onPress={() => { onSelect(opt.value); setOpen(false); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 9 })}>
-                    <MaterialCommunityIcons name={isSel ? "check-circle" : "circle-outline"} size={15} color={isSel ? colors.primary : colors.subtle} />
-                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{translateCopy(opt.label, language)}</Text>
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
-        </>
-      ) : null}
+    <View>
+      <View ref={anchorRef} collapsable={false} onLayout={measure}>
+        <Pressable onPress={() => { if (open) { setOpen(false); return; } measure(); setOpen(true); }} style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+          <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: active ? "900" : "700" }}>{translateCopy(active && selected ? selected.label : label, language)}</Text>
+          <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={14} color={colors.muted} />
+        </Pressable>
+      </View>
+      <AnchoredDropdown visible={open} anchor={anchorRect} onClose={() => setOpen(false)} maxHeight={300} minWidth={190}>
+        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+          {options.map((opt) => {
+            const isSel = opt.value === value;
+            return (
+              <Pressable key={`${opt.value}`} onPress={() => { onSelect(opt.value); setOpen(false); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 9 })}>
+                <MaterialCommunityIcons name={isSel ? "check-circle" : "circle-outline"} size={15} color={isSel ? colors.primary : colors.subtle} />
+                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{translateCopy(opt.label, language)}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </AnchoredDropdown>
     </View>
   );
 }
