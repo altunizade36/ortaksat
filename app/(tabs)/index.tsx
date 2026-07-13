@@ -18,7 +18,7 @@ import { EmptyState } from "@/components/ui";
 import type { CategoryNode } from "@/lib/category-tree";
 import { WebFooter } from "@/components/web-landing";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
-import { commissionAmount, money } from "@/lib/format";
+import { commissionAmount, commissionRatePct, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
@@ -629,12 +629,6 @@ function HomeSeoSkeleton() {
 
 function momentumScore(listing: Listing) {
   return listing.leadCount * 2 + listing.partnerCount + listing.favoriteCount / 10;
-}
-
-// Komisyon ORANI (%): oran tipinde doğrudan değer; sabit tipte fiyata göre efektif %.
-function commissionRatePct(listing: Listing) {
-  if (listing.commissionType === "rate") return listing.commissionValue;
-  return listing.price > 0 ? Math.round((listing.commissionValue / listing.price) * 100) : 0;
 }
 
 // (id, seed) -> deterministik pseudo-random sıra anahtarı (FNV-1a benzeri).

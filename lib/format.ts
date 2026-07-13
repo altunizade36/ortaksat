@@ -61,6 +61,16 @@ export function commissionAmount(listing: Listing) {
   return listing.commissionValue;
 }
 
+/**
+ * Komisyon ORANI (%). Oran tipinde doğrudan değer; SABİT tipte fiyata göre
+ * efektif oran (sabit komisyonlu ilanlar da orana göre filtrelenip sıralanabilsin).
+ * Fiyat 0/eksikse 0 döner. Tek kaynak — ana sayfa filtre/sıralamaları buradan okur.
+ */
+export function commissionRatePct(listing: Listing) {
+  if (listing.commissionType === "rate") return listing.commissionValue;
+  return listing.price > 0 ? Math.round((listing.commissionValue / listing.price) * 100) : 0;
+}
+
 /** Kademeli komisyonda uygulanan oran: min <= priorSales olan en yüksek tier; yoksa baz oran. */
 export function tierRate(tiers: Array<{ minSales: number; rate: number }> | undefined, baseRate: number, priorSales: number): number {
   if (!tiers || tiers.length === 0) return baseRate;

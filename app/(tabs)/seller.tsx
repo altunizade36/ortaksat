@@ -576,7 +576,7 @@ function SellerScreenInner() {
                 <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(listing.price, listing.currency)}</Text>
                   <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
-                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("ortak kazancı", language)} {moneyIn(commissionAmount(listing), listing.currency)}</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("ortak kazancı", language)} {moneyIn(commissionAmount(listing), listing.currency)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}</Text>
                   </View>
                 </View>
               </View>

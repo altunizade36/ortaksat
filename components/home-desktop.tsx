@@ -14,7 +14,7 @@ import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from 
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
 import { matchesLocationFilter } from "@/lib/locations";
-import { commissionAmount, moneyIn } from "@/lib/format";
+import { commissionAmount, commissionRatePct, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { Skeleton } from "@/components/skeleton";
@@ -29,12 +29,6 @@ function descendantLabels(node: CategoryNode, out: string[] = []): string[] {
   out.push(node.label);
   for (const ch of node.children ?? []) descendantLabels(ch, out);
   return out;
-}
-
-// Komisyon ORANI (%): oran tipinde doğrudan; sabit tipte fiyata göre efektif %.
-function commissionRatePct(listing: Listing) {
-  if (listing.commissionType === "rate") return listing.commissionValue;
-  return listing.price > 0 ? Math.round((listing.commissionValue / listing.price) * 100) : 0;
 }
 
 export function HomeDesktop() {
