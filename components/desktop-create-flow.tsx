@@ -4,7 +4,7 @@ import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { CategoryPicker } from "@/components/category-picker";
 import { Mascot } from "@/components/brand/Mascot";
@@ -1109,6 +1109,19 @@ function DField({ field, value, onChange }: { field: FieldDef; value: string | b
 function DSelect({ label, value, options, onChange, placeholder }: { label: string; value: string; options: string[]; onChange: (v: string) => void; placeholder?: string }) {
   const { language } = useLanguage();
   const [open, setOpen] = useState(false);
+  // MOBİL WEB HATASI: liste inline açılıyor ama kutu ekranın ALTINDAYSA açılan seçenekler
+  // görünür alanın dışında kalıyordu → kullanıcı "Seçin"e basınca hiçbir şey olmamış gibi
+  // görünüyordu ("seçimlerde bozulma"; 11 seçimden 9'u böyleydi).
+  // Açılan listeyi DOM'dan (data-openlist) bulup görünür alana kaydırırız — RN-web View
+  // ref'i DOM düğümü garanti etmediği için ref'e DEĞİL, data-attribute'a bağlanıyoruz.
+  useEffect(() => {
+    if (!open || Platform.OS !== "web" || typeof document === "undefined") return;
+    const id = requestAnimationFrame(() => {
+      const el = document.querySelector('[data-openlist="1"]') as HTMLElement | null;
+      el?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open]);
   return (
     <View style={{ gap: label ? 6 : 0 }}>
       {label ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{label}</Text> : null}
@@ -1118,7 +1131,7 @@ function DSelect({ label, value, options, onChange, placeholder }: { label: stri
       </Pressable>
       {/* Inline açılır liste: alttaki alanların ÜSTÜNE binmez, onları aşağı iter (mobil dahil sorunsuz). */}
       {open ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 11, borderWidth: 1, marginTop: 4, maxHeight: 240, overflow: "hidden" }}>
+        <View dataSet={{ openlist: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 11, borderWidth: 1, marginTop: 4, maxHeight: 240, overflow: "hidden" }}>
           <ScrollView style={{ maxHeight: 240 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
             {options.map((o) => (
               <Pressable key={o} onPress={() => { onChange(o); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed || o === value ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 11 })}>

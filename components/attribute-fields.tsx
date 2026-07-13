@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
-import { Pressable, Text, TextInput, View } from "react-native";
+import { useEffect, useState } from "react";
+import { Platform, Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { modelsForSchema, type FieldDef } from "@/lib/category-tree";
@@ -77,8 +77,20 @@ function AField({ field, value, onChange }: { field: FieldDef; value: AttrValue 
 function ASelect({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
   const { language } = useLanguage();
   const [open, setOpen] = useState(false);
+  // MOBİL WEB HATASI: liste ABSOLUTE (top:52) → ekranın altındaki bir alanda açılınca
+  // görünür alanın dışına taşıyor ve absolute olduğu için sayfa ona kaydıramıyordu
+  // (seçenekler hiç görünmüyordu). Açılan alanı ekranın ORTASINA kaydır ki altındaki
+  // ~260px'lik listeye yer kalsın. (RN-web View ref'i DOM düğümü garanti etmez → data-attr.)
+  useEffect(() => {
+    if (!open || Platform.OS !== "web" || typeof document === "undefined") return;
+    const id = requestAnimationFrame(() => {
+      const el = document.querySelector('[data-openselect="1"]') as HTMLElement | null;
+      el?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open]);
   return (
-    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
+    <View dataSet={open ? { openselect: "1" } : undefined} style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
       <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
         <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || translateCopy("Seçin", language)}</Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
