@@ -653,7 +653,7 @@ function HomeCardBase({ listing, favorited, onFav, onOpen }: { listing: Listing;
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: "space-between" }}>
           <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{moneyIn(listing.price, listing.currency)}</Text>
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {moneyIn(commission, listing.currency)}</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {moneyIn(commission, listing.currency)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}</Text>
           </View>
         </View>
         {listing.bonusAmount && listing.bonusAmount > 0 && listing.bonusQuota ? (

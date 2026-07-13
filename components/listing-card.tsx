@@ -163,7 +163,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
                   <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
                     <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-                      {t("earning")} {moneyIn(commission, listing.currency)}
+                      {t("earning")} {moneyIn(commission, listing.currency)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}
                     </Text>
                   </View>
                   {/* Ortaklık kabul şekli — ortağın "nasıl ortak olurum" sinyali (ürün mantığı). */}
