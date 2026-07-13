@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, useRouter } from "expo-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -17,6 +17,7 @@ import { downloadCsv } from "@/lib/csv-export";
 import { getDistrict, getProvince } from "@/lib/locations";
 import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
+import { adminBroadcastLive, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, type AdminMessageRow, type AdminOverview } from "@/lib/live-service";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
@@ -132,6 +133,11 @@ function AdminScreenInner() {
   const [listingQuery, setListingQuery] = useState("");
   const [bcTitle, setBcTitle] = useState("");
   const [bcBody, setBcBody] = useState("");
+  const [bcSending, setBcSending] = useState(false);
+  const [bcResult, setBcResult] = useState<string | null>(null);
+  // Kullanıcıya bildirim modalı (window.prompt yerine — native'de prompt yok).
+  const [notifyTarget, setNotifyTarget] = useState<{ id: string; name: string } | null>(null);
+  const [notifyText, setNotifyText] = useState("");
   const [listingFilter, setListingFilter] = useState<"all" | "pending" | "active" | "rejected" | "paused" | "featured" | "risky">("all");
   const [userFilter, setUserFilter] = useState<"all" | "active" | "suspended" | "seller" | "staff">("all");
   const [msgFilter, setMsgFilter] = useState<"all" | "risky">("all");
@@ -155,13 +161,45 @@ function AdminScreenInner() {
   const listingFiltered = listingFilter === "all" ? listings : listingFilter === "risky" ? riskyListings : listingFilter === "featured" ? listings.filter((l) => l.featured) : listingFilter === "pending" ? listings.filter((l) => l.status === "pending_review") : listings.filter((l) => l.status === listingFilter);
   const shownListings = lq ? listingFiltered.filter((l) => l.title.toLocaleLowerCase("tr-TR").includes(lq) || l.category.toLocaleLowerCase("tr-TR").includes(lq) || (findUser(l.ownerId)?.name ?? "").toLocaleLowerCase("tr-TR").includes(lq) || l.status.includes(lq)) : listingFiltered;
 
+  // DÜZELTİLDİ (hata): native dalda hiç GİRDİ ALINMADAN sabit "Yönetimden bilgilendirme."
+  // gönderiliyordu — admin kendi yazdığını sanıyor, kullanıcıya genel metin gidiyordu.
+  // Artık her iki platformda da gerçek bir metin kutusu (modal) açılır.
   function promptNotify(userId: string, name: string) {
-    if (Platform.OS === "web" && typeof window !== "undefined") {
-      const msg = window.prompt(`${name} kullanıcısına bildirim gönder:`, "");
-      if (msg && msg.trim()) adminNotifyUser(userId, "OrtakSat Yönetimi", msg.trim());
+    setNotifyTarget({ id: userId, name });
+    setNotifyText("");
+  }
+
+  /**
+   * DÜZELTİLDİ (P0): "Onayla" eskiden yalnızca öneri satırının DURUMUNU değiştiriyordu —
+   * kategori ağaca EKLENMİYORDU. Yani kullanıcı "Diğer"e yazıp öneriyor, admin onaylıyor,
+   * ama kategori hiçbir yerde oluşmuyordu (admin elle "Ekstra Kategoriler"e yeniden
+   * yazmak zorundaydı). Artık onaylamak öneriyi GERÇEKTEN ağaca ekler:
+   * yol "Kök → … → Yaprak" ise yaprak, kök kategorinin alt kategorisi olarak eklenir.
+   */
+  function adoptCategorySuggestion(id: string, suggestedPath: string) {
+    const parts = suggestedPath.split(/[→>]/).map((p) => p.trim()).filter(Boolean);
+    const leaf = parts[parts.length - 1];
+    const root = parts[0] ?? leaf;
+    if (!leaf) return;
+    const norm = (s: string) => s.toLocaleLowerCase("tr-TR").trim();
+    const existing = extraCategories.find((c) => norm(c.label) === norm(root));
+    if (existing) {
+      if (!existing.subcategories.some((sc) => norm(sc.label) === norm(leaf))) {
+        saveCategory({ ...existing, subcategories: [...existing.subcategories, { label: leaf, slug: slugifyTr(leaf) }] });
+      }
     } else {
-      adminNotifyUser(userId, "OrtakSat Yönetimi", "Yönetimden bilgilendirme.");
+      saveCategory({
+        id: uuid(),
+        key: `x-${slugifyTr(root)}`,
+        label: root,
+        slug: slugifyTr(root),
+        image: "",
+        subcategories: root === leaf ? [] : [{ label: leaf, slug: slugifyTr(leaf) }],
+        sortOrder: 999,
+        isActive: true
+      });
     }
+    setCategorySuggestionStatus(id, "approved");
   }
   const [section, setSection] = useState<Section>("dashboard");
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
@@ -169,10 +207,24 @@ function AdminScreenInner() {
   // Sunucu-gerçek analitik (AdminActivity 15sn'de bir çeker + onData ile buraya verir) → Dashboard/stats
   // KPI'ları istemci-cap'li dizilerden DEĞİL bu tek kaynaktan besler (çelişen toplamlar giderilir).
   const [analytics, setAnalytics] = useState<AdminAnalytics | null>(null);
+  // SUNUCU GERÇEĞİ: operasyonel sayılar (ilan/kullanıcı/ortaklık/komisyon/şikayet) artık
+  // istemci bellek penceresinden (≤1000/≤500 — ölçekte YANLIŞ) değil, gerçek tablolardan.
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
+  // Platform geneli mesaj moderasyonu (eski bölüm ADMİNİN KENDİ kutusunu gösteriyordu).
+  const [modMessages, setModMessages] = useState<AdminMessageRow[]>([]);
+  const [msgStats, setMsgStats] = useState<{ conversations: number; messages: number; messages_24h: number; blocked_pairs: number } | null>(null);
 
   useEffect(() => {
     fetchAdminAudit().then(setAudit).catch(() => setAudit(null));
+    void fetchAdminOverview().then(setOverview).catch(() => setOverview(null));
   }, []);
+
+  // Mesaj moderasyonu bölümü açılınca platform genelinden çek.
+  useEffect(() => {
+    if (section !== "messages") return;
+    void fetchAdminMessages({ limit: 100 }).then(setModMessages).catch(() => setModMessages([]));
+    void fetchAdminMessageStats().then(setMsgStats).catch(() => setMsgStats(null));
+  }, [section]);
 
   const isAdmin = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
   const activeListings = listings.filter((l) => l.status === "active");
@@ -656,7 +708,7 @@ function AdminScreenInner() {
             <Panel title="Kategori Önerileri" sub={`${pendingCat} bekliyor`}>
               {categorySuggestions.length === 0 ? <EmptyState title="Öneri yok" body="Henüz kategori önerisi gelmedi." /> : null}
               {categorySuggestions.map((s) => (
-                <SuggestionRow key={s.id} title={s.suggestedPath} note={s.note} meta={`${s.userName ?? "Kullanıcı"} · ${s.createdAt}`} status={s.status} onApprove={() => setCategorySuggestionStatus(s.id, "approved")} onReject={() => setCategorySuggestionStatus(s.id, "rejected")} />
+                <SuggestionRow key={s.id} title={s.suggestedPath} note={s.note} meta={`${s.userName ?? "Kullanıcı"} · ${s.createdAt}`} status={s.status} onApprove={() => adoptCategorySuggestion(s.id, s.suggestedPath)} onReject={() => setCategorySuggestionStatus(s.id, "rejected")} />
               ))}
             </Panel>
             <Panel title="Kategori Yapısı" sub={`${categoryTree.length} ana kategori`}>
@@ -703,28 +755,32 @@ function AdminScreenInner() {
 
         {section === "messages" ? (
           (() => {
-            const convRisk = conversations.map((c) => {
-              const bodies = messages.filter((m) => m.conversationId === c.id).map((m) => m.body);
-              return { c, risk: conversationRisk(bodies), last: bodies[bodies.length - 1], count: bodies.length };
-            });
-            const riskyCount = convRisk.filter((x) => x.risk).length;
-            const shown = msgFilter === "risky" ? convRisk.filter((x) => x.risk) : convRisk;
+            // DÜZELTİLDİ (P0): Bu bölüm eskiden hesap anlık görüntüsündeki `conversations`/
+            // `messages`i kullanıyordu — bunlar RLS/filtre gereği ADMİNİN KENDİ yazışmalarıydı.
+            // Yani "platform mesaj moderasyonu" aslında adminin kendi gelen kutusuydu
+            // (sahte güvenlik sinyali). Artık admin_recent_messages RPC'si ile PLATFORM
+            // GENELİNDEN okunuyor; sayılar da admin_message_stats'tan (gerçek).
+            const rows = modMessages.map((m) => ({ m, risk: conversationRisk([m.body]) }));
+            const riskyCount = rows.filter((x) => x.risk).length;
+            const shown = msgFilter === "risky" ? rows.filter((x) => x.risk) : rows;
             return (
-              <Panel title="Mesaj Moderasyonu" sub={`${conversations.length} görüşme · ${messages.length} mesaj · ${riskyCount} riskli`}>
-                <FilterChips value={msgFilter} onChange={setMsgFilter} options={[{ key: "all", label: "Tümü", count: conversations.length }, { key: "risky", label: "⚠ Riskli", count: riskyCount }]} />
-                {shown.length === 0 ? <EmptyState title="Görüşme yok" body={msgFilter === "risky" ? "Riskli kelime içeren görüşme bulunmuyor." : "Henüz görüşme yok."} /> : null}
-                <Table head={["GÖRÜŞME", "İLAN", "SON MESAJ", "DURUM"]} cols={[1.4, 1.5, 1.8, 1]}>
-                  {shown.slice(0, 60).map(({ c, risk, last }) => {
-                    const listing = listings.find((l) => l.id === c.listingId);
-                    return (
-                      <Row key={c.id} cols={[1.4, 1.5, 1.8, 1]} cells={[
-                        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{c.participantIds.map((id) => findUser(id)?.name).filter(Boolean).join(" ↔ ")}</Text>,
-                        listing ? <Link href={{ pathname: "/listing/[id]", params: { id: listing.id } }} asChild><Pressable><Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{listing.title}</Text></Pressable></Link> : <Text style={{ color: colors.muted, fontSize: 12 }}>—</Text>,
-                        <Text numberOfLines={1} style={{ color: risk ? colors.accent : colors.muted, fontSize: 12, fontWeight: risk ? "700" : "600" }}>{last ?? "—"}</Text>,
-                        risk ? <View style={{ alignSelf: "flex-start", backgroundColor: colors.accentSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="alert" size={11} color={colors.accent} /><Text style={{ color: colors.accent, fontSize: 10, fontWeight: "900" }}>{risk}</Text></View> : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Normal</Text>
-                      ]} />
-                    );
-                  })}
+              <Panel
+                title="Mesaj Moderasyonu"
+                sub={msgStats
+                  ? `${msgStats.conversations} görüşme · ${msgStats.messages} mesaj (24s: ${msgStats.messages_24h}) · ${msgStats.blocked_pairs} engel · son ${modMessages.length} mesajda ${riskyCount} riskli`
+                  : "Yükleniyor…"}
+              >
+                <FilterChips value={msgFilter} onChange={setMsgFilter} options={[{ key: "all", label: "Tümü", count: rows.length }, { key: "risky", label: "⚠ Riskli", count: riskyCount }]} />
+                {shown.length === 0 ? <EmptyState title="Mesaj yok" body={msgFilter === "risky" ? "Son mesajlarda riskli ifade bulunmuyor." : "Platformda henüz mesaj yok."} /> : null}
+                <Table head={["GÖNDEREN → ALICI", "İLAN", "MESAJ", "DURUM"]} cols={[1.4, 1.5, 1.8, 1]}>
+                  {shown.map(({ m, risk }) => (
+                    <Row key={m.id} cols={[1.4, 1.5, 1.8, 1]} cells={[
+                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{(m.sender_name ?? "—") + " → " + (m.receiver_name ?? "—")}</Text>,
+                      m.listing_id ? <Link href={{ pathname: "/listing/[id]", params: { id: m.listing_id } }} asChild><Pressable><Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{m.listing_title ?? "İlan"}</Text></Pressable></Link> : <Text style={{ color: colors.muted, fontSize: 12 }}>—</Text>,
+                      <Text numberOfLines={1} style={{ color: risk ? colors.accent : colors.muted, fontSize: 12, fontWeight: risk ? "700" : "600" }}>{m.body || "—"}</Text>,
+                      risk ? <View style={{ alignSelf: "flex-start", backgroundColor: colors.accentSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="alert" size={11} color={colors.accent} /><Text style={{ color: colors.accent, fontSize: 10, fontWeight: "900" }}>{risk}</Text></View> : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Normal</Text>
+                    ]} />
+                  ))}
                 </Table>
               </Panel>
             );
@@ -843,14 +899,38 @@ function AdminScreenInner() {
 
         {section === "notifications" ? (
           <View style={{ gap: 16 }}>
+          {/* DÜZELTİLDİ (P0): Duyuru eskiden bildirim satırlarını istemcideki `users`
+              dizisinden (bellek penceresi, ≤1000) üretiyordu → "tüm kullanıcılara"
+              aslında en fazla 1000 kişiye ulaşıyordu. Artık sunucu RPC'si TÜM
+              profillere yazar ve ULAŞAN GERÇEK SAYIYI döndürür. */}
           {canManageUsers ? (
-            <Panel title="Duyuru Gönder" sub="Tüm kayıtlı kullanıcılara bildirim gönder">
+            <Panel title="Duyuru Gönder" sub={overview ? `${Math.max(0, overview.users_total - 1)} kullanıcıya (askıya alınanlar hariç) — sunucu taraflı, sınırsız` : "Tüm kayıtlı kullanıcılara bildirim gönder"}>
               <View style={{ gap: 10 }}>
                 <TextInput value={bcTitle} onChangeText={setBcTitle} placeholder="Başlık (ör. Yeni özellik!)" placeholderTextColor={colors.muted} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 42, paddingHorizontal: 12 }} />
                 <TextInput value={bcBody} onChangeText={setBcBody} placeholder="Mesaj metni" placeholderTextColor={colors.muted} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 64, paddingHorizontal: 12, paddingVertical: 10 }} />
-                <Pressable disabled={!bcTitle.trim()} onPress={() => confirmAction(`Duyuru ${users.length - 1} kullanıcıya gönderilsin mi?`, () => { adminBroadcast(bcTitle, bcBody); setBcTitle(""); setBcBody(""); })} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: bcTitle.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}>
+                {bcResult ? <Text style={{ color: bcResult.startsWith("!") ? colors.accent : colors.success, fontSize: 12.5, fontWeight: "800" }}>{bcResult.replace(/^!/, "")}</Text> : null}
+                <Pressable
+                  disabled={!bcTitle.trim() || !bcBody.trim() || bcSending}
+                  onPress={() => confirmAction(
+                    `Duyuru ${overview ? Math.max(0, overview.users_total - 1) : "tüm"} kullanıcıya gönderilsin mi? Bu işlem geri alınamaz.`,
+                    () => {
+                      setBcSending(true);
+                      setBcResult(null);
+                      void adminBroadcastLive(bcTitle.trim(), bcBody.trim())
+                        .then((n) => {
+                          setBcSending(false);
+                          if (n == null) { setBcResult("!Duyuru gönderilemedi. Tekrar dene."); return; }
+                          setBcResult(`Duyuru ${n} kullanıcıya gönderildi.`);
+                          setBcTitle("");
+                          setBcBody("");
+                        })
+                        .catch(() => { setBcSending(false); setBcResult("!Duyuru gönderilemedi. Tekrar dene."); });
+                    }
+                  )}
+                  style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: bcTitle.trim() && bcBody.trim() && !bcSending ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}
+                >
                   <MaterialCommunityIcons name="bullhorn-outline" size={16} color="#FFFFFF" />
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Tümüne gönder</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{bcSending ? "Gönderiliyor…" : "Tümüne gönder"}</Text>
                 </Pressable>
               </View>
             </Panel>
@@ -951,6 +1031,43 @@ function AdminScreenInner() {
           </View>
         ) : null}
       </ScrollView>
+
+      {/* Kullanıcıya bildirim gönder — her iki platformda çalışan gerçek metin kutusu
+          (eskiden web'de window.prompt, NATIVE'de hiç girdi alınmadan sabit metin). */}
+      <Modal visible={notifyTarget !== null} transparent animationType="fade" onRequestClose={() => setNotifyTarget(null)}>
+        <Pressable onPress={() => setNotifyTarget(null)} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", flex: 1, justifyContent: "center", padding: 20 }}>
+          <Pressable onPress={() => undefined} style={{ backgroundColor: colors.surface, borderRadius: 16, gap: 12, maxWidth: 460, padding: 18, width: "100%" }}>
+            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{notifyTarget?.name} kullanıcısına bildirim</Text>
+            <TextInput
+              value={notifyText}
+              onChangeText={setNotifyText}
+              multiline
+              autoFocus
+              placeholder="Mesajın…"
+              placeholderTextColor={colors.subtle}
+              style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 90, padding: 12, textAlignVertical: "top" }}
+            />
+            <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
+              <Pressable onPress={() => setNotifyTarget(null)} style={{ borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 10 }}>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text>
+              </Pressable>
+              <Pressable
+                disabled={!notifyText.trim()}
+                onPress={() => {
+                  const t = notifyTarget;
+                  if (!t || !notifyText.trim()) return;
+                  adminNotifyUser(t.id, "OrtakSat Yönetimi", notifyText.trim());
+                  setNotifyTarget(null);
+                  setNotifyText("");
+                }}
+                style={{ backgroundColor: notifyText.trim() ? colors.primary : colors.line, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 10 }}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Gönder</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
     </View>
   );
 }

@@ -1081,6 +1081,99 @@ export async function insertReport(input: {
   return id;
 }
 
+// ---------------------------------------------------------------------------
+// ADMIN — SUNUCU GERÇEĞİ. Admin paneli eskiden TÜM verisini istemci bellek
+// penceresinden okuyordu (≤1000 ilan/kullanıcı, ≤500 komisyon…) → sayılar ölçekte
+// YANLIŞ, kayıtlar EKSİKti ve ilanlar herkese-açık view'den geldiği için pasif/
+// arşiv ilanlar hiç görünmüyordu. Bu RPC'ler gerçek tablolardan, sunucuda
+// sayar/arar/sayfalar (is_admin() korumalı).
+// ---------------------------------------------------------------------------
+export type AdminOverview = {
+  listings: Record<string, number> | null;
+  listings_total: number;
+  users_total: number;
+  users_by_role: Record<string, number> | null;
+  users_suspended: number;
+  partnerships: Record<string, number> | null;
+  commissions: Record<string, number> | null;
+  gmv: number;
+  orders_total: number;
+  commission_volume: number;
+  reports_open: number;
+  reports_total: number;
+  leads_total: number;
+  cat_suggestions_pending: number;
+  loc_suggestions_pending: number;
+};
+
+export async function fetchAdminOverview(): Promise<AdminOverview | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("admin_overview");
+  if (error) { console.warn("admin_overview failed", error); return null; }
+  return (data ?? null) as AdminOverview | null;
+}
+
+export type AdminListingRow = {
+  id: string; title: string; status: string; price: number; category: string; location: string;
+  owner_id: string; owner_name: string | null; created_at: string; featured: boolean;
+  lead_count: number; partner_count: number; total_count: number;
+};
+
+export async function fetchAdminListings(opts: { q?: string; status?: string; limit?: number; offset?: number }): Promise<AdminListingRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("admin_search_listings", {
+    p_q: opts.q ?? null, p_status: opts.status ?? null, p_limit: opts.limit ?? 50, p_offset: opts.offset ?? 0
+  });
+  if (error) { console.warn("admin_search_listings failed", error); return []; }
+  return (data ?? []) as AdminListingRow[];
+}
+
+export type AdminUserRow = {
+  id: string; name: string | null; email: string | null; role: string; status: string; rating: number;
+  verified_phone: boolean; verified_identity: boolean; created_at: string;
+  listing_count: number; total_count: number;
+};
+
+export async function fetchAdminUsers(opts: { q?: string; role?: string; limit?: number; offset?: number }): Promise<AdminUserRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("admin_search_users", {
+    p_q: opts.q ?? null, p_role: opts.role ?? null, p_limit: opts.limit ?? 50, p_offset: opts.offset ?? 0
+  });
+  if (error) { console.warn("admin_search_users failed", error); return []; }
+  return (data ?? []) as AdminUserRow[];
+}
+
+/** Sunucu-taraflı duyuru: TÜM kullanıcılara ulaşır (eskiden ≤1000 ile sınırlıydı). Ulaşan sayıyı döndürür. */
+export async function adminBroadcastLive(title: string, body: string, role?: string): Promise<number | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("admin_broadcast", { p_title: title, p_body: body, p_role: role ?? null });
+  if (error) { console.warn("admin_broadcast failed", error); return null; }
+  return Number(data ?? 0);
+}
+
+export type AdminMessageRow = {
+  id: string; conversation_id: string; body: string; created_at: string;
+  sender_id: string; sender_name: string | null; receiver_id: string; receiver_name: string | null;
+  listing_id: string | null; listing_title: string | null; total_count: number;
+};
+
+/** PLATFORM GENELİ mesajlar (adminin kendi kutusu DEĞİL — eski bölüm bunu gösteriyordu). */
+export async function fetchAdminMessages(opts: { q?: string; limit?: number; offset?: number }): Promise<AdminMessageRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("admin_recent_messages", {
+    p_q: opts.q ?? null, p_limit: opts.limit ?? 100, p_offset: opts.offset ?? 0
+  });
+  if (error) { console.warn("admin_recent_messages failed", error); return []; }
+  return (data ?? []) as AdminMessageRow[];
+}
+
+export async function fetchAdminMessageStats(): Promise<{ conversations: number; messages: number; messages_24h: number; blocked_pairs: number } | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("admin_message_stats");
+  if (error) { console.warn("admin_message_stats failed", error); return null; }
+  return (data ?? null) as { conversations: number; messages: number; messages_24h: number; blocked_pairs: number } | null;
+}
+
 export async function updateReportStatusLive(report: Report, status: ModerationStatus, resolverId: string) {
   if (!supabase || !uuidPattern.test(resolverId)) return false;
 
