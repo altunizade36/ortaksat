@@ -88,6 +88,11 @@ export default function Root({ children }: PropsWithChildren) {
 
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: responsiveShell }} />
+        {/* YENİLEME FLAŞI DÜZELTMESİ: boot-splash yalnız İLK (soğuk) ziyarette gösterilir.
+            Aynı oturumda yenileme/gezinmede SSG içeriği zaten anında hazır → splash göstermek
+            "renkli içerik → düz açık splash → içerik" flaşı ("şimşek gibi çakma") yaratıyordu.
+            Bu head-script paint'ten ÖNCE çalışır → daha önce açıldıysa splash hiç boyanmaz. */}
+        <script dangerouslySetInnerHTML={{ __html: "(function(){try{if(sessionStorage.getItem('ortaksat_booted'))document.documentElement.className+=' booted';}catch(e){}})();" }} />
       </head>
       <body>
         {children}
@@ -109,7 +114,7 @@ export default function Root({ children }: PropsWithChildren) {
 // böylece react-native-web'in ilk layout sıçraması kullanıcıya görünmez.
 const bootScript =
   "(function(){var s=document.getElementById('boot-splash');if(!s)return;" +
-  "var d=false;function done(){if(d||!s)return;d=true;s.style.opacity='0';s.style.pointerEvents='none';setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s);},400);}" +
+  "var d=false;function done(){if(d||!s)return;d=true;try{sessionStorage.setItem('ortaksat_booted','1');}catch(e){}s.style.opacity='0';s.style.pointerEvents='none';setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s);},400);}" +
   "function ready(){requestAnimationFrame(function(){requestAnimationFrame(done);});}" +
   "if(document.readyState==='complete'){ready();}else{window.addEventListener('load',ready);}" +
   "setTimeout(done,6000);})();";
@@ -160,6 +165,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 }
 /* Butonlarda iOS uzun-basış "kopyala/paylaş" balonunu kapat — app hissi. */
 [role="button"], button { -webkit-touch-callout: none; }
+
+/* Bu oturumda daha önce açıldıysa splash HİÇ gösterilmez (yenileme flaşını önler). */
+html.booted #boot-splash { display: none !important; }
 
 /* Açılış ekranı (boot splash) — markalı yumuşak yükleme */
 #boot-splash {
