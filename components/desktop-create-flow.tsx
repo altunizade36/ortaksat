@@ -282,6 +282,33 @@ export function DesktopCreateFlow() {
   // Adım-1 kapısı yalnızca "boş değil"e bakınca kısa (otomatik-önerilen) başlık adımı
   // geçip yayında patlıyordu. Aynı uzunluk kurallarını burada uygularız; nedeni de
   // kullanıcıya nextBlockReason ile gösteririz (buton sessizce kilitlenmesin).
+  // "Devam"a basınca eksikleri GÖSTER + ilk eksiğe kaydır. Eskiden buton disabled'dı:
+  // kullanıcı basıyordu, HİÇBİR ŞEY olmuyordu ve eksiğin hangi alan olduğunu formda arıyordu.
+  const [showErrors, setShowErrors] = useState(false);
+  const missingKeys = useMemo(() => new Set(missingFields.map((f) => f.key)), [missingFields]);
+
+  /** İlk eksik alana kaydır (web). Native'de alanlar kırmızı işaretlenir. */
+  function scrollToFirstMissing() {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    const first = missingFields[0];
+    if (!first) return;
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-field="${first.key}"]`) as HTMLElement | null;
+      el?.scrollIntoView?.({ block: "center", behavior: "smooth" });
+    });
+  }
+
+  /** Devam: geçebiliyorsa ilerle; geçemiyorsa eksikleri işaretle ve ilkine götür. */
+  function tryNext() {
+    if (canNext()) {
+      setShowErrors(false);
+      setStep((s) => s + 1);
+      return;
+    }
+    setShowErrors(true);
+    scrollToFirstMissing();
+  }
+
   const nextBlockReason = (): string | null => {
     if (step === 0) return path.length ? null : translateCopy("Devam etmek için bir kategori seç.", language);
     if (step === 1) {
@@ -561,10 +588,10 @@ export function DesktopCreateFlow() {
               const models = modelsForSchema(schema.key, String(values.brand ?? ""));
               if (models.length) {
                 const dep: FieldDef = { ...f, type: "select", options: [...models, "Diğer"] };
-                return <DField key={f.key} field={dep} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
+                return <DField key={f.key} field={dep} value={values[f.key]} onChange={(v) => setV(f.key, v)} invalid={showErrors && missingKeys.has(f.key)} />;
               }
             }
-            return <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} />;
+            return <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} invalid={showErrors && missingKeys.has(f.key)} />;
           };
           return (
             <View style={{ gap: 22 }}>
@@ -1066,7 +1093,7 @@ export function DesktopCreateFlow() {
           <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{step === 0 ? translateCopy("Vazgeç", language) : translateCopy("Geri", language)}</Text>
         </Pressable>
         {step < STEPS.length - 1 ? (
-          <Pressable disabled={!canNext()} onPress={() => setStep((s) => s + 1)} style={{ alignItems: "center", backgroundColor: canNext() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 22, paddingVertical: 12 }}>
+          <Pressable accessibilityRole="button" onPress={tryNext} style={{ alignItems: "center", backgroundColor: canNext() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 22, paddingVertical: 12 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Devam", language)}</Text><MaterialCommunityIcons name="arrow-right" size={16} color="#FFFFFF" />
           </Pressable>
         ) : (
@@ -1099,7 +1126,7 @@ function FormSection({ title, hint, icon, children }: { title: string; hint?: st
   );
 }
 
-function DField({ field, value, onChange }: { field: FieldDef; value: string | boolean | string[] | undefined; onChange: (v: string | boolean | string[]) => void }) {
+function DField({ field, value, onChange, invalid }: { field: FieldDef; value: string | boolean | string[] | undefined; onChange: (v: string | boolean | string[]) => void; invalid?: boolean }) {
   const { language } = useLanguage();
   const wide = field.type === "textarea" || field.type === "multiselect";
   // Başlık/açıklama için karakter standardı (Sahibinden benzeri) + canlı sayaç.
@@ -1107,9 +1134,10 @@ function DField({ field, value, onChange }: { field: FieldDef; value: string | b
   const charLen = charLimit ? String(value ?? "").length : 0;
   const selected = Array.isArray(value) ? value : [];
   return (
-    <View style={{ flexBasis: wide ? "100%" : 230, flexGrow: 1, gap: 6, minWidth: 0 }}>
+    // data-field: "Devam"a basınca ilk EKSİK alana kaydırmak için hedef (web).
+    <View dataSet={{ field: field.key }} style={{ flexBasis: wide ? "100%" : 230, flexGrow: 1, gap: 6, minWidth: 0 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} seçili` : ""}</Text>
+        <Text style={{ color: invalid ? colors.accent : colors.muted, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} seçili` : ""}</Text>
         {charLimit ? <Text style={{ color: charLen > charLimit.max || (charLen > 0 && charLen < charLimit.min) ? colors.accent : colors.subtle, fontSize: 11, fontWeight: "700" }}>{charLen}/{charLimit.max}</Text> : null}
       </View>
       {field.type === "multiselect" ? (

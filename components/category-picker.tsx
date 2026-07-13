@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -17,7 +17,7 @@ import { useStore } from "@/lib/use-store";
  * onChange(path) çağrılır; form alanları bu path'e göre değişir.
  */
 export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onChange: (path: CategoryNode[]) => void }) {
-  const { categoryTree } = useStore();
+  const { categoryTree, listings } = useStore();
   const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const [trail, setTrail] = useState<CategoryNode[]>(value ?? []);
@@ -57,6 +57,37 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
     }
     if (path.length) finalize(path);
   };
+
+  // POPÜLER KATEGORİLER: gerçek AKTİF ilanlardan türetilir (uydurma sayı/sıralama yok).
+  // Yeni satıcı ağaca hiç girmeden en çok ilan verilen kategorilere tek dokunuşla ulaşır.
+  const popular = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const l of listings) {
+      if (l.status !== "active" || !l.category) continue;
+      counts.set(l.category, (counts.get(l.category) ?? 0) + 1);
+    }
+    if (!counts.size) return [] as Array<{ path: CategoryNode[]; count: number }>;
+    // Etiketten ağaçtaki yolu çöz (ilk eşleşen yaprak/düğüm).
+    const findPath = (label: string): CategoryNode[] | null => {
+      const target = label.toLocaleLowerCase("tr-TR").trim();
+      const walk = (nodes: CategoryNode[], trailAcc: CategoryNode[]): CategoryNode[] | null => {
+        for (const n of nodes) {
+          const next = [...trailAcc, n];
+          if (n.label.toLocaleLowerCase("tr-TR").trim() === target) return next;
+          const deep = n.children ? walk(n.children, next) : null;
+          if (deep) return deep;
+        }
+        return null;
+      };
+      return walk(categoryTree, []);
+    };
+    return [...counts.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 8)
+      .map(([label, count]) => ({ path: findPath(label), count }))
+      .filter((x): x is { path: CategoryNode[]; count: number } => Array.isArray(x.path) && x.path.length > 0)
+      .slice(0, 6);
+  }, [listings, categoryTree]);
 
   const pickTop = (n: CategoryNode) => { setTrail([n]); setQuery(""); };
   const pickChild = (n: CategoryNode) => {
@@ -146,6 +177,29 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
                 <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800", maxWidth: 220 }}>
                   {rc.labels[rc.labels.length - 1]}
                 </Text>
+              </Pressable>
+            ))}
+          </View>
+        </View>
+      ) : null}
+
+      {!finalized && !top && !query.trim() && popular.length ? (
+        <View style={{ gap: 7 }}>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Popüler kategoriler", language)}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+            {popular.map((p) => (
+              <Pressable
+                key={p.path.map((n) => n.slug).join(">")}
+                accessibilityRole="button"
+                accessibilityLabel={p.path.map((n) => n.label).join(" › ")}
+                onPress={() => finalize(p.path)}
+                style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 40, paddingHorizontal: 13 })}
+              >
+                <MaterialCommunityIcons name="trending-up" size={14} color={colors.muted} />
+                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800", maxWidth: 200 }}>
+                  {translateCopy(p.path[p.path.length - 1].label, language)}
+                </Text>
+                <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>{p.count}</Text>
               </Pressable>
             ))}
           </View>
