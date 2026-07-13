@@ -82,7 +82,7 @@ import {
   updateCategorySuggestionStatusLive,
   updateLocationSuggestionStatusLive
 } from "@/lib/live-service";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimit, rateLimitSync } from "@/lib/rate-limit";
 import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 import { loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadOwnListings, loadPlatformSettings, loadSeoSettings, loadSuggestions, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import { categoryTree as baseCategoryTree, setHiddenCategories as setHiddenCategoriesModule, type CategoryNode } from "@/lib/category-tree";
@@ -929,6 +929,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (liveUser) void insertConversation(conversation);
       }
       if (body?.trim()) {
+        if (!rateLimitSync("message_send")) { setSyncError("Çok hızlı mesaj gönderiyorsun. Lütfen biraz yavaşla."); return conversation; }
         const message: Message = {
           id: newId("m", liveUser),
           conversationId: conversation.id,
@@ -1539,6 +1540,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
             listing.id === listingId ? { ...listing, reviewCount: listing.reviewCount + 1 } : listing
           )
         );
+        // Ürün yorumu: ilan sahibine bildir (kendine yorum zaten yukarıda engelli).
+        if (listing.ownerId !== currentUser.id) {
+          notify(listing.ownerId, "review", "Yeni ürün yorumu", `${currentUser.name} "${listing.title}" ilanına ${rating}★ yorum bıraktı.`, { listingId });
+        }
         if (liveUser) persistCritical(insertReview(review), () => {
           setReviews((items) => items.filter((r) => r.id !== review.id));
           setListings((items) => items.map((l) => (l.id === listingId ? { ...l, reviewCount: Math.max(0, l.reviewCount - 1) } : l)));
@@ -1579,6 +1584,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
         };
         setReviews((items) => [review, ...items]);
         setListings((items) => items.map((item) => (item.id === listing.id ? { ...item, reviewCount: item.reviewCount + 1 } : item)));
+        // Karşı tarafa (değerlendirilen satıcı/ortak) bildir.
+        if (review.reviewedUserId) {
+          const rol = reviewerIsSeller ? "Satıcı" : "Ortak";
+          notify(review.reviewedUserId, "review", "Yeni değerlendirme aldın", `${currentUser.name} (${rol}) seni ${rating}★ ile değerlendirdi.`, { listingId: listing.id });
+        }
         if (liveUser) persistCritical(insertReview(review), () => {
           setReviews((items) => items.filter((r) => r.id !== review.id));
           setListings((items) => items.map((l) => (l.id === listing.id ? { ...l, reviewCount: Math.max(0, l.reviewCount - 1) } : l)));
@@ -1928,6 +1938,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (isSuspended) return;
         const trimmed = body.trim();
         if (!trimmed && !attachment) return;
+        // Spam koruması: aynı cihazdan aşırı mesaj gönderimini anında engelle.
+        if (!rateLimitSync("message_send")) { setSyncError("Çok hızlı mesaj gönderiyorsun. Lütfen biraz yavaşla."); return; }
         haptic.light();
         const conversation = conversations.find((item) => item.id === conversationId);
         if (!conversation || conversation.status !== "open") return;

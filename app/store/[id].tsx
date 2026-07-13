@@ -89,6 +89,7 @@ export default function StoreScreen() {
   // giriş yapan kullanıcının YAZDIĞI yorumları tutuyor). Böylece ziyaretçi de
   // satıcının aldığı gerçek değerlendirmeleri görür.
   const [fetchedReviews, setFetchedReviews] = useState<Review[]>([]);
+  const [reviewSort, setReviewSort] = useState<"recent" | "high" | "low" | "helpful">("recent");
   // ReviewCard yanıt/oy sonrası kaynağı günceller → tab değişip geri gelince (remount) stale
   // prop yerine güncel değer seed'lenir (eskiden yanıt/oy görünüşte kayboluyordu).
   const patchReview = (rid: string, patch: Partial<Review>) => setFetchedReviews((rs) => rs.map((r) => (r.id === rid ? { ...r, ...patch } : r)));
@@ -101,8 +102,13 @@ export default function StoreScreen() {
     const map = new Map<string, Review>();
     for (const r of reviews) if (r.reviewedUserId === id) map.set(r.id, r);
     for (const r of fetchedReviews) map.set(r.id, r);
-    return Array.from(map.values()).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-  }, [reviews, fetchedReviews, id]);
+    const list = Array.from(map.values());
+    const byRecent = (a: Review, b: Review) => b.createdAt.localeCompare(a.createdAt);
+    if (reviewSort === "high") return list.sort((a, b) => b.rating - a.rating || byRecent(a, b));
+    if (reviewSort === "low") return list.sort((a, b) => a.rating - b.rating || byRecent(a, b));
+    if (reviewSort === "helpful") return list.sort((a, b) => (b.helpfulCount ?? 0) - (a.helpfulCount ?? 0) || byRecent(a, b));
+    return list.sort(byRecent);
+  }, [reviews, fetchedReviews, id, reviewSort]);
 
   async function refresh() {
     setRefreshing(true);
@@ -391,6 +397,7 @@ export default function StoreScreen() {
               {tab === "reviews" ? (
                 <View style={{ gap: 12 }}>
                   {reviewsAboutSeller.length > 0 ? <ReviewSummary reviews={reviewsAboutSeller} rating={seller.rating} language={language} /> : null}
+                  {reviewsAboutSeller.length > 1 ? <ReviewSortBar value={reviewSort} onChange={setReviewSort} language={language} /> : null}
                   {reviewsAboutSeller.length === 0 ? (
                     <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
                   ) : reviewsAboutSeller.map((r) => (
@@ -623,6 +630,7 @@ export default function StoreScreen() {
           {translateCopy("Satıcı yorumları", language)} {reviewsAboutSeller.length ? `(${reviewsAboutSeller.length})` : ""}
         </Text>
         {reviewsAboutSeller.length > 0 ? <ReviewSummary reviews={reviewsAboutSeller} rating={seller.rating} language={language} /> : null}
+        {reviewsAboutSeller.length > 1 ? <ReviewSortBar value={reviewSort} onChange={setReviewSort} language={language} /> : null}
         {reviewsAboutSeller.length === 0 ? (
           <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
         ) : (
@@ -639,6 +647,28 @@ export default function StoreScreen() {
 }
 
 // Yorum özeti: büyük ortalama + yıldız satırı + 5★..1★ dağılım barları (Trendyol/Sahibinden).
+type ReviewSort = "recent" | "high" | "low" | "helpful";
+function ReviewSortBar({ value, onChange, language }: { value: ReviewSort; onChange: (v: ReviewSort) => void; language: "tr" | "en" }) {
+  const opts: Array<{ key: ReviewSort; label: string }> = [
+    { key: "recent", label: translateCopy("En yeni", language) },
+    { key: "high", label: translateCopy("En yüksek", language) },
+    { key: "low", label: translateCopy("En düşük", language) },
+    { key: "helpful", label: translateCopy("En faydalı", language) }
+  ];
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+      {opts.map((o) => {
+        const on = value === o.key;
+        return (
+          <Pressable key={o.key} onPress={() => onChange(o.key)} accessibilityRole="button" style={({ pressed }) => ({ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 12, paddingVertical: 6 })}>
+            <Text style={{ color: on ? "#FFFFFF" : colors.muted, fontSize: 12, fontWeight: "800" }}>{o.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+}
+
 function ReviewSummary({ reviews, rating, language }: { reviews: Review[]; rating: number; language: "tr" | "en" }) {
   const total = reviews.length;
   return (
@@ -856,7 +886,15 @@ function ReviewCard({ review, reviewerName, isSeller, authed, onPatch, language 
           <MaterialCommunityIcons name="account" size={20} color={colors.primaryDark} />
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
-          <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{reviewerName ?? translateCopy("Kullanıcı", language)}</Text>
+          <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{reviewerName ?? translateCopy("Kullanıcı", language)}</Text>
+            {review.saleId ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 7, paddingVertical: 2 }}>
+                <MaterialCommunityIcons name="check-decagram" size={12} color={colors.success} />
+                <Text style={{ color: colors.success, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Doğrulanmış satış", language)}</Text>
+              </View>
+            ) : null}
+          </View>
           <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{shortDate(review.createdAt)}</Text>
         </View>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>

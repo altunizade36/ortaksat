@@ -45,6 +45,15 @@ export type RateLimitResult = { allowed: boolean; reason?: string };
 const BLOCK_MESSAGE = "Çok sık denediniz. Lütfen birkaç dakika sonra tekrar deneyin.";
 
 /**
+ * Senkron istemci-içi tavan. Optimistik/anlık akışlar (mesaj gönderimi gibi) için:
+ * ağ beklemeden aynı cihazdan aşırı tekrarı anında engeller. Asıl koruma yine
+ * sunucudadır ama bu, spam bot'un yerel döngüsünü ilk anda keser.
+ */
+export function rateLimitSync(action: Action): boolean {
+  return clientAllows(action);
+}
+
+/**
  * Bir aksiyona izin var mı? Önce istemci, sonra (varsa) sunucu sayacını kontrol eder.
  * Sunucu erişilemezse istemci kararıyla devam eder (fail-open, ama istemci yine sınırlar).
  */

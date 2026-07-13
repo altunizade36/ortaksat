@@ -5,7 +5,7 @@ import { Link, useLocalSearchParams, type Href } from "expo-router";
 
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { Modal, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 
 import { openUrlSafe } from "@/lib/link";
 
@@ -107,6 +107,7 @@ function MessagesScreenInner() {
   const [activeId, setActiveId] = useState<string | null>(params.c ?? null);
   const [draft, setDraft] = useState("");
   const [attaching, setAttaching] = useState(false);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   // Yıldız / takip / arşiv artık kullanıcıya göre kalıcı (web localStorage).
   const { starred, following, archivedIds, toggleStar, toggleFollow, toggleArchive } = useInboxPrefs(currentUser.id);
   const [showArchived, setShowArchived] = useState(false);
@@ -400,7 +401,7 @@ function MessagesScreenInner() {
                           ) : null}
                           <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "64%", overflow: "hidden", paddingHorizontal: m.attachmentType === "image" ? 4 : 13, paddingVertical: m.attachmentType === "image" ? 4 : 9 }}>
                             {m.attachmentType === "image" && m.attachmentUrl ? (
-                              <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => m.attachmentUrl && void openUrlSafe(m.attachmentUrl)}><SafeRemoteImage uri={m.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, width: 240 }} /></Pressable>
+                              <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => m.attachmentUrl && setLightboxUri(m.attachmentUrl)}><SafeRemoteImage uri={m.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, width: 240 }} /></Pressable>
                             ) : null}
                             {m.attachmentType === "file" && m.attachmentUrl ? (
                               <Pressable accessibilityRole="button" accessibilityLabel={`Dosyayı aç: ${m.attachmentName ?? "Dosya"}`} onPress={() => m.attachmentUrl && void openUrlSafe(m.attachmentUrl)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} /><Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? "Dosya"}</Text></Pressable>
@@ -522,6 +523,14 @@ function MessagesScreenInner() {
             </View>
           ) : null}
         </View>
+        <Modal visible={lightboxUri !== null} transparent animationType="fade" onRequestClose={() => setLightboxUri(null)}>
+          <Pressable onPress={() => setLightboxUri(null)} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.92)", flex: 1, justifyContent: "center", padding: 24 }}>
+            {lightboxUri ? <SafeRemoteImage uri={lightboxUri} contentFit="contain" style={{ height: "84%", width: "90%" }} /> : null}
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kapat", language)} onPress={() => setLightboxUri(null)} style={{ position: "absolute", right: 22, top: 22 }}>
+              <MaterialCommunityIcons name="close-circle" size={34} color="#FFFFFF" />
+            </Pressable>
+          </Pressable>
+        </Modal>
       </View>
     );
   }

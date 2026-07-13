@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthRequired } from "@/components/auth-gate";
@@ -70,6 +70,7 @@ function ChatScreenInner() {
   const [body, setBody] = useState("");
   const [attaching, setAttaching] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
   // Sohbet gövde-kaydırması OLMAYAN sabit bir düzen; mobil web'de klavye composer'ı
   // örtmesin diye SADECE bu ekrana klavye inset'i uygulanır (genel kök değil → başka
   // sayfalarda "ekran komple kayıyor" olmaz).
@@ -292,7 +293,7 @@ function ChatScreenInner() {
               <View style={{ alignItems: mine ? "flex-end" : "flex-start" }}>
                 <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "82%", overflow: "hidden", paddingHorizontal: message.attachmentType === "image" ? 4 : 12, paddingVertical: message.attachmentType === "image" ? 4 : 8 }}>
                   {message.attachmentType === "image" && message.attachmentUrl ? (
-                    <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => message.attachmentUrl && void openUrlSafe(message.attachmentUrl)}>
+                    <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => message.attachmentUrl && setLightboxUri(message.attachmentUrl)}>
                       <SafeRemoteImage uri={message.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 180, width: 220 }} />
                     </Pressable>
                   ) : null}
@@ -379,6 +380,22 @@ function ChatScreenInner() {
           <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
         </Pressable>
       </View>
+
+      {/* Görsel lightbox: sohbetteki görsele dokununca uygulama içinde tam ekran aç (tarayıcıya atmadan). */}
+      <Modal visible={lightboxUri !== null} transparent animationType="fade" onRequestClose={() => setLightboxUri(null)}>
+        <Pressable onPress={() => setLightboxUri(null)} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.92)", flex: 1, justifyContent: "center", padding: 16 }}>
+          {lightboxUri ? <SafeRemoteImage uri={lightboxUri} contentFit="contain" style={{ height: "82%", width: "100%" }} /> : null}
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kapat", language)} onPress={() => setLightboxUri(null)} style={{ position: "absolute", right: 18, top: 44 }}>
+            <MaterialCommunityIcons name="close-circle" size={34} color="#FFFFFF" />
+          </Pressable>
+          {lightboxUri ? (
+            <Pressable accessibilityRole="button" onPress={() => lightboxUri && void openUrlSafe(lightboxUri)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, bottom: 34, flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingHorizontal: 16, paddingVertical: 9, position: "absolute" })}>
+              <MaterialCommunityIcons name="download" size={16} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{translateCopy("Tam boyut / indir", language)}</Text>
+            </Pressable>
+          ) : null}
+        </Pressable>
+      </Modal>
     </KeyboardAvoidingView>
   );
 }

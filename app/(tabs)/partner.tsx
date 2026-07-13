@@ -11,6 +11,7 @@ import { shareOrCopy } from "@/lib/share";
 
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
+import { StarRatingInput } from "@/components/star-rating-input";
 import { Seo } from "@/components/seo";
 import { DisputeModal } from "@/components/dispute-modal";
 import { LegalNote } from "@/components/legal-disclaimer";
@@ -999,13 +1000,7 @@ function ReviewPrompt({
   return (
     <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 8, padding: 10 }}>
       <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Satıcıyı değerlendir", language)}</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-        {[5, 4, 3].map((item) => (
-          <View key={item} style={{ flexBasis: "31%", flexGrow: 1 }}>
-            <PrimaryButton tone={rating === item ? "soft" : "secondary"} onPress={() => setRating(item)}>{language === "en" ? `${item} stars` : `${item} yıldız`}</PrimaryButton>
-          </View>
-        ))}
-      </View>
+      <StarRatingInput value={rating} onChange={setRating} />
       <TextInput
         value={comment}
         onChangeText={setComment}

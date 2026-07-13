@@ -13,6 +13,7 @@ import { useCompare } from "@/lib/compare";
 import { Accordion } from "@/components/accordion";
 import { AgreementCard } from "@/components/agreement-card";
 import { colors } from "@/components/colors";
+import { StarRatingInput } from "@/components/star-rating-input";
 import { JsonLd } from "@/components/json-ld";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
@@ -29,6 +30,7 @@ import { categoryConversion } from "@/lib/conversion";
 import { VerificationBadges } from "@/components/verification-badges";
 import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { shortDate } from "@/lib/locale";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
@@ -1011,7 +1013,7 @@ export default function ListingDetailScreen() {
           {reviewableSale ? (
             <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 10, padding: 10 }}>
               <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Satış sonrası yorum hakkın var", language)}</Text>
-              <View style={{ flexDirection: "row", gap: 6 }}>{[5, 4, 3].map((rating) => (<Pressable key={rating} onPress={() => setReviewRating(rating)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: reviewRating === rating ? colors.primarySoft : colors.surface, borderColor: reviewRating === rating ? colors.primary : colors.line, borderRadius: 8, borderWidth: 1, flex: 1, minHeight: 38, justifyContent: "center", opacity: pressed ? 0.74 : 1 })}><Text selectable style={{ color: reviewRating === rating ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: "900" }}>{rating} {translateCopy("yıldız", language)}</Text></Pressable>))}</View>
+              <StarRatingInput value={reviewRating} onChange={setReviewRating} />
               <Field label="Yorum" value={reviewComment} onChangeText={setReviewComment} multiline />
               <PrimaryButton tone="secondary" icon="star-outline" onPress={handleSaleReview}>{translateCopy("Yorumu kaydet", language)}</PrimaryButton>
             </View>
@@ -1024,9 +1026,25 @@ export default function ListingDetailScreen() {
           {listingReviews.map((item) => {
             const reviewer = findUser(item.reviewerId);
             return (
-              <View key={item.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 5, padding: 10 }}>
-                <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{reviewer?.name ?? translateCopy("Kullanıcı", language)} · {item.rating}/5</Text>
+              <View key={item.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 6, padding: 10 }}>
+                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{reviewer?.name ?? translateCopy("Kullanıcı", language)}</Text>
+                  <View style={{ flexDirection: "row", gap: 1 }}>{[1, 2, 3, 4, 5].map((n) => <MaterialCommunityIcons key={n} name={n <= item.rating ? "star" : "star-outline"} size={13} color={colors.gold} />)}</View>
+                  {item.saleId ? (
+                    <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 6, paddingVertical: 1 }}>
+                      <MaterialCommunityIcons name="check-decagram" size={11} color={colors.success} />
+                      <Text selectable style={{ color: colors.success, fontSize: 10, fontWeight: "900" }}>{translateCopy("Doğrulanmış satış", language)}</Text>
+                    </View>
+                  ) : null}
+                  <Text selectable style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700", marginLeft: "auto" }}>{shortDate(item.createdAt)}</Text>
+                </View>
                 <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{item.comment}</Text>
+                {item.sellerReply ? (
+                  <View style={{ backgroundColor: colors.primarySoft, borderLeftColor: colors.primary, borderLeftWidth: 3, borderRadius: 8, gap: 2, marginTop: 2, padding: 8 }}>
+                    <Text selectable style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Satıcı yanıtı", language)}</Text>
+                    <Text selectable style={{ color: colors.ink, fontSize: 12.5, lineHeight: 18 }}>{item.sellerReply}</Text>
+                  </View>
+                ) : null}
               </View>
             );
           })}

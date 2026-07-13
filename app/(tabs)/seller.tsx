@@ -7,6 +7,7 @@ import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, 
 import { Alert } from "@/lib/alert";
 
 import { colors } from "@/components/colors";
+import { StarRatingInput } from "@/components/star-rating-input";
 import { ReasonModal } from "@/components/reason-modal";
 import { RecordSaleModal } from "@/components/record-sale-modal";
 import { CommissionOverrideModal } from "@/components/commission-override-modal";
@@ -1048,13 +1049,7 @@ function ReviewPrompt({
   return (
     <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 8, padding: 10 }}>
       <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Ortağı değerlendir", language)}</Text>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-        {[5, 4, 3].map((item) => (
-          <View key={item} style={{ flexBasis: "31%", flexGrow: 1 }}>
-            <PrimaryButton tone={rating === item ? "soft" : "secondary"} onPress={() => setRating(item)}>{item} {translateCopy("yıldız", language)}</PrimaryButton>
-          </View>
-        ))}
-      </View>
+      <StarRatingInput value={rating} onChange={setRating} />
       <TextInput
         value={comment}
         onChangeText={setComment}
