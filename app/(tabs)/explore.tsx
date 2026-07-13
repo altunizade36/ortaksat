@@ -83,6 +83,7 @@ type ExploreMedia = {
   type: "image" | "video";
   uri: string;
   listing: Listing;
+  mediaCount?: number; // ilana ait toplam görsel/video (rozet: "1/5")
 };
 
 export default function ExploreScreen() {
@@ -92,7 +93,7 @@ export default function ExploreScreen() {
   const params = useLocalSearchParams<{ q?: string; province?: string; district?: string; price?: string; comm?: string; rate?: string; rating?: string; featured?: string; stock?: string; verified?: string; open?: string; sort?: string; cat?: string; city?: string; tab?: string; attr?: string; num?: string }>();
   // Param değeri string | string[] gelebilir; tek değere indir.
   const sp = (v?: string | string[]) => (Array.isArray(v) ? v[0] ?? "" : v ?? "");
-  const { findUser, listings, loadMoreMarketplace, marketplaceHasMore, marketplaceLoadingMore, marketplaceLoadFailed, retryMarketplace } = useStore();
+  const { findUser, listings, isFavorite, toggleFavorite, loadMoreMarketplace, marketplaceHasMore, marketplaceLoadingMore, marketplaceLoadFailed, retryMarketplace } = useStore();
   const { items: savedSearches, add: addSaved, remove: removeSaved } = useSavedSearches();
   const [refreshing, setRefreshing] = useState(false);
   const [seed, setSeed] = useState(1);
@@ -449,32 +450,43 @@ export default function ExploreScreen() {
     if (sortMode === "priceAsc") arr.sort((a, b) => a.price - b.price);
     else if (sortMode === "priceDesc") arr.sort((a, b) => b.price - a.price);
     else if (sortMode === "commission") arr.sort((a, b) => commissionAmount(b) - commissionAmount(a));
+    else if (sortMode === "commissionRate") arr.sort((a, b) => commissionRatePct(b) - commissionRatePct(a));
+    else if (sortMode === "rating") arr.sort((a, b) => (findUser(b.ownerId)?.rating ?? 0) - (findUser(a.ownerId)?.rating ?? 0));
     else if (sortMode === "new") arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     return arr;
-  }, [activeListings, sortMode]);
+  }, [activeListings, sortMode, findUser]);
 
+  // İLAN BAŞINA TEK KART. Eskiden her ilan HER GÖRSELİ için ayrı karta açılıyordu
+  // (flatMap) → 5 fotoğraflı ürün gridde 5 kez tekrar ediyor, "{n} içerik" sayacı da
+  // ilan sayısıyla uyuşmuyordu. Artık tek kart; ekstra görsel sayısı rozetle belirtilir
+  // ve karta dokununca feed'de tüm medyada gezilebilir.
   const mediaItems = useMemo(() => {
-    return mediaSourceListings.flatMap((listing) => {
+    return mediaSourceListings.map((listing) => {
       const media = [listing.image, ...(listing.adAssets ?? [])]
         .map((item) => item?.trim())
         .filter((item): item is string => Boolean(item));
-
       const uniqueMedia = Array.from(new Set(media));
-      return uniqueMedia.map((uri, index) => ({
-        id: `${listing.id}-media-${index}`,
-        index,
+      const uri = uniqueMedia[0] ?? listing.image;
+      return {
+        id: `${listing.id}-media-0`,
+        index: 0,
         poster: listing.image,
         type: (isVideoUri(uri) ? "video" : "image") as ExploreMedia["type"],
         uri,
-        listing
-      }));
+        listing,
+        mediaCount: uniqueMedia.length
+      };
     });
   }, [mediaSourceListings]);
 
   const visibleMediaItems = mediaItems.slice(0, visibleCount);
   const rows = useMemo(() => chunk(visibleMediaItems, columns), [visibleMediaItems, columns]);
-  const videoCount = mediaItems.filter((item) => item.type === "video").length;
   const openCount = activeListings.filter((listing) => listing.partnershipMode === "open").length;
+  // Ortalama komisyon oranı (%) — ortağın "bu kategoride kazanç var mı" sinyali.
+  const avgRate = useMemo(() => {
+    const rates = activeListings.map(commissionRatePct).filter((r) => r > 0);
+    return rates.length ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : 0;
+  }, [activeListings]);
 
   useEffect(() => {
     setVisibleCount(INITIAL_EXPLORE_ITEMS);
@@ -1023,9 +1035,11 @@ export default function ExploreScreen() {
               {t("visualExploreBody")}
             </Text>
           </View>
+          {/* Sayaç artık İLAN sayısı (eskiden "içerik" = medya sayısıydı ve gridde
+              görünen ürün sayısıyla uyuşmuyordu). */}
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, minWidth: 74, paddingHorizontal: 10, paddingVertical: 6 }}>
             <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>
-              {mediaItems.length} {t("content")}
+              {mediaItems.length} {translateCopy("ilan", language)}
             </Text>
           </View>
           {!isWideWeb ? (
@@ -1071,10 +1085,13 @@ export default function ExploreScreen() {
           ))}
         </ScrollView>
 
+        {/* İstatistikler: eskiden "Görsel / Video" sayısıydı — alıcı/ortak için değersiz
+            (katalogda kaç FOTOĞRAF olduğu kimseyi ilgilendirmez). Artık karar verdiren
+            gerçek sinyaller: anında ortak olunabilen ilan + ortalama komisyon oranı. */}
         <View style={{ flexDirection: "row", gap: 6 }}>
-          <ExploreStat icon="image-multiple-outline" label="Görsel" value={`${mediaItems.length - videoCount}`} />
-          <ExploreStat icon="play-box-multiple-outline" label="Video" value={`${videoCount}`} />
-          <ExploreStat icon="flash" label="Anında" value={`${openCount}`} />
+          <ExploreStat icon="tag-multiple-outline" label="İlan" value={`${mediaItems.length}`} />
+          <ExploreStat icon="flash" label="Anında ortak" value={`${openCount}`} />
+          <ExploreStat icon="percent" label="Ort. komisyon" value={avgRate > 0 ? `%${avgRate}` : "—"} />
         </View>
 
         {/* Aktif filtre çipleri (tek-tek kaldırılabilir + tümünü temizle). */}
@@ -1117,9 +1134,11 @@ export default function ExploreScreen() {
                 {row.map((item, index) => (
                   <ExploreTile
                     key={`${item.id}-${seed}`}
+                    favorited={isFavorite(item.listing.id)}
                     height={tileHeight}
                     item={item}
                     language={language}
+                    onFav={() => toggleFavorite(item.listing.id)}
                     onPress={() => router.push({ pathname: "/(tabs)/explore-feed/[id]", params: { id: item.listing.id, media: item.id } })}
                     order={rowIndex * columns + index}
                     size={tileSize}
@@ -1540,7 +1559,7 @@ function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner
   );
 }
 
-function ExploreTileBase({ height, item, language, onPress, order, size, t }: { height: number; item: ExploreMedia; language: "tr" | "en"; onPress: () => void; order: number; size: number; t: (key: string) => string }) {
+function ExploreTileBase({ favorited, height, item, language, onFav, onPress, order, size, t }: { favorited?: boolean; height: number; item: ExploreMedia; language: "tr" | "en"; onFav?: () => void; onPress: () => void; order: number; size: number; t: (key: string) => string }) {
   const { listing } = item;
   const featured = item.index === 0 || order % 12 === 0;
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
@@ -1562,6 +1581,26 @@ function ExploreTileBase({ height, item, language, onPress, order, size, t }: { 
             <MaterialCommunityIcons name="play" size={18} color={colors.primaryDark} />
           </View>
         ) : null}
+        {/* Favori — ListingCard'da vardı, keşfet kartında YOKTU (tutarsızlık). */}
+        {onFav ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: Boolean(favorited) }}
+            accessibilityLabel={favorited ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)}
+            hitSlop={6}
+            onPress={onFav}
+            style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 8, top: 34, width: 30 }}
+          >
+            <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={17} color={favorited ? colors.accent : colors.muted} />
+          </Pressable>
+        ) : null}
+        {/* Görsel sayısı: ilan başına tek kart olduğu için "daha fazla görsel var" sinyali. */}
+        {(item.mediaCount ?? 1) > 1 ? (
+          <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, bottom: 8, flexDirection: "row", gap: 3, left: 8, paddingHorizontal: 7, paddingVertical: 3, position: "absolute" }}>
+            <MaterialCommunityIcons name="image-multiple-outline" size={11} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{item.mediaCount}</Text>
+          </View>
+        ) : null}
       </View>
       {/* Okunur metin bölümü (beyaz, alt) */}
       <View style={{ flex: 1, gap: 3, paddingHorizontal: 9, paddingVertical: 8 }}>
@@ -1578,7 +1617,7 @@ function ExploreTileBase({ height, item, language, onPress, order, size, t }: { 
         {commission > 0 ? (
           <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 7, flexDirection: "row", gap: 4, paddingHorizontal: 7, paddingVertical: 3 }}>
             <MaterialCommunityIcons name="cash-multiple" size={12} color={colors.primaryDark} />
-            <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{t("earning")} {money(commission)}</Text>
+            <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{t("earning")} {money(commission)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}</Text>
           </View>
         ) : null}
       </View>
@@ -1590,7 +1629,9 @@ function ExploreTileBase({ height, item, language, onPress, order, size, t }: { 
 // değişimi) boşuna render olmasın. Yalnız içerik/boyut/dil değişince render et;
 // onPress kimliği yok sayılır (davranışsal olarak sabit).
 const ExploreTile = memo(ExploreTileBase, (a, b) =>
-  a.item === b.item && a.height === b.height && a.size === b.size && a.order === b.order && a.language === b.language
+  // favorited de karşılaştırılmalı — yoksa kalbe basınca kart yeniden render OLMAZ
+  // (memo eski çıktıyı tutar) ve favori görsel olarak dolmaz.
+  a.item === b.item && a.favorited === b.favorited && a.height === b.height && a.size === b.size && a.order === b.order && a.language === b.language
 );
 
 function getExploreStatus(item: ExploreMedia, listing: Listing, featured: boolean, conversionScore: number, t: (key: string) => string): { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone: "primary" | "dark" | "warning" } {
