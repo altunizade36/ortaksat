@@ -1,4 +1,4 @@
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@/components/icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { Link, useRouter, type Href } from "expo-router";
 import { Mascot } from "@/components/brand/Mascot";

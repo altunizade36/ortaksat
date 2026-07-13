@@ -1,5 +1,5 @@
 import { useIsWideWeb } from "@/lib/layout";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, type Href } from "expo-router";
 import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";

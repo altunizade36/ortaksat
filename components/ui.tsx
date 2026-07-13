@@ -1,4 +1,4 @@
-﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
+﻿import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, type Href } from "expo-router";
 import { PropsWithChildren } from "react";
 import { Pressable, Text, View } from "react-native";

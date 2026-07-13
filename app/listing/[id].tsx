@@ -1,4 +1,4 @@
-﻿import { MaterialCommunityIcons } from "@expo/vector-icons";
+﻿import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useRef, useState } from "react";
