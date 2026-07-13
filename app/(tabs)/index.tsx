@@ -241,7 +241,7 @@ export default function HomeScreen() {
             </View>
             <MobileHeroCluster />
           </LinearGradient>
-          <CategoryShowcase categoryTree={categoryTree} isWideWeb={false} />
+          <CategoryShowcase categoryTree={categoryTree} listings={activeListings} isWideWeb={false} />
 
           {/* En çok kazandıran fırsatlar (mobil şerit) */}
           {topEarn.length > 0 ? (
@@ -611,46 +611,102 @@ function HomeQuickActions({ currentUserId }: { currentUserId: string }) {
   );
 }
 
-function CategoryShowcase({ categoryTree, isWideWeb }: { categoryTree: CategoryNode[]; isWideWeb: boolean }) {
+function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree: CategoryNode[]; listings: Listing[]; isWideWeb: boolean }) {
   const { language } = useLanguage();
-  const cats = categoryTree.slice(0, isWideWeb ? 12 : 10);
+
+  // Her ÜST kategori için canlı aktif-ilan sayısı: ağacı bir kez gezip
+  // "etiket → kök anahtarı" haritası kur, ilanları köke göre say (matchCategoryByName
+  // her ilan için ağacı yeniden gezmesin diye O(ağaç + ilan)).
+  const norm = (s: string) => s.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
+  const counts = useMemo(() => {
+    const rootByLabel = new Map<string, string>();
+    const walk = (nodes: CategoryNode[], rootKey: string) => {
+      for (const n of nodes) {
+        if (!rootByLabel.has(norm(n.label))) rootByLabel.set(norm(n.label), rootKey);
+        if (n.children) walk(n.children, rootKey);
+      }
+    };
+    for (const root of categoryTree) walk([root], root.key);
+    const c = new Map<string, number>();
+    for (const l of listings) {
+      const rk = rootByLabel.get(norm(l.category));
+      if (rk) c.set(rk, (c.get(rk) ?? 0) + 1);
+    }
+    return c;
+  }, [categoryTree, listings]);
+
+  // En aktif kategoriler öne (canlı hisset); eşitse ağaç sırası korunur.
+  const cats = useMemo(() => {
+    const ranked = categoryTree
+      .map((node, i) => ({ node, i, n: counts.get(node.key) ?? 0 }))
+      .sort((a, b) => b.n - a.n || a.i - b.i)
+      .map((x) => x.node);
+    return ranked.slice(0, isWideWeb ? 14 : 12);
+  }, [categoryTree, counts, isWideWeb]);
   if (cats.length === 0) return null;
 
-  const Tile = ({ node }: { node: CategoryNode }) => (
-    <Link href={{ pathname: "/kategori/[slug]", params: { slug: node.slug ?? node.key } }} asChild>
-      <Pressable style={({ pressed }) => ({ alignItems: "center", gap: 7, opacity: pressed ? 0.75 : 1, width: isWideWeb ? undefined : 78 })}>
-        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, height: isWideWeb ? 72 : 64, justifyContent: "center", overflow: "hidden", width: isWideWeb ? 72 : 64 }}>
-          {node.image ? (
-            <SafeRemoteImage uri={node.image} alt={`${node.label} kategorisi`} accessibilityLabel={`${node.label} kategorisi`} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+  const tileW = isWideWeb ? 84 : 78;
+  const boxSize = isWideWeb ? 76 : 66;
+  const Tile = ({ node, rank }: { node: CategoryNode; rank: number }) => {
+    const n = counts.get(node.key) ?? 0;
+    const hot = rank === 0 && n > 0; // en aktif kategori rozeti
+    return (
+      <Link href={{ pathname: "/kategori/[slug]", params: { slug: node.slug ?? node.key } }} asChild>
+        <Pressable style={({ pressed }) => ({ alignItems: "center", gap: 6, opacity: pressed ? 0.75 : 1, width: tileW })}>
+          <View style={{ height: boxSize, width: boxSize }}>
+            <View style={{ alignItems: "center", borderColor: colors.line, borderRadius: 18, borderWidth: 1, height: boxSize, justifyContent: "center", overflow: "hidden", width: boxSize }}>
+              {node.image ? (
+                <SafeRemoteImage uri={node.image} alt={`${node.label} kategorisi`} accessibilityLabel={`${node.label} kategorisi`} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+              ) : (
+                <LinearGradient colors={[colors.primarySoft, colors.surface]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ alignItems: "center", height: "100%", justifyContent: "center", width: "100%" }}>
+                  <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={isWideWeb ? 30 : 27} color={colors.primaryDark} />
+                </LinearGradient>
+              )}
+            </View>
+            {/* "En popüler" rozeti — en çok ilanı olan kategori */}
+            {hot ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: colors.surface, borderRadius: 999, borderWidth: 1.5, flexDirection: "row", gap: 2, paddingHorizontal: 5, paddingVertical: 1, position: "absolute", right: -4, top: -5 }}>
+                <MaterialCommunityIcons name="fire" size={9} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 8.5, fontWeight: "900" }}>{translateCopy("popüler", language)}</Text>
+              </View>
+            ) : null}
+          </View>
+          <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 11.5, fontWeight: "800", lineHeight: 14, maxWidth: tileW, minHeight: 28, textAlign: "center" }}>
+            {translateCopy(getCategoryShortLabel(node.label), language)}
+          </Text>
+          {n > 0 ? (
+            <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 }}>
+              <Text style={{ color: colors.primaryDark, fontSize: 10, fontWeight: "900" }}>{n > 999 ? "999+" : n} {translateCopy("ilan", language)}</Text>
+            </View>
           ) : (
-            <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={28} color={colors.primary} />
+            <Text style={{ color: colors.subtle, fontSize: 10, fontWeight: "700" }}>{translateCopy("keşfet", language)}</Text>
           )}
-        </View>
-        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 11.5, fontWeight: "800", maxWidth: isWideWeb ? 88 : 78, textAlign: "center" }}>
-          {translateCopy(getCategoryShortLabel(node.label), language)}
-        </Text>
-      </Pressable>
-    </Link>
-  );
+        </Pressable>
+      </Link>
+    );
+  };
 
   return (
-    <View style={{ gap: 10 }}>
+    <View style={{ gap: 12 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text style={{ color: colors.ink, flex: 1, fontSize: isWideWeb ? 20 : 17, fontWeight: "900" }}>{translateCopy("Kategorilere göz at", language)}</Text>
+        <View style={{ flex: 1, gap: 1 }}>
+          <Text style={{ color: colors.ink, fontSize: isWideWeb ? 20 : 17, fontWeight: "900" }}>{translateCopy("Kategorilere göz at", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy("En çok ilan olan kategoriler önde", language)}</Text>
+        </View>
         <Link href="/kategoriler" asChild>
-          <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+          <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 3, opacity: pressed ? 0.75 : 1, paddingHorizontal: 12, paddingVertical: 6 })}>
             <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Tümü", language)}</Text>
-            <MaterialCommunityIcons name="arrow-right" size={16} color={colors.primaryDark} />
+            <MaterialCommunityIcons name="arrow-right" size={15} color={colors.primaryDark} />
           </Pressable>
         </Link>
       </View>
       {isWideWeb ? (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
-          {cats.map((node) => <Tile key={node.key} node={node} />)}
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+          {cats.map((node, i) => <Tile key={node.key} node={node} rank={i} />)}
         </View>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 12 }}>
-          {cats.map((node) => <Tile key={node.key} node={node} />)}
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingRight: 12 }}>
+          {cats.map((node, i) => <Tile key={node.key} node={node} rank={i} />)}
         </ScrollView>
       )}
     </View>
