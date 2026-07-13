@@ -233,7 +233,7 @@ export default function HomeScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
       onScroll={loadMoreIfNeeded}
       scrollEventThrottle={16}
-      contentContainerStyle={{ gap: 10, padding: horizontalPadding, paddingBottom: isWideWeb ? 0 : isWeb ? 28 : 100 }}
+      contentContainerStyle={{ flexGrow: 1, gap: 10, padding: horizontalPadding, paddingBottom: isWideWeb ? 0 : isWeb ? 28 : 100 }}
     >
       <Head>
         <title>OrtakSat — Komisyonla Ortak Satış Platformu | İlan Ver, Ortak Ol Kazan</title>

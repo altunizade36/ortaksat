@@ -7,7 +7,7 @@ import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
-import { EmptyState, PrimaryButton } from "@/components/ui";
+import { PrimaryButton } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useMounted } from "@/lib/layout";
@@ -71,45 +71,53 @@ function FollowingInner() {
   return (
     <ScrollView
       style={{ backgroundColor: colors.background, flex: 1 }}
-      contentContainerStyle={{ paddingBottom: 40 }}
+      contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} />}
     >
-      <View style={{ gap: 4, paddingHorizontal: horizontalPadding, paddingTop: 14 }}>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-          <MaterialCommunityIcons name="storefront-check-outline" size={22} color={colors.primaryDark} />
-          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Takip ettiklerin", language)}</Text>
+      {/* İçerik 1280 ortalı (layout standardı); footer full-bleed + dibe sabit. */}
+      <View style={{ alignSelf: "center", gap: 14, maxWidth: 1280, paddingHorizontal: horizontalPadding, paddingTop: 16, width: "100%" }}>
+        <View style={{ gap: 4 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <MaterialCommunityIcons name="storefront-check-outline" size={24} color={colors.primaryDark} />
+            <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{translateCopy("Takip Ettiklerin", language)}</Text>
+          </View>
+          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>
+            {followedSellerIds.length > 0
+              ? `${followedSellerIds.length} ${translateCopy("satıcı takip ediyorsun · yeni ilanları burada", language)}`
+              : translateCopy("Takip ettiğin satıcıların yeni ilanları burada toplanır.", language)}
+          </Text>
         </View>
-        <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>
-          {followedSellerIds.length > 0
-            ? `${followedSellerIds.length} ${translateCopy("satıcı takip ediyorsun", language)}`
-            : translateCopy("Henüz satıcı takip etmiyorsun.", language)}
-        </Text>
+
+        {loading ? (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap }}>
+            {[0, 1, 2, 3].map((i) => <View key={i} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 14, height: 210, width: cardWidth }} />)}
+          </View>
+        ) : followedSellerIds.length === 0 ? (
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, paddingHorizontal: 20, paddingVertical: 30 }}>
+            <View style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 62, justifyContent: "center", width: 62 }}>
+              <MaterialCommunityIcons name="storefront-plus-outline" size={30} color={colors.primaryDark} />
+            </View>
+            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900", textAlign: "center" }}>{translateCopy("Takip listen boş", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 460, alignSelf: "center", textAlign: "center" }}>{translateCopy("Beğendiğin satıcıların mağaza sayfasından 'Takip Et' ile takip et; yeni ilanları burada ve bildirimlerinde görünsün.", language)}</Text>
+            <View style={{ alignItems: "center", marginTop: 2 }}>
+              <PrimaryButton tone="secondary" icon="compass-outline" onPress={() => router.push("/explore")}>{translateCopy("Satıcıları keşfet", language)}</PrimaryButton>
+            </View>
+          </View>
+        ) : items.length === 0 ? (
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 12, paddingHorizontal: 20, paddingVertical: 30 }}>
+            <View style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 56, justifyContent: "center", width: 56 }}>
+              <MaterialCommunityIcons name="clock-outline" size={26} color={colors.muted} />
+            </View>
+            <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900", textAlign: "center" }}>{translateCopy("Yeni ilan yok", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 460, alignSelf: "center", textAlign: "center" }}>{translateCopy("Takip ettiğin satıcıların şu an aktif ilanı yok. Yeni ilan yayınladıklarında bildirim alacaksın.", language)}</Text>
+          </View>
+        ) : (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap }}>
+            {items.map((listing) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} />)}
+          </View>
+        )}
       </View>
 
-      {loading ? (
-        <View style={{ padding: 40 }}><Text style={{ color: colors.muted, fontSize: 13, textAlign: "center" }}>{translateCopy("Yükleniyor…", language)}</Text></View>
-      ) : followedSellerIds.length === 0 ? (
-        <View style={{ padding: 16 }}>
-          <EmptyState
-            title={translateCopy("Takip listen boş", language)}
-            body={translateCopy("Beğendiğin satıcıların mağaza sayfasından 'Takip Et' ile takip et; yeni ilanları burada ve bildirimlerinde görünsün.", language)}
-          />
-          <View style={{ alignItems: "center", marginTop: 12 }}>
-            <PrimaryButton tone="secondary" icon="compass-outline" onPress={() => router.push("/explore")}>{translateCopy("Satıcıları keşfet", language)}</PrimaryButton>
-          </View>
-        </View>
-      ) : items.length === 0 ? (
-        <View style={{ padding: 16 }}>
-          <EmptyState
-            title={translateCopy("Yeni ilan yok", language)}
-            body={translateCopy("Takip ettiğin satıcıların şu an aktif ilanı yok. Yeni ilan yayınladıklarında bildirim alacaksın.", language)}
-          />
-        </View>
-      ) : (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap, paddingHorizontal: horizontalPadding, paddingTop: 12 }}>
-          {items.map((listing) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} />)}
-        </View>
-      )}
       <WebFooter />
     </ScrollView>
   );

@@ -89,7 +89,7 @@ export default function TrustScreen() {
     const rows = allRows.filter((r) => filter === "open" ? (r.status === "open" || r.status === "reviewing") : filter === "resolved" ? (r.status === "resolved" || r.status === "rejected") : true);
 
     return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
         <Seo title={translateCopy("Güven Merkezi — Doğrulama, şeffaflık ve şikayet | OrtakSat", language)} description={translateCopy("OrtakSat Güven Merkezi: satıcı/ortak doğrulama, güven puanı, şikayet yönetimi ve şeffaf süreçlerle güvenli bir ortak satış ortamı.", language)} path="/trust" />
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>

@@ -169,7 +169,7 @@ function NotificationsScreenInner() {
     // e-posta/SMS/WhatsApp bildirimi henüz yok → "Yakında" olarak dürüstçe gösterilir.
 
     return (
-      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+      <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 12 }}>
           <View style={{ flex: 1, gap: 4 }}>

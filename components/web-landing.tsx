@@ -125,7 +125,10 @@ export function WebFooter() {
       style={{
         backgroundColor: colors.primaryDark,
         marginHorizontal: isWideWeb ? -20 : -12, // sayfa padding'iyle eşleş (mobil 12, masaüstü 20) — sabit -20 mobilde taşıyordu
-        marginTop: 18,
+        // Dibe sabit footer: ScrollView contentContainer flexGrow:1 olan sayfalarda
+        // kısa içerikte footer'ı ekranın DİBİNE iter (altında beyaz boşluk kalmaz);
+        // içerik uzunsa marginTop:auto=0 → normal akış. paddingTop içeriden ayırır.
+        marginTop: "auto",
         paddingBottom: 14,
         paddingHorizontal: isWideWeb ? 32 : 16,
         paddingTop: 18

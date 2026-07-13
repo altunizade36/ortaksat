@@ -71,7 +71,7 @@ function Inner() {
   };
 
   return (
-    <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={{ paddingBottom: 40 }}>
+    <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}>
       <Seo
         title={`${name} — Ortak vitrini | OrtakSat`}
         description={`${name} adlı ortağın OrtakSat vitrini: promosyonundaki ${items.length} ilan. İlanları incele, ortak bağlantısıyla satın al.`}

@@ -78,7 +78,7 @@ export default function CategoriesPage() {
   }
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
       <Head><title>Tüm Kategoriler — Emlak, Vasıta, Elektronik | OrtakSat</title><meta name="description" content="OrtakSat'ta tüm kategoriler: emlak, vasıta, elektronik, moda, ev & yaşam ve daha fazlası. Ürününü ortak sat, komisyon kazan." /></Head>
       <View style={{ alignSelf: "center", gap: 20, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
       {/* Hero */}

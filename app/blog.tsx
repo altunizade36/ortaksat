@@ -53,7 +53,7 @@ export default function BlogPage() {
   const recent = ALL_POSTS.slice().reverse().slice(0, 5);
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
       <Head>
         <title>Blog — Ortak satış, komisyon ve pazarlama rehberi | OrtakSat</title>
         <meta name="description" content="OrtakSat blog: ortak satış, komisyon, referans pazarlama, ilan optimizasyonu ve güvenli alışveriş üzerine rehberler. Satıcı ve ortaklar için pratik ipuçları." />
