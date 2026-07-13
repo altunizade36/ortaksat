@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -124,6 +124,16 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
   const hasData = list.length > 0;
   const results = open ? list.filter((n) => locKey(n.name).includes(locKey(query))).slice(0, 40) : [];
 
+  // Mahalle listesi de açılınca görünür alana kaydırılmalı (il/ilçe ile aynı mobil hata).
+  useEffect(() => {
+    if (!open || Platform.OS !== "web" || typeof document === "undefined") return;
+    const id = requestAnimationFrame(() => {
+      const el = document.querySelector('[data-openloc="1"]') as HTMLElement | null;
+      el?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open]);
+
   // Veri yoksa veya kullanıcı "listede yok" dediyse: serbest metin
   if (!hasData || manual) {
     return (
@@ -149,7 +159,7 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
       </Pressable>
       {open ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, maxHeight: 320, overflow: "hidden" }}>
+        <View dataSet={{ openloc: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, maxHeight: 320, overflow: "hidden" }}>
           <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
             <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
             <TextInput value={query} onChangeText={setQuery} autoFocus placeholder={translateCopy("Mahalle ara…", language)} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }} />
@@ -192,6 +202,17 @@ function ComboBox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const results = open ? search(query).slice(0, 40) : [];
+  // MOBİL WEB: açılan liste (320px) ekranın altındaki bir alanda açılınca görünür alanın
+  // DIŞINDA kalıyordu → kullanıcı basıyor, hiçbir şey olmamış gibi görünüyordu.
+  // (RN-web View ref'i DOM düğümü garanti etmez → dataSet + querySelector ile hedefle.)
+  useEffect(() => {
+    if (!open || Platform.OS !== "web" || typeof document === "undefined") return;
+    const id = requestAnimationFrame(() => {
+      const el = document.querySelector('[data-openloc="1"]') as HTMLElement | null;
+      el?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
+    });
+    return () => cancelAnimationFrame(id);
+  }, [open]);
 
   return (
     <View style={{ gap: 4 }}>
@@ -212,7 +233,7 @@ function ComboBox({
       </Pressable>
 
       {open ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, marginTop: 2, maxHeight: 320, overflow: "hidden" }}>
+        <View dataSet={{ openloc: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, marginTop: 2, maxHeight: 320, overflow: "hidden" }}>
           <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
             <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
             <TextInput
