@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { Alert, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { Alert } from "@/lib/alert";
 
 import { Link } from "expo-router";
 

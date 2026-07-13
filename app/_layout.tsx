@@ -14,6 +14,7 @@ import { CompareBar } from "@/components/compare-bar";
 import { PresenceHeartbeat } from "@/components/presence-heartbeat";
 import { PushRegistrar } from "@/components/push-registrar";
 import { ErrorToast } from "@/components/error-toast";
+import { AlertHost } from "@/components/alert-host";
 import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
@@ -96,6 +97,7 @@ function RootStack() {
       <PresenceHeartbeat />
       <PushRegistrar />
       <ErrorToast />
+      <AlertHost />
     </View>
   );
 }
