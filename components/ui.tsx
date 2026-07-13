@@ -109,8 +109,12 @@ export function StatusPill({ label, tone = "info" }: { label: string; tone?: "in
 export function Metric({ label, value }: { label: string; value: string }) {
   const { language } = useLanguage();
   return (
-    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flex: 1, gap: 5, padding: 10 }}>
-      <Text ellipsizeMode="tail" numberOfLines={2} selectable style={{ color: colors.muted, fontSize: 11, fontWeight: "800", lineHeight: 14, minHeight: 28 }}>
+    // Kutular satırda flex:1 + stretch olduğu için zaten eşit yükseklikte hizalanır.
+    // Eskiden etikete minHeight:28 (2 satırlık) veriliyordu → "Stok" gibi TEK satırlık
+    // etiketlerde bile 2 satır yer rezerve edilip etiketle değer arasında büyük ÖLÜ BOŞLUK
+    // oluşuyor, kutular gereksiz uzuyordu. Etiket artık doğal yüksekliğinde.
+    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flex: 1, gap: 3, padding: 11 }}>
+      <Text ellipsizeMode="tail" numberOfLines={2} selectable style={{ color: colors.muted, fontSize: 11, fontWeight: "800", lineHeight: 14 }}>
         {translateCopy(label, language)}
       </Text>
       <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 18, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
