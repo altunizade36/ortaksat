@@ -31,10 +31,16 @@ function descendantLabels(node: CategoryNode, out: string[] = []): string[] {
   return out;
 }
 
+// Komisyon ORANI (%): oran tipinde doğrudan; sabit tipte fiyata göre efektif %.
+function commissionRatePct(listing: Listing) {
+  if (listing.commissionType === "rate") return listing.commissionValue;
+  return listing.price > 0 ? Math.round((listing.commissionValue / listing.price) * 100) : 0;
+}
+
 export function HomeDesktop() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { categoryTree, listings, isFavorite, toggleFavorite, marketplaceInitialLoading, marketplaceLoadFailed, retryMarketplace } = useStore();
+  const { categoryTree, listings, findUser, isFavorite, toggleFavorite, marketplaceInitialLoading, marketplaceLoadFailed, retryMarketplace } = useStore();
 
   const active = useMemo(() => listings.filter((l) => l.status === "active"), [listings]);
   // Filtreler
@@ -48,12 +54,16 @@ export function HomeDesktop() {
   const [onlyOpen, setOnlyOpen] = useState(false);
   const [onlyFeatured, setOnlyFeatured] = useState(false);
   const [minCommission, setMinCommission] = useState(0);
+  const [minRate, setMinRate] = useState(0);                 // en az komisyon ORANI (%)
+  const [commTypeFilter, setCommTypeFilter] = useState<"all" | "rate" | "fixed">("all");
+  const [minRating, setMinRating] = useState(0);             // en az satıcı puanı
+  const [onlyVerified, setOnlyVerified] = useState(false);   // doğrulanmış satıcı
   const [inStock, setInStock] = useState(false);
   const [onlyNew, setOnlyNew] = useState(false);
   // Kategori-özel facet (Yakıt/Isıtma/İç Özellik…) + sayısal aralık (m²/km/yıl…) — Keşfet paritesi.
   const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
   const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>({});
-  const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
+  const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission" | "commissionRate" | "rating">("featured");
   const [visibleCount, setVisibleCount] = useState(18);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   useEffect(() => { setRecentIds(getRecent()); }, []);
@@ -105,6 +115,10 @@ export function HomeDesktop() {
       if (onlyOpen && l.partnershipMode !== "open") return false;
       if (onlyFeatured && !l.featured) return false;
       if (minCommission && commissionAmount(l) < minCommission) return false;
+      if (minRate && commissionRatePct(l) < minRate) return false;
+      if (commTypeFilter !== "all" && l.commissionType !== commTypeFilter) return false;
+      if (minRating > 0 && (findUser(l.ownerId)?.rating ?? 0) < minRating) return false;
+      if (onlyVerified) { const o = findUser(l.ownerId); if (!o || !(o.verifiedIdentity || o.verifiedPhone)) return false; }
       if (inStock && l.stockCount <= 0) return false;
       if (onlyNew && !(Date.parse(l.createdAt ?? "") > Date.now() - 7 * 86400000)) return false;
       // Kategori-özel facet eşleşmesi (Yakıt=Dizel…): ilan attribute'u seçili değerlerden biriyse geçer.
@@ -130,7 +144,7 @@ export function HomeDesktop() {
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, catLabelSet, pMin, pMax, loc.provinceId, loc.districtId, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew, attrFilters, numRange, catNums]);
+  }, [active, catLabelSet, pMin, pMax, loc.provinceId, loc.districtId, onlyOpen, onlyFeatured, minCommission, minRate, commTypeFilter, minRating, onlyVerified, inStock, onlyNew, attrFilters, numRange, catNums]);
 
   const sorted = useMemo(() => {
     const arr = [...filtered];
@@ -138,24 +152,27 @@ export function HomeDesktop() {
     else if (sortMode === "priceDesc") arr.sort((a, b) => b.price - a.price);
     else if (sortMode === "newest") arr.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
     else if (sortMode === "commission") arr.sort((a, b) => commissionAmount(b) - commissionAmount(a));
+    else if (sortMode === "commissionRate") arr.sort((a, b) => commissionRatePct(b) - commissionRatePct(a));
+    else if (sortMode === "rating") arr.sort((a, b) => (findUser(b.ownerId)?.rating ?? 0) - (findUser(a.ownerId)?.rating ?? 0));
     else arr.sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
     return arr;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [filtered, sortMode]);
 
   const grid = sorted.slice(0, visibleCount);
 
   // Filtre/sıralama değişince baştan göster.
-  useEffect(() => { setVisibleCount(18); }, [selectedNode, pMin, pMax, loc.provinceId, loc.districtId, onlyOpen, onlyFeatured, minCommission, inStock, onlyNew, sortMode, attrFilters, numRange]);
+  useEffect(() => { setVisibleCount(18); }, [selectedNode, pMin, pMax, loc.provinceId, loc.districtId, onlyOpen, onlyFeatured, minCommission, minRate, commTypeFilter, minRating, onlyVerified, inStock, onlyNew, sortMode, attrFilters, numRange]);
 
   const topCats = categoryTree.filter((c) => c.label !== "Diğer");
   const popular = topCats.slice(0, 12);
   // Ortak-satış modeli: en çok kazandıran (en yüksek komisyonlu) fırsatlar.
   const topEarn = useMemo(() => [...active].filter((l) => commissionAmount(l) > 0).sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 10), [active]);
-  const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (loc.provinceId != null ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0) + (minCommission ? 1 : 0) + (inStock ? 1 : 0) + (onlyNew ? 1 : 0) + Object.keys(attrFilters).length + Object.keys(numRange).length;
-  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLoc({}); setOnlyOpen(false); setOnlyFeatured(false); setMinCommission(0); setInStock(false); setOnlyNew(false); setAttrFilters({}); setNumRange({}); };
+  const activeFilterCount = (selectedNode ? 1 : 0) + (pMin || pMax ? 1 : 0) + (loc.provinceId != null ? 1 : 0) + (onlyOpen ? 1 : 0) + (onlyFeatured ? 1 : 0) + (minCommission ? 1 : 0) + (minRate ? 1 : 0) + (commTypeFilter !== "all" ? 1 : 0) + (minRating ? 1 : 0) + (onlyVerified ? 1 : 0) + (inStock ? 1 : 0) + (onlyNew ? 1 : 0) + Object.keys(attrFilters).length + Object.keys(numRange).length;
+  const resetFilters = () => { setSelectedNode(null); setExpandedKey(null); setPriceMin(""); setPriceMax(""); setLoc({}); setOnlyOpen(false); setOnlyFeatured(false); setMinCommission(0); setMinRate(0); setCommTypeFilter("all"); setMinRating(0); setOnlyVerified(false); setInStock(false); setOnlyNew(false); setAttrFilters({}); setNumRange({}); };
   const COMMISSION_PRESETS: Array<[number, string]> = [[500, "500 ₺+"], [1000, "1.000 ₺+"], [2500, "2.500 ₺+"], [5000, "5.000 ₺+"]];
   const PRICE_PRESETS: Array<[string, string, string]> = [["0", "1000", "0 - 1.000 ₺"], ["1000", "5000", "1.000 - 5.000 ₺"], ["5000", "25000", "5.000 - 25.000 ₺"], ["25000", "100000", "25.000 - 100.000 ₺"], ["100000", "", "100.000 ₺ +"]];
-  const SORTS: Array<[typeof sortMode, string]> = [["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"], ["commission", "Kazanç"]];
+  const SORTS: Array<[typeof sortMode, string]> = [["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"], ["commission", "Kazanç"], ["commissionRate", "Komisyon %"], ["rating", "Puan"]];
 
   return (
     <View style={{ alignItems: "flex-start", alignSelf: "center", flexDirection: "row", gap: 20, maxWidth: 1280, width: "100%" }}>
@@ -246,7 +263,7 @@ export function HomeDesktop() {
             <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
           </View>
 
-          {/* Ortak kazancı (min komisyon) */}
+          {/* Ortak kazancı (min komisyon ₺) */}
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En Az Ortak Kazancı", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
@@ -261,10 +278,57 @@ export function HomeDesktop() {
             </View>
           </View>
 
+          {/* Komisyon ORANI (%) — ortakların en çok baktığı */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En Az Komisyon Oranı (%)", language)}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {[10, 15, 20, 25].map((r) => {
+                const on = minRate === r;
+                return (
+                  <Pressable key={r} onPress={() => setMinRate(on ? 0 : r)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 5 }}>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "800" }}>%{r}+</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Komisyon tipi */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Komisyon Tipi", language)}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {([["all", translateCopy("Tümü", language)], ["rate", translateCopy("Oran %", language)], ["fixed", translateCopy("Sabit ₺", language)]] as Array<["all" | "rate" | "fixed", string]>).map(([v, lbl]) => {
+                const on = commTypeFilter === v;
+                return (
+                  <Pressable key={v} onPress={() => setCommTypeFilter(v)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 5 }}>
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "800" }}>{lbl}</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
+          {/* Satıcı puanı */}
+          <View style={{ gap: 8 }}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Satıcı Puanı", language)}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {[4, 4.5].map((r) => {
+                const on = minRating === r;
+                return (
+                  <Pressable key={r} onPress={() => setMinRating(on ? 0 : r)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 3, paddingHorizontal: 11, paddingVertical: 5 }}>
+                    <MaterialCommunityIcons name="star" size={12} color={on ? "#FFFFFF" : colors.gold} />
+                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "800" }}>{r}+</Text>
+                  </Pressable>
+                );
+              })}
+            </View>
+          </View>
+
           {/* Hızlı anahtarlar */}
           <View style={{ gap: 10 }}>
             <SwitchRow label={translateCopy("Sadece ortak satışa açık", language)} on={onlyOpen} onPress={() => setOnlyOpen((v) => !v)} />
             <SwitchRow label={translateCopy("Öne çıkan ilanlar", language)} on={onlyFeatured} onPress={() => setOnlyFeatured((v) => !v)} />
+            <SwitchRow label={translateCopy("Doğrulanmış satıcı", language)} on={onlyVerified} onPress={() => setOnlyVerified((v) => !v)} />
             <SwitchRow label={translateCopy("Stokta olanlar", language)} on={inStock} onPress={() => setInStock((v) => !v)} />
             <SwitchRow label={translateCopy("Yeni ilanlar (7 gün)", language)} on={onlyNew} onPress={() => setOnlyNew((v) => !v)} />
           </View>
