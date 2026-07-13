@@ -249,7 +249,15 @@ function DesktopActions() {
     <View style={{ alignItems: "center", flexDirection: "row", gap: 18 }}>
       {items.map((item) => (
         <Link key={item.label} href={item.href} asChild>
-          <Pressable style={{ alignItems: "center", gap: 2 }}>
+          {/* Dokunma hedefi: ikonun kendisi 22px → kutu 20x21px oluyordu (44px erişilebilirlik
+              hedefinin çok altında) ve bunlar HER ekranda duran en çok kullanılan kontroller.
+              minWidth/minHeight 44 + hitSlop ile hedef büyütüldü (görsel boyut değişmiyor). */}
+          <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={translateCopy(item.label, language)}
+            hitSlop={10}
+            style={{ alignItems: "center", gap: 2, justifyContent: "center", minHeight: 44, minWidth: 44 }}
+          >
             <View>
               <MaterialCommunityIcons name={item.icon} size={22} color={colors.primaryDark} />
               {item.badge ? (

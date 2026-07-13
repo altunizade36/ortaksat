@@ -583,6 +583,8 @@ function HomeQuickActions({ currentUserId }: { currentUserId: string }) {
       {actions.map((action) => (
         <Link key={action.label} href={action.href} asChild>
           <Pressable
+            accessibilityRole="link"
+            accessibilityLabel={translateCopy(action.label, language)}
             style={({ pressed }) => ({
               alignItems: "center",
               backgroundColor: action.tone === "primary" ? colors.primary : action.tone === "soft" ? colors.primarySoft : colors.surface,
