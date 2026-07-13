@@ -1,3 +1,4 @@
+import { useIsWideWeb } from "@/lib/layout";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Link, type Href } from "expo-router";
 import { useState } from "react";
@@ -52,6 +53,7 @@ export function WebTrustStrip() {
 /** Web footer with brand, navigation columns and legal line. */
 export function WebFooter() {
   const { t, language } = useLanguage();
+  const isWideWeb = useIsWideWeb();
   const [email, setEmail] = useState("");
   const [subscribed, setSubscribed] = useState(false);
   const [newsletterErr, setNewsletterErr] = useState(false);
@@ -122,10 +124,10 @@ export function WebFooter() {
     <View
       style={{
         backgroundColor: colors.primaryDark,
-        marginHorizontal: -20,
+        marginHorizontal: isWideWeb ? -20 : -12, // sayfa padding'iyle eşleş (mobil 12, masaüstü 20) — sabit -20 mobilde taşıyordu
         marginTop: 18,
         paddingBottom: 14,
-        paddingHorizontal: 32,
+        paddingHorizontal: isWideWeb ? 32 : 16,
         paddingTop: 18
       }}
     >
@@ -197,7 +199,11 @@ export function WebFooter() {
             {translateCopy("OrtakSat ödeme, kargo veya komisyon tahsilatı yapmaz; yalnızca ilan, ortak satıcı eşleştirme, mesajlaşma ve anlaşma kaydı sağlar. Satış, ödeme, teslimat ve komisyon ödemesi kullanıcılar arasındaki anlaşmalardan ibaret olup tüm sorumluluk taraflara aittir.", language)}
           </Text>
         </View>
-        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+        {/* Rozet satırı flex ITEM olduğu için içeriği kadar genişleyip ebeveyni aşıyordu
+            (390px ekranda +71px taşma). flexBasis:"100%" ile kendi satırını alır ve
+            ebeveyn genişliğine sığar → çipler düzgün sarar. Ebeveyn ROW olduğu için
+            flexBasis burada GENİŞLİK demektir (sütun konteynerde yükseklik olurdu). */}
+        <View style={{ alignItems: "center", flexBasis: "100%", flexDirection: "row", flexWrap: "wrap", gap: 8, minWidth: 0 }}>
           {trustBadges.map((b) => (
             <View key={b.label} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
               <MaterialCommunityIcons name={b.icon} size={14} color="rgba(255,255,255,0.92)" />
