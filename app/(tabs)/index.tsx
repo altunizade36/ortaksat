@@ -28,7 +28,7 @@ import { LocationSelector, type LocationValue } from "@/components/location-sele
 import { matchesLocationFilter } from "@/lib/locations";
 import { useStore } from "@/lib/use-store";
 
-type SortMode = "featured" | "commission" | "newest";
+type SortMode = "featured" | "commission" | "commissionRate" | "newest" | "priceAsc" | "priceDesc" | "rating";
 type FilterKey = "all" | "trending" | "open" | "highCommission" | "lowStock" | string;
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 const INITIAL_HOME_ITEMS = 18;
@@ -43,17 +43,24 @@ export default function HomeScreen() {
   const query = params.q ?? "";
   const [filter, setFilter] = useState<FilterKey>("all");
   const [sortMode, setSortMode] = useState<SortMode>("featured");
-  // Gelişmiş filtre (keşfet ile aynı mantık): fiyat aralığı, min komisyon, stok, anında ortaklık.
+  // Gelişmiş filtre sistemi: kategori, fiyat, komisyon ₺/%, satıcı puanı/doğrulama, stok, anında ortaklık.
   const [advancedOpen, setAdvancedOpen] = useState(false);
   const [priceMin, setPriceMin] = useState("");
   const [priceMax, setPriceMax] = useState("");
   const [minComm, setMinComm] = useState(0);
+  const [minRate, setMinRate] = useState(0);              // en az komisyon ORANI (%)
+  const [commTypeFilter, setCommTypeFilter] = useState<"all" | "rate" | "fixed">("all");
+  const [minRating, setMinRating] = useState(0);          // en az satıcı puanı
+  const [catFilter, setCatFilter] = useState<string | null>(null); // üst kategori (kök) anahtarı
   const [onlyOpenPartner, setOnlyOpenPartner] = useState(false);
   const [onlyInStock, setOnlyInStock] = useState(false);
+  const [onlyFeatured, setOnlyFeatured] = useState(false);
+  const [onlyVerified, setOnlyVerified] = useState(false);
   // Konum (81 il + ilçe) — keşfet/kategori ile aynı seçici; ana sayfada eksikti.
   const [loc, setLoc] = useState<LocationValue>({});
-  const hasAdvanced = Boolean(priceMin || priceMax || minComm > 0 || onlyOpenPartner || onlyInStock || loc.provinceId != null);
-  const clearAdvanced = () => { setPriceMin(""); setPriceMax(""); setMinComm(0); setOnlyOpenPartner(false); setOnlyInStock(false); setLoc({}); };
+  const hasAdvanced = Boolean(priceMin || priceMax || minComm > 0 || minRate > 0 || commTypeFilter !== "all" || minRating > 0 || catFilter || onlyOpenPartner || onlyInStock || onlyFeatured || onlyVerified || loc.provinceId != null);
+  const advancedCount = [Boolean(priceMin || priceMax), minComm > 0, minRate > 0, commTypeFilter !== "all", minRating > 0, Boolean(catFilter), onlyOpenPartner, onlyInStock, onlyFeatured, onlyVerified, loc.provinceId != null].filter(Boolean).length;
+  const clearAdvanced = () => { setPriceMin(""); setPriceMax(""); setMinComm(0); setMinRate(0); setCommTypeFilter("all"); setMinRating(0); setCatFilter(null); setOnlyOpenPartner(false); setOnlyInStock(false); setOnlyFeatured(false); setOnlyVerified(false); setLoc({}); };
   const [refreshing, setRefreshing] = useState(false);
   const [gridWidth, setGridWidth] = useState(0);
   const [visibleCount, setVisibleCount] = useState(INITIAL_HOME_ITEMS);
@@ -77,16 +84,41 @@ export default function HomeScreen() {
   const sortLabels: Record<SortMode, string> = {
     featured: t("featured"),
     commission: t("earning"),
-    newest: t("newest")
+    commissionRate: translateCopy("Komisyon %", language),
+    newest: t("newest"),
+    priceAsc: translateCopy("Fiyat ↑", language),
+    priceDesc: translateCopy("Fiyat ↓", language),
+    rating: translateCopy("Puan", language)
   };
   const isWideWeb = useIsWideWeb();
   const isWeb = Platform.OS === "web";
+  // Geniş ekranda (masaüstü web) gelişmiş filtre paneli varsayılan AÇIK gelir —
+  // "yandaki" kalıcı filtre hissi; dar ekranda dokununca açılır (yer kaplamasın).
+  useEffect(() => { if (isWideWeb) setAdvancedOpen(true); }, [isWideWeb]);
   const horizontalPadding = isWideWeb ? 20 : 12;
   const columnGap = isWideWeb ? 14 : 10;
   const measuredGridWidth = gridWidth || width - horizontalPadding * 2;
   const { cardWidth } = responsiveGrid({ available: measuredGridWidth, gap: columnGap, minCardWidth: isWideWeb ? 176 : 168 });
   const activeListings = useMemo(() => listings.filter((listing) => listing.status === "active"), [listings]);
   const categories = useMemo(() => Array.from(new Set(activeListings.map((listing) => listing.category))), [activeListings]);
+  // "etiket → kök kategori anahtarı" haritası: gelişmiş filtrede üst-kategoriye göre süzme.
+  const rootByLabel = useMemo(() => {
+    const norm = (s: string) => s.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
+    const map = new Map<string, string>();
+    const walk = (nodes: CategoryNode[], rootKey: string) => {
+      for (const n of nodes) { if (!map.has(norm(n.label))) map.set(norm(n.label), rootKey); if (n.children) walk(n.children, rootKey); }
+    };
+    for (const root of categoryTree) walk([root], root.key);
+    return { get: (label: string) => map.get(norm(label)) };
+  }, [categoryTree]);
+  // Üst kategori seçenekleri (ilanı olan kökler önce) — gelişmiş filtre açılır listesi.
+  const rootCatOptions = useMemo(() => {
+    const counts = new Map<string, number>();
+    for (const l of activeListings) { const rk = rootByLabel.get(l.category); if (rk) counts.set(rk, (counts.get(rk) ?? 0) + 1); }
+    return categoryTree
+      .map((n) => ({ key: n.key, label: n.label, n: counts.get(n.key) ?? 0 }))
+      .sort((a, b) => b.n - a.n || 0);
+  }, [categoryTree, activeListings, rootByLabel]);
   const filters = useMemo(() => [...quickFilters, ...categories.map((item) => ({ key: `cat:${item}`, label: translateCopy(getCategoryShortLabel(item), language), icon: getCategoryIcon(item) }))], [categories, language, quickFilters]);
   const maxCommission = useMemo(() => activeListings.reduce((max, listing) => Math.max(max, commissionAmount(listing)), 0), [activeListings]);
   const maxMomentum = useMemo(() => activeListings.reduce((max, listing) => Math.max(max, momentumScore(listing)), 0), [activeListings]);
@@ -118,10 +150,16 @@ export default function HomeScreen() {
       })
       .filter((listing) => {
         // Gelişmiş filtreler (quick-filter üstüne biner).
+        if (catFilter && rootByLabel.get(listing.category) !== catFilter) return false;
         if (listing.price < pMin || listing.price > pMax) return false;
         if (minComm > 0 && commissionAmount(listing) < minComm) return false;
+        if (minRate > 0 && commissionRatePct(listing) < minRate) return false;
+        if (commTypeFilter !== "all" && listing.commissionType !== commTypeFilter) return false;
+        if (minRating > 0 && (findUser(listing.ownerId)?.rating ?? 0) < minRating) return false;
+        if (onlyVerified) { const o = findUser(listing.ownerId); if (!o || !(o.verifiedIdentity || o.verifiedPhone)) return false; }
         if (onlyOpenPartner && listing.partnershipMode !== "open") return false;
         if (onlyInStock && listing.stockCount <= 0) return false;
+        if (onlyFeatured && !listing.featured) return false;
         if (!matchesLocationFilter(listing, loc.provinceId, loc.districtId)) return false;
         return true;
       })
@@ -132,22 +170,31 @@ export default function HomeScreen() {
       .filter((item) => tokens.length === 0 || item.score > 0)
       .sort((a, b) => {
         if (tokens.length > 0 && b.score !== a.score) return b.score - a.score;
-        const feat = Number(Boolean(b.listing.featured)) - Number(Boolean(a.listing.featured));
-        if (feat !== 0) return feat;
+        // Fiyat/puan/oran sıralamasında "featured önce" kuralı UYGULANMAZ (kullanıcı
+        // açıkça o eksene göre sıralamak ister); diğerlerinde featured öne alınır.
+        const priceOrRating = sortMode === "priceAsc" || sortMode === "priceDesc" || sortMode === "rating" || sortMode === "commissionRate";
+        if (!priceOrRating) {
+          const feat = Number(Boolean(b.listing.featured)) - Number(Boolean(a.listing.featured));
+          if (feat !== 0) return feat;
+        }
         if (sortMode === "commission") return commissionAmount(b.listing) - commissionAmount(a.listing);
+        if (sortMode === "commissionRate") return commissionRatePct(b.listing) - commissionRatePct(a.listing);
         if (sortMode === "newest") return b.listing.createdAt.localeCompare(a.listing.createdAt);
+        if (sortMode === "priceAsc") return a.listing.price - b.listing.price;
+        if (sortMode === "priceDesc") return b.listing.price - a.listing.price;
+        if (sortMode === "rating") return (findUser(b.listing.ownerId)?.rating ?? 0) - (findUser(a.listing.ownerId)?.rating ?? 0);
         // Öne çıkan (varsayılan): arama yokken oturum-seed'li deterministik karışım —
         // her girişte farklı, oturum içinde sabit. seed=0 iken momentum sırası (SSG güvenli).
         if (tokens.length === 0 && shuffleSeed) return shuffleRank(a.listing.id, shuffleSeed) - shuffleRank(b.listing.id, shuffleSeed);
         return momentumScore(b.listing) - momentumScore(a.listing);
       })
       .map((item) => item.listing);
-  }, [activeListings, filter, findUser, maxCommission, maxMomentum, minComm, onlyInStock, onlyOpenPartner, priceMax, priceMin, query, shuffleSeed, sortMode, loc.provinceId, loc.districtId]);
+  }, [activeListings, filter, findUser, maxCommission, maxMomentum, minComm, minRate, commTypeFilter, minRating, catFilter, rootByLabel, onlyInStock, onlyOpenPartner, onlyFeatured, onlyVerified, priceMax, priceMin, query, shuffleSeed, sortMode, loc.provinceId, loc.districtId]);
   const visibleListings = filteredListings.slice(0, visibleCount);
 
   useEffect(() => {
     setVisibleCount(INITIAL_HOME_ITEMS);
-  }, [filter, query, sortMode, priceMin, priceMax, minComm, onlyOpenPartner, onlyInStock, loc.provinceId, loc.districtId]);
+  }, [filter, query, sortMode, priceMin, priceMax, minComm, minRate, commTypeFilter, minRating, catFilter, onlyOpenPartner, onlyInStock, onlyFeatured, onlyVerified, loc.provinceId, loc.districtId]);
 
   function showMore() {
     if (visibleCount < filteredListings.length) {
@@ -336,80 +383,131 @@ export default function HomeScreen() {
           </View>
 
           {advancedOpen ? (
-            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 16 }}>
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 15, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                 <MaterialCommunityIcons name="tune-variant" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{translateCopy("Gelişmiş filtre", language)}</Text>
+                <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Gelişmiş filtre", language)}</Text>
+                {advancedCount > 0 ? (
+                  <View style={{ backgroundColor: colors.primary, borderRadius: 999, minWidth: 18, paddingHorizontal: 6, paddingVertical: 1 }}>
+                    <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "900", textAlign: "center" }}>{advancedCount}</Text>
+                  </View>
+                ) : null}
+                <View style={{ flex: 1 }} />
                 {hasAdvanced ? (
-                  <Pressable accessibilityRole="button" onPress={clearAdvanced} hitSlop={8}>
-                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text>
+                  <Pressable accessibilityRole="button" onPress={clearAdvanced} hitSlop={8} style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, opacity: pressed ? 0.7 : 1 })}>
+                    <MaterialCommunityIcons name="close-circle-outline" size={14} color={colors.accent} />
+                    <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text>
                   </Pressable>
                 ) : null}
               </View>
-              {/* Konum (81 il + ilçe) — keşfet/kategori ile aynı seçici. */}
+
+              {/* Kategori (üst kategori) */}
+              {rootCatOptions.length > 0 ? (
+                <View style={{ gap: 7 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Kategori", language)}</Text>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
+                    <FilterPill active={!catFilter} label={translateCopy("Tümü", language)} onPress={() => setCatFilter(null)} />
+                    {rootCatOptions.map((c) => (
+                      <FilterPill key={c.key} active={catFilter === c.key} icon={getCategoryIcon(c.label)} label={`${translateCopy(getCategoryShortLabel(c.label), language)}${c.n > 0 ? ` (${c.n})` : ""}`} onPress={() => setCatFilter((prev) => (prev === c.key ? null : c.key))} />
+                    ))}
+                  </ScrollView>
+                </View>
+              ) : null}
+
+              {/* Konum (81 il + ilçe) */}
               <View style={{ gap: 7 }}>
                 <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum (İl / İlçe)", language)}</Text>
                 <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
               </View>
-              {/* Fiyat aralığı */}
+
+              {/* Fiyat aralığı + hızlı presetler */}
               <View style={{ gap: 7 }}>
                 <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Fiyat aralığı (TL)", language)}</Text>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                  <TextInput
-                    value={priceMin}
-                    onChangeText={setPriceMin}
-                    keyboardType="numeric"
-                    placeholder={translateCopy("En az", language)}
-                    placeholderTextColor={colors.subtle}
-                    style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }}
-                  />
+                  <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }} />
                   <Text style={{ color: colors.subtle, fontSize: 14, fontWeight: "800" }}>—</Text>
-                  <TextInput
-                    value={priceMax}
-                    onChangeText={setPriceMax}
-                    keyboardType="numeric"
-                    placeholder={translateCopy("En çok", language)}
-                    placeholderTextColor={colors.subtle}
-                    style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }}
-                  />
+                  <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }} />
+                </View>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {([["0", "1000"], ["1000", "5000"], ["5000", "25000"], ["25000", ""]] as Array<[string, string]>).map(([lo, hi]) => {
+                    const on = priceMin === (lo === "0" ? "" : lo) && priceMax === hi;
+                    const label = hi ? `${money(Number(lo))}–${money(Number(hi))}` : `${money(Number(lo))}+`;
+                    return <FilterPill key={lo + hi} active={on} label={label} onPress={() => { setPriceMin(lo === "0" ? "" : lo); setPriceMax(hi); }} />;
+                  })}
                 </View>
               </View>
-              {/* Min komisyon */}
+
+              {/* Komisyon ORANI (%) — ortakların en çok baktığı */}
               <View style={{ gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En az komisyon", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En az komisyon oranı (%)", language)}</Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  {[0, 250, 500, 1000].map((amt) => (
-                    <Pressable
-                      key={amt}
-                      accessibilityRole="button"
-                      onPress={() => setMinComm(amt)}
-                      style={{ backgroundColor: minComm === amt ? colors.primary : colors.surfaceAlt, borderColor: minComm === amt ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 }}
-                    >
-                      <Text style={{ color: minComm === amt ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{amt === 0 ? translateCopy("Tümü", language) : `${money(amt)}+`}</Text>
-                    </Pressable>
+                  {[0, 10, 15, 20, 25].map((r) => (
+                    <FilterPill key={r} active={minRate === r} label={r === 0 ? translateCopy("Tümü", language) : `%${r}+`} onPress={() => setMinRate(r)} />
                   ))}
                 </View>
               </View>
+
+              {/* Komisyon tutarı (₺) */}
+              <View style={{ gap: 7 }}>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En az komisyon (₺)", language)}</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                  {[0, 250, 500, 1000].map((amt) => (
+                    <FilterPill key={amt} active={minComm === amt} label={amt === 0 ? translateCopy("Tümü", language) : `${money(amt)}+`} onPress={() => setMinComm(amt)} />
+                  ))}
+                </View>
+              </View>
+
+              {/* Komisyon tipi + Satıcı puanı */}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
+                <View style={{ gap: 7 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Komisyon tipi", language)}</Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <FilterPill active={commTypeFilter === "all"} label={translateCopy("Tümü", language)} onPress={() => setCommTypeFilter("all")} />
+                    <FilterPill active={commTypeFilter === "rate"} label={translateCopy("Oran %", language)} onPress={() => setCommTypeFilter("rate")} />
+                    <FilterPill active={commTypeFilter === "fixed"} label={translateCopy("Sabit ₺", language)} onPress={() => setCommTypeFilter("fixed")} />
+                  </View>
+                </View>
+                <View style={{ gap: 7 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Satıcı puanı", language)}</Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    {[0, 4, 4.5].map((r) => (
+                      <FilterPill key={r} active={minRating === r} icon={r > 0 ? "star" : undefined} label={r === 0 ? translateCopy("Tümü", language) : `${r}+`} onPress={() => setMinRating(r)} />
+                    ))}
+                  </View>
+                </View>
+              </View>
+
               {/* Anahtarlar */}
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setOnlyOpenPartner((v) => !v)}
-                  style={{ alignItems: "center", backgroundColor: onlyOpenPartner ? colors.primarySoft : colors.surfaceAlt, borderColor: onlyOpenPartner ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}
-                >
-                  <MaterialCommunityIcons name={onlyOpenPartner ? "check-circle" : "flash-outline"} size={15} color={onlyOpenPartner ? colors.primaryDark : colors.muted} />
-                  <Text style={{ color: onlyOpenPartner ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Anında ortaklık", language)}</Text>
-                </Pressable>
-                <Pressable
-                  accessibilityRole="button"
-                  onPress={() => setOnlyInStock((v) => !v)}
-                  style={{ alignItems: "center", backgroundColor: onlyInStock ? colors.primarySoft : colors.surfaceAlt, borderColor: onlyInStock ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}
-                >
-                  <MaterialCommunityIcons name={onlyInStock ? "check-circle" : "package-variant-closed"} size={15} color={onlyInStock ? colors.primaryDark : colors.muted} />
-                  <Text style={{ color: onlyInStock ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Stokta olanlar", language)}</Text>
-                </Pressable>
+                <FilterPill active={onlyOpenPartner} icon={onlyOpenPartner ? "check-circle" : "flash-outline"} label={translateCopy("Anında ortaklık", language)} onPress={() => setOnlyOpenPartner((v) => !v)} />
+                <FilterPill active={onlyInStock} icon={onlyInStock ? "check-circle" : "package-variant-closed"} label={translateCopy("Stokta olanlar", language)} onPress={() => setOnlyInStock((v) => !v)} />
+                <FilterPill active={onlyFeatured} icon={onlyFeatured ? "check-circle" : "star-outline"} label={translateCopy("Öne çıkanlar", language)} onPress={() => setOnlyFeatured((v) => !v)} />
+                <FilterPill active={onlyVerified} icon={onlyVerified ? "check-circle" : "shield-check-outline"} label={translateCopy("Doğrulanmış satıcı", language)} onPress={() => setOnlyVerified((v) => !v)} />
               </View>
+
+              {/* Sonuçları gör (dar ekranda paneli kapatır) */}
+              <Pressable accessibilityRole="button" onPress={() => { if (!isWideWeb) setAdvancedOpen(false); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingVertical: 13 })}>
+                <MaterialCommunityIcons name="magnify" size={17} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{filteredListings.length} {translateCopy("sonucu göster", language)}</Text>
+              </Pressable>
             </View>
+          ) : null}
+
+          {/* Uygulanan filtre özeti — kaldırılabilir çipler */}
+          {hasAdvanced ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+              {catFilter ? <ActiveChip label={translateCopy(getCategoryShortLabel(rootCatOptions.find((c) => c.key === catFilter)?.label ?? ""), language)} onRemove={() => setCatFilter(null)} /> : null}
+              {loc.provinceId != null ? <ActiveChip label={translateCopy("Konum", language)} onRemove={() => setLoc({})} /> : null}
+              {(priceMin || priceMax) ? <ActiveChip label={`${priceMin ? money(Number(priceMin)) : "0"}–${priceMax ? money(Number(priceMax)) : "∞"}`} onRemove={() => { setPriceMin(""); setPriceMax(""); }} /> : null}
+              {minRate > 0 ? <ActiveChip label={`%${minRate}+`} onRemove={() => setMinRate(0)} /> : null}
+              {minComm > 0 ? <ActiveChip label={`${money(minComm)}+`} onRemove={() => setMinComm(0)} /> : null}
+              {commTypeFilter !== "all" ? <ActiveChip label={commTypeFilter === "rate" ? translateCopy("Oran %", language) : translateCopy("Sabit ₺", language)} onRemove={() => setCommTypeFilter("all")} /> : null}
+              {minRating > 0 ? <ActiveChip label={`★ ${minRating}+`} onRemove={() => setMinRating(0)} /> : null}
+              {onlyOpenPartner ? <ActiveChip label={translateCopy("Anında ortaklık", language)} onRemove={() => setOnlyOpenPartner(false)} /> : null}
+              {onlyInStock ? <ActiveChip label={translateCopy("Stokta", language)} onRemove={() => setOnlyInStock(false)} /> : null}
+              {onlyFeatured ? <ActiveChip label={translateCopy("Öne çıkanlar", language)} onRemove={() => setOnlyFeatured(false)} /> : null}
+              {onlyVerified ? <ActiveChip label={translateCopy("Doğrulanmış", language)} onRemove={() => setOnlyVerified(false)} /> : null}
+            </ScrollView>
           ) : null}
 
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
@@ -531,6 +629,12 @@ function HomeSeoSkeleton() {
 
 function momentumScore(listing: Listing) {
   return listing.leadCount * 2 + listing.partnerCount + listing.favoriteCount / 10;
+}
+
+// Komisyon ORANI (%): oran tipinde doğrudan değer; sabit tipte fiyata göre efektif %.
+function commissionRatePct(listing: Listing) {
+  if (listing.commissionType === "rate") return listing.commissionValue;
+  return listing.price > 0 ? Math.round((listing.commissionValue / listing.price) * 100) : 0;
 }
 
 // (id, seed) -> deterministik pseudo-random sıra anahtarı (FNV-1a benzeri).
@@ -710,6 +814,30 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
         </ScrollView>
       )}
     </View>
+  );
+}
+
+// Uygulanan filtre özeti çipi (dokununca kaldırır).
+function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={onRemove} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, opacity: pressed ? 0.7 : 1, paddingHorizontal: 11, paddingVertical: 6 })}>
+      <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{label}</Text>
+      <MaterialCommunityIcons name="close" size={13} color={colors.primaryDark} />
+    </Pressable>
+  );
+}
+
+// Gelişmiş filtre paneli için birörnek seçim/anahtar pill'i.
+function FilterPill({ active, label, icon, onPress }: { active?: boolean; label: string; icon?: IconName; onPress: () => void }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={onPress}
+      style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, opacity: pressed ? 0.75 : 1, paddingHorizontal: 13, paddingVertical: 8 })}
+    >
+      {icon ? <MaterialCommunityIcons name={icon} size={14} color={active ? "#FFFFFF" : colors.muted} /> : null}
+      <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
+    </Pressable>
   );
 }
 
