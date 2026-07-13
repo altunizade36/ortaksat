@@ -13,6 +13,7 @@ import { colors } from "@/components/colors";
 import { CompareBar } from "@/components/compare-bar";
 import { PresenceHeartbeat } from "@/components/presence-heartbeat";
 import { PushRegistrar } from "@/components/push-registrar";
+import { ErrorToast } from "@/components/error-toast";
 import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
@@ -94,19 +95,13 @@ function RootStack() {
       <CompareBar />
       <PresenceHeartbeat />
       <PushRegistrar />
-      <SyncErrorListener />
+      <ErrorToast />
     </View>
   );
 }
 
-// Kritik akış yazımı canlıda başarısız olduğunda kullanıcıya görünür hata gösterir
-// (rollback store'da yapılır). Demo/mock modda syncError hiç dolmaz.
-function SyncErrorListener() {
-  const { syncError, clearSyncError } = useStore();
-  useEffect(() => {
-    if (!syncError) return;
-    Alert.alert("Kaydedilemedi", syncError);
-    clearSyncError();
-  }, [syncError, clearSyncError]);
-  return null;
-}
+// Kritik akış yazımı canlıda başarısız olduğunda kullanıcıya görünür hata gösterir.
+// ARTIK Alert.alert DEĞİL (web'de window.alert → tarayıcının ham sistem kutusu:
+// "www.ortaksat.com web sitesinin mesajı… / İletişim kutularını gizle" — markasız,
+// sayfayı kilitliyor, kullanıcıya "siteyi engelle" öneriyordu). Yerine uygulama-içi
+// toast: <ErrorToast /> (bkz. components/error-toast.tsx).

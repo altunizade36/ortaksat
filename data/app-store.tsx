@@ -39,6 +39,7 @@ import {
   insertListing,
   insertConversation,
   insertMessage,
+  messageSendBlockedReason,
   insertNotification,
   partnerJoinLive,
   insertReport,
@@ -960,11 +961,43 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setMessages((items) => [message, ...items]);
         setConversations((items) => items.map((item) => (item.id === conversation.id ? { ...item, lastMessageAt: message.createdAt } : item)));
         notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${message.body}`);
-        if (liveUser) persistCritical(insertMessage(message), () => {
-          setMessages((items) => items.filter((m) => m.id !== message.id));
-        }, "Mesaj gönderilemedi. Bağlantını kontrol edip tekrar dene.");
+        // Başarısızsa mesajı SİLME (eskiden siliniyor + ham tarayıcı uyarısı çıkıyordu):
+        // "failed" işaretle → baloncukta "Gönderilemedi · tekrar dene" görünür ve tek
+        // dokunuşla yeniden gönderilir. sendConversationMessage ile aynı davranış.
+        if (liveUser) insertMessage(message)
+          .then((ok) => { if (!ok) handleSendFailure(message); })
+          .catch(() => handleSendFailure(message));
       }
       return conversation;
+    }
+    /**
+     * Mesaj gönderimi başarısız olduğunda NE OLDUĞUNU ayırt eder.
+     *
+     * Eskiden her başarısızlık "Mesaj gönderilemedi. Bağlantını kontrol edip tekrar dene."
+     * diyordu ve bu ham bir tarayıcı uyarısı olarak çıkıyordu. Ama en sık sebep bağlantı
+     * DEĞİL: ilan silinince conversations/messages CASCADE ile silinir, istemcinin
+     * belleğindeki konuşma ise kalır → kullanıcı artık var olmayan bir sohbete yazar,
+     * her deneme başarısız olur ve "bağlantını kontrol et" YANILTIR (bağlantı iyidir).
+     *
+     * Artık: geçici hata → baloncuk "failed" (tekrar dene). Kalıcı hata → hayalet
+     * konuşma yerelden temizlenir ve kullanıcıya gerçek sebep söylenir.
+     */
+    function handleSendFailure(message: Message) {
+      void messageSendBlockedReason(message).then((reason) => {
+        if (reason === "gone") {
+          setConversations((items) => items.filter((c) => c.id !== message.conversationId));
+          setMessages((items) => items.filter((m) => m.conversationId !== message.conversationId));
+          setSyncError("Bu görüşme artık mevcut değil — ilan kaldırılmış olabilir.");
+          return;
+        }
+        if (reason === "denied") {
+          setMessages((items) => items.map((m) => (m.id === message.id ? { ...m, status: "failed" } : m)));
+          setSyncError("Bu görüşmeye artık mesaj gönderemezsin (kapatılmış veya engellenmiş).");
+          return;
+        }
+        // Geçici (ağ/sunucu) → mesaj durur, tek dokunuşla tekrar denenir.
+        setMessages((items) => items.map((m) => (m.id === message.id ? { ...m, status: "failed" } : m)));
+      });
     }
     function notify(userId: string, type: Notification["type"], title: string, body: string, metadata?: NotificationMeta) {
       const notification: Notification = {
@@ -2030,8 +2063,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // Mesaj DB'ye yazılamazsa (bağlantı/RLS) baloncuğu SİLME → "failed" işaretle
         // ki kullanıcı görsün ve "tekrar dene" ile yeniden gönderebilsin (kayıp yok).
         if (liveUser) insertMessage(message)
-          .then((ok) => { if (!ok) setMessages((items) => items.map((m) => (m.id === message.id ? { ...m, status: "failed" } : m))); })
-          .catch(() => setMessages((items) => items.map((m) => (m.id === message.id ? { ...m, status: "failed" } : m))));
+          .then((ok) => { if (!ok) handleSendFailure(message); })
+          .catch(() => handleSendFailure(message));
       },
       retryMessage(messageId) {
         const msg = messages.find((m) => m.id === messageId && m.status === "failed");
@@ -2039,8 +2072,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // "failed" işaretini kaldır (yeniden gönderiliyor) → başarısızsa tekrar işaretlenir.
         setMessages((items) => items.map((m) => (m.id === messageId ? { ...m, status: undefined } : m)));
         if (liveUser) insertMessage({ ...msg, status: undefined })
-          .then((ok) => { if (!ok) setMessages((items) => items.map((m) => (m.id === messageId ? { ...m, status: "failed" } : m))); })
-          .catch(() => setMessages((items) => items.map((m) => (m.id === messageId ? { ...m, status: "failed" } : m))));
+          .then((ok) => { if (!ok) handleSendFailure(msg); })
+          .catch(() => handleSendFailure(msg));
       },
       markConversationRead(conversationId) {
         const unread = messages.filter((item) => item.conversationId === conversationId && item.receiverId === currentUser.id && !item.read);

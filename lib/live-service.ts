@@ -1019,6 +1019,30 @@ export async function insertMessage(message: Message): Promise<boolean> {
 }
 
 /**
+ * Mesaj gönderimi KALICI olarak imkânsız mı (yeniden denemek anlamsız mı)?
+ *
+ * Örnek: ilan silinince `conversations`/`messages` CASCADE ile SİLİNİR, ama istemcinin
+ * belleğindeki konuşma durur → kullanıcı hâlâ o sohbete yazabiliyor, her denemede
+ * insert FK/RLS'e takılıyor ve "bağlantını kontrol et" gibi YANILTICI bir hata alıyor
+ * (bağlantı gayet iyi; konuşma yok). Bunları ayırt edip kullanıcıya doğru şeyi söyleriz.
+ *
+ * 23503 = foreign_key_violation (konuşma/ilan artık yok)
+ * 42501 = insufficient_privilege / RLS reddi (artık katılımcı değil)
+ */
+export async function messageSendBlockedReason(message: Message): Promise<"gone" | "denied" | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase
+    .from("conversations")
+    .select("id, status")
+    .eq("id", message.conversationId)
+    .maybeSingle();
+  if (error) return null;              // ağ/geçici → normal "tekrar dene" akışı
+  if (!data) return "gone";            // konuşma sunucuda YOK (ilan silinmiş → cascade)
+  if (data.status !== "open") return "denied"; // kapalı/engelli
+  return null;
+}
+
+/**
  * Mesaj eki yukler (gorsel/video). Mevcut listing-images bucket'ini kullanir;
  * sikistirma + boyut siniri uploadListingImage ile ayni. Canli olmayan modda
  * (uuid olmayan userId) yerel uri'yi aynen dondurur, boylece onizleme calisir.
