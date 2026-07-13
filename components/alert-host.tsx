@@ -58,6 +58,7 @@ export function AlertHost() {
             {cancel ? (
               <Pressable
                 accessibilityRole="button"
+                testID="alert-cancel"
                 onPress={() => close(cancel)}
                 style={({ pressed }) => ({ borderColor: colors.line, borderRadius: 10, borderWidth: 1, opacity: pressed ? 0.75 : 1, paddingHorizontal: 16, paddingVertical: 11 })}
               >
@@ -70,6 +71,7 @@ export function AlertHost() {
                 <Pressable
                   key={`${b.text ?? "ok"}-${i}`}
                   accessibilityRole="button"
+                  testID={i === 0 ? "alert-confirm" : `alert-action-${i}`}
                   onPress={() => close(b)}
                   style={({ pressed }) => ({
                     backgroundColor: isDestructive ? colors.accent : colors.primary,

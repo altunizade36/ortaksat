@@ -1,4 +1,5 @@
 import { test, devices, type Page } from "@playwright/test";
+import { acceptConfirm } from "./helpers/confirm";
 import { createConfirmedUser, uniqueEmail, resetAuthRateLimits, runSql } from "./helpers/supabase-admin";
 
 const PW = "GucluSifre123!";
@@ -51,41 +52,25 @@ test("ONAY-MODLU ORTAKLIK + KOMİSYON ÖDEME DÖNGÜSÜ + ALICI ONAYI", async ({
   const basvurBtn = page.getByRole("button", { name: /Ortaklık Başvurusu Gönder|Hemen ortak ol|Ortaklık iste/i }).first();
   console.log(`   başvuru butonu: ${(await basvurBtn.count()) > 0 ? "VAR" : "YOK"}`);
 
-  // HİPOTEZ: onay modunda ilan sayfasında BAŞVURU FORMU var (kanal / tahmini erişim / sosyal ad).
-  // Butona boş formla basınca hiçbir şey olmuyordu. Önce BOŞ dene, sonra DOLDURUP dene.
-  await basvurBtn.scrollIntoViewIfNeeded().catch(() => {});
-  await basvurBtn.tap({ timeout: 10000 }).catch(() => {});
-  await page.waitForTimeout(3500);
-  const bosDeneme = await one<Record<string, unknown>>(`select id from partnerships where listing_id='${listingId}' and partner_id='${partnerId}'`);
-  console.log(`   BOŞ formla gönder → ortaklık: ${bosDeneme ? "OLUŞTU" : "OLUŞMADI"}`);
+  // ONAY MODUNDA BAŞVURU NOTU ZORUNLU. NOTU ÖNCE doldur, SONRA gönder — böylece
+  // "Eksik başvuru" uyarısı hiç çıkmaz. (Eskiden önce boş gönderiliyordu; uyarı
+  // window.alert'ti ve Playwright otomatik kapatıyordu. Artık uyarı UYGULAMA-İÇİ
+  // modal olduğu için ekranı bekletiyor ve sonraki tıklamaları bloke ediyordu.)
+  const not = page.getByPlaceholder(/Kısaca anlat|neden|kısaca/i).first();
+  if (await not.count()) {
+    await not.fill("Instagram'da 5 bin takipçim var, teknoloji içerikleri paylaşıyorum.");
+    console.log("   zorunlu 'başvuru notu' dolduruldu");
+  } else console.log("   !! başvuru notu alanı bulunamadı");
+  const erisim = page.getByPlaceholder(/ör\. 500/i).first();
+  if (await erisim.count()) await erisim.fill("5000");
+  await page.waitForTimeout(500);
 
-  if (!bosDeneme) {
-    // ONAY MODUNDA BAŞVURU NOTU ZORUNLU (handleJoin: note boşsa uyarı verip çıkıyor).
-    // Playwright uyarıyı otomatik kapattığı için ilk turda "sessizce çalışmıyor" sanmıştım.
-    const not = page.getByPlaceholder(/Kısaca anlat/i).first();
-    if (await not.count()) {
-      await not.fill("Instagram'da 5 bin takipçim var, teknoloji içerikleri paylaşıyorum.");
-      console.log("   zorunlu 'başvuru notu' dolduruldu");
-    } else console.log("   !! başvuru notu alanı bulunamadı");
-    const erisim = page.getByPlaceholder(/ör\. 500/i).first();
-    if (await erisim.count()) await erisim.fill("5000");
-    await page.waitForTimeout(500);
-    await basvurBtn.scrollIntoViewIfNeeded().catch(() => {});
-    await basvurBtn.tap({ timeout: 10000 }).catch((e) => console.log("  tap hata: " + e.message.slice(0, 40)));
-  }
-  await page.waitForTimeout(3000);
-  await page.screenshot({ path: "e2e-artifacts/ap-0-basvuru-sonrasi.png" });
-  const afterTap = await page.locator("body").innerText();
-  console.log("   dokunma sonrası ekran:", afterTap.slice(0, 180).replace(/\n/g, " | "));
-  // Sözleşme/onay modalı çıkabilir → kabul et
-  for (const rx of [/Kabul ediyorum|Onaylıyorum|Kabul et/i, /^(Gönder|Başvur|Devam|Onayla)/]) {
-    const b = page.getByText(rx).first();
-    if (await b.count()) {
-      console.log(`   ek onay adımı bulundu: "${(await b.innerText().catch(() => "?")).slice(0, 30)}"`);
-      await b.tap({ timeout: 6000 }).catch(() => {});
-      await page.waitForTimeout(3000);
-    }
-  }
+  await basvurBtn.scrollIntoViewIfNeeded().catch(() => {});
+  await basvurBtn.tap({ timeout: 10000 }).catch((e) => console.log("  tap hata: " + e.message.slice(0, 40)));
+  await page.waitForTimeout(2500);
+  // Başarı bilgisi ("Başvuru gönderildi") uygulama-içi modal olarak çıkar → kapat.
+  await acceptConfirm(page, 3000);
+  await page.waitForTimeout(2500);
   await page.screenshot({ path: "e2e-artifacts/ap-0b-onay-sonrasi.png" });
   await page.waitForTimeout(3000);
 
@@ -111,6 +96,7 @@ test("ONAY-MODLU ORTAKLIK + KOMİSYON ÖDEME DÖNGÜSÜ + ALICI ONAYI", async ({
   console.log(`   satıcı panelinde "Kabul Et" butonu: ${(await onayBtn.count()) > 0 ? "VAR ✓" : "YOK ✗"}`);
   await onayBtn.scrollIntoViewIfNeeded().catch(() => {});
   await onayBtn.tap({ timeout: 8000 }).catch(() => console.log("  onayla tap hata"));
+  await acceptConfirm(page);
   await page.waitForTimeout(5000);
 
   p = await one<Record<string, unknown>>(`select status, agreed_commission_type, agreed_commission_value, agreed_at from partnerships where id='${partnershipId}'`);
@@ -128,6 +114,7 @@ test("ONAY-MODLU ORTAKLIK + KOMİSYON ÖDEME DÖNGÜSÜ + ALICI ONAYI", async ({
   console.log(`   satış butonu: ${(await satisBtn.count()) > 0 ? "VAR ✓" : "YOK ✗"}`);
   await satisBtn.scrollIntoViewIfNeeded().catch(() => {});
   await satisBtn.tap({ timeout: 10000 }).catch((e) => console.log("  satış tap hata: " + e.message.slice(0, 40)));
+  await acceptConfirm(page);
   await page.waitForTimeout(2500);
   for (const inp of await page.locator("input").all()) {
     if (!(await inp.isVisible().catch(() => false))) continue;
@@ -166,6 +153,7 @@ test("ONAY-MODLU ORTAKLIK + KOMİSYON ÖDEME DÖNGÜSÜ + ALICI ONAYI", async ({
   console.log(`5) SATICI   → "Ödendi bildir" butonu: ${(await odendiBtn.count()) > 0 ? "VAR ✓" : "YOK ✗"}`);
   await odendiBtn.scrollIntoViewIfNeeded().catch(() => {});
   await odendiBtn.tap({ timeout: 8000 }).catch(() => {});
+  await acceptConfirm(page);
   await page.waitForTimeout(2000);
   await page.getByText(/^(Ödendi Bildir|Onayla|Evet)/).last().tap({ timeout: 5000 }).catch(() => {});
   await page.waitForTimeout(5000);
@@ -200,6 +188,7 @@ test("ONAY-MODLU ORTAKLIK + KOMİSYON ÖDEME DÖNGÜSÜ + ALICI ONAYI", async ({
   if (zatenPaid) return; // döngü 6a'da tamamlandı
   await aldimBtn.scrollIntoViewIfNeeded().catch(() => {});
   await aldimBtn.tap({ timeout: 8000 }).catch(() => {});
+  await acceptConfirm(page);
   await page.waitForTimeout(2000);
   await page.getByText(/^(Onayla|Evet|Aldım)/).last().tap({ timeout: 5000 }).catch(() => {});
   await page.waitForTimeout(5000);
