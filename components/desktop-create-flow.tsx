@@ -9,6 +9,7 @@ import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-na
 import { CategoryPicker } from "@/components/category-picker";
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
+import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { OptionSheet } from "@/components/option-sheet";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
@@ -1214,28 +1215,26 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
 function DSelect({ label, value, options, onChange, placeholder }: { label: string; value: string; options: string[]; onChange: (v: string) => void; placeholder?: string }) {
   const { language } = useLanguage();
   const [open, setOpen] = useState(false);
-  // MOBİL WEB HATASI: liste inline açılıyor ama kutu ekranın ALTINDAYSA açılan seçenekler
-  // görünür alanın dışında kalıyordu → kullanıcı "Seçin"e basınca hiçbir şey olmamış gibi
-  // görünüyordu ("seçimlerde bozulma"; 11 seçimden 9'u böyleydi).
-  // Açılan listeyi DOM'dan (data-openlist) bulup görünür alana kaydırırız — RN-web View
-  // ref'i DOM düğümü garanti etmediği için ref'e DEĞİL, data-attribute'a bağlanıyoruz.
-  useEffect(() => {
-    if (!open || Platform.OS !== "web" || typeof document === "undefined") return;
-    const id = requestAnimationFrame(() => {
-      const el = document.querySelector('[data-openlist="1"]') as HTMLElement | null;
-      el?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [open]);
+  const [query, setQuery] = useState("");
+  // ÇAPALI AÇILIR LİSTE: liste artık AKIŞTA değil. Eskiden inline açılıyor, altındaki
+  // her şeyi AŞAĞI İTİYORDU; kutu ekranın altındaysa liste görünür alanın dışında
+  // kalıyordu (çözüm "sayfayı listeye kaydır"dı — istenmeyen davranış). Artık ticari
+  // sitelerdeki gibi tetikleyicinin ÜSTÜNDE katman olarak açılır; yer yoksa yukarı açar.
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor();
+  const searchable = options.length >= 12;
+  const shown = searchable && query.trim()
+    ? options.filter((o) => o.toLocaleLowerCase("tr-TR").includes(query.toLocaleLowerCase("tr-TR").trim()))
+    : options;
   return (
     <View style={{ gap: label ? 6 : 0 }}>
       {label ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{label}</Text> : null}
-      <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
-        <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || placeholder || translateCopy("Seçin", language)}</Text>
-        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
-      </Pressable>
-      {/* NATIVE: alttan açılan seçim sayfası — liste konumdan bağımsız TAM görünür olur
-          (native'de ScrollView otomatik kaymadığı için inline liste ekran dışında kalabiliyordu). */}
+      <View ref={anchorRef} collapsable={false} onLayout={measure}>
+        <Pressable onPress={() => { if (open) { setOpen(false); return; } measure(); setQuery(""); setOpen(true); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
+          <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || placeholder || translateCopy("Seçin", language)}</Text>
+          <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+        </Pressable>
+      </View>
+      {/* NATIVE: alttan açılan seçim sayfası (mobil standardı). */}
       {Platform.OS !== "web" ? (
         <OptionSheet
           visible={open}
@@ -1245,19 +1244,26 @@ function DSelect({ label, value, options, onChange, placeholder }: { label: stri
           onSelect={onChange}
           onClose={() => setOpen(false)}
         />
-      ) : null}
-      {/* WEB: inline açılır liste (alttakileri aşağı iter) + açılışta görünür alana kaydırma. */}
-      {open && Platform.OS === "web" ? (
-        <View dataSet={{ openlist: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 11, borderWidth: 1, marginTop: 4, maxHeight: 240, overflow: "hidden" }}>
-          <ScrollView style={{ maxHeight: 240 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-            {options.map((o) => (
+      ) : (
+        <AnchoredDropdown visible={open} anchor={anchorRect} onClose={() => setOpen(false)} maxHeight={300} minWidth={200}>
+          {searchable ? (
+            <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
+              <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
+              <TextInput value={query} onChangeText={setQuery} autoFocus placeholder={translateCopy("Ara…", language)} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 40, paddingVertical: 8 }} />
+            </View>
+          ) : null}
+          <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+            {shown.length === 0 ? (
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 14 }}>{translateCopy("Sonuç yok.", language)}</Text>
+            ) : null}
+            {shown.map((o) => (
               <Pressable key={o} onPress={() => { onChange(o); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed || o === value ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 11 })}>
                 <Text style={{ color: o === value ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: o === value ? "800" : "600" }}>{o}</Text>
               </Pressable>
             ))}
           </ScrollView>
-        </View>
-      ) : null}
+        </AnchoredDropdown>
+      )}
     </View>
   );
 }

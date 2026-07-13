@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
+import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { colors } from "@/components/colors";
 import { OptionSheet } from "@/components/option-sheet";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -112,6 +113,7 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [manual, setManual] = useState(false);
+  const { ref: nbAnchorRef, rect: nbAnchorRect, measure: measureNb } = useAnchor();
 
   useEffect(() => {
     let active = true;
@@ -125,15 +127,8 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
   const hasData = list.length > 0;
   const results = open ? list.filter((n) => locKey(n.name).includes(locKey(query))).slice(0, 40) : [];
 
-  // Mahalle listesi de açılınca görünür alana kaydırılmalı (il/ilçe ile aynı mobil hata).
-  useEffect(() => {
-    if (!open || Platform.OS !== "web" || typeof document === "undefined") return;
-    const id = requestAnimationFrame(() => {
-      const el = document.querySelector('[data-openloc="1"]') as HTMLElement | null;
-      el?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [open]);
+  // (Eski "açılınca sayfayı listeye kaydır" hack'i KALDIRILDI — liste artık çapalı
+  //  katmanda açılıyor, kaydırmaya gerek yok.)
 
   // Veri yoksa veya kullanıcı "listede yok" dediyse: serbest metin
   if (!hasData || manual) {
@@ -151,33 +146,33 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
     );
   }
 
-  // Gerçek mahalle listesi (Supabase)
+  // Gerçek mahalle listesi (Supabase) — çapalı katmanda açılır (akışı itmez, kırpılmaz).
   return (
     <View style={{ gap: 4 }}>
-      <Pressable onPress={() => { setOpen((o) => !o); setQuery(""); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
-        <MaterialCommunityIcons name="map-marker-outline" size={18} color={value ? colors.primary : colors.muted} />
-        <Text numberOfLines={1} style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || translateCopy("Mahalle seçin", language)}</Text>
-        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
-      </Pressable>
-      {open ? (
-        <View dataSet={{ openloc: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, maxHeight: 320, overflow: "hidden" }}>
-          <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
-            <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
-            <TextInput value={query} onChangeText={setQuery} autoFocus placeholder={translateCopy("Mahalle ara…", language)} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }} />
-          </View>
-          <ScrollView style={{ maxHeight: 230 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
-            {results.map((n) => (
-              <Pressable key={n.id} onPress={() => { onChange(n.name); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 10 })}>
-                <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600" }}>{n.name}</Text>
-              </Pressable>
-            ))}
-          </ScrollView>
+      <View ref={nbAnchorRef} collapsable={false} onLayout={measureNb}>
+        <Pressable onPress={() => { if (open) { setOpen(false); return; } measureNb(); setQuery(""); setOpen(true); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
+          <MaterialCommunityIcons name="map-marker-outline" size={18} color={value ? colors.primary : colors.muted} />
+          <Text numberOfLines={1} style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || translateCopy("Mahalle seçin", language)}</Text>
+          <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+        </Pressable>
+      </View>
+      <AnchoredDropdown visible={open} anchor={nbAnchorRect} onClose={() => setOpen(false)} maxHeight={340} minWidth={220}>
+        <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
+          <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
+          <TextInput value={query} onChangeText={setQuery} autoFocus placeholder={translateCopy("Mahalle ara…", language)} placeholderTextColor={colors.subtle} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }} />
+        </View>
+        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+          {results.map((n) => (
+            <Pressable key={n.id} onPress={() => { onChange(n.name); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", paddingHorizontal: 14, paddingVertical: 10 })}>
+              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600" }}>{n.name}</Text>
+            </Pressable>
+          ))}
           <Pressable onPress={() => { setManual(true); setOpen(false); }} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 14, paddingVertical: 11 }}>
             <MaterialCommunityIcons name="plus-circle-outline" size={16} color={colors.primaryDark} />
             <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Mahallem listede yok", language)}</Text>
           </Pressable>
-        </View>
-      ) : null}
+        </ScrollView>
+      </AnchoredDropdown>
     </View>
   );
 }
@@ -203,37 +198,34 @@ function ComboBox({
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const results = open ? search(query).slice(0, 40) : [];
-  // MOBİL WEB: açılan liste (320px) ekranın altındaki bir alanda açılınca görünür alanın
-  // DIŞINDA kalıyordu → kullanıcı basıyor, hiçbir şey olmamış gibi görünüyordu.
-  // (RN-web View ref'i DOM düğümü garanti etmez → dataSet + querySelector ile hedefle.)
-  useEffect(() => {
-    if (!open || Platform.OS !== "web" || typeof document === "undefined") return;
-    const id = requestAnimationFrame(() => {
-      const el = document.querySelector('[data-openloc="1"]') as HTMLElement | null;
-      el?.scrollIntoView?.({ block: "nearest", behavior: "smooth" });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [open]);
+  // ÇAPALI AÇILIR LİSTE: liste artık AKIŞTA değil, tetikleyicinin ekran konumuna
+  // çapalanmış bir katmanda (Modal/portal) açılır. Böylece sayfayı AŞAĞI İTMEZ ve
+  // `overflow:hidden` olan kart/panel içinde KIRPILMAZ ("il/ilçe görünmüyor" sorunu).
+  // Eski çözüm sayfayı listeye kaydırmaktı — istenmeyen davranış buydu.
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor();
+  const openList = () => { if (disabled) return; measure(); setQuery(""); setOpen(true); };
 
   return (
     <View style={{ gap: 4 }}>
       <FieldLabel text={label} />
-      <Pressable
-        onPress={() => { if (!disabled) { setOpen((o) => !o); setQuery(""); } }}
-        style={{ alignItems: "center", backgroundColor: disabled ? colors.background : colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, opacity: disabled ? 0.55 : 1, paddingHorizontal: 12 }}
-      >
-        <MaterialCommunityIcons name="map-marker-radius-outline" size={18} color={valueLabel ? colors.primary : colors.muted} />
-        <Text numberOfLines={1} style={{ color: valueLabel ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: valueLabel ? "700" : "500" }}>
-          {valueLabel ?? placeholder}
-        </Text>
-        {valueLabel && onClear ? (
-          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Temizle", language)} onPress={() => { onClear(); setOpen(false); }} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable>
-        ) : (
-          <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
-        )}
-      </Pressable>
+      <View ref={anchorRef} collapsable={false} onLayout={measure}>
+        <Pressable
+          onPress={() => (open ? setOpen(false) : openList())}
+          style={{ alignItems: "center", backgroundColor: disabled ? colors.background : colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, opacity: disabled ? 0.55 : 1, paddingHorizontal: 12 }}
+        >
+          <MaterialCommunityIcons name="map-marker-radius-outline" size={18} color={valueLabel ? colors.primary : colors.muted} />
+          <Text numberOfLines={1} style={{ color: valueLabel ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: valueLabel ? "700" : "500" }}>
+            {valueLabel ?? placeholder}
+          </Text>
+          {valueLabel && onClear ? (
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Temizle", language)} onPress={() => { onClear(); setOpen(false); }} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable>
+          ) : (
+            <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+          )}
+        </Pressable>
+      </View>
 
-      {/* NATIVE: alttan açılan seçim sayfası + arama (81 il / ilçeler konumdan bağımsız tam görünür). */}
+      {/* NATIVE: alttan açılan seçim sayfası + arama (81 il / ilçeler tam görünür). */}
       {Platform.OS !== "web" ? (
         <OptionSheet
           visible={open}
@@ -248,9 +240,8 @@ function ComboBox({
           onClose={() => setOpen(false)}
           searchable
         />
-      ) : null}
-      {open && Platform.OS === "web" ? (
-        <View dataSet={{ openloc: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, marginTop: 2, maxHeight: 320, overflow: "hidden" }}>
+      ) : (
+        <AnchoredDropdown visible={open} anchor={anchorRect} onClose={() => setOpen(false)} maxHeight={340} minWidth={220}>
           <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
             <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
             <TextInput
@@ -262,7 +253,7 @@ function ComboBox({
               style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 42, paddingVertical: 8 }}
             />
           </View>
-          <ScrollView style={{ maxHeight: 270 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
+          <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
             {results.length === 0 ? (
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 14 }}>{translateCopy("Sonuç yok.", language)}</Text>
             ) : null}
@@ -272,8 +263,8 @@ function ComboBox({
               </Pressable>
             ))}
           </ScrollView>
-        </View>
-      ) : null}
+        </AnchoredDropdown>
+      )}
     </View>
   );
 }

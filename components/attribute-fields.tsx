@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useEffect, useState } from "react";
-import { Platform, Pressable, Text, TextInput, View } from "react-native";
+import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
+import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { colors } from "@/components/colors";
 import { OptionSheet } from "@/components/option-sheet";
 import { modelsForSchema, type FieldDef } from "@/lib/category-tree";
@@ -78,25 +79,21 @@ function AField({ field, value, onChange }: { field: FieldDef; value: AttrValue 
 function ASelect({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
   const { language } = useLanguage();
   const [open, setOpen] = useState(false);
-  // MOBİL WEB HATASI: liste ABSOLUTE (top:52) → ekranın altındaki bir alanda açılınca
-  // görünür alanın dışına taşıyor ve absolute olduğu için sayfa ona kaydıramıyordu
-  // (seçenekler hiç görünmüyordu). Açılan alanı ekranın ORTASINA kaydır ki altındaki
-  // ~260px'lik listeye yer kalsın. (RN-web View ref'i DOM düğümü garanti etmez → data-attr.)
-  useEffect(() => {
-    if (!open || Platform.OS !== "web" || typeof document === "undefined") return;
-    const id = requestAnimationFrame(() => {
-      const el = document.querySelector('[data-openselect="1"]') as HTMLElement | null;
-      el?.scrollIntoView?.({ block: "center", behavior: "smooth" });
-    });
-    return () => cancelAnimationFrame(id);
-  }, [open]);
+  // ÇAPALI AÇILIR LİSTE: liste eskiden EBEVEYNE göre absolute'du (top:52) → kapsayıcı
+  // `overflow:hidden` ise KIRPILIYOR, ekran altındaysa dışarı taşıyordu; sayfa da
+  // absolute'a kaydıramadığı için "seçenekler hiç görünmüyordu". Artık portal
+  // (Modal) içinde tetikleyicinin ölçülen ekran konumuna çapalanır — kırpılamaz,
+  // düzeni itmez, altta yer yoksa yukarı açılır.
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor();
   return (
-    <View dataSet={open ? { openselect: "1" } : undefined} style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
-      <Pressable onPress={() => setOpen((o) => !o)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
-        <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || translateCopy("Seçin", language)}</Text>
-        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
-      </Pressable>
-      {/* NATIVE: alttan açılan seçim sayfası (absolute liste native'de ekran dışında kalıyordu). */}
+    <View>
+      <View ref={anchorRef} collapsable={false} onLayout={measure}>
+        <Pressable onPress={() => { if (open) { setOpen(false); return; } measure(); setOpen(true); }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: open ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, minHeight: 46, paddingHorizontal: 12 }}>
+          <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || translateCopy("Seçin", language)}</Text>
+          <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+        </Pressable>
+      </View>
+      {/* NATIVE: alttan açılan seçim sayfası (mobil standardı). */}
       {Platform.OS !== "web" ? (
         <OptionSheet
           visible={open}
@@ -106,26 +103,22 @@ function ASelect({ value, options, onChange }: { value: string; options: string[
           onSelect={onChange}
           onClose={() => setOpen(false)}
         />
-      ) : null}
-      {open && Platform.OS === "web" ? (
-        <>
-          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 900 }} />
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, left: 0, maxHeight: 260, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.16, shadowRadius: 20, top: 52, zIndex: 1000 }}>
-            <View>
-              {value ? (
-                <Pressable onPress={() => { onChange(""); setOpen(false); }} style={{ paddingHorizontal: 12, paddingVertical: 9 }}>
-                  <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Temizle", language)}</Text>
-                </Pressable>
-              ) : null}
-              {options.map((o) => (
-                <Pressable key={o} onPress={() => { onChange(o); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed || o === value ? colors.surfaceAlt : "transparent", paddingHorizontal: 12, paddingVertical: 9 })}>
-                  <Text style={{ color: o === value ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: o === value ? "800" : "600" }}>{o}</Text>
-                </Pressable>
-              ))}
-            </View>
-          </View>
-        </>
-      ) : null}
+      ) : (
+        <AnchoredDropdown visible={open} anchor={anchorRect} onClose={() => setOpen(false)} maxHeight={280} minWidth={180}>
+          <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+            {value ? (
+              <Pressable onPress={() => { onChange(""); setOpen(false); }} style={{ borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 12, paddingVertical: 10 }}>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Temizle", language)}</Text>
+              </Pressable>
+            ) : null}
+            {options.map((o) => (
+              <Pressable key={o} onPress={() => { onChange(o); setOpen(false); }} style={({ pressed }) => ({ backgroundColor: pressed || o === value ? colors.surfaceAlt : "transparent", paddingHorizontal: 12, paddingVertical: 10 })}>
+                <Text style={{ color: o === value ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: o === value ? "800" : "600" }}>{o}</Text>
+              </Pressable>
+            ))}
+          </ScrollView>
+        </AnchoredDropdown>
+      )}
     </View>
   );
 }

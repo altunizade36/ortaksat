@@ -13,6 +13,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { listingCategories } from "@/lib/categories";
 import { getFormSchema, matchCategoryByName, resolveFormKey, topCategories, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
+import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { SkeletonGrid } from "@/components/skeleton";
 import { commissionAmount, commissionRatePct, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -1420,58 +1421,58 @@ function FilterDropdown({ label, value, options, onSelect, searchable }: { label
     setOpen(false);
     setQuery("");
   }
+  // ÇAPALI KATMAN: eskiden ebeveyne göre absolute'du → `overflow:hidden` kapsayıcıda
+  // kırpılıyor, zIndex savaşına giriyor ve ekran altında taşabiliyordu.
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor();
   return (
-    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
-      <Pressable
-        onPress={() => setOpen((o) => !o)}
-        style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
-      >
-        <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: active ? "900" : "700" }}>
-          {translateCopy(active && selected ? selected.label : label, language)}
-        </Text>
-        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={15} color={colors.muted} />
-      </Pressable>
-      {open ? (
-        <>
-          <Pressable onPress={close} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 90 }} />
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, left: 0, maxHeight: 320, minWidth: 220, paddingVertical: 6, position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 44, zIndex: 100 }}>
-            {searchable ? (
-              <View style={{ paddingBottom: 6, paddingHorizontal: 10 }}>
-                <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 10 }}>
-                  <MaterialCommunityIcons name="magnify" size={15} color={colors.muted} />
-                  <TextInput
-                    value={query}
-                    onChangeText={setQuery}
-                    placeholder={translateCopy("Şehir ara", language)}
-                    placeholderTextColor={colors.muted}
-                    autoFocus
-                    style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "600", height: 36, paddingVertical: 0 }}
-                  />
-                </View>
-              </View>
-            ) : null}
-            <ScrollView style={{ maxHeight: searchable ? 260 : undefined }} keyboardShouldPersistTaps="handled">
-              {filtered.length === 0 ? (
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", paddingHorizontal: 14, paddingVertical: 10 }}>{translateCopy("Sonuç yok", language)}</Text>
-              ) : (
-                filtered.map((opt) => {
-                  const isSel = opt.value === value;
-                  return (
-                    <Pressable
-                      key={`${opt.value}`}
-                      onPress={() => { onSelect(opt.value); close(); }}
-                      style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 10 })}
-                    >
-                      <MaterialCommunityIcons name={isSel ? "check-circle" : "circle-outline"} size={16} color={isSel ? colors.primary : colors.subtle} />
-                      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{translateCopy(opt.label, language)}</Text>
-                    </Pressable>
-                  );
-                })
-              )}
-            </ScrollView>
+    <View>
+      <View ref={anchorRef} collapsable={false} onLayout={measure}>
+        <Pressable
+          onPress={() => { if (open) { close(); return; } measure(); setOpen(true); }}
+          style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
+        >
+          <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: active ? "900" : "700" }}>
+            {translateCopy(active && selected ? selected.label : label, language)}
+          </Text>
+          <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={15} color={colors.muted} />
+        </Pressable>
+      </View>
+      <AnchoredDropdown visible={open} anchor={anchorRect} onClose={close} maxHeight={320} minWidth={220}>
+        {searchable ? (
+          <View style={{ paddingHorizontal: 10, paddingVertical: 8 }}>
+            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 10 }}>
+              <MaterialCommunityIcons name="magnify" size={15} color={colors.muted} />
+              <TextInput
+                value={query}
+                onChangeText={setQuery}
+                placeholder={translateCopy("Şehir ara", language)}
+                placeholderTextColor={colors.muted}
+                autoFocus
+                style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "600", height: 36, paddingVertical: 0 }}
+              />
+            </View>
           </View>
-        </>
-      ) : null}
+        ) : null}
+        <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled">
+          {filtered.length === 0 ? (
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", paddingHorizontal: 14, paddingVertical: 10 }}>{translateCopy("Sonuç yok", language)}</Text>
+          ) : (
+            filtered.map((opt) => {
+              const isSel = opt.value === value;
+              return (
+                <Pressable
+                  key={`${opt.value}`}
+                  onPress={() => { onSelect(opt.value); close(); }}
+                  style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 10 })}
+                >
+                  <MaterialCommunityIcons name={isSel ? "check-circle" : "circle-outline"} size={16} color={isSel ? colors.primary : colors.subtle} />
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: isSel ? "900" : "600" }}>{translateCopy(opt.label, language)}</Text>
+                </Pressable>
+              );
+            })
+          )}
+        </ScrollView>
+      </AnchoredDropdown>
     </View>
   );
 }
@@ -1516,20 +1517,22 @@ function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: st
     onChange(`${mn}-${mx}`);
     setOpen(false);
   }
+  // ÇAPALI KATMAN (ebeveyne-absolute → kırpılma/taşma sorunu giderildi).
+  const { ref: anchorRef, rect: anchorRect, measure } = useAnchor();
   return (
-    <View style={{ position: "relative", zIndex: open ? 1000 : 1 }}>
-      <Pressable
-        onPress={() => setOpen((o) => !o)}
-        style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
-      >
-        <MaterialCommunityIcons name="cash" size={14} color={active ? colors.primaryDark : colors.muted} />
-        <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: active ? "900" : "700" }}>{label}</Text>
-        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={15} color={colors.muted} />
-      </Pressable>
-      {open ? (
-        <>
-          <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 90 }} />
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, left: 0, minWidth: 250, padding: 12, position: "absolute", shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.16, shadowRadius: 24, top: 44, zIndex: 100 }}>
+    <View>
+      <View ref={anchorRef} collapsable={false} onLayout={measure}>
+        <Pressable
+          onPress={() => { if (open) { setOpen(false); return; } measure(); setOpen(true); }}
+          style={{ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}
+        >
+          <MaterialCommunityIcons name="cash" size={14} color={active ? colors.primaryDark : colors.muted} />
+          <Text style={{ color: active ? colors.primaryDark : colors.ink, fontSize: 13, fontWeight: active ? "900" : "700" }}>{label}</Text>
+          <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={15} color={colors.muted} />
+        </Pressable>
+      </View>
+      <AnchoredDropdown visible={open} anchor={anchorRect} onClose={() => setOpen(false)} maxHeight={360} minWidth={260}>
+          <ScrollView nestedScrollEnabled keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 10, padding: 12 }}>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {PRICE_PRESETS.map((p) => {
                 const on = value === p.value;
@@ -1572,9 +1575,8 @@ function PriceRangeFilter({ value, onChange }: { value: string; onChange: (v: st
                 <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Uygula", language)}</Text>
               </Pressable>
             </View>
-          </View>
-        </>
-      ) : null}
+          </ScrollView>
+      </AnchoredDropdown>
     </View>
   );
 }
