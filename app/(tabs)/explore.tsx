@@ -13,6 +13,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { listingCategories } from "@/lib/categories";
 import { getFormSchema, matchCategoryByName, resolveFormKey, topCategories, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
+import { SkeletonGrid } from "@/components/skeleton";
 import { commissionAmount, commissionRatePct, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
@@ -93,7 +94,7 @@ export default function ExploreScreen() {
   const params = useLocalSearchParams<{ q?: string; province?: string; district?: string; price?: string; comm?: string; rate?: string; rating?: string; featured?: string; stock?: string; verified?: string; open?: string; sort?: string; cat?: string; city?: string; tab?: string; attr?: string; num?: string }>();
   // Param değeri string | string[] gelebilir; tek değere indir.
   const sp = (v?: string | string[]) => (Array.isArray(v) ? v[0] ?? "" : v ?? "");
-  const { findUser, listings, isFavorite, toggleFavorite, loadMoreMarketplace, marketplaceHasMore, marketplaceLoadingMore, marketplaceLoadFailed, retryMarketplace } = useStore();
+  const { findUser, listings, isFavorite, toggleFavorite, loadMoreMarketplace, marketplaceHasMore, marketplaceInitialLoading, marketplaceLoadingMore, marketplaceLoadFailed, retryMarketplace } = useStore();
   const { items: savedSearches, add: addSaved, remove: removeSaved } = useSavedSearches();
   const [refreshing, setRefreshing] = useState(false);
   const [seed, setSeed] = useState(1);
@@ -636,12 +637,19 @@ export default function ExploreScreen() {
   // hidrasyon). Mount sonrası (mountedGate) gerçek düzen render edilir.
   if (Platform.OS === "web" && !mountedGate) {
     return (
-      <ScrollView contentContainerStyle={{ backgroundColor: colors.background, gap: 12, padding: 16 }} style={{ backgroundColor: colors.background }}>
-        <View style={{ backgroundColor: colors.primarySoft, borderRadius: 18, height: 150 }} />
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-          {Array.from({ length: 8 }).map((_, i) => (
-            <View key={i} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height: 230, width: 200 }} />
-          ))}
+      // Kabuk gerçek düzeni yansıtsın (hero artık İNCE şerit; kart ölçüsü ~178×250) —
+      // aksi halde mount anında görsel "sıçrama" olur. Genişlikten BAĞIMSIZ sabitler
+      // (deterministik → temiz hidrasyon, #418).
+      <ScrollView contentContainerStyle={{ backgroundColor: colors.background, gap: 14, padding: 16 }} style={{ backgroundColor: colors.background }}>
+        <View style={{ backgroundColor: colors.primarySoft, borderRadius: 14, height: 66 }} />
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height: 46 }} />
+        <View style={{ flexDirection: "row", gap: 24 }}>
+          <View style={{ flex: 1, flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+            {Array.from({ length: 10 }).map((_, i) => (
+              <View key={i} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height: 250, width: 178 }} />
+            ))}
+          </View>
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, height: 520, width: 260 }} />
         </View>
       </ScrollView>
     );
@@ -804,17 +812,57 @@ export default function ExploreScreen() {
             {visibleProducts.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
               // Katalog hiç yüklenemedi (ağ/sunucu) → "sonuç yok" yerine yeniden-dene.
               <MarketplaceRetry onRetry={retryMarketplace} />
+            ) : visibleProducts.length === 0 && (serverLoading || (marketplaceInitialLoading && listings.length === 0)) ? (
+              // GERÇEK YÜKLEME İSKELETİ. Eskiden arama yapılırken hiçbir yükleme
+              // göstergesi yoktu (bayat sonuçlar duruyordu) ve hidrasyon iskeleti
+              // sabit 200×230 kutulardı — gerçek kart boyutuyla uyuşmuyordu.
+              <SkeletonGrid count={productGrid.columns * 2} cardWidth={productGrid.cardWidth} gap={16} />
             ) : visibleProducts.length === 0 ? (
               <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 40 }}>
                 <MaterialCommunityIcons name="magnify-close" size={32} color={colors.primary} />
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{t("noResults")}</Text>
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", textAlign: "center" }}>{t("retrySearchFilter")}</Text>
-                <Link href="/create" asChild>
-                  <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 11 })}>
-                    <MaterialCommunityIcons name="store-plus-outline" size={16} color="#FFFFFF" />
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("İlan ver", language)}</Text>
-                  </Pressable>
-                </Link>
+                {/* AKILLI BOŞ DURUM: filtre varsa asıl çözüm "ilan ver" değil, filtreyi
+                    gevşetmek. Kaç filtrenin daralttığını söyle ve tek tıkla temizlet. */}
+                {activeFilterCount > 0 || queryText ? (
+                  <>
+                    <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", maxWidth: 420, textAlign: "center" }}>
+                      {activeFilterCount > 0
+                        ? `${activeFilterCount} ${translateCopy("filtre sonuçları daraltıyor. Filtreleri temizleyerek tüm ilanları görebilirsin.", language)}`
+                        : translateCopy("Aramanla eşleşen ilan yok. Farklı bir kelime deneyebilirsin.", language)}
+                    </Text>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center", marginTop: 4 }}>
+                      {activeFilterCount > 0 ? (
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => { setPriceRange(""); setMinCommission(0); setMinRate(0); setMinRating(0); setOnlyFeatured(false); router.setParams({ province: undefined, district: undefined }); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setCity(""); clearCatFilter(); }}
+                          style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 11 })}
+                        >
+                          <MaterialCommunityIcons name="filter-remove-outline" size={16} color="#FFFFFF" />
+                          <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Filtreleri temizle", language)}</Text>
+                        </Pressable>
+                      ) : null}
+                      {queryText ? (
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => router.setParams({ q: undefined })}
+                          style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 11 })}
+                        >
+                          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Aramayı temizle", language)}</Text>
+                        </Pressable>
+                      ) : null}
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", textAlign: "center" }}>{t("retrySearchFilter")}</Text>
+                    <Link href="/create" asChild>
+                      <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 11 })}>
+                        <MaterialCommunityIcons name="store-plus-outline" size={16} color="#FFFFFF" />
+                        <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("İlan ver", language)}</Text>
+                      </Pressable>
+                    </Link>
+                  </>
+                )}
               </View>
             ) : (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
