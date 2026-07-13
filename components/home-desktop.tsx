@@ -522,6 +522,26 @@ export function HomeDesktop() {
               })}
             </ScrollView>
           </View>
+          {/* Uygulanan filtreler — kaldırılabilir özet çipler (mobil ile parite) */}
+          {activeFilterCount > 0 ? (
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", gap: 8, paddingRight: 12 }}>
+              {selectedNode ? <ActiveChip label={translateCopy(selectedNode.label, language)} onRemove={() => setSelectedNode(null)} /> : null}
+              {pMin || pMax ? <ActiveChip label={`${pMin ? moneyIn(pMin, "TRY") : "0"}–${pMax ? moneyIn(pMax, "TRY") : "∞"}`} onRemove={() => { setPriceMin(""); setPriceMax(""); }} /> : null}
+              {loc.provinceId != null ? <ActiveChip label={translateCopy("Konum", language)} onRemove={() => setLoc({})} /> : null}
+              {minCommission ? <ActiveChip label={`${moneyIn(minCommission, "TRY")}+`} onRemove={() => setMinCommission(0)} /> : null}
+              {minRate ? <ActiveChip label={`%${minRate}+`} onRemove={() => setMinRate(0)} /> : null}
+              {commTypeFilter !== "all" ? <ActiveChip label={commTypeFilter === "rate" ? translateCopy("Oran %", language) : translateCopy("Sabit ₺", language)} onRemove={() => setCommTypeFilter("all")} /> : null}
+              {minRating ? <ActiveChip label={`★ ${minRating}+`} onRemove={() => setMinRating(0)} /> : null}
+              {onlyOpen ? <ActiveChip label={translateCopy("Ortak satışa açık", language)} onRemove={() => setOnlyOpen(false)} /> : null}
+              {onlyFeatured ? <ActiveChip label={translateCopy("Öne çıkan", language)} onRemove={() => setOnlyFeatured(false)} /> : null}
+              {onlyVerified ? <ActiveChip label={translateCopy("Doğrulanmış", language)} onRemove={() => setOnlyVerified(false)} /> : null}
+              {inStock ? <ActiveChip label={translateCopy("Stokta", language)} onRemove={() => setInStock(false)} /> : null}
+              {onlyNew ? <ActiveChip label={translateCopy("Yeni (7 gün)", language)} onRemove={() => setOnlyNew(false)} /> : null}
+              <Pressable accessibilityRole="button" onPress={resetFilters} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, paddingHorizontal: 6, paddingVertical: 6 })}>
+                <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "900" }}>{translateCopy("Tümünü temizle", language)}</Text>
+              </Pressable>
+            </ScrollView>
+          ) : null}
         </View>
 
         {grid.length === 0 && marketplaceInitialLoading ? (
@@ -666,6 +686,16 @@ function SwitchRow({ label, on, onPress }: { label: string; on: boolean; onPress
         <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
       </View>
       <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+// Uygulanan filtre özeti çipi (dokununca kaldırır) — grid başlığında.
+function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }) {
+  return (
+    <Pressable accessibilityRole="button" onPress={onRemove} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, opacity: pressed ? 0.7 : 1, paddingHorizontal: 11, paddingVertical: 6 })}>
+      <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{label}</Text>
+      <MaterialCommunityIcons name="close" size={13} color={colors.primaryDark} />
     </Pressable>
   );
 }
