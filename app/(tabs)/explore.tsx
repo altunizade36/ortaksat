@@ -122,6 +122,9 @@ export default function ExploreScreen() {
   const [minRate, setMinRate] = useState(() => Number(sp(params.rate)) || 0);
   const [minRating, setMinRating] = useState(() => Number(sp(params.rating)) || 0);
   const [onlyFeatured, setOnlyFeatured] = useState(() => sp(params.featured) === "1");
+  // Kategori-özel filtreler çok kalabalık olabiliyor (Emlak: 7 sayısal + 10+ facet)
+  // → dar yan panelde sonsuz uzuyordu. Varsayılan KATLI; "tümünü göster" ile açılır.
+  const [catFiltersExpanded, setCatFiltersExpanded] = useState(false);
   const [productVisible, setProductVisible] = useState(20);
   const [visibleCount, setVisibleCount] = useState(INITIAL_EXPLORE_ITEMS);
   // Sunucu-tarafli arama: q girilince tum katalogda arar (yuklu 90 ile sinirli
@@ -569,68 +572,97 @@ export default function ExploreScreen() {
           ))}
         </View>
       ) : null}
-      {/* Seçilebilir seviye: yol boşsa ana kategoriler, değilse mevcut düğümün altları */}
+      {/* Seçilebilir seviye. TAŞMA DÜZELTMESİ: eskiden YATAY KAYDIRMAydı → dar yan
+          panelde çipler kutunun kenarından kırpılıyor, yarısı görünmüyordu. Artık
+          SARMALANIYOR (flexWrap) — hiçbir çip kesilmez. */}
       {(catPath.length === 0 || drillOptions.length > 0) ? (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingRight: 8 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
           {(catPath.length === 0 ? topCategories() : drillOptions).map((n) => {
             const on = catPath.length === 0 && catNode?.key === n.key;
             const drilled = catPath.length > 0;
             return (
-              <Pressable key={n.key} onPress={() => (drilled ? drillTo(n.key) : selectTop(n.key))} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 12, paddingVertical: 7 }}>
-                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
+              <Pressable key={n.key} onPress={() => (drilled ? drillTo(n.key) : selectTop(n.key))} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, maxWidth: "100%", paddingHorizontal: 11, paddingVertical: 6 }}>
+                <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
                 {(n.children?.length ?? 0) > 0 ? <MaterialCommunityIcons name="chevron-right" size={13} color={on ? "#FFFFFF" : colors.subtle} /> : null}
               </Pressable>
             );
           })}
-        </ScrollView>
-      ) : null}
-      {catPath.length > 0 ? (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-          {catBrandField ? (
-            <BrandFilter
-              label={catBrandField.label}
-              options={catBrandField.options ?? []}
-              selected={attrFilters.brand ?? []}
-              onToggle={(b) => toggleAttr("brand", b)}
-              language={language}
-            />
-          ) : null}
-          {catNums.map((nf) => (
-            <View key={nf.key} style={{ gap: 4, minWidth: 160 }}>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(nf.label, language)}{nf.suffix ? ` (${nf.suffix})` : ""}</Text>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minWidth: 0, minHeight: 38, paddingHorizontal: 9 }} />
-                <Text style={{ color: colors.muted }}>—</Text>
-                <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minWidth: 0, minHeight: 38, paddingHorizontal: 9 }} />
-              </View>
-            </View>
-          ))}
-          {catFacets.map((f) => {
-            const opts = f.options ?? [];
-            const selected = attrFilters[f.key] ?? [];
-            // Çok seçenekli facet (İç Özellikler, Muhit, renk…) → aranabilir/kaydırılabilir
-            // kutu (BrandFilter deseni); azsa tüm seçenekler çip olarak (artık KIRPILMIYOR).
-            if (opts.length > 12) {
-              return <BrandFilter key={f.key} label={f.label} options={opts} selected={selected} onToggle={(v) => toggleAttr(f.key, v)} language={language} />;
-            }
-            return (
-              <View key={f.key} style={{ gap: 4, minWidth: 160 }}>
-                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(f.label, language)}{selected.length ? ` · ${selected.length}` : ""}</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
-                  {opts.map((opt) => {
-                    const on = selected.includes(opt);
-                    return (
-                      <Pressable key={opt} onPress={() => toggleAttr(f.key, opt)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 9, paddingVertical: 4 }}>
-                        <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 11, fontWeight: "800" }}>{translateCopy(opt, language)}</Text>
-                      </Pressable>
-                    );
-                  })}
-                </View>
-              </View>
-            );
-          })}
         </View>
       ) : null}
+      {catPath.length > 0 ? (() => {
+        // KATLAMA: Emlak gibi kategorilerde 7 sayısal + 10+ facet var → dar yan panelde
+        // panel sonsuz uzuyordu (kilometrelerce kaydırma). Varsayılan olarak yalnız ilk
+        // birkaç filtre gösterilir; gerisi "tümünü göster" ile açılır.
+        // Alanlar TAM GENİŞLİK (flexBasis:"100%") → 260px panelde taşma/kırpılma olmaz.
+        // (Ebeveyn row-wrap olduğu için flexBasis:"100%" GENİŞLİKtir, yükseklik değil.)
+        const COLLAPSED = 3;
+        type Item = { key: string; node: React.ReactNode };
+        const items: Item[] = [];
+        if (catBrandField) {
+          items.push({ key: "brand", node: (
+            <BrandFilter label={catBrandField.label} options={catBrandField.options ?? []} selected={attrFilters.brand ?? []} onToggle={(b) => toggleAttr("brand", b)} language={language} />
+          ) });
+        }
+        for (const nf of catNums) {
+          items.push({ key: `n-${nf.key}`, node: (
+            <View style={{ flexBasis: "100%", gap: 4, minWidth: 0 }}>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(nf.label, language)}{nf.suffix ? ` (${nf.suffix})` : ""}</Text>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                <TextInput value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 13, minWidth: 0, minHeight: 38, paddingHorizontal: 9 }} />
+                <Text style={{ color: colors.muted }}>—</Text>
+                <TextInput value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flexBasis: 0, flexGrow: 1, fontSize: 13, minWidth: 0, minHeight: 38, paddingHorizontal: 9 }} />
+              </View>
+            </View>
+          ) });
+        }
+        for (const f of catFacets) {
+          const opts = f.options ?? [];
+          const selected = attrFilters[f.key] ?? [];
+          if (opts.length > 12) {
+            items.push({ key: `f-${f.key}`, node: <BrandFilter label={f.label} options={opts} selected={selected} onToggle={(v) => toggleAttr(f.key, v)} language={language} /> });
+            continue;
+          }
+          items.push({ key: `f-${f.key}`, node: (
+            <View style={{ flexBasis: "100%", gap: 4, minWidth: 0 }}>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(f.label, language)}{selected.length ? ` · ${selected.length}` : ""}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                {opts.map((opt) => {
+                  const on = selected.includes(opt);
+                  return (
+                    <Pressable key={opt} onPress={() => toggleAttr(f.key, opt)} style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, maxWidth: "100%", paddingHorizontal: 9, paddingVertical: 4 }}>
+                      <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 11, fontWeight: "800" }}>{translateCopy(opt, language)}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ) });
+        }
+        // Seçili filtreleri KATLAMA — kullanıcı uyguladığını hep görsün.
+        const activeKeys = new Set<string>([
+          ...Object.keys(attrFilters).map((k) => (k === "brand" ? "brand" : `f-${k}`)),
+          ...Object.keys(numRange).map((k) => `n-${k}`)
+        ]);
+        const visible = catFiltersExpanded ? items : items.filter((it, i) => i < COLLAPSED || activeKeys.has(it.key));
+        const hiddenCount = items.length - visible.length;
+        return (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+            {visible.map((it) => <View key={it.key} style={{ flexBasis: "100%", minWidth: 0 }}>{it.node}</View>)}
+            {hiddenCount > 0 || catFiltersExpanded ? (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => setCatFiltersExpanded((v) => !v)}
+                style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", flexDirection: "row", gap: 4, opacity: pressed ? 0.7 : 1, paddingVertical: 4 })}
+              >
+                <MaterialCommunityIcons name={catFiltersExpanded ? "chevron-up" : "chevron-down"} size={15} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>
+                  {catFiltersExpanded ? translateCopy("Daha az filtre", language) : `${hiddenCount} ${translateCopy("filtre daha", language)}`}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        );
+      })() : null}
     </View>
   );
 

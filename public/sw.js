@@ -3,7 +3,7 @@
    çevrimdışıysa /offline.html sunulur (bayat içerik/oturum riski yok). */
 // v11: yenileme flaşı düzeltmesi (boot-splash yalnız soğuk ziyarette) — eski HTML/bundle
 // cihazlarda kalmasın diye statik önbellek sürümü yükseltildi.
-const CACHE = "ortaksat-static-v15";
+const CACHE = "ortaksat-static-v16";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {
