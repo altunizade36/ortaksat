@@ -80,6 +80,8 @@ export function DesktopCreateFlow() {
   const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, listings } = useStore();
   const [step, setStep] = useState(0);
   const [path, setPath] = useState<CategoryNode[]>([]);
+  // "Diğer" seçildiğinde kullanıcı ARADIĞI kategoriyi yazar → admin ÖNERİ HAVUZUNA düşer.
+  const [customCategory, setCustomCategory] = useState("");
   const [values, setValues] = useState<Values>({});
   const [images, setImages] = useState<string[]>([]);
   const [imageDraft, setImageDraft] = useState("");
@@ -109,6 +111,10 @@ export function DesktopCreateFlow() {
   const formKey = path.length ? resolveFormKey(path) : "";
   const schema = formKey ? getFormSchema(formKey) : undefined;
   const leafLabel = path.length ? path[path.length - 1].label : "";
+  // Yolun HERHANGİ bir düğümü "Diğer" ise → kategori listemizde eksik demektir.
+  // (Eskiden yalnız path[0]==="Diğer" bakılıyordu; artık "Diğer" her dalda olduğu için
+  //  "Emlak › Konut › Diğer" gibi seçimler de havuza düşmeliydi ama düşmüyordu.)
+  const isDigerPath = path.some((p) => /^di[ğg]er/i.test(p.label.trim()));
   const coverImage = images[0] || path.find((p) => p.image)?.image || CONDITION_IMG;
 
   // Anlık moderasyon uyarısı (kullanıcı yazarken): yasaklı = kırmızı, dikkatli = sarı.
@@ -398,9 +404,18 @@ export function DesktopCreateFlow() {
       let verdict = kwVerdict === "review" || catVerdict === "review" ? "review" : "none";
       let statusOverride: "pending_review" | undefined = verdict === "review" ? "pending_review" : undefined;
 
-      // "Diğer" seçildiyse kategori önerisi olarak admin incelemesine düşür.
-      if (path[0]?.label === "Diğer") {
-        addCategorySuggestion({ suggestedPath: `${title || "Yeni ürün"} — ${description.slice(0, 60)}`, note: "İlan formundan 'Diğer' kategorisi ile gönderildi." });
+      // "Diğer" seçildiyse → kategori EKSİK demektir: kullanıcının yazdığı kategori adını
+      // TAM YOL ile birlikte admin ÖNERİ HAVUZUNA düşür (category_suggestions).
+      // Böylece eksik kategoriler görünür olur ve ağaca eklenir.
+      if (isDigerPath) {
+        const yol = path.map((p) => p.label).join(" › ");
+        const istenen = customCategory.trim();
+        addCategorySuggestion({
+          suggestedPath: istenen ? `${yol} → ${istenen}` : `${yol} → (belirtilmedi: ${title || "Yeni ürün"})`,
+          note: istenen
+            ? `Kullanıcı "Diğer"i seçip eksik kategoriyi yazdı. İlan: ${title || "-"}`
+            : `Kullanıcı "Diğer"i seçti (kategori adı yazmadı). İlan: ${title || "-"} — ${description.slice(0, 60)}`
+        });
       }
       void addLocationSuggestion; // konum önerisi 'Mahallemi bulamadım' akışına bağlı (canlıda mahalle listesi gelince)
       const price = v.clean.price;
@@ -605,6 +620,27 @@ export function DesktopCreateFlow() {
                     <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
                   </Pressable>
                 </View>
+              ) : null}
+
+                {/* "Diğer" seçildi → kategorimiz eksik. Kullanıcıdan aradığı kategoriyi iste;
+                  bu metin admin ÖNERİ HAVUZUNA düşer ve eksik kategoriler tamamlanır. */}
+              {isDigerPath ? (
+                <FormSection title="Aradığın kategori listede yok mu?" icon="playlist-plus" hint="Kategorini yaz — ekibimiz görüp kategori listesine ekler. İlanın yine de hemen yayınlanır.">
+                  <View style={{ gap: 6 }}>
+                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Aradığın kategori", language)}</Text>
+                    <TextInput
+                      value={customCategory}
+                      onChangeText={setCustomCategory}
+                      placeholder={translateCopy("ör. Drone Yedek Parçası, Vintage Plak, Solar Panel…", language)}
+                      placeholderTextColor={colors.subtle}
+                      accessibilityLabel={translateCopy("Aradığın kategori", language)}
+                      style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }}
+                    />
+                    <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
+                      {translateCopy("Seçtiğin yol", language)}: {path.map((p) => p.label).join(" › ")}
+                    </Text>
+                  </View>
+                </FormSection>
               ) : null}
 
               {titleField ? (

@@ -1580,6 +1580,33 @@ export const categoryTree: CategoryNode[] = [
   node("Diğer", [leaf("Kategori öner", "alisverisGenel")], "alisverisGenel", IMG("1441986300917-64674bd600d8"))
 ];
 
+// ============================================================================
+// "DİĞER" GARANTİSİ — İSTİSNASIZ HER DALDA
+// ----------------------------------------------------------------------------
+// Kullanıcı aradığı kategoriyi bulamazsa hiçbir dalda tıkanmasın: her EBEVEYN düğüme
+// bir "Diğer" yaprağı eklenir. Kullanıcı "Diğer"i seçip aradığı kategoriyi YAZAR;
+// bu metin admin'deki KATEGORİ ÖNERİ HAVUZUNA düşer (category_suggestions) ve eksik
+// kategoriler oradan görülüp ağaca eklenir.
+//
+// 489 ebeveyne elle eklemek mümkün değil → ağaç build-time OTOMATİK son-işlemden geçer.
+// Slug çakışmasını önlemek için key/slug = "diger-<ebeveyn-slug>" (etiket yine "Diğer");
+// aksi halde 489 düğüm aynı "diger" slug'ını paylaşır ve /kategori/diger rotası çakışırdı.
+// formKey ebeveynden MİRAS alınır → "Diğer"e ilan verilince doğru form açılır.
+function ensureDigerEverywhere(nodes: CategoryNode[], inheritedFormKey?: string): void {
+  for (const n of nodes) {
+    const fk = n.formKey ?? inheritedFormKey;
+    const kids = n.children;
+    if (!kids || kids.length === 0) continue;
+    ensureDigerEverywhere(kids, fk);
+    const hasDiger = kids.some((c) => /^di[ğg]er/i.test(c.label.trim()));
+    if (!hasDiger) {
+      kids.push({ key: `diger-${n.slug}`, label: "Diğer", slug: `diger-${n.slug}`, formKey: fk });
+    }
+  }
+}
+ensureDigerEverywhere(categoryTree);
+
+
 // ---- lookups & helpers ---------------------------------------------------
 // Admin panelden gizlenen kategoriler (üst veya alt, key ile). Store DB'den yükleyip
 // setHiddenCategories ile günceller; SSG/ilk render'da boş → sonra client filtreler
