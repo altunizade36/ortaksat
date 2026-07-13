@@ -928,6 +928,58 @@ export async function toggleReviewHelpfulLive(reviewId: string): Promise<number 
   return Number(data ?? 0);
 }
 
+// Kendi yorumunu düzenle (RPC: yalnız reviewer_id=auth.uid()).
+export async function editReviewLive(reviewId: string, rating: number, comment: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { data, error } = await supabase.rpc("edit_own_review", { p_review_id: reviewId, p_rating: rating, p_comment: comment });
+  if (error) { console.warn("edit_own_review failed", error); return false; }
+  return data === true;
+}
+
+// Kendi yorumunu sil (soft delete; RPC yalnız sahibini etkiler).
+export async function deleteReviewLive(reviewId: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { data, error } = await supabase.rpc("delete_own_review", { p_review_id: reviewId });
+  if (error) { console.warn("delete_own_review failed", error); return false; }
+  return data === true;
+}
+
+// Kullanıcıyı engelle / engeli kaldır / engellenenleri getir.
+export async function blockUserLive(blockedId: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return false;
+  const { error } = await supabase.from("blocked_users").upsert({ blocker_id: me, blocked_id: blockedId });
+  if (error) { console.warn("block user failed", error); return false; }
+  return true;
+}
+export async function unblockUserLive(blockedId: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return false;
+  const { error } = await supabase.from("blocked_users").delete().eq("blocker_id", me).eq("blocked_id", blockedId);
+  if (error) { console.warn("unblock user failed", error); return false; }
+  return true;
+}
+export async function fetchBlockedUsers(userId: string): Promise<string[]> {
+  if (!supabase || !userId) return [];
+  const { data, error } = await supabase.from("blocked_users").select("blocked_id").eq("blocker_id", userId);
+  if (error) { console.warn("fetch blocked failed", error); return []; }
+  return (data ?? []).map((r) => r.blocked_id as string);
+}
+
+// Native push token'ını kaydet (upsert). Web'de çağrılmaz.
+export async function savePushTokenLive(token: string, platform: string): Promise<void> {
+  if (!supabase || !token) return;
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return;
+  const { error } = await supabase.from("push_tokens").upsert({ user_id: me, token, platform, updated_at: new Date().toISOString() });
+  if (error) console.warn("push token save failed", error);
+}
+
 export async function insertConversation(conversation: Conversation) {
   if (!supabase) return;
   const { error } = await supabase.from("conversations").insert({

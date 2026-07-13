@@ -97,7 +97,13 @@
       "expo-localization",
       "expo-video",
       "expo-font",
-      "expo-web-browser"
+      "expo-web-browser",
+      [
+        "expo-notifications",
+        {
+          "color": "#0EA5B7"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

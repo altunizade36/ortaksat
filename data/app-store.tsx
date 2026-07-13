@@ -28,6 +28,11 @@ import {
   createSupportTicketLive,
   followSellerLive,
   unfollowSellerLive,
+  editReviewLive,
+  deleteReviewLive,
+  blockUserLive,
+  unblockUserLive,
+  fetchBlockedUsers,
   loadMyFollowsLive,
   insertFavorite,
   insertLead,
@@ -280,6 +285,9 @@ type AppStore = {
   createLead: (input: Omit<Lead, "id" | "createdAt" | "status">) => Lead | undefined;
   createReview: (listingId: string, rating: number, comment: string) => Review | undefined;
   createSaleReview: (saleId: string, rating: number, comment: string) => Review | undefined;
+  editReview: (reviewId: string, rating: number, comment: string) => Promise<boolean>;
+  deleteReview: (reviewId: string) => Promise<boolean>;
+  reportReview: (review: Review, details?: string) => Promise<boolean>;
   canReviewSale: (saleId: string) => boolean;
   createSaleFromLead: (leadId: string, input?: Partial<SaleFromLeadInput>) => Sale | undefined;
   recordSaleForPartner: (partnershipId: string, input?: Partial<SaleFromLeadInput> & { buyerName?: string }) => Sale | undefined;
@@ -292,9 +300,14 @@ type AppStore = {
   followedSellerIds: string[];
   isFollowing: (sellerId: string) => boolean;
   toggleFollow: (sellerId: string) => void;
+  blockedUserIds: string[];
+  isUserBlocked: (userId: string) => boolean;
+  blockUser: (userId: string) => Promise<void>;
+  unblockUser: (userId: string) => Promise<void>;
   startConversation: (listingId: string, receiverId: string, body?: string) => Conversation | undefined;
   sendMessage: (listingId: string, receiverId: string, body: string) => void;
   sendConversationMessage: (conversationId: string, body: string, attachment?: { url: string; type: "image" | "file"; name?: string }) => void;
+  retryMessage: (messageId: string) => void;
   markConversationRead: (conversationId: string) => void;
   markNotificationRead: (notificationId: string) => void;
   categorySuggestions: CategorySuggestion[];
@@ -428,6 +441,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [reviews, setReviews] = useState(isSupabaseConfigured ? [] : initialReviews);
   const [favorites, setFavorites] = useState(isSupabaseConfigured ? [] : initialFavorites);
   const [followedSellerIds, setFollowedSellerIds] = useState<string[]>([]);
+  const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
   const [conversations, setConversations] = useState(isSupabaseConfigured ? [] : initialConversations);
   const [messages, setMessages] = useState(isSupabaseConfigured ? [] : initialMessages);
   const [notifications, setNotifications] = useState(isSupabaseConfigured ? [] : initialNotifications);
@@ -473,6 +487,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
     setMessages([]);
     setFavorites([]);
     setFollowedSellerIds([]);
+    setBlockedUserIds([]);
     setPartnerships([]);
     setLeads([]);
     setSales([]);
@@ -638,13 +653,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
       loadedAccountUserRef.current = profile.id;
       void syncSavedForUser(profile.id); // kayıtlı aramaları sunucuyla senkronla (cihazlar arası)
       // Hesap verisi + öneriler + takipler: her biri BAĞIMSIZ dirençli — biri patlasa diğerleri yüklenir.
-      const [account, suggestions, myFollows] = await Promise.all([
+      const [account, suggestions, myFollows, myBlocks] = await Promise.all([
         loadAccountSnapshot(profile.id).catch(() => null),
         loadSuggestions().catch(() => ({ categorySuggestions: [], locationSuggestions: [] })),
-        loadMyFollowsLive(profile.id).catch(() => [] as string[])
+        loadMyFollowsLive(profile.id).catch(() => [] as string[]),
+        fetchBlockedUsers(profile.id).catch(() => [] as string[])
       ]);
       if (!mounted) return;
       setFollowedSellerIds(myFollows);
+      setBlockedUserIds(myBlocks);
       // Kategori/konum önerileri (RLS: kendi + admin hepsi) — kalıcı yüklensin.
       setCategorySuggestions(suggestions.categorySuggestions);
       setLocationSuggestions(suggestions.locationSuggestions);
@@ -1595,6 +1612,38 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }, "Değerlendirme kaydedilemedi. Lütfen tekrar dene.");
         return review;
       },
+      async editReview(reviewId, rating, comment) {
+        const mine = reviews.find((r) => r.id === reviewId && r.reviewerId === currentUser.id);
+        if (!mine || rating < 1 || rating > 5 || !comment.trim()) return false;
+        const prev = { rating: mine.rating, comment: mine.comment };
+        setReviews((items) => items.map((r) => (r.id === reviewId ? { ...r, rating, comment: comment.trim() } : r)));
+        if (liveUser) {
+          const ok = await editReviewLive(reviewId, rating, comment.trim());
+          if (!ok) { setReviews((items) => items.map((r) => (r.id === reviewId ? { ...r, ...prev } : r))); setSyncError("Yorum güncellenemedi. Tekrar dene."); return false; }
+        }
+        return true;
+      },
+      async deleteReview(reviewId) {
+        const mine = reviews.find((r) => r.id === reviewId && r.reviewerId === currentUser.id);
+        if (!mine) return false;
+        setReviews((items) => items.filter((r) => r.id !== reviewId));
+        setListings((items) => items.map((l) => (l.id === mine.listingId ? { ...l, reviewCount: Math.max(0, l.reviewCount - 1) } : l)));
+        if (liveUser) {
+          const ok = await deleteReviewLive(reviewId);
+          if (!ok) { setReviews((items) => [mine, ...items]); setSyncError("Yorum silinemedi. Tekrar dene."); return false; }
+        }
+        return true;
+      },
+      async reportReview(review, details) {
+        // Yorum şikayeti = yorumu yazan kullanıcıyı, yorum kimliğiyle bildir (mevcut reports altyapısı).
+        if (!liveUser) { setAuthError("Bildirim göndermek için e-posta ile giriş yapmalısın."); return false; }
+        if (review.reviewerId === currentUser.id) return false;
+        const reason = "YORUM ŞİKAYETİ";
+        const note = `review=${review.id}: ${(details ?? "").trim() || review.comment.slice(0, 120)}`;
+        const reportId = await insertReport({ reporterId: currentUser.id, reportedUserId: review.reviewerId, reason, details: note });
+        if (reportId) setReports((items) => [{ id: reportId, reporterId: currentUser.id, reportedUserId: review.reviewerId, reason, details: note, status: "open", createdAt: today() }, ...items]);
+        return Boolean(reportId);
+      },
       createSaleFromLead(leadId, input) {
         if (isSuspended) { setAuthError("Hesabın askıya alındığı için işlem yapamazsın."); return undefined; }
         const lead = leads.find((item) => item.id === leadId);
@@ -1928,6 +1977,21 @@ export function StoreProvider({ children }: PropsWithChildren) {
           if (liveUser) persistCritical(followSellerLive(sellerId), () => { setFollowedSellerIds((ids) => ids.filter((id) => id !== sellerId)); bumpFollower(-1); }, "Takip edilemedi. Bağlantını kontrol edip tekrar dene.");
         }
       },
+      blockedUserIds,
+      isUserBlocked(userId) {
+        return blockedUserIds.includes(userId);
+      },
+      async blockUser(userId) {
+        if (!isAuthenticated) { setAuthError("Engellemek için giriş yapmalısın."); return; }
+        if (userId === currentUser.id || blockedUserIds.includes(userId)) return;
+        setBlockedUserIds((ids) => [...ids, userId]);
+        if (liveUser) { const ok = await blockUserLive(userId); if (!ok) { setBlockedUserIds((ids) => ids.filter((id) => id !== userId)); setSyncError("Engellenemedi. Tekrar dene."); } }
+      },
+      async unblockUser(userId) {
+        if (!blockedUserIds.includes(userId)) return;
+        setBlockedUserIds((ids) => ids.filter((id) => id !== userId));
+        if (liveUser) { const ok = await unblockUserLive(userId); if (!ok) { setBlockedUserIds((ids) => (ids.includes(userId) ? ids : [...ids, userId])); setSyncError("Engel kaldırılamadı. Tekrar dene."); } }
+      },
       startConversation(listingId, receiverId, body) {
         return createOrReuseConversation(listingId, receiverId, body);
       },
@@ -1963,11 +2027,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setConversations((items) => items.map((item) => (item.id === conversationId ? { ...item, lastMessageAt: message.createdAt } : item)));
         const preview = trimmed || (attachment?.type === "file" ? `📎 ${attachment.name ?? "Dosya"}` : "📷 Görsel");
         notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${preview}`);
-        // Mesaj DB'ye yazılamazsa (bağlantı/RLS) optimistik baloncuğu geri al ve
-        // görünür hata göster — mesaj sessizce kaybolup alıcıya ulaşmamazlık yaşanmasın.
-        if (liveUser) persistCritical(insertMessage(message), () => {
-          setMessages((items) => items.filter((m) => m.id !== message.id));
-        }, "Mesaj gönderilemedi. Bağlantını kontrol edip tekrar dene.");
+        // Mesaj DB'ye yazılamazsa (bağlantı/RLS) baloncuğu SİLME → "failed" işaretle
+        // ki kullanıcı görsün ve "tekrar dene" ile yeniden gönderebilsin (kayıp yok).
+        if (liveUser) insertMessage(message)
+          .then((ok) => { if (!ok) setMessages((items) => items.map((m) => (m.id === message.id ? { ...m, status: "failed" } : m))); })
+          .catch(() => setMessages((items) => items.map((m) => (m.id === message.id ? { ...m, status: "failed" } : m))));
+      },
+      retryMessage(messageId) {
+        const msg = messages.find((m) => m.id === messageId && m.status === "failed");
+        if (!msg) return;
+        // "failed" işaretini kaldır (yeniden gönderiliyor) → başarısızsa tekrar işaretlenir.
+        setMessages((items) => items.map((m) => (m.id === messageId ? { ...m, status: undefined } : m)));
+        if (liveUser) insertMessage({ ...msg, status: undefined })
+          .then((ok) => { if (!ok) setMessages((items) => items.map((m) => (m.id === messageId ? { ...m, status: "failed" } : m))); })
+          .catch(() => setMessages((items) => items.map((m) => (m.id === messageId ? { ...m, status: "failed" } : m))));
       },
       markConversationRead(conversationId) {
         const unread = messages.filter((item) => item.conversationId === conversationId && item.receiverId === currentUser.id && !item.read);

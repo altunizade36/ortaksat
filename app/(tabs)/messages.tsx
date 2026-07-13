@@ -94,7 +94,7 @@ function scanMessageRisk(text: string) {
 }
 
 function MessagesScreenInner() {
-  const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, partnerships, refreshUserData, sales, sendConversationMessage } = useStore();
+  const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, partnerships, refreshUserData, sales, sendConversationMessage, retryMessage } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const { t, language } = useLanguage();
   const isWideWeb = useIsWideWeb();
@@ -410,10 +410,18 @@ function MessagesScreenInner() {
                             {lastOfGroup ? (
                               <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingBottom: m.attachmentType === "image" ? 4 : 0 }}>
                                 <Text style={{ color: mine ? "#E6FBF7" : colors.subtle, fontSize: 10, fontWeight: "700" }}>{msgTime(m.createdAt)}</Text>
-                                {mine ? <MaterialCommunityIcons name={m.read ? "check-all" : "check"} size={13} color={m.read ? "#E6FBF7" : "rgba(255,255,255,0.7)"} /> : null}
+                                {mine ? (m.status === "failed"
+                                  ? <MaterialCommunityIcons name="alert-circle" size={13} color="#FFD9D0" />
+                                  : <MaterialCommunityIcons name={m.read ? "check-all" : "check"} size={13} color={m.read ? "#E6FBF7" : "rgba(255,255,255,0.7)"} />) : null}
                               </View>
                             ) : null}
                           </View>
+                          {mine && m.status === "failed" ? (
+                            <Pressable accessibilityRole="button" onPress={() => retryMessage(m.id)} style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, marginTop: 3, opacity: pressed ? 0.7 : 1 })}>
+                              <MaterialCommunityIcons name="refresh" size={12} color={colors.accent} />
+                              <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "800" }}>{translateCopy("Gönderilemedi · tekrar dene", language)}</Text>
+                            </Pressable>
+                          ) : null}
                         </View>
                       </View>
                     );

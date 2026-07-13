@@ -12,6 +12,7 @@ import { AppHeader } from "@/components/app-header";
 import { colors } from "@/components/colors";
 import { CompareBar } from "@/components/compare-bar";
 import { PresenceHeartbeat } from "@/components/presence-heartbeat";
+import { PushRegistrar } from "@/components/push-registrar";
 import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
@@ -82,6 +83,7 @@ function RootStack() {
         <Stack.Screen name="profile-edit" options={{ presentation: "modal", title: t("editProfile") }} />
         <Stack.Screen name="notifications" options={{ title: t("notifications") }} />
         <Stack.Screen name="favorites" options={{ title: t("favorites") }} />
+        <Stack.Screen name="following" options={{ title: t("following") }} />
         {/* Sohbet: pazaryeri başlığı (logo+arama) yerine sohbete özel kompakt
             başlık kullanılır (ekran kendi başlığını çizer) — dikey alan israfı yok. */}
         <Stack.Screen name="chat/[id]" options={{ headerShown: false, title: t("chat") }} />
@@ -91,6 +93,7 @@ function RootStack() {
       </Stack>
       <CompareBar />
       <PresenceHeartbeat />
+      <PushRegistrar />
       <SyncErrorListener />
     </View>
   );

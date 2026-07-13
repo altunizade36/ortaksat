@@ -66,7 +66,7 @@ function ChatScreenInner() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { currentUser, findConversation, findListing, findUser, markConversationRead, messages, reportUser, sendConversationMessage } = useStore();
+  const { currentUser, findConversation, findListing, findUser, markConversationRead, messages, reportUser, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser } = useStore();
   const [body, setBody] = useState("");
   const [attaching, setAttaching] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
@@ -98,6 +98,7 @@ function ChatScreenInner() {
   const listing = conversation ? findListing(conversation.listingId) : undefined;
   const otherId = conversation?.participantIds.find((item) => item !== currentUser.id);
   const otherUser = otherId ? findUser(otherId) : undefined;
+  const blockedHere = otherId ? isUserBlocked(otherId) : false;
   const conversationMessages = useMemo(() => {
     // messages dizisi yeni→eski (başa eklenir); aynı zaman damgasında yüksek index
     // = daha eski, bu yüzden önce gelir (eskiden yeniye doğru thread).
@@ -216,6 +217,25 @@ function ChatScreenInner() {
               <MaterialCommunityIcons name="open-in-new" size={18} color={colors.primaryDark} />
             </Pressable>
           ) : null}
+          {/* Engelle / engel kaldır */}
+          {otherId ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={isUserBlocked(otherId) ? translateCopy("Engeli kaldır", language) : translateCopy("Kullanıcıyı engelle", language)}
+              hitSlop={8}
+              onPress={() => {
+                const blocked = isUserBlocked(otherId);
+                if (blocked) { void unblockUser(otherId); return; }
+                Alert.alert(translateCopy("Kullanıcıyı engelle", language), translateCopy("Bu kullanıcı sana mesaj gönderemeyecek. Dilediğinde engeli kaldırabilirsin.", language), [
+                  { text: translateCopy("Vazgeç", language), style: "cancel" },
+                  { text: translateCopy("Engelle", language), style: "destructive", onPress: () => void blockUser(otherId) }
+                ]);
+              }}
+              style={({ pressed }) => ({ alignItems: "center", backgroundColor: isUserBlocked(otherId) ? colors.accentSoft : colors.surfaceAlt, borderColor: isUserBlocked(otherId) ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}
+            >
+              <MaterialCommunityIcons name={isUserBlocked(otherId) ? "account-cancel" : "account-cancel-outline"} size={17} color={isUserBlocked(otherId) ? colors.accent : colors.muted} />
+            </Pressable>
+          ) : null}
           {/* Şikayet — mobil chat'te de kullanıcıyı bildir (masaüstü inbox parity). */}
           {otherId ? (
             <Pressable
@@ -313,10 +333,18 @@ function ChatScreenInner() {
                       <Text selectable style={{ color: mine ? "#E6FBF7" : colors.subtle, fontSize: 10, fontWeight: "700" }}>
                         {chatMsgTime(message.createdAt) || shortDate(message.createdAt)}
                       </Text>
-                      {mine ? <MaterialCommunityIcons name={message.read ? "check-all" : "check"} size={13} color={message.read ? "#E6FBF7" : "rgba(255,255,255,0.7)"} /> : null}
+                      {mine ? (message.status === "failed"
+                        ? <MaterialCommunityIcons name="alert-circle" size={13} color="#FFD9D0" />
+                        : <MaterialCommunityIcons name={message.read ? "check-all" : "check"} size={13} color={message.read ? "#E6FBF7" : "rgba(255,255,255,0.7)"} />) : null}
                     </View>
                   ) : null}
                 </View>
+                {mine && message.status === "failed" ? (
+                  <Pressable accessibilityRole="button" onPress={() => retryMessage(message.id)} style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, marginTop: 3, opacity: pressed ? 0.7 : 1 })}>
+                    <MaterialCommunityIcons name="refresh" size={12} color={colors.accent} />
+                    <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "800" }}>{translateCopy("Gönderilemedi · tekrar dene", language)}</Text>
+                  </Pressable>
+                ) : null}
               </View>
             </View>
           );
@@ -333,7 +361,7 @@ function ChatScreenInner() {
 
       {/* Hızlı yanıt önerileri — kutu boşken ve odak yokken. Odaklanınca gizlenir ki
           yazmaya başlayınca ekran "zıplamasın" (kayma tek seferde klavye açılışına biner). */}
-      {!inputFocused && !body.trim() ? (
+      {!blockedHere && !inputFocused && !body.trim() ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingVertical: 8 }} style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, maxHeight: 52 }}>
           <Pressable onPress={() => setBody(translateCopy("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?", language))} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
             <MaterialCommunityIcons name="handshake-outline" size={13} color={colors.primaryDark} />
@@ -355,6 +383,14 @@ function ChatScreenInner() {
         </ScrollView>
       ) : null}
 
+      {blockedHere ? (
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingBottom: insets.bottom > 0 ? insets.bottom : 14, paddingHorizontal: 16, paddingTop: 14 }}>
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", textAlign: "center" }}>{translateCopy("Bu kullanıcıyı engelledin. Mesajlaşmak için engeli kaldır.", language)}</Text>
+          <Pressable accessibilityRole="button" onPress={() => otherId && void unblockUser(otherId)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 10 })}>
+            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Engeli kaldır", language)}</Text>
+          </Pressable>
+        </View>
+      ) : (
       <View style={{ alignItems: "flex-end", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, paddingBottom: insets.bottom > 0 ? insets.bottom : 10, paddingHorizontal: 10, paddingTop: 10 }}>
         <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Görsel ekle", language)} disabled={attaching} onPress={() => void attachImage()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}>
           <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} />
@@ -380,6 +416,7 @@ function ChatScreenInner() {
           <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
         </Pressable>
       </View>
+      )}
 
       {/* Görsel lightbox: sohbetteki görsele dokununca uygulama içinde tam ekran aç (tarayıcıya atmadan). */}
       <Modal visible={lightboxUri !== null} transparent animationType="fade" onRequestClose={() => setLightboxUri(null)}>

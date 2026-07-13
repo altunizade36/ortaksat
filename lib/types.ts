@@ -227,6 +227,8 @@ export type Message = {
   attachmentUrl?: string;
   attachmentType?: "image" | "file";
   attachmentName?: string;
+  // Yalnız istemci: gönderim başarısızsa "failed" (DB'ye yazılmaz). Tekrar-dene UX'i için.
+  status?: "failed";
 };
 
 // Bildirimin ilgili olduğu kayıtlar (derin link için). DB trigger notify_on_lead

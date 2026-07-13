@@ -241,6 +241,7 @@ function DesktopActions() {
   const items: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href; badge?: number }> = [
     { icon: "plus-box-outline", label: "İlan Ver", href: "/create" },
     { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
+    { icon: "storefront-check-outline", label: "Takip Ettiklerin", href: "/following" as Href },
     { icon: "message-text-outline", label: "Mesajlar", href: "/messages", badge: unreadMessages },
     { icon: "bell-outline", label: "Bildirimler", href: "/notifications-tab", badge: unreadNotifications }
   ];
@@ -300,6 +301,7 @@ function AccountMenu() {
       { icon: "handshake-outline", label: "Ortak Satışlarım", href: "/partner" },
       { icon: "cash-multiple", label: "Kazançlarım", href: "/earnings" },
       { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
+      { icon: "storefront-check-outline", label: "Takip Ettiklerin", href: "/following" as Href },
       { icon: "message-text-outline", label: "Mesajlarım", href: "/messages", badge: unreadMessages }
     ],
     [
