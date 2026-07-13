@@ -9,7 +9,15 @@
         "components": [
           {
             "/": "/i/*",
-            "comment": "Ortaksat ortak satış referral linkleri"
+            "comment": "Ortak satış referral linkleri (para-kritik: atıf uygulamada da korunsun)"
+          },
+          {
+            "/": "/listing/*",
+            "comment": "İlan detay linkleri — paylaşımlar bu formatta üretiliyor"
+          },
+          {
+            "/": "/onay/*",
+            "comment": "Alıcı satış onayı (tokenlı, giriş gerekmez)"
           }
         ]
       }

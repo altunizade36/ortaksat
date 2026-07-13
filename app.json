@@ -12,7 +12,8 @@
       "buildNumber": "1",
       "supportsTablet": true,
       "associatedDomains": [
-        "applinks:ortaksat.com"
+        "applinks:ortaksat.com",
+        "applinks:www.ortaksat.com"
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
@@ -37,6 +38,31 @@
               "scheme": "https",
               "host": "ortaksat.com",
               "pathPrefix": "/i"
+            },
+            {
+              "scheme": "https",
+              "host": "ortaksat.com",
+              "pathPrefix": "/listing"
+            },
+            {
+              "scheme": "https",
+              "host": "ortaksat.com",
+              "pathPrefix": "/onay"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ortaksat.com",
+              "pathPrefix": "/i"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ortaksat.com",
+              "pathPrefix": "/listing"
+            },
+            {
+              "scheme": "https",
+              "host": "www.ortaksat.com",
+              "pathPrefix": "/onay"
             }
           ],
           "category": [

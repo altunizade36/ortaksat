@@ -9,6 +9,7 @@ import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-na
 import { CategoryPicker } from "@/components/category-picker";
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
+import { OptionSheet } from "@/components/option-sheet";
 import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -1129,8 +1130,20 @@ function DSelect({ label, value, options, onChange, placeholder }: { label: stri
         <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || placeholder || translateCopy("Seçin", language)}</Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
       </Pressable>
-      {/* Inline açılır liste: alttaki alanların ÜSTÜNE binmez, onları aşağı iter (mobil dahil sorunsuz). */}
-      {open ? (
+      {/* NATIVE: alttan açılan seçim sayfası — liste konumdan bağımsız TAM görünür olur
+          (native'de ScrollView otomatik kaymadığı için inline liste ekran dışında kalabiliyordu). */}
+      {Platform.OS !== "web" ? (
+        <OptionSheet
+          visible={open}
+          title={label || placeholder || translateCopy("Seçin", language)}
+          options={options}
+          value={value}
+          onSelect={onChange}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
+      {/* WEB: inline açılır liste (alttakileri aşağı iter) + açılışta görünür alana kaydırma. */}
+      {open && Platform.OS === "web" ? (
         <View dataSet={{ openlist: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 11, borderWidth: 1, marginTop: 4, maxHeight: 240, overflow: "hidden" }}>
           <ScrollView style={{ maxHeight: 240 }} nestedScrollEnabled keyboardShouldPersistTaps="handled">
             {options.map((o) => (

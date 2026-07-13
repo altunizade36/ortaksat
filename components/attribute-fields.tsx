@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Platform, Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { OptionSheet } from "@/components/option-sheet";
 import { modelsForSchema, type FieldDef } from "@/lib/category-tree";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 
@@ -95,7 +96,18 @@ function ASelect({ value, options, onChange }: { value: string; options: string[
         <Text style={{ color: value ? colors.ink : colors.subtle, flex: 1, fontSize: 13.5, fontWeight: value ? "700" : "500" }}>{value || translateCopy("Seçin", language)}</Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
       </Pressable>
-      {open ? (
+      {/* NATIVE: alttan açılan seçim sayfası (absolute liste native'de ekran dışında kalıyordu). */}
+      {Platform.OS !== "web" ? (
+        <OptionSheet
+          visible={open}
+          title={translateCopy("Seçin", language)}
+          options={options}
+          value={value}
+          onSelect={onChange}
+          onClose={() => setOpen(false)}
+        />
+      ) : null}
+      {open && Platform.OS === "web" ? (
         <>
           <Pressable onPress={() => setOpen(false)} style={{ bottom: -2000, left: -2000, position: "absolute", right: -2000, top: -2000, zIndex: 900 }} />
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, left: 0, maxHeight: 260, position: "absolute", right: 0, shadowColor: "#101828", shadowOffset: { width: 0, height: 10 }, shadowOpacity: 0.16, shadowRadius: 20, top: 52, zIndex: 1000 }}>

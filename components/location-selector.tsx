@@ -3,6 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { OptionSheet } from "@/components/option-sheet";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { districtsOfProvince, locKey, provinces, searchDistricts, searchProvinces } from "@/lib/locations";
 import { fetchNeighborhoods, type Neighborhood } from "@/lib/location-service";
@@ -232,7 +233,23 @@ function ComboBox({
         )}
       </Pressable>
 
-      {open ? (
+      {/* NATIVE: alttan açılan seçim sayfası + arama (81 il / ilçeler konumdan bağımsız tam görünür). */}
+      {Platform.OS !== "web" ? (
+        <OptionSheet
+          visible={open}
+          title={label}
+          options={search("").map((r) => r.label)}
+          value={valueLabel}
+          onSelect={(name) => {
+            if (!name) { onClear?.(); return; }
+            const hit = search("").find((r) => r.label === name);
+            if (hit) onSelect(hit.id);
+          }}
+          onClose={() => setOpen(false)}
+          searchable
+        />
+      ) : null}
+      {open && Platform.OS === "web" ? (
         <View dataSet={{ openloc: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, marginTop: 2, maxHeight: 320, overflow: "hidden" }}>
           <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
             <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />

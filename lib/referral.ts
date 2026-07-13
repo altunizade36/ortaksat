@@ -6,8 +6,10 @@
 // Burada ilan bazında { partnershipId, refCode } TTL'li saklanır; alıcı ilan
 // detayında satıcıyla iletişime geçince bu atıf üzerinden lead ortağa bağlanır.
 //
-// Web'de localStorage; native'de (veya storage yoksa) oturum-içi bellek fallback.
+// Web: localStorage (senkron). NATIVE: AsyncStorage (kalıcı) + bellek cache ile senkron API.
 // Ödeme/checkout YOK — yalnızca lead atfı için kullanılır.
+import AsyncStorage from "@react-native-async-storage/async-storage";
+
 
 const KEY = "ortaksat_ref_v1";
 // Atıf penceresi: 30 gün. "Kısa süreli" saklama; süresi geçen atıf sessizce yok sayılır.
@@ -22,11 +24,28 @@ function isExpired(v: RefEntry, now: number): boolean {
 }
 type RefMap = Record<string, RefEntry>; // listingId -> entry
 
-// Native / storage olmadığında oturum süresince tutulan yedek.
+// Bellek-içi cache: API senkron kalsın diye (getRefAttribution senkron çağrılıyor).
+// Web'de localStorage'dan senkron doldurulur; NATIVE'de AsyncStorage'dan async hidrate edilir.
 let memoryMap: RefMap = {};
 
 function hasStorage(): boolean {
   return typeof window !== "undefined" && !!window.localStorage;
+}
+
+// NATIVE KALICILIK (kritik): eskiden native'de atıf YALNIZCA bellekteydi → uygulama
+// kapanınca ortağın referans kredisi KAYBOLUYORDU (para modelinin kalbi). Artık
+// AsyncStorage'a yazılır ve açılışta geri yüklenir (recent.ts ile aynı desen).
+if (!hasStorage()) {
+  AsyncStorage.getItem(KEY)
+    .then((raw) => {
+      try {
+        const obj = raw ? (JSON.parse(raw) as unknown) : {};
+        if (obj && typeof obj === "object" && !Array.isArray(obj)) memoryMap = obj as RefMap;
+      } catch {
+        // bozuk kayıt → yok say
+      }
+    })
+    .catch(() => {});
 }
 
 function readAll(): RefMap {
@@ -42,7 +61,11 @@ function readAll(): RefMap {
 
 function writeAll(map: RefMap): void {
   memoryMap = map;
-  if (!hasStorage()) return;
+  if (!hasStorage()) {
+    // native: kalıcı yaz (fire-and-forget; bellek cache zaten güncel)
+    AsyncStorage.setItem(KEY, JSON.stringify(map)).catch(() => {});
+    return;
+  }
   try {
     window.localStorage.setItem(KEY, JSON.stringify(map));
   } catch {
