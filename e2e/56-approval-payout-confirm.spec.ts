@@ -175,12 +175,29 @@ test("ONAY-MODLU ORTAKLIK + KOMİSYON ÖDEME DÖNGÜSÜ + ALICI ONAYI", async ({
   // ========== 6) ORTAK "ALDIM" onaylar → paid ==========
   await logout(page);
   await login(page, partnerEmail);
-  // "Ödemeyi Aldım" butonu ORTAK PANELİNDE (partner.tsx), /earnings'te değil.
+  // ARTIK KAZANÇ SAYFASINDA DA olmalı → önce /earnings'te dene.
+  await page.goto("/earnings", { waitUntil: "domcontentloaded" });
+  await page.waitForTimeout(9000);
+  const kazancAldim = page.getByText(/Ödemeyi Aldım/i).first();
+  console.log(`6a) KAZANÇ SAYFASINDA "Ödemeyi Aldım": ${(await kazancAldim.count()) > 0 ? "VAR ✓" : "YOK ✗"}`);
+  if (await kazancAldim.count()) {
+    await kazancAldim.scrollIntoViewIfNeeded().catch(() => {});
+    await kazancAldim.tap({ timeout: 8000 }).catch(() => {});
+    await page.waitForTimeout(5000);
+    const cc = await one<Record<string, unknown>>(`select status from commissions where id='${commissionId}'`);
+    console.log(`    DB (kazanç sayfasından onay): status=${cc?.status} → ${cc?.status === "paid" ? "DOĞRU ✓" : "YANLIŞ ✗"}`);
+  }
+
   await page.goto("/partner", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(9000);
   await page.screenshot({ path: "e2e-artifacts/ap-3-ortak-panel.png" });
+  // NOT: komisyon 6a'da (kazanç sayfasından) zaten 'paid' yapıldıysa buton BURADA OLMAMALI —
+  // bu DOĞRU davranıştır (onaylanmış ödeme tekrar onaylanamaz). Bu yüzden "YOK" beklenen sonuç.
+  const zatenPaid = (await one<Record<string, unknown>>(`select status from commissions where id='${commissionId}'`))?.status === "paid";
   const aldimBtn = page.getByText(/Ödemeyi Aldım|Çözüldü · Aldım/i).first();
-  console.log(`6) ORTAK    → "Ödemeyi aldım" butonu: ${(await aldimBtn.count()) > 0 ? "VAR ✓" : "YOK ✗"}`);
+  const varMi = (await aldimBtn.count()) > 0;
+  console.log(`6) ORTAK PANELİ → buton ${varMi ? "VAR" : "YOK"} | komisyon zaten paid mi: ${zatenPaid} → ${zatenPaid && !varMi ? "DOĞRU ✓ (onaylanmış ödeme tekrar onaylanamaz)" : varMi ? "onaylanabilir ✓" : "?"}`);
+  if (zatenPaid) return; // döngü 6a'da tamamlandı
   await aldimBtn.scrollIntoViewIfNeeded().catch(() => {});
   await aldimBtn.tap({ timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(2000);

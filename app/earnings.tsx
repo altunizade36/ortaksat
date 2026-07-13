@@ -6,7 +6,7 @@ import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "rea
 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
-import { Card, EmptyState } from "@/components/ui";
+import { Card, EmptyState, PrimaryButton } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -39,7 +39,7 @@ function saleDate(s: { paidAt?: string; approvedAt?: string; createdAt?: string 
 
 function EarningsScreenInner() {
   const { language } = useLanguage();
-  const { currentUser, findListing, partnerships, refreshUserData, sales } = useStore();
+  const { currentUser, findListing, partnerships, refreshUserData, sales, updateSaleStatus } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const isWideWeb = useIsWideWeb();
   const [period, setPeriod] = useState<"month" | "quarter" | "year">("month");
@@ -289,6 +289,27 @@ function EarningsScreenInner() {
                 <View style={{ backgroundColor: meta.tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: meta.color, fontSize: 10.5, fontWeight: "900" }}>{translateCopy(meta.label, language)}</Text></View>
               </View>
             </View>
+
+            {/* ÖDEME MUTABAKATI KAZANÇ SAYFASINDA DA: satıcı "ödedim" dedikten sonra (seller_paid)
+                ortağın "Ödemeyi Aldım" onayı komisyonu 'paid' yapar — döngünün son halkası.
+                Bu aksiyon yalnızca ortak panelinde vardı; ortak, KAZANÇ sayfasında ödemesini
+                görüyor ama onaylayamıyordu (tutarsızlık). Kural ortak paneliyle AYNI. */}
+            {t.status === "seller_paid" || t.status === "disputed" ? (
+              <View style={{ flexDirection: "row", gap: 8, marginTop: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <PrimaryButton tone="soft" onPress={() => updateSaleStatus(t.id, "paid")}>
+                    {t.status === "disputed" ? translateCopy("Çözüldü · Aldım", language) : translateCopy("Ödemeyi Aldım", language)}
+                  </PrimaryButton>
+                </View>
+                {t.status !== "disputed" ? (
+                  <View style={{ flex: 1 }}>
+                    <PrimaryButton tone="secondary" onPress={() => updateSaleStatus(t.id, "disputed")}>
+                      {translateCopy("Sorun bildir", language)}
+                    </PrimaryButton>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
           </Card>
         );
       })}
