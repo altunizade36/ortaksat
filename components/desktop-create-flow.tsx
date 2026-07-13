@@ -234,23 +234,49 @@ export function DesktopCreateFlow() {
     setPendingDraft(null);
   };
 
-  async function pickFromGallery() {
-    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
-    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.85, selectionLimit: MAX_PHOTOS });
-    if (result.canceled) return;
-    const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
-    const tooBig = result.assets.some((a) => typeof a.fileSize === "number" && a.fileSize > MAX_BYTES);
+  const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+
+  /** Seçilen görselleri (boyut sınırı + adet sınırı ile) listeye ekler. Galeri ve kamera ortak kullanır. */
+  function addAssets(assets: Array<{ uri: string; fileSize?: number }>) {
+    const tooBig = assets.some((a) => typeof a.fileSize === "number" && a.fileSize > MAX_BYTES);
     if (tooBig) setError(translateCopy("Bazı görseller 5 MB sınırını aşıyor ve eklenmedi. Lütfen daha küçük dosyalar seçin.", language));
-    const uris = result.assets
+    const uris = assets
       .filter((a) => !(typeof a.fileSize === "number" && a.fileSize > MAX_BYTES))
       .map((a) => a.uri)
       .filter(Boolean);
+    if (!uris.length) return;
     setImages((s) => {
       const next = [...s, ...uris].slice(0, MAX_PHOTOS);
       if (s.length + uris.length > MAX_PHOTOS) setError(translateCopy(`En fazla ${MAX_PHOTOS} görsel ekleyebilirsin. Fazlası eklenmedi.`, language));
       return next;
     });
+  }
+
+  async function pickFromGallery() {
+    const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!perm.granted) {
+      setError(translateCopy("Galeri izni verilmedi. Ayarlardan izin verip tekrar dene.", language));
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.85, selectionLimit: MAX_PHOTOS });
+    if (result.canceled) return;
+    addAssets(result.assets);
+  }
+
+  /**
+   * KAMERA (mobil): ürünü anında çekip ilana ekle. Eskiden yalnız galeri vardı —
+   * mobilde ilan verirken en doğal yol telefonla fotoğrafı O AN çekmek.
+   * Web'de kamera akışı yok (tarayıcı dosya seçici zaten galeriyi kapsar) → buton gizli.
+   */
+  async function captureFromCamera() {
+    const perm = await ImagePicker.requestCameraPermissionsAsync();
+    if (!perm.granted) {
+      setError(translateCopy("Kamera izni verilmedi. Ayarlardan izin verip tekrar dene.", language));
+      return;
+    }
+    const result = await ImagePicker.launchCameraAsync({ mediaTypes: ["images"], quality: 0.85 });
+    if (result.canceled) return;
+    addAssets(result.assets);
   }
 
   // Adım-1 kapısı yalnızca "boş değil"e bakınca kısa (otomatik-önerilen) başlık adımı
@@ -656,10 +682,24 @@ export function DesktopCreateFlow() {
           <View style={{ gap: 14 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Fotoğraflar", language)}</Text>
             <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En az 1, en fazla 5 görsel ekle. İlk görsel kapak olur. Fotoğraflar otomatik ölçeklenir — format/boyutla uğraşmana gerek yok.", language)}</Text>
-            <Pressable onPress={() => void pickFromGallery()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 11 }}>
-              <MaterialCommunityIcons name="image-multiple-outline" size={17} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Galeriden / cihazdan seç", language)}</Text>
-            </Pressable>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              {/* MOBİL: ürünü O AN çek (eskiden yalnız galeri vardı — telefonla ilan verenin en doğal yolu). */}
+              {Platform.OS !== "web" ? (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel={translateCopy("Fotoğraf çek", language)}
+                  onPress={() => void captureFromCamera()}
+                  style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, minHeight: 48, paddingHorizontal: 16 }}
+                >
+                  <MaterialCommunityIcons name="camera-outline" size={18} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{translateCopy("Fotoğraf çek", language)}</Text>
+                </Pressable>
+              ) : null}
+              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Galeriden / cihazdan seç", language)} onPress={() => void pickFromGallery()} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 7, minHeight: 48, paddingHorizontal: 16 }}>
+                <MaterialCommunityIcons name="image-multiple-outline" size={17} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Galeriden / cihazdan seç", language)}</Text>
+              </Pressable>
+            </View>
             <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("veya görsel adresi yapıştır:", language)}</Text>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <TextInput value={imageDraft} onChangeText={setImageDraft} placeholder="https://…/foto.jpg" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 46, paddingHorizontal: 12 }} />

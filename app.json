@@ -17,7 +17,8 @@
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSPhotoLibraryUsageDescription": "Ortaksat ilan fotoğrafı seçmek için galeri erişimi ister."
+        "NSPhotoLibraryUsageDescription": "OrtakSat ilan fotoğrafı seçmek için galeri erişimi ister.",
+        "NSCameraUsageDescription": "OrtakSat, ilan fotoğrafını doğrudan çekebilmen için kamera erişimi ister."
       }
     },
     "android": {
@@ -71,14 +72,17 @@
           ]
         }
       ],
-      "permissions": []
+      "permissions": [
+        "CAMERA"
+      ]
     },
     "plugins": [
       "expo-router",
       [
         "expo-image-picker",
         {
-          "photosPermission": "Ortaksat ilan fotoğrafı seçmek için galeri erişimi ister."
+          "photosPermission": "OrtakSat ilan fotoğrafı seçmek için galeri erişimi ister.",
+          "cameraPermission": "OrtakSat, ilan fotoğrafını doğrudan çekebilmen için kamera erişimi ister."
         }
       ],
       [

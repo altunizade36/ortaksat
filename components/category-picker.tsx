@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -7,6 +7,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getFormSchema, resolveFormKey, suggestCategories, type CategoryNode } from "@/lib/category-tree";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
+import { getRecentCategories, pushRecentCategory, subscribeRecentCategories, type RecentCategory } from "@/lib/recent-categories";
 import { useStore } from "@/lib/use-store";
 
 /**
@@ -34,13 +35,36 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
   const hasChildren = !!(current?.children && current.children.length);
   const canFinalizeHere = trail.length >= 2 && (!hasChildren || currentFormKey !== "alisverisGenel");
 
+  // SON KULLANILAN KATEGORİLER: aynı satıcı çoğunlukla aynı kategoride tekrar ilan
+  // veriyor; 4594 yapraklı ağacı her seferinde gezmesin diye çip olarak sunulur.
+  const [recents, setRecents] = useState<RecentCategory[]>([]);
+  useEffect(() => { setRecents(getRecentCategories()); return subscribeRecentCategories(setRecents); }, []);
+
+  /** Seçim kesinleşince hem forma geç hem "son kullanılan"a yaz. */
+  const finalize = (path: CategoryNode[]) => {
+    pushRecentCategory({ slugs: path.map((n) => n.slug), labels: path.map((n) => n.label) });
+    onChange(path);
+  };
+  /** Çipten seçim: kayıtlı slug yolunu ağaçta yeniden çöz (ağaç değişmişse sessizce atla). */
+  const pickRecent = (rc: RecentCategory) => {
+    const path: CategoryNode[] = [];
+    let level = categoryTree;
+    for (const slug of rc.slugs) {
+      const hit = level.find((n) => n.slug === slug || n.key === slug);
+      if (!hit) return;
+      path.push(hit);
+      level = hit.children ?? [];
+    }
+    if (path.length) finalize(path);
+  };
+
   const pickTop = (n: CategoryNode) => { setTrail([n]); setQuery(""); };
   const pickChild = (n: CategoryNode) => {
     const next = [...trail, n];
     if (n.children && n.children.length) setTrail(next);
-    else onChange(next); // leaf → finalize
+    else finalize(next); // leaf → finalize
   };
-  const selectCurrent = () => { if (trail.length >= 2) onChange(trail); };
+  const selectCurrent = () => { if (trail.length >= 2) finalize(trail); };
   const goTo = (idx: number) => setTrail(trail.slice(0, idx + 1));
 
   const previewPath = finalized ? value : trail;
@@ -72,7 +96,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
         {suggestions.length ? (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, overflow: "hidden" }}>
             {suggestions.map((s) => (
-              <Pressable key={s.labels.join(">")} onPress={() => { onChange(s.path); setQuery(""); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 11 })}>
+              <Pressable key={s.labels.join(">")} onPress={() => { finalize(s.path); setQuery(""); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 11 })}>
                 <MaterialCommunityIcons name="tag-arrow-right-outline" size={18} color={colors.primary} />
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy(s.labels[s.labels.length - 1], language)}</Text>
@@ -103,6 +127,28 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
               <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
             </Pressable>
           ) : null}
+        </View>
+      ) : null}
+
+      {!finalized && !top && !query.trim() && recents.length ? (
+        <View style={{ gap: 7 }}>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Son kullandığın kategoriler", language)}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+            {recents.map((rc) => (
+              <Pressable
+                key={rc.slugs.join(">")}
+                accessibilityRole="button"
+                accessibilityLabel={rc.labels.join(" › ")}
+                onPress={() => pickRecent(rc)}
+                style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 40, paddingHorizontal: 13 })}
+              >
+                <MaterialCommunityIcons name="history" size={14} color={colors.primaryDark} />
+                <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800", maxWidth: 220 }}>
+                  {rc.labels[rc.labels.length - 1]}
+                </Text>
+              </Pressable>
+            ))}
+          </View>
         </View>
       ) : null}
 
