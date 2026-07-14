@@ -97,7 +97,7 @@ function SellerScreenInner() {
     refreshMarketplace,
     refreshUserData,
     offers,
-    respondToOffer
+    sellerRespondOffer
   } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(() => Promise.all([refreshMarketplace(), refreshUserData()]));
   const [query, setQuery] = useState("");
@@ -144,6 +144,8 @@ function SellerScreenInner() {
   }, [partnershipIdsKey]);
   const myLeads = leads.filter((lead) => myListingIds.has(lead.listingId));
   // Yanıt bekleyen teklifler (en yenisi üstte) — satıcının en aksiyon-gerektiren işi.
+  const [counterFor, setCounterFor] = useState<string | null>(null);
+  const [counterAmount, setCounterAmount] = useState("");
   const pendingOffers = offers
     .filter((o) => o.sellerId === currentUser.id && o.status === "pending")
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -391,7 +393,7 @@ function SellerScreenInner() {
                         `${moneyIn(o.amount, l?.currency)} ${translateCopy("teklifini kabul ediyorsun. Alıcı bilgilendirilecek; ödeme ve teslimatı onunla doğrudan yaparsın.", language)}`,
                         [
                           { text: translateCopy("Vazgeç", language), style: "cancel" },
-                          { text: translateCopy("Kabul Et", language), onPress: () => void respondToOffer(o.id, "accepted") }
+                          { text: translateCopy("Kabul Et", language), onPress: () => void sellerRespondOffer(o.id, "accepted") }
                         ]
                       )}
                       style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.success, borderRadius: 9, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
@@ -401,11 +403,19 @@ function SellerScreenInner() {
                     </Pressable>
                     <Pressable
                       accessibilityRole="button"
-                      onPress={() => void respondToOffer(o.id, "rejected")}
+                      onPress={() => void sellerRespondOffer(o.id, "rejected")}
                       style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
                     >
                       <MaterialCommunityIcons name="close" size={15} color={colors.muted} />
                       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Reddet", language)}</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => { setCounterFor(o.id); setCounterAmount(""); }}
+                      style={({ pressed }) => ({ alignItems: "center", borderColor: colors.primary, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
+                    >
+                      <MaterialCommunityIcons name="swap-horizontal" size={15} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Karşı Teklif", language)}</Text>
                     </Pressable>
                     <Pressable
                       accessibilityRole="button"
@@ -416,6 +426,36 @@ function SellerScreenInner() {
                       <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Mesaj", language)}</Text>
                     </Pressable>
                   </View>
+                  {counterFor === o.id ? (
+                    <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 10 }}>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Karşı teklif tutarın (₺)", language)}</Text>
+                      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                        <TextInput
+                          value={counterAmount}
+                          onChangeText={(t) => setCounterAmount(t.replace(/[^0-9.,]/g, ""))}
+                          keyboardType="numeric"
+                          autoFocus
+                          placeholder={l ? String(l.price) : "0"}
+                          placeholderTextColor={colors.subtle}
+                          style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 15, fontWeight: "800", minHeight: 42, paddingHorizontal: 10 }}
+                        />
+                        <Pressable
+                          accessibilityRole="button"
+                          onPress={() => {
+                            const amt = parseTrPrice(counterAmount);
+                            if (!(amt > 0)) return;
+                            void sellerRespondOffer(o.id, "countered", amt).then(() => setCounterFor(null));
+                          }}
+                          style={({ pressed }) => ({ backgroundColor: colors.primary, borderRadius: 9, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 11 })}
+                        >
+                          <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Gönder", language)}</Text>
+                        </Pressable>
+                        <Pressable accessibilityRole="button" onPress={() => setCounterFor(null)} hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, padding: 6 })}>
+                          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text>
+                        </Pressable>
+                      </View>
+                    </View>
+                  ) : null}
                 </View>
               );
             })}

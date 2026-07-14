@@ -1249,14 +1249,30 @@ export async function fetchOffersLive(): Promise<Offer[]> {
   return (data ?? []).map((r) => mapOffer(r as Record<string, unknown>));
 }
 
-/** Satıcı yanıtlar (kabul/ret/karşı teklif) ya da alıcı geri çeker. */
-export async function respondToOfferLive(offerId: string, status: Offer["status"], counterAmount?: number): Promise<boolean> {
+/**
+ * SATICI yanıtı — kabul / ret / karşı teklif.
+ *
+ * GÜVENLİK: Eskiden istemci `offers` satırını DOĞRUDAN update ediyordu ve RLS
+ * yalnız "taraflardan biri" kontrolü yapıyordu → ALICI kendi teklifini
+ * status='accepted' yapıp amount'u 1 TL'ye çekebiliyordu. Artık tüm durum
+ * geçişleri SECURITY DEFINER RPC'den geçer; kimin neyi yapabileceğini ve
+ * anlaşma tutarını SUNUCU belirler (istemci tutar gönderemez).
+ */
+export async function offerSellerRespondLive(offerId: string, action: "accepted" | "rejected" | "countered", counterAmount?: number): Promise<boolean> {
   if (!supabase) return true;
-  const patch: Record<string, unknown> = { status, responded_at: new Date().toISOString() };
-  if (status === "countered") patch.counter_amount = counterAmount ?? null;
-  const { error } = await supabase.from("offers").update(patch).eq("id", offerId);
-  if (error) { console.warn("offer update failed", error); return false; }
-  return true;
+  const { data, error } = await supabase.rpc("offer_seller_respond", {
+    p_offer_id: offerId, p_action: action, p_counter_amount: counterAmount ?? null
+  });
+  if (error) { console.warn("offer_seller_respond failed", error); return false; }
+  return data === true;
+}
+
+/** ALICI eylemi — geri çek, ya da satıcının karşı teklifini kabul/ret. */
+export async function offerBuyerActionLive(offerId: string, action: "withdrawn" | "accept_counter" | "reject_counter"): Promise<boolean> {
+  if (!supabase) return true;
+  const { data, error } = await supabase.rpc("offer_buyer_action", { p_offer_id: offerId, p_action: action });
+  if (error) { console.warn("offer_buyer_action failed", error); return false; }
+  return data === true;
 }
 
 export async function updateReportStatusLive(report: Report, status: ModerationStatus, resolverId: string) {

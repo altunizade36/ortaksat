@@ -90,7 +90,7 @@ export default function ListingDetailScreen() {
     toggleFavorite,
     offers,
     createOffer,
-    respondToOffer
+    buyerOfferAction
   } = useStore();
   const { has: hasInCompare, toggle: toggleCompare } = useCompare();
   const storeListing = findListing(id);
@@ -880,9 +880,31 @@ export default function ListingDetailScreen() {
                       : translateCopy("Geri çekildi.", language)}
                   </Text>
                   {myOffer.status === "pending" ? (
-                    <Pressable onPress={() => void respondToOffer(myOffer.id, "withdrawn")} accessibilityRole="button" hitSlop={6} style={({ pressed }) => ({ alignSelf: "flex-start", opacity: pressed ? 0.7 : 1, paddingTop: 2 })}>
+                    <Pressable onPress={() => void buyerOfferAction(myOffer.id, "withdrawn")} accessibilityRole="button" hitSlop={6} style={({ pressed }) => ({ alignSelf: "flex-start", opacity: pressed ? 0.7 : 1, paddingTop: 2 })}>
                       <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "900" }}>{translateCopy("Teklifi geri çek", language)}</Text>
                     </Pressable>
+                  ) : null}
+                  {/* Satıcı karşı teklif verdiyse alıcı yanıtlayabilmeli — yoksa akış burada tıkanıyordu. */}
+                  {myOffer.status === "countered" ? (
+                    <View style={{ flexDirection: "row", gap: 8, paddingTop: 4 }}>
+                      <Pressable
+                        accessibilityRole="button"
+                        testID="offer-accept-counter"
+                        onPress={() => void buyerOfferAction(myOffer.id, "accept_counter")}
+                        style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.success, borderRadius: 9, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
+                      >
+                        <MaterialCommunityIcons name="check" size={15} color="#FFFFFF" />
+                        <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Kabul Et", language)}</Text>
+                      </Pressable>
+                      <Pressable
+                        accessibilityRole="button"
+                        testID="offer-reject-counter"
+                        onPress={() => void buyerOfferAction(myOffer.id, "reject_counter")}
+                        style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
+                      >
+                        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Reddet", language)}</Text>
+                      </Pressable>
+                    </View>
                   ) : null}
                 </View>
               ) : (

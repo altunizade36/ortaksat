@@ -35,7 +35,8 @@ import {
   fetchBlockedUsers,
   createOfferLive,
   fetchOffersLive,
-  respondToOfferLive,
+  offerSellerRespondLive,
+  offerBuyerActionLive,
   loadMyFollowsLive,
   insertFavorite,
   insertLead,
@@ -307,7 +308,8 @@ type AppStore = {
   toggleFollow: (sellerId: string) => void;
   offers: Offer[];
   createOffer: (listingId: string, sellerId: string, amount: number, note?: string) => Promise<{ ok: boolean; error?: string }>;
-  respondToOffer: (offerId: string, status: Offer["status"], counterAmount?: number) => Promise<boolean>;
+  sellerRespondOffer: (offerId: string, action: "accepted" | "rejected" | "countered", counterAmount?: number) => Promise<boolean>;
+  buyerOfferAction: (offerId: string, action: "withdrawn" | "accept_counter" | "reject_counter") => Promise<boolean>;
   blockedUserIds: string[];
   isUserBlocked: (userId: string) => boolean;
   blockUser: (userId: string) => Promise<void>;
@@ -2030,12 +2032,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (res.ok) setOffers(await fetchOffersLive()); // sunucudan tazele (id/created_at gerçek)
         return res;
       },
-      async respondToOffer(offerId, status, counterAmount) {
-        const prev = offers;
-        setOffers((items) => items.map((o) => (o.id === offerId ? { ...o, status, counterAmount: status === "countered" ? counterAmount : o.counterAmount } : o)));
-        const ok = await respondToOfferLive(offerId, status, counterAmount);
-        if (!ok) { setOffers(prev); setSyncError("Teklif yanıtlanamadı. Tekrar dene."); }
-        return ok;
+      // SATICI: kabul / ret / karşı teklif. Durum geçişini SUNUCU zorlar (RPC).
+      async sellerRespondOffer(offerId, action, counterAmount) {
+        const ok = await offerSellerRespondLive(offerId, action, counterAmount);
+        if (!ok) { setSyncError("Teklif yanıtlanamadı. Tekrar dene."); return false; }
+        setOffers(await fetchOffersLive()); // gerçek durum/tutar sunucudan
+        return true;
+      },
+      // ALICI: geri çek, ya da karşı teklifi kabul/ret. Kabul edilirse anlaşma tutarını
+      // SUNUCU yazar (counter_amount) — istemci tutar gönderemez.
+      async buyerOfferAction(offerId, action) {
+        const ok = await offerBuyerActionLive(offerId, action);
+        if (!ok) { setSyncError("İşlem yapılamadı. Tekrar dene."); return false; }
+        setOffers(await fetchOffersLive());
+        return true;
       },
       blockedUserIds,
       isUserBlocked(userId) {
