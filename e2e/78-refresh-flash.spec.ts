@@ -1,4 +1,4 @@
-import { test, devices } from "@playwright/test";
+import { test, expect, devices } from "@playwright/test";
 import fs from "node:fs";
 
 /**
@@ -56,4 +56,23 @@ test("YENİLEME: mobil keşfet", async ({ browser }) => {
   const page = await ctx.newPage();
   await capture(page, "/explore", "mobil-kesfet");
   await ctx.close();
+});
+
+/**
+ * GERİLEME KORUMASI: yenilemede SSG taslağının çıplak boyanmasını engelleyen iki şart.
+ * Bunlar bozulursa kullanıcı yine "arkada saçma sapan sayfalar" görür.
+ */
+test("YENİLEME KORUMASI: iskelet HTML'de var ve atlanmıyor", async ({ request }) => {
+  const html = await (await request.get("/")).text();
+
+  // 1) İskelet ekranı statik HTML'in İÇİNDE olmalı (ilk boyamayı o karşılar).
+  expect(html, "boot-splash iskeleti HTML'de olmalı").toContain('id="boot-splash"');
+  expect(html, "iskelet gövdesi (grid) olmalı").toContain("bs-grid");
+
+  // 2) Eski "aynı oturumdaysa iskeleti atla" mantığı GERİ GELMEMELİ — asıl hata oydu:
+  //    yenilemede örtü kalkınca tarayıcı yanlış/ikonsuz taslağı çıplak boyuyordu.
+  expect(html, "sessionStorage ile iskeleti atlama mantığı geri gelmiş").not.toContain("ortaksat_booted");
+
+  // 3) İskelet, window.load ile değil; React gerçek düzeni basınca (app-ready) kalkmalı.
+  expect(html, "app-ready tetiği olmalı").toContain("app-ready");
 });
