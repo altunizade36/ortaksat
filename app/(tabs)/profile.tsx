@@ -24,13 +24,16 @@ function isImageAvatar(value: string) {
 }
 
 function ProfileScreenInner() {
-  const { backendMode, conversations, currentUser, favorites, leads, listings, messages, notifications, partnerships, refreshUserData, reports, reviews, sales, signOut } = useStore();
+  const { backendMode, conversations, currentUser, favorites, leads, listings, messages, notifications, offers, partnerships, refreshUserData, reports, reviews, sales, signOut } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const { language, t } = useLanguage();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id);
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
   const myFavorites = favorites.filter((favorite) => favorite.userId === currentUser.id);
+  // Verdiğim teklifler — satıcının listesi vardı, alıcının yoktu.
+  const myOffers = offers.filter((o) => o.buyerId === currentUser.id);
+  const liveOffers = myOffers.filter((o) => o.status === "pending" || o.status === "countered");
   const reviewsByMe = reviews.filter((review) => review.reviewerId === currentUser.id);
   const reviewsAboutMe = reviews.filter((review) => review.reviewedUserId === currentUser.id);
   const activeListings = myListings.filter((listing) => listing.status === "active");
@@ -139,6 +142,7 @@ function ProfileScreenInner() {
               <MenuRow icon="storefront-outline" label="İlanlarım" detail={`${activeListings.length} aktif · ${pausedListings.length} duraklatılmış`} value={`${myListings.length}`} href="/(tabs)/seller" />
               <MenuRow icon="handshake-outline" label="Ortaklıklarım" detail={`${activePartnerships.length} aktif · ${pendingPartnerships.length} bekliyor`} value={`${myPartnerships.length}`} href="/(tabs)/partner" />
               <MenuRow icon="star-outline" label="Değerlendirmeler" detail={`${reviewsAboutMe.length} hakkımda · ${reviewsByMe.length} yazdığım`} value={`${reviewsAboutMe.length + reviewsByMe.length}`} />
+              <MenuRow icon="handshake-outline" label="Tekliflerim" detail={liveOffers.length ? `${liveOffers.length} süren teklif` : "Verdiğin teklifler"} value={`${myOffers.length}`} href="/offers" />
               <MenuRow icon="heart-outline" label="Favoriler" detail="Kaydedilen ilanlar" value={`${myFavorites.length}`} href="/favorites" />
               <MenuRow icon="chat-outline" label="Görüşmeler" detail="Alıcı, satıcı ve ortak mesajları" value={`${myConversations.length}`} href="/(tabs)/messages" />
             </View>

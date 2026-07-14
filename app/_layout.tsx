@@ -85,6 +85,7 @@ function RootStack() {
         <Stack.Screen name="profile-edit" options={{ presentation: "modal", title: t("editProfile") }} />
         <Stack.Screen name="notifications" options={{ title: t("notifications") }} />
         <Stack.Screen name="favorites" options={{ title: t("favorites") }} />
+        <Stack.Screen name="offers" options={{ title: t("myOffers") }} />
         <Stack.Screen name="following" options={{ title: t("following") }} />
         {/* Sohbet: pazaryeri başlığı (logo+arama) yerine sohbete özel kompakt
             başlık kullanılır (ekran kendi başlığını çizer) — dikey alan israfı yok. */}
