@@ -1,4 +1,7 @@
-import { MaterialCommunityIcons as MaterialCommunityIconsBase } from "@expo/vector-icons";
+// ALT-YOLDAN import: barrel ("@expo/vector-icons") BÜTÜN ikon ailelerinin glyph
+// haritalarını bundle'a sokuyordu (FontAwesome6Pro tek başına 654kB) — oysa yalnız
+// MaterialCommunityIcons kullanılıyor. Metro tree-shake etmiyor.
+import MaterialCommunityIconsBase from "@expo/vector-icons/MaterialCommunityIcons";
 import { useEffect, useState, type ComponentProps } from "react";
 import { Platform, Text } from "react-native";
 
