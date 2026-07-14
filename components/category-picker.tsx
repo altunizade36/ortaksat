@@ -78,7 +78,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder={translateCopy("Kategori ara: iPhone, koltuk, araba…", language)}
+            placeholder={translateCopy("Ne satıyorsun? iPhone, koltuk, araba, arsa…", language)}
             placeholderTextColor={colors.subtle}
             style={{ color: colors.ink, flex: 1, fontSize: 14.5, minHeight: 46, paddingVertical: 9 }}
           />
