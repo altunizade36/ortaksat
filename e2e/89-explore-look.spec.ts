@@ -1,4 +1,4 @@
-import { test, devices, type Page } from "@playwright/test";
+import { test, expect, devices, type Page } from "@playwright/test";
 
 const OUT = "e2e-artifacts/explore-look";
 
@@ -23,5 +23,27 @@ test("KEŞFET görünüm (mobil)", async ({ browser }) => {
   const ctx = await browser.newContext({ ...devices["iPhone 13"] });
   const page = await ctx.newPage();
   await shoot(page, "m-explore", "/explore");
+
+  // Kategori filtresi KAPALI başlamalı → çipler görünmemeli; ilk ilan kartı erken gelmeli.
+  const catChipVisible = await page.getByText("Yedek Parça, Aksesuar & Tuning").first().isVisible().catch(() => false);
+  console.log(`kategori çipi (kapalıyken) görünür mü: ${catChipVisible}`);
+  expect(catChipVisible, "kategori çipleri kapalıyken görünmemeli").toBeFalsy();
+
+  // İlk ilan kartı görseli DOM'da olmalı (ilanlar erken)
+  const firstCardTop = await page.evaluate(() => {
+    const img = document.querySelector('img[src*="/demo/"]') as HTMLElement | null;
+    return img ? Math.round(img.getBoundingClientRect().top + window.scrollY) : -1;
+  });
+  console.log(`ilk ilan kartı Y konumu: ${firstCardTop}px`);
+  expect(firstCardTop, "ilk ilan kartı DOM'da olmalı").toBeGreaterThan(0);
+
+  // Başlığa dokun → kategori çipleri açılmalı (işlev korundu)
+  await page.getByText("Kategoriye göre filtrele").first().click();
+  await page.waitForTimeout(700);
+  const catChipAfter = await page.getByText("Yedek Parça, Aksesuar & Tuning").first().isVisible().catch(() => false);
+  console.log(`açınca kategori çipi görünür mü: ${catChipAfter}`);
+  expect(catChipAfter, "başlığa dokununca çipler açılmalı").toBeTruthy();
+  await page.screenshot({ path: `${OUT}/m-explore-opened.png`, fullPage: true }).catch(() => {});
+
   await ctx.close();
 });
