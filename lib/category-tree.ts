@@ -2017,6 +2017,14 @@ function groupThousands(value: number): string {
  * detay sayfası bunları çip listesi olarak ayrı "Özellikler & Donanım" bölümünde,
  * skaler alanları (m²/oda/km/yıl) ise Sahibinden-vari "İlan Bilgileri" kutusunda gösterir.
  */
+// Bilinmeyen (şemada olmayan / eski / hatalı) anahtar için son çare: ham İngilizce
+// anahtarı ("bodyType", "transmission") ekranda GÖSTERME — okunabilir hale getir.
+// Gerçek anahtarların HEPSİ FIELD_LABELS'te Türkçe var; bu yalnız artık-veri koruması.
+function humanizeKey(key: string): string {
+  const spaced = key.replace(/([a-z0-9])([A-Z])/g, "$1 $2").replace(/[_-]+/g, " ").trim();
+  return spaced.charAt(0).toLocaleUpperCase("tr-TR") + spaced.slice(1);
+}
+
 export function describeAttributes(attributes?: Record<string, string | number | boolean | string[]> | null): Array<{ label: string; value: string; items?: string[] }> {
   if (!attributes) return [];
   const rows: Array<{ label: string; value: string; items?: string[] }> = [];
@@ -2032,7 +2040,7 @@ export function describeAttributes(attributes?: Record<string, string | number |
     // Yıl 4 haneli kalmalı ("2018", "2.018" değil).
     const isNumericVal = typeof val === "number" || (typeof val === "string" && /^\d+$/.test(val.trim()));
     if (Array.isArray(val)) {
-      rows.push({ label: def?.label ?? key, value: val.join(", "), items: val.map(String) });
+      rows.push({ label: def?.label ?? humanizeKey(key), value: val.join(", "), items: val.map(String) });
       continue;
     }
     const value = typeof val === "boolean"
@@ -2040,7 +2048,7 @@ export function describeAttributes(attributes?: Record<string, string | number |
       : isNumericVal && key !== "year" && Number(val) >= 1000
         ? `${groupThousands(Number(val))}${suffix}`
         : `${val}${suffix}`;
-    rows.push({ label: def?.label ?? key, value });
+    rows.push({ label: def?.label ?? humanizeKey(key), value });
   }
   return rows;
 }
