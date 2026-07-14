@@ -88,20 +88,27 @@ export default function Root({ children }: PropsWithChildren) {
 
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: responsiveShell }} />
-        {/* YENİLEME FLAŞI DÜZELTMESİ: boot-splash yalnız İLK (soğuk) ziyarette gösterilir.
-            Aynı oturumda yenileme/gezinmede SSG içeriği zaten anında hazır → splash göstermek
-            "renkli içerik → düz açık splash → içerik" flaşı ("şimşek gibi çakma") yaratıyordu.
-            Bu head-script paint'ten ÖNCE çalışır → daha önce açıldıysa splash hiç boyanmaz. */}
-        <script dangerouslySetInnerHTML={{ __html: "(function(){try{if(sessionStorage.getItem('ortaksat_booted'))document.documentElement.className+=' booted';}catch(e){}})();" }} />
+        {/* JS kapalıysa iskelet ekranı gizle — içerik DOM'da zaten var (SEO/crawler güvenli). */}
+        <noscript dangerouslySetInnerHTML={{ __html: "<style>#boot-splash{display:none!important}</style>" }} />
       </head>
       <body>
         {children}
         {/* Açılış ekranı — JS/veri yüklenene kadar boş beyaz sıçrama yerine markalı,
             yumuşak bir yükleme gösterir; uygulama hazır olunca kaybolur. */}
         <div id="boot-splash" aria-hidden="true">
-          <div className="bs-inner">
+          <div className="bs-bar">
             <div className="bs-logo">Ortak<span>Sat</span></div>
-            <div className="bs-spin" />
+            <div className="bs-search" />
+          </div>
+          <div className="bs-nav" />
+          <div className="bs-body">
+            <div className="bs-side" />
+            <div className="bs-main">
+              <div className="bs-hero" />
+              <div className="bs-grid">
+                <i /><i /><i /><i /><i /><i />
+              </div>
+            </div>
           </div>
         </div>
         <script dangerouslySetInnerHTML={{ __html: bootScript }} />
@@ -110,14 +117,17 @@ export default function Root({ children }: PropsWithChildren) {
   );
 }
 
-// Açılış ekranını, JS bundle yüklenip hidrasyon/reflow bittikten SONRA kaldırır —
-// böylece react-native-web'in ilk layout sıçraması kullanıcıya görünmez.
+// Iskelet ekrani, React GERCEK duzeni basana kadar durur. Kaldirma tetigi artik
+// window.load DEGIL, kok duzenin <html class="app-ready"> isaretidir (bkz app/_layout.tsx):
+// SSG taslagi (yanlis duzen/ikonsuz/kartsiz) kullaniciya HIC gorunmez. 8sn guvenlik agi.
 const bootScript =
   "(function(){var s=document.getElementById('boot-splash');if(!s)return;" +
-  "var d=false;function done(){if(d||!s)return;d=true;try{sessionStorage.setItem('ortaksat_booted','1');}catch(e){}s.style.opacity='0';s.style.pointerEvents='none';setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s);},400);}" +
-  "function ready(){requestAnimationFrame(function(){requestAnimationFrame(done);});}" +
-  "if(document.readyState==='complete'){ready();}else{window.addEventListener('load',ready);}" +
-  "setTimeout(done,6000);})();";
+  "var d=false;function done(){if(d)return;d=true;s.style.opacity='0';s.style.pointerEvents='none';" +
+  "setTimeout(function(){if(s&&s.parentNode)s.parentNode.removeChild(s);},260);}" +
+  "if(document.documentElement.classList.contains('app-ready')){done();return;}" +
+  "var mo=new MutationObserver(function(){if(document.documentElement.classList.contains('app-ready')){mo.disconnect();done();}});" +
+  "mo.observe(document.documentElement,{attributes:true,attributeFilter:['class']});" +
+  "setTimeout(function(){mo.disconnect();done();},8000);})();";
 
 // Inter'i render-bloklamadan yükle: <link media="print"> ekle, yüklenince media='all'.
 const fontLoader =
@@ -166,29 +176,59 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* Butonlarda iOS uzun-basış "kopyala/paylaş" balonunu kapat — app hissi. */
 [role="button"], button { -webkit-touch-callout: none; }
 
-/* Bu oturumda daha önce açıldıysa splash HİÇ gösterilmez (yenileme flaşını önler). */
-html.booted #boot-splash { display: none !important; }
-
-/* Açılış ekranı (boot splash) — markalı yumuşak yükleme */
+/* İSKELET EKRAN — SSG taslağının üstünü örter.
+   Statik export'ta sunucu HTML'i ekran genişliğini bilemez: masaüstünde bile dar düzen,
+   ikonsuz ve kartsız bir taslak basılıyor; React 150-250ms sonra gerçek sayfayı geçiriyor.
+   Kullanıcı bunu "arkada saçma sapan sayfalar" olarak görüyordu. Çözüm: taslağı hiç
+   göstermemek — yerine sitenin ÇERÇEVESİNE benzeyen bir iskelet, ve React gerçek düzeni
+   basınca (html.app-ready) yumuşak geçiş. */
 #boot-splash {
   position: fixed; inset: 0; z-index: 99999;
-  display: flex; align-items: center; justify-content: center;
+  display: flex; flex-direction: column;
   background: #F0FDFF;
-  transition: opacity .38s ease;
+  transition: opacity .26s ease;
+  overflow: hidden;
 }
-#boot-splash .bs-inner { display: flex; flex-direction: column; align-items: center; gap: 20px; }
-#boot-splash .bs-logo { font-size: 26px; font-weight: 900; letter-spacing: -0.3px; color: #0F172A; }
+#boot-splash .bs-bar {
+  display: flex; align-items: center; gap: 14px;
+  height: 64px; padding: 0 14px;
+  background: #FFFFFF; border-bottom: 1px solid #E3EAEF;
+}
+#boot-splash .bs-logo { font-size: 19px; font-weight: 900; letter-spacing: -0.3px; color: #0F172A; white-space: nowrap; }
 #boot-splash .bs-logo span { color: #0EA5B7; }
-#boot-splash .bs-spin {
-  width: 30px; height: 30px; border-radius: 999px;
-  border: 3px solid rgba(14,165,183,0.18); border-top-color: #0EA5B7;
-  animation: bs-rot .7s linear infinite;
+#boot-splash .bs-search { flex: 1; max-width: 620px; height: 38px; border-radius: 999px; background: #EEF3F6; }
+#boot-splash .bs-nav { display: none; }
+#boot-splash .bs-body { display: flex; flex: 1; gap: 14px; padding: 12px; }
+#boot-splash .bs-side { display: none; }
+#boot-splash .bs-main { display: flex; flex: 1; flex-direction: column; gap: 12px; min-width: 0; }
+#boot-splash .bs-hero { height: 132px; border-radius: 16px; background: #DFF4F7; }
+#boot-splash .bs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+#boot-splash .bs-grid i { display: block; height: 132px; border-radius: 12px; background: #FFFFFF; border: 1px solid #E8EEF2; }
+
+/* Geniş web: gerçek düzende sol filtre paneli + geniş grid var — iskelet de onu taklit etsin,
+   böylece iskeletten içeriğe geçişte hiçbir şey yerinden oynamaz. */
+@media (min-width: 1024px) {
+  #boot-splash .bs-bar { height: 70px; padding: 0 24px; }
+  #boot-splash .bs-logo { font-size: 22px; }
+  #boot-splash .bs-nav { display: block; height: 46px; background: #FFFFFF; border-bottom: 1px solid #E3EAEF; }
+  #boot-splash .bs-body { gap: 18px; padding: 16px 24px; max-width: 1280px; width: 100%; margin: 0 auto; }
+  #boot-splash .bs-side { display: block; width: 248px; flex: none; border-radius: 16px; background: #FFFFFF; border: 1px solid #E8EEF2; }
+  #boot-splash .bs-hero { height: 252px; }
+  #boot-splash .bs-grid { grid-template-columns: repeat(4, 1fr); }
+  #boot-splash .bs-grid i { height: 208px; }
 }
-@keyframes bs-rot { to { transform: rotate(360deg); } }
-@media (prefers-color-scheme: dark) {
-  #boot-splash { background: #0B1220; }
-  #boot-splash .bs-logo { color: #E5E9EE; }
+
+/* Nefes alan hafif parlama — "donmuş" değil "yükleniyor" hissi. */
+#boot-splash .bs-search, #boot-splash .bs-hero, #boot-splash .bs-side, #boot-splash .bs-grid i, #boot-splash .bs-nav {
+  animation: bs-pulse 1.4s ease-in-out infinite;
 }
+@keyframes bs-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .62; } }
+@media (prefers-reduced-motion: reduce) {
+  #boot-splash .bs-search, #boot-splash .bs-hero, #boot-splash .bs-side, #boot-splash .bs-grid i, #boot-splash .bs-nav { animation: none; }
+}
+
+/* React gerçek düzeni bastı → iskelet yumuşakça kalkar. */
+html.app-ready #boot-splash { opacity: 0; pointer-events: none; }
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;

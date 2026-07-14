@@ -1,9 +1,9 @@
 /* OrtakSat service worker — güvenli + çevrimdışı dayanıklı.
    Statik varlıklar (JS/CSS/görsel) cache-first; navigasyon ağdan gider ama
    çevrimdışıysa /offline.html sunulur (bayat içerik/oturum riski yok). */
-// v11: yenileme flaşı düzeltmesi (boot-splash yalnız soğuk ziyarette) — eski HTML/bundle
+// v21: yenileme iskeleti (SSG taslağı artık hiç boyanmıyor) — eski HTML/bundle
 // cihazlarda kalmasın diye statik önbellek sürümü yükseltildi.
-const CACHE = "ortaksat-static-v20";
+const CACHE = "ortaksat-static-v21";
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {

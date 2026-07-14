@@ -18,6 +18,7 @@ import { AlertHost } from "@/components/alert-host";
 import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
+import { useMounted } from "@/lib/layout";
 import { LanguageProvider, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
 
@@ -58,6 +59,20 @@ function RootStack() {
     }
     return () => clearTimeout(fallback);
   }, [marketplaceInitialLoading]);
+
+  // WEB İSKELET EKRANI: statik export'un sunucu HTML'i ekran genişliğini bilemediği için
+  // yenilemede önce YANLIŞ bir taslak (dar düzen, ikonsuz, kartsız) boyanıyordu. Taslağı
+  // #boot-splash örtüyor; örtüyü tam BURADA — gerçek düzen mount olup boyandıktan sonra —
+  // kaldırıyoruz. İki rAF, mount sonrası yeniden çiziminin ekrana düşmesini garanti eder.
+  const webMounted = useMounted();
+  useEffect(() => {
+    if (Platform.OS !== "web" || !webMounted || typeof document === "undefined") return;
+    let inner = 0;
+    const outer = requestAnimationFrame(() => {
+      inner = requestAnimationFrame(() => document.documentElement.classList.add("app-ready"));
+    });
+    return () => { cancelAnimationFrame(outer); cancelAnimationFrame(inner); };
+  }, [webMounted]);
 
   return (
     <View nativeID="app-shell" style={{ flex: 1 }}>
