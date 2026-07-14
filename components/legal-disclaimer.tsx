@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Text, View } from "react-native";
+import { useState } from "react";
+import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -29,6 +30,36 @@ export function LegalNote({ style }: { style?: object }) {
     <View style={[{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, padding: 11 }, style]}>
       <MaterialCommunityIcons name="information-outline" size={16} color={colors.muted} style={{ marginTop: 1 }} />
       <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{DISCLAIMER_SHORT}</Text>
+    </View>
+  );
+}
+
+/**
+ * Açılır-kapanır koruma kutusu (ilan ver adımları). Varsayılan KAPALI: tek satır özet +
+ * "Detay" oku. Böylece tüm maddeler KORUNUR ama her adımda ekranı 6 satırla doldurmaz.
+ */
+export function LegalDisclaimerCollapsible() {
+  const { language } = useLanguage();
+  const [open, setOpen] = useState(false);
+  return (
+    <View style={{ backgroundColor: colors.infoSoft, borderColor: colors.info, borderRadius: 12, borderWidth: 1, paddingHorizontal: 13, paddingVertical: open ? 12 : 10 }}>
+      <Pressable accessibilityRole="button" onPress={() => setOpen((v) => !v)} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        <MaterialCommunityIcons name="shield-check-outline" size={17} color={colors.info} />
+        <Text numberOfLines={open ? undefined : 1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "800" }}>
+          {translateCopy("Ortaksat aracı platformdur: ödeme almaz, para tutmaz, komisyon kesmez, kargo yapmaz.", language)}
+        </Text>
+        <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
+      </Pressable>
+      {open ? (
+        <View style={{ gap: 6, marginTop: 10 }}>
+          {POINTS.map((p) => (
+            <View key={p} style={{ alignItems: "flex-start", flexDirection: "row", gap: 8 }}>
+              <MaterialCommunityIcons name="circle-small" size={18} color={colors.muted} style={{ marginTop: -1 }} />
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy(p, language)}</Text>
+            </View>
+          ))}
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -43,7 +43,7 @@ test("YAYIN SONRASI: başarı ekranı gerçek link ile gelir", async ({ page }) 
       description: "E2E test ilanı açıklaması — ürün temiz ve bakımlı, detaylar için mesaj atın."
     },
     images: ["https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200"],
-    loc: { provinceId: 34 },
+    loc: { provinceId: 34, districtId: 34001 },
     visibility: "neighborhood",
     currency: "TRY",
     commissionType: "rate",

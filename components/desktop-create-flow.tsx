@@ -11,7 +11,7 @@ import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { OptionSheet } from "@/components/option-sheet";
-import { LegalDisclaimer } from "@/components/legal-disclaimer";
+import { LegalDisclaimer, LegalDisclaimerCollapsible } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { modelsForSchema, deriveFieldsFromPath, describeAttributes, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
@@ -470,7 +470,11 @@ export function DesktopCreateFlow() {
       if (descReq && d.length < LIMITS.description.min) return `${translateCopy("Açıklama en az", language)} ${LIMITS.description.min} ${translateCopy("karakter olmalı", language)}.`;
       return null;
     }
-    if (step === 2) return loc.provinceId ? null : translateCopy("İl seçmelisin.", language);
+    if (step === 2) {
+      if (!loc.provinceId) return translateCopy("İl seçmelisin.", language);
+      if (!loc.districtId) return translateCopy("İlçe seçmelisin.", language);
+      return null;
+    }
     if (step === 3) return images.length ? null : translateCopy("Devam etmek için en az 1 görsel ekle.", language);
     if (step === 4) return Number(commissionValue) > 0 ? null : translateCopy("Komisyon değeri sıfırdan büyük olmalı.", language);
     return null;
@@ -524,6 +528,7 @@ export function DesktopCreateFlow() {
     // eksik foto/konum/komisyonlu ilan yayınlanmasın (canNext'e ek güvenlik).
     if (images.length === 0) { setError("En az bir fotoğraf ekle."); setStep(3); return; }
     if (!loc.provinceId) { setError("İl seçmelisin."); setStep(2); return; }
+    if (!loc.districtId) { setError("İlçe seçmelisin."); setStep(2); return; }
     if (!(Number(commissionValue) > 0)) { setError("Komisyon değeri sıfırdan büyük olmalı."); setStep(4); return; }
 
     setPublishing(true);
@@ -1009,7 +1014,7 @@ export function DesktopCreateFlow() {
         {step === 2 ? (
           <View style={{ gap: 16 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Konum", language)}</Text>
-            <LocationSelector value={loc} onChange={setLoc} required showNeighborhood showAddressLine mode="listing" />
+            <LocationSelector value={loc} onChange={setLoc} required neighborhoodRequired={false} showNeighborhood showAddressLine mode="listing" />
             <View style={{ gap: 8 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Adres görünürlüğü", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -1029,7 +1034,7 @@ export function DesktopCreateFlow() {
         {step === 3 ? (
           <View style={{ gap: 14 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Fotoğraflar", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("En az 1, en fazla 5 görsel ekle. İlk görsel kapak olur. Fotoğraflar otomatik ölçeklenir — format/boyutla uğraşmana gerek yok.", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy(`En az 1, en fazla ${MAX_PHOTOS} görsel ekle. İlk görsel kapak olur. Fotoğraflar otomatik ölçeklenir — format/boyutla uğraşmana gerek yok.`, language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               {/* MOBİL: ürünü O AN çek (eskiden yalnız galeri vardı — telefonla ilan verenin en doğal yolu). */}
               {Platform.OS !== "web" ? (
@@ -1385,7 +1390,9 @@ export function DesktopCreateFlow() {
         ) : null}
       </View>
 
-      <LegalDisclaimer />
+      {/* Son adımda (yayından hemen önce) tam yasal kutu; ara adımlarda kompakt açılır-kapanır
+          (içerik korunur, her adımda 6 satırla ekranı doldurmaz). */}
+      {step === 5 ? <LegalDisclaimer /> : <LegalDisclaimerCollapsible />}
 
       {/* Honeypot (botlar için gizli tuzak; ekranda görünmez, gerçek kullanıcı dokunmaz) */}
       <TextInput

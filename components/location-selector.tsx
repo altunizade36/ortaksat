@@ -28,6 +28,7 @@ export function LocationSelector({
   value,
   onChange,
   required,
+  neighborhoodRequired,
   showNeighborhood = true,
   showAddressLine = false,
   mode = "listing"
@@ -35,10 +36,13 @@ export function LocationSelector({
   value: LocationValue;
   onChange: (next: LocationValue) => void;
   required?: boolean;
+  /** Mahalle için ayrı zorunluluk (varsayılan = required). Mahalle çoğu ilanda opsiyoneldir. */
+  neighborhoodRequired?: boolean;
   showNeighborhood?: boolean;
   showAddressLine?: boolean;
   mode?: Mode;
 }) {
+  const nbRequired = neighborhoodRequired ?? required;
   const { language } = useLanguage();
   const districtList = useMemo(() => districtsOfProvince(value.provinceId), [value.provinceId]);
   const provinceLabel = provinces.find((p) => p.id === value.provinceId)?.name;
@@ -70,7 +74,7 @@ export function LocationSelector({
         </View>
         {showNeighborhood ? (
           <View style={{ flex: 1, minWidth: 180, zIndex: 10 }}>
-            <FieldLabel text={`${translateCopy("Mahalle / Köy", language)}${required ? " *" : ""}`} />
+            <FieldLabel text={`${translateCopy("Mahalle / Köy", language)}${nbRequired ? " *" : ""}`} />
             <NeighborhoodField districtId={value.districtId} value={value.neighborhood} onChange={(n) => onChange({ ...value, neighborhood: n })} />
           </View>
         ) : null}
