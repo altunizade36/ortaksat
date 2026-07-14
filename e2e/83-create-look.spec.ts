@@ -1,4 +1,4 @@
-import { test, devices, type Page } from "@playwright/test";
+import { test, expect, devices, type Page } from "@playwright/test";
 import { createConfirmedUser, uniqueEmail, resetAuthRateLimits } from "./helpers/supabase-admin";
 
 const PW = "GucluSifre123!";
@@ -34,6 +34,23 @@ test("KATEGORİ GÖRÜNÜM (masaüstü)", async ({ browser }) => {
   await page.getByText("Emlak", { exact: true }).first().click().catch(() => {});
   await page.waitForTimeout(1500);
   await shot(page, "d2-emlak-acildi");
+
+  // SÜTUN NAVİGASYONU (yeniden yazıldı): ana → alt → yaprak → form adımına geçmeli.
+  await page.getByText("Konut", { exact: true }).first().click().catch(() => {});
+  await page.waitForTimeout(1200);
+  await page.getByText("Satılık", { exact: true }).first().click().catch(() => {});
+  await page.waitForTimeout(1200);
+  // Bir yaprağa in (Daire tipik). Yoksa görünen ilk alt öğeyi seç.
+  await page.getByText(/Daire|Konut|Villa|Müstakil/).first().click().catch(() => {});
+  await page.waitForTimeout(2500);
+  await shot(page, "d3-form-adimi");
+
+  // Kategori seçilince İLAN BİLGİLERİ adımının içeriği (başlık alanı) görünmeli.
+  const bodyText = (await page.locator("body").innerText()).toLowerCase();
+  const advanced = /ilan başlığı|başlık|açıklama|fiyat/.test(bodyText);
+  console.log(`sütun-nav sonrası forma geçti mi: ${advanced}`);
+  expect(advanced, "ana→alt→yaprak seçimi form adımına geçmeli").toBeTruthy();
+
   await ctx.close();
 });
 
