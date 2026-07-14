@@ -1,4 +1,4 @@
-import { test, devices, type Page } from "@playwright/test";
+import { test, expect, devices, type Page } from "@playwright/test";
 import { createConfirmedUser, uniqueEmail, resetAuthRateLimits, runSql } from "./helpers/supabase-admin";
 
 const PW = "GucluSifre123!";
@@ -163,32 +163,34 @@ test("iPHONE: ilan verme UÇTAN UCA — 6 adım + YAYINLA", async ({ page }) => 
   await page.waitForTimeout(6000);
   await page.screenshot({ path: "e2e-artifacts/pub-7-sonuc.png" });
 
-  // Kullanıcının asıl sorusu: "ilanım yayınlandı mı?" → panel GERÇEKTEN gösteriyor mu?
-  console.log(`\nurl=${page.url().slice(0, 75)}`);
-  const aktifSayisi = async () => {
-    const n = await page.evaluate(() => {
-      const els = Array.from(document.querySelectorAll<HTMLElement>("div"));
-      const lbl = els.find((e) => (e.innerText || "").trim() === "Aktif ilan");
-      const card = lbl?.parentElement;
-      const m = (card?.innerText || "").match(/(\d+)/);
-      return m ? m[1] : "?";
-    });
-    return n;
-  };
-  // DB'DEKİ GERÇEK DURUM (teardown silmeden önce): ilan hangi status ile oluştu?
+  // YENİ AKIŞ: yayından sonra artık doğrudan panele atılmıyor → BAŞARI EKRANI geliyor
+  // (gerçek ilan linki + paylaş + ortak daveti). Eskiden burada /seller panelini
+  // kontrol ediyorduk; o davranış bilerek değişti.
+  const body7 = await page.locator("body").innerText();
+  const basari = /İlanın yayında|incelemeye alındı/.test(body7);
+  console.log(`  başarı ekranı çıktı mı: ${basari}`);
+  expect(basari, "yayından sonra başarı ekranı görünmeli").toBeTruthy();
+
+  // Başarı ekranında GERÇEK ilan linki olmalı (/listing/<uuid>). Eskiden yayından sonra
+  // kullanıcıya hiç link verilmiyordu; paylaşım metinleri yayından önce gösterildiği için
+  // gerçek linki içeremiyordu.
+  const linkGorunur = /ortaksat\.com\/listing\//.test(body7);
+  console.log(`  gerçek ilan linki görünür mü: ${linkGorunur}`);
+  expect(linkGorunur, "başarı ekranında gerçek ilan linki olmalı").toBeTruthy();
+
+  // DB'DE gerçekten oluştu mu (teardown silmeden önce)?
   const dbRows = await runSql<Array<Record<string, unknown>>>(
-    "select id, left(title,24) title, status, owner_id, price, province_id, (select count(*) from listing_images i where i.listing_id=l.id) imgs from listings l where created_at > now() - interval '10 minutes' order by created_at desc limit 2"
+    "select id, left(title,24) title, status, price, (select count(*) from listing_images i where i.listing_id=l.id) imgs from listings l where created_at > now() - interval '10 minutes' order by created_at desc limit 2"
   ).catch((e) => [{ err: String(e).slice(0, 80) }]);
   console.log("  DB'DEKİ YENİ İLAN:", JSON.stringify(dbRows));
+  expect(Array.isArray(dbRows) && dbRows.length > 0 && !("err" in dbRows[0]), "ilan DB'de olmalı").toBeTruthy();
 
-  console.log(`  yönlendirme sonrası: aktifİlan=${await aktifSayisi()}`);
-  await page.waitForTimeout(6000);
-  console.log(`  +6sn bekleyince:     aktifİlan=${await aktifSayisi()}`);
-  await page.screenshot({ path: "e2e-artifacts/pub-8-panel.png" });
-
-  // AYIRT EDİCİ TEST: sayfayı YENİLE → sunucudan taze veri gelir.
-  await page.reload({ waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(7000);
-  console.log(`  SAYFA YENİLENİNCE:   aktifİlan=${await aktifSayisi()}`);
-  await page.screenshot({ path: "e2e-artifacts/pub-9-panel-reload.png" });
+  // "İlanı gör" ile gerçek ilana gidebilmeli
+  const gor = page.getByText("İlanı gör", { exact: true }).first();
+  if (await gor.count()) {
+    await gor.tap({ timeout: 6000 }).catch(() => {});
+    await page.waitForTimeout(3000);
+    console.log(`  İlanı gör → url=${page.url().slice(-40)}`);
+    expect(page.url(), "İlanı gör gerçek ilan sayfasına götürmeli").toContain("/listing/");
+  }
 });
