@@ -15,7 +15,7 @@ import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { modelsForSchema, deriveFieldsFromPath, describeAttributes, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
-import { CURRENCIES, moneyIn, type CurrencyCode } from "@/lib/format";
+import { CURRENCIES, moneyIn, partnerInviteUrl, productUrl, listingShareTemplates, type CurrencyCode } from "@/lib/format";
 import { categoryConversion } from "@/lib/conversion";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { formatLocation, getProvince } from "@/lib/locations";
@@ -24,12 +24,16 @@ import { autoFillListing } from "@/lib/listing-autofill";
 import { categoryRisk, moderateListingText, MODERATION_MESSAGES, scanTextLocal } from "@/lib/moderation";
 import { computeListingRisk } from "@/lib/risk";
 import { rateLimit } from "@/lib/rate-limit";
+import { shareOrCopy } from "@/lib/share";
 import type { CommissionType, Listing, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 
 const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon & Ortak Satış", "Önizleme & Yayınla"];
-const MAX_PHOTOS = 5; // ilan başına görsel üst sınırı (şimdilik 1–5). Yükleme otomatik 1600px'e ölçekler + JPEG sıkıştırır (kullanıcı formatla uğraşmaz).
+// 5 idi: emlak/vasıta gibi kategorilerde ürünü anlatmaya yetmiyordu (Sahibinden 15-30 verir).
+// Yükleme otomatik 1600px'e ölçekler + sıkıştırır, ayrıca 512px kart varyantı üretir.
+const MAX_PHOTOS = 15;
+const RECOMMENDED_PHOTOS = 3;
 const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
 
 // Kategoriye göre önerilen komisyon aralığı (%). Yüksek-tutarlı kategoriler (emlak/
@@ -51,7 +55,11 @@ const SUGGESTED_COMMISSION: Record<string, [number, number]> = {
 const DEFAULT_COMMISSION_RANGE: [number, number] = [8, 20];
 
 // Yarım kalan ilan taslağı — cihazda saklanır, kullanıcı geri döndüğünde devam eder.
-const DRAFT_KEY = "ortaksat_listing_draft_v1";
+// TASLAK ANAHTARI KULLANICIYA ÖZEL olmalı: eskiden sabit anahtardı ve çıkışta
+// silinmiyordu → A kullanıcısının yarım ilanı (başlık/fiyat/fotoğraf/konum) aynı
+// cihazda B kullanıcısına "yarım kalan ilanın var" diye açılıyordu.
+const DRAFT_PREFIX = "ortaksat_listing_draft_v1";
+const draftKeyFor = (userId?: string) => `${DRAFT_PREFIX}:${userId || "anon"}`;
 const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 gün
 
 type Values = Record<string, string | boolean | string[]>;
@@ -73,12 +81,15 @@ type DraftShape = {
   partnerNote: string;
   contactMethod: "message" | "whatsapp" | "phone";
   attributionWindow?: string;
+  tiers?: Array<{ minSales: string; rate: string }>;
+  customCategory?: string;
 };
 
 export function DesktopCreateFlow() {
   const { language } = useLanguage();
   const router = useRouter();
   const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, listings } = useStore();
+  const DRAFT_KEY = draftKeyFor(currentUser?.id);
   const [step, setStep] = useState(0);
   const [path, setPath] = useState<CategoryNode[]>([]);
   // "Diğer" seçildiğinde kullanıcı ARADIĞI kategoriyi yazar → admin ÖNERİ HAVUZUNA düşer.
@@ -107,6 +118,7 @@ export function DesktopCreateFlow() {
   const [honeypot, setHoneypot] = useState(""); // bot tuzağı: gerçek kullanıcı boş bırakır
   const [pendingDraft, setPendingDraft] = useState<DraftShape | null>(null); // "devam et?" banner'ı
   const [draftReady, setDraftReady] = useState(false); // ilk yükleme bitti mi (autosave'i geciktir)
+  const [published, setPublished] = useState<{ listing: Listing; review: boolean } | null>(null);
   const [shareCopied, setShareCopied] = useState(false); // paylaşım metni kopyalandı bildirimi
 
   const formKey = path.length ? resolveFormKey(path) : "";
@@ -132,11 +144,58 @@ export function DesktopCreateFlow() {
 
   // Komisyon/kazanç yardımı: fiyattan ortak kazancını ve kategoriye göre önerilen
   // komisyon aralığını canlı hesapla.
-  const priceNum = parseTrPrice(String(values.price ?? ""));
+  // ETKİN FİYAT ANAHTARI: her şema fiyatı "price" ile tutmuyor (gecelik / kişi başı /
+  // başlangıç fiyatı gibi anahtarlar var). publish() bunu zaten türetiyordu ama ÖNİZLEME,
+  // canlı komisyon hesabı ve paylaşım metni doğrudan values.price okuyordu → o kategorilerde
+  // kullanıcı fiyatı ₺0, ortak kazancını ₺0 görüyor, ilan ise doğru fiyatla yayınlanıyordu.
+  const priceKey = useMemo(() => {
+    if (!schema) return "price";
+    const f =
+      schema.fields.find((x) => x.key === "price") ??
+      schema.fields.find((x) => x.type === "number" && x.suffix === "₺" && x.required) ??
+      schema.fields.find((x) => x.type === "number" && x.suffix === "₺");
+    return f?.key ?? "price";
+  }, [schema]);
+  const priceNum = parseTrPrice(String(values[priceKey] ?? ""));
   const perSaleCommission = commissionType === "rate"
     ? Math.round((priceNum * (Number(commissionValue) || 0)) / 100)
     : Number(commissionValue) || 0;
   const suggestedRange = SUGGESTED_COMMISSION[path[0]?.label ?? ""] ?? DEFAULT_COMMISSION_RANGE;
+
+  /**
+   * PİYASA İPUCU + MÜKERRER BAŞLIK UYARISI.
+   * Bu iki sinyali risk motoru (lib/risk.ts) ZATEN hesaplıyordu — ama yalnız gizli bir
+   * moderasyon puanı olarak: fiyatı medyanın çok altındaysan ya da başlığın başka bir
+   * ilanla aynıysa ilanın sessizce "incelemeye" düşüyordu ve NEDENİNİ öğrenemiyordun.
+   * Artık yazarken söylüyoruz.
+   */
+  const peerPrices = useMemo(() => {
+    const cat = leafLabel || path[0]?.label;
+    if (!cat) return [] as number[];
+    return listings
+      .filter((l) => l.status === "active" && l.category === cat && l.price > 0)
+      .map((l) => l.price)
+      .sort((a, b) => a - b);
+  }, [listings, leafLabel, path]);
+
+  const priceHint = useMemo(() => {
+    if (peerPrices.length < 4) return null; // az örnekle "piyasa" demek yanıltıcı olur
+    const q = (f: number) => peerPrices[Math.min(peerPrices.length - 1, Math.floor(peerPrices.length * f))];
+    const low = q(0.25);
+    const high = q(0.75);
+    const median = q(0.5);
+    const tooLow = priceNum > 0 && priceNum < median * 0.25;
+    return { low, high, median, tooLow, n: peerPrices.length };
+  }, [peerPrices, priceNum]);
+
+  const duplicateTitle = useMemo(() => {
+    const t = String(values.title ?? "").trim().toLocaleLowerCase("tr-TR");
+    if (t.length < 9) return null;
+    const dup = listings.find((l) => l.status === "active" && l.title.trim().toLocaleLowerCase("tr-TR") === t);
+    if (!dup) return null;
+    return dup.ownerId === currentUser?.id ? "own" : "other";
+  }, [values.title, listings, currentUser?.id]);
+
 
   // Paylaşım önizlemesi: yayınlandığında ortakların kullanacağı hazır metinler
   // (WhatsApp/Instagram/TikTok). Yayından önce görülür + kopyalanabilir.
@@ -211,11 +270,14 @@ export function DesktopCreateFlow() {
       savedAt: Date.now(), step,
       path: path.map((p) => ({ key: p.key, label: p.label, slug: p.slug, formKey: p.formKey, image: p.image })),
       values, images, loc, visibility, currency, commissionType, commissionValue,
-      bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow
+      bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow,
+      // Eskiden kaydedilmiyorlardı: kademeli komisyon kurup ya da eksik kategori adı yazıp
+      // sayfadan çıkan kullanıcı, taslağı geri yüklediğinde ikisini de sessizce kaybediyordu.
+      tiers, customCategory
     };
     const h = setTimeout(() => { void AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); }, 700);
     return () => clearTimeout(h);
-  }, [draftReady, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow, step, publishing]);
+  }, [DRAFT_KEY, draftReady, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow, tiers, customCategory, step, publishing]);
 
   const clearDraft = () => { setPendingDraft(null); void AsyncStorage.removeItem(DRAFT_KEY); };
 
@@ -237,6 +299,8 @@ export function DesktopCreateFlow() {
     if (d.attributionWindow) setAttributionWindow(String(d.attributionWindow));
     setPartnerNote(d.partnerNote ?? "");
     if (d.contactMethod) setContactMethod(d.contactMethod);
+    if (Array.isArray(d.tiers)) setTiers(d.tiers);
+    if (typeof d.customCategory === "string") setCustomCategory(d.customCategory);
     setStep(typeof d.step === "number" ? d.step : 1);
     setPendingDraft(null);
   };
@@ -244,6 +308,52 @@ export function DesktopCreateFlow() {
   const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
 
   /** Seçilen görselleri (boyut sınırı + adet sınırı ile) listeye ekler. Galeri ve kamera ortak kullanır. */
+  /**
+   * URL ile görsel ekleme. Eskiden: herhangi bir metni (ör. "asdf") görsel diye kabul
+   * ediyor, sınıra gelindiğinde ise SESSİZCE hiçbir şey yapmıyordu (buton ölü görünüyordu).
+   */
+  function addImageUrl() {
+    const u = imageDraft.trim();
+    if (!u) return;
+    if (!/^https?:\/\/.+/i.test(u)) { setError("Görsel bağlantısı http:// veya https:// ile başlamalı."); return; }
+    if (images.includes(u)) { setError("Bu görsel zaten ekli."); return; }
+    if (images.length >= MAX_PHOTOS) { setError(`En fazla ${MAX_PHOTOS} görsel ekleyebilirsin.`); return; }
+    setError(null);
+    setImages((s) => [...s, u]);
+    setImageDraft("");
+  }
+
+  // WEB: SÜRÜKLE-BIRAK + PANODAN YAPIŞTIR. İkisi de yoktu; masaüstünde fotoğraf eklemenin
+  // tek yolu dosya seçiciydi. Yalnız fotoğraf adımında (step 3) ve yalnız web'de dinlenir.
+  const [dragOver, setDragOver] = useState(false);
+  useEffect(() => {
+    if (Platform.OS !== "web" || step !== 3 || typeof window === "undefined") return;
+    const takeFiles = (files: FileList | null | undefined) => {
+      const imgs = Array.from(files ?? ([] as unknown as FileList)).filter((f) => f.type.startsWith("image/"));
+      if (!imgs.length) return;
+      addAssets(imgs.map((f) => ({ uri: URL.createObjectURL(f), fileSize: f.size })));
+    };
+    const onDragOver = (e: DragEvent) => { e.preventDefault(); setDragOver(true); };
+    const onDragLeave = () => setDragOver(false);
+    const onDrop = (e: DragEvent) => { e.preventDefault(); setDragOver(false); takeFiles(e.dataTransfer?.files); };
+    const onPaste = (e: ClipboardEvent) => {
+      // Metin yapıştırırken (URL kutusu) araya girme — yalnız görsel varsa devral.
+      const files = e.clipboardData?.files;
+      if (files && files.length) { e.preventDefault(); takeFiles(files); }
+    };
+    window.addEventListener("dragover", onDragOver);
+    window.addEventListener("dragleave", onDragLeave);
+    window.addEventListener("drop", onDrop);
+    window.addEventListener("paste", onPaste);
+    return () => {
+      window.removeEventListener("dragover", onDragOver);
+      window.removeEventListener("dragleave", onDragLeave);
+      window.removeEventListener("drop", onDrop);
+      window.removeEventListener("paste", onPaste);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, images.length]);
+
   function addAssets(assets: Array<{ uri: string; fileSize?: number }>) {
     const tooBig = assets.some((a) => typeof a.fileSize === "number" && a.fileSize > MAX_BYTES);
     if (tooBig) setError(translateCopy("Bazı görseller 5 MB sınırını aşıyor ve eklenmedi. Lütfen daha küçük dosyalar seçin.", language));
@@ -339,7 +449,12 @@ export function DesktopCreateFlow() {
   const canNext = () => nextBlockReason() === null;
 
   async function publish() {
-    if (!schema) return;
+    if (!schema) {
+      // Eskiden sessizce return ediyordu: "Yayınla" tıklanıyor, hiçbir şey olmuyordu.
+      setError("Kategori formu yüklenemedi. Kategoriyi tekrar seç.");
+      setStep(0);
+      return;
+    }
     setError(null);
     setNotice(null);
 
@@ -356,11 +471,8 @@ export function DesktopCreateFlow() {
     // Fiyat alanı her şemada "price" anahtarıyla gelmez: kimi form gecelik/kişi-başı/
     // başlangıç fiyatı gibi farklı bir anahtar kullanır. Etkin fiyatı şemadan türetiriz;
     // aksi halde günlük kiralık, tur/etkinlik, talep gibi kategoriler hiç yayınlanamıyordu.
-    const priceField =
-      schema.fields.find((f) => f.key === "price") ??
-      schema.fields.find((f) => f.type === "number" && f.suffix === "₺" && f.required) ??
-      schema.fields.find((f) => f.type === "number" && f.suffix === "₺");
-    const priceRaw = priceField ? values[priceField.key] : values.price;
+    const priceField = schema.fields.find((f) => f.key === priceKey);
+    const priceRaw = values[priceKey];
     const priceFilled = priceRaw != null && String(priceRaw).trim().length > 0;
     // Şemada fiyat alanı YOKSA fiyat opsiyoneldir (ör. İş İlanları). Aksi hâlde
     // fiyatsız kategori hiç yayınlanamıyordu (validateListing daima fiyat ister).
@@ -476,7 +588,7 @@ export function DesktopCreateFlow() {
       const risk = computeListingRisk(riskDraft, listings, currentUser);
       if (risk.level === "high" && !statusOverride) { verdict = "review"; statusOverride = "pending_review"; }
 
-      createListing({
+      const created = createListing({
         title: v.clean.title || leafLabel,
         description: description ? v.clean.description : auto.description,
         salesPitch: detailLines.slice(0, 4).length ? detailLines.slice(0, 4) : auto.salesPitch,
@@ -516,17 +628,104 @@ export function DesktopCreateFlow() {
       // İlan oluşturuldu → yarım-kalan taslağı sil (tekrar "devam et?" çıkmasın).
       void AsyncStorage.removeItem(DRAFT_KEY);
 
-      if (verdict === "review") {
-        // İnceleme gerektiren ilan: kullanıcıya bilgi ver, ardından yönlendir.
-        setNotice(MODERATION_MESSAGES.review);
-        setPublishing(false);
-        setTimeout(() => router.replace("/(tabs)/seller"), 1800);
-        return;
-      }
-      router.replace("/(tabs)/seller");
+      // BAŞARI EKRANI: eskiden kullanıcı doğrudan panele atılıyordu ve elinde HİÇBİR ŞEY
+      // kalmıyordu. Paylaşım metinleri yayından ÖNCE gösteriliyordu — yani içlerinde gerçek
+      // ilan linki OLAMIYORDU (ilan henüz yoktu). Oysa platformun trafiği tam da satıcının
+      // bu linki paylaşmasından geliyor. Artık gerçek link + paylaş + ortak daveti veriyoruz.
+      setPublished({ listing: created, review: verdict === "review" });
+      setPublishing(false);
+      return;
+    } catch (e) {
+      // Eskiden yalnız finally vardı: uploadListingImage/createListing çökerse buton
+      // dönmeyi bırakıyor ama HİÇBİR mesaj çıkmıyordu — kullanıcı ilanın neden
+      // görünmediğini anlamıyordu (sessiz kayıp).
+      console.warn("İlan yayınlanamadı", e);
+      setError(
+        (e as Error)?.message?.includes("Network")
+          ? "Bağlantı koptu. İlanın taslakta duruyor — internetin gelince tekrar dene."
+          : "İlan yayınlanamadı. Taslağın korundu, tekrar deneyebilirsin."
+      );
+      setStep(5);
     } finally {
       setPublishing(false);
     }
+  }
+
+  // ── YAYIN SONRASI ───────────────────────────────────────────────────────────
+  function resetForNew() {
+    setPublished(null); setStep(0); setPath([]); setValues({}); setImages([]);
+    setLoc({}); setTiers([]); setCustomCategory(""); setError(null); setNotice(null);
+  }
+
+  if (published) {
+    const l = published.listing;
+    const link = productUrl(l);
+    const invite = partnerInviteUrl(l);
+    const wa = listingShareTemplates(l, link).whatsapp;
+    const copy = async (text: string) => {
+      try { await Clipboard.setStringAsync(text); setShareCopied(true); setTimeout(() => setShareCopied(false), 1800); } catch { /* pano yok */ }
+    };
+    return (
+      <View style={{ gap: 14 }}>
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: published.review ? colors.gold : colors.success, borderRadius: 18, borderWidth: 1, gap: 10, padding: 22 }}>
+          <Mascot name={published.review ? "thinking" : "success"} size={92} />
+          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900", textAlign: "center" }}>
+            {published.review ? translateCopy("İlanın incelemeye alındı", language) : translateCopy("İlanın yayında! 🎉", language)}
+          </Text>
+          <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 520, textAlign: "center" }}>
+            {published.review
+              ? translateCopy("Kısa bir kontrolden sonra yayına alınacak. Onaylanınca haber vereceğiz — bu arada linkini şimdiden hazırlayabilirsin.", language)
+              : translateCopy("Şimdi en önemli adım: linki paylaş. İlanı gören ortaklar senin için satabilir; satışta komisyonu sen belirlersin.", language)}
+          </Text>
+        </View>
+
+        {/* GERÇEK İLAN LİNKİ — eskiden yayından sonra kullanıcıya hiçbir link verilmiyordu. */}
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 16 }}>
+          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("İlan linkin", language)}</Text>
+          <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, padding: 11 }}>
+            <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "700" }}>{link}</Text>
+          </View>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <Pressable accessibilityRole="button" testID="publish-share" onPress={() => void shareOrCopy({ title: l.title, message: wa, url: link })}
+              style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 11 })}>
+              <MaterialCommunityIcons name="share-variant" size={16} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Paylaş", language)}</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" testID="publish-copy-link" onPress={() => void copy(link)}
+              style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 11 })}>
+              <MaterialCommunityIcons name="content-copy" size={16} color={colors.muted} />
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Linki kopyala", language)}</Text>
+            </Pressable>
+            <Pressable accessibilityRole="button" testID="publish-invite" onPress={() => void copy(invite)}
+              style={({ pressed }) => ({ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 11 })}>
+              <MaterialCommunityIcons name="account-plus-outline" size={16} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Ortak davet linki", language)}</Text>
+            </Pressable>
+          </View>
+          {shareCopied ? <Text style={{ color: colors.success, fontSize: 12, fontWeight: "800" }}>{translateCopy("Kopyalandı", language)}</Text> : null}
+          <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
+            {translateCopy("Ortak davet linkiyle gelen kişi doğrudan ortağın olur; yaptığı satışta komisyonu o kazanır.", language)}
+          </Text>
+        </View>
+
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          <Pressable accessibilityRole="button" testID="publish-view" onPress={() => router.push({ pathname: "/listing/[id]", params: { id: l.id } })}
+            style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 11 })}>
+            <MaterialCommunityIcons name="eye-outline" size={16} color={colors.ink} />
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("İlanı gör", language)}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={resetForNew}
+            style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 11 })}>
+            <MaterialCommunityIcons name="plus" size={16} color={colors.ink} />
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Yeni ilan ver", language)}</Text>
+          </Pressable>
+          <Pressable accessibilityRole="button" onPress={() => router.replace("/(tabs)/seller")}
+            style={({ pressed }) => ({ alignItems: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 10, paddingVertical: 11 })}>
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("İlanlarıma git", language)}</Text>
+          </Pressable>
+        </View>
+      </View>
+    );
   }
 
   // Geri: adım 0'da önceki sayfaya (yoksa ana sayfa), adım >0'da önceki adıma.
@@ -647,6 +846,18 @@ export function DesktopCreateFlow() {
               {titleField ? (
                 <FormSection title="İlan başlığı" icon="format-title" hint="Kısa, net ve aranan kelimelerle eşleşen bir başlık yaz.">
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(titleField)}</View>
+                  {/* MÜKERRER BAŞLIK — risk motoru bunu zaten yakalıyor ve ilanı sessizce
+                      incelemeye düşürüyordu; kullanıcı nedenini asla öğrenemiyordu. */}
+                  {duplicateTitle ? (
+                    <View style={{ alignItems: "flex-start", backgroundColor: colors.goldSoft, borderColor: colors.gold, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, marginTop: 8, padding: 10 }}>
+                      <MaterialCommunityIcons name="alert-outline" size={15} color={colors.goldInk} />
+                      <Text style={{ color: colors.goldInk, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>
+                        {duplicateTitle === "own"
+                          ? translateCopy("Bu başlıkla yayında olan bir ilanın zaten var. Aynısını tekrar açmak yerine mevcut ilanı güncellemen daha iyi sonuç verir.", language)
+                          : translateCopy("Bu başlık, yayındaki başka bir ilanla birebir aynı. Kopya görünmemesi için başlığı farklılaştır — aksi halde ilanın incelemeye düşebilir.", language)}
+                      </Text>
+                    </View>
+                  ) : null}
                 </FormSection>
               ) : null}
 
@@ -697,6 +908,20 @@ export function DesktopCreateFlow() {
 
               <FormSection title="Fiyat" icon="cash-multiple" hint="Üst sınır yok. Nokta binlik ayırıcıdır (örn. 1.500.000).">
                 {priceField ? <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(priceField)}</View> : null}
+                {/* PİYASA İPUCU — risk motoru medyanı zaten hesaplıyordu ama kullanıcı görmüyordu. */}
+                {priceHint ? (
+                  <View style={{ backgroundColor: priceHint.tooLow ? colors.goldSoft : colors.surfaceAlt, borderColor: priceHint.tooLow ? colors.gold : colors.line, borderRadius: 10, borderWidth: 1, gap: 3, marginTop: 10, padding: 10 }}>
+                    <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>
+                      {translateCopy("Bu kategoride benzer ilanlar", language)}: {moneyIn(priceHint.low, currency)} – {moneyIn(priceHint.high, currency)}
+                      <Text style={{ color: colors.subtle, fontWeight: "600" }}>{`  (${priceHint.n} ilan)`}</Text>
+                    </Text>
+                    {priceHint.tooLow ? (
+                      <Text style={{ color: colors.goldInk, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>
+                        {translateCopy("Fiyatın piyasa medyanının çok altında. Doğruysa sorun yok — ama bu ilanlar dolandırıcılık şüphesiyle incelemeye düşebilir.", language)}
+                      </Text>
+                    ) : null}
+                  </View>
+                ) : null}
                 <View style={{ gap: 8, marginTop: priceField ? 12 : 0 }}>
                   <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Para birimi", language)}</Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -764,10 +989,31 @@ export function DesktopCreateFlow() {
                 <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Galeriden / cihazdan seç", language)}</Text>
               </Pressable>
             </View>
+            {/* SÜRÜKLE-BIRAK alanı + sayaç + öneri. Eskiden: sayaç yoktu (kaç fotoğraf
+                kaldığını bilmiyordun), sürükle-bırak/yapıştır hiç yoktu, ve "3+ fotoğraflı
+                ilan daha hızlı satılır" bilgisi yalnız gizli risk motorunda duruyordu. */}
+            {Platform.OS === "web" ? (
+              <View style={{ alignItems: "center", backgroundColor: dragOver ? colors.primarySoft : colors.surfaceAlt, borderColor: dragOver ? colors.primary : colors.line, borderRadius: 12, borderStyle: "dashed", borderWidth: 2, gap: 4, paddingVertical: 16 }}>
+                <MaterialCommunityIcons name={dragOver ? "tray-arrow-down" : "image-plus"} size={22} color={dragOver ? colors.primaryDark : colors.subtle} />
+                <Text style={{ color: dragOver ? colors.primaryDark : colors.muted, fontSize: 12.5, fontWeight: "800" }}>
+                  {dragOver ? translateCopy("Bırak, ekleyelim", language) : translateCopy("Fotoğrafları buraya sürükle — ya da Ctrl+V ile yapıştır", language)}
+                </Text>
+              </View>
+            ) : null}
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
+                {images.length}/{MAX_PHOTOS} {translateCopy("fotoğraf", language)}
+              </Text>
+              {images.length > 0 && images.length < RECOMMENDED_PHOTOS ? (
+                <Text style={{ color: colors.goldInk, fontSize: 11.5, fontWeight: "700" }}>
+                  · {translateCopy("En az 3 fotoğraflı ilanlar belirgin şekilde daha çok ilgi görüyor.", language)}
+                </Text>
+              ) : null}
+            </View>
             <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("veya görsel adresi yapıştır:", language)}</Text>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <TextInput value={imageDraft} onChangeText={setImageDraft} placeholder="https://…/foto.jpg" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 46, paddingHorizontal: 12 }} />
-              <Pressable onPress={() => { const u = imageDraft.trim(); if (u && images.length < MAX_PHOTOS) { setImages((s) => [...s, u]); setImageDraft(""); } }} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 12 }}>
+              <Pressable onPress={() => addImageUrl()} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 12 }}>
                 <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ekle", language)}</Text>
               </Pressable>
             </View>
