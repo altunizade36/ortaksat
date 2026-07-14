@@ -583,7 +583,7 @@ export default function ListingDetailScreen() {
               }}
               style={{ position: "relative" }}
             >
-              <SafeRemoteImage uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
+              <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
               <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
                 <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Büyüt", language)}{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
@@ -1228,6 +1228,7 @@ export default function ListingDetailScreen() {
             style={{ alignItems: "center", height: "78%", justifyContent: "center", overflow: "hidden", width: "100%" }}
           >
             <SafeRemoteImage
+              full
               uri={gallery[galleryIdx] ?? currentListing.image}
               alt={currentListing.title}
               accessibilityLabel={currentListing.title}

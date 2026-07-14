@@ -421,7 +421,7 @@ function ChatScreenInner() {
       {/* Görsel lightbox: sohbetteki görsele dokununca uygulama içinde tam ekran aç (tarayıcıya atmadan). */}
       <Modal visible={lightboxUri !== null} transparent animationType="fade" onRequestClose={() => setLightboxUri(null)}>
         <Pressable onPress={() => setLightboxUri(null)} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.92)", flex: 1, justifyContent: "center", padding: 16 }}>
-          {lightboxUri ? <SafeRemoteImage uri={lightboxUri} contentFit="contain" style={{ height: "82%", width: "100%" }} /> : null}
+          {lightboxUri ? <SafeRemoteImage full uri={lightboxUri} contentFit="contain" style={{ height: "82%", width: "100%" }} /> : null}
           <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kapat", language)} onPress={() => setLightboxUri(null)} style={{ position: "absolute", right: 18, top: 44 }}>
             <MaterialCommunityIcons name="close-circle" size={34} color="#FFFFFF" />
           </Pressable>

@@ -2,7 +2,8 @@ import { Image } from "expo-image";
 import { useEffect, useRef } from "react";
 import { Animated, View } from "react-native";
 
-const brandHead = require("../../assets/brand-head.png");
+// 262kB PNG idi ve HER sayfada iniyordu; ekranda 36-44px → 128px WebP (6kB).
+const brandHead = require("../../assets/brand-head.webp");
 
 // Header marka ikonu: OrtakSat maskotunun sevimli kedi kafası, hafif salınımla.
 // Şeffaf zeminli — header'ın beyaz zeminine temiz oturur. 36–44px kullan.

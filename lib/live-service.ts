@@ -499,12 +499,42 @@ export async function uploadListingImage(uri: string, userId: string) {
     return uri;
   }
 
-  const path = `${userId}/${makeUuid()}.${ext}`;
+  const id = makeUuid();
+  const path = `${userId}/${id}.${ext}`;
   const { error } = await supabase.storage.from("listing-images").upload(path, body, { contentType, upsert: false });
   if (error) {
     console.warn("Supabase listing image upload failed", error);
     return uri;
   }
+
+  // KART VARYANTI (<uuid>-t.jpg): kartlar ~180-256px, ama tam boyut (1600px) görsel
+  // indiriliyordu. Supabase görsel dönüşümü bu planda kapalı (render/image → 403), o yüzden
+  // küçüğü burada üretip yanına koyuyoruz. Başarısız olursa sorun değil: SafeRemoteImage
+  // küçüğü bulamazsa orijinale döner (bkz. lib/image-url.ts).
+  if (!isVideo) {
+    try {
+      let thumbBlob: Blob | null = null;
+      if (Platform.OS === "web") {
+        const t = await compressImageBlob(body, 512, 0.72, 120 * 1024);
+        // Canvas gerçekten küçülttüyse kullan; küçülmediyse thumb yükleme (yoksa tam boyut
+        // görseli "küçük" diye yüklemiş olurduk — hiç yoktan kötü).
+        if (t.blob.size < body.size) thumbBlob = t.blob;
+      } else {
+        // NATIVE: compressImageBlob canvas'a dayanır ve burada blob'u AYNEN döndürür.
+        // Gerçek küçültme için image-manipulator şart.
+        const small = await manipulateAsync(workUri, [{ resize: { width: 512 } }], { compress: 0.7, format: SaveFormat.JPEG });
+        thumbBlob = await (await fetch(small.uri)).blob();
+      }
+      if (thumbBlob && thumbBlob.size > 0) {
+        await supabase.storage
+          .from("listing-images")
+          .upload(`${userId}/${id}-t.jpg`, thumbBlob, { contentType: "image/jpeg", upsert: true });
+      }
+    } catch (e) {
+      console.warn("Kart varyantı üretilemedi (orijinal kullanılacak):", (e as Error)?.message);
+    }
+  }
+
   return supabase.storage.from("listing-images").getPublicUrl(path).data.publicUrl;
 }
 
