@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useRouter } from "expo-router";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Modal, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { Modal, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -985,19 +985,30 @@ function AdminScreenInner() {
           </Panel>
           <Panel title="Ayarlar" sub="Platform genel ayarları — anında kaydedilir ve tüm siteye uygulanır">
             {([
-              { key: "allowSignups", label: "Yeni kayıtlara izin ver", desc: "Kapalıyken yeni hesap kaydı engellenir." },
-              { key: "reviewBeforePublish", label: "İlanları yayından önce incele", desc: "Açıkken yeni ilanlar önce onaya (incelemeye) düşer." },
-              { key: "requireEmailVerification", label: "E-posta doğrulama zorunlu", desc: "Açıkken doğrulanmamış e-posta ile ilan verme sınırlanır." },
-              { key: "maintenanceMode", label: "Bakım modu", desc: "Açıkken tüm sayfalarda üstte bakım uyarısı görünür." }
-            ] as Array<{ key: keyof typeof platformSettings; label: string; desc: string }>).map((s) => {
+              { key: "allowSignups", label: "Yeni kayıtlara izin ver", desc: "Kapalıyken yeni hesap kaydı engellenir.",
+                riskyAt: false, warn: "Yeni kayıtları KAPATIYORSUN. Siteye hiç kimse yeni hesap açamayacak. Devam edilsin mi?" },
+              { key: "reviewBeforePublish", label: "İlanları yayından önce incele", desc: "Açıkken yeni ilanlar önce onaya (incelemeye) düşer.",
+                riskyAt: true, warn: "Ön inceleme AÇILIYOR. Bundan sonra ilanlar anında yayınlanmaz, sen onaylayana kadar bekler. Devam edilsin mi?" },
+              { key: "requireEmailVerification", label: "E-posta doğrulama zorunlu", desc: "Açıkken doğrulanmamış e-posta ile ilan verme sınırlanır.",
+                riskyAt: true, warn: "E-posta doğrulama ZORUNLU olacak. Doğrulamamış kullanıcılar ilan veremez. Devam edilsin mi?" },
+              { key: "maintenanceMode", label: "Bakım modu", desc: "Açıkken tüm sayfalarda üstte bakım uyarısı görünür.",
+                riskyAt: true, warn: "BAKIM MODU açılıyor. Siteye giren HERKES üstte bakım uyarısı görecek. Devam edilsin mi?" }
+            ] as Array<{ key: keyof typeof platformSettings; label: string; desc: string; riskyAt: boolean; warn: string }>).map((s) => {
               const on = platformSettings[s.key];
+              // Ayarlar anında CANLI siteye uygulanıyor. Riskli yönde (bakım aç, kayıtları kapat…)
+              // yanlışlıkla dokunma tüm ziyaretçileri etkilerdi — o yönde onay iste.
+              const toggle = () => {
+                const next = !on;
+                if (next === s.riskyAt) confirmAction(s.warn, () => updatePlatformSetting(s.key, next), "Evet, uygula");
+                else updatePlatformSetting(s.key, next);
+              };
               return (
                 <View key={s.key} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingVertical: 13 }}>
                   <View style={{ flex: 1, gap: 2 }}>
                     <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{s.label}</Text>
                     <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{s.desc}</Text>
                   </View>
-                  <Pressable onPress={() => updatePlatformSetting(s.key, !on)} style={{ alignItems: on ? "flex-end" : "flex-start", backgroundColor: on ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}>
+                  <Pressable accessibilityRole="switch" testID={`setting-${s.key}`} onPress={toggle} style={{ alignItems: on ? "flex-end" : "flex-start", backgroundColor: on ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}>
                     <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} />
                   </Pressable>
                 </View>
@@ -1077,16 +1088,12 @@ function isOpenReport(r: { status: string }) {
   return r.status === "open" || r.status === "reviewing";
 }
 
-// Yıkıcı işlem onayı: web'de window.confirm, native'de Alert.
-function confirmAction(message: string, onYes: () => void) {
-  if (Platform.OS === "web" && typeof window !== "undefined") {
-    if (window.confirm(message)) onYes();
-  } else {
-    Alert.alert("Onay", message, [
-      { text: "Vazgeç", style: "cancel" },
-      { text: "Evet", style: "destructive", onPress: onYes }
-    ]);
-  }
+// Yıkıcı işlem onayı — markalı uygulama-içi diyalog (Alert web'de AlertHost'a gider).
+function confirmAction(message: string, onYes: () => void, yesLabel = "Evet") {
+  Alert.alert("Onay", message, [
+    { text: "Vazgeç", style: "cancel" },
+    { text: yesLabel, style: "destructive", onPress: onYes }
+  ]);
 }
 
 // ---- pieces --------------------------------------------------------------

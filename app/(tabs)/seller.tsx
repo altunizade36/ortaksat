@@ -149,6 +149,14 @@ function SellerScreenInner() {
   const pendingOffers = offers
     .filter((o) => o.sellerId === currentUser.id && o.status === "pending")
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  // Kabul edilenler "Anlaşmalar" bölümünde kalır — yoksa kabul ettiğin an gözden kayboluyordu.
+  const acceptedOffers = useMemo(
+    () => offers
+      .filter((o) => o.sellerId === currentUser.id && o.status === "accepted")
+      .sort((a, b) => (b.respondedAt ?? b.createdAt).localeCompare(a.respondedAt ?? a.createdAt))
+      .slice(0, 20),
+    [offers, currentUser.id]
+  );
   function messageBuyer(listingId: string, buyerId: string) {
     const c = startConversation(listingId, buyerId, "Teklifin hakkında konuşalım.");
     if (c) router.push({ pathname: "/chat/[id]", params: { id: c.id } });
@@ -456,6 +464,60 @@ function SellerScreenInner() {
                       </View>
                     </View>
                   ) : null}
+                </View>
+              );
+            })}
+          </View>
+        </Card>
+      ) : null}
+
+      {/* ANLAŞMALAR — kabul edilen teklif "pending" listesinden düşünce satıcının elinde
+          hiçbir şey kalmıyordu: anlaşma vardı ama takip edilecek yer yoktu. */}
+      {acceptedOffers.length > 0 ? (
+        <Card>
+          <SectionTitle title="Anlaşmalar" action={`${acceptedOffers.length}`} />
+          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", marginBottom: 8 }}>
+            {translateCopy("Kabul ettiğin teklifler. Ödeme ve teslimatı alıcıyla doğrudan yaparsın — OrtakSat para tutmaz.", language)}
+          </Text>
+          <View style={{ gap: 10 }}>
+            {acceptedOffers.map((o) => {
+              const l = myListings.find((x) => x.id === o.listingId);
+              const buyer = findUser(o.buyerId);
+              return (
+                <View key={o.id} style={{ backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                    <MaterialCommunityIcons name="check-decagram" size={17} color={colors.success} />
+                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{l?.title ?? translateCopy("İlan", language)}</Text>
+                    <Text style={{ color: colors.success, fontSize: 15, fontWeight: "900" }}>{moneyIn(o.amount, l?.currency)}</Text>
+                  </View>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>
+                    {translateCopy("Anlaşılan tutar", language)} · {buyer?.name ?? translateCopy("Alıcı", language)}
+                  </Text>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => messageBuyer(o.listingId, o.buyerId)}
+                      style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
+                    >
+                      <MaterialCommunityIcons name="message-text-outline" size={15} color="#FFFFFF" />
+                      <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Alıcıyla mesajlaş", language)}</Text>
+                    </Pressable>
+                    {l && l.status === "active" ? (
+                      <Pressable
+                        accessibilityRole="button"
+                        onPress={() => confirmMarkSold(o.listingId)}
+                        style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
+                      >
+                        <MaterialCommunityIcons name="check-circle-outline" size={15} color={colors.muted} />
+                        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Satıldı olarak işaretle", language)}</Text>
+                      </Pressable>
+                    ) : l && l.status === "sold" ? (
+                      <View style={{ alignItems: "center", flexDirection: "row", gap: 5, paddingVertical: 9 }}>
+                        <MaterialCommunityIcons name="check" size={14} color={colors.success} />
+                        <Text style={{ color: colors.success, fontSize: 12, fontWeight: "800" }}>{translateCopy("İlan satıldı", language)}</Text>
+                      </View>
+                    ) : null}
+                  </View>
                 </View>
               );
             })}
