@@ -116,6 +116,9 @@ export default function ExploreScreen() {
   const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>(() => parseNumParam(sp(params.num)));
   const [statusOpen, setStatusOpen] = useState(() => sp(params.open) === "1");
   const [showMobileFilters, setShowMobileFilters] = useState(false); // mobilde filtre panelini aç/kapat
+  // Mobilde "Kategoriye göre filtrele" varsayılan KAPALI: ~18 kategori çipi ilanları
+  // ekranın çok altına itiyordu. Kategori seçiliyken açık kalır (drill filtreleri görünsün).
+  const [catFilterOpen, setCatFilterOpen] = useState(false);
   const [sortMode, setSortMode] = useState<SortMode>(() => (["priceAsc", "priceDesc", "commission", "commissionRate", "rating", "new"].includes(sp(params.sort)) ? (sp(params.sort) as SortMode) : "recommended"));
   const [onlyVerified, setOnlyVerified] = useState(() => sp(params.verified) === "1");
   // Ana sayfa filtre paritesi: komisyon ORANI (%), satıcı puanı, öne çıkanlar.
@@ -553,13 +556,25 @@ export default function ExploreScreen() {
   // Kategoriye göre dinamik filtre — hem masaüstü (ürün-kartı) hem mobil (medya-feed)
   // düzeninde HER ZAMAN görünür. Üst kategori seç → şemasından sayısal aralık
   // (m²/km/yıl) + facet (Yakıt/Vites/Isıtma…) filtreleri gelir.
-  const renderCatFilter = () => (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, marginBottom: 12, marginHorizontal: isWideWeb ? 0 : padding, padding: 14 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+  const renderCatFilter = () => {
+    // Mobilde: kategori seçili değilken varsayılan KAPALI (başlığa dokun → aç).
+    // Masaüstünde ve kategori seçiliyken HER ZAMAN açık.
+    const collapsible = !isWideWeb && catPath.length === 0;
+    const bodyOpen = !collapsible || catFilterOpen;
+    return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: bodyOpen ? 10 : 0, marginBottom: 12, marginHorizontal: isWideWeb ? 0 : padding, padding: 14 }}>
+      <Pressable
+        disabled={!collapsible}
+        onPress={() => collapsible && setCatFilterOpen((v) => !v)}
+        style={{ alignItems: "center", flexDirection: "row", gap: 8 }}
+      >
         <MaterialCommunityIcons name="tune-variant" size={16} color={colors.primaryDark} />
         <Text style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{translateCopy("Kategoriye göre filtrele", language)}</Text>
         {catPath.length > 0 ? <Pressable onPress={clearCatFilter} hitSlop={8}><Text style={{ color: colors.primary, fontSize: 12, fontWeight: "900" }}>{translateCopy("Temizle", language)}</Text></Pressable> : null}
-      </View>
+        {collapsible ? <MaterialCommunityIcons name={catFilterOpen ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} /> : null}
+      </Pressable>
+      {!bodyOpen ? null : (<>
+
       {/* Breadcrumb: Tümü > Emlak > Konut > … (tıklayınca o seviyeye dön) */}
       {pathNodes.length > 0 ? (
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
@@ -663,8 +678,10 @@ export default function ExploreScreen() {
           </View>
         );
       })() : null}
+      </>)}
     </View>
-  );
+    );
+  };
 
   // SSG + ilk istemci render'ı: genişlikten BAĞIMSIZ deterministik kabuk (temiz
   // hidrasyon). Mount sonrası (mountedGate) gerçek düzen render edilir.
