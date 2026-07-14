@@ -53,6 +53,33 @@ const SUGGESTED_COMMISSION: Record<string, [number, number]> = {
   "Müzik Enstrümanları": [8, 18],
   "Sağlık & Medikal": [8, 15]
 };
+
+// Başlık boşken gösterilen ÖRNEK (kategoriye göre). Sahibinden gibi: kullanıcıya iyi bir
+// başlığın nasıl olduğunu gösterir, ama alanı doldurmaz — kendi yazar.
+const TITLE_EXAMPLES: Record<string, string> = {
+  "Emlak": "Örn. Bahçelievler'de 3+1 Ara Kat Cephe Daire",
+  "Vasıta": "Örn. 2018 BMW 320i, 45.000 km, tam bakımlı",
+  "Yedek Parça, Aksesuar & Tuning": "Örn. Passat B8 Orijinal Far Takımı, sıfır",
+  "İkinci El & Sıfır Alışveriş": "Örn. iPhone 13 128GB, kutulu, garantili",
+  "İş Makineleri & Sanayi": "Örn. 2015 CAT 320D Ekskavatör, 6.500 saat",
+  "Ustalar & Hizmetler": "Örn. Boya Badana ve Alçı Ustası — İstanbul",
+  "Özel Ders & Eğitim": "Örn. Lise Matematik Özel Ders — birebir/online",
+  "Hayvanlar Alemi": "Örn. Golden Retriever Yavru, aşıları tam",
+  "Dijital Ürünler & Hizmetler": "Örn. Kurumsal Logo + Marka Kimliği Tasarımı"
+};
+const titlePlaceholderFor = (topLabel?: string) => (topLabel && TITLE_EXAMPLES[topLabel]) || "Örn. Ürünü, modeli ve öne çıkan özelliğini yaz";
+
+// Açıklama için tek-dokunuş madde şablonu (kategoriye göre). Boş açıklamayı doldurur;
+// kullanıcı üzerine yazar. Alıcının en çok sorduğu şeyleri hazır satır olarak verir.
+const DESC_TEMPLATES: Record<string, string> = {
+  "Emlak": "• Oda / salon: \n• m² (net/brüt): \n• Bulunduğu kat / bina yaşı: \n• Isıtma: \n• Aidat: \n• Krediye uygun mu: \n• Eşyalı mı: \n• Öne çıkanlar (asansör, otopark, cephe): ",
+  "Vasıta": "• Model yılı / km: \n• Yakıt / vites: \n• Değişen–boyalı parça: \n• Tramer kaydı: \n• Bakım geçmişi: \n• Lastik durumu: \n• Ekstralar (cam tavan, kamera…): \n• Takas / kredi: ",
+  "İkinci El & Sıfır Alışveriş": "• Ürün / model: \n• Durumu (sıfır / az kullanılmış): \n• Garanti / fatura: \n• Kutu–aksesuar tam mı: \n• Kullanım süresi: \n• Kusur (varsa): \n• Kargo / elden teslim: ",
+  "İş Makineleri & Sanayi": "• Marka / model / yıl: \n• Çalışma saati: \n• Bakım durumu: \n• Arıza / eksik: \n• Ekipman / ataşman: \n• Teslim yeri: "
+};
+const descTemplateFor = (topLabel?: string) =>
+  (topLabel && DESC_TEMPLATES[topLabel]) ||
+  "• Ürün / hizmet: \n• Durumu: \n• Öne çıkan özellikler: \n• Neden satıyorsun: \n• Teslim / iletişim: ";
 const DEFAULT_COMMISSION_RANGE: [number, number] = [8, 20];
 
 // Yarım kalan ilan taslağı — cihazda saklanır, kullanıcı geri döndüğünde devam eder.
@@ -808,11 +835,13 @@ export function DesktopCreateFlow() {
         {step === 1 && schema ? (() => {
           // Sahibinden tarzı gruplama: alanları rolüne göre bölümlere ayır (şema
           // değişmeden). Başlık → Özellikler → Donanım (multiselect) → Fiyat → Açıklama.
-          const titleField = schema.fields.find((f) => f.key === "title");
+          const titleFieldRaw = schema.fields.find((f) => f.key === "title");
+          // Başlık boşken kategoriye özel iyi bir örnek göster (Sahibinden gibi).
+          const titleField = titleFieldRaw ? { ...titleFieldRaw, placeholder: titlePlaceholderFor(path[0]?.label) } : undefined;
           const priceField = schema.fields.find((f) => f.key === "price");
           const descField = schema.fields.find((f) => f.key === "description");
-          const multiFields = schema.fields.filter((f) => f.type === "multiselect" && f !== titleField);
-          const specFields = schema.fields.filter((f) => f !== titleField && f !== priceField && f !== descField && f.type !== "multiselect");
+          const multiFields = schema.fields.filter((f) => f.type === "multiselect" && f !== titleFieldRaw);
+          const specFields = schema.fields.filter((f) => f !== titleFieldRaw && f !== priceField && f !== descField && f.type !== "multiselect");
           const renderField = (f: FieldDef) => {
             // Model alanı: marka seçiliyse markaya bağımlı model listesi.
             if (f.key === "model") {
@@ -957,6 +986,20 @@ export function DesktopCreateFlow() {
               {descField ? (
                 <FormSection title="Açıklama" icon="text-box-outline" hint="Ürünü detaylı anlat; ne kadar açık yazarsan o kadar güven verirsin.">
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(descField)}</View>
+                  {/* Sahibinden tarzı tek-dokunuş şablon: boş açıklamayı, alıcının en çok
+                      sorduğu maddelerle doldurur. Doluysa üzerine yazmamak için sadece
+                      açıklama boşken görünür. */}
+                  {!String(values.description ?? "").trim() ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      testID="desc-template"
+                      onPress={() => setV("description", descTemplateFor(path[0]?.label))}
+                      style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", borderColor: colors.primary, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 8 })}
+                    >
+                      <MaterialCommunityIcons name="playlist-plus" size={15} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Örnek şablon ekle", language)}</Text>
+                    </Pressable>
+                  ) : null}
                 </FormSection>
               ) : null}
             </View>

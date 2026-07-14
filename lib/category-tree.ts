@@ -2122,16 +2122,20 @@ export function deriveFieldsFromPath(path: CategoryNode[], schema: FormSchema): 
     if (match) out.listingType = match;
   }
 
-  // Başlık önerisi: marka + model + yaprak kategori (yalnızca boşsa uygulanır).
-  // Tekrarı gider: bir parça diğerini içeriyorsa (marka "iPhone" ⊂ model "iPhone 15
-  // Pro Max") yalnızca kapsayan kalır → "iPhone iPhone 15 Pro Max" düzelir.
-  const leafLbl = labels[labels.length - 1];
-  const rawParts = [brand, model, leafLbl].filter((p): p is string => Boolean(p));
-  const uniq: string[] = [];
-  for (const p of rawParts) if (!uniq.includes(p)) uniq.push(p);
-  const kept = uniq.filter((p) => !uniq.some((o) => o !== p && o.toLocaleLowerCase("tr-TR").includes(p.toLocaleLowerCase("tr-TR"))));
-  const titleSeed = (kept.length ? kept : uniq).join(" ").trim();
-  if (titleSeed.length >= 3) out.title = titleSeed.slice(0, 70);
+  // Başlık önerisi — YALNIZCA marka veya model belliyse (ör. "iPhone 15 Pro Max").
+  // Aksi halde başlık BOŞ kalır: kullanıcı kendi yazar (Sahibinden gibi). Eskiden
+  // yaprak kategori adı başlık olurdu → "Otomobil (Markaya Göre)" gibi ağaç-navigasyon
+  // artefaktları başlığa sızıyordu. Parantez içi ipuçlarını her hâlükârda temizle.
+  const clean = (s: string) => s.replace(/\s*\([^)]*\)\s*/g, " ").replace(/\s+/g, " ").trim();
+  if (brand || model) {
+    const leafLbl = clean(labels[labels.length - 1]);
+    const rawParts = [brand && clean(brand), model && clean(model), leafLbl].filter((p): p is string => Boolean(p));
+    const uniq: string[] = [];
+    for (const p of rawParts) if (!uniq.includes(p)) uniq.push(p);
+    const kept = uniq.filter((p) => !uniq.some((o) => o !== p && o.toLocaleLowerCase("tr-TR").includes(p.toLocaleLowerCase("tr-TR"))));
+    const titleSeed = (kept.length ? kept : uniq).join(" ").trim();
+    if (titleSeed.length >= 3) out.title = titleSeed.slice(0, 70);
+  }
 
   return out;
 }
