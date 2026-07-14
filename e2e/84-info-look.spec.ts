@@ -1,4 +1,4 @@
-import { test, devices, type Page } from "@playwright/test";
+import { test, expect, devices, type Page } from "@playwright/test";
 import { createConfirmedUser, uniqueEmail, resetAuthRateLimits } from "./helpers/supabase-admin";
 
 const PW = "GucluSifre123!";
@@ -37,6 +37,25 @@ test("İLAN BİLGİLERİ görünüm (masaüstü)", async ({ browser }) => {
 
   await toInfo(page, "otomobil", /Otomobil/i);
   await page.screenshot({ path: `${OUT}/d-otomobil.png`, fullPage: true }).catch(() => {});
+
+  // GAP DÜZELTMESİ: başlık artık kategori artefaktıyla ("Markaya Göre") dolu GELMEMELİ,
+  // ve kategoriye özel örnek placeholder göstermeli.
+  const titleField = page.getByTestId("field-title").first();
+  const titleVal = await titleField.inputValue().catch(() => "?");
+  const titlePh = await titleField.getAttribute("placeholder").catch(() => "");
+  console.log(`başlık değeri: "${titleVal}" | placeholder: "${titlePh}"`);
+  expect(titleVal.includes("Markaya Göre"), "başlık artefaktı sızmamalı").toBeFalsy();
+  expect((titlePh ?? "").includes("Örn."), "başlık örnek placeholder göstermeli").toBeTruthy();
+
+  // ŞABLON: boş açıklamaya tek-dokunuş şablon dolmalı
+  const tmpl = page.getByTestId("desc-template").first();
+  if (await tmpl.count()) {
+    await tmpl.click();
+    await page.waitForTimeout(800);
+    const body = (await page.locator("body").innerText());
+    console.log(`şablon eklendi mi (Tramer): ${body.includes("Tramer")}`);
+    expect(body.includes("Tramer") || body.includes("km"), "açıklama şablonu dolmalı").toBeTruthy();
+  }
   await ctx.close();
 });
 

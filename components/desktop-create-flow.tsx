@@ -1503,12 +1503,13 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
         <DSelect label="" value={String(value ?? "")} options={field.options ?? []} onChange={onChange} placeholder={translateCopy("Seçin", language)} />
       ) : (
         <TextInput
+          testID={`field-${field.key}`}
           value={String(value ?? "")}
           onChangeText={onChange}
           keyboardType={field.type === "number" ? "numeric" : "default"}
           multiline={wide}
           maxLength={charLimit ? charLimit.max : undefined}
-          placeholder={field.key === "title" ? `En az ${LIMITS.title.min} karakter — kısa ve net başlık` : field.placeholder}
+          placeholder={field.key === "title" ? (field.placeholder || `En az ${LIMITS.title.min} karakter — kısa ve net başlık`) : field.placeholder}
           placeholderTextColor={colors.subtle}
           style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: wide ? 84 : 46, paddingHorizontal: 12, paddingVertical: wide ? 10 : 8, textAlignVertical: wide ? "top" : "center" }}
         />
