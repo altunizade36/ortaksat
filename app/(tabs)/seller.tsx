@@ -95,7 +95,9 @@ function SellerScreenInner() {
     recordBatchPayout,
     setPartnershipCommission,
     refreshMarketplace,
-    refreshUserData
+    refreshUserData,
+    offers,
+    respondToOffer
   } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(() => Promise.all([refreshMarketplace(), refreshUserData()]));
   const [query, setQuery] = useState("");
@@ -141,6 +143,14 @@ function SellerScreenInner() {
     };
   }, [partnershipIdsKey]);
   const myLeads = leads.filter((lead) => myListingIds.has(lead.listingId));
+  // Yanıt bekleyen teklifler (en yenisi üstte) — satıcının en aksiyon-gerektiren işi.
+  const pendingOffers = offers
+    .filter((o) => o.sellerId === currentUser.id && o.status === "pending")
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  function messageBuyer(listingId: string, buyerId: string) {
+    const c = startConversation(listingId, buyerId, "Teklifin hakkında konuşalım.");
+    if (c) router.push({ pathname: "/chat/[id]", params: { id: c.id } });
+  }
   // Son 14 gün gelen talep serisi (gerçek createdAt; istemci tarafında hesaplanır).
   const activitySeries = useMemo(() => {
     const now = new Date();
@@ -351,6 +361,67 @@ function SellerScreenInner() {
           <MaterialCommunityIcons name="chevron-right" size={18} color={colors.muted} />
         </Pressable>
       </Card>
+
+      {/* GELEN TEKLİFLER — eskiden teklif yalnız sohbete serbest metin olarak geliyordu;
+          satıcı takip edemiyor, kabul/ret edemiyor, mesaj geçmişinde kayboluyordu. */}
+      {pendingOffers.length > 0 ? (
+        <Card>
+          <SectionTitle title="Gelen teklifler" action={`${pendingOffers.length}`} />
+          <View style={{ gap: 10 }}>
+            {pendingOffers.map((o) => {
+              const l = myListings.find((x) => x.id === o.listingId);
+              const buyer = findUser(o.buyerId);
+              return (
+                <View key={o.id} style={{ backgroundColor: colors.goldSoft, borderColor: colors.gold, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                    <MaterialCommunityIcons name="handshake" size={17} color={colors.goldInk} />
+                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{l?.title ?? translateCopy("İlan", language)}</Text>
+                    <Text style={{ color: colors.goldInk, fontSize: 15, fontWeight: "900" }}>{moneyIn(o.amount, l?.currency)}</Text>
+                  </View>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>
+                    {buyer?.name ?? translateCopy("Alıcı", language)}
+                    {l ? ` · ${translateCopy("liste", language)}: ${moneyIn(l.price, l.currency)}` : ""}
+                  </Text>
+                  {o.note ? <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>“{o.note}”</Text> : null}
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => Alert.alert(
+                        translateCopy("Teklifi kabul et", language),
+                        `${moneyIn(o.amount, l?.currency)} ${translateCopy("teklifini kabul ediyorsun. Alıcı bilgilendirilecek; ödeme ve teslimatı onunla doğrudan yaparsın.", language)}`,
+                        [
+                          { text: translateCopy("Vazgeç", language), style: "cancel" },
+                          { text: translateCopy("Kabul Et", language), onPress: () => void respondToOffer(o.id, "accepted") }
+                        ]
+                      )}
+                      style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.success, borderRadius: 9, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
+                    >
+                      <MaterialCommunityIcons name="check" size={15} color="#FFFFFF" />
+                      <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Kabul Et", language)}</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => void respondToOffer(o.id, "rejected")}
+                      style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
+                    >
+                      <MaterialCommunityIcons name="close" size={15} color={colors.muted} />
+                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Reddet", language)}</Text>
+                    </Pressable>
+                    <Pressable
+                      accessibilityRole="button"
+                      onPress={() => messageBuyer(o.listingId, o.buyerId)}
+                      style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 5, opacity: pressed ? 0.7 : 1, paddingHorizontal: 6, paddingVertical: 9 })}
+                    >
+                      <MaterialCommunityIcons name="message-text-outline" size={15} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Mesaj", language)}</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              );
+            })}
+          </View>
+        </Card>
+      ) : null}
 
       <Card>
         <SectionTitle title="Bugün dikkat isteyenler" action={`${newLeads.length + myApplications.length + unpaidSales.length + lowStockListings.length} ${t("taskShort")}`} />

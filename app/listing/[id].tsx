@@ -7,6 +7,7 @@ import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindo
 import { Alert } from "@/lib/alert";
 import { openUrlSafe } from "@/lib/link";
 import { shareOrCopy } from "@/lib/share";
+import { parseTrPrice } from "@/lib/validation";
 
 import { describeAttributes, findCategorySlug } from "@/lib/category-tree";
 import { useCompare } from "@/lib/compare";
@@ -86,7 +87,10 @@ export default function ListingDetailScreen() {
     partnerships,
     reports,
     startConversation,
-    toggleFavorite
+    toggleFavorite,
+    offers,
+    createOffer,
+    respondToOffer
   } = useStore();
   const { has: hasInCompare, toggle: toggleCompare } = useCompare();
   const storeListing = findListing(id);
@@ -110,6 +114,12 @@ export default function ListingDetailScreen() {
   const [message, setMessage] = useState("");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
+  // TEKLİF: alıcının bu ilandaki AKTİF teklifi (geri çekilmiş/eski olanlar sayılmaz).
+  const [offerOpen, setOfferOpen] = useState(false);
+  const [offerAmount, setOfferAmount] = useState("");
+  const [offerNote, setOfferNote] = useState("");
+  const [offerErr, setOfferErr] = useState<string | null>(null);
+  const [offerBusy, setOfferBusy] = useState(false);
   const [activeImage, setActiveImage] = useState(0);
   const [lightbox, setLightbox] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
@@ -248,6 +258,10 @@ export default function ListingDetailScreen() {
   const activeShareUrl = partnership?.status === "active" ? shareUrl(currentListing, partnership.refCode) : undefined;
   const isOwner = currentListing.ownerId === currentUser.id;
   const isDemo = Boolean(currentListing.demo);
+  // Bu ilandaki KENDİ son teklifim (geri çekilenler hariç → yeniden teklif verebilsin).
+  const myOffer = offers
+    .filter((o) => o.listingId === currentListing.id && o.buyerId === currentUser.id && o.status !== "withdrawn")
+    .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   function demoBlocked() {
     Alert.alert(translateCopy("Örnek ilan", language), translateCopy("Bu bir örnek (vitrin) ilandır; yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık bu ilanda kapalıdır.", language));
   }
@@ -848,6 +862,32 @@ export default function ListingDetailScreen() {
           {!isOwner && !isDemo ? (
             <View style={{ gap: 10 }}>
               <SafetyNote />
+              {/* TEKLİF VER — eskiden teklif yalnız sohbete serbest metin olarak
+                  yazılabiliyordu; satıcı takip edemiyor, kabul/ret edemiyordu. */}
+              {myOffer ? (
+                <View style={{ backgroundColor: myOffer.status === "accepted" ? colors.successSoft : myOffer.status === "rejected" ? colors.accentSoft : colors.goldSoft, borderColor: myOffer.status === "accepted" ? colors.success : myOffer.status === "rejected" ? colors.accent : colors.gold, borderRadius: 10, borderWidth: 1, gap: 4, padding: 12 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                    <MaterialCommunityIcons name="handshake" size={16} color={myOffer.status === "accepted" ? colors.success : myOffer.status === "rejected" ? colors.accent : colors.goldInk} />
+                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>
+                      {translateCopy("Teklifin", language)}: {moneyIn(myOffer.amount, currentListing.currency)}
+                    </Text>
+                  </View>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>
+                    {myOffer.status === "pending" ? translateCopy("Satıcının yanıtı bekleniyor.", language)
+                      : myOffer.status === "accepted" ? translateCopy("KABUL EDİLDİ — satıcıyla mesajlaşarak teslimatı ayarla.", language)
+                      : myOffer.status === "rejected" ? translateCopy("Kabul edilmedi. Yeni bir teklif verebilirsin.", language)
+                      : myOffer.status === "countered" ? `${translateCopy("Satıcı karşı teklif verdi", language)}: ${moneyIn(myOffer.counterAmount ?? 0, currentListing.currency)}`
+                      : translateCopy("Geri çekildi.", language)}
+                  </Text>
+                  {myOffer.status === "pending" ? (
+                    <Pressable onPress={() => void respondToOffer(myOffer.id, "withdrawn")} accessibilityRole="button" hitSlop={6} style={({ pressed }) => ({ alignSelf: "flex-start", opacity: pressed ? 0.7 : 1, paddingTop: 2 })}>
+                      <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "900" }}>{translateCopy("Teklifi geri çek", language)}</Text>
+                    </Pressable>
+                  ) : null}
+                </View>
+              ) : (
+                <PrimaryButton tone="secondary" icon="handshake-outline" onPress={() => { setOfferAmount(""); setOfferNote(""); setOfferErr(null); setOfferOpen(true); }}>{translateCopy("Teklif Ver", language)}</PrimaryButton>
+              )}
               <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
               {/* Numarayı Göster (Sahibinden tarzı) — istek üzerine gerçek numara */}
               {revealedPhone ? (
@@ -1054,6 +1094,73 @@ export default function ListingDetailScreen() {
 
       {/* Tam ekran görsel (lightbox) */}
       {/* Şikayet nedeni seçici (spec 80) */}
+      {/* TEKLİF VER modalı — tutar + not. Platform para TUTMAZ: kabul edilse bile
+          ödeme/teslimat taraflar arasındadır; burada tutulan anlaşma kaydıdır. */}
+      <Modal visible={offerOpen} transparent animationType="fade" onRequestClose={() => setOfferOpen(false)}>
+        <Pressable onPress={() => setOfferOpen(false)} style={{ alignItems: "center", backgroundColor: "rgba(8,15,25,0.55)", flex: 1, justifyContent: "center", padding: 20 }}>
+          <Pressable onPress={() => undefined} style={{ backgroundColor: colors.surface, borderRadius: 18, gap: 12, maxWidth: 420, padding: 20, width: "100%" }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+              <MaterialCommunityIcons name="handshake-outline" size={20} color={colors.primaryDark} />
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 16.5, fontWeight: "900" }}>{translateCopy("Teklif Ver", language)}</Text>
+            </View>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>
+              {translateCopy("İlan fiyatı", language)}: {moneyIn(currentListing.price, currentListing.currency)}
+            </Text>
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Teklifin (₺)", language)}</Text>
+              <TextInput
+                value={offerAmount}
+                onChangeText={(t) => { setOfferAmount(t.replace(/[^0-9.,]/g, "")); setOfferErr(null); }}
+                keyboardType="numeric"
+                autoFocus
+                placeholder={translateCopy("Örn. 45.000", language)}
+                placeholderTextColor={colors.subtle}
+                style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, fontWeight: "800", minHeight: 48, paddingHorizontal: 12 }}
+              />
+            </View>
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Not (opsiyonel)", language)}</Text>
+              <TextInput
+                value={offerNote}
+                onChangeText={setOfferNote}
+                multiline
+                placeholder={translateCopy("Ör. Nakit alırım, bugün gelebilirim.", language)}
+                placeholderTextColor={colors.subtle}
+                style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 70, padding: 10, textAlignVertical: "top" }}
+              />
+            </View>
+            {offerErr ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "800" }}>{offerErr}</Text> : null}
+            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
+              {translateCopy("OrtakSat ödeme almaz. Teklif kabul edilirse ödeme ve teslimatı satıcıyla doğrudan yaparsın.", language)}
+            </Text>
+            <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
+              <Pressable onPress={() => setOfferOpen(false)} style={({ pressed }) => ({ borderColor: colors.line, borderRadius: 10, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 16, paddingVertical: 11 })}>
+                <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text>
+              </Pressable>
+              <Pressable
+                disabled={offerBusy}
+                onPress={() => {
+                  const amt = parseTrPrice(offerAmount);
+                  if (!(amt > 0)) { setOfferErr(translateCopy("Geçerli bir tutar gir.", language)); return; }
+                  setOfferBusy(true);
+                  void createOffer(currentListing.id, currentListing.ownerId, amt, offerNote.trim() || undefined)
+                    .then((res) => {
+                      setOfferBusy(false);
+                      if (!res.ok) { setOfferErr(res.error ?? translateCopy("Teklif gönderilemedi.", language)); return; }
+                      setOfferOpen(false);
+                      Alert.alert(translateCopy("Teklifin gönderildi", language), translateCopy("Satıcı yanıtlayınca bildirim alacaksın.", language));
+                    })
+                    .catch(() => { setOfferBusy(false); setOfferErr(translateCopy("Teklif gönderilemedi.", language)); });
+                }}
+                style={({ pressed }) => ({ backgroundColor: offerBusy ? colors.line : colors.primary, borderRadius: 10, opacity: pressed ? 0.85 : 1, paddingHorizontal: 20, paddingVertical: 11 })}
+              >
+                <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{offerBusy ? translateCopy("Gönderiliyor…", language) : translateCopy("Teklifi Gönder", language)}</Text>
+              </Pressable>
+            </View>
+          </Pressable>
+        </Pressable>
+      </Modal>
+
       <Modal visible={reportOpen} transparent animationType="fade" onRequestClose={() => setReportOpen(false)}>
         <View style={{ backgroundColor: "rgba(16,24,40,0.55)", flex: 1, justifyContent: "center", padding: 20 }}>
           <View style={{ alignSelf: "center", backgroundColor: colors.background, borderRadius: 18, gap: 14, maxWidth: 460, padding: 22, width: "100%" }}>

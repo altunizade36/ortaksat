@@ -33,6 +33,9 @@ import {
   blockUserLive,
   unblockUserLive,
   fetchBlockedUsers,
+  createOfferLive,
+  fetchOffersLive,
+  respondToOfferLive,
   loadMyFollowsLive,
   insertFavorite,
   insertLead,
@@ -98,6 +101,7 @@ import type {
   Conversation,
   Favorite,
   Lead,
+  Offer,
   CategorySuggestion,
   LeadStatus,
   Listing,
@@ -301,6 +305,9 @@ type AppStore = {
   followedSellerIds: string[];
   isFollowing: (sellerId: string) => boolean;
   toggleFollow: (sellerId: string) => void;
+  offers: Offer[];
+  createOffer: (listingId: string, sellerId: string, amount: number, note?: string) => Promise<{ ok: boolean; error?: string }>;
+  respondToOffer: (offerId: string, status: Offer["status"], counterAmount?: number) => Promise<boolean>;
   blockedUserIds: string[];
   isUserBlocked: (userId: string) => boolean;
   blockUser: (userId: string) => Promise<void>;
@@ -442,6 +449,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [reviews, setReviews] = useState(isSupabaseConfigured ? [] : initialReviews);
   const [favorites, setFavorites] = useState(isSupabaseConfigured ? [] : initialFavorites);
   const [followedSellerIds, setFollowedSellerIds] = useState<string[]>([]);
+  const [offers, setOffers] = useState<Offer[]>([]);
   const [blockedUserIds, setBlockedUserIds] = useState<string[]>([]);
   const [conversations, setConversations] = useState(isSupabaseConfigured ? [] : initialConversations);
   const [messages, setMessages] = useState(isSupabaseConfigured ? [] : initialMessages);
@@ -488,6 +496,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
     setMessages([]);
     setFavorites([]);
     setFollowedSellerIds([]);
+    setOffers([]);
     setBlockedUserIds([]);
     setPartnerships([]);
     setLeads([]);
@@ -654,15 +663,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
       loadedAccountUserRef.current = profile.id;
       void syncSavedForUser(profile.id); // kayıtlı aramaları sunucuyla senkronla (cihazlar arası)
       // Hesap verisi + öneriler + takipler: her biri BAĞIMSIZ dirençli — biri patlasa diğerleri yüklenir.
-      const [account, suggestions, myFollows, myBlocks] = await Promise.all([
+      const [account, suggestions, myFollows, myBlocks, myOffers] = await Promise.all([
         loadAccountSnapshot(profile.id).catch(() => null),
         loadSuggestions().catch(() => ({ categorySuggestions: [], locationSuggestions: [] })),
         loadMyFollowsLive(profile.id).catch(() => [] as string[]),
-        fetchBlockedUsers(profile.id).catch(() => [] as string[])
+        fetchBlockedUsers(profile.id).catch(() => [] as string[]),
+        fetchOffersLive().catch(() => [] as Offer[])
       ]);
       if (!mounted) return;
       setFollowedSellerIds(myFollows);
       setBlockedUserIds(myBlocks);
+      setOffers(myOffers);
       // Kategori/konum önerileri (RLS: kendi + admin hepsi) — kalıcı yüklensin.
       setCategorySuggestions(suggestions.categorySuggestions);
       setLocationSuggestions(suggestions.locationSuggestions);
@@ -2009,6 +2020,22 @@ export function StoreProvider({ children }: PropsWithChildren) {
           bumpFollower(1);
           if (liveUser) persistCritical(followSellerLive(sellerId), () => { setFollowedSellerIds((ids) => ids.filter((id) => id !== sellerId)); bumpFollower(-1); }, "Takip edilemedi. Bağlantını kontrol edip tekrar dene.");
         }
+      },
+      offers,
+      async createOffer(listingId, sellerId, amount, note) {
+        if (!isAuthenticated) { setAuthError("Teklif vermek için giriş yapmalısın."); return { ok: false, error: "Giriş gerekli." }; }
+        if (sellerId === currentUser.id) return { ok: false, error: "Kendi ilanına teklif veremezsin." };
+        if (!(amount > 0)) return { ok: false, error: "Geçerli bir tutar gir." };
+        const res = await createOfferLive({ listingId, sellerId, amount, note });
+        if (res.ok) setOffers(await fetchOffersLive()); // sunucudan tazele (id/created_at gerçek)
+        return res;
+      },
+      async respondToOffer(offerId, status, counterAmount) {
+        const prev = offers;
+        setOffers((items) => items.map((o) => (o.id === offerId ? { ...o, status, counterAmount: status === "countered" ? counterAmount : o.counterAmount } : o)));
+        const ok = await respondToOfferLive(offerId, status, counterAmount);
+        if (!ok) { setOffers(prev); setSyncError("Teklif yanıtlanamadı. Tekrar dene."); }
+        return ok;
       },
       blockedUserIds,
       isUserBlocked(userId) {

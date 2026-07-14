@@ -2,7 +2,7 @@
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 
 import { supabase } from "@/lib/supabase";
-import type { CategorySuggestion, Conversation, Lead, Listing, LocationSuggestion, Message, ModerationStatus, Notification, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
+import type { CategorySuggestion, Conversation, Lead, Listing, LocationSuggestion, Message, ModerationStatus, Notification, Offer, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -1196,6 +1196,67 @@ export async function fetchAdminMessageStats(): Promise<{ conversations: number;
   const { data, error } = await supabase.rpc("admin_message_stats");
   if (error) { console.warn("admin_message_stats failed", error); return null; }
   return (data ?? null) as { conversations: number; messages: number; messages_24h: number; blocked_pairs: number } | null;
+}
+
+
+// ---------------------------------------------------------------------------
+// TEKLİFLER — alıcının ilana verdiği yapılandırılmış, tutarlı öneri.
+// Eskiden teklif yalnız sohbette serbest metindi: satıcı takip edemiyor,
+// kabul/ret edemiyordu, mesaj geçmişinde kayboluyordu.
+// ---------------------------------------------------------------------------
+function mapOffer(r: Record<string, unknown>): Offer {
+  return {
+    id: String(r.id),
+    listingId: String(r.listing_id),
+    buyerId: String(r.buyer_id),
+    sellerId: String(r.seller_id),
+    amount: Number(r.amount ?? 0),
+    note: (r.note as string) ?? undefined,
+    status: (r.status as Offer["status"]) ?? "pending",
+    counterAmount: r.counter_amount != null ? Number(r.counter_amount) : undefined,
+    respondedAt: (r.responded_at as string) ?? undefined,
+    createdAt: String(r.created_at ?? "")
+  };
+}
+
+/** Teklif ver. Aynı ilana ikinci BEKLEYEN teklif DB'de engellidir (spam). */
+export async function createOfferLive(input: { listingId: string; sellerId: string; amount: number; note?: string }): Promise<{ ok: boolean; error?: string }> {
+  if (!supabase) return { ok: true };
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return { ok: false, error: "Teklif vermek için giriş yapmalısın." };
+  const { error } = await supabase.from("offers").insert({
+    listing_id: input.listingId,
+    buyer_id: me,
+    seller_id: input.sellerId,
+    amount: input.amount,
+    note: input.note?.trim() || null
+  });
+  if (error) {
+    // 23505 = benzersizlik → zaten bekleyen teklifi var.
+    if (error.code === "23505") return { ok: false, error: "Bu ilana zaten bekleyen bir teklifin var." };
+    console.warn("offer insert failed", error);
+    return { ok: false, error: "Teklif gönderilemedi. Tekrar dene." };
+  }
+  return { ok: true };
+}
+
+/** Kullanıcının TARAF olduğu tüm teklifler (alıcı veya satıcı) — RLS zaten süzer. */
+export async function fetchOffersLive(): Promise<Offer[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.from("offers").select("*").order("created_at", { ascending: false }).limit(300);
+  if (error) { console.warn("offers fetch failed", error); return []; }
+  return (data ?? []).map((r) => mapOffer(r as Record<string, unknown>));
+}
+
+/** Satıcı yanıtlar (kabul/ret/karşı teklif) ya da alıcı geri çeker. */
+export async function respondToOfferLive(offerId: string, status: Offer["status"], counterAmount?: number): Promise<boolean> {
+  if (!supabase) return true;
+  const patch: Record<string, unknown> = { status, responded_at: new Date().toISOString() };
+  if (status === "countered") patch.counter_amount = counterAmount ?? null;
+  const { error } = await supabase.from("offers").update(patch).eq("id", offerId);
+  if (error) { console.warn("offer update failed", error); return false; }
+  return true;
 }
 
 export async function updateReportStatusLive(report: Report, status: ModerationStatus, resolverId: string) {

@@ -7,7 +7,7 @@ export type LeadSource = "whatsapp" | "instagram" | "web" | "phone";
 export type PurchaseIntent = "hot" | "warm" | "cold";
 export type OrderStatus = "pending" | "confirmed" | "delivered" | "cancelled";
 export type SaleStatus = "pending" | "return_pending" | "approved" | "seller_paid" | "paid" | "cancelled" | "disputed";
-export type NotificationType = "application" | "lead" | "sale" | "message" | "payout" | "review" | "price_drop" | "sold" | "follow" | "system";
+export type NotificationType = "application" | "lead" | "sale" | "message" | "payout" | "review" | "price_drop" | "sold" | "follow" | "offer" | "system";
 export type UserRole = "user" | "seller" | "partner" | "moderator" | "admin" | "super_admin";
 export type ModerationStatus = "open" | "reviewing" | "resolved" | "rejected";
 export type ConversationStatus = "open" | "closed" | "blocked";
@@ -284,5 +284,25 @@ export type LocationSuggestion = {
   type: string;
   note?: string;
   status: SuggestionStatus;
+  createdAt: string;
+};
+
+/**
+ * TEKLİF — alıcının ilana verdiği, tutarı olan yapılandırılmış öneri.
+ * (leads ORTAK ATIFI içindir; bu ayrı bir kavramdır.)
+ * Platform para tutmaz: kabul edilse bile ödeme/teslimat taraflar arasındadır,
+ * burada tutulan yalnızca ANLAŞMA KAYDIdır.
+ */
+export type OfferStatus = "pending" | "accepted" | "rejected" | "countered" | "withdrawn";
+export type Offer = {
+  id: string;
+  listingId: string;
+  buyerId: string;
+  sellerId: string;
+  amount: number;
+  note?: string;
+  status: OfferStatus;
+  counterAmount?: number;
+  respondedAt?: string;
   createdAt: string;
 };
