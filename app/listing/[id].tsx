@@ -15,6 +15,7 @@ import { Accordion } from "@/components/accordion";
 import { AgreementCard } from "@/components/agreement-card";
 import { colors } from "@/components/colors";
 import { StarRatingInput } from "@/components/star-rating-input";
+import { ReviewCard } from "@/components/review-card";
 import { JsonLd } from "@/components/json-ld";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
@@ -31,7 +32,6 @@ import { categoryConversion } from "@/lib/conversion";
 import { VerificationBadges } from "@/components/verification-badges";
 import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { shortDate } from "@/lib/locale";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
@@ -81,6 +81,10 @@ export default function ListingDetailScreen() {
     joinListing,
     reportListing,
     reviews,
+    editReview,
+    deleteReview,
+    reportReview,
+    backendMode,
     sales,
     leads,
     listings,
@@ -257,6 +261,7 @@ export default function ListingDetailScreen() {
   const partnership = findPartnership(currentListing.id);
   const activeShareUrl = partnership?.status === "active" ? shareUrl(currentListing, partnership.refCode) : undefined;
   const isOwner = currentListing.ownerId === currentUser.id;
+  const isReviewAuthed = backendMode === "supabase" && !!currentUser?.id && currentUser.id.includes("-");
   const isDemo = Boolean(currentListing.demo);
   // Bu ilandaki KENDİ son teklifim (geri çekilenler hariç → yeniden teklif verebilsin).
   const myOffer = offers
@@ -1085,31 +1090,22 @@ export default function ListingDetailScreen() {
               {translateCopy("Bu ürün için henüz yorum yok.", language)}
             </Text>
           ) : null}
-          {listingReviews.map((item) => {
-            const reviewer = findUser(item.reviewerId);
-            return (
-              <View key={item.id} style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 6, padding: 10 }}>
-                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{reviewer?.name ?? translateCopy("Kullanıcı", language)}</Text>
-                  <View style={{ flexDirection: "row", gap: 1 }}>{[1, 2, 3, 4, 5].map((n) => <MaterialCommunityIcons key={n} name={n <= item.rating ? "star" : "star-outline"} size={13} color={colors.gold} />)}</View>
-                  {item.saleId ? (
-                    <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 6, paddingVertical: 1 }}>
-                      <MaterialCommunityIcons name="check-decagram" size={11} color={colors.success} />
-                      <Text selectable style={{ color: colors.success, fontSize: 10, fontWeight: "900" }}>{translateCopy("Doğrulanmış satış", language)}</Text>
-                    </View>
-                  ) : null}
-                  <Text selectable style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700", marginLeft: "auto" }}>{shortDate(item.createdAt)}</Text>
-                </View>
-                <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{item.comment}</Text>
-                {item.sellerReply ? (
-                  <View style={{ backgroundColor: colors.primarySoft, borderLeftColor: colors.primary, borderLeftWidth: 3, borderRadius: 8, gap: 2, marginTop: 2, padding: 8 }}>
-                    <Text selectable style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Satıcı yanıtı", language)}</Text>
-                    <Text selectable style={{ color: colors.ink, fontSize: 12.5, lineHeight: 18 }}>{item.sellerReply}</Text>
-                  </View>
-                ) : null}
-              </View>
-            );
-          })}
+          {/* Paylaşılan ReviewCard (mağaza sayfasıyla AYNI): kendi yorumunu düzenle/sil,
+              satıcı yanıtı, faydalı oyu, şikayet. Burada eskiden salt-okunur bir kopya vardı. */}
+          {listingReviews.map((item) => (
+            <ReviewCard
+              key={item.id}
+              review={item}
+              reviewerName={findUser(item.reviewerId)?.name}
+              isSeller={isOwner}
+              authed={isReviewAuthed}
+              isMine={item.reviewerId === currentUser.id}
+              onEdit={editReview}
+              onDelete={deleteReview}
+              onReport={reportReview}
+              language={language}
+            />
+          ))}
         </Card>
       </View>
       </WebContainer>
