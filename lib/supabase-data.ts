@@ -345,8 +345,37 @@ export async function loadPlatformSettings(): Promise<import("@/lib/types").Plat
   };
 }
 
+type PrefetchBag = { listings: Promise<unknown>; profiles: Promise<unknown> };
+
+/**
+ * İlk açılışta besleme isteği, JS bundle inip çalışana kadar (~1,07sn) HİÇ başlamıyordu.
+ * app/+html.tsx belge ayrıştırılırken (~50ms) aynı iki isteği başlatıp promise'leri
+ * window.__osPrefetch'e koyar. Burada onları TÜKETİRİZ — böylece istek iki kez gitmez.
+ * Ön-çekim yoksa/başarısızsa sessizce normal yola düşülür (yanlış veri riski yok).
+ */
+async function takePrefetched(): Promise<MarketplaceSnapshot | null> {
+  if (typeof window === "undefined") return null;
+  const w = window as unknown as { __osPrefetch?: PrefetchBag | null };
+  const bag = w.__osPrefetch;
+  if (!bag) return null;
+  w.__osPrefetch = null; // yalnız ilk açılış; sonraki yenilemeler canlı veri çeker
+  try {
+    const [rawListings, rawProfiles] = await Promise.all([bag.listings, bag.profiles]);
+    if (!Array.isArray(rawListings) || !Array.isArray(rawProfiles)) return null;
+    const listings = (rawListings as PublicListingCardRow[]).map(mapListing);
+    const users = (rawProfiles as ProfileRow[]).map(mapProfile);
+    const counts = listings.reduce<Record<string, number>>((acc, l) => { acc[l.ownerId] = (acc[l.ownerId] ?? 0) + 1; return acc; }, {});
+    return { listings, users: users.map((u) => ({ ...u, listingCount: counts[u.id] ?? u.listingCount })) };
+  } catch {
+    return null;
+  }
+}
+
 export async function loadMarketplaceSnapshot(): Promise<MarketplaceSnapshot | null> {
   if (!supabase) return null;
+
+  const prefetched = await takePrefetched();
+  if (prefetched) return prefetched;
 
   const [listingsResult, profilesResult] = await Promise.all([
     supabase

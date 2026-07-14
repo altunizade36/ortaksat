@@ -88,6 +88,11 @@ export default function Root({ children }: PropsWithChildren) {
 
         <ScrollViewStyleReset />
         <style dangerouslySetInnerHTML={{ __html: responsiveShell }} />
+        {/* VERİ ÖN-ÇEKİMİ: ilan beslemesi isteği, JS bundle inip çalışana kadar (ölçüm: ~1,07sn)
+            HİÇ başlamıyordu → ilk kart 1,67sn'de, masaüstü LCP ~2,8sn. Bu satır-içi script
+            belge ayrıştırılırken (~50ms) isteği başlatır; store hazır olduğunda yanıt çoktan
+            yoldadır (bkz. loadMarketplaceSnapshot). Anon anahtar zaten herkese açık (bundle'da). */}
+        <script dangerouslySetInnerHTML={{ __html: prefetchScript }} />
         {/* JS kapalıysa iskelet ekranı gizle — içerik DOM'da zaten var (SEO/crawler güvenli). */}
         <noscript dangerouslySetInnerHTML={{ __html: "<style>#boot-splash{display:none!important}</style>" }} />
       </head>
@@ -120,6 +125,23 @@ export default function Root({ children }: PropsWithChildren) {
 // Iskelet ekrani, React GERCEK duzeni basana kadar durur. Kaldirma tetigi artik
 // window.load DEGIL, kok duzenin <html class="app-ready"> isaretidir (bkz app/_layout.tsx):
 // SSG taslagi (yanlis duzen/ikonsuz/kartsiz) kullaniciya HIC gorunmez. 8sn guvenlik agi.
+const SB_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
+const SB_KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
+const PROFILE_COLS = "id,full_name,avatar_url,bio,verified_phone,verified_identity,verified_instagram,rating,response_rate,role,status,successful_sales,follower_count";
+
+// Sorgular loadMarketplaceSnapshot ile AYNI olmalı; ayrışırsa ön-çekim sessizce atlanır
+// (store normal yolundan çeker) — yani yanlış veri riski yok, sadece hız kazancı kaybolur.
+const prefetchScript = SB_URL && SB_KEY
+  ? "(function(){try{" +
+    "var u=" + JSON.stringify(SB_URL + "/rest/v1") + ",k=" + JSON.stringify(SB_KEY) + ";" +
+    "var h={apikey:k,Authorization:'Bearer '+k,Accept:'application/json'};" +
+    "var g=function(q){return fetch(u+q,{headers:h}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});};" +
+    "window.__osPrefetch={" +
+    "listings:g('/listing_public_cards?select=*&status=eq.active&order=created_at.desc&limit=90')," +
+    "profiles:g('/profiles?select=" + PROFILE_COLS + "&limit=200')" +
+    "};}catch(e){}})();"
+  : "";
+
 const bootScript =
   "(function(){var s=document.getElementById('boot-splash');if(!s)return;" +
   "var d=false;function done(){if(d)return;d=true;s.style.opacity='0';s.style.pointerEvents='none';" +
