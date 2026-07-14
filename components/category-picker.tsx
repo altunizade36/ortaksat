@@ -1,10 +1,9 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
-import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { getFormSchema, resolveFormKey, suggestCategories, type CategoryNode } from "@/lib/category-tree";
+import { resolveFormKey, suggestCategories, type CategoryNode } from "@/lib/category-tree";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { getRecentCategories, pushRecentCategory, subscribeRecentCategories, type RecentCategory } from "@/lib/recent-categories";
@@ -17,7 +16,7 @@ import { useStore } from "@/lib/use-store";
  * onChange(path) çağrılır; form alanları bu path'e göre değişir.
  */
 export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onChange: (path: CategoryNode[]) => void }) {
-  const { categoryTree, listings } = useStore();
+  const { categoryTree } = useStore();
   const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const [trail, setTrail] = useState<CategoryNode[]>(value ?? []);
@@ -58,36 +57,6 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
     if (path.length) finalize(path);
   };
 
-  // POPÜLER KATEGORİLER: gerçek AKTİF ilanlardan türetilir (uydurma sayı/sıralama yok).
-  // Yeni satıcı ağaca hiç girmeden en çok ilan verilen kategorilere tek dokunuşla ulaşır.
-  const popular = useMemo(() => {
-    const counts = new Map<string, number>();
-    for (const l of listings) {
-      if (l.status !== "active" || !l.category) continue;
-      counts.set(l.category, (counts.get(l.category) ?? 0) + 1);
-    }
-    if (!counts.size) return [] as Array<{ path: CategoryNode[]; count: number }>;
-    // Etiketten ağaçtaki yolu çöz (ilk eşleşen yaprak/düğüm).
-    const findPath = (label: string): CategoryNode[] | null => {
-      const target = label.toLocaleLowerCase("tr-TR").trim();
-      const walk = (nodes: CategoryNode[], trailAcc: CategoryNode[]): CategoryNode[] | null => {
-        for (const n of nodes) {
-          const next = [...trailAcc, n];
-          if (n.label.toLocaleLowerCase("tr-TR").trim() === target) return next;
-          const deep = n.children ? walk(n.children, next) : null;
-          if (deep) return deep;
-        }
-        return null;
-      };
-      return walk(categoryTree, []);
-    };
-    return [...counts.entries()]
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 8)
-      .map(([label, count]) => ({ path: findPath(label), count }))
-      .filter((x): x is { path: CategoryNode[]; count: number } => Array.isArray(x.path) && x.path.length > 0)
-      .slice(0, 6);
-  }, [listings, categoryTree]);
 
   const pickTop = (n: CategoryNode) => { setTrail([n]); setQuery(""); };
   const pickChild = (n: CategoryNode) => {
@@ -99,198 +68,126 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
   const goTo = (idx: number) => setTrail(trail.slice(0, idx + 1));
 
   const previewPath = finalized ? value : trail;
-  const formKey = previewPath.length ? resolveFormKey(previewPath) : "";
-  const requiredLabels = formKey ? getFormSchema(formKey).fields.filter((f) => f.required).map((f) => f.label) : [];
 
   return (
-    <View style={{ gap: 14 }}>
-      {/* Para-modeli bilgi kutusu (her kategori ekranında görünür) */}
-      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 9, paddingHorizontal: 12, paddingVertical: 9 }}>
-        <MaterialCommunityIcons name="shield-check-outline" size={17} color={colors.primaryDark} />
-        <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16 }}>
-          {translateCopy("OrtakSat ödeme, kargo veya komisyon işlemez. Taraflar kendi aralarında anlaşır; platform yalnızca ilan ve eşleşme altyapısı sağlar.", language)}
-        </Text>
-      </View>
-      {/* Search + suggestions */}
+    <View style={{ gap: 12 }}>
+      {/* Arama */}
       <View style={{ gap: 6 }}>
-        <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: query ? colors.primary : colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14 }}>
-          <MaterialCommunityIcons name="magnify" size={20} color={colors.primary} />
+        <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: query ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 9, paddingHorizontal: 13 }}>
+          <MaterialCommunityIcons name="magnify" size={19} color={colors.subtle} />
           <TextInput
             value={query}
             onChangeText={setQuery}
-            placeholder={translateCopy("Ne satıyorsun? iPhone, koltuk, araba, arsa…", language)}
+            placeholder={translateCopy("Kategori ara: iPhone, koltuk, araba…", language)}
             placeholderTextColor={colors.subtle}
-            style={{ color: colors.ink, flex: 1, fontSize: 14.5, minHeight: 50, paddingVertical: 10 }}
+            style={{ color: colors.ink, flex: 1, fontSize: 14.5, minHeight: 46, paddingVertical: 9 }}
           />
-          {query ? <Pressable onPress={() => setQuery("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} /></Pressable> : null}
+          {query ? <Pressable onPress={() => setQuery("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={17} color={colors.muted} /></Pressable> : null}
         </View>
         {suggestions.length ? (
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, overflow: "hidden" }}>
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, overflow: "hidden" }}>
             {suggestions.map((s) => (
-              <Pressable key={s.labels.join(">")} onPress={() => { finalize(s.path); setQuery(""); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 11 })}>
-                <MaterialCommunityIcons name="tag-arrow-right-outline" size={18} color={colors.primary} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy(s.labels[s.labels.length - 1], language)}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{s.labels.map((l) => translateCopy(l, language)).join(" › ")}</Text>
-                </View>
-                <MaterialCommunityIcons name="arrow-right" size={16} color={colors.muted} />
+              <Pressable key={s.labels.join(">")} onPress={() => { finalize(s.path); setQuery(""); }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 13, paddingVertical: 10 })}>
+                <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy(s.labels[s.labels.length - 1], language)}</Text>
+                <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{s.labels.map((l) => translateCopy(l, language)).join(" › ")}</Text>
               </Pressable>
             ))}
           </View>
         ) : null}
       </View>
 
-      {/* Breadcrumb */}
+      {/* Seçilen yol (breadcrumb) — sade metin */}
       {previewPath.length ? (
-        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-          <MaterialCommunityIcons name="map-marker-path" size={16} color={colors.muted} />
+        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 3 }}>
           {previewPath.map((p, i) => (
-            <View key={p.key} style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-              {i > 0 ? <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} /> : null}
+            <View key={p.key} style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+              {i > 0 ? <Text style={{ color: colors.subtle, fontSize: 12 }}>›</Text> : null}
               <Pressable onPress={() => !finalized && goTo(i)}>
                 <Text style={{ color: i === previewPath.length - 1 ? colors.primaryDark : colors.muted, fontSize: 12.5, fontWeight: i === previewPath.length - 1 ? "900" : "700" }}>{translateCopy(p.label, language)}</Text>
               </Pressable>
             </View>
           ))}
           {finalized ? (
-            <Pressable onPress={() => onChange([])} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 4, marginLeft: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-              <MaterialCommunityIcons name="pencil-outline" size={13} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
+            <Pressable onPress={() => onChange([])} hitSlop={6} style={{ marginLeft: 8 }}>
+              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
             </Pressable>
           ) : null}
         </View>
       ) : null}
 
+      {/* Son kullanılan — tekrar ilan veren satıcı 4594 yapraklı ağacı gezmesin (sade, sayısız) */}
       {!finalized && !top && !query.trim() && recents.length ? (
-        <View style={{ gap: 7 }}>
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Son kullandığın kategoriler", language)}</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
-            {recents.map((rc) => (
-              <Pressable
-                key={rc.slugs.join(">")}
-                accessibilityRole="button"
-                accessibilityLabel={rc.labels.join(" › ")}
-                onPress={() => pickRecent(rc)}
-                style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 40, paddingHorizontal: 13 })}
-              >
-                <MaterialCommunityIcons name="history" size={14} color={colors.primaryDark} />
-                <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800", maxWidth: 220 }}>
-                  {rc.labels[rc.labels.length - 1]}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-      ) : null}
-
-      {!finalized && !top && !query.trim() && popular.length ? (
-        <View style={{ gap: 7 }}>
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Popüler kategoriler", language)}</Text>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
-            {popular.map((p) => (
-              <Pressable
-                key={p.path.map((n) => n.slug).join(">")}
-                accessibilityRole="button"
-                accessibilityLabel={p.path.map((n) => n.label).join(" › ")}
-                onPress={() => finalize(p.path)}
-                style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 40, paddingHorizontal: 13 })}
-              >
-                <MaterialCommunityIcons name="trending-up" size={14} color={colors.muted} />
-                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800", maxWidth: 200 }}>
-                  {translateCopy(p.path[p.path.length - 1].label, language)}
-                </Text>
-                <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>{p.count}</Text>
-              </Pressable>
-            ))}
-          </View>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          {recents.slice(0, 6).map((rc) => (
+            <Pressable key={rc.slugs.join(">")} onPress={() => pickRecent(rc)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, minHeight: 34, justifyContent: "center", paddingHorizontal: 12 })}>
+              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700", maxWidth: 200 }}>{rc.labels[rc.labels.length - 1]}</Text>
+            </Pressable>
+          ))}
         </View>
       ) : null}
 
       {!finalized ? (
-        <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-          {/* Pane 1: top categories — mobilde bir üst kategori seçilince gizlenir (dar ekranda alt kategoriye odak). */}
+        <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 12 }}>
+          {/* Sütun 1: ana kategoriler (mobilde üst seçilince gizlenir) */}
           {isWideWeb || !top ? (
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 230, flexGrow: 1, maxWidth: isWideWeb ? 280 : undefined, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
-            <Text style={{ backgroundColor: colors.surfaceAlt, color: colors.muted, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.4, paddingHorizontal: 14, paddingVertical: 9, textTransform: "uppercase" }}>{translateCopy("Ana Kategori", language)}</Text>
-            <ScrollView style={{ maxHeight: isWideWeb ? 420 : 320 }}>
-              {categoryTree.map((n) => {
-                const on = top?.key === n.key;
-                return (
-                  <Pressable key={n.key} onPress={() => pickTop(n)} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 10, paddingHorizontal: 12, paddingVertical: 11 }}>
-                    {n.image ? <View style={{ borderRadius: 8, height: 30, overflow: "hidden", width: 30 }}><SafeRemoteImage uri={n.image} style={{ height: "100%", width: "100%" }} contentFit="cover" /></View> : null}
-                    <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 13.5, fontWeight: on ? "900" : "700" }}>{translateCopy(n.label, language)}</Text>
-                    <MaterialCommunityIcons name="chevron-right" size={17} color={on ? colors.primary : colors.subtle} />
-                  </Pressable>
-                );
-              })}
-            </ScrollView>
-          </View>
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 240, flexGrow: 1, maxWidth: isWideWeb ? 300 : undefined, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
+              <ScrollView style={{ maxHeight: isWideWeb ? 440 : 400 }}>
+                {categoryTree.map((n, i) => {
+                  const on = top?.key === n.key;
+                  return (
+                    <Pressable key={n.key} onPress={() => pickTop(n)} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 13 }}>
+                      <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 14, fontWeight: on ? "900" : "600" }}>{translateCopy(n.label, language)}</Text>
+                      <MaterialCommunityIcons name="chevron-right" size={18} color={on ? colors.primary : colors.subtle} />
+                    </Pressable>
+                  );
+                })}
+              </ScrollView>
+            </View>
           ) : null}
 
-          {/* Pane 2: current level children */}
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 230, flexGrow: 1.4, minWidth: 0, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
-            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 9 }}>
-              {!isWideWeb && top ? (
-                <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Üst kategoriye dön", language)} onPress={() => setTrail([])} hitSlop={8}>
+          {/* Sütun 2: alt kategoriler */}
+          {top ? (
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 240, flexGrow: 1.6, minWidth: 0, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
+              {!isWideWeb ? (
+                <Pressable onPress={() => setTrail([])} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 11 }}>
                   <MaterialCommunityIcons name="chevron-left" size={18} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy(top.label, language)}</Text>
                 </Pressable>
               ) : null}
-              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.4, textTransform: "uppercase" }}>
-                {current ? `${translateCopy(current.label, language)} — ${translateCopy("Alt Kategori", language)}` : translateCopy("Önce ana kategori seçin", language)}
-              </Text>
+              <ScrollView style={{ maxHeight: isWideWeb ? 440 : 420 }}>
+                {canFinalizeHere ? (
+                  <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primarySoft, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 13 }}>
+                    <MaterialCommunityIcons name="check-circle" size={18} color={colors.primary} />
+                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13.5, fontWeight: "900" }}>“{translateCopy(current.label, language)}” {translateCopy("ile devam et", language)}</Text>
+                  </Pressable>
+                ) : null}
+                {midItems.length === 0 && !canFinalizeHere ? (
+                  <View style={{ gap: 10, padding: 16 }}>
+                    <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Bu bir son kategori. Seçerek devam edebilirsin.", language)}</Text>
+                    <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 12 }}>
+                      <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>“{translateCopy(current.label, language)}” {translateCopy("ile devam et", language)}</Text>
+                    </Pressable>
+                  </View>
+                ) : (
+                  midItems.map((n, i) => (
+                    <Pressable key={n.key} onPress={() => pickChild(n)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderTopColor: colors.line, borderTopWidth: (i === 0 && !canFinalizeHere) ? 0 : 1, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 13 })}>
+                      <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600" }}>{translateCopy(n.label, language)}</Text>
+                      {n.children && n.children.length ? <MaterialCommunityIcons name="chevron-right" size={18} color={colors.subtle} /> : null}
+                    </Pressable>
+                  ))
+                )}
+              </ScrollView>
             </View>
-            <ScrollView style={{ maxHeight: isWideWeb ? 420 : 360 }}>
-              {!current ? (
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 16 }}>{translateCopy("Soldan bir ana kategori seçerek başlayın ya da yukarıdan arayın.", language)}</Text>
-              ) : midItems.length === 0 ? (
-                <View style={{ gap: 10, padding: 16 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "700" }}>{translateCopy("Bu bir son kategori. Seçerek devam edebilirsin.", language)}</Text>
-                  <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, paddingVertical: 11 }}>
-                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>“{translateCopy(current.label, language)}” {translateCopy("ile devam et", language)}</Text>
-                  </Pressable>
-                </View>
-              ) : (
-                midItems.map((n) => (
-                  <Pressable key={n.key} onPress={() => pickChild(n)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 11 })}>
-                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{translateCopy(n.label, language)}</Text>
-                    {n.children && n.children.length ? <MaterialCommunityIcons name="chevron-right" size={17} color={colors.subtle} /> : <MaterialCommunityIcons name="checkbox-blank-circle-outline" size={15} color={colors.subtle} />}
-                  </Pressable>
-                ))
-              )}
-            </ScrollView>
-          </View>
-
-          {/* Pane 3: summary */}
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 220, flexGrow: 1, gap: 10, maxWidth: isWideWeb ? 300 : undefined, padding: 16, width: isWideWeb ? undefined : "100%" }}>
-            <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy("Seçim özeti", language)}</Text>
-            {previewPath.length ? (
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{previewPath.map((p) => translateCopy(p.label, language)).join(" › ")}</Text>
-            ) : (
-              <Text style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Henüz kategori seçilmedi.", language)}</Text>
-            )}
-            {canFinalizeHere ? (
-              <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 11 }}>
-                <MaterialCommunityIcons name="check" size={16} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bu kategoriyi seç", language)}</Text>
-              </Pressable>
-            ) : hasChildren && trail.length >= 1 ? (
-              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{translateCopy("Devam etmek için bir alt kategori seç — böylece doğru form ve filtreler gelir.", language)}</Text>
-            ) : null}
-            {requiredLabels.length ? (
-              <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 4, marginTop: 2, padding: 11 }}>
-                <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Bu kategori için gerekenler:", language)}</Text>
-                <Text numberOfLines={4} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{requiredLabels.join(", ")}{translateCopy(", fotoğraf, fiyat, konum, komisyon.", language)}</Text>
-              </View>
-            ) : null}
-          </View>
+          ) : !isWideWeb ? null : (
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 240, flexGrow: 1.6, padding: 20 }}>
+              <Text style={{ color: colors.subtle, fontSize: 13, fontWeight: "600" }}>{translateCopy("Soldan bir ana kategori seç.", language)}</Text>
+            </View>
+          )}
         </View>
       ) : (
-        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 14 }}>
-          <MaterialCommunityIcons name="check-decagram" size={24} color={colors.primaryDark} />
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Kategori seçildi", language)}</Text>
-            <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Bu kategori için form aşağıda buna göre hazırlandı:", language)} {requiredLabels.slice(0, 4).join(", ")}…</Text>
-          </View>
+        <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, padding: 13 }}>
+          <MaterialCommunityIcons name="check-circle" size={20} color={colors.success} />
+          <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "800" }}>{translateCopy("Kategori seçildi. Form aşağıda hazır.", language)}</Text>
         </View>
       )}
     </View>

@@ -25,6 +25,7 @@ import { categoryRisk, moderateListingText, MODERATION_MESSAGES, scanTextLocal }
 import { computeListingRisk } from "@/lib/risk";
 import { rateLimit } from "@/lib/rate-limit";
 import { shareOrCopy } from "@/lib/share";
+import { useIsWideWeb } from "@/lib/layout";
 import type { CommissionType, Listing, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
@@ -87,6 +88,7 @@ type DraftShape = {
 
 export function DesktopCreateFlow() {
   const { language } = useLanguage();
+  const isWideWeb = useIsWideWeb();
   const router = useRouter();
   const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, listings } = useStore();
   const DRAFT_KEY = draftKeyFor(currentUser?.id);
@@ -747,8 +749,8 @@ export function DesktopCreateFlow() {
         <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{step === 0 ? translateCopy("Geri", language) : `${translateCopy("Geri", language)}: ${translateCopy(STEPS[step - 1], language)}`}</Text>
       </Pressable>
       <View style={{ gap: 4 }}>
-        <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Yeni ilan oluştur", language)}</Text>
-        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Kategorini seç, sana özel form açılsın. Ortak satışa açarak ortakların ürününü kendi kitlesine yaysın.", language)}</Text>
+        <Text style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 21, fontWeight: "900" }}>{translateCopy("Yeni ilan oluştur", language)}</Text>
+        {isWideWeb ? <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{translateCopy("Kategorini seç, sana özel form açılsın.", language)}</Text> : null}
       </View>
 
       {/* Yarım kalan taslak — "kaldığın yerden devam et" */}
@@ -768,22 +770,36 @@ export function DesktopCreateFlow() {
         </View>
       ) : null}
 
-      {/* Stepper */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-        {STEPS.map((s, i) => {
-          const done = i < step;
-          const on = i === step;
-          const reachable = i <= step || (i === step + 1 && canNext());
-          return (
-            <Pressable key={s} onPress={() => { if (i < step || reachable) setStep(i); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : done ? colors.primarySoft : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 13, paddingVertical: 8 }}>
-              <View style={{ alignItems: "center", backgroundColor: on ? "#FFFFFF" : done ? colors.primary : colors.surfaceAlt, borderRadius: 999, height: 20, justifyContent: "center", width: 20 }}>
-                {done ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" /> : <Text style={{ color: on ? colors.primary : colors.muted, fontSize: 11, fontWeight: "900" }}>{i + 1}</Text>}
-              </View>
-              <Text style={{ color: on ? "#FFFFFF" : done ? colors.primaryDark : colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(s, language)}</Text>
-            </Pressable>
-          );
-        })}
-      </View>
+      {/* Adım göstergesi. Eskiden 6 kocaman çip mobilde 3 satıra yayılıp kategoriyi
+          ekranın çok altına itiyordu. Mobilde artık tek satır: ilerleme çubuğu + "Adım n/6".
+          Masaüstünde kompakt tıklanabilir çipler kalır. */}
+      {isWideWeb ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          {STEPS.map((s, i) => {
+            const done = i < step;
+            const on = i === step;
+            const reachable = i <= step || (i === step + 1 && canNext());
+            return (
+              <Pressable key={s} onPress={() => { if (i < step || reachable) setStep(i); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : "transparent", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
+                <View style={{ alignItems: "center", backgroundColor: on ? "#FFFFFF" : done ? colors.primary : colors.surfaceAlt, borderRadius: 999, height: 18, justifyContent: "center", width: 18 }}>
+                  {done ? <MaterialCommunityIcons name="check" size={11} color="#FFFFFF" /> : <Text style={{ color: on ? colors.primary : colors.muted, fontSize: 10.5, fontWeight: "900" }}>{i + 1}</Text>}
+                </View>
+                <Text style={{ color: on ? "#FFFFFF" : done ? colors.primaryDark : colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy(s, language)}</Text>
+              </Pressable>
+            );
+          })}
+        </View>
+      ) : (
+        <View style={{ gap: 7 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy(STEPS[step], language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Adım", language)} {step + 1}/{STEPS.length}</Text>
+          </View>
+          <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 6, overflow: "hidden" }}>
+            <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: "100%", width: `${((step + 1) / STEPS.length) * 100}%` }} />
+          </View>
+        </View>
+      )}
 
       {/* Body */}
       <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, padding: 22 }}>
