@@ -1263,7 +1263,7 @@ export default function ExploreScreen() {
           </View>
           {visibleMediaItems.length < mediaItems.length ? (
             <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "800", paddingVertical: 8, textAlign: "center" }}>
-              {visibleMediaItems.length} / {mediaItems.length} {t("content")}
+              {visibleMediaItems.length} / {mediaItems.length} {translateCopy("ilan", language)}
             </Text>
           ) : null}
         </>
