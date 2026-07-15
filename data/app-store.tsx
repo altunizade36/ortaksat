@@ -1528,6 +1528,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
           deliveryNote: repairTurkishText(input.deliveryNote),
           slug: listing.slug
         };
+        // Restock: stok bitince 'sold' olan ilan yeniden stoklanınca OTOMATİK aktifleşsin
+        // (eskiden gizli kalıp ayrı "Aktifleştir" gerekiyordu — satıcı tuzağı). Yalnız
+        // 'sold'→'active'; paused/archived/rejected kasıtlı olduğundan korunur.
+        if (listing.status === "sold" && updatedListing.status === "sold" && (updatedListing.stockCount ?? 0) > 0) {
+          updatedListing.status = "active";
+        }
         const ok = liveUser ? await updateListingLive(updatedListing) : true;
         if (!ok) {
           setAuthError("İlan güncellenemedi. Lütfen tekrar dene.");
@@ -2200,14 +2206,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const nextStock = typeof patch.stockCount === "number" ? Math.max(0, Math.floor(patch.stockCount)) : undefined;
         const nextPrice = typeof patch.price === "number" ? Math.max(0, Math.round(patch.price)) : undefined;
         if (nextStock === undefined && nextPrice === undefined) return;
-        const prev = { stockCount: listing.stockCount, price: listing.price };
+        // Restock: satılan (stok-biten) ilan satır-içi stok>0 ile aktifleşsin (full-edit ile parite).
+        const reactivate = listing.status === "sold" && nextStock !== undefined && nextStock > 0;
+        const prev = { stockCount: listing.stockCount, price: listing.price, status: listing.status };
         setListings((items) =>
           items.map((item) =>
             item.id === listingId
               ? {
                   ...item,
                   ...(nextStock !== undefined ? { stockCount: nextStock } : {}),
-                  ...(nextPrice !== undefined ? { price: nextPrice } : {})
+                  ...(nextPrice !== undefined ? { price: nextPrice } : {}),
+                  ...(reactivate ? { status: "active" as const } : {})
                 }
               : item
           )
@@ -2222,6 +2231,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
             },
             "Güncelleme kaydedilemedi. Bağlantını kontrol edip tekrar dene."
           );
+          // Reaktivasyon status'u ayrı yazılır (stok RPC'si status yazmaz).
+          if (reactivate) persistOrWarn(updateListingStatusLive({ ...listing, status: "active" }), "İlan durumu güncellenemedi. Lütfen tekrar dene.");
         }
       },
       setListingFeatured(listingId, featured) {
