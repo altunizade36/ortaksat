@@ -45,11 +45,15 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
-        {/* PWA: service worker kaydı (yüklenebilir uygulama) */}
+        {/* PWA: service worker kaydı + OTOMATİK GÜNCELLEME. Eskiden yalnız register vardı;
+            yeni sürüm deploy edilince kullanıcı eski JS'te takılı kalıyordu (önbellek). Artık
+            yeni SW devralınca (controllerchange) sayfa BİR KEZ yenilenir → herkes otomatik güncel
+            sürüme geçer. İlk ziyarette (önceden controller yoktu) yenileme YOK; refreshing bayrağı
+            döngüyü engeller. */}
         <script
           dangerouslySetInnerHTML={{
             __html:
-              "if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}"
+              "(function(){if(!('serviceWorker' in navigator))return;var had=!!navigator.serviceWorker.controller;var refreshing=false;navigator.serviceWorker.addEventListener('controllerchange',function(){if(refreshing)return;if(!had){had=true;return;}refreshing=true;window.location.reload();});window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').then(function(reg){try{reg.update();}catch(e){}}).catch(function(){});});})();"
           }}
         />
 
