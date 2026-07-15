@@ -38,10 +38,20 @@ export function RecordSaleModal({
   const { language } = useLanguage();
   const [amount, setAmount] = useState(String(listPrice));
   const [qty, setQty] = useState("1");
+  // Tutar kullanıcı tarafından elle değiştirildi mi? Değilse adet arttıkça tutar
+  // otomatik fiyat×adet olur (eskiden tutar birim-fiyatta kalıp adet=3'te komisyon
+  // ve stok TUTARSIZ oluyordu: 3 stok düşüyor ama komisyon 1 birim üzerinden).
+  const [amountEdited, setAmountEdited] = useState(false);
 
   useEffect(() => {
-    if (visible) { setAmount(String(listPrice)); setQty("1"); }
+    if (visible) { setAmount(String(listPrice)); setQty("1"); setAmountEdited(false); }
   }, [visible, listPrice]);
+
+  function changeQty(t: string) {
+    const q = Math.max(1, Number(t.replace(/[^0-9]/g, "")) || 1);
+    setQty(t.replace(/[^0-9]/g, ""));
+    if (!amountEdited) setAmount(String(listPrice * q)); // elle düzenlenmediyse toplamı ölçekle
+  }
 
   const amountNum = Number(amount.replace(/[^0-9]/g, "")) || 0;
   const qtyNum = Math.max(1, Number(qty.replace(/[^0-9]/g, "")) || 1);
@@ -73,7 +83,7 @@ export function RecordSaleModal({
               <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Satış tutarı (toplam)", language)}</Text>
               <TextInput
                 value={amount}
-                onChangeText={(t) => setAmount(t.replace(/[^0-9]/g, ""))}
+                onChangeText={(t) => { setAmount(t.replace(/[^0-9]/g, "")); setAmountEdited(true); }}
                 keyboardType="number-pad"
                 placeholder={String(listPrice)}
                 placeholderTextColor={colors.subtle}
@@ -84,7 +94,7 @@ export function RecordSaleModal({
               <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Adet", language)}</Text>
               <TextInput
                 value={qty}
-                onChangeText={(t) => setQty(t.replace(/[^0-9]/g, ""))}
+                onChangeText={changeQty}
                 keyboardType="number-pad"
                 placeholder="1"
                 placeholderTextColor={colors.subtle}
