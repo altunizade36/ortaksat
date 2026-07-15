@@ -1192,8 +1192,9 @@ export default function ExploreScreen() {
         {/* İstatistikler: eskiden "Görsel / Video" sayısıydı — alıcı/ortak için değersiz
             (katalogda kaç FOTOĞRAF olduğu kimseyi ilgilendirmez). Artık karar verdiren
             gerçek sinyaller: anında ortak olunabilen ilan + ortalama komisyon oranı. */}
+        {/* "İlan" çipi kaldırıldı: başlıktaki "90 ilan" ile tekrardı ve 3 çip 390px'e sıkışıp
+            etiketleri "Anında ..." / "Ort. k..." diye kırpıyordu. 2 çip → kırpılmadan sığar. */}
         <View style={{ flexDirection: "row", gap: 6 }}>
-          <ExploreStat icon="tag-multiple-outline" label="İlan" value={`${mediaItems.length}`} />
           <ExploreStat icon="flash" label="Anında ortak" value={`${openCount}`} />
           <ExploreStat icon="percent" label="Ort. komisyon" value={avgRate > 0 ? `%${avgRate}` : "—"} />
         </View>
