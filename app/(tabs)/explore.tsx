@@ -560,6 +560,7 @@ export default function ExploreScreen() {
   useFocusEffect(
     useCallback(() => {
       // İlk focus (ilk açılış) restore ETME — yalnız geri-dönüşlerde.
+      if (typeof console !== "undefined") console.log(`[EXPLORE-FOCUS] first=${!focusedOnceRef.current} memo=${JSON.stringify(exploreScrollMemo)} sig="${filterSig}"`);
       if (!focusedOnceRef.current) { focusedOnceRef.current = true; return; }
       if (exploreScrollMemo.sig !== filterSig || exploreScrollMemo.count <= INITIAL_EXPLORE_ITEMS) return;
       setVisibleCount((c) => (c < exploreScrollMemo.count ? exploreScrollMemo.count : c));

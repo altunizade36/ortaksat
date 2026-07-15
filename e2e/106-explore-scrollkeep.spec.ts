@@ -29,7 +29,7 @@ test("KEŞFET: ilana girip geri dönünce kaydırma konumu korunmalı (mobil)", 
   test.setTimeout(120_000);
   const ctx = await browser.newContext({ ...devices["iPhone 13"] });
   const page = await ctx.newPage();
-  page.on("console", (m) => { if (m.text().includes("EXPLORE-RESTORE")) console.log("  APP:", m.text()); });
+  page.on("console", (m) => { if (m.text().includes("EXPLORE-")) console.log("  APP:", m.text()); });
   await page.goto("/explore", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(4500);
 
