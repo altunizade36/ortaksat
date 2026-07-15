@@ -1,4 +1,4 @@
-import { test, type Page } from "@playwright/test";
+import { test, expect, type Page } from "@playwright/test";
 
 const OUT = "e2e-artifacts/explore-consistency";
 
@@ -34,10 +34,24 @@ test("KEŞFET tutarlılık ölçümü (tüm viewportlar)", async ({ browser }) =
   test.setTimeout(200_000);
   const ctx = await browser.newContext();
   const page = await ctx.newPage();
-  await measure(page, "1-mobil-390", 390, 844);
-  await measure(page, "2-mobilyatay-640", 640, 800);
-  await measure(page, "3-tablet-834", 834, 1112);
-  await measure(page, "4-web-1024", 1024, 900);
-  await measure(page, "5-web-1440", 1440, 900);
+  const r1 = await measure(page, "1-mobil-390", 390, 844);
+  const r2 = await measure(page, "2-mobilyatay-640", 640, 800);
+  const r3 = await measure(page, "3-tablet-834", 834, 1112);
+  const r4 = await measure(page, "4-web-1024", 1024, 900);
+  const r5 = await measure(page, "5-web-1440", 1440, 900);
+  const all = [r1, r2, r3, r4, r5];
+
+  // 1) Her viewport'ta görseller TAM KARE (oran 1.0) ve cover — tüm platformlarda aynı.
+  for (const r of all) {
+    expect(r.ratios.every((x) => Math.abs(x - 1) <= 0.02), `oran tam kare olmalı: ${r.ratios}`).toBeTruthy();
+    expect(r.fits.every((f) => f === "cover"), `fit cover olmalı: ${r.fits}`).toBeTruthy();
+    expect(r.overflow, "yatay taşma olmamalı").toBeLessThanOrEqual(2);
+  }
+  // 2) Sütun sayısı genişlikle MONOTON artmalı (tablette düşüş = tutarsızlık).
+  const cols = all.map((r) => r.cols);
+  for (let i = 1; i < cols.length; i++) {
+    expect(cols[i], `sütunlar genişledikçe azalmamalı: ${cols.join("→")}`).toBeGreaterThanOrEqual(cols[i - 1]);
+  }
+  console.log(`SÜTUN AKIŞI: ${cols.join(" → ")} (monoton ✓)`);
   await ctx.close();
 });
