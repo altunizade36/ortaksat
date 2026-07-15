@@ -34,7 +34,7 @@ export default function StoreScreen() {
   const { width } = useWindowDimensions();
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
-  const { currentUser, findUser, listings, partnerships, leads, reports, reviews, sales, startConversation, reportUser, editReview, deleteReview, reportReview, isFollowing, toggleFollow, backendMode, refreshMarketplace } = useStore();
+  const { currentUser, findUser, listings, partnerships, leads, reports, reviews, sales, startConversation, reportUser, editReview, deleteReview, reportReview, isFollowing, toggleFollow, isUserBlocked, blockUser, unblockUser, backendMode, refreshMarketplace } = useStore();
   // Girişli mi? (helpful oyu için: anon → /auth; girişli + geçici hata → yönlendirme YOK)
   const isAuthed = backendMode === "supabase" && !!currentUser?.id && currentUser.id.includes("-");
 
@@ -46,6 +46,19 @@ export default function StoreScreen() {
       ok
         ? translateCopy("Bildiriminiz kayıt altına alındı ve incelenecek. Teşekkürler.", language)
         : translateCopy("Bildirim için e-posta ile giriş yapmalısın.", language)
+    );
+  }
+
+  function handleToggleBlock() {
+    if (!seller || isOwnStore) return;
+    if (isUserBlocked(seller.id)) { void unblockUser(seller.id); return; }
+    Alert.alert(
+      translateCopy("Kullanıcıyı engelle", language),
+      `${seller.name} — ${translateCopy("engellensin mi? Engellediğin kullanıcı sana mesaj gönderemez, sen de ona gönderemezsin.", language)}`,
+      [
+        { text: translateCopy("Vazgeç", language), style: "cancel" },
+        { text: translateCopy("Engelle", language), style: "destructive", onPress: () => void blockUser(seller.id) }
+      ]
     );
   }
   const [filter, setFilter] = useState<StoreFilter>("active");
@@ -467,6 +480,9 @@ export default function StoreScreen() {
                 {!isOwnStore ? (
                   <Pressable onPress={() => void handleReportSeller()} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name="flag-outline" size={17} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Satıcıyı şikayet et", language)}</Text></Pressable>
                 ) : null}
+                {!isOwnStore && seller ? (
+                  <Pressable onPress={() => handleToggleBlock()} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}><MaterialCommunityIcons name={isUserBlocked(seller.id) ? "account-check-outline" : "account-cancel-outline"} size={17} color={isUserBlocked(seller.id) ? colors.primaryDark : colors.muted} /><Text style={{ color: isUserBlocked(seller.id) ? colors.primaryDark : colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy(isUserBlocked(seller.id) ? "Engeli kaldır" : "Kullanıcıyı engelle", language)}</Text></Pressable>
+                ) : null}
               </View>
             </View>
           </View>
@@ -558,6 +574,11 @@ export default function StoreScreen() {
             {!isOwnStore ? (
               <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Satıcıyı şikayet et", language)} onPress={() => void handleReportSeller()} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 14 })}>
                 <MaterialCommunityIcons name="flag-outline" size={19} color={colors.muted} />
+              </Pressable>
+            ) : null}
+            {!isOwnStore && seller ? (
+              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy(isUserBlocked(seller.id) ? "Engeli kaldır" : "Kullanıcıyı engelle", language)} onPress={() => handleToggleBlock()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: isUserBlocked(seller.id) ? colors.accentSoft : "transparent", borderColor: isUserBlocked(seller.id) ? colors.accent : colors.line, borderRadius: 10, borderWidth: 1, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 14 })}>
+                <MaterialCommunityIcons name={isUserBlocked(seller.id) ? "account-check-outline" : "account-cancel-outline"} size={19} color={isUserBlocked(seller.id) ? colors.accent : colors.muted} />
               </Pressable>
             ) : null}
           </View>

@@ -258,5 +258,7 @@ export const socialDict: Record<string, string> = {
   "Bir kullanıcıyı sohbet ekranından engelleyebilirsin. Engellediğin kişiler sana mesaj gönderemez.": "You can block a user from the chat screen. People you block can't message you.",
   "Engeli kaldır": "Unblock",
   "Engellendi": "Blocked",
-  "Mesajlara dön": "Back to messages"
+  "Mesajlara dön": "Back to messages",
+  "Kullanıcıyı engelle": "Block user",
+  "engellensin mi? Engellediğin kullanıcı sana mesaj gönderemez, sen de ona gönderemezsin.": "block this user? A blocked user can't message you, and you can't message them either."
 };
