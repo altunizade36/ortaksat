@@ -102,13 +102,21 @@ function ProfileEditScreenInner() {
   }
 
   function startVerification(label: string) {
+    // Talep notu (staff-görünür report.details): HANGİ doğrulamaların beklediğini + telefonu
+    // + kullanıcıyı yaz — eskiden argümansız gönderiliyordu, ekip neyi doğrulayacağını bilmiyordu.
+    const pending = [
+      !currentUser.verifiedPhone ? "telefon" : null,
+      !currentUser.verifiedIdentity ? "kimlik" : null,
+      !currentUser.verifiedInstagram ? "Instagram" : null
+    ].filter(Boolean).join(", ");
+    const note = `Bekleyen doğrulama(lar): ${pending || "genel"}. Telefon: ${currentUser.phone || "—"}. Kullanıcı: ${currentUser.name} (${currentUser.id}).`;
     Alert.alert(
       label,
       translateCopy("Doğrulama, güvenlik gereği ekibimizce yapılır. Talebini şimdi gönder — kimlik/telefon bilgin incelenip uygun bulunursa hesabın doğrulanır. Ek belge gerekirse iletişime geçeriz.", language),
       [
         { text: translateCopy("Kapat", language), style: "cancel" },
         { text: translateCopy("Talebi gönder", language), onPress: () => { void (async () => {
-          const ok = await requestVerification();
+          const ok = await requestVerification(note);
           Alert.alert(
             translateCopy(ok ? "Doğrulama talebin alındı" : "Gönderilemedi", language),
             translateCopy(ok ? "Ekibimiz en kısa sürede inceleyecek. Ek belge gerekirse iletişim üzerinden ulaşırız." : "Lütfen tekrar dene ya da iletişim sayfasından yaz.", language),
