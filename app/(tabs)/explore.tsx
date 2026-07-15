@@ -449,7 +449,11 @@ export default function ExploreScreen() {
   // Artık contentW (=min(width,1280)) üzerinden → gerçek alan, doğru sütun sayısı.
   const sidebarWidth = 260;
   const productArea = contentW - padding * 2 - sidebarWidth - 24;
-  const productGrid = responsiveGrid({ available: productArea, gap: 16, minCardWidth: 175, maxColumns: 6 });
+  // minCardWidth mobil ızgarayla (148) hizalandı: eskiden 175'ti ve 260px panelle birlikte
+  // TABLET (834px) alanına yalnız 2 sütun sığıyordu — oysa dar telefonda (640px) 3 sütun
+  // vardı (geniş ekran daha AZ sütun = tutarsız). 150 ile sütunlar pürüzsüz artar:
+  // 834→3, 1024→4, 1280→5 (mobil 640→3 ile sürekli). Instagram-vari tutarlı akış.
+  const productGrid = responsiveGrid({ available: productArea, gap: 16, minCardWidth: 150, maxColumns: 6 });
 
   // Mobil medya-feed'i de sıralamaya (sortMode) uysun: kaynağı önce sırala, sonra
   // media öğelerine aç. "recommended" → activeListings'in mevcut (alaka/öne çıkan) düzeni.
@@ -1679,8 +1683,9 @@ function ExploreTileBase({ favorited, height, item, language, onFav, onPress, on
       onPress={onPress}
       style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height, opacity: pressed ? 0.92 : 1, overflow: "hidden", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, width: size })}
     >
-      {/* Görsel (kare, temiz zemin — dama-tahtası yok) */}
-      <View style={{ backgroundColor: colors.surfaceAlt, height: size, overflow: "hidden", width: "100%" }}>
+      {/* Görsel — TAM KARE (aspectRatio:1, ListingCard'la aynı). Eskiden height:size idi ve
+          kenarlık/yuvarlama ile 176×178 gibi hafif kayıyordu; artık her platformda birebir kare. */}
+      <View style={{ aspectRatio: 1, backgroundColor: colors.surfaceAlt, overflow: "hidden", width: "100%" }}>
         <SafeRemoteImage uri={item.type === "video" ? item.poster : item.uri} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
         <View style={{ left: 8, position: "absolute", right: 8, top: 8 }}>
           <StatusLabel icon={status.icon} label={status.label} tone={status.tone} />
