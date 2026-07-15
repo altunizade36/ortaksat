@@ -15,7 +15,7 @@ import { getFormSchema, matchCategoryByName, resolveFormKey, topCategories, type
 import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
 import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { SkeletonGrid } from "@/components/skeleton";
-import { commissionAmount, commissionRatePct, money, moneyIn } from "@/lib/format";
+import { commissionAmount, commissionRatePct, money, moneyCompact, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
@@ -1740,7 +1740,7 @@ function ExploreTileBase({ favorited, height, item, language, onFav, onPress, on
           {translateCopy(subcategory, language)}
         </Text>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "space-between" }}>
-          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{money(listing.price)}</Text>
+          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{moneyCompact(listing.price)}</Text>
           <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{displayText(listing.location)}</Text>
         </View>
         {commission > 0 ? (
