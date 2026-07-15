@@ -16,7 +16,7 @@ import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { QuickStart } from "@/components/quick-start";
 import { MiniBarChart } from "@/components/mini-bar-chart";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
-import { commissionAmount, money, moneyIn } from "@/lib/format";
+import { commissionAmount, effectiveCommissionAmount, money, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { haptic } from "@/lib/haptics";
 import { shareOrCopy } from "@/lib/share";
@@ -109,7 +109,7 @@ function SellerScreenInner() {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const isWideWeb = useIsWideWeb();
   const [rejectTargetId, setRejectTargetId] = useState<string | null>(null);
-  const [saleTarget, setSaleTarget] = useState<{ partnershipId: string; partnerName: string; price: number; currency?: string; commissionType: "rate" | "fixed"; commissionValue: number; leadId?: string } | null>(null);
+  const [saleTarget, setSaleTarget] = useState<{ partnershipId: string; listingId: string; partnerName: string; price: number; currency?: string; commissionType: "rate" | "fixed"; commissionValue: number; leadId?: string } | null>(null);
   const [commissionTarget, setCommissionTarget] = useState<{ partnershipId: string; partnerName: string; currency?: string; defaultLabel: string; currentType?: "rate" | "fixed"; currentValue?: number } | null>(null);
   const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
   // Grafik yalnız istemcide (new Date) render edilsin — SSG hydration uyuşmazlığı olmasın.
@@ -887,7 +887,7 @@ function SellerScreenInner() {
                       return (
                         <View style={{ flexDirection: "row", gap: 8 }}>
                           <View style={{ flex: 1 }}>
-                            <PrimaryButton tone={converted || !canConvert ? "soft" : "primary"} onPress={() => (converted || !canConvert ? undefined : setSaleTarget({ partnershipId: lead.partnershipId, partnerName: findUser(partnership?.partnerId ?? "")?.name ?? translateCopy("Ortak", language), price: listing.price, currency: listing.currency, commissionType: listing.commissionType, commissionValue: listing.commissionValue, leadId: lead.id }))}>
+                            <PrimaryButton tone={converted || !canConvert ? "soft" : "primary"} onPress={() => (converted || !canConvert ? undefined : setSaleTarget({ partnershipId: lead.partnershipId, listingId: listing.id, partnerName: findUser(partnership?.partnerId ?? "")?.name ?? translateCopy("Ortak", language), price: listing.price, currency: listing.currency, commissionType: listing.commissionType, commissionValue: listing.commissionValue, leadId: lead.id }))}>
                               {label}
                             </PrimaryButton>
                           </View>
@@ -935,7 +935,7 @@ function SellerScreenInner() {
                         </View>
                         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                           <Pressable
-                            onPress={() => canSell ? setSaleTarget({ partnershipId: p.id, partnerName, price: listing.price, currency: listing.currency, commissionType: listing.commissionType, commissionValue: listing.commissionValue }) : undefined}
+                            onPress={() => canSell ? setSaleTarget({ partnershipId: p.id, listingId: listing.id, partnerName, price: listing.price, currency: listing.currency, commissionType: listing.commissionType, commissionValue: listing.commissionValue }) : undefined}
                             style={({ pressed }) => ({ alignItems: "center", backgroundColor: canSell ? colors.primary : colors.line, borderRadius: 8, flexDirection: "row", flexGrow: 1, gap: 5, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 9 })}
                           >
                             <MaterialCommunityIcons name="cash-plus" size={15} color="#FFFFFF" />
@@ -1093,6 +1093,18 @@ function SellerScreenInner() {
         currency={saleTarget?.currency}
         commissionType={saleTarget?.commissionType ?? "rate"}
         commissionValue={saleTarget?.commissionValue ?? 0}
+        // Önizleme = kaydedilecek EFEKTİF komisyon (per-ortak override/kademe + başlangıç bonusu).
+        // Eskiden ilan-baz oranı gösteriliyordu → override'lı ortakta görünen ≠ kaydedilen (para tutarsızlığı).
+        computeCommission={(amount, quantity) => {
+          if (!saleTarget) return 0;
+          const l = listings.find((x) => x.id === saleTarget.listingId);
+          if (!l) return 0;
+          const pship = partnerships.find((x) => x.id === saleTarget.partnershipId);
+          const prior = sales.filter((s) => s.partnershipId === saleTarget.partnershipId && s.status !== "cancelled").length;
+          const base = effectiveCommissionAmount(l, pship, prior, amount, quantity);
+          const bonus = (l.bonusAmount ?? 0) > 0 && (l.bonusQuota ?? 0) > 0 && prior < (l.bonusQuota ?? 0) ? Math.round(l.bonusAmount ?? 0) : 0;
+          return base + bonus;
+        }}
         onClose={() => setSaleTarget(null)}
         onSubmit={(amount, quantity) => {
           if (saleTarget) {

@@ -19,6 +19,7 @@ export function RecordSaleModal({
   currency,
   commissionType,
   commissionValue,
+  computeCommission,
   onClose,
   onSubmit
 }: {
@@ -28,6 +29,9 @@ export function RecordSaleModal({
   currency?: string;
   commissionType: "rate" | "fixed";
   commissionValue: number;
+  // Verilirse önizleme bunu kullanır (per-ortak override/kademe/bonus dahil EFEKTİF komisyon).
+  // Yoksa basit ilan-baz oranıyla hesaplanır (geriye-dönük uyum).
+  computeCommission?: (amount: number, quantity: number) => number;
   onClose: () => void;
   onSubmit: (amount: number, quantity: number) => void;
 }) {
@@ -42,7 +46,9 @@ export function RecordSaleModal({
   const amountNum = Number(amount.replace(/[^0-9]/g, "")) || 0;
   const qtyNum = Math.max(1, Number(qty.replace(/[^0-9]/g, "")) || 1);
   const totalAmount = amountNum > 0 ? amountNum : listPrice * qtyNum;
-  const commission = commissionType === "rate" ? Math.round((totalAmount * commissionValue) / 100) : commissionValue * qtyNum;
+  const commission = computeCommission
+    ? computeCommission(totalAmount, qtyNum)
+    : commissionType === "rate" ? Math.round((totalAmount * commissionValue) / 100) : commissionValue * qtyNum;
   const valid = totalAmount > 0;
 
   return (
