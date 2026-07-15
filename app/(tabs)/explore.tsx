@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Link, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
-import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { Modal, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -76,11 +76,6 @@ const SORT_LABELS: Record<SortMode, string> = {
 };
 const SORT_ORDER: SortMode[] = ["recommended", "commission", "commissionRate", "new", "priceAsc", "priceDesc", "rating"];
 const INITIAL_EXPLORE_ITEMS = 20;
-
-// KEŞFET KAYDIRMA HAFIZASI: ilana girip GERİ dönünce Instagram gibi yerini + yüklü kart
-// sayısını korur (eskiden en başa/175px'e dönüyordu). Modül seviyesinde → web remount'ta
-// da yaşar. `sig` filtre imzası: filtre değişirse taze başlar (eski konumu geri yüklemez).
-const exploreScrollMemo: { y: number; count: number; sig: string } = { y: 0, count: 0, sig: "" };
 const EXPLORE_PAGE_SIZE = 16;
 
 type ExploreMedia = {
@@ -505,21 +500,12 @@ export default function ExploreScreen() {
     return rates.length ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : 0;
   }, [activeListings]);
 
-  // Filtre imzası (kaydırma hafızası + reset için). STRING → obje/dizi referans değişimiyle
-  // boşuna reset tetiklenmez (catPath/attrFilters/numRange her render'da yeni referans olur).
-  const filterSig = `${filter}|${params.q ?? ""}|${city}|${minCommission}|${statusOpen}|${sortMode}|${onlyVerified}|${priceRange}|${stockFilter}|${catPath.join(">")}|${provinceId ?? ""}|${districtId ?? ""}`;
-  const resetSig = `${filterSig}|${JSON.stringify(attrFilters)}|${JSON.stringify(numRange)}`;
-
-  // Sayaç sıfırlama YALNIZCA filtre GERÇEKTEN değişince. Eskiden deps'te obje/dizi vardı →
-  // ilana girip geri dönünce (referanslar yenilenince) reset tetikleniyor, visibleCount
-  // düşüp içerik kısalıyor, kaydırma konumu en başa atıyordu.
-  const lastResetSig = useRef(resetSig);
   useEffect(() => {
-    if (lastResetSig.current === resetSig) return;
-    lastResetSig.current = resetSig;
     setVisibleCount(INITIAL_EXPLORE_ITEMS);
     setProductVisible(20);
-  }, [resetSig]);
+    // Kategori-özel filtreler (catPath/attrFilters/numRange) de sayacı sıfırlamalı;
+    // yoksa daraltılan sonuç kümesinde eski "daha fazla göster" sayacı takılı kalıyordu.
+  }, [filter, params.q, city, minCommission, statusOpen, sortMode, onlyVerified, priceRange, stockFilter, catPath, attrFilters, numRange, provinceId, districtId]);
 
   function refresh() {
     setRefreshing(true);
@@ -550,38 +536,10 @@ export default function ExploreScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceRange, minCommission, stockFilter, onlyVerified, statusOpen, sortMode, catPath, city, filter, attrFilters, numRange]);
 
-  // Kaydırma hafızası: ScrollView ref (filterSig yukarıda, reset effect'ten önce tanımlı).
-  const scrollRef = useRef<ScrollView>(null);
-
-  // GERİ dönünce yerini koru: FOCUS'ta (ilana girip dönünce) çalışır. Component mount
-  // KALIYOR (remount yok) ama expo-router /listing'e geçince explore'u display:none yapıyor,
-  // tarayıcı gizlenen ScrollView'ın scrollTop'unu SIFIRLIYOR → focus'ta geri yüklemek gerek.
-  const focusedOnceRef = useRef(false);
-  useFocusEffect(
-    useCallback(() => {
-      // İlk focus (ilk açılış) restore ETME — yalnız geri-dönüşlerde.
-      if (typeof console !== "undefined") console.log(`[EXPLORE-FOCUS] first=${!focusedOnceRef.current} memo=${JSON.stringify(exploreScrollMemo)} sig="${filterSig}"`);
-      if (!focusedOnceRef.current) { focusedOnceRef.current = true; return; }
-      if (exploreScrollMemo.sig !== filterSig || exploreScrollMemo.count <= INITIAL_EXPLORE_ITEMS) return;
-      setVisibleCount((c) => (c < exploreScrollMemo.count ? exploreScrollMemo.count : c));
-      const y = exploreScrollMemo.y;
-      let tries = 0;
-      const tick = () => {
-        scrollRef.current?.scrollTo({ y, animated: false });
-        if (++tries < 10) setTimeout(tick, 90);
-      };
-      requestAnimationFrame(() => requestAnimationFrame(tick));
-    }, [filterSig])
-  );
-
   // KENAR-tetiklemeli: her scroll karesinde değil, dibe her yaklaşımda bir kez.
   const exploreLoadArmed = useRef(true);
   function loadMoreIfNeeded(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
-    // Konumu hafızaya al (ilana girip geri dönünce Instagram gibi yerini koru).
-    exploreScrollMemo.y = contentOffset.y;
-    exploreScrollMemo.count = visibleCount;
-    exploreScrollMemo.sig = filterSig;
     const distanceToBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
     if (distanceToBottom > 820) exploreLoadArmed.current = true;
     if (distanceToBottom < 520 && exploreLoadArmed.current) {
@@ -1120,7 +1078,6 @@ export default function ExploreScreen() {
 
   return (
     <ScrollView
-      ref={scrollRef}
       contentInsetAdjustmentBehavior="automatic"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
       onScroll={loadMoreIfNeeded}
