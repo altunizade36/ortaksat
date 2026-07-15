@@ -375,15 +375,19 @@ function DoubleTapMedia({ item, onLike }: { item: FeedMedia; onLike: () => void 
     }
   };
 
+  // Medyayı SARMAK yerine üstüne AYRI absolute tap-katmanı: FeedMediaView'ın absolute
+  // çocukları (bulanık bg/karartma) web'de sarmalayan Pressable'ın onPress'ini yutuyordu.
+  // Tap-katmanı butonların ALTINDA (item View'da onlar sonra render → üstte) kalır.
   return (
-    <Pressable onPress={handlePress} style={{ flex: 1 }} accessibilityRole="image" accessibilityLabel={item.listing.title}>
+    <View style={{ flex: 1 }}>
       <FeedMediaView item={item} />
+      <Pressable onPress={handlePress} style={StyleSheet.absoluteFillObject} accessibilityRole="image" accessibilityLabel={item.listing.title} />
       {burst > 0 ? (
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { alignItems: "center", justifyContent: "center", opacity, transform: [{ scale }] }]}>
           <MaterialCommunityIcons name="heart" size={130} color="rgba(255,255,255,0.96)" style={{ textShadowColor: "rgba(0,0,0,0.35)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12 }} />
         </Animated.View>
       ) : null}
-    </Pressable>
+    </View>
   );
 }
 
