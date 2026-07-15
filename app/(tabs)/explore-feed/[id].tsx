@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Animated, Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
 import { shareOrCopy } from "@/lib/share";
@@ -183,7 +183,13 @@ export default function ExploreFeedScreen() {
 
         return (
           <View key={`${item.id}-${index}-${seed}`} style={{ backgroundColor: "#000000", height: effHeight, overflow: "hidden", width }}>
-            <FeedMediaView item={item} />
+            <DoubleTapMedia
+              item={item}
+              onLike={() => {
+                if (!isAuthenticated) { router.push("/auth"); return; }
+                if (!isFavorite(listing.id)) toggleFavorite(listing.id); // Instagram: çift-dokun EKLER, kaldırmaz
+              }}
+            />
             <View style={{ backgroundColor: "rgba(0,0,0,0.24)", bottom: 0, left: 0, position: "absolute", right: 0, top: 0 }} />
 
             <View style={{ left: 68, position: "absolute", right: 74, top: insets.top + 13 }}>
@@ -332,6 +338,50 @@ export default function ExploreFeedScreen() {
       })}
       </ScrollView>
     </View>
+  );
+}
+
+/**
+ * ÇİFT-DOKUN BEĞENİ (Instagram imzası): görsele çift dokununca beğenir + ortada kalp
+ * patlaması animasyonu. Tek dokunma hiçbir şey yapmaz, dikey kaydırma engellenmez.
+ * Instagram gibi: çift-dokun her zaman EKLER (beğeniyi kaldırmaz).
+ */
+function DoubleTapMedia({ item, onLike }: { item: FeedMedia; onLike: () => void }) {
+  const lastTap = useRef(0);
+  const [burst, setBurst] = useState(0);
+  const scale = useRef(new Animated.Value(0)).current;
+  const opacity = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (burst === 0) return;
+    scale.setValue(0.3);
+    opacity.setValue(0.95);
+    Animated.parallel([
+      Animated.spring(scale, { toValue: 1, friction: 4, tension: 80, useNativeDriver: true }),
+      Animated.timing(opacity, { toValue: 0, duration: 650, delay: 300, useNativeDriver: true })
+    ]).start();
+  }, [burst, opacity, scale]);
+
+  const handlePress = () => {
+    const now = Date.now();
+    if (now - lastTap.current < 300) {
+      onLike();
+      setBurst((b) => b + 1);
+      lastTap.current = 0; // üçüncü hızlı dokunma yeni çift saymasın
+    } else {
+      lastTap.current = now;
+    }
+  };
+
+  return (
+    <Pressable onPress={handlePress} style={{ flex: 1 }} accessibilityRole="image" accessibilityLabel={item.listing.title}>
+      <FeedMediaView item={item} />
+      {burst > 0 ? (
+        <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { alignItems: "center", justifyContent: "center", opacity, transform: [{ scale }] }]}>
+          <MaterialCommunityIcons name="heart" size={130} color="rgba(255,255,255,0.96)" style={{ textShadowColor: "rgba(0,0,0,0.35)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12 }} />
+        </Animated.View>
+      ) : null}
+    </Pressable>
   );
 }
 
