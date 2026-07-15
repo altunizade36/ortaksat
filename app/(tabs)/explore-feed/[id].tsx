@@ -381,7 +381,7 @@ function DoubleTapMedia({ item, onLike }: { item: FeedMedia; onLike: () => void 
   return (
     <View style={{ flex: 1 }}>
       <FeedMediaView item={item} />
-      <Pressable onPress={handlePress} style={StyleSheet.absoluteFillObject} accessibilityRole="image" accessibilityLabel={item.listing.title} />
+      <Pressable testID="feed-tap-layer" onPress={handlePress} style={StyleSheet.absoluteFillObject} accessibilityRole="image" accessibilityLabel={item.listing.title} />
       {burst > 0 ? (
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { alignItems: "center", justifyContent: "center", opacity, transform: [{ scale }] }]}>
           <MaterialCommunityIcons name="heart" size={130} color="rgba(255,255,255,0.96)" style={{ textShadowColor: "rgba(0,0,0,0.35)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12 }} />

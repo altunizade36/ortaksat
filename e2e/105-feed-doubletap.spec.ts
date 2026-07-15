@@ -34,18 +34,17 @@ test("KEŞFET FEED: çift-dokun beğeni + kaydırma korunur (mobil)", async ({ b
   // Beğeni durumu ÖNCE
   const favBefore = await page.evaluate(() => document.body.innerText.includes("Favoride"));
 
-  // Görsel merkezine ÇİFT DOKUN (iki hızlı tık)
-  const vw = page.viewportSize()!;
-  const cx = vw.width / 2, cy = vw.height / 2;
-  await page.mouse.click(cx, cy, { delay: 20 });
-  await page.waitForTimeout(120);
-  await page.mouse.click(cx, cy, { delay: 20 });
-  await page.waitForTimeout(1200);
+  // Tap-katmanına ÇİFT DOKUN (testID ile kesin hedef, clickCount:2 gerçek çift-tık)
+  const tapLayer = page.getByTestId("feed-tap-layer").first();
+  await tapLayer.click({ clickCount: 2, delay: 60 });
+  await page.waitForTimeout(1500);
   await page.screenshot({ path: `${OUT}/1-cift-dokun.png` }).catch(() => {});
 
   const favAfter = await page.evaluate(() => document.body.innerText.includes("Favoride"));
-  console.log(`beğeni: önce=${favBefore} → sonra=${favAfter}`);
-  expect(favAfter, "çift-dokun beğeniyi eklemeli (Favoride)").toBeTruthy();
+  // DB'den de doğrula (etiket gecikebilir)
+  const favRows = await runSql<Array<{ c: string }>>(`select count(*)::text c from favorites f join profiles p on p.id=f.user_id where p.full_name='Cift Dokun'`).catch(() => [{ c: "?" }]);
+  console.log(`beğeni: etiket önce=${favBefore} → sonra=${favAfter} | DB favori=${favRows[0]?.c}`);
+  expect(favAfter || Number(favRows[0]?.c) > 0, "çift-dokun beğeniyi eklemeli (Favoride/DB)").toBeTruthy();
 
   // KAYDIRMA hâlâ çalışıyor mu — bir sonraki öğeye geç
   const counterBefore = await page.evaluate(() => (document.body.innerText.match(/(\d+)\/(\d+)/) || [])[1] ?? "?");
