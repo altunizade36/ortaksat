@@ -190,7 +190,9 @@ export default function ExploreFeedScreen() {
                 if (!isFavorite(listing.id)) toggleFavorite(listing.id); // Instagram: çift-dokun EKLER, kaldırmaz
               }}
             />
-            <View style={{ backgroundColor: "rgba(0,0,0,0.24)", bottom: 0, left: 0, position: "absolute", right: 0, top: 0 }} />
+            {/* Metin okunurluğu için karartma — pointerEvents:none, yoksa çift-dokun beğeniyi
+                yutar (bu katman DoubleTapMedia'nın üstünde). */}
+            <View pointerEvents="none" style={{ backgroundColor: "rgba(0,0,0,0.24)", bottom: 0, left: 0, position: "absolute", right: 0, top: 0 }} />
 
             <View style={{ left: 68, position: "absolute", right: 74, top: insets.top + 13 }}>
               <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, flexDirection: "row", gap: 6, maxWidth: "100%", paddingHorizontal: 10, paddingVertical: 7 }}>
