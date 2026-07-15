@@ -1106,6 +1106,7 @@ export default function ExploreScreen() {
 
   return (
     <ScrollView
+      ref={scrollRef}
       contentInsetAdjustmentBehavior="automatic"
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
       onScroll={loadMoreIfNeeded}
