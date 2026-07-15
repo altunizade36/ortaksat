@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Link, useLocalSearchParams, useRouter } from "expo-router";
+import { Link, useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -553,27 +553,25 @@ export default function ExploreScreen() {
   // Kaydırma hafızası: ScrollView ref (filterSig yukarıda, reset effect'ten önce tanımlı).
   const scrollRef = useRef<ScrollView>(null);
 
-  // GERİ dönünce yerini koru: mount'ta aynı filtreyle kaydedilmiş konum varsa geri yükle.
-  const restoredRef = useRef(false);
-  useEffect(() => {
-    if (restoredRef.current) return;
-    restoredRef.current = true;
-    const match = exploreScrollMemo.sig === filterSig && exploreScrollMemo.count > INITIAL_EXPLORE_ITEMS;
-    if (typeof console !== "undefined") console.log(`[EXPLORE-RESTORE] mount memo=${JSON.stringify(exploreScrollMemo)} sig="${filterSig}" match=${match}`);
-    if (match) {
-      setVisibleCount(exploreScrollMemo.count);
+  // GERİ dönünce yerini koru: FOCUS'ta (ilana girip dönünce) çalışır. Component mount
+  // KALIYOR (remount yok) ama expo-router /listing'e geçince explore'u display:none yapıyor,
+  // tarayıcı gizlenen ScrollView'ın scrollTop'unu SIFIRLIYOR → focus'ta geri yüklemek gerek.
+  const focusedOnceRef = useRef(false);
+  useFocusEffect(
+    useCallback(() => {
+      // İlk focus (ilk açılış) restore ETME — yalnız geri-dönüşlerde.
+      if (!focusedOnceRef.current) { focusedOnceRef.current = true; return; }
+      if (exploreScrollMemo.sig !== filterSig || exploreScrollMemo.count <= INITIAL_EXPLORE_ITEMS) return;
+      setVisibleCount((c) => (c < exploreScrollMemo.count ? exploreScrollMemo.count : c));
       const y = exploreScrollMemo.y;
-      // Kart sayısı arttı → içerik uzadı; birkaç deneme ile o konuma git (layout otursun).
       let tries = 0;
       const tick = () => {
         scrollRef.current?.scrollTo({ y, animated: false });
-        if (++tries < 8) setTimeout(tick, 120);
+        if (++tries < 10) setTimeout(tick, 90);
       };
       requestAnimationFrame(() => requestAnimationFrame(tick));
-    }
-    // yalnız ilk mount
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    }, [filterSig])
+  );
 
   // KENAR-tetiklemeli: her scroll karesinde değil, dibe her yaklaşımda bir kez.
   const exploreLoadArmed = useRef(true);
