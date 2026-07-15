@@ -76,6 +76,11 @@ const SORT_LABELS: Record<SortMode, string> = {
 };
 const SORT_ORDER: SortMode[] = ["recommended", "commission", "commissionRate", "new", "priceAsc", "priceDesc", "rating"];
 const INITIAL_EXPLORE_ITEMS = 20;
+
+// KEŞFET KAYDIRMA HAFIZASI: ilana girip GERİ dönünce Instagram gibi yerini + yüklü kart
+// sayısını korur (eskiden en başa/175px'e dönüyordu). Modül seviyesinde → web remount'ta
+// da yaşar. `sig` filtre imzası: filtre değişirse taze başlar (eski konumu geri yüklemez).
+const exploreScrollMemo: { y: number; count: number; sig: string } = { y: 0, count: 0, sig: "" };
 const EXPLORE_PAGE_SIZE = 16;
 
 type ExploreMedia = {
@@ -536,10 +541,33 @@ export default function ExploreScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceRange, minCommission, stockFilter, onlyVerified, statusOpen, sortMode, catPath, city, filter, attrFilters, numRange]);
 
+  // Kaydırma hafızası: aktif filtre imzası + ScrollView ref.
+  const scrollRef = useRef<ScrollView>(null);
+  const filterSig = `${filter}|${params.q ?? ""}|${city}|${minCommission}|${statusOpen}|${sortMode}|${onlyVerified}|${priceRange}|${stockFilter}|${catPath.join(">")}|${provinceId ?? ""}|${districtId ?? ""}`;
+
+  // GERİ dönünce yerini koru: mount'ta aynı filtreyle kaydedilmiş konum varsa geri yükle.
+  const restoredRef = useRef(false);
+  useEffect(() => {
+    if (restoredRef.current) return;
+    restoredRef.current = true;
+    if (exploreScrollMemo.sig === filterSig && exploreScrollMemo.count > INITIAL_EXPLORE_ITEMS) {
+      setVisibleCount(exploreScrollMemo.count);
+      const y = exploreScrollMemo.y;
+      // Kart sayısı arttı → içerik uzadı; iki rAF sonra o konuma git (layout otursun).
+      requestAnimationFrame(() => requestAnimationFrame(() => scrollRef.current?.scrollTo({ y, animated: false })));
+    }
+    // yalnız ilk mount
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // KENAR-tetiklemeli: her scroll karesinde değil, dibe her yaklaşımda bir kez.
   const exploreLoadArmed = useRef(true);
   function loadMoreIfNeeded(event: NativeSyntheticEvent<NativeScrollEvent>) {
     const { contentOffset, contentSize, layoutMeasurement } = event.nativeEvent;
+    // Konumu hafızaya al (ilana girip geri dönünce Instagram gibi yerini koru).
+    exploreScrollMemo.y = contentOffset.y;
+    exploreScrollMemo.count = visibleCount;
+    exploreScrollMemo.sig = filterSig;
     const distanceToBottom = contentSize.height - (contentOffset.y + layoutMeasurement.height);
     if (distanceToBottom > 820) exploreLoadArmed.current = true;
     if (distanceToBottom < 520 && exploreLoadArmed.current) {
