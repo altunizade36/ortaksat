@@ -1237,7 +1237,12 @@ export default function ExploreScreen() {
                     item={item}
                     language={language}
                     onFav={() => toggleFavorite(item.listing.id)}
-                    onPress={() => router.push({ pathname: "/(tabs)/explore-feed/[id]", params: { id: item.listing.id, media: item.id } })}
+                    // ANA DOKUNMA → İLAN SAYFASI (masaüstüyle tutarlı, pazaryeri beklentisi).
+                    // Eskiden explore-feed'e (tam ekran medya) gidiyordu → kullanıcı ürüne
+                    // tıklayınca ilan yerine fotoğraf kaydırıcı görüyordu (tıklama şaşırtıcı).
+                    onPress={() => router.push({ pathname: "/listing/[id]", params: { id: item.listing.id } })}
+                    // GÖRSEL KEŞFET (tam ekran kaydırma) ayrı buton olarak korunur.
+                    onVisual={() => router.push({ pathname: "/(tabs)/explore-feed/[id]", params: { id: item.listing.id, media: item.id } })}
                     order={rowIndex * columns + index}
                     size={tileSize}
                     t={t}
@@ -1658,7 +1663,7 @@ function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner
   );
 }
 
-function ExploreTileBase({ favorited, height, item, language, onFav, onPress, order, size, t }: { favorited?: boolean; height: number; item: ExploreMedia; language: "tr" | "en"; onFav?: () => void; onPress: () => void; order: number; size: number; t: (key: string) => string }) {
+function ExploreTileBase({ favorited, height, item, language, onFav, onPress, onVisual, order, size, t }: { favorited?: boolean; height: number; item: ExploreMedia; language: "tr" | "en"; onFav?: () => void; onPress: () => void; onVisual?: () => void; order: number; size: number; t: (key: string) => string }) {
   const { listing } = item;
   const featured = item.index === 0 || order % 12 === 0;
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
@@ -1679,6 +1684,19 @@ function ExploreTileBase({ favorited, height, item, language, onFav, onPress, or
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, bottom: 8, height: 30, justifyContent: "center", position: "absolute", right: 8, width: 30 }}>
             <MaterialCommunityIcons name="play" size={18} color={colors.primaryDark} />
           </View>
+        ) : onVisual ? (
+          // GÖRSEL KEŞFET (tam ekran kaydırma) — ana dokunma artık ilana gider; bu buton
+          // TikTok-tarzı tam ekran medya deneyimini korur (yalnız görselde; videoda oynat ikonu var).
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={translateCopy("Görsel keşfet — tam ekran", language)}
+            hitSlop={6}
+            onPress={onVisual}
+            style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 8, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 4, position: "absolute", right: 8 }}
+          >
+            <MaterialCommunityIcons name="fullscreen" size={14} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{translateCopy("Görsel", language)}</Text>
+          </Pressable>
         ) : null}
         {/* Favori — ListingCard'da vardı, keşfet kartında YOKTU (tutarsızlık). */}
         {onFav ? (
