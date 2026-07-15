@@ -364,9 +364,9 @@ function DoubleTapMedia({ item, onLike }: { item: FeedMedia; onLike: () => void 
     ]).start();
   }, [burst, opacity, scale]);
 
-  const handlePress = () => {
+  const handleTap = () => {
     const now = Date.now();
-    if (now - lastTap.current < 300) {
+    if (now - lastTap.current < 400) {
       onLike();
       setBurst((b) => b + 1);
       lastTap.current = 0; // üçüncü hızlı dokunma yeni çift saymasın
@@ -381,7 +381,9 @@ function DoubleTapMedia({ item, onLike }: { item: FeedMedia; onLike: () => void 
   return (
     <View style={{ flex: 1 }}>
       <FeedMediaView item={item} />
-      <Pressable testID="feed-tap-layer" onPress={handlePress} style={StyleSheet.absoluteFillObject} accessibilityRole="image" accessibilityLabel={item.listing.title} />
+      {/* onPressIn (basış başı) daha erken/güvenilir; RN-web'de onPress (release) hızlı
+          çift-tıkta ikinci kez tetiklenmeyebiliyordu. */}
+      <Pressable testID="feed-tap-layer" onPressIn={handleTap} style={StyleSheet.absoluteFillObject} accessibilityRole="image" accessibilityLabel={item.listing.title} />
       {burst > 0 ? (
         <Animated.View pointerEvents="none" style={[StyleSheet.absoluteFillObject, { alignItems: "center", justifyContent: "center", opacity, transform: [{ scale }] }]}>
           <MaterialCommunityIcons name="heart" size={130} color="rgba(255,255,255,0.96)" style={{ textShadowColor: "rgba(0,0,0,0.35)", textShadowOffset: { width: 0, height: 2 }, textShadowRadius: 12 }} />

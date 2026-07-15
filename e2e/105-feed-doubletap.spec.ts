@@ -36,10 +36,15 @@ test("KEŞFET FEED: çift-dokun beğeni + kaydırma korunur (mobil)", async ({ b
 
   // Tap-katmanına ÇİFT DOKUN (testID ile kesin hedef, clickCount:2 gerçek çift-tık)
   const tapLayer = page.getByTestId("feed-tap-layer").first();
-  await tapLayer.click({ clickCount: 2, delay: 60 });
-  await page.waitForTimeout(1500);
+  await tapLayer.click();           // 1. dokun
+  await page.waitForTimeout(150);   // <300ms
+  await tapLayer.click();           // 2. dokun → çift-dokun
+  await page.waitForTimeout(1800);
   await page.screenshot({ path: `${OUT}/1-cift-dokun.png` }).catch(() => {});
 
+  const afterUrl = page.url();
+  const authOpen = await page.evaluate(() => /giriş yap veya|E-posta ile giriş|hoş geldin/i.test(document.body.innerText));
+  console.log(`çift-dokun sonrası url:${afterUrl.replace("https://www.ortaksat.com","")} | auth-modal-açık:${authOpen}`);
   const favAfter = await page.evaluate(() => document.body.innerText.includes("Favoride"));
   // DB'den de doğrula (etiket gecikebilir)
   const favRows = await runSql<Array<{ c: string }>>(`select count(*)::text c from favorites f join profiles p on p.id=f.user_id where p.full_name='Cift Dokun'`).catch(() => [{ c: "?" }]);
