@@ -505,12 +505,21 @@ export default function ExploreScreen() {
     return rates.length ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : 0;
   }, [activeListings]);
 
+  // Filtre imzası (kaydırma hafızası + reset için). STRING → obje/dizi referans değişimiyle
+  // boşuna reset tetiklenmez (catPath/attrFilters/numRange her render'da yeni referans olur).
+  const filterSig = `${filter}|${params.q ?? ""}|${city}|${minCommission}|${statusOpen}|${sortMode}|${onlyVerified}|${priceRange}|${stockFilter}|${catPath.join(">")}|${provinceId ?? ""}|${districtId ?? ""}`;
+  const resetSig = `${filterSig}|${JSON.stringify(attrFilters)}|${JSON.stringify(numRange)}`;
+
+  // Sayaç sıfırlama YALNIZCA filtre GERÇEKTEN değişince. Eskiden deps'te obje/dizi vardı →
+  // ilana girip geri dönünce (referanslar yenilenince) reset tetikleniyor, visibleCount
+  // düşüp içerik kısalıyor, kaydırma konumu en başa atıyordu.
+  const lastResetSig = useRef(resetSig);
   useEffect(() => {
+    if (lastResetSig.current === resetSig) return;
+    lastResetSig.current = resetSig;
     setVisibleCount(INITIAL_EXPLORE_ITEMS);
     setProductVisible(20);
-    // Kategori-özel filtreler (catPath/attrFilters/numRange) de sayacı sıfırlamalı;
-    // yoksa daraltılan sonuç kümesinde eski "daha fazla göster" sayacı takılı kalıyordu.
-  }, [filter, params.q, city, minCommission, statusOpen, sortMode, onlyVerified, priceRange, stockFilter, catPath, attrFilters, numRange, provinceId, districtId]);
+  }, [resetSig]);
 
   function refresh() {
     setRefreshing(true);
@@ -541,9 +550,8 @@ export default function ExploreScreen() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [priceRange, minCommission, stockFilter, onlyVerified, statusOpen, sortMode, catPath, city, filter, attrFilters, numRange]);
 
-  // Kaydırma hafızası: aktif filtre imzası + ScrollView ref.
+  // Kaydırma hafızası: ScrollView ref (filterSig yukarıda, reset effect'ten önce tanımlı).
   const scrollRef = useRef<ScrollView>(null);
-  const filterSig = `${filter}|${params.q ?? ""}|${city}|${minCommission}|${statusOpen}|${sortMode}|${onlyVerified}|${priceRange}|${stockFilter}|${catPath.join(">")}|${provinceId ?? ""}|${districtId ?? ""}`;
 
   // GERİ dönünce yerini koru: mount'ta aynı filtreyle kaydedilmiş konum varsa geri yükle.
   const restoredRef = useRef(false);
