@@ -13,7 +13,7 @@ import { ListingCard } from "@/components/listing-card";
 import { ReviewCard } from "@/components/review-card";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
-import { money, trPhoneIntl } from "@/lib/format";
+import { money, moneyCompact, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { haptic } from "@/lib/haptics";
 import { fetchSellerPhone } from "@/lib/supabase-data";
@@ -516,7 +516,7 @@ export default function StoreScreen() {
         <View style={{ flexDirection: "row", gap: 8 }}>
           <Metric label={t("activeListing")} value={`${activeListings.length}`} />
           <Metric label={translateCopy("Takipçi", language)} value={`${seller.followerCount}`} />
-          <Metric label={t("earning")} value={money(totalCommission)} />
+          <Metric label={t("earning")} value={moneyCompact(totalCommission)} />
         </View>
         {!isOwnStore ? (
           <Pressable onPress={handleFollow} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: following ? colors.surfaceAlt : colors.primary, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
@@ -540,27 +540,27 @@ export default function StoreScreen() {
           </View>
         ) : null}
 
-        <View style={{ flexDirection: "row", gap: 8 }}>
+        {/* Birincil aksiyon TAM GENİŞLİK: "Mağazaya mesaj gönder" uzun etiketti ve iki
+            sütunlu satırda yarıya sıkışıp "Mağazaya mesaj ..." diye kırpılıyordu. */}
+        <View style={{ gap: 8 }}>
           {isOwnStore ? (
-            <View style={{ flex: 1 }}>
-              <PrimaryButton href="/create" icon="store-plus-outline">{translateCopy("Yeni ilan aç", language)}</PrimaryButton>
-            </View>
+            <PrimaryButton href="/create" icon="store-plus-outline">{translateCopy("Yeni ilan aç", language)}</PrimaryButton>
           ) : (
-            <View style={{ flex: 1 }}>
-              <PrimaryButton icon="message-text-outline" onPress={messageSeller}>{translateCopy("Mağazaya mesaj gönder", language)}</PrimaryButton>
-            </View>
+            <PrimaryButton icon="message-text-outline" onPress={messageSeller}>{translateCopy("Mağazaya mesaj gönder", language)}</PrimaryButton>
           )}
-          <View style={{ flex: 1 }}>
-            <PrimaryButton href={isOwnStore ? "/(tabs)/seller" : "/(tabs)/partner"} tone="secondary" icon={isOwnStore ? "storefront-outline" : "handshake-outline"}>
-              {isOwnStore ? translateCopy("Satıcı paneli", language) : translateCopy("Ortaklık ürünleri", language)}
-            </PrimaryButton>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <View style={{ flex: 1 }}>
+              <PrimaryButton href={isOwnStore ? "/(tabs)/seller" : "/(tabs)/partner"} tone="secondary" icon={isOwnStore ? "storefront-outline" : "handshake-outline"}>
+                {isOwnStore ? translateCopy("Satıcı paneli", language) : translateCopy("Ortaklık ürünleri", language)}
+              </PrimaryButton>
+            </View>
+            {/* Şikayet et (mobil) — masaüstü sidebar'daki güvenlik aksiyonunun karşılığı. */}
+            {!isOwnStore ? (
+              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Satıcıyı şikayet et", language)} onPress={() => void handleReportSeller()} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 14 })}>
+                <MaterialCommunityIcons name="flag-outline" size={19} color={colors.muted} />
+              </Pressable>
+            ) : null}
           </View>
-          {/* Şikayet et (mobil) — masaüstü sidebar'daki güvenlik aksiyonunun karşılığı. */}
-          {!isOwnStore ? (
-            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Satıcıyı şikayet et", language)} onPress={() => void handleReportSeller()} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 12 })}>
-              <MaterialCommunityIcons name="flag-outline" size={19} color={colors.muted} />
-            </Pressable>
-          ) : null}
         </View>
         {/* Numarayı Göster (mobil, Sahibinden tarzı) */}
         {!isOwnStore ? (

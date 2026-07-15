@@ -29,6 +29,21 @@ export function money(value: number) {
   return formatted;
 }
 
+/**
+ * Kompakt para: dar istatistik kartlarında büyük tutarları kısaltır (₺6,1M / ₺1,5B).
+ * Tam gösterim yeri olan yerlerde money() kullanılır; bu yalnız 3-sütun kart gibi
+ * sıkışık alanlar için — eskiden "₺6.141...." diye kırpılıyordu.
+ */
+export function moneyCompact(value: number): string {
+  const v = Number.isFinite(value) ? Math.round(value) : 0;
+  const sym = defaultCurrency === "TRY" ? "₺" : "";
+  const abs = Math.abs(v);
+  // Türkçe kısaltma: M = milyon, Mr = milyar. "B" (bin/billion karışır) KULLANMA.
+  if (abs >= 1_000_000_000) return `${sym}${(v / 1_000_000_000).toFixed(1).replace(".0", "").replace(".", ",")} Mr`;
+  if (abs >= 1_000_000) return `${sym}${(v / 1_000_000).toFixed(1).replace(".0", "").replace(".", ",")} M`;
+  return money(v); // milyon altı tam sığar
+}
+
 export type CurrencyCode = "TRY" | "USD" | "EUR";
 export const CURRENCIES: Array<{ code: CurrencyCode; symbol: string; label: string }> = [
   { code: "TRY", symbol: "₺", label: "Türk Lirası (₺)" },
