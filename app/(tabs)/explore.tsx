@@ -11,6 +11,7 @@ import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { listingCategories } from "@/lib/categories";
+import { useCompare } from "@/lib/compare";
 import { getFormSchema, matchCategoryByName, resolveFormKey, topCategories, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
 import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
@@ -96,6 +97,7 @@ export default function ExploreScreen() {
   // Param değeri string | string[] gelebilir; tek değere indir.
   const sp = (v?: string | string[]) => (Array.isArray(v) ? v[0] ?? "" : v ?? "");
   const { findUser, listings, isFavorite, toggleFavorite, loadMoreMarketplace, marketplaceHasMore, marketplaceInitialLoading, marketplaceLoadingMore, marketplaceLoadFailed, retryMarketplace } = useStore();
+  const { ids: compareIds, toggle: toggleCompare } = useCompare();
   const { items: savedSearches, add: addSaved, remove: removeSaved } = useSavedSearches();
   const [refreshing, setRefreshing] = useState(false);
   const [seed, setSeed] = useState(1);
@@ -1222,14 +1224,38 @@ export default function ExploreScreen() {
       {mediaItems.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
         <MarketplaceRetry onRetry={retryMarketplace} />
       ) : mediaItems.length === 0 ? (
-        <View style={{ alignItems: "center", gap: 8, padding: 28 }}>
+        <View style={{ alignItems: "center", gap: 10, padding: 28 }}>
           <MaterialCommunityIcons name="image-search-outline" size={32} color={colors.primary} />
           <Text selectable style={{ color: colors.ink, fontSize: 17, fontWeight: "900", textAlign: "center" }}>
             {t("noResults")}
           </Text>
-          <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 19, textAlign: "center" }}>
-            {t("retrySearchFilter")}
-          </Text>
+          {/* AKILLI BOŞ DURUM (mobil): filtre/arama varsa tek-tıkla temizlet (masaüstüyle parite). */}
+          {activeFilterCount > 0 || queryText ? (
+            <>
+              <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19, maxWidth: 340, textAlign: "center" }}>
+                {activeFilterCount > 0
+                  ? `${activeFilterCount} ${translateCopy("filtre sonuçları daraltıyor. Filtreleri temizleyerek tüm ilanları görebilirsin.", language)}`
+                  : translateCopy("Aramanla eşleşen ilan yok. Farklı bir kelime deneyebilirsin.", language)}
+              </Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "center" }}>
+                {activeFilterCount > 0 ? (
+                  <Pressable accessibilityRole="button" onPress={() => { setPriceRange(""); setMinCommission(0); setMinRate(0); setMinRating(0); setOnlyFeatured(false); router.setParams({ province: undefined, district: undefined }); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setCity(""); clearCatFilter(); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 11 })}>
+                    <MaterialCommunityIcons name="filter-remove-outline" size={16} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Filtreleri temizle", language)}</Text>
+                  </Pressable>
+                ) : null}
+                {queryText ? (
+                  <Pressable accessibilityRole="button" onPress={() => router.setParams({ q: undefined })} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 11 })}>
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Aramayı temizle", language)}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            </>
+          ) : (
+            <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 19, textAlign: "center" }}>
+              {t("retrySearchFilter")}
+            </Text>
+          )}
         </View>
       ) : (
         <>
@@ -1241,8 +1267,10 @@ export default function ExploreScreen() {
                     key={`${item.id}-${seed}`}
                     favorited={isFavorite(item.listing.id)}
                     height={tileHeight}
+                    inCompare={compareIds.includes(item.listing.id)}
                     item={item}
                     language={language}
+                    onCompare={() => toggleCompare(item.listing.id)}
                     onFav={() => toggleFavorite(item.listing.id)}
                     // ANA DOKUNMA → İLAN SAYFASI (masaüstüyle tutarlı, pazaryeri beklentisi).
                     // Eskiden explore-feed'e (tam ekran medya) gidiyordu → kullanıcı ürüne
@@ -1670,7 +1698,7 @@ function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner
   );
 }
 
-function ExploreTileBase({ favorited, height, item, language, onFav, onPress, onVisual, order, size, t }: { favorited?: boolean; height: number; item: ExploreMedia; language: "tr" | "en"; onFav?: () => void; onPress: () => void; onVisual?: () => void; order: number; size: number; t: (key: string) => string }) {
+function ExploreTileBase({ favorited, height, inCompare, item, language, onCompare, onFav, onPress, onVisual, order, size, t }: { favorited?: boolean; height: number; inCompare?: boolean; item: ExploreMedia; language: "tr" | "en"; onCompare?: () => void; onFav?: () => void; onPress: () => void; onVisual?: () => void; order: number; size: number; t: (key: string) => string }) {
   const { listing } = item;
   const featured = item.index === 0 || order % 12 === 0;
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
@@ -1724,6 +1752,20 @@ function ExploreTileBase({ favorited, height, item, language, onFav, onPress, on
             <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={17} color={favorited ? colors.accent : colors.muted} />
           </Pressable>
         ) : null}
+        {/* Karşılaştır — ListingCard'da (masaüstü) vardı, mobil keşfet kartında YOKTU (tutarsızlık).
+            Compare barı mobilde görünüyordu ama karta ekleme yolu yalnız ilan detayındaydı. */}
+        {onCompare ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ selected: Boolean(inCompare) }}
+            accessibilityLabel={inCompare ? translateCopy("Karşılaştırmadan çıkar", language) : translateCopy("Karşılaştır", language)}
+            hitSlop={6}
+            onPress={onCompare}
+            style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 8, top: 68, width: 30 }}
+          >
+            <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
+          </Pressable>
+        ) : null}
         {/* Görsel sayısı: ilan başına tek kart olduğu için "daha fazla görsel var" sinyali. */}
         {(item.mediaCount ?? 1) > 1 ? (
           <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, bottom: 8, flexDirection: "row", gap: 3, left: 8, paddingHorizontal: 7, paddingVertical: 3, position: "absolute" }}>
@@ -1761,7 +1803,7 @@ function ExploreTileBase({ favorited, height, item, language, onFav, onPress, on
 const ExploreTile = memo(ExploreTileBase, (a, b) =>
   // favorited de karşılaştırılmalı — yoksa kalbe basınca kart yeniden render OLMAZ
   // (memo eski çıktıyı tutar) ve favori görsel olarak dolmaz.
-  a.item === b.item && a.favorited === b.favorited && a.height === b.height && a.size === b.size && a.order === b.order && a.language === b.language
+  a.item === b.item && a.favorited === b.favorited && a.inCompare === b.inCompare && a.height === b.height && a.size === b.size && a.order === b.order && a.language === b.language
 );
 
 function getExploreStatus(item: ExploreMedia, listing: Listing, featured: boolean, conversionScore: number, t: (key: string) => string): { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone: "primary" | "dark" | "warning" } {
