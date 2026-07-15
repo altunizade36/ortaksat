@@ -171,6 +171,7 @@ export const components2Dict: Record<string, string> = {
   "Telefonunu doğrula": "Verify your phone",
   "Doğrula": "Verify",
   "Kimliğini doğrula": "Verify your identity",
+  "Instagram hesabını bağla": "Connect your Instagram account",
   "Profil gücü": "Profile strength",
   "Güçlü profil daha çok güven kazandırır; ortaklar ve alıcılar seninle daha rahat çalışır.": "A strong profile builds more trust; partners and buyers work with you more comfortably.",
   "Tamam": "Done",

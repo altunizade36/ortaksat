@@ -54,10 +54,13 @@ function ProfileScreenInner() {
   const isWideWeb = useIsWideWeb();
 
   if (isWideWeb) {
+    // Etiket duruma göre: yapılmamışsa EMİR ("Telefonunu doğrula"), yapılmışsa GEÇMİŞ
+    // ("Telefon doğrulandı ✓"). Eskiden hep "doğrulandı" yazıyordu → boş daire + "Tamamla"
+    // ile çelişiyordu (henüz doğrulanmamışken "doğrulandı" demek amatör/yanıltıcı).
     const verifications: Array<{ label: string; done: boolean }> = [
-      { label: translateCopy("Telefon doğrulandı", language), done: currentUser.verifiedPhone },
-      { label: translateCopy("Kimlik doğrulandı", language), done: currentUser.verifiedIdentity },
-      { label: translateCopy("Instagram bağlandı", language), done: !!currentUser.verifiedInstagram }
+      { label: translateCopy(currentUser.verifiedPhone ? "Telefon doğrulandı" : "Telefonunu doğrula", language), done: currentUser.verifiedPhone },
+      { label: translateCopy(currentUser.verifiedIdentity ? "Kimlik doğrulandı" : "Kimliğini doğrula", language), done: currentUser.verifiedIdentity },
+      { label: translateCopy(currentUser.verifiedInstagram ? "Instagram bağlandı" : "Instagram hesabını bağla", language), done: !!currentUser.verifiedInstagram }
     ];
     const doneCount = verifications.filter((v) => v.done).length;
     const completion = Math.round(((doneCount + (currentUser.bio ? 1 : 0) + (myListings.length ? 1 : 0)) / 5) * 100);

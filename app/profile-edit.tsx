@@ -234,9 +234,10 @@ function ProfileEditScreenInner() {
       { key: "verification", icon: "shield-check-outline", label: translateCopy("Doğrulama Durumu", language), sub: translateCopy("Kimlik ve hesap", language) }
     ];
     const verifications = [
-      { label: translateCopy("Telefon doğrulandı", language), done: currentUser.verifiedPhone },
-      { label: translateCopy("Kimlik doğrulandı", language), done: currentUser.verifiedIdentity },
-      { label: translateCopy("Instagram bağlandı", language), done: !!currentUser.verifiedInstagram }
+      // Duruma göre etiket: yapılmamışsa emir ("Telefonunu doğrula"), yapılmışsa geçmiş.
+      { label: translateCopy(currentUser.verifiedPhone ? "Telefon doğrulandı" : "Telefonunu doğrula", language), done: currentUser.verifiedPhone },
+      { label: translateCopy(currentUser.verifiedIdentity ? "Kimlik doğrulandı" : "Kimliğini doğrula", language), done: currentUser.verifiedIdentity },
+      { label: translateCopy(currentUser.verifiedInstagram ? "Instagram bağlandı" : "Instagram hesabını bağla", language), done: !!currentUser.verifiedInstagram }
     ];
     const doneCount = verifications.filter((v) => v.done).length;
     const completion = Math.round(((doneCount + (bio ? 1 : 0) + (avatar ? 1 : 0)) / 5) * 100);
