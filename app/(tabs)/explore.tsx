@@ -1673,7 +1673,12 @@ function ExploreTileBase({ favorited, height, item, language, onFav, onPress, on
   const subcategory = displayText(listing.category);
 
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height, opacity: pressed ? 0.92 : 1, overflow: "hidden", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, width: size })}>
+    <Pressable
+      accessibilityRole="link"
+      accessibilityLabel={`${displayText(listing.title)} — ${money(listing.price)}`}
+      onPress={onPress}
+      style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height, opacity: pressed ? 0.92 : 1, overflow: "hidden", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, width: size })}
+    >
       {/* Görsel (kare, temiz zemin — dama-tahtası yok) */}
       <View style={{ backgroundColor: colors.surfaceAlt, height: size, overflow: "hidden", width: "100%" }}>
         <SafeRemoteImage uri={item.type === "video" ? item.poster : item.uri} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
