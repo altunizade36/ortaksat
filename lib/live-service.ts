@@ -648,6 +648,16 @@ export async function updatePartnershipStatus(partnership: Partnership): Promise
   return true;
 }
 
+// Ortağın KENDİ ortaklığından ayrılması. RLS yalnız ilan-sahibine (satıcı) partnership
+// UPDATE izni verir; bu yüzden ortak-iptali SECURITY DEFINER `leave_partnership` RPC'den
+// yapılır (yalnız partner_id = auth.uid() ve status='active' iken cancelled'a çeker).
+export async function leavePartnershipLive(partnershipId: string): Promise<boolean> {
+  if (!supabase) return true;
+  const { data, error } = await supabase.rpc("leave_partnership", { p_id: partnershipId });
+  if (error) { console.warn("leave partnership failed", error); return false; }
+  return data === "left";
+}
+
 export async function insertLead(lead: Lead): Promise<boolean> {
   if (!supabase) return true;
   const { error } = await supabase.from("leads").insert({

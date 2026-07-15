@@ -260,5 +260,8 @@ export const socialDict: Record<string, string> = {
   "Engellendi": "Blocked",
   "Mesajlara dön": "Back to messages",
   "Kullanıcıyı engelle": "Block user",
-  "engellensin mi? Engellediğin kullanıcı sana mesaj gönderemez, sen de ona gönderemezsin.": "block this user? A blocked user can't message you, and you can't message them either."
+  "engellensin mi? Engellediğin kullanıcı sana mesaj gönderemez, sen de ona gönderemezsin.": "block this user? A blocked user can't message you, and you can't message them either.",
+  "Ortaklıktan ayrıl": "Leave partnership",
+  "Ayrıl": "Leave",
+  "ilanındaki ortaklıktan ayrılmak istediğine emin misin? Paylaşım linkin artık lead getirmez. Kazanılmış komisyonların korunur.": "— are you sure you want to leave this partnership? Your share link will stop bringing leads. Commissions you've already earned are kept."
 };

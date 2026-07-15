@@ -67,7 +67,7 @@ export default function PartnerScreen() {
 }
 
 function PartnerScreenInner() {
-  const { canReviewSale, createSaleReview, currentUser, findUser, isAuthenticated, joinListing, leads, listings, partnerships, refreshMarketplace, refreshUserData, sales, startConversation, updateLeadStatus, updateSaleStatus, users } = useStore();
+  const { canReviewSale, createSaleReview, currentUser, findUser, isAuthenticated, joinListing, leads, leavePartnership, listings, partnerships, refreshMarketplace, refreshUserData, sales, startConversation, updateLeadStatus, updateSaleStatus, users } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(() => Promise.all([refreshMarketplace(), refreshUserData()]));
   const { language, t } = useLanguage();
   const router = useRouter();
@@ -270,7 +270,17 @@ function PartnerScreenInner() {
     updateLeadStatus,
     updateSaleStatus,
     dispute: (saleId: string) => setDisputeSaleId(saleId),
-    reapply: onJoin
+    reapply: onJoin,
+    leave: (partnershipId: string, title: string) => {
+      Alert.alert(
+        translateCopy("Ortaklıktan ayrıl", language),
+        `"${title}" ${translateCopy("ilanındaki ortaklıktan ayrılmak istediğine emin misin? Paylaşım linkin artık lead getirmez. Kazanılmış komisyonların korunur.", language)}`,
+        [
+          { text: translateCopy("Vazgeç", language), style: "cancel" },
+          { text: translateCopy("Ayrıl", language), style: "destructive", onPress: () => leavePartnership(partnershipId) }
+        ]
+      );
+    }
   };
   const renderPartnershipCard = (partnership: Partnership) => {
     const listing = listings.find((item) => item.id === partnership.listingId);
@@ -797,6 +807,7 @@ type PartnershipCardActions = {
   updateSaleStatus: (saleId: string, status: SaleStatus, reason?: string) => void;
   dispute: (saleId: string) => void;
   reapply: (listingId: string) => void;
+  leave: (partnershipId: string, title: string) => void;
 };
 
 // Ortak ortaklık kartı — hem mobil liste hem masaüstü "Aktif/Bekleyen" sekmesinde
@@ -869,6 +880,10 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
           <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
           <PrimaryButton tone="soft" icon="cash-check" onPress={() => actions.claimSale(listing.id, listing.ownerId, listing.title)}>Sattım — satıcıya bildir</PrimaryButton>
           <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Satışını satıcı sisteme ekleyince komisyonun başlar. Referans linkinle satış yaptıysan buradan satıcıya bildir.", language)}</Text>
+          <Pressable accessibilityRole="button" onPress={() => actions.leave(partnership.id, listing.title)} style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", opacity: pressed ? 0.6 : 1, paddingVertical: 6 })}>
+            <MaterialCommunityIcons name="exit-to-app" size={15} color={colors.muted} />
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortaklıktan ayrıl", language)}</Text>
+          </Pressable>
         </>
       ) : partnership.status === "rejected" ? (
         <View style={{ gap: 8 }}>

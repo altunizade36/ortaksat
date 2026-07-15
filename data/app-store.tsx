@@ -61,6 +61,7 @@ import {
   updateListingStockPriceLive,
   updateListingInventoryLive,
   updatePartnershipStatus,
+  leavePartnershipLive,
   setPartnershipCommissionLive,
   updateReportStatusLive,
   updateProfileLive,
@@ -302,6 +303,7 @@ type AppStore = {
   approvePartnership: (partnershipId: string) => void;
   rejectPartnership: (partnershipId: string, reason?: string) => void;
   endPartnership: (partnershipId: string, mode?: "blocked" | "cancelled") => void;
+  leavePartnership: (partnershipId: string) => void;
   setPartnershipCommission: (partnershipId: string, type?: "rate" | "fixed", value?: number) => void;
   toggleFavorite: (listingId: string) => void;
   followedSellerIds: string[];
@@ -1965,6 +1967,22 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setPartnerships((items) => items.map((p) => (p.id === partnershipId ? partnership : p)));
           setListings((items) => items.map((l) => (l.id === partnership.listingId ? { ...l, partnerCount: l.partnerCount + 1 } : l)));
         }, "Ortaklık güncellenemedi. Bağlantını kontrol edip tekrar dene.");
+      },
+      // Ortak KENDİ aktif ortaklığından ayrılır (satıcının endPartnership'inin ortak-tarafı karşılığı;
+      // eskiden ortağın çıkış yolu YOKTU, kalıcı takılıydı). Sunucu otoritesi: leavePartnershipLive →
+      // SECURITY DEFINER RPC yalnız partner_id = auth.uid() & status='active' iken cancelled'a çeker.
+      leavePartnership(partnershipId) {
+        const partnership = partnerships.find((item) => item.id === partnershipId);
+        if (!partnership || partnership.partnerId !== currentUser.id || partnership.status !== "active") return;
+        const listing = listings.find((item) => item.id === partnership.listingId);
+        const updated: Partnership = { ...partnership, status: "cancelled" };
+        setPartnerships((items) => items.map((p) => (p.id === partnershipId ? updated : p)));
+        if (listing) setListings((items) => items.map((l) => (l.id === partnership.listingId ? { ...l, partnerCount: Math.max(0, l.partnerCount - 1) } : l)));
+        if (listing) notify(listing.ownerId, "application", "Ortak ayrıldı", `${currentUser.name}, "${listing.title}" ilanındaki ortaklıktan ayrıldı.`, { listingId: listing.id, partnershipId: partnership.id });
+        if (liveUser) persistCritical(leavePartnershipLive(partnershipId), () => {
+          setPartnerships((items) => items.map((p) => (p.id === partnershipId ? partnership : p)));
+          if (listing) setListings((items) => items.map((l) => (l.id === partnership.listingId ? { ...l, partnerCount: l.partnerCount + 1 } : l)));
+        }, "Ortaklıktan ayrılınamadı. Bağlantını kontrol edip tekrar dene.");
       },
       // Satıcı bu ortağa ÖZEL komisyon belirler (ilan varsayılanını ezer). type yoksa temizler.
       setPartnershipCommission(partnershipId, type, value) {
