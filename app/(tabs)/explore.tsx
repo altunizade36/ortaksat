@@ -1129,11 +1129,13 @@ export default function ExploreScreen() {
       <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
       <View style={{ gap: 7, paddingBottom: 8, paddingHorizontal: isWideWeb ? 0 : padding, paddingTop: isWideWeb ? 0 : 6 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-          <View style={{ flex: 1 }}>
-            <Text selectable style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <Text selectable style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, fontWeight: "900" }}>
               {t("explore")}
             </Text>
-            <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700", lineHeight: 19 }}>
+            {/* Alt metin mobilde 320px'de 4 satıra yayılıp başlığı şişiriyordu → 2 satır sınırı
+                + biraz küçük; ürünler daha yukarıda görünür (Instagram-vari kompakt başlık). */}
+            <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700", lineHeight: 17 }}>
               {t("visualExploreBody")}
             </Text>
           </View>

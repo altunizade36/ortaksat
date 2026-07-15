@@ -218,7 +218,7 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     saleCancelled: "Satış iptal",
     salesTracking: "Satış takibi"
     ,
-    visualExploreBody: "Görsel ve videoları tara; açınca tam ekran kaydır.",
+    visualExploreBody: "Beğendiğin ürüne dokun, incele; ortak ol, komisyon kazan.",
     content: "içerik",
     retrySearchFilter: "Arama kelimesini veya filtreyi değiştirerek tekrar deneyebilirsin.",
     videoContent: "Video içerik",
@@ -422,7 +422,7 @@ const dictionaries: Record<AppLanguage, Dictionary> = {
     saleCancelled: "Sale cancelled",
     salesTracking: "Sales tracking"
     ,
-    visualExploreBody: "Browse photos and videos; open one to swipe full screen.",
+    visualExploreBody: "Tap a product to view details; partner up and earn commission.",
     content: "items",
     retrySearchFilter: "Change your search term or filter and try again.",
     videoContent: "Video content",
