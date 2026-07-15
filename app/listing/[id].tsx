@@ -477,15 +477,29 @@ export default function ListingDetailScreen() {
     image: [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean).slice(0, 5),
     description: metaDesc,
     category: currentListing.category,
-    ...(!isDemo && owner && currentListing.reviewCount > 0 && owner.rating > 0
-      ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: Number(owner.rating.toFixed(1)),
-            reviewCount: currentListing.reviewCount
-          }
-        }
-      : {}),
+    // aggregateRating + review: YALNIZCA gerçek (demo değil) ilan yorumları varsa. Sahte
+    // yıldız Google politikasını ve sahte-veri yasağını ihlal eder. Gerçek yorum gelince
+    // otomatik yıldızlı zengin sonuç çıkar. Puan, ilanın GERÇEK yorumlarından hesaplanır.
+    ...(() => {
+      if (isDemo) return {};
+      const rated = listingReviews.filter((r) => r.rating >= 1 && r.rating <= 5);
+      if (rated.length === 0) return {};
+      const avg = rated.reduce((s, r) => s + r.rating, 0) / rated.length;
+      const withText = rated.filter((r) => r.comment && r.comment.trim()).slice(0, 3);
+      return {
+        aggregateRating: { "@type": "AggregateRating", ratingValue: Number(avg.toFixed(1)), reviewCount: rated.length, bestRating: 5, worstRating: 1 },
+        ...(withText.length > 0
+          ? {
+              review: withText.map((r) => ({
+                "@type": "Review",
+                reviewRating: { "@type": "Rating", ratingValue: r.rating, bestRating: 5, worstRating: 1 },
+                author: { "@type": "Person", name: findUser(r.reviewerId)?.name || "OrtakSat kullanıcısı" },
+                reviewBody: r.comment.replace(/\s+/g, " ").slice(0, 300)
+              }))
+            }
+          : {})
+      };
+    })(),
     offers: {
       "@type": "Offer",
       price: currentListing.price,

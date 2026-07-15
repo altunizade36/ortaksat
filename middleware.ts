@@ -93,6 +93,46 @@ async function listingResponse(id: string): Promise<Response | undefined> {
       seller: { "@type": "Organization", name: "OrtakSat" }
     }
   };
+  // AGGREGATE RATING + REVIEW — Google "review snippet" (yıldız) için. Sahte veri YASAK:
+  // yalnız GERÇEK yorum varsa eklenir. review_count 0 ise hiç sorgu atılmaz (verim).
+  // Gerçek yorum geldiğinde otomatik yıldızlı zengin sonuç çıkar.
+  if ((l.review_count ?? 0) > 0) {
+    try {
+      const rvApi = `${SUPABASE_URL}/rest/v1/reviews?listing_id=eq.${encodeURIComponent(id)}&deleted_at=is.null&select=rating,comment,reviewer:profiles!reviews_reviewer_id_fkey(full_name)&order=created_at.desc&limit=20`;
+      const rvRes = await fetch(rvApi, { headers: { apikey: SUPABASE_KEY, authorization: `Bearer ${SUPABASE_KEY}` } });
+      let rvRows: Array<{ rating: number; comment: string | null; reviewer?: { full_name?: string | null } | null }> = [];
+      if (rvRes.ok) {
+        rvRows = await rvRes.json();
+      } else {
+        // Embed (isim) başarısızsa: puan/yorumu isimsiz çek — aggregateRating yine GERÇEK kalır.
+        const r2 = await fetch(`${SUPABASE_URL}/rest/v1/reviews?listing_id=eq.${encodeURIComponent(id)}&deleted_at=is.null&select=rating,comment&order=created_at.desc&limit=20`, { headers: { apikey: SUPABASE_KEY, authorization: `Bearer ${SUPABASE_KEY}` } });
+        if (r2.ok) rvRows = await r2.json();
+      }
+      const ratings = (rvRows || []).map((r) => Number(r.rating)).filter((n) => n >= 1 && n <= 5);
+      if (ratings.length > 0) {
+        const avg = ratings.reduce((a, b) => a + b, 0) / ratings.length;
+        product.aggregateRating = {
+          "@type": "AggregateRating",
+          ratingValue: Number(avg.toFixed(1)),
+          reviewCount: ratings.length,
+          bestRating: 5,
+          worstRating: 1
+        };
+        const withText = (rvRows || []).filter((r) => r.comment && String(r.comment).trim()).slice(0, 3);
+        if (withText.length > 0) {
+          product.review = withText.map((r) => ({
+            "@type": "Review",
+            reviewRating: { "@type": "Rating", ratingValue: Number(r.rating), bestRating: 5, worstRating: 1 },
+            author: { "@type": "Person", name: (r.reviewer?.full_name || "OrtakSat kullanıcısı") },
+            reviewBody: String(r.comment).replace(/\s+/g, " ").slice(0, 300)
+          }));
+        }
+      }
+    } catch {
+      // Yorum çekilemezse Product yine geçerli (offers ile fiyat zengin sonucu korunur).
+    }
+  }
+
   const catSlug = l.category ? CAT_NAME_TO_SLUG[l.category] : undefined;
   const crumbEls: Array<Record<string, unknown>> = [{ "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://www.ortaksat.com/" }];
   if (catSlug && l.category) crumbEls.push({ "@type": "ListItem", position: 2, name: l.category, item: `https://www.ortaksat.com/kategori/${catSlug}` });
