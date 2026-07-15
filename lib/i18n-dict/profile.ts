@@ -347,5 +347,10 @@ export const profileDict: Record<string, string> = {
   "Ürün bul, ortak satış merkeziyle kazanç ve başvurularına hızlı ulaş.": "Find products and quickly reach your earnings and applications through the partner sales center.",
   "Kategori, ürün veya ortak satış ara": "Search category, product or partner sale",
   "Sonuç bulunamadı": "No results found",
-  "Farklı bir kategori veya ürün adıyla tekrar ara.": "Search again with a different category or product name."
+  "Farklı bir kategori veya ürün adıyla tekrar ara.": "Search again with a different category or product name.",
+  "Takip Ettiklerin": "Following",
+  "Tekliflerim": "My offers",
+  "süren teklif": "active offers",
+  "Verdiğin teklifler": "Offers you made",
+  "Takip ettiğin satıcıların yeni ilanları": "New listings from sellers you follow"
 };

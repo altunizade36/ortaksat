@@ -34,6 +34,8 @@ export function MobileNavMenu() {
   ];
   const account: NavItem[] = [
     { label: "Favorilerim", href: "/favorites", icon: "heart-outline" },
+    { label: "Takip Ettiklerin", href: "/following", icon: "storefront-check-outline" },
+    { label: "Tekliflerim", href: "/offers", icon: "tag-outline" },
     { label: "Mesajlar", href: "/(tabs)/messages", icon: "message-text-outline", badge: unreadMsg },
     { label: "Bildirimler", href: "/(tabs)/notifications-tab", icon: "bell-outline", badge: unreadNotif },
     { label: "Satıcı Panelim", href: "/(tabs)/seller", icon: "storefront-outline" },

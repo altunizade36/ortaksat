@@ -117,10 +117,12 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       Alert.alert(translateCopy("İzin gerekli", language), translateCopy("Ek fotoğraf seçmek için galeri izni vermelisin.", language));
       return;
     }
-    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.82, selectionLimit: 4 });
+    // Kapak (image) dışı ek görseller: create akışı MAX_PHOTOS=15 (kapak + 14) → edit de 14.
+    // ESKİDEN 4'e kırpıyordu: 15 fotoluk ilanı düzenleyen satıcı kalıcı olarak 5'e düşürüyordu (VERİ KAYBI).
+    const result = await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.82, selectionLimit: 14 });
     if (result.canceled) return;
     const uris = result.assets.map((a) => a.uri).filter(Boolean);
-    setAdAssets((s) => [...s, ...uris].slice(0, 4));
+    setAdAssets((s) => [...s, ...uris].slice(0, 14));
   }
 
   async function submit() {
@@ -138,7 +140,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     const salesPitch = pitch.split("\n").map((item) => item.trim()).filter(Boolean);
     const parsedRules = partnerRules.split("\n").map((item) => item.trim()).filter(Boolean);
     const parsedTags = tags.split(",").map((item) => item.trim()).filter(Boolean);
-    const parsedAdAssets = adAssets.slice(0, 4);
+    const parsedAdAssets = adAssets.slice(0, 14); // kapak + 14 ek = 15 (create ile parite; 4'e kırpma VERİ KAYBIYDI)
 
     // Yapısal özellikleri düzenleyiciden yeniden kur (create ile aynı mantık);
     // şema yoksa mevcut değerleri koru. _leaf/_root/_formKey meta bilgisi saklanır.
@@ -394,20 +396,20 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           <SectionTitle title={translateCopy("Hazır paylaşım metinleri", language)} action={translateCopy("Ortak kullanır", language)} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-              <PrimaryButton tone="secondary" onPress={() => setInstagramText(buildShareTemplates({ title, price: Number(price), commissionType, commissionValue: Number(commissionValue), pitch: pitch.split("\n") }).instagram)}>Instagram</PrimaryButton>
+              <PrimaryButton tone="secondary" onPress={() => setInstagramText(buildShareTemplates({ title, price: parseTrPrice(price), commissionType, commissionValue: Number(commissionValue), pitch: pitch.split("\n") }).instagram)}>Instagram</PrimaryButton>
             </View>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-              <PrimaryButton tone="secondary" onPress={() => setWhatsappText(buildShareTemplates({ title, price: Number(price), commissionType, commissionValue: Number(commissionValue), pitch: pitch.split("\n") }).whatsapp)}>WhatsApp</PrimaryButton>
+              <PrimaryButton tone="secondary" onPress={() => setWhatsappText(buildShareTemplates({ title, price: parseTrPrice(price), commissionType, commissionValue: Number(commissionValue), pitch: pitch.split("\n") }).whatsapp)}>WhatsApp</PrimaryButton>
             </View>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-              <PrimaryButton tone="secondary" onPress={() => setTiktokText(buildShareTemplates({ title, price: Number(price), commissionType, commissionValue: Number(commissionValue), pitch: pitch.split("\n") }).tiktok)}>TikTok</PrimaryButton>
+              <PrimaryButton tone="secondary" onPress={() => setTiktokText(buildShareTemplates({ title, price: parseTrPrice(price), commissionType, commissionValue: Number(commissionValue), pitch: pitch.split("\n") }).tiktok)}>TikTok</PrimaryButton>
             </View>
           </View>
           <Field label="Instagram açıklaması" value={instagramText} onChangeText={setInstagramText} multiline />
           <Field label="WhatsApp paylaşım mesajı" value={whatsappText} onChangeText={setWhatsappText} multiline />
           <Field label="Kısa TikTok açıklaması" value={tiktokText} onChangeText={setTiktokText} multiline />
           <View style={{ gap: 8 }}>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ek görseller (en fazla 4)", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ek görseller (en fazla 14)", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
               {adAssets.map((img, i) => (
                 <View key={img + i} style={{ borderColor: colors.line, borderRadius: 10, borderWidth: 1, height: 84, overflow: "hidden", width: 84 }}>

@@ -80,6 +80,8 @@ function NotificationsScreenInner() {
     const partnership = meta.partnershipId ? partnerships.find((p) => p.id === meta.partnershipId) : undefined;
     if (listing && listing.ownerId === currentUser.id) return `/(tabs)/seller?focus=${meta.listingId}` as Href;
     if (partnership && partnership.partnerId === currentUser.id) return `/(tabs)/partner?focus=${meta.listingId}` as Href;
+    // Teklif bildirimi + alıcı (ilan sahibi değil) → amaca-özel /offers ekranı (kabul/karşı-teklif orada).
+    if (type === "offer") return "/offers" as Href;
     return { pathname: "/listing/[id]", params: { id: meta.listingId } } as unknown as Href;
   };
   const myNotifications = notifications.filter((notification) => notification.userId === currentUser.id);

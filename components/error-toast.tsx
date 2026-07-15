@@ -1,9 +1,11 @@
+import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Platform, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/components/colors";
 import { MaterialCommunityIcons } from "@/components/icons";
+import { registerAuthPrompt } from "@/lib/auth-prompt";
 import { useStore } from "@/lib/use-store";
 
 /**
@@ -20,10 +22,17 @@ import { useStore } from "@/lib/use-store";
  */
 export function ErrorToast() {
   const { syncError, clearSyncError } = useStore();
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const [msg, setMsg] = useState<string | null>(null);
   const anim = useRef(new Animated.Value(0)).current;
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // "Giriş gerekli" aksiyonları (anon favori vb.) için global yönlendirmeyi bağla.
+  useEffect(() => {
+    registerAuthPrompt(() => router.push("/auth"));
+    return () => registerAuthPrompt(null);
+  }, [router]);
 
   useEffect(() => {
     if (!syncError) return;

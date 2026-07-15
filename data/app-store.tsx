@@ -18,6 +18,7 @@ import {
 } from "@/data/mock-data";
 import { logActivity } from "@/lib/audit";
 import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@/lib/auth-links";
+import { promptLogin } from "@/lib/auth-prompt";
 import { registerFavoriteToggle, syncFavorites } from "@/lib/favorites-cache";
 import { haptic } from "@/lib/haptics";
 import { syncSavedForUser } from "@/lib/saved-searches";
@@ -1980,7 +1981,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }, "Komisyon güncellenemedi. Bağlantını kontrol edip tekrar dene.");
       },
       toggleFavorite(listingId) {
-        if (!isAuthenticated) { setAuthError("Favorilere eklemek için giriş yapmalısın."); return; }
+        // Anon: sessiz no-op yerine /auth'a yönlendir (iletişim/ortak akışlarıyla parite).
+        if (!isAuthenticated) { promptLogin(); return; }
         haptic.light();
         const existing = favorites.find((item) => item.listingId === listingId && item.userId === currentUser.id);
         if (existing) {
@@ -2343,21 +2345,25 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setListings((items) => items.map((item) => (item.id === saleListing.id ? restoredListing : item)));
           if (liveUser) void updateListingInventoryLive(restoredListing);
         }
+        // NOT: payout bildirimlerine metadata (listingId+partnershipId) ŞART — yoksa
+        // hrefForMeta null döner ve "ödemeyi aldığını onayla" bildirimi tıklanamaz
+        // (para döngüsü ölü-uç olurdu). Metadata ile ortak→/partner, satıcı→/seller paneline gider.
+        const payoutMeta = sale ? { listingId: sale.listingId, partnershipId: sale.partnershipId } : undefined;
         if (sale && status === "seller_paid") {
           const partnership = partnerships.find((item) => item.id === sale.partnershipId);
-          if (partnership) notify(partnership.partnerId, "payout", "Komisyon ödendi bildirildi", `${sale.commissionAmount} TL için ödemeyi aldığını onayla.`);
+          if (partnership) notify(partnership.partnerId, "payout", "Komisyon ödendi bildirildi", `${sale.commissionAmount} TL için ödemeyi aldığını onayla.`, payoutMeta);
         }
         if (sale && status === "paid") {
           const listing = listings.find((item) => item.id === sale.listingId);
-          if (listing) notify(listing.ownerId, "payout", "Ortak ödemeyi onayladı", `${sale.commissionAmount} TL komisyon kapandı.`);
+          if (listing) notify(listing.ownerId, "payout", "Ortak ödemeyi onayladı", `${sale.commissionAmount} TL komisyon kapandı.`, payoutMeta);
         }
         if (sale && status === "cancelled" && salePartnership) {
-          notify(salePartnership.partnerId, "payout", "Satış/komisyon iptal edildi", `${saleListing?.title ?? "İlan"} için komisyon kaydı iptal edildi.`);
+          notify(salePartnership.partnerId, "payout", "Satış/komisyon iptal edildi", `${saleListing?.title ?? "İlan"} için komisyon kaydı iptal edildi.`, payoutMeta);
         }
         if (sale && status === "disputed") {
           // İtirazı karşı tarafa bildir (kim açtıysa diğerine gider).
           const other = isSeller ? salePartnership?.partnerId : saleListing?.ownerId;
-          if (other) notify(other, "payout", "Komisyon anlaşmazlığı açıldı", `${saleListing?.title ?? "İlan"} komisyonu için anlaşmazlık bildirildi. Panelden inceleyip çözebilirsin.`);
+          if (other) notify(other, "payout", "Komisyon anlaşmazlığı açıldı", `${saleListing?.title ?? "İlan"} komisyonu için anlaşmazlık bildirildi. Panelden inceleyip çözebilirsin.`, payoutMeta);
         }
         if (liveUser && updatedSale && sale) persistCritical(updateSaleStatusLive(updatedSale), () => {
           setSales((items) => items.map((item) => (item.id === saleId ? sale : item)));

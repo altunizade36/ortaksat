@@ -24,7 +24,7 @@ function isImageAvatar(value: string) {
 }
 
 function ProfileScreenInner() {
-  const { backendMode, blockedUserIds, conversations, currentUser, favorites, leads, listings, messages, notifications, offers, partnerships, refreshUserData, reports, reviews, sales, signOut } = useStore();
+  const { backendMode, blockedUserIds, conversations, currentUser, favorites, followedSellerIds, leads, listings, messages, notifications, offers, partnerships, refreshUserData, reports, reviews, sales, signOut } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const { language, t } = useLanguage();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
@@ -327,6 +327,9 @@ function ProfileScreenInner() {
         <MenuRow icon="storefront-outline" label={t("myListings")} detail={`${activeListings.length} ${t("activeShort")} · ${pausedListings.length} ${t("pausedShort")}`} value={`${myListings.length}`} href="/(tabs)/seller" />
         <MenuRow icon="handshake-outline" label={t("myPartnerships")} detail={`${activePartnerships.length} ${t("activeShort")} · ${pendingPartnerships.length} ${t("pending")}`} value={`${myPartnerships.length}`} href="/(tabs)/partner" />
         <MenuRow icon="star-outline" label={t("reviews")} detail={`${reviewsAboutMe.length} ${t("profileReviews")} · ${reviewsByMe.length} ${t("writtenByYou")}`} value={`${reviewsAboutMe.length + reviewsByMe.length}`} />
+        <MenuRow icon="tag-outline" label={translateCopy("Tekliflerim", language)} detail={liveOffers.length ? `${liveOffers.length} ${translateCopy("süren teklif", language)}` : translateCopy("Verdiğin teklifler", language)} value={`${myOffers.length}`} href="/offers" />
+        <MenuRow icon="heart-outline" label={translateCopy("Favoriler", language)} detail={translateCopy("Kaydedilen ilanlar", language)} value={`${myFavorites.length}`} href="/favorites" />
+        <MenuRow icon="storefront-check-outline" label={translateCopy("Takip Ettiklerin", language)} detail={translateCopy("Takip ettiğin satıcıların yeni ilanları", language)} value={`${followedSellerIds.length}`} href="/following" />
         <MenuRow icon="bell-outline" label={t("notification")} detail={t("unreadNotification")} value={`${unreadNotifications.length}`} href="/notifications" />
         <MenuRow icon="chat-outline" label={t("conversation")} detail={t("buyerSellerPartnerMessages")} value={`${myConversations.length}`} href="/(tabs)/messages" />
         <MenuRow icon="account-cancel-outline" label={translateCopy("Engellenenler", language)} detail={translateCopy("Engellediğin kullanıcılar sana mesaj gönderemez", language)} value={`${blockedUserIds.length}`} href="/engellenenler" />
