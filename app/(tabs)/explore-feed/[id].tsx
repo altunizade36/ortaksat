@@ -76,19 +76,20 @@ export default function ExploreFeedScreen() {
     return selectedIndex >= 0 ? [...media.slice(selectedIndex), ...media.slice(0, selectedIndex)] : media;
   }, [id, listings, mediaId, seed]);
 
-  useEffect(() => {
-    if (feed.length <= 1 || Object.values(openComments).some(Boolean)) return;
-    const timer = setTimeout(() => {
-      const nextIndex = currentIndex + 1 >= feed.length ? 0 : currentIndex + 1;
-      scrollRef.current?.scrollTo({ animated: true, y: nextIndex * height });
-      setCurrentIndex(nextIndex);
-    }, feed[currentIndex]?.type === "video" ? 9500 : 6500);
+  // OTOMATİK İLERLEME KALDIRILDI: feed her 6,5sn'de kendiliğinden bir sonraki ilana
+  // kayıyordu → kullanıcı ürüne bakarken "başkası açılıyor", ve otomatik kaydırma elle
+  // kaydırmayla çakışıp "kaydırma bozuluyordu". Artık kullanıcı kendi hızında kaydırır
+  // (TikTok/Reels gibi; içerik kendiliğinden atlamaz).
 
-    return () => clearTimeout(timer);
-  }, [currentIndex, feed, height, openComments]);
+  // PAGING YÜKSEKLİĞİ: her sayfa ScrollView'ın GERÇEK yüksekliğinde olmalı. Eskiden
+  // useWindowDimensions().height kullanılıyordu; mobil web'de adres çubuğu açılıp kapanınca
+  // bu değer container'la uyuşmuyor → pagingEnabled yanlış konuma snap ediyor, görsel yarım
+  // kalıyordu. Container'ı onLayout ile ölçüp onu kullanıyoruz.
+  const [pageH, setPageH] = useState(height);
+  const effHeight = pageH > 0 ? pageH : height;
 
   function handleScrollEnd(event: NativeSyntheticEvent<NativeScrollEvent>) {
-    const nextIndex = Math.round(event.nativeEvent.contentOffset.y / height);
+    const nextIndex = Math.round(event.nativeEvent.contentOffset.y / effHeight);
     setCurrentIndex(Math.max(0, Math.min(feed.length - 1, nextIndex)));
   }
 
@@ -156,6 +157,7 @@ export default function ExploreFeedScreen() {
         decelerationRate="fast"
         pagingEnabled
         onMomentumScrollEnd={handleScrollEnd}
+        onLayout={(e) => { const h = e.nativeEvent.layout.height; if (h > 0 && Math.abs(h - pageH) > 1) setPageH(h); }}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ backgroundColor: "#000000" }}
         style={{ backgroundColor: "#000000", flex: 1 }}
@@ -180,7 +182,7 @@ export default function ExploreFeedScreen() {
         const commentsOpen = Boolean(openComments[listing.id]);
 
         return (
-          <View key={`${item.id}-${index}-${seed}`} style={{ backgroundColor: "#000000", height, overflow: "hidden", width }}>
+          <View key={`${item.id}-${index}-${seed}`} style={{ backgroundColor: "#000000", height: effHeight, overflow: "hidden", width }}>
             <FeedMediaView item={item} />
             <View style={{ backgroundColor: "rgba(0,0,0,0.24)", bottom: 0, left: 0, position: "absolute", right: 0, top: 0 }} />
 
