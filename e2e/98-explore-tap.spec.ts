@@ -1,4 +1,4 @@
-import { test, devices, type Page } from "@playwright/test";
+import { test, expect, devices, type Page } from "@playwright/test";
 
 const OUT = "e2e-artifacts/explore-tap";
 
@@ -20,6 +20,8 @@ async function tapFirstCard(page: Page, tag: string) {
     await page.screenshot({ path: `${OUT}/${tag}-tiklama-sonrasi.png`, fullPage: true }).catch(() => {});
   }
   console.log(`[${tag}] kart bulundu:${found} | tıklama sonrası → ${dest} | JS hata: ${jsErr.length ? jsErr.join("; ") : "yok"}`);
+  // Her iki platformda da ürüne dokunma İLAN SAYFASINA gitmeli (tutarlı).
+  expect(dest.includes("/listing/"), `${tag}: kart tıklama /listing/'e gitmeli (explore-feed değil)`).toBeTruthy();
   return { found, dest, jsErr };
 }
 
