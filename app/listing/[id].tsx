@@ -927,7 +927,7 @@ export default function ListingDetailScreen() {
                   ) : null}
                 </View>
               ) : (
-                <PrimaryButton tone="secondary" icon="handshake-outline" onPress={() => { setOfferAmount(""); setOfferNote(""); setOfferErr(null); setOfferOpen(true); }}>{translateCopy("Teklif Ver", language)}</PrimaryButton>
+                <PrimaryButton tone="secondary" icon="handshake-outline" onPress={() => { if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; } setOfferAmount(""); setOfferNote(""); setOfferErr(null); setOfferOpen(true); }}>{translateCopy("Teklif Ver", language)}</PrimaryButton>
               )}
               <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
               {/* Numarayı Göster (Sahibinden tarzı) — istek üzerine gerçek numara */}

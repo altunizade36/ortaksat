@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -11,8 +11,9 @@ import { useCompare } from "@/lib/compare";
 import { getCategoryShortLabel } from "@/lib/categories";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
+import { fetchListingsByIds } from "@/lib/supabase-data";
 import { displayText } from "@/lib/text";
-import type { Listing } from "@/lib/types";
+import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 export function CompareBar() {
@@ -23,7 +24,25 @@ export function CompareBar() {
   const { listings, findUser } = useStore();
   const [open, setOpen] = useState(false);
 
-  const items = ids.map((id) => listings.find((l) => l.id === id)).filter((l): l is Listing => !!l);
+  // Sunucu-arama sonucu / uzaktan getirilen ilanlar bellek penceresinde (listings)
+  // olmayabilir → karşılaştırmaya eklenen id çözülemeyip DÜŞÜYORDU (hiçbiri çözülmezse
+  // çubuk hiç görünmüyordu). favorites/following gibi eksikleri sunucudan getir.
+  const [fetched, setFetched] = useState<Listing[]>([]);
+  const [fetchedUsers, setFetchedUsers] = useState<User[]>([]);
+  const attemptedRef = useRef<Set<string>>(new Set());
+  useEffect(() => {
+    const missing = ids.filter((id) => !listings.some((l) => l.id === id) && !attemptedRef.current.has(id));
+    if (missing.length === 0) return;
+    missing.forEach((id) => attemptedRef.current.add(id)); // tek-sefer dene (silinmiş ilanda döngü olmasın)
+    void fetchListingsByIds(missing).then((res) => {
+      if (res?.listings?.length) setFetched((prev) => [...prev.filter((p) => !res.listings.some((n) => n.id === p.id)), ...res.listings]);
+      if (res?.users?.length) setFetchedUsers((prev) => [...prev.filter((p) => !res.users.some((n) => n.id === p.id)), ...res.users]);
+    });
+  }, [ids, listings]);
+
+  const resolveListing = (id: string) => listings.find((l) => l.id === id) ?? fetched.find((l) => l.id === id);
+  const owner = (ownerId: string) => findUser(ownerId) ?? fetchedUsers.find((u) => u.id === ownerId);
+  const items = ids.map(resolveListing).filter((l): l is Listing => !!l);
   if (items.length === 0) return null;
 
   // num + dir olan satırlarda en iyi değer vurgulanır (en düşük fiyat / en yüksek kazanç…).
@@ -33,7 +52,7 @@ export function CompareBar() {
     { label: "Ortak kazancı", get: (l) => moneyIn(commissionAmount(l), l.currency), num: (l) => commissionAmount(l), dir: "max" },
     { label: "Komisyon", get: (l) => (l.commissionType === "rate" ? `%${l.commissionValue}` : moneyIn(l.commissionValue, l.currency)), num: (l) => (l.commissionType === "rate" ? l.commissionValue : commissionAmount(l)), dir: "max" },
     { label: "Bonus", get: (l) => (l.bonusAmount ? `${moneyIn(l.bonusAmount, l.currency)}${l.bonusQuota ? ` · ${l.bonusQuota} adet` : ""}` : "—"), num: (l) => l.bonusAmount ?? 0, dir: "max" },
-    { label: "Satıcı puanı", get: (l) => { const o = findUser(l.ownerId); return o?.rating ? `${o.rating.toFixed(1)} ★` : translateCopy("Yeni", language); }, num: (l) => findUser(l.ownerId)?.rating ?? 0, dir: "max" },
+    { label: "Satıcı puanı", get: (l) => { const o = owner(l.ownerId); return o?.rating ? `${o.rating.toFixed(1)} ★` : translateCopy("Yeni", language); }, num: (l) => owner(l.ownerId)?.rating ?? 0, dir: "max" },
     { label: "Kategori", get: (l) => getCategoryShortLabel(l.category) },
     { label: "Konum", get: (l) => displayText(l.location) },
     { label: "Ortaklık", get: (l) => (l.partnershipMode === "open" ? translateCopy("Anında", language) : l.partnershipMode === "approval" ? translateCopy("Onaylı", language) : translateCopy("Davetli", language)) }
