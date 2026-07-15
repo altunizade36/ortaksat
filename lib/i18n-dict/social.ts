@@ -246,5 +246,17 @@ export const socialDict: Record<string, string> = {
   "Reddet": "Reject",
   "Komisyon ödüyor mu, ürün doğru mu, müşteri memnun mu?": "Does the seller pay commission, is the product accurate, and is the customer satisfied?",
   "Gerçek müşteri getiriyor mu, spam yapıyor mu, ürünü doğru temsil ediyor mu?": "Do they bring real customers, do they spam, and do they represent the product accurately?",
-  "Gerçek müşteri getiren, satışa dönen talep oluşturan ortakların ortak güveni yükselir.": "Partners who bring real customers and create leads that convert to sales raise their partner trust."
+  "Gerçek müşteri getiren, satışa dönen talep oluşturan ortakların ortak güveni yükselir.": "Partners who bring real customers and create leads that convert to sales raise their partner trust.",
+  "Engellenenler": "Blocked users",
+  "Engellenen Kullanıcılar": "Blocked Users",
+  "Engellediğin kullanıcılar sana mesaj gönderemez": "Users you block can't message you",
+  "Engellenenler için giriş yap": "Sign in to see blocked users",
+  "Engellediğin kullanıcıları görmek ve engeli kaldırmak için giriş yapman gerekir.": "You need to sign in to see and unblock users you've blocked.",
+  "kişiyi engelledin · sana mesaj gönderemezler": "people blocked · they can't message you",
+  "Engellediğin kullanıcılar burada listelenir; sana mesaj gönderemezler.": "Users you've blocked are listed here; they can't message you.",
+  "Engellenen kimse yok": "No blocked users",
+  "Bir kullanıcıyı sohbet ekranından engelleyebilirsin. Engellediğin kişiler sana mesaj gönderemez.": "You can block a user from the chat screen. People you block can't message you.",
+  "Engeli kaldır": "Unblock",
+  "Engellendi": "Blocked",
+  "Mesajlara dön": "Back to messages"
 };

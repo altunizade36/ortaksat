@@ -1000,6 +1000,22 @@ export async function fetchBlockedUsers(userId: string): Promise<string[]> {
   return (data ?? []).map((r) => r.blocked_id as string);
 }
 
+// Engellenen kullanıcıları görünen profil bilgisiyle getir (yönetim ekranı için).
+// SECURITY DEFINER `my_blocked_profiles` yalnız çağıranın engellediklerini döndürür.
+export type BlockedProfile = { id: string; name: string; avatarUrl?: string; role?: string; blockedAt?: string };
+export async function fetchBlockedProfiles(): Promise<BlockedProfile[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("my_blocked_profiles");
+  if (error) { console.warn("fetch blocked profiles failed", error); return []; }
+  return ((data ?? []) as Array<{ id: string; full_name: string | null; avatar_url: string | null; role: string | null; blocked_at: string | null }>).map((r) => ({
+    id: r.id,
+    name: r.full_name?.trim() || "Kullanıcı",
+    avatarUrl: r.avatar_url ?? undefined,
+    role: r.role ?? undefined,
+    blockedAt: r.blocked_at ?? undefined
+  }));
+}
+
 // Native push token'ını kaydet (upsert). Web'de çağrılmaz.
 export async function savePushTokenLive(token: string, platform: string): Promise<void> {
   if (!supabase || !token) return;

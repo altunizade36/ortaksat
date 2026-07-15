@@ -24,7 +24,7 @@ function isImageAvatar(value: string) {
 }
 
 function ProfileScreenInner() {
-  const { backendMode, conversations, currentUser, favorites, leads, listings, messages, notifications, offers, partnerships, refreshUserData, reports, reviews, sales, signOut } = useStore();
+  const { backendMode, blockedUserIds, conversations, currentUser, favorites, leads, listings, messages, notifications, offers, partnerships, refreshUserData, reports, reviews, sales, signOut } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const { language, t } = useLanguage();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
@@ -148,6 +148,7 @@ function ProfileScreenInner() {
               <MenuRow icon="handshake-outline" label="Tekliflerim" detail={liveOffers.length ? `${liveOffers.length} süren teklif` : "Verdiğin teklifler"} value={`${myOffers.length}`} href="/offers" />
               <MenuRow icon="heart-outline" label="Favoriler" detail="Kaydedilen ilanlar" value={`${myFavorites.length}`} href="/favorites" />
               <MenuRow icon="chat-outline" label="Görüşmeler" detail="Alıcı, satıcı ve ortak mesajları" value={`${myConversations.length}`} href="/(tabs)/messages" />
+              <MenuRow icon="account-cancel-outline" label="Engellenenler" detail="Engellediğin kullanıcılar sana mesaj gönderemez" value={`${blockedUserIds.length}`} href="/engellenenler" />
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
@@ -328,6 +329,7 @@ function ProfileScreenInner() {
         <MenuRow icon="star-outline" label={t("reviews")} detail={`${reviewsAboutMe.length} ${t("profileReviews")} · ${reviewsByMe.length} ${t("writtenByYou")}`} value={`${reviewsAboutMe.length + reviewsByMe.length}`} />
         <MenuRow icon="bell-outline" label={t("notification")} detail={t("unreadNotification")} value={`${unreadNotifications.length}`} href="/notifications" />
         <MenuRow icon="chat-outline" label={t("conversation")} detail={t("buyerSellerPartnerMessages")} value={`${myConversations.length}`} href="/(tabs)/messages" />
+        <MenuRow icon="account-cancel-outline" label={translateCopy("Engellenenler", language)} detail={translateCopy("Engellediğin kullanıcılar sana mesaj gönderemez", language)} value={`${blockedUserIds.length}`} href="/engellenenler" />
         <MenuRow icon="database-check-outline" label={t("dataInfrastructure")} detail={isLiveAccount ? t("liveProfileActive") : t("previewData")} value={isLiveAccount ? t("live") : t("preview")} href="/profile-edit" />
       </Card>
 
