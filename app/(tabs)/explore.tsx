@@ -558,11 +558,18 @@ export default function ExploreScreen() {
   useEffect(() => {
     if (restoredRef.current) return;
     restoredRef.current = true;
-    if (exploreScrollMemo.sig === filterSig && exploreScrollMemo.count > INITIAL_EXPLORE_ITEMS) {
+    const match = exploreScrollMemo.sig === filterSig && exploreScrollMemo.count > INITIAL_EXPLORE_ITEMS;
+    if (typeof console !== "undefined") console.log(`[EXPLORE-RESTORE] mount memo=${JSON.stringify(exploreScrollMemo)} sig="${filterSig}" match=${match}`);
+    if (match) {
       setVisibleCount(exploreScrollMemo.count);
       const y = exploreScrollMemo.y;
-      // Kart sayısı arttı → içerik uzadı; iki rAF sonra o konuma git (layout otursun).
-      requestAnimationFrame(() => requestAnimationFrame(() => scrollRef.current?.scrollTo({ y, animated: false })));
+      // Kart sayısı arttı → içerik uzadı; birkaç deneme ile o konuma git (layout otursun).
+      let tries = 0;
+      const tick = () => {
+        scrollRef.current?.scrollTo({ y, animated: false });
+        if (++tries < 8) setTimeout(tick, 120);
+      };
+      requestAnimationFrame(() => requestAnimationFrame(tick));
     }
     // yalnız ilk mount
     // eslint-disable-next-line react-hooks/exhaustive-deps
