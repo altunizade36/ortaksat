@@ -23,6 +23,7 @@ import { registerFavoriteToggle, syncFavorites } from "@/lib/favorites-cache";
 import { haptic } from "@/lib/haptics";
 import { syncSavedForUser } from "@/lib/saved-searches";
 import { effectiveCommissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
+import { scanTextLocal } from "@/lib/moderation";
 import {
   deleteFavorite,
   ensureProfile,
@@ -1533,6 +1534,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // 'sold'→'active'; paused/archived/rejected kasıtlı olduğundan korunur.
         if (listing.status === "sold" && updatedListing.status === "sold" && (updatedListing.stockCount ?? 0) > 0) {
           updatedListing.status = "active";
+        }
+        // Reddedilen/incelemedeki ilanı DÜZENLEMEK = YENİDEN GÖNDER: içeriği yeniden tara.
+        // Temizse yayına döner (active), "review" ifadesi varsa tekrar incelemeye, yasaklıysa
+        // sebeple reddedilir. Eskiden reddedilen ilan düzenlense de 'rejected' kalıyor, satıcının
+        // hiçbir kurtarma yolu yoktu (üstelik panelde hiç görünmüyordu).
+        if (listing.status === "rejected" || listing.status === "pending_review") {
+          const scan = scanTextLocal(`${updatedListing.title}\n${updatedListing.description}`);
+          updatedListing.status = scan.verdict === "block" ? "rejected" : scan.verdict === "review" ? "pending_review" : "active";
+          updatedListing.rejectionReason = scan.verdict === "block" ? (scan.matched ? `Yasaklı içerik: ${scan.matched}` : "Yasaklı içerik") : undefined;
         }
         const ok = liveUser ? await updateListingLive(updatedListing) : true;
         if (!ok) {

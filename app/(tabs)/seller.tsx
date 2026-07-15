@@ -1,6 +1,6 @@
 ﻿import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 
@@ -125,6 +125,9 @@ function SellerScreenInner() {
   }, [focusId]);
 
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status !== "rejected" && listing.status !== "archived");
+  // Reddedilen ilanlar myListings'ten çıkarılır ama SATICI onları görmeli (eskiden sessizce
+  // yok oluyorlardı — neden/düzenle/yeniden-gönder yoktu). Ayrı bir uyarı bölümünde gösterilir.
+  const rejectedListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status === "rejected");
   const myListingIds = new Set(myListings.map((listing) => listing.id));
   const myPartnershipIds = partnerships.filter((partnership) => myListingIds.has(partnership.listingId)).map((partnership) => partnership.id);
   const partnershipIdsKey = myPartnershipIds.join(",");
@@ -587,6 +590,22 @@ function SellerScreenInner() {
 
       <Card>
         <SectionTitle title="İlan yönetimi" action={`${visibleListings.length}`} />
+        {rejectedListings.length > 0 ? (
+          <View style={{ backgroundColor: colors.warningSoft, borderColor: colors.warning, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+              <MaterialCommunityIcons name="account-cancel-outline" size={17} color={colors.warning} />
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{rejectedListings.length} {translateCopy("ilan yayına alınamadı", language)}</Text>
+            </View>
+            {rejectedListings.map((l) => (
+              <View key={l.id} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, gap: 8, padding: 10 }}>
+                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{displayText(l.title)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{displayText(l.rejectionReason || translateCopy("İncelemede uygun bulunmadı.", language))}</Text>
+                <PrimaryButton tone="secondary" icon="pencil-outline" href={`/listing-edit/${l.id}` as Href}>{translateCopy("Düzenle & yeniden gönder", language)}</PrimaryButton>
+              </View>
+            ))}
+            <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Düzenleyip kaydettiğinde ilan içeriği yeniden taranır; uygunsa yayına döner.", language)}</Text>
+          </View>
+        ) : null}
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 48, paddingHorizontal: 12 }}>
           <MaterialCommunityIcons name="magnify" size={21} color={colors.primary} />
           <TextInput

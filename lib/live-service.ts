@@ -868,7 +868,8 @@ export async function updateListingLive(listing: Listing) {
       share_templates: listing.shareTemplates ?? null,
       ad_assets: listing.adAssets ?? [],
       tags: listing.tags,
-      attributes: listing.attributes ?? {}
+      attributes: listing.attributes ?? {},
+      rejection_reason: listing.rejectionReason ?? null
     })
     .eq("id", listing.id);
 

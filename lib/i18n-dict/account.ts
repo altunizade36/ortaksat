@@ -407,5 +407,9 @@ export const accountDict: Record<string, string> = {
   "Komisyon nasıl ödenir?": "How is commission paid?",
   "Ortaksat para tutmaz veya transfer etmez. Ortağının komisyonunu, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sen ödersin. Ödedikten sonra satışı satıcı panelinden “Ödendi” işaretle.": "OrtakSat holds and transfers no money. You pay your affiliate's commission directly via your agreed channel (bank transfer, cash, etc.). After paying, mark the sale “Paid” from the seller panel.",
   "En çok satan": "Best selling",
-  "Satış yaptıkça en çok satan ilanların burada sıralanır.": "As you make sales, your best-selling listings are ranked here."
+  "Satış yaptıkça en çok satan ilanların burada sıralanır.": "As you make sales, your best-selling listings are ranked here.",
+  "ilan yayına alınamadı": "listing(s) couldn't be published",
+  "İncelemede uygun bulunmadı.": "Not approved during review.",
+  "Düzenle & yeniden gönder": "Edit & resubmit",
+  "Düzenleyip kaydettiğinde ilan içeriği yeniden taranır; uygunsa yayına döner.": "When you edit and save, the listing content is re-scanned; if suitable, it goes back live."
 };

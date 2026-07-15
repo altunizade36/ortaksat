@@ -76,6 +76,7 @@ export type Listing = {
   imageAlt?: string;
   fallbackCategoryImage?: string;
   status: ListingStatus;
+  rejectionReason?: string; // admin reddi / yasaklı içerik sebebi (satıcıya gösterilir; edit'te yeniden taranır)
   partnershipMode: PartnershipMode;
   stockCount: number;
   minPartnerRating: number;
