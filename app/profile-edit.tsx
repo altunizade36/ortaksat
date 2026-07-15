@@ -41,6 +41,7 @@ function ProfileEditScreenInner() {
   const [section, setSection] = useState<SettingsSection>("personal");
   const [storeName, setStoreName] = useState(currentUser.name);
   const [iban, setIban] = useState((prefs0.iban as string) ?? "");
+  const [igHandle, setIgHandle] = useState((prefs0.instagram_handle as string) ?? "");
   // Şifre değiştir (mevcut şifre + yeni + tekrar). Güvenlik: Supabase mevcut
   // şifreyi ister; ayrıca web'de Alert no-op olduğu için satır-içi mesaj gösteririz.
   const [pwCurrent, setPwCurrent] = useState("");
@@ -109,7 +110,10 @@ function ProfileEditScreenInner() {
       !currentUser.verifiedIdentity ? "kimlik" : null,
       !currentUser.verifiedInstagram ? "Instagram" : null
     ].filter(Boolean).join(", ");
-    const note = `Bekleyen doğrulama(lar): ${pending || "genel"}. Telefon: ${currentUser.phone || "—"}. Kullanıcı: ${currentUser.name} (${currentUser.id}).`;
+    const ig = igHandle.trim().replace(/^@+/, "");
+    // Instagram handle'ı preferences'a kalıcı yaz (staff sonra da görebilsin) + talep notuna ekle.
+    if (ig) void savePreferences({ instagram_handle: ig });
+    const note = `Bekleyen doğrulama(lar): ${pending || "genel"}. Telefon: ${currentUser.phone || "—"}.${ig ? ` Instagram: @${ig}.` : ""} Kullanıcı: ${currentUser.name} (${currentUser.id}).`;
     Alert.alert(
       label,
       translateCopy("Doğrulama, güvenlik gereği ekibimizce yapılır. Talebini şimdi gönder — kimlik/telefon bilgin incelenip uygun bulunursa hesabın doğrulanır. Ek belge gerekirse iletişime geçeriz.", language),
@@ -388,6 +392,11 @@ function ProfileEditScreenInner() {
                   <MaterialCommunityIcons name="information-outline" size={17} color={colors.info} style={{ marginTop: 1 }} />
                   <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Doğrulamalar güvenlik gereği ekibimizce, belge/bilgi kontrolüyle yapılır. Aşağıdan talep oluşturabilirsin.", language)}</Text>
                 </View>
+                {!currentUser.verifiedInstagram ? (
+                  <View style={{ marginTop: 8 }}>
+                    <DeskField label={translateCopy("Instagram kullanıcı adı (doğrulama için)", language)} value={igHandle} onChangeText={setIgHandle} icon="instagram" placeholder="@kullaniciadi" />
+                  </View>
+                ) : null}
                 <Pressable onPress={() => startVerification(translateCopy("Doğrulama talebi", language))} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, marginTop: 8, paddingHorizontal: 20, paddingVertical: 11 }}>
                   <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Doğrulama talebi oluştur", language)}</Text>
                 </Pressable>
@@ -511,6 +520,9 @@ function ProfileEditScreenInner() {
             <StatusPill label={currentUser.verifiedInstagram ? translateCopy("Instagram ✓", language) : translateCopy("Instagram —", language)} tone={currentUser.verifiedInstagram ? "success" : "warning"} />
           </View>
           <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>{translateCopy("Doğrulamalar güvenlik gereği ekibimizce, belge/bilgi kontrolüyle yapılır.", language)}</Text>
+          {!currentUser.verifiedInstagram ? (
+            <DeskField label={translateCopy("Instagram kullanıcı adı (doğrulama için)", language)} value={igHandle} onChangeText={setIgHandle} icon="instagram" placeholder="@kullaniciadi" />
+          ) : null}
           <PrimaryButton icon="shield-check-outline" tone="secondary" onPress={() => startVerification(translateCopy("Doğrulama talebi", language))}>{translateCopy("Doğrulama talebi oluştur", language)}</PrimaryButton>
         </Card>
 

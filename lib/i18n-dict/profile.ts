@@ -352,5 +352,6 @@ export const profileDict: Record<string, string> = {
   "Tekliflerim": "My offers",
   "süren teklif": "active offers",
   "Verdiğin teklifler": "Offers you made",
-  "Takip ettiğin satıcıların yeni ilanları": "New listings from sellers you follow"
+  "Takip ettiğin satıcıların yeni ilanları": "New listings from sellers you follow",
+  "Instagram kullanıcı adı (doğrulama için)": "Instagram username (for verification)"
 };
