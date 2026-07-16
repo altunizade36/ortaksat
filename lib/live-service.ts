@@ -104,6 +104,30 @@ export async function savePreferencesLive(userId: string, preferences: Record<st
   return true;
 }
 
+// IBAN (finansal) `payout_info` tablosunda, SATIR-BAZLI RLS ile yalnız sahibine açık.
+// ESKİDEN profiles.preferences JSONB'deydi; o kolon `authenticated` SELECT grant'ında ve
+// profiles RLS'i USING(true) olduğu için HERHANGİ girişli kullanıcı tüm IBAN'ları
+// okuyabiliyordu. IBAN'ı ASLA preferences'a geri koyma.
+export async function fetchMyPayoutIban(): Promise<string> {
+  if (!supabase) return "";
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return "";
+  const { data, error } = await supabase.from("payout_info").select("iban").eq("user_id", me).maybeSingle();
+  if (error) { console.warn("payout iban fetch failed", error); return ""; }
+  return (data?.iban as string | null) ?? "";
+}
+
+export async function saveMyPayoutIban(iban: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { data: auth } = await supabase.auth.getUser();
+  const me = auth.user?.id;
+  if (!me) return false;
+  const { error } = await supabase.from("payout_info").upsert({ user_id: me, iban: iban || null, updated_at: new Date().toISOString() });
+  if (error) { console.warn("payout iban save failed", error); return false; }
+  return true;
+}
+
 /** Kullanicinin e-posta bildirim tercihini gunceller (KVKK: kolay opt-out). */
 export async function saveEmailNotificationsLive(userId: string, enabled: boolean): Promise<boolean> {
   if (!supabase) return false;

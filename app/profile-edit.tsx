@@ -15,7 +15,7 @@ import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
-import { changePasswordLive, reauthenticateLive, uploadProfileAvatar } from "@/lib/live-service";
+import { changePasswordLive, fetchMyPayoutIban, reauthenticateLive, saveMyPayoutIban, uploadProfileAvatar } from "@/lib/live-service";
 import { actionLabel, fetchLoginHistory, type LoginEvent } from "@/lib/security-history";
 import { useStore } from "@/lib/use-store";
 import { passwordStrength } from "@/lib/validation";
@@ -40,7 +40,8 @@ function ProfileEditScreenInner() {
   const isWideWeb = useIsWideWeb();
   const [section, setSection] = useState<SettingsSection>("personal");
   const [storeName, setStoreName] = useState(currentUser.name);
-  const [iban, setIban] = useState((prefs0.iban as string) ?? "");
+  // IBAN artık preferences'ta DEĞİL (P1 sızıntı); payout_info tablosundan (own-only RLS) gelir.
+  const [iban, setIban] = useState("");
   const [igHandle, setIgHandle] = useState((prefs0.instagram_handle as string) ?? "");
   // Şifre değiştir (mevcut şifre + yeni + tekrar). Güvenlik: Supabase mevcut
   // şifreyi ister; ayrıca web'de Alert no-op olduğu için satır-içi mesaj gösteririz.
@@ -91,12 +92,22 @@ function ProfileEditScreenInner() {
     Alert.alert(translateCopy("Şifre güncellendi", language), translateCopy("Yeni şifren kaydedildi. Bir sonraki girişte bunu kullan.", language));
   }
 
+  // IBAN'ı own-only payout_info tablosundan yükle (canlı hesapta; preview/mock'ta boş kalır).
+  useEffect(() => {
+    let alive = true;
+    if (backendMode !== "supabase") return;
+    void fetchMyPayoutIban().then((v) => { if (alive && v) setIban(v); });
+    return () => { alive = false; };
+  }, [backendMode, currentUser.id]);
+
   async function saveStore() {
     setStoreSaving(true);
-    // IBAN profiles kolonunda tutulmaz; preferences JSON'a kalıcı yazılır (komisyon
-    // ödeme bilgisi). Önceden yalnız lokal state'teydi ve kaydedilmiyordu.
+    // IBAN `payout_info` tablosunda, satır-bazlı RLS ile YALNIZ sahibine açık.
+    // ESKİDEN profiles.preferences JSONB'deydi → o kolon tüm girişli kullanıcılara
+    // okunabilir olduğu için IBAN'lar toplanabiliyordu (P1 finansal sızıntı).
+    // IBAN'ı ASLA preferences'a geri koyma.
     const ibanClean = iban.replace(/\s+/g, "").toLocaleUpperCase("tr-TR");
-    await savePreferences({ iban: ibanClean });
+    await saveMyPayoutIban(ibanClean);
     const ok = await updateProfile({ name: storeName.trim() || name, phone, avatar, bio });
     setStoreSaving(false);
     Alert.alert(ok ? translateCopy("Kaydedildi", language) : translateCopy("Kaydedilemedi", language), ok ? translateCopy("Mağaza bilgilerin güncellendi.", language) : (authError ?? translateCopy("Bir sorun oluştu.", language)));
