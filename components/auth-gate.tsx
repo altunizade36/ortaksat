@@ -2,6 +2,7 @@ import { MaterialCommunityIcons } from "@/components/icons";
 import { Link } from "expo-router";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
+import { BrandMark } from "@/components/brand/brand-mark";
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -15,7 +16,7 @@ import type { MascotName } from "@/lib/mascots";
 export function AuthRequired({
   title = "Bu sayfa için giriş yapın",
   body = "Gezmeye devam edebilirsin; ancak bu bölümü kullanmak için ücretsiz bir hesap gerekiyor.",
-  icon = "lock-outline",
+  icon,
   mascot
 }: {
   title?: string;
@@ -27,12 +28,16 @@ export function AuthRequired({
   return (
     <ScrollView contentContainerStyle={{ alignItems: "center", backgroundColor: colors.background, flexGrow: 1, justifyContent: "center", padding: 24 }} style={{ backgroundColor: colors.background }}>
       <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 20, borderWidth: 1, gap: 14, maxWidth: 420, padding: 30, width: "100%" }}>
+        {/* Sıra: maskot (istendiyse) > bağlamsal ikon (askıya alındı/e-posta/yetki gibi) > MARKA LOGOSU.
+            Varsayılan giriş kapısı artık jenerik kilit değil, logo gösterir. */}
         {mascot ? (
           <Mascot name={mascot} size={172} />
-        ) : (
+        ) : icon ? (
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 64, justifyContent: "center", width: 64 }}>
             <MaterialCommunityIcons name={icon} size={32} color={colors.primaryDark} />
           </View>
+        ) : (
+          <BrandMark size={68} />
         )}
         <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900", textAlign: "center" }}>{translateCopy(title, language)}</Text>
         <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, textAlign: "center" }}>{translateCopy(body, language)}</Text>

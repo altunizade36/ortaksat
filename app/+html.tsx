@@ -106,6 +106,9 @@ export default function Root({ children }: PropsWithChildren) {
             yumuşak bir yükleme gösterir; uygulama hazır olunca kaybolur. */}
         <div id="boot-splash" aria-hidden="true">
           <div className="bs-bar">
+            {/* Logo iskelette de OLMALI: yoksa uygulama mount olunca ikon sonradan belirip
+                başlığı ittiriyordu (yenilemede kayma). Sabit 40×40 → düzen kaymaz. */}
+            <img className="bs-mark" src="/logo-mark.png" width={40} height={40} alt="" />
             <div className="bs-logo">Ortak<span>Sat</span></div>
             <div className="bs-search" />
           </div>
@@ -220,6 +223,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
   height: 64px; padding: 0 14px;
   background: #FFFFFF; border-bottom: 1px solid #E3EAEF;
 }
+#boot-splash .bs-mark { width: 40px; height: 40px; flex: none; display: block; }
 #boot-splash .bs-logo { font-size: 19px; font-weight: 900; letter-spacing: -0.3px; color: #0F172A; white-space: nowrap; }
 #boot-splash .bs-logo span { color: #0EA5B7; }
 #boot-splash .bs-search { flex: 1; max-width: 620px; height: 38px; border-radius: 999px; background: #EEF3F6; }

@@ -6,9 +6,12 @@
 // cihazlarda kalmasın diye statik önbellek sürümü yükseltildi.
 const CACHE = "ortaksat-static-v23"; // v23: yeni logo (favicon/apple-touch/pwa/og) — eski kedi ikonları önbellekten düşsün
 const OFFLINE_URL = "/offline.html";
+// offline.html + boot-splash logoyu gösterir; ilk-ziyaret-sonra-çevrimdışıda kırık
+// görünmesin diye logo da install'da ön-bellenir.
+const PRECACHE = [OFFLINE_URL, "/logo-mark.png"];
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE).then((cache) => cache.add(OFFLINE_URL)).catch(() => {}));
+  event.waitUntil(caches.open(CACHE).then((cache) => cache.addAll(PRECACHE)).catch(() => {}));
   self.skipWaiting();
 });
 
