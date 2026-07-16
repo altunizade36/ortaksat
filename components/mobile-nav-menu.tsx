@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Modal, Pressable, ScrollView, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+import { BrandMark } from "@/components/brand/brand-mark";
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
@@ -72,9 +73,8 @@ export function MobileNavMenu() {
           <View style={{ backgroundColor: colors.background, maxWidth: 340, paddingTop: insets.top + 10, width: "86%" }}>
             {/* Başlık */}
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingBottom: 12, paddingHorizontal: 16 }}>
-              <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, height: 40, justifyContent: "center", width: 40 }}>
-                <MaterialCommunityIcons name="handshake" size={22} color="#FFFFFF" />
-              </View>
+              {/* Gerçek marka logosu (eskiden jenerik vektör "handshake" ikonuydu). */}
+              <BrandMark size={40} />
               <View style={{ flex: 1, minWidth: 0 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900" }}>ortaksat</Text>
                 <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isAuthenticated ? currentUser.name : translateCopy("Ortak satışla kazan", language)}</Text>

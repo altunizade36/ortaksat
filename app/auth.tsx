@@ -379,9 +379,8 @@ export default function AuthScreen() {
           <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
             <Link href="/" asChild>
               <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 36, justifyContent: "center", width: 36 }}>
-                  <MaterialCommunityIcons name="handshake" size={20} color={colors.primaryDark} />
-                </View>
+                {/* Gerçek marka logosu (eskiden jenerik vektör "handshake" ikonuydu). */}
+                <BrandMark size={38} />
                 <Text style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900" }}>ortaksat</Text>
               </Pressable>
             </Link>
