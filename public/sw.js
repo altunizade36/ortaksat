@@ -4,7 +4,7 @@
 // v22: keşfet mobil iyileştirmeleri (tık→ilan, kompakt başlık, tutarlı çipler,
 // kare görseller, otomatik-ilerleme yok) — eski önbelleği zorla temizle, taze sürüm gelsin.
 // cihazlarda kalmasın diye statik önbellek sürümü yükseltildi.
-const CACHE = "ortaksat-static-v22";
+const CACHE = "ortaksat-static-v23"; // v23: yeni logo (favicon/apple-touch/pwa/og) — eski kedi ikonları önbellekten düşsün
 const OFFLINE_URL = "/offline.html";
 
 self.addEventListener("install", (event) => {

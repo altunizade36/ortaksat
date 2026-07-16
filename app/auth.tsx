@@ -6,6 +6,7 @@ import { Alert } from "@/lib/alert";
 
 import { Link } from "expo-router";
 
+import { BrandMark } from "@/components/brand/brand-mark";
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";
@@ -417,6 +418,11 @@ export default function AuthScreen() {
           <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 20 }}>
             {/* Left: auth card */}
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexBasis: 420, flexGrow: 1, minWidth: 0, padding: 26 }}>
+              {/* Marka logosu — giriş/kayıt formunun başı (klasik "logo + form" deseni). */}
+              <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, gap: 6, marginBottom: 16, paddingBottom: 14 }}>
+                <BrandMark size={52} />
+                <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900", letterSpacing: 0.2 }}>OrtakSat</Text>
+              </View>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 12, marginBottom: 16 }}>
                 <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 48, justifyContent: "center", width: 48 }}>
                   <MaterialCommunityIcons name="shield-account" size={26} color={colors.primaryDark} />
@@ -580,10 +586,9 @@ export default function AuthScreen() {
           <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} />
           <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
         </Pressable>
+        {/* Marka logosu (jenerik handshake ikonu yerine) — giriş/kayıt/şifre ekranlarının başı. */}
         <View style={{ alignItems: "center", gap: 8, paddingVertical: 8 }}>
-          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 14, height: 52, justifyContent: "center", width: 52 }}>
-            <MaterialCommunityIcons name="handshake" size={28} color={colors.primaryDark} />
-          </View>
+          <BrandMark size={56} />
           <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{mode === "login" ? translateCopy("Giriş yap", language) : mode === "register" ? translateCopy("Hesap aç", language) : translateCopy("Şifre sıfırla", language)}</Text>
         </View>
 
