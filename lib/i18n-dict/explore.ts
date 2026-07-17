@@ -282,5 +282,7 @@ export const exploreDict: Record<string, string> = {
   "Ortak satış akışı": "Partner sales flow",
   "Bu ürün anında ortaklığa açık; başvurunca bağlantın hemen hazır olur.": "This product is open to instant partnership; your link is ready right after applying.",
   "Bu üründe satıcı onayı gerekir; satıcı başvurunu görür, uygun bulursa ortaklık açılır.": "This product requires seller approval; the seller reviews your application and opens the partnership if suitable.",
-  "Bu ürün davetli ortaklığa açık; satıcı sadece seçtiği ortaklarla çalışır.": "This product is invite-only; the seller works only with selected partners."
+  "Bu ürün davetli ortaklığa açık; satıcı sadece seçtiği ortaklarla çalışır.": "This product is invite-only; the seller works only with selected partners.",
+  "Komisyon oranı (en az)": "Commission rate (min)",
+  "Satıcı puanı (en az)": "Seller rating (min)",
 };

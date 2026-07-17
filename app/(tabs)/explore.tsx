@@ -1111,12 +1111,15 @@ export default function ExploreScreen() {
                   minCommission={minCommission} onMinCommission={setMinCommission}
                   priceRange={priceRange} onPriceRange={setPriceRange}
                   statusOpen={statusOpen} onStatusOpen={setStatusOpen}
-                  onClear={() => { setCity(""); setMinCommission(0); setPriceRange(""); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); router.setParams({ province: undefined, district: undefined }); clearCatFilter(); }}
+                  onClear={() => { setCity(""); setMinCommission(0); setPriceRange(""); setStockFilter(""); setStatusOpen(false); setOnlyVerified(false); setMinRate(0); setMinRating(0); setOnlyFeatured(false); router.setParams({ province: undefined, district: undefined }); clearCatFilter(); }}
                   width={Math.max(0, width - 28)} mobile
                   provinceId={provinceId} districtId={districtId}
                   onLocation={(v) => router.setParams({ province: v.provinceId != null ? getProvince(v.provinceId)?.slug : undefined, district: v.districtId != null ? getDistrict(v.districtId)?.slug : undefined })}
                   stockFilter={stockFilter} onStockFilter={setStockFilter}
                   onlyVerified={onlyVerified} onOnlyVerified={setOnlyVerified}
+                  minRate={minRate} onMinRate={setMinRate}
+                  minRating={minRating} onMinRating={setMinRating}
+                  onlyFeatured={onlyFeatured} onOnlyFeatured={setOnlyFeatured}
                 />
               </ScrollView>
               <View style={{ borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingBottom: insets.bottom + 12, paddingHorizontal: 14, paddingTop: 12 }}>
@@ -1321,7 +1324,13 @@ function FilterPanel({
   stockFilter,
   onStockFilter,
   onlyVerified,
-  onOnlyVerified
+  onOnlyVerified,
+  minRate,
+  onMinRate,
+  minRating,
+  onMinRating,
+  onlyFeatured,
+  onOnlyFeatured
 }: {
   cities: string[];
   city: string;
@@ -1343,6 +1352,15 @@ function FilterPanel({
   onStockFilter?: (v: string) => void;
   onlyVerified?: boolean;
   onOnlyVerified?: (v: boolean) => void;
+  // MOBİL PARİTE: bu üçü masaüstü toolbar'ında vardı, mobilde HİÇ erişilemiyordu
+  // (setMinRate/setMinRating/setOnlyFeatured yalnız isWideWeb dalında çağrılıyordu).
+  // Komisyon ORANI (%) bir ortağın baktığı ana metrik — mobilde yokluğu ciddi boşluktu.
+  minRate?: number;
+  onMinRate?: (v: number) => void;
+  minRating?: number;
+  onMinRating?: (v: number) => void;
+  onlyFeatured?: boolean;
+  onOnlyFeatured?: (v: boolean) => void;
 }) {
   const { language } = useLanguage();
   const commissionPresets = [0, 100, 250, 500];
@@ -1440,6 +1458,51 @@ function FilterPanel({
           })}
         </View>
       </View>
+
+      {/* Komisyon ORANI (%) — masaüstü toolbar paritesi. */}
+      {onMinRate ? (
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Komisyon oranı (en az)", language)}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {[10, 15, 20, 25].map((r) => {
+              const on = (minRate ?? 0) === r;
+              return (
+                <Pressable key={r} accessibilityRole="button" onPress={() => onMinRate(on ? 0 : r)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>%{r}+</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+
+      {/* Satıcı puanı — masaüstü toolbar paritesi. */}
+      {onMinRating ? (
+        <View style={{ gap: 8 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Satıcı puanı (en az)", language)}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {[4, 4.5].map((r) => {
+              const on = (minRating ?? 0) === r;
+              return (
+                <Pressable key={r} accessibilityRole="button" onPress={() => onMinRating(on ? 0 : r)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <MaterialCommunityIcons name="star" size={13} color={on ? "#FFFFFF" : colors.gold} />
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{r}+</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
+
+      {/* Öne çıkan ilanlar — masaüstü toolbar paritesi. */}
+      {onOnlyFeatured ? (
+        <Pressable accessibilityRole="button" accessibilityState={{ checked: Boolean(onlyFeatured) }} onPress={() => onOnlyFeatured(!onlyFeatured)} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+          <View style={{ alignItems: "center", backgroundColor: onlyFeatured ? colors.primary : colors.surface, borderColor: onlyFeatured ? colors.primary : colors.line, borderRadius: 6, borderWidth: 1.5, height: 20, justifyContent: "center", width: 20 }}>
+            {onlyFeatured ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" /> : null}
+          </View>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Öne çıkan ilanlar", language)}</Text>
+        </Pressable>
+      ) : null}
 
       {/* Mobil: masaüstü toolbar'ındaki il/ilçe + stok + onaylı-satıcı filtreleri burada. */}
       {mobile && onLocation ? (
