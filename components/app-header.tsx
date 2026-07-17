@@ -157,7 +157,10 @@ export function AppHeader() {
         <Link href="/" asChild>
           <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("OrtakSat ana sayfa", language)} style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minWidth: 0 }}>
             <BrandMark size={42} />
-            <View style={{ gap: 1, minWidth: 0 }}>
+            {/* flex:1 ŞART: minWidth:0 tek başına RNW'de no-op (View zaten flexShrink:0) →
+                kutu max-content kalıyor, 320-375px'te "ortaksat"+slogan header butonlarının
+                ALTINA giriyordu (390px'te kıl payı sığdığı için testlerde görünmedi). */}
+            <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
               <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 21, fontWeight: "900", letterSpacing: 0 }}>
                 ortaksat
               </Text>

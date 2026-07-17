@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useState } from "react";
-import { Modal, Pressable, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -43,7 +43,11 @@ export function DisputeModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={close}>
-      <View style={{ backgroundColor: "rgba(0,0,0,0.45)", flex: 1, justifyContent: "center", padding: 20 }}>
+      {/* KAV + ScrollView: klavye acilinca kart yukari kalkmiyor ve gonder butonu
+          klavyenin ALTINDA kaliyordu (iOS sayisal klavyede Done YOK). RN Modal ebeveynin
+          KAV'ini MIRAS ALMAZ -> her modalin kendi KAV'i olmali. */}
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ backgroundColor: "rgba(0,0,0,0.45)", flex: 1 }}>
+        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20 }}>
         <View style={{ alignSelf: "center", backgroundColor: colors.background, borderRadius: 18, gap: 14, maxWidth: 440, padding: 20, width: "100%" }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
             <MaterialCommunityIcons name="scale-balance" size={20} color={colors.warning} />
@@ -90,7 +94,8 @@ export function DisputeModal({
             </Pressable>
           </View>
         </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

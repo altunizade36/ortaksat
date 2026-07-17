@@ -1,7 +1,8 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { Modal, Pressable, ScrollView, Text, View } from "react-native";
+import { Modal, Platform, Pressable, ScrollView, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
@@ -18,6 +19,7 @@ import { useStore } from "@/lib/use-store";
 
 export function CompareBar() {
   const isWideWeb = useIsWideWeb();
+  const insets = useSafeAreaInsets();
   const { language } = useLanguage();
   const router = useRouter();
   const { ids, remove, clear } = useCompare();
@@ -89,21 +91,28 @@ export function CompareBar() {
   return (
     <>
       {/* Yüzen bar */}
-      <View pointerEvents="box-none" style={{ alignItems: "center", bottom: isWideWeb ? 18 : 92, left: 0, position: "absolute", right: 0, zIndex: 2000 }}>
-        <View style={{ alignItems: "center", backgroundColor: colors.ink, borderRadius: 999, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 10, shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.3, shadowRadius: 24 }}>
-          <View style={{ flexDirection: "row" }}>
+      {/* Alt boşluk 3 durumlu: geniş web (bar yok) · mobil WEB (tab bar `display:none` →
+          92px ölü boşluktu) · NATIVE (tab bar: bottom=max(insets,12), height=70 → üstünde dur). */}
+      <View pointerEvents="box-none" style={{ alignItems: "center", bottom: isWideWeb ? 18 : Platform.OS === "web" ? 18 : Math.max(insets.bottom, 12) + 80, left: 0, paddingHorizontal: 12, position: "absolute", right: 0, zIndex: 2000 }}>
+        {/* maxWidth + çocukların flexShrink'i ŞART: RNW'de View varsayılanı flexShrink:0 →
+            bar genişliği çocukların TOPLAMI oluyordu (~334-430px) ve 320-390px ekranda
+            taşıp TÜM SAYFAYI yana kaydırıyordu (html'de overflow-x:hidden yok). */}
+        <View style={{ alignItems: "center", backgroundColor: colors.ink, borderRadius: 999, flexDirection: "row", gap: 12, maxWidth: "100%", paddingHorizontal: 14, paddingVertical: 10, shadowColor: "#101828", shadowOffset: { width: 0, height: 12 }, shadowOpacity: 0.3, shadowRadius: 24 }}>
+          <View style={{ flexDirection: "row", flexShrink: 0 }}>
             {items.map((l, i) => (
               <View key={l.id} style={{ borderColor: colors.ink, borderRadius: 8, borderWidth: 2, height: 36, marginLeft: i === 0 ? 0 : -8, overflow: "hidden", width: 36 }}>
                 <SafeRemoteImage uri={l.image} style={{ height: "100%", width: "100%" }} contentFit="cover" />
               </View>
             ))}
           </View>
-          <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>{items.length < 2 ? translateCopy("1 ürün · 1 daha seç", language) : `${items.length} ${translateCopy("ürün seçildi", language)}`}</Text>
-          <Pressable onPress={() => setOpen(true)} disabled={items.length < 2} accessibilityRole="button" accessibilityState={{ disabled: items.length < 2 }} accessibilityLabel={items.length < 2 ? translateCopy("Karşılaştırmak için en az 2 ürün seçin", language) : translateCopy("Seçili ürünleri karşılaştır", language)} style={{ alignItems: "center", backgroundColor: items.length < 2 ? "rgba(255,255,255,0.25)" : colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
+          {/* Etiket daralmayı ÜSTLENİR (flexShrink:1 + tek satır) → dar ekranda buton ve
+              kapatma X'i asla taşmaz/kırpılmaz. */}
+          <Text numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{items.length < 2 ? translateCopy("1 ürün · 1 daha seç", language) : `${items.length} ${translateCopy("ürün seçildi", language)}`}</Text>
+          <Pressable onPress={() => setOpen(true)} disabled={items.length < 2} accessibilityRole="button" accessibilityState={{ disabled: items.length < 2 }} accessibilityLabel={items.length < 2 ? translateCopy("Karşılaştırmak için en az 2 ürün seçin", language) : translateCopy("Seçili ürünleri karşılaştır", language)} style={{ alignItems: "center", backgroundColor: items.length < 2 ? "rgba(255,255,255,0.25)" : colors.primary, borderRadius: 999, flexDirection: "row", flexShrink: 0, gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
             <MaterialCommunityIcons name="compare-horizontal" size={16} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Karşılaştır", language)}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Karşılaştırmayı temizle", language)} onPress={clear} hitSlop={8}>
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Karşılaştırmayı temizle", language)} onPress={clear} hitSlop={8} style={{ flexShrink: 0 }}>
             <MaterialCommunityIcons name="close" size={18} color="rgba(255,255,255,0.75)" />
           </Pressable>
         </View>

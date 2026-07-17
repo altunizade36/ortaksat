@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
@@ -14,6 +14,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useMounted } from "@/lib/layout";
 import { shortDate } from "@/lib/locale";
 import type { Offer } from "@/lib/types";
+import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { useStore } from "@/lib/use-store";
 
 /*
@@ -32,7 +33,10 @@ const TONE: Record<Offer["status"], { bg: string; line: string; ink: string; ico
 function OffersInner() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { currentUser, offers, findListing, findUser, buyerOfferAction, startConversation } = useStore();
+  const { currentUser, offers, findListing, findUser, buyerOfferAction, startConversation, refreshUserData } = useStore();
+  // Teklif durumu UZAKTAN degisir (pending -> countered/accepted): satici karsi teklif
+  // verince alici asagi cekip yenileyebilmeli. Yoksa tek care uygulamayi oldurup acmak.
+  const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const [busy, setBusy] = useState<string | null>(null);
 
   const mine = useMemo(
@@ -129,7 +133,10 @@ function OffersInner() {
   };
 
   return (
-    <ScrollView contentContainerStyle={{ gap: 12, paddingBottom: 28 }}>
+    <ScrollView
+      contentContainerStyle={{ gap: 12, paddingBottom: 28 }}
+      refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}
+    >
       <WebContainer>
         <View style={{ gap: 12, padding: 12 }}>
           <Card>

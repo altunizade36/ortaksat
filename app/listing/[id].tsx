@@ -2,7 +2,7 @@
 import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useRef, useState } from "react";
-import { Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
 import { openUrlSafe } from "@/lib/link";
@@ -1132,7 +1132,13 @@ export default function ListingDetailScreen() {
       {/* TEKLİF VER modalı — tutar + not. Platform para TUTMAZ: kabul edilse bile
           ödeme/teslimat taraflar arasındadır; burada tutulan anlaşma kaydıdır. */}
       <Modal visible={offerOpen} transparent animationType="fade" onRequestClose={() => setOfferOpen(false)}>
-        <Pressable onPress={() => setOfferOpen(false)} style={{ alignItems: "center", backgroundColor: "rgba(8,15,25,0.55)", flex: 1, justifyContent: "center", padding: 20 }}>
+        {/* P0: tutar alani autoFocus + numeric -> klavye ANINDA acilir; iOS sayisal
+            klavyede Done/return YOK. Kart yukari kalkmadigi icin "Teklifi Gonder"
+            klavyenin ALTINDA kaliyor, tek kacis arka plana basmak = TEKLIFI SILER.
+            RN Modal ebeveynin KAV'ini miras almaz -> modalin kendi KAV'i sart. */}
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+        <Pressable onPress={() => setOfferOpen(false)} style={{ backgroundColor: "rgba(8,15,25,0.55)", flex: 1 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", flexGrow: 1, justifyContent: "center", padding: 20 }}>
           <Pressable onPress={() => undefined} style={{ backgroundColor: colors.surface, borderRadius: 18, gap: 12, maxWidth: 420, padding: 20, width: "100%" }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
               <MaterialCommunityIcons name="handshake-outline" size={20} color={colors.primaryDark} />
@@ -1193,7 +1199,9 @@ export default function ListingDetailScreen() {
               </Pressable>
             </View>
           </Pressable>
+          </ScrollView>
         </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal visible={reportOpen} transparent animationType="fade" onRequestClose={() => setReportOpen(false)}>

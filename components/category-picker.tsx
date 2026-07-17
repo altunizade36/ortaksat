@@ -131,7 +131,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
           {/* Sütun 1: ana kategoriler (mobilde üst seçilince gizlenir) */}
           {isWideWeb || !top ? (
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 240, flexGrow: 1, maxWidth: isWideWeb ? 300 : undefined, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
-              <ScrollView style={{ maxHeight: isWideWeb ? 440 : 400 }}>
+              <ScrollView nestedScrollEnabled style={{ maxHeight: isWideWeb ? 440 : 400 }}>
                 {categoryTree.map((n, i) => {
                   const on = top?.key === n.key;
                   return (
@@ -154,7 +154,7 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
                   <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy(top.label, language)}</Text>
                 </Pressable>
               ) : null}
-              <ScrollView style={{ maxHeight: isWideWeb ? 440 : 420 }}>
+              <ScrollView nestedScrollEnabled style={{ maxHeight: isWideWeb ? 440 : 420 }}>
                 {canFinalizeHere ? (
                   <Pressable onPress={selectCurrent} style={{ alignItems: "center", backgroundColor: colors.primarySoft, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 13 }}>
                     <MaterialCommunityIcons name="check-circle" size={18} color={colors.primary} />

@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useEffect, useState } from "react";
-import { Modal, Pressable, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { PrimaryButton } from "@/components/ui";
@@ -43,7 +43,12 @@ export function CommissionOverrideModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <Pressable onPress={onClose} style={{ alignItems: "center", backgroundColor: "rgba(16,24,40,0.45)", flex: 1, justifyContent: "center", padding: 20 }}>
+      {/* KAV + ScrollView: klavye acilinca kart yukari kalkmiyor ve gonder butonu
+          klavyenin ALTINDA kaliyordu (iOS sayisal klavyede Done YOK). RN Modal ebeveynin
+          KAV'ini MIRAS ALMAZ -> her modalin kendi KAV'i olmali. */}
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
+        <Pressable onPress={onClose} style={{ backgroundColor: "rgba(16,24,40,0.45)", flex: 1 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", flexGrow: 1, justifyContent: "center", padding: 20 }}>
         <Pressable onPress={() => undefined} style={{ backgroundColor: colors.surface, borderRadius: 16, gap: 12, maxWidth: 420, padding: 18, width: "100%" }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
             <MaterialCommunityIcons name="cash-edit" size={20} color={colors.primaryDark} />
@@ -85,7 +90,9 @@ export function CommissionOverrideModal({
             <View style={{ flex: 1 }}><PrimaryButton icon="content-save" onPress={() => { if (parsed > 0) { onSubmit(type, parsed); onClose(); } }}>{t("save") || translateCopy("Kaydet", language)}</PrimaryButton></View>
           </View>
         </Pressable>
-      </Pressable>
+          </ScrollView>
+        </Pressable>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }

@@ -46,6 +46,9 @@ export default function CreateListingScreen() {
         <meta property="og:description" content="Ürününü ücretsiz listele, komisyonunu belirle; ortaklar senin için satsın." />
       </Head>
       <ScrollView
+        // ŞART: yoksa (varsayılan "never") klavye açıkken İLK dokunuş yutulur → kategori
+        // önerisine/alana basmak ÇİFT dokunuş istiyordu. Bu, satıcı hunisinin 0. adımı.
+        keyboardShouldPersistTaps="handled"
         contentInsetAdjustmentBehavior="automatic"
         showsVerticalScrollIndicator={false}
         style={{ backgroundColor: colors.background }}

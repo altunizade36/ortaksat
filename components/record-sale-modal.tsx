@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useEffect, useState } from "react";
-import { Modal, Pressable, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { moneyIn } from "@/lib/format";
@@ -63,7 +63,12 @@ export function RecordSaleModal({
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      <View style={{ backgroundColor: "rgba(0,0,0,0.45)", flex: 1, justifyContent: "center", padding: 20 }}>
+      {/* KAV + ScrollView ŞART: sayısal klavye açılınca (autoFocus) kart yukarı kalkmıyor ve
+          "Satışı Kaydet" klavyenin ALTINDA kalıyordu. iOS sayısal klavyede Done/return YOK →
+          kapatma yolu da yok; arka plana basmak modalı kapatıp girileni siliyordu.
+          RN Modal'ları ebeveynin KAV'ını MİRAS ALMAZ → her modalın kendi KAV'ı olmalı. */}
+      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ backgroundColor: "rgba(0,0,0,0.45)", flex: 1 }}>
+        <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20 }}>
         <View style={{ alignSelf: "center", backgroundColor: colors.background, borderRadius: 18, gap: 14, maxWidth: 420, padding: 20, width: "100%" }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
             <MaterialCommunityIcons name="cash-plus" size={20} color={colors.primary} />
@@ -117,7 +122,8 @@ export function RecordSaleModal({
             </Pressable>
           </View>
         </View>
-      </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </Modal>
   );
 }
