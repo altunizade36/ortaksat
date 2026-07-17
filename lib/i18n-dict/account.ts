@@ -411,5 +411,7 @@ export const accountDict: Record<string, string> = {
   "ilan yayına alınamadı": "listing(s) couldn't be published",
   "İncelemede uygun bulunmadı.": "Not approved during review.",
   "Düzenle & yeniden gönder": "Edit & resubmit",
-  "Düzenleyip kaydettiğinde ilan içeriği yeniden taranır; uygunsa yayına döner.": "When you edit and save, the listing content is re-scanned; if suitable, it goes back live."
+  "Düzenleyip kaydettiğinde ilan içeriği yeniden taranır; uygunsa yayına döner.": "When you edit and save, the listing content is re-scanned; if suitable, it goes back live.",
+  "Rapor indir (CSV)": "Download report (CSV)",
+  "Bu dönemde hareket yok. Farklı bir dönem seç.": "No activity in this period. Pick a different period.",
 };

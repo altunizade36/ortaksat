@@ -120,18 +120,33 @@ function EarningsScreenInner() {
     </View>
   ) : null;
 
+  // Dönem seçici MOBİLDE DE olmalı (eskiden periods/periodTxns yalnız isWideWeb dalındaydı →
+  // mobil "tüm zamanlar"a mahkûmdu). Dönem işlem listesini gerçekten filtreler.
+  const periods: Array<{ key: typeof period; label: string }> = [
+    { key: "month", label: translateCopy("Bu ay", language) },
+    { key: "quarter", label: translateCopy("Son 3 ay", language) },
+    { key: "year", label: translateCopy("Bu yıl", language) }
+  ];
+  const periodStartMs = period === "month" ? new Date(now.getFullYear(), now.getMonth(), 1).getTime()
+    : period === "quarter" ? new Date(now.getFullYear(), now.getMonth() - 2, 1).getTime()
+    : new Date(now.getFullYear(), 0, 1).getTime();
+  const periodTxns = txns.filter((t) => t.sortAt > 0 && t.sortAt >= periodStartMs);
+
+  // Dönem çipleri (iki düzende de aynı bileşen).
+  const PeriodChips = (
+    <View style={{ flexDirection: "row", gap: 6 }}>
+      {periods.map((p) => {
+        const on = period === p.key;
+        return (
+          <Pressable key={p.key} accessibilityRole="button" onPress={() => setPeriod(p.key)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 8 }}>
+            <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{p.label}</Text>
+          </Pressable>
+        );
+      })}
+    </View>
+  );
+
   if (isWideWeb) {
-    const periods: Array<{ key: typeof period; label: string }> = [
-      { key: "month", label: translateCopy("Bu ay", language) },
-      { key: "quarter", label: translateCopy("Son 3 ay", language) },
-      { key: "year", label: translateCopy("Bu yıl", language) }
-    ];
-    // Dönem seçici artık gerçekten işlem listesini filtreliyor (önceden yalnızca
-    // butonun vurgusunu değiştiriyordu, hiçbir veriyi süzmüyordu).
-    const periodStartMs = period === "month" ? new Date(now.getFullYear(), now.getMonth(), 1).getTime()
-      : period === "quarter" ? new Date(now.getFullYear(), now.getMonth() - 2, 1).getTime()
-      : new Date(now.getFullYear(), 0, 1).getTime();
-    const periodTxns = txns.filter((t) => t.sortAt > 0 && t.sortAt >= periodStartMs);
     const stats: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; sub: string }> = isSeller
       ? [
           { icon: "cash-register", tint: colors.successSoft, color: colors.success, value: money(totalRevenue), title: translateCopy("Toplam ciro", language), sub: translateCopy("İlanlarından yapılan satışlar", language) },
@@ -330,6 +345,7 @@ function EarningsScreenInner() {
         <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{translateCopy(isSeller ? "İlanlarından yapılan satışlar ve ortaklara ödenecek komisyonlar. Ortaksat para tutmaz." : "Ortak satış komisyonların. Ödeme satıcıyla aranızda yapılır; Ortaksat para tutmaz.", language)}</Text>
       </View>
       {RoleToggle ? <View style={{ alignSelf: "flex-start" }}>{RoleToggle}</View> : null}
+      <View style={{ alignSelf: "flex-start" }}>{PeriodChips}</View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         {isSeller ? (
           <>
@@ -345,15 +361,17 @@ function EarningsScreenInner() {
           </>
         )}
       </View>
-      {/* Satıcıda CSV dışa aktarım (masaüstünde de var) — satış geçmişini indir. */}
-      {isSeller && txns.length > 0 && Platform.OS === "web" ? (
+      {/* CSV dışa aktarım: HER İKİ ROL (eskiden mobilde yalnız satıcıya açıktı; downloadReport
+          zaten ortak dosyasını da üretiyordu → ortak mobilde raporunu indiremiyordu). */}
+      {txns.length > 0 && Platform.OS === "web" ? (
         <Pressable onPress={downloadReport} style={{ alignItems: "center", alignSelf: "flex-start", flexDirection: "row", gap: 5 }}>
           <MaterialCommunityIcons name="download-outline" size={16} color={colors.primaryDark} />
-          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Satış raporu indir (CSV)", language)}</Text>
+          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(isSeller ? "Satış raporu indir (CSV)" : "Rapor indir (CSV)", language)}</Text>
         </Pressable>
       ) : null}
+      {txns.length > 0 && periodTxns.length === 0 ? <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", paddingVertical: 18, textAlign: "center" }}>{translateCopy("Bu dönemde hareket yok. Farklı bir dönem seç.", language)}</Text> : null}
       {txns.length === 0 ? <EmptyState title={translateCopy(isSeller ? "Henüz satış yok" : "Henüz kazanç yok", language)} body={translateCopy(isSeller ? "İlanlarından satış yapıldıkça (ortak veya doğrudan) burada listelenecek." : "Ortak satış yaptıkça komisyonların burada görünecek.", language)} mascot="idea" /> : null}
-      {txns.map((t) => {
+      {periodTxns.map((t) => {
         const meta = STATUS_META[t.status];
         return (
           <Card key={t.id}>
