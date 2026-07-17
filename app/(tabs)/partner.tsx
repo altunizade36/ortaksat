@@ -67,7 +67,7 @@ export default function PartnerScreen() {
 }
 
 function PartnerScreenInner() {
-  const { canReviewSale, createSaleReview, currentUser, findUser, isAuthenticated, joinListing, leads, leavePartnership, listings, partnerships, refreshMarketplace, refreshUserData, sales, startConversation, updateLeadStatus, updateSaleStatus, users } = useStore();
+  const { authError, canReviewSale, createSaleReview, currentUser, findUser, isAuthenticated, joinListing, leads, leavePartnership, listings, partnerships, refreshMarketplace, refreshUserData, sales, startConversation, updateLeadStatus, updateSaleStatus, users } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(() => Promise.all([refreshMarketplace(), refreshUserData()]));
   const { language, t } = useLanguage();
   const router = useRouter();
@@ -217,7 +217,9 @@ function PartnerScreenInner() {
     if (ok) haptic.success(); else haptic.warning();
     Alert.alert(
       translateCopy(ok ? (result?.status === "active" ? "Ortaklık aktif" : "Başvuru gönderildi") : "İşlem yapılamadı", language),
-      translateCopy(ok ? (result?.status === "active" ? "Paylaşım bağlantın hazır." : "Satıcı onayından sonra bağlantın açılır.") : "Kendi ilanına ortak olamazsın, giriş yapman gerekir veya ilan aktif değil.", language)
+      // Hata mesajı SABİT idi → store'un gerçek sebebi (engellendin, puan yetersiz, ilan
+      // pasif…) yutuluyor, kullanıcı yanlış açıklama görüyordu. Önce authError'ı göster.
+      translateCopy(ok ? (result?.status === "active" ? "Paylaşım bağlantın hazır." : "Satıcı onayından sonra bağlantın açılır.") : (authError ?? "Kendi ilanına ortak olamazsın, giriş yapman gerekir veya ilan aktif değil."), language)
     );
   }
 

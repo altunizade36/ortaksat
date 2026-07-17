@@ -1865,14 +1865,24 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const existing = partnerships.find(
           (item) => item.listingId === listingId && item.partnerId === currentUser.id
         );
-        // Reddedilmemiş mevcut ortaklık aynen döner. Reddedilmiş başvuru ise tekrar
-        // açılabilmeli: DB'de (listing_id, partner_id) benzersiz olduğundan yeni satır
-        // insert edilemez → mevcut satır güncellenir.
-        if (existing && existing.status !== "rejected") {
+        // Mevcut ortaklık varsa: YENİDEN AÇILABİLİR mi?
+        //  • rejected (satıcı reddetti) / cancelled (ortak KENDİ ayrıldı) / completed (bitti)
+        //    → yeniden başvurulabilir; DB'de (listing_id, partner_id) benzersiz olduğundan yeni
+        //    satır insert edilemez → partner_join mevcut satırı günceller (şartları o anki
+        //    ilandan TAZELER).
+        //  • blocked → satıcı engelledi: TERMİNAL. Eskiden buraya düşüp sessizce "başarı"
+        //    dönüyordu (kullanıcı ortak olduğunu sanıyor, link asla atıf yapmıyordu).
+        //  • active/pending → zaten içeride, aynen dön.
+        const REOPENABLE: Partnership["status"][] = ["rejected", "cancelled", "completed"];
+        if (existing && existing.status === "blocked") {
+          setAuthError("Bu satıcı seni bu ilan için engelledi. Ortak olamazsın.");
+          return undefined;
+        }
+        if (existing && !REOPENABLE.includes(existing.status)) {
           setAuthError(undefined);
           return existing;
         }
-        if (existing && existing.status === "rejected") {
+        if (existing && REOPENABLE.includes(existing.status)) {
           const reopenStatus = listing.partnershipMode === "open" || invited ? "active" : "pending";
           const reopened: Partnership = {
             ...existing,

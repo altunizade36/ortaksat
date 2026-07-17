@@ -95,8 +95,13 @@ export default function ExploreFeedScreen() {
 
   function becomePartner(listing: Listing) {
     if (!isAuthenticated) { router.push("/auth"); return; }
+    // "Zaten ortak" YALNIZ active/pending demektir. cancelled (kendi ayrıldı) / rejected /
+    // completed olan ortak DEĞİLDİR → yeniden ortak olabilmeli (joinListing yeniden açar).
     const existing = partnerships.find((p) => p.listingId === listing.id && p.partnerId === currentUser.id);
-    if (existing) { router.push(`/listing/${listing.id}`); return; } // zaten ortak → detay/panel
+    if (existing && (existing.status === "active" || existing.status === "pending")) {
+      router.push(`/listing/${listing.id}`); // zaten ortak → detay/panel
+      return;
+    }
     if (listing.partnershipMode === "open") {
       // Anında ortaklık: gerçekten ortak yap, paylaşım linki hazır olsun.
       const created = joinListing(listing.id);
