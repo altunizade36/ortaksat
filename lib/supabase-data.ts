@@ -732,14 +732,14 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
 // Herkese açık ortak vitrini: bir ortağın aktif promosyon ilanları + her biri için ref_code.
 // partner_public_shop/profile SECURITY DEFINER fonksiyonları RLS'i güvenle aşar (yalnız public alan).
 export type PartnerShopProfile = { partnerId: string; fullName: string; verifiedIdentity: boolean; verifiedPhone: boolean; confirmedSales: number; activePartnerships: number };
-export type PartnerShopItem = { listing: Listing; refCode: string; partnershipId: string };
+export type PartnerShopItem = { listing: Listing; refCode: string; partnershipId: string; attributionWindowDays?: number };
 export async function loadPartnerShopLive(partnerId: string): Promise<{ profile: PartnerShopProfile | null; items: PartnerShopItem[] }> {
   if (!supabase || !partnerId) return { profile: null, items: [] };
   const [shopRes, profRes] = await Promise.all([
     supabase.rpc("partner_public_shop", { p_id: partnerId }),
     supabase.rpc("partner_public_profile", { p_id: partnerId })
   ]);
-  const rows = (shopRes.data ?? []) as Array<{ listing_id: string; ref_code: string; partnership_id: string }>;
+  const rows = (shopRes.data ?? []) as Array<{ listing_id: string; ref_code: string; partnership_id: string; agreed_attribution_window_days?: number }>;
   const ids = rows.map((r) => r.listing_id);
   let cards: Listing[] = [];
   if (ids.length) {
@@ -748,8 +748,12 @@ export async function loadPartnerShopLive(partnerId: string): Promise<{ profile:
   }
   const byId = new Map(cards.map((c) => [c.id, c]));
   const items: PartnerShopItem[] = rows
-    .map((r) => ({ listing: byId.get(r.listing_id), refCode: String(r.ref_code ?? ""), partnershipId: String(r.partnership_id ?? "") }))
-    .filter((x): x is PartnerShopItem => Boolean(x.listing));
+    .map((r): PartnerShopItem | null => {
+      const listing = byId.get(r.listing_id);
+      if (!listing) return null;
+      return { listing, refCode: String(r.ref_code ?? ""), partnershipId: String(r.partnership_id ?? ""), attributionWindowDays: r.agreed_attribution_window_days ?? undefined };
+    })
+    .filter((x): x is PartnerShopItem => x !== null);
   const p = (profRes.data ?? [])[0] as Record<string, unknown> | undefined;
   const profile: PartnerShopProfile | null = p
     ? {

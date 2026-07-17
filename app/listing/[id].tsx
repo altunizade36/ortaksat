@@ -204,7 +204,9 @@ export default function ListingDetailScreen() {
     const local = partnerships.find((p) => p.refCode === refParam && p.listingId === lst.id && p.status === "active");
     if (local) {
       refCapturedFor.current = captureKey;
-      saveRefAttribution(lst.id, local.id, refParam, lst.attributionWindowDays);
+      // ANLAŞILAN pencere (join'de kilitlenen snapshot) > canlı ilanınki. Satıcı pencereyi
+      // sonradan kısaltıp ortağın hak ettiği atıf kredisini silemesin.
+      saveRefAttribution(lst.id, local.id, refParam, local.agreedAttributionWindowDays ?? lst.attributionWindowDays);
       // First-touch: saklanan atıf orijinal ortakta kalmış olabilir → lead kredisini ONDAN al.
       setAttributedPartnershipId(getRefAttribution(lst.id)?.partnershipId ?? local.id);
       void logReferralClick(lst.id, local.id, refParam); // tıklama yine kaydedilir (yeni linkin ölçümü)
@@ -215,7 +217,8 @@ export default function ListingDetailScreen() {
       refCapturedFor.current = captureKey; // tekrar çözmeyi engelle
       void resolveReferralLink(lst.slug, refParam).then((res) => {
         if (!res?.partnershipId) return; // geçersiz/expired → sessizce yok say
-        saveRefAttribution(res.listingId || lst.id, res.partnershipId, refParam, lst.attributionWindowDays);
+        // ANLAŞILAN pencere ref-link kaydından gelir; yoksa canlı ilana düş.
+        saveRefAttribution(res.listingId || lst.id, res.partnershipId, refParam, res.attributionWindowDays ?? lst.attributionWindowDays);
         setAttributedPartnershipId(getRefAttribution(lst.id)?.partnershipId ?? res.partnershipId);
         void logReferralClick(res.listingId || lst.id, res.partnershipId, refParam);
       });

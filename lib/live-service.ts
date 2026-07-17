@@ -709,6 +709,9 @@ export type ReferralLink = {
   category: string;
   location: string;
   imageUrl?: string;
+  /** Ortaklığın ANLAŞILAN atıf penceresi (join'de kilitlenen snapshot; canlı ilanınki DEĞİL).
+   *  Satıcı pencereyi sonradan kısaltsa bile ortak anlaştığı krediyi korur. */
+  attributionWindowDays?: number;
 };
 
 export async function resolveReferralLink(slug: string, refCode: string): Promise<ReferralLink | null> {
@@ -735,7 +738,8 @@ export async function resolveReferralLink(slug: string, refCode: string): Promis
     price: Number(data.price ?? 0),
     category: data.category,
     location: data.location,
-    imageUrl: data.image_url ?? undefined
+    imageUrl: data.image_url ?? undefined,
+    attributionWindowDays: data.agreed_attribution_window_days ?? undefined
   };
 }
 
