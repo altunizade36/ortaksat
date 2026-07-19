@@ -791,6 +791,20 @@ function PartnerScreenInner() {
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{displayText(listing.title)}</Text>
                   <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{commissionText(listing)} · kazanç {moneyIn(commissionAmount(listing), listing.currency)}</Text>
                   <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{displayText(listing.location)}{owner ? ` · ${displayText(owner.name)}` : ""}</Text>
+                  {/* Satıcı puanı + doğrulama + stok: ortağın ürünü DEĞERLENDİRMESİ için şart
+                      (eskiden mobil satırda yoktu; filtreleyebiliyor ama göremiyordu). */}
+                  <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 1 }}>
+                    {owner?.rating ? (
+                      <View style={{ alignItems: "center", flexDirection: "row", gap: 2 }}>
+                        <MaterialCommunityIcons name="star" size={11} color={colors.gold} />
+                        <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{owner.rating.toFixed(1)}</Text>
+                      </View>
+                    ) : null}
+                    {owner?.verifiedIdentity || owner?.verifiedPhone ? <MaterialCommunityIcons name="check-decagram" size={11} color={colors.primary} /> : null}
+                    <View style={{ backgroundColor: listing.stockCount <= 3 ? colors.warningSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 6, paddingVertical: 1 }}>
+                      <Text style={{ color: listing.stockCount <= 3 ? colors.warning : colors.muted, fontSize: 10, fontWeight: "800" }}>{listing.stockCount > 0 ? `${listing.stockCount} stok` : translateCopy("Tükendi", language)}</Text>
+                    </View>
+                  </View>
                 </Pressable>
                 <Pressable onPress={() => onJoin(listing.id)} disabled={joined} style={({ pressed }) => ({ alignItems: "center", backgroundColor: joined ? colors.surfaceAlt : colors.primary, borderColor: joined ? colors.line : colors.primary, borderRadius: 8, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingHorizontal: 13, paddingVertical: 8 })}>
                   <Text style={{ color: joined ? colors.muted : "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{joined ? translateCopy("Ortak", language) : translateCopy("Ortak ol", language)}</Text>
@@ -807,6 +821,28 @@ function PartnerScreenInner() {
       ) : null}
 
       {funnelCard}
+
+      {/* Herkese açık ortak vitrini — MOBİLDE erişimi yoktu (yalnız masaüstü "links" tabında).
+          Ortak, önerdiği tüm ürünlerin tek sayfasını (vitrin) telefondan açıp paylaşamıyordu. */}
+      {activePartnerships.length > 0 ? (
+        <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 14, borderWidth: 1, gap: 8, padding: 14 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+            <MaterialCommunityIcons name="storefront-outline" size={17} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 14, fontWeight: "900" }}>{translateCopy("Herkese açık vitrinim", language)}</Text>
+          </View>
+          <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Önerdiğin tüm ilanlar tek sayfada. Bu bağlantıyı paylaş; buradan gelen talep/işlemler sana yazılır.", language)}</Text>
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <Pressable onPress={() => router.push({ pathname: "/ortak/[id]", params: { id: currentUser.id } })} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flex: 1, flexDirection: "row", gap: 6, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingVertical: 11 })}>
+              <MaterialCommunityIcons name="open-in-new" size={15} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Vitrini aç", language)}</Text>
+            </Pressable>
+            <Pressable onPress={() => void copyText("Vitrin", `https://www.ortaksat.com/ortak/${currentUser.id}`)} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flex: 1, flexDirection: "row", gap: 6, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingVertical: 11 })}>
+              <MaterialCommunityIcons name="link-variant" size={15} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Bağlantıyı kopyala", language)}</Text>
+            </Pressable>
+          </View>
+        </View>
+      ) : null}
 
       <Card>
         <SectionTitle title="Aktif ortaklıklarım" action={`${visiblePartnerships.length}`} />

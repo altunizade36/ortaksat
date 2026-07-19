@@ -26,7 +26,9 @@ const PARTNER: { steps: Step[]; ctaLabel: string; ctaHref: Href; ctaIcon: IconNa
     { icon: "hand-coin-outline", title: "Kazan", body: "Getirdiğin satıştan komisyonu satıcıdan alırsın. Üyelik ücretsiz, stok/ödeme derdi yok." }
   ],
   ctaLabel: "Fırsatları keşfet",
-  ctaHref: "/partner",
+  // /partner'da render ediliyor → href "/partner" NO-OP idi. Ürünleri keşfedip her
+  // ilandaki "Ortak ol" ile ortaklığa başlanır.
+  ctaHref: "/explore",
   ctaIcon: "compass-outline"
 };
 
