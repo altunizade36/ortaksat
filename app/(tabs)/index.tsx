@@ -498,7 +498,7 @@ export default function HomeScreen() {
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
               {catFilter ? <ActiveChip label={translateCopy(getCategoryShortLabel(rootCatOptions.find((c) => c.key === catFilter)?.label ?? ""), language)} onRemove={() => setCatFilter(null)} /> : null}
               {loc.provinceId != null ? <ActiveChip label={translateCopy("Konum", language)} onRemove={() => setLoc({})} /> : null}
-              {(priceMin || priceMax) ? <ActiveChip label={`${priceMin ? money(Number(priceMin)) : "0"}–${priceMax ? money(Number(priceMax)) : "∞"}`} onRemove={() => { setPriceMin(""); setPriceMax(""); }} /> : null}
+              {(priceMin || priceMax) ? <ActiveChip label={`${priceMin ? money(parseTrPrice(priceMin)) : "0"}–${priceMax ? money(parseTrPrice(priceMax)) : "∞"}`} onRemove={() => { setPriceMin(""); setPriceMax(""); }} /> : null}
               {minRate > 0 ? <ActiveChip label={`%${minRate}+`} onRemove={() => setMinRate(0)} /> : null}
               {minComm > 0 ? <ActiveChip label={`${money(minComm)}+`} onRemove={() => setMinComm(0)} /> : null}
               {commTypeFilter !== "all" ? <ActiveChip label={commTypeFilter === "rate" ? translateCopy("Oran %", language) : translateCopy("Sabit ₺", language)} onRemove={() => setCommTypeFilter("all")} /> : null}

@@ -129,7 +129,7 @@ function BulkUploadInner() {
         districtId = d?.id;
       }
       const commission = overrideComm ?? (Number(get("commission")) || 10);
-      const stock = Math.max(1, Number(get("stock")) || 1);
+      const stock = Math.max(1, Math.floor(parseTrPrice(get("stock")) || 1)); // TR-binlik ("1.500"→1500, Number 1.5 yapardı)
       const image = get("image") || bulkImages[idx] || "";
       const errors: string[] = [];
       const v = validateListing({ title, description: description || "Toplu yükleme ürünü.", price });

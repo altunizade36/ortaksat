@@ -131,8 +131,13 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     // "Teklif al") zorunlu değildir — create ile parite. Aksi hâlde edit bu ilanları kilitliyordu.
     const priceSchemaField = attrSchema?.fields.find((f) => f.key === "price") ?? attrSchema?.fields.find((f) => f.type === "number" && f.suffix === "₺");
     const priceRequired = priceSchemaField ? !!priceSchemaField.required : false;
-    const parsedCommission = Number(commissionValue);
-    const parsedStock = Number(stockCount);
+    // TR-SAYI GÜVENLİĞİ (create ile parite): sabit (₺) komisyonu "1.500" yazınca Number()
+    // 1.5 ₺ yapardı → sessizce yanlış komisyonla KAYDEDİLİR. Sabit=TR-binlik parseTrPrice;
+    // oran=% ondalık olabilir (12,5) → virgülü noktaya çevir. Stok da TR-binlik olabilir.
+    const parsedCommission = commissionType === "rate"
+      ? (parseFloat(String(commissionValue).replace(",", ".")) || 0)
+      : (parseTrPrice(String(commissionValue)) || 0);
+    const parsedStock = parseTrPrice(String(stockCount)) || 0;
     const parsedMinRating = Number(minPartnerRating);
     const parsedCommissionDueDays = Number(commissionDueDays);
     const parsedReturnWindowDays = Number(returnWindowDays);
@@ -203,8 +208,8 @@ function ListingEditForm({ listing }: { listing: Listing }) {
 
     // Yapısal konumdan metni kur (il/ilçe korunur); serbest metin bug'ı giderildi.
     const locText = formatLocation(loc, visibility) || getProvince(loc.provinceId)?.name || listing.location || "Türkiye";
-    const bonusNum = Number(bonusAmount);
-    const quotaNum = Number(bonusQuota);
+    const bonusNum = parseTrPrice(String(bonusAmount)) || 0; // TR-binlik ("1.000"→1000, Number 1 yapardı)
+    const quotaNum = Number(bonusQuota); // adet (küçük tam sayı)
     const hasBonus = bonusNum > 0 && quotaNum > 0;
 
     setSaving(true);
@@ -255,6 +260,12 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     Alert.alert(translateCopy("İlan güncellendi", language), translateCopy("Satıcı panelindeki ilan bilgileri yenilendi.", language));
     router.back();
   }
+
+  // Paylaşım şablonu metni için komisyonu doğru oku (submit'teki parsedCommission ile aynı mantık;
+  // sabit "1.500" TR-binlik Number ile 1.5 ₺ olup yanlış pazarlama metni üretmesin).
+  const commissionNum = commissionType === "rate"
+    ? (parseFloat(String(commissionValue).replace(",", ".")) || 0)
+    : (parseTrPrice(String(commissionValue)) || 0);
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
@@ -396,13 +407,13 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           <SectionTitle title={translateCopy("Hazır paylaşım metinleri", language)} action={translateCopy("Ortak kullanır", language)} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-              <PrimaryButton tone="secondary" onPress={() => setInstagramText(buildShareTemplates({ title, price: parseTrPrice(price), commissionType, commissionValue: Number(commissionValue), pitch: pitch.split("\n") }).instagram)}>Instagram</PrimaryButton>
+              <PrimaryButton tone="secondary" onPress={() => setInstagramText(buildShareTemplates({ title, price: parseTrPrice(price), commissionType, commissionValue: commissionNum, pitch: pitch.split("\n") }).instagram)}>Instagram</PrimaryButton>
             </View>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-              <PrimaryButton tone="secondary" onPress={() => setWhatsappText(buildShareTemplates({ title, price: parseTrPrice(price), commissionType, commissionValue: Number(commissionValue), pitch: pitch.split("\n") }).whatsapp)}>WhatsApp</PrimaryButton>
+              <PrimaryButton tone="secondary" onPress={() => setWhatsappText(buildShareTemplates({ title, price: parseTrPrice(price), commissionType, commissionValue: commissionNum, pitch: pitch.split("\n") }).whatsapp)}>WhatsApp</PrimaryButton>
             </View>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}>
-              <PrimaryButton tone="secondary" onPress={() => setTiktokText(buildShareTemplates({ title, price: parseTrPrice(price), commissionType, commissionValue: Number(commissionValue), pitch: pitch.split("\n") }).tiktok)}>TikTok</PrimaryButton>
+              <PrimaryButton tone="secondary" onPress={() => setTiktokText(buildShareTemplates({ title, price: parseTrPrice(price), commissionType, commissionValue: commissionNum, pitch: pitch.split("\n") }).tiktok)}>TikTok</PrimaryButton>
             </View>
           </View>
           <Field label="Instagram açıklaması" value={instagramText} onChangeText={setInstagramText} multiline />
