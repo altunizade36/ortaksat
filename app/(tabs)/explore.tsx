@@ -1220,6 +1220,33 @@ export default function ExploreScreen() {
             ) : null}
           </ScrollView>
         ) : null}
+
+        {/* MOBİL PARİTE: Kayıtlı aramalar yalnız masaüstündeydi → hesaba kayıtlı + Supabase'e
+            senkron olmasına rağmen mobil/native'de HİÇBİR yüzey gösteremiyordu. Yatay şerit
+            (320px güvenli): mevcut aramayı/filtreyi kaydet + kayıtlı olanlara tek dokunuşla dön. */}
+        {(((queryText || hasSaveableFilter) && !isCurrentSaved) || savedSearches.length > 0) ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", gap: 8, paddingVertical: 2 }}>
+            {(queryText || hasSaveableFilter) && !isCurrentSaved ? (
+              <Pressable onPress={() => addSaved(queryText, currentFilters())} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6 }}>
+                <MaterialCommunityIcons name="bell-plus-outline" size={14} color={colors.primaryDark} />
+                <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900", maxWidth: 190 }}>{queryText ? `“${queryText}” ${translateCopy("aramasını kaydet", language)}` : translateCopy("Bu filtreyi kaydet", language)}</Text>
+              </Pressable>
+            ) : null}
+            {savedSearches.map((s) => {
+              const hasF = s.f && Object.keys(s.f).length > 0;
+              const label = s.q || translateCopy("Filtreli arama", language);
+              return (
+                <View key={s.id} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingLeft: 11, paddingRight: 5, paddingVertical: 5 }}>
+                  <MaterialCommunityIcons name={hasF ? "filter-check-outline" : "bookmark-outline"} size={13} color={colors.muted} />
+                  <Pressable onPress={() => applySaved(s)} accessibilityRole="button"><Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800", maxWidth: 150 }}>{label}</Text></Pressable>
+                  <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kayıtlı aramayı sil", language)} onPress={() => removeSaved(s.id)} hitSlop={8} style={{ alignItems: "center", height: 22, justifyContent: "center", width: 22 }}>
+                    <MaterialCommunityIcons name="close" size={13} color={colors.subtle} />
+                  </Pressable>
+                </View>
+              );
+            })}
+          </ScrollView>
+        ) : null}
       </View>
 
       {renderCatFilter()}

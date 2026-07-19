@@ -184,21 +184,40 @@ function PartnerScreenInner() {
     return bv - av || commissionAmount(b) - commissionAmount(a);
   }), [allOpportunities, findUser]);
 
-  // Mobil fırsat filtresi/sıralaması (önceden mobilde HİÇ filtre/sort yoktu; masaüstü
-  // toolbar'daki oppCommission/oppSort state'i mobil çiplerle de kullanılır).
+  // Mobil fırsat filtresi/sıralaması — masaüstü toolbar'ıyla BİREBİR aynı 5 filtre
+  // (kategori/komisyon/şehir/stok/güven) + 5 sıralama. Eskiden mobil YALNIZ oppCommission+
+  // oppSort uyguluyordu → kategori/şehir/stok/güven mobilde hiç işe yaramıyordu.
   const mobileOpportunities = useMemo(() => {
-    const arr = rankedOpportunities.filter((l) => {
+    return allOpportunities.filter((l) => {
+      if (oppCategory && l.category !== oppCategory) return false;
       if (oppCommission > 0) {
         const effRate = l.commissionType === "rate" ? l.commissionValue : (l.price > 0 ? (l.commissionValue / l.price) * 100 : 0);
         if (effRate < oppCommission) return false;
       }
+      if (oppCity && l.location !== oppCity) return false;
+      if (oppStock === "in" && l.stockCount <= 0) return false;
+      if (oppStock === "low" && (l.stockCount > 5 || l.stockCount <= 0)) return false;
+      if (oppGuven) {
+        const r = findUser(l.ownerId)?.rating ?? 0;
+        if (oppGuven === "high" && r < 4.7) return false;
+        if (oppGuven === "mid" && (r < 4.3 || r >= 4.7)) return false;
+      }
       return true;
+    }).sort((a, b) => {
+      if (oppSort === "commission") return commissionAmount(b) - commissionAmount(a);
+      if (oppSort === "stock") return b.stockCount - a.stockCount;
+      if (oppSort === "rating") return (findUser(b.ownerId)?.rating ?? 0) - (findUser(a.ownerId)?.rating ?? 0);
+      if (oppSort === "new") return b.createdAt.localeCompare(a.createdAt);
+      const av = (a.featured ? 2 : 0) + ((findUser(a.ownerId)?.verifiedIdentity || findUser(a.ownerId)?.verifiedPhone) ? 1 : 0);
+      const bv = (b.featured ? 2 : 0) + ((findUser(b.ownerId)?.verifiedIdentity || findUser(b.ownerId)?.verifiedPhone) ? 1 : 0);
+      return bv - av || commissionAmount(b) - commissionAmount(a);
     });
-    if (oppSort === "commission") return arr.slice().sort((a, b) => commissionAmount(b) - commissionAmount(a));
-    if (oppSort === "new") return arr.slice().sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-    if (oppSort === "stock") return arr.slice().sort((a, b) => b.stockCount - a.stockCount);
-    return arr;
-  }, [rankedOpportunities, oppCommission, oppSort]);
+  }, [allOpportunities, oppCategory, oppCommission, oppCity, oppStock, oppGuven, oppSort, findUser]);
+
+  // Kategori/şehir seçenekleri artık BİLEŞEN düzeyinde (mobil dropdown'lar da kullansın;
+  // eskiden yalnız isWideWeb dalında tanımlıydı).
+  const oppCategoryOptions = useMemo(() => Array.from(new Set(allOpportunities.map((l) => l.category))).sort((a, b) => a.localeCompare(b, "tr")), [allOpportunities]);
+  const oppCityOptions = useMemo(() => Array.from(new Set(allOpportunities.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")), [allOpportunities]);
 
   function onJoin(listingId: string) {
     // Anonim: girişe yönlendir (dönüşte ilana gelir) — alert'te tıkanma yok.
@@ -303,8 +322,6 @@ function PartnerScreenInner() {
   };
 
   if (isWideWeb) {
-    const oppCategoryOptions = Array.from(new Set(allOpportunities.map((l) => l.category))).sort((a, b) => a.localeCompare(b, "tr"));
-    const oppCityOptions = Array.from(new Set(allOpportunities.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr"));
     const opportunities = allOpportunities.filter((l) => {
       if (oppCategory && l.category !== oppCategory) return false;
       // Komisyon oranı filtresi: sabit-₺ ilanlar için efektif oran (komisyon/fiyat×100)
@@ -707,7 +724,12 @@ function PartnerScreenInner() {
         <Card>
           <SectionTitle title="Ortak satış fırsatları" action={`${mobileOpportunities.length}`} />
           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Beğendiğin ürüne ortak ol, kendi kitlene sat, satış olunca komisyon kazan.", language)}</Text>
-          {/* Mobil fırsat filtre/sıralama çipleri (masaüstü toolbar'ın karşılığı). */}
+          {/* Mobil fırsat filtre/sıralama (masaüstü toolbar'ın TAM karşılığı: kategori/komisyon/
+              şehir/stok/güven + sıralama). Eskiden mobilde yalnız komisyon+sıralama vardı. */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, zIndex: 30 }}>
+            <PanelDropdown label="Kategoriler" value={oppCategory} onSelect={(v) => setOppCategory(String(v))} options={[{ label: "Tümü", value: "" }, ...oppCategoryOptions.map((c) => ({ label: c, value: c }))]} />
+            <PanelDropdown label="Konum" value={oppCity} onSelect={(v) => setOppCity(String(v))} options={[{ label: "Tümü", value: "" }, ...oppCityOptions.map((c) => ({ label: c, value: c }))]} />
+          </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, paddingVertical: 2 }}>
             {([[0, "Tümü komisyon"], [10, "%10+"], [15, "%15+"]] as const).map(([val, lbl]) => {
               const on = oppCommission === val;
@@ -717,8 +739,27 @@ function PartnerScreenInner() {
                 </Pressable>
               );
             })}
+            {/* Stok filtresi (toggle çip). */}
+            {([["in", "Stokta var"], ["low", "Az stok"]] as const).map(([val, lbl]) => {
+              const on = oppStock === val;
+              return (
+                <Pressable key={`st${val}`} onPress={() => setOppStock(on ? "" : val)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+                </Pressable>
+              );
+            })}
+            {/* Güven seviyesi (toggle çip). */}
+            {([["high", "Yüksek güven"], ["mid", "Orta güven"]] as const).map(([val, lbl]) => {
+              const on = oppGuven === val;
+              return (
+                <Pressable key={`g${val}`} onPress={() => setOppGuven(on ? "" : val)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <MaterialCommunityIcons name="shield-check-outline" size={13} color={on ? "#FFFFFF" : colors.muted} />
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+                </Pressable>
+              );
+            })}
             <View style={{ backgroundColor: colors.line, marginHorizontal: 2, width: 1 }} />
-            {([["recommended", "Önerilen"], ["commission", "Yüksek komisyon"], ["new", "Yeni"], ["stock", "Çok stok"]] as const).map(([val, lbl]) => {
+            {([["recommended", "Önerilen"], ["commission", "Yüksek komisyon"], ["rating", "Satıcı puanı"], ["new", "Yeni"], ["stock", "Çok stok"]] as const).map(([val, lbl]) => {
               const on = oppSort === val;
               return (
                 <Pressable key={`s${val}`} onPress={() => setOppSort(val)} style={{ backgroundColor: on ? colors.primaryDark : colors.surfaceAlt, borderColor: on ? colors.primaryDark : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
@@ -727,6 +768,13 @@ function PartnerScreenInner() {
               );
             })}
           </ScrollView>
+          {/* Aktif fırsat filtrelerini tek dokunuşla temizle. */}
+          {(oppCategory || oppCommission || oppCity || oppStock || oppGuven || oppSort !== "recommended") ? (
+            <Pressable onPress={() => { setOppCategory(""); setOppCommission(0); setOppCity(""); setOppStock(""); setOppGuven(""); setOppSort("recommended"); }} accessibilityRole="button" style={{ alignSelf: "flex-start", flexDirection: "row", alignItems: "center", gap: 5 }}>
+              <MaterialCommunityIcons name="filter-remove-outline" size={14} color={colors.muted} />
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Filtreleri temizle", language)}</Text>
+            </Pressable>
+          ) : null}
           <HowPartnerWorks language={language} />
           {allOpportunities.length === 0 ? (
             <NoOpportunities language={language} />
