@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { AuthRequired } from "@/components/auth-gate";
@@ -22,6 +22,7 @@ import { useKeyboardInset } from "@/lib/use-keyboard-inset";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey, shortDate } from "@/lib/locale";
 import type { Message } from "@/lib/types";
+import { useForegroundRefresh } from "@/lib/use-foreground-refresh";
 import { useStore } from "@/lib/use-store";
 
 const CHAT_RISK_WORDS = [
@@ -66,7 +67,7 @@ function ChatScreenInner() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { currentUser, findConversation, findListing, findUser, markConversationRead, messages, reportUser, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser } = useStore();
+  const { currentUser, accountLoaded, findConversation, findListing, findUser, markConversationRead, messages, refreshUserData, reportUser, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser } = useStore();
   const [body, setBody] = useState("");
   const [attaching, setAttaching] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
@@ -82,6 +83,8 @@ function ChatScreenInner() {
   const sendingRef = useRef(false); // çift-gönderim (hızlı Enter) koruması
   const conversation = findConversation(id);
   const { otherTyping, notifyTyping } = useTypingIndicator(conversation?.id, currentUser.id);
+  // Sekme ön plana dönünce mesajları tazele — WS askıdayken gelen yanıt kaçmasın (mobil-web).
+  useForegroundRefresh(refreshUserData);
 
   useEffect(() => {
     if (conversation) markConversationRead(conversation.id);
@@ -117,9 +120,19 @@ function ChatScreenInner() {
   }
 
   if (!conversation) {
+    // Hesap-özeti (konuşmalar) hâlâ yükleniyorsa "bulunamadı" YALAN olur — derin-link/
+    // yenilemede 1-3sn boyunca gerçek konuşma "yok" görünüyordu. Yüklenene kadar yükleniyor göster.
+    if (!accountLoaded) {
+      return (
+        <View style={{ alignItems: "center", backgroundColor: colors.background, flex: 1, gap: 10, justifyContent: "center", padding: 24 }}>
+          <ActivityIndicator color={colors.primary} />
+          <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "700" }}>{translateCopy("Konuşma yükleniyor…", language)}</Text>
+        </View>
+      );
+    }
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 12 }}>
-        <EmptyState title={language === "en" ? "Conversation not found" : "Konuşma bulunamadı"} body={language === "en" ? "This conversation may have been deleted or you may not have access." : "Bu konuşma silinmiş veya erişim yetkin olmayabilir."} />
+        <EmptyState title={language === "en" ? "Conversation not found" : "Konuşma bulunamadı"} body={language === "en" ? "This conversation may have been deleted or you may not have access." : "Bu konuşma silinmiş veya erişim yetkin olmayabilir."} action={{ label: translateCopy("Mesajlara dön", language), href: "/(tabs)/messages", icon: "chat-outline" }} />
       </ScrollView>
     );
   }

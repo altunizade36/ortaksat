@@ -15,6 +15,7 @@ import { EmptyState } from "@/components/ui";
 import { commissionAmount, localToday, money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useNativeRefresh } from "@/lib/use-native-refresh";
+import { useForegroundRefresh } from "@/lib/use-foreground-refresh";
 import { uploadMessageAttachment } from "@/lib/live-service";
 import { fetchSellerPhone } from "@/lib/supabase-data";
 import { useTypingIndicator } from "@/lib/use-typing";
@@ -96,6 +97,8 @@ function scanMessageRisk(text: string) {
 function MessagesScreenInner() {
   const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, partnerships, refreshUserData, sales, sendConversationMessage, retryMessage } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
+  // Sekme ön plana dönünce mesajları tazele (WS askıdayken kaçan yanıtları getirir).
+  useForegroundRefresh(refreshUserData);
   const { t, language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const contentWidth = useContentWidth();
@@ -572,7 +575,7 @@ function MessagesScreenInner() {
 
       {/* keyboardShouldPersistTaps: yoksa isimle filtreleyip sonuca basınca İLK dokunuş
           yalnız klavyeyi kapatıyor (çift dokunuş gerekiyordu). seller/favorites'ta zaten var. */}
-      <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
+      <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       {myConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noConversation")} body={t("noConversationBody")} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="mobile" /></View> : null}
       {myConversations.length > 0 && visibleConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noResults")} body={t("searchOrFilterAgain")} mascot="thinking" /></View> : null}
 

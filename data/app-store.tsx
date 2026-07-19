@@ -227,6 +227,7 @@ type AppStore = {
   marketplaceHasMore: boolean;
   marketplaceLoadingMore: boolean;
   marketplaceInitialLoading: boolean;
+  accountLoaded: boolean;
   // İlk yükleme başarısız oldu (ağ/sunucu) → boş sayfa yerine "yeniden dene" göster.
   marketplaceLoadFailed: boolean;
   loadMoreMarketplace: () => void;
@@ -482,6 +483,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const [marketplaceLoadingMore, setMarketplaceLoadingMore] = useState(false);
   // İlk ilan yüklemesi sürerken skeleton göstermek için (yalnız canlı modda).
   const [marketplaceInitialLoading, setMarketplaceInitialLoading] = useState(isSupabaseConfigured);
+  // Hesap-özeti (konuşmalar/mesajlar dahil) yüklendi mi? Chat/inbox 'yükleniyor' ile
+  // 'gerçekten yok'u ayırt etsin (derin-link/yenilemede yanlış 'Konuşma bulunamadı' önlenir).
+  const [accountLoaded, setAccountLoaded] = useState(!isSupabaseConfigured);
   // İlk yükleme başarısız (snapshot null / ağ hatası) → "yeniden dene" durumu.
   const [marketplaceLoadFailed, setMarketplaceLoadFailed] = useState(false);
   // Kritik akışlarda arka plan Supabase yazımı başarısız olursa kullanıcıya gösterilecek hata.
@@ -665,7 +669,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       // EZİYORDU. Realtime + optimistic yazımlar veriyi zaten güncel tutar. Senkron claim →
       // mount'taki eşzamanlı iki çağrı da dedup edilir.
       const alreadyLoaded = loadedAccountUserRef.current === profile.id;
-      if (alreadyLoaded) return;
+      if (alreadyLoaded) { setAccountLoaded(true); return; }
       loadedAccountUserRef.current = profile.id;
       void syncSavedForUser(profile.id); // kayıtlı aramaları sunucuyla senkronla (cihazlar arası)
       // Hesap verisi + öneriler + takipler: her biri BAĞIMSIZ dirençli — biri patlasa diğerleri yüklenir.
@@ -677,6 +681,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         fetchOffersLive().catch(() => [] as Offer[])
       ]);
       if (!mounted) return;
+      setAccountLoaded(true); // başarı ya da hata; artık boş=gerçekten-boş
       setFollowedSellerIds(myFollows);
       setBlockedUserIds(myBlocks);
       setOffers(myOffers);
@@ -729,6 +734,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setAuthUser(null);
         setEmailVerified(false);
         loadedAccountUserRef.current = null; // çıkış → sonraki giriş hesap-özetini yeniden yüklesin
+        setAccountLoaded(false);
         void syncSavedForUser(null); // kayıtlı aramaları temizle (paylaşılan tarayıcı gizliliği)
         // Oturum başka bir yolla kapandıysa (token süresi, başka sekmede çıkış) da
         // özel veriyi temizle → sonraki kullanıcıya sızmasın.
@@ -2526,6 +2532,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       marketplaceHasMore,
       marketplaceLoadingMore,
       marketplaceInitialLoading,
+      accountLoaded,
       marketplaceLoadFailed,
       loadMoreMarketplace() {
         // BELLEK/DOM KORUMASI: sanallaştırma olmadan sonsuz kaydırma diziyi+düğümleri sınırsız
@@ -2626,7 +2633,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         return favorites.some((item) => item.listingId === listingId && item.userId === currentUser.id);
       }
     };
-  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, hiddenCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, marketplaceLoadFailed, messages, notifications, orders, partnerships, pendingVerifyEmail, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
+  }, [authError, authReady, authUser, backendMode, blogPosts, contentPages, conversations, emailVerified, extraCategories, hiddenCategories, favorites, leads, listings, marketplaceHasMore, marketplaceLoadingMore, marketplaceInitialLoading, accountLoaded, marketplaceLoadFailed, messages, notifications, orders, partnerships, pendingVerifyEmail, platformSettings, reports, reviews, sales, seoSettings, syncError, users]);
 
   // Hafif favori-önbelleğini app-store ile senkronla (kart favori kalbi için).
   const favToggleRef = useRef<(id: string) => void>(() => {});
