@@ -712,6 +712,12 @@ export type ReferralLink = {
   /** Ortaklığın ANLAŞILAN atıf penceresi (join'de kilitlenen snapshot; canlı ilanınki DEĞİL).
    *  Satıcı pencereyi sonradan kısaltsa bile ortak anlaştığı krediyi korur. */
   attributionWindowDays?: number;
+  // Landing güven bandı (yabancı ziyaretçinin "kime güveneceğim" bariyeri için).
+  partnerName?: string;
+  partnerVerified?: boolean;
+  partnerSales?: number;
+  sellerRating?: number;
+  sellerVerified?: boolean;
 };
 
 export async function resolveReferralLink(slug: string, refCode: string): Promise<ReferralLink | null> {
@@ -739,7 +745,12 @@ export async function resolveReferralLink(slug: string, refCode: string): Promis
     category: data.category,
     location: data.location,
     imageUrl: data.image_url ?? undefined,
-    attributionWindowDays: data.agreed_attribution_window_days ?? undefined
+    attributionWindowDays: data.agreed_attribution_window_days ?? undefined,
+    partnerName: data.partner_name ?? undefined,
+    partnerVerified: data.partner_verified ?? undefined,
+    partnerSales: data.partner_sales ?? undefined,
+    sellerRating: data.seller_rating != null ? Number(data.seller_rating) : undefined,
+    sellerVerified: data.seller_verified ?? undefined
   };
 }
 

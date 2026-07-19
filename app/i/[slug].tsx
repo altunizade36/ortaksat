@@ -18,7 +18,7 @@ export default function ReferralLeadScreen() {
   const params = useLocalSearchParams<{ slug: string; ref?: string }>();
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const ref = Array.isArray(params.ref) ? params.ref[0] : params.ref;
-  const { createLead, listings, partnerships } = useStore();
+  const { createLead, findUser, listings, partnerships } = useStore();
   const router = useRouter();
   const [remoteReferral, setRemoteReferral] = useState<ReferralLink | null>(null);
   const [loading, setLoading] = useState(Boolean(ref));
@@ -40,6 +40,15 @@ export default function ReferralLeadScreen() {
   const category = remoteReferral?.category ?? localListing?.category;
   const location = remoteReferral?.location ?? localListing?.location;
   const canSubmit = Boolean(title && ref && (remoteReferral || localPartnership));
+  // GÜVEN BANDI: yabancı ziyaretçinin "kime güveneceğim" bariyeri. remote (anon) snapshot'tan
+  // gelir; giriş yapılıysa local kullanıcıdan türetilir.
+  const localPartner = !remoteReferral && localPartnership ? findUser(localPartnership.partnerId) : undefined;
+  const localSeller = !remoteReferral && localListing ? findUser(localListing.ownerId) : undefined;
+  const partnerName = remoteReferral?.partnerName ?? localPartner?.name;
+  const partnerVerified = remoteReferral?.partnerVerified ?? (localPartner ? (localPartner.verifiedIdentity || localPartner.verifiedPhone || !!localPartner.verifiedInstagram) : false);
+  const partnerSales = remoteReferral?.partnerSales ?? 0;
+  const sellerRating = remoteReferral?.sellerRating ?? localSeller?.rating;
+  const sellerVerified = remoteReferral?.sellerVerified ?? (localSeller ? (localSeller.verifiedIdentity || localSeller.verifiedPhone || !!localSeller.verifiedInstagram) : false);
 
   // Yerel (önizleme/bellek) eşleşmede de atfı sakla — landing'den ilana geçişte korunur.
   useEffect(() => {
@@ -152,6 +161,38 @@ export default function ReferralLeadScreen() {
           <Text selectable style={{ color: colors.ink, fontSize: 25, fontWeight: "900", lineHeight: 31 }}>
             {title}
           </Text>
+          {/* GÜVEN BANDI: ortağın kim olduğu + doğrulama + satış geçmişi + satıcı puanı.
+              Sosyalden gelen yabancı için #1 dönüşüm bariyerini ("kime güveneceğim") giderir. */}
+          {(partnerName || sellerRating != null) ? (
+            <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 6, padding: 12 }}>
+              {partnerName ? (
+                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  <MaterialCommunityIcons name="account-heart-outline" size={16} color={colors.primaryDark} />
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }} numberOfLines={1}>
+                    {localize(`${partnerName} öneriyor`, `Recommended by ${partnerName}`)}
+                  </Text>
+                  {partnerVerified ? (
+                    <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 7, paddingVertical: 2 }}>
+                      <MaterialCommunityIcons name="check-decagram" size={11} color="#FFFFFF" />
+                      <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{localize("Doğrulanmış", "Verified")}</Text>
+                    </View>
+                  ) : null}
+                  {partnerSales > 0 ? (
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>· {localize(`${partnerSales} satış`, `${partnerSales} sales`)}</Text>
+                  ) : null}
+                </View>
+              ) : null}
+              {sellerRating != null && sellerRating > 0 ? (
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                  <MaterialCommunityIcons name="storefront-outline" size={15} color={colors.muted} />
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{localize("Satıcı puanı", "Seller rating")}</Text>
+                  <MaterialCommunityIcons name="star" size={13} color="#F5A623" />
+                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{sellerRating.toFixed(1)}</Text>
+                  {sellerVerified ? <MaterialCommunityIcons name="check-decagram-outline" size={13} color={colors.primaryDark} /> : null}
+                </View>
+              ) : null}
+            </View>
+          ) : null}
           <View style={{ flexDirection: "row", gap: 10 }}>
             <Metric label={localize("Fiyat", "Price")} value={money(price)} />
             <Metric label={localize("Konum", "Location")} value={location ?? "-"} />
