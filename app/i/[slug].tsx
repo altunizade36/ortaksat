@@ -1,7 +1,8 @@
 ﻿import { Image } from "expo-image";
-import { Link, useLocalSearchParams } from "expo-router";
+import { MaterialCommunityIcons } from "@/components/icons";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, ScrollView, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -18,6 +19,7 @@ export default function ReferralLeadScreen() {
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
   const ref = Array.isArray(params.ref) ? params.ref[0] : params.ref;
   const { createLead, listings, partnerships } = useStore();
+  const router = useRouter();
   const [remoteReferral, setRemoteReferral] = useState<ReferralLink | null>(null);
   const [loading, setLoading] = useState(Boolean(ref));
   const [buyerName, setBuyerName] = useState("");
@@ -31,6 +33,7 @@ export default function ReferralLeadScreen() {
     () => partnerships.find((partnership) => partnership.refCode === ref && partnership.listingId === localListing?.id),
     [localListing?.id, partnerships, ref]
   );
+  const viewListingId = remoteReferral?.listingId ?? localListing?.id;
   const title = remoteReferral?.title ?? localListing?.title;
   const image = remoteReferral?.imageUrl ?? localListing?.image;
   const price = remoteReferral?.price ?? localListing?.price ?? 0;
@@ -156,6 +159,16 @@ export default function ReferralLeadScreen() {
           <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
             {localize("Bu talep, ürünü paylaşan ortak satıcıya doğru şekilde bağlanır.", "This request is linked to the partner who shared the product.")}
           </Text>
+          {/* KRİTİK dönüşüm: paylaşılan linke tıklayan alıcı ürünün TÜM detayını (galeri,
+              açıklama, satıcı, yorumlar) görebilmeli. Atıf zaten saklandı (saveRefAttribution)
+              → ilana geçince ortak kredisi KORUNUR. Eskiden bu buton YOKTU, alıcı tek foto +
+              formda kalıp geri dönüyordu (tüm ortaklık modelinin dönüşümünü öldürüyordu). */}
+          {viewListingId ? (
+            <Pressable onPress={() => router.push(`/listing/${viewListingId}`)} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", opacity: pressed ? 0.9 : 1, paddingVertical: 14 })}>
+              <MaterialCommunityIcons name="eye-outline" size={18} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{localize("Ürünü İncele", "View product")}</Text>
+            </Pressable>
+          ) : null}
         </Card>
 
         <Card>

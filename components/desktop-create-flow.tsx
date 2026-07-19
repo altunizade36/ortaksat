@@ -1056,7 +1056,10 @@ export function DesktopCreateFlow() {
             {/* SÜRÜKLE-BIRAK alanı + sayaç + öneri. Eskiden: sayaç yoktu (kaç fotoğraf
                 kaldığını bilmiyordun), sürükle-bırak/yapıştır hiç yoktu, ve "3+ fotoğraflı
                 ilan daha hızlı satılır" bilgisi yalnız gizli risk motorunda duruyordu. */}
-            {Platform.OS === "web" ? (
+            {/* Sürükle-bırak/Ctrl+V yalnız GENİŞ web'de var. Telefon tarayıcısında bu jestler
+                yok → mobilde çalışmayan kesikli kutu + "Ctrl+V ile yapıştır" yönergesi
+                gösteriliyordu (kafa karıştıran ölü UI). isWideWeb'e kapatıldı. */}
+            {Platform.OS === "web" && isWideWeb ? (
               <View style={{ alignItems: "center", backgroundColor: dragOver ? colors.primarySoft : colors.surfaceAlt, borderColor: dragOver ? colors.primary : colors.line, borderRadius: 12, borderStyle: "dashed", borderWidth: 2, gap: 4, paddingVertical: 16 }}>
                 <MaterialCommunityIcons name={dragOver ? "tray-arrow-down" : "image-plus"} size={22} color={dragOver ? colors.primaryDark : colors.subtle} />
                 <Text style={{ color: dragOver ? colors.primaryDark : colors.muted, fontSize: 12.5, fontWeight: "800" }}>
@@ -1309,11 +1312,15 @@ export function DesktopCreateFlow() {
                 <View style={{ gap: 6, padding: 14 }}>
                   <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{path.map((p) => translateCopy(p.label, language)).join(" › ")}</Text>
                   <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{String(values.title ?? leafLabel)}</Text>
-                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(parseTrPrice(String(values.price ?? "")), currency)}</Text>
+                  {/* priceNum/perSaleCommission ŞART: değeri "price" DIŞINDA bir alanda tutan
+                      kategorilerde (günlük kiralık→nightlyPrice, oda/yurt→perPersonPrice,
+                      açık artırma→startPrice) `values.price` undefined → önizleme ₺0 gösteriyordu.
+                      Yayınla priceKey kullanıyor; bu satırlar da aynı türetilmiş değeri kullanmalı. */}
+                  <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(priceNum, currency)}</Text>
                   <View style={{ backgroundColor: colors.primarySoft, borderRadius: 8, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 9, paddingVertical: 6 }}>
                     <MaterialCommunityIcons name="cash-multiple" size={14} color={colors.primaryDark} />
                     <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11, fontWeight: "800" }}>{translateCopy("Ortak kazancı", language)}</Text>
-                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{moneyIn(commissionType === "rate" ? Math.round((parseTrPrice(String(values.price ?? "")) * (Number(commissionValue) || 0)) / 100) : Number(commissionValue) || 0, currency)}</Text>
+                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{moneyIn(perSaleCommission, currency)}</Text>
                   </View>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{formatLocation(loc, visibility) || translateCopy("Konum belirtilmedi", language)}</Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>

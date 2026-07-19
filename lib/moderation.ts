@@ -63,10 +63,40 @@ function matchesWord(hay: string, word: string): boolean {
   return re.test(hay);
 }
 
+// BELİRSİZ blok kelimeleri: gerçek maddeyi DE, o maddenin AKSESUARINI da adlandırır
+// (şarap → "Şarap Dolabı", bira → "Bira Bardağı", rakı → "Rakı Kadehi", puro → "Puro Kesici").
+// Bunlar YALNIZ aksesuar/eşya bağlamı YOKKEN bloklanır → meşru ev-eşyası satıcısı mağdur olmaz,
+// gerçek alkol/tütün ilanı (bağlamsız) yine engellenir.
+const AMBIGUOUS_BLOCK = new Set([
+  "alkol", "içki", "bira", "şarap", "rakı", "viski", "votka", "likör",
+  "sigara", "tütün", "elektronik sigara", "e-sigara", "vape", "puro"
+]);
+// Aksesuar/eşya bağlamı: bunlardan biri geçiyorsa belirsiz kelime "ürünün kendisi" değildir.
+const ACCESSORY_CONTEXT = [
+  "dolap", "dolabı", "bardak", "bardağı", "kadeh", "kadehi", "şişe", "şişesi", "açacak", "açacağı",
+  "kesici", "kesicisi", "takım", "takımı", "set", "seti", "stand", "standı", "raf", "rafı",
+  "sehpa", "sehpası", "kutu", "kutusu", "askı", "askısı", "servis", "altlık", "altlığı",
+  "mahzen", "mahzeni", "soğutucu", "soğutucusu", "aparat", "aparatı", "tepsi", "tepsisi",
+  "saklama", "rafları", "standlı", "koleksiyon", "maket", "biblo", "figür", "oyuncak"
+];
+function hasAccessoryContext(hay: string): boolean {
+  return ACCESSORY_CONTEXT.some((w) => matchesWord(hay, w));
+}
+/** İlk GERÇEKTEN bloklayan kelime (belirsiz kelimelerde aksesuar-bağlamı istisnası uygulanır). */
+function firstBlockMatch(hay: string): string | undefined {
+  const acc = hasAccessoryContext(hay);
+  for (const w of BLOCK_WORDS) {
+    if (!matchesWord(hay, w)) continue;
+    if (acc && AMBIGUOUS_BLOCK.has(w)) continue; // ör. "Şarap Dolabı" → blok değil
+    return w;
+  }
+  return undefined;
+}
+
 function localScan(text: string): ModerationVerdict {
   const hay = (text ?? "").toLocaleLowerCase("tr-TR");
   if (!hay.trim()) return "none";
-  if (BLOCK_WORDS.some((w) => matchesWord(hay, w))) return "block";
+  if (firstBlockMatch(hay)) return "block";
   if (REVIEW_WORDS.some((w) => matchesWord(hay, w))) return "review";
   return "none";
 }
@@ -75,7 +105,7 @@ function localScan(text: string): ModerationVerdict {
 export function scanTextLocal(text: string): { verdict: ModerationVerdict; matched?: string } {
   const hay = (text ?? "").toLocaleLowerCase("tr-TR");
   if (!hay.trim()) return { verdict: "none" };
-  const b = BLOCK_WORDS.find((w) => matchesWord(hay, w));
+  const b = firstBlockMatch(hay);
   if (b) return { verdict: "block", matched: b };
   const r = REVIEW_WORDS.find((w) => matchesWord(hay, w));
   if (r) return { verdict: "review", matched: r };
