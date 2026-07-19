@@ -186,9 +186,18 @@ export function DesktopCreateFlow() {
     return f?.key ?? "price";
   }, [schema]);
   const priceNum = parseTrPrice(String(values[priceKey] ?? ""));
+  // KOMİSYON/BONUS TR-SAYI GÜVENLİĞİ: sabit (₺) komisyonu satıcı "1.500" diye yazınca
+  // Number("1.500") = 1.5 ₺ olur → sessizce YANLIŞ komisyonla yayınlanır (para modelini bozar).
+  // Sabit tutar TR binlik biçimindedir → parseTrPrice. Yüzde (%) için nokta binlik DEĞİL
+  // ondalık olabilir (12,5), o yüzden virgülü noktaya çevirip parseFloat. (bkz. tr-number-parse-gotcha)
+  const commissionRaw = String(commissionValue);
+  const commissionNum = commissionType === "rate"
+    ? (parseFloat(commissionRaw.replace(",", ".")) || 0)
+    : (parseTrPrice(commissionRaw) || 0);
+  const bonusNum = parseTrPrice(String(bonusAmount)) || 0;
   const perSaleCommission = commissionType === "rate"
-    ? Math.round((priceNum * (Number(commissionValue) || 0)) / 100)
-    : Number(commissionValue) || 0;
+    ? Math.round((priceNum * commissionNum) / 100)
+    : commissionNum;
   const suggestedRange = SUGGESTED_COMMISSION[path[0]?.label ?? ""] ?? DEFAULT_COMMISSION_RANGE;
 
   /**
@@ -232,7 +241,7 @@ export function DesktopCreateFlow() {
     title: String(values.title ?? leafLabel).trim() || leafLabel || "Ürün",
     category: leafLabel || path[0]?.label || "Genel",
     price: priceNum,
-    commission: commissionType === "rate" ? Number(commissionValue) || 0 : 0,
+    commission: commissionType === "rate" ? commissionNum || 0 : 0,
     currency
   }).shareTemplates, [values.title, leafLabel, path, priceNum, commissionType, commissionValue, currency]);
 
@@ -476,7 +485,13 @@ export function DesktopCreateFlow() {
       return null;
     }
     if (step === 3) return images.length ? null : translateCopy("Devam etmek için en az 1 görsel ekle.", language);
-    if (step === 4) return Number(commissionValue) > 0 ? null : translateCopy("Komisyon değeri sıfırdan büyük olmalı.", language);
+    if (step === 4) {
+      if (!(commissionNum > 0)) return translateCopy("Komisyon değeri sıfırdan büyük olmalı.", language);
+      // Absürt komisyon koruması (para modeli): oran %100'ü, sabit tutar ürün fiyatını aşamaz.
+      if (commissionType === "rate" && commissionNum > 100) return translateCopy("Komisyon oranı %100'den büyük olamaz.", language);
+      if (commissionType !== "rate" && priceNum > 0 && commissionNum > priceNum) return translateCopy("Sabit komisyon, ürün fiyatından büyük olamaz.", language);
+      return null;
+    }
     return null;
   };
   const canNext = () => nextBlockReason() === null;
@@ -529,7 +544,7 @@ export function DesktopCreateFlow() {
     if (images.length === 0) { setError("En az bir fotoğraf ekle."); setStep(3); return; }
     if (!loc.provinceId) { setError("İl seçmelisin."); setStep(2); return; }
     if (!loc.districtId) { setError("İlçe seçmelisin."); setStep(2); return; }
-    if (!(Number(commissionValue) > 0)) { setError("Komisyon değeri sıfırdan büyük olmalı."); setStep(4); return; }
+    if (!(commissionNum > 0)) { setError("Komisyon değeri sıfırdan büyük olmalı."); setStep(4); return; }
 
     setPublishing(true);
     try {
@@ -607,7 +622,7 @@ export function DesktopCreateFlow() {
         title: v.clean.title || leafLabel,
         category: leafLabel || path[0]?.label || "Genel",
         price,
-        commission: Number(commissionValue) || 0,
+        commission: commissionNum || 0,
         currency
       });
 
@@ -616,7 +631,7 @@ export function DesktopCreateFlow() {
       const riskDraft = {
         id: "draft", ownerId: currentUser?.id ?? "", title: v.clean.title || leafLabel,
         description: description || auto.description, salesPitch: detailLines, price,
-        category: leafLabel || path[0]?.label || "Genel", commissionType, commissionValue: Number(commissionValue) || 0,
+        category: leafLabel || path[0]?.label || "Genel", commissionType, commissionValue: commissionNum || 0,
         adAssets: uploadedImages.slice(1), status: "active"
       } as unknown as Listing;
       const risk = computeListingRisk(riskDraft, listings, currentUser);
@@ -632,12 +647,12 @@ export function DesktopCreateFlow() {
         price,
         currency,
         commissionType,
-        commissionValue: Number(commissionValue) || 0,
+        commissionValue: commissionNum || 0,
         commissionTiers: commissionType === "rate"
           ? tiers.map((tr) => ({ minSales: Math.max(0, Math.floor(Number(tr.minSales) || 0)), rate: Math.max(0, Math.min(90, Number(tr.rate) || 0)) })).filter((tr) => tr.rate > 0).sort((a, b) => a.minSales - b.minSales)
           : undefined,
-        bonusAmount: Number(bonusAmount) > 0 && Number(bonusQuota) > 0 ? Number(bonusAmount) : undefined,
-        bonusQuota: Number(bonusAmount) > 0 && Number(bonusQuota) > 0 ? Number(bonusQuota) : undefined,
+        bonusAmount: bonusNum > 0 && Number(bonusQuota) > 0 ? bonusNum : undefined,
+        bonusQuota: bonusNum > 0 && Number(bonusQuota) > 0 ? Number(bonusQuota) : undefined,
         partnershipMode,
         attributes,
         category: leafLabel || path[0]?.label || "Genel",
@@ -1162,8 +1177,8 @@ export function DesktopCreateFlow() {
                 </Text>
                 <View style={{ flex: 1 }} />
                 {[suggestedRange[0], Math.round((suggestedRange[0] + suggestedRange[1]) / 2), suggestedRange[1]].map((v) => (
-                  <Pressable key={v} onPress={() => setCommissionValue(String(v))} style={{ backgroundColor: Number(commissionValue) === v ? colors.primary : colors.surface, borderColor: Number(commissionValue) === v ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 5 }}>
-                    <Text style={{ color: Number(commissionValue) === v ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "900" }}>%{v}</Text>
+                  <Pressable key={v} onPress={() => setCommissionValue(String(v))} style={{ backgroundColor: commissionNum === v ? colors.primary : colors.surface, borderColor: commissionNum === v ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 5 }}>
+                    <Text style={{ color: commissionNum === v ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "900" }}>%{v}</Text>
                   </Pressable>
                 ))}
               </View>
@@ -1193,9 +1208,9 @@ export function DesktopCreateFlow() {
               ) : (
                 <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{translateCopy("Kazanç hesabını görmek için 2. adımda fiyat gir.", language)}</Text>
               )}
-              {Number(bonusAmount) > 0 && Number(bonusQuota) > 0 && priceNum > 0 ? (
+              {bonusNum > 0 && Number(bonusQuota) > 0 && priceNum > 0 ? (
                 <Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "800" }}>
-                  {translateCopy("Bonus dahil ilk", language)} {Number(bonusQuota)} {translateCopy("satışta HER ORTAK toplam", language)}: {moneyIn((perSaleCommission + Number(bonusAmount)) * Number(bonusQuota), currency)}
+                  {translateCopy("Bonus dahil ilk", language)} {Number(bonusQuota)} {translateCopy("satışta HER ORTAK toplam", language)}: {moneyIn((perSaleCommission + bonusNum) * Number(bonusQuota), currency)}
                 </Text>
               ) : null}
               <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("Ortaksat para tutmaz; ödeme satıcı ile ortak arasında yapılır. Rakamlar bilgilendirme amaçlıdır.", language)}</Text>
@@ -1325,11 +1340,11 @@ export function DesktopCreateFlow() {
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{formatLocation(loc, visibility) || translateCopy("Konum belirtilmedi", language)}</Text>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                     <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
-                      <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{commissionType === "rate" ? `%${commissionValue} komisyon` : `${moneyIn(Number(commissionValue) || 0, currency)} komisyon`}</Text>
+                      <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{commissionType === "rate" ? `%${commissionValue} komisyon` : `${moneyIn(commissionNum || 0, currency)} komisyon`}</Text>
                     </View>
-                    {Number(bonusAmount) > 0 && Number(bonusQuota) > 0 ? (
+                    {bonusNum > 0 && Number(bonusQuota) > 0 ? (
                       <View style={{ backgroundColor: colors.warningSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
-                        <Text style={{ color: colors.warning, fontSize: 11, fontWeight: "900" }}>ilk {Number(bonusQuota)} satışa +{moneyIn(Number(bonusAmount), currency)} bonus</Text>
+                        <Text style={{ color: colors.warning, fontSize: 11, fontWeight: "900" }}>ilk {Number(bonusQuota)} satışa +{moneyIn(bonusNum, currency)} bonus</Text>
                       </View>
                     ) : null}
                   </View>

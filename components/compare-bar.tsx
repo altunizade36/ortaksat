@@ -93,7 +93,7 @@ export function CompareBar() {
       {/* Yüzen bar */}
       {/* Alt boşluk 3 durumlu: geniş web (bar yok) · mobil WEB (tab bar `display:none` →
           92px ölü boşluktu) · NATIVE (tab bar: bottom=max(insets,12), height=70 → üstünde dur). */}
-      <View pointerEvents="box-none" style={{ alignItems: "center", bottom: isWideWeb ? 18 : Platform.OS === "web" ? 18 : Math.max(insets.bottom, 12) + 80, left: 0, paddingHorizontal: 12, position: "absolute", right: 0, zIndex: 2000 }}>
+      <View pointerEvents="box-none" style={{ alignItems: "center", bottom: isWideWeb ? 18 : Platform.OS === "web" ? 18 + insets.bottom : Math.max(insets.bottom, 12) + 80, left: 0, paddingHorizontal: 12, position: "absolute", right: 0, zIndex: 2000 }}>
         {/* maxWidth + çocukların flexShrink'i ŞART: RNW'de View varsayılanı flexShrink:0 →
             bar genişliği çocukların TOPLAMI oluyordu (~334-430px) ve 320-390px ekranda
             taşıp TÜM SAYFAYI yana kaydırıyordu (html'de overflow-x:hidden yok). */}

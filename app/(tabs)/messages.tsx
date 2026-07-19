@@ -814,5 +814,7 @@ export default function MessagesScreen() {
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Mesajların için giriş yapın", language)} />;
+  // Hesap verisi (konuşmalar) yüklenmeden "Henüz mesaj yok" YALANINI flaşlama.
+  if (!auth.accountLoaded) return <ScreenSkeleton />;
   return <MessagesScreenInner />;
 }

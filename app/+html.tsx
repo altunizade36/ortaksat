@@ -204,6 +204,9 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 }
 /* Butonlarda iOS uzun-basış "kopyala/paylaş" balonunu kapat — app hissi. */
 [role="button"], button { -webkit-touch-callout: none; }
+/* Yakın konumlu çip/buton sıralarında hızlı çift-dokunuş kazara sayfa-zoom'unu
+   tetiklemesin; dokunmalar ~300ms gecikmesiz anında işlensin (app gibi). */
+[role="button"], button, a { touch-action: manipulation; }
 
 /* İSKELET EKRAN — SSG taslağının üstünü örter.
    Statik export'ta sunucu HTML'i ekran genişliğini bilemez: masaüstünde bile dar düzen,

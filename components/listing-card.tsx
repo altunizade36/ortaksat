@@ -245,7 +245,8 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
             accessibilityState={{ selected: isFav }}
             accessibilityLabel={isFav ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)}
             onPress={toggleFav}
-            style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderColor: isFav ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, height: 30, justifyContent: "center", position: "absolute", right: 8, top: 8, width: 30, zIndex: 4 }}
+            hitSlop={8}
+            style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderColor: isFav ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", position: "absolute", right: 8, top: 8, width: 34, zIndex: 4 }}
           >
             <MaterialCommunityIcons name={isFav ? "heart" : "heart-outline"} size={16} color={isFav ? colors.accent : colors.muted} />
           </Pressable>
@@ -254,7 +255,8 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
             accessibilityState={{ selected: inCompare }}
             accessibilityLabel={inCompare ? translateCopy("Karşılaştırmadan çıkar", language) : translateCopy("Karşılaştır", language)}
             onPress={() => toggle(listing.id)}
-            style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderColor: inCompare ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 30, justifyContent: "center", position: "absolute", right: 44, top: 8, width: 30, zIndex: 4 }}
+            hitSlop={8}
+            style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderColor: inCompare ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", position: "absolute", right: 50, top: 8, width: 34, zIndex: 4 }}
           >
             <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
           </Pressable>

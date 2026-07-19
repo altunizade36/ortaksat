@@ -1152,7 +1152,7 @@ function KpiCard({ icon, label, value, tone }: { icon: keyof typeof MaterialComm
       <View style={{ alignItems: "center", backgroundColor: bg, borderRadius: 8, height: 30, justifyContent: "center", width: 30 }}>
         <MaterialCommunityIcons name={icon} size={17} color={color} />
       </View>
-      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.72} style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>{value}</Text>
       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{label}</Text>
     </View>
   );

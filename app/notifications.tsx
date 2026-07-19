@@ -48,12 +48,14 @@ type DeskNotif = { id: string; type: NotificationType; title: string; body: stri
 
 export default function NotificationsScreen() {
   const { language } = useLanguage();
-  const { isAuthenticated } = useStore();
+  const { isAuthenticated, accountLoaded } = useStore();
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
   if (!isAuthenticated) {
     return <AuthRequired title={translateCopy("Bildirimlerin için giriş yap", language)} body={translateCopy("Başvuru, satış ve mesaj bildirimlerin hesabına özeldir; görmek için giriş yapman gerekir.", language)} />;
   }
+  // Hesap verisi (bildirimler) yüklenmeden "Bildirim yok" YALANINI flaşlama.
+  if (!accountLoaded) return <ScreenSkeleton />;
   return <NotificationsScreenInner />;
 }
 

@@ -440,7 +440,7 @@ export default function CategoryLandingScreen() {
           <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{node.label} — Sık Sorulan Sorular</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             {faq.map((item) => (
-              <View key={item.q} style={{ flexBasis: 440, flexGrow: 1, maxWidth: 720 }}>
+              <View key={item.q} style={{ flexBasis: 240, flexGrow: 1, minWidth: 0, maxWidth: 720 }}>
                 <Accordion title={item.q} icon="comment-question-outline">
                   <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{item.a}</Text>
                 </Accordion>

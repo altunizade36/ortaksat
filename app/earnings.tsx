@@ -416,7 +416,7 @@ function EarningsScreenInner() {
 function MiniStat({ label, value }: { label: string; value: string }) {
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flex: 1, gap: 3, padding: 10 }}>
-      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.78} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{value}</Text>
       <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{label}</Text>
     </View>
   );

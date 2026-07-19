@@ -61,10 +61,19 @@ export function ErrorScreen({
 
 /** expo-router bir route segmentinde render hatası yakalarsa bunu gösterir. */
 export function RouteErrorBoundary({ error, retry }: { error: Error; retry: () => Promise<void> }) {
+  // asyncRoutes (kod-bölme) tuzağı: lazy chunk fetch'i başarısız olursa React.lazy reddi
+  // ÖNBELLEKLER → retry() aynı hatayı tekrar fırlatır, kullanıcı döngüde kalır. Chunk
+  // hatasında tek gerçek kurtuluş sayfayı yeniden yüklemek (chunk yeniden çekilir).
+  const msg = String(error?.message || error || "");
+  const isChunkError = /Loading chunk|ChunkLoadError|Failed to fetch dynamically|error loading dynamically imported|importing a module script failed/i.test(msg);
+  const canReload = typeof window !== "undefined" && typeof window.location?.reload === "function";
   return (
     <ErrorScreen
+      title={isChunkError ? "Sayfa yüklenemedi" : "Bir şeyler ters gitti"}
+      body={isChunkError ? "Bağlantın kesildiği için sayfa yüklenemedi. Yeniden dene." : undefined}
       detail={__DEV__ ? error?.message : undefined}
       onRetry={() => {
+        if (isChunkError && canReload) { window.location.reload(); return; }
         void retry();
       }}
     />

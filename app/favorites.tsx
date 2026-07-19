@@ -307,5 +307,8 @@ export default function FavoritesScreen() {
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate: SSG↔istemci-ilk render eşitlenir (#418)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Favorilerin için giriş yapın", language)} />;
+  // Store ilk yüklemesi bitmeden "Favori yok" YALANINI flaşlama (favoriler pazaryeri
+  // ilanlarına göre çözülür; ilanlar/hesap gelmeden boş görünür).
+  if (auth.marketplaceInitialLoading || !auth.accountLoaded) return <ScreenSkeleton />;
   return <FavoritesScreenInner />;
 }

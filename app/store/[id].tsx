@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@/components/icons";
 import { Image } from "expo-image";
 import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -72,15 +72,20 @@ export default function StoreScreen() {
   // görünüyordu. listing/[id] fetchListingById ile çözüyor; mağaza da sunucudan çeker.
   const [fetchedSeller, setFetchedSeller] = useState<User | undefined>(undefined);
   const [fetchedSellerListings, setFetchedSellerListings] = useState<Listing[]>([]);
+  // Sunucudan çekim sürüyor mu — yükleme bitmeden "Mağaza bulunamadı" YALANINI flaşlamamak için.
+  const [fetchingSeller, setFetchingSeller] = useState(false);
   useEffect(() => {
     let alive = true;
     if (!id || backendMode !== "supabase") return;
     if (findUser(id) && listings.some((l) => l.ownerId === id)) return; // zaten bellekte
+    setFetchingSeller(true);
     void fetchListingsBySellers([id]).then((res) => {
-      if (!alive || !res) return;
-      setFetchedSellerListings(res.listings);
-      setFetchedSeller(res.users.find((u) => u.id === id));
-    });
+      if (!alive) return;
+      if (res) {
+        setFetchedSellerListings(res.listings);
+        setFetchedSeller(res.users.find((u) => u.id === id));
+      }
+    }).finally(() => { if (alive) setFetchingSeller(false); });
     return () => { alive = false; };
   }, [id, backendMode]);
   const seller = (id ? findUser(id) : undefined) ?? fetchedSeller;
@@ -213,6 +218,15 @@ export default function StoreScreen() {
   }
 
   if (!seller) {
+    // Sunucudan çekim sürerken "bulunamadı" gösterme — yalnız çekim bitip yine boşsa.
+    if (fetchingSeller) {
+      return (
+        <View style={{ alignItems: "center", justifyContent: "center", paddingVertical: 80 }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginTop: 12 }}>{translateCopy("Mağaza yükleniyor…", language)}</Text>
+        </View>
+      );
+    }
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ padding: 12 }}>
         <EmptyState title={translateCopy("Mağaza bulunamadı", language)} body={translateCopy("Bu satıcı profili kaldırılmış veya bağlantı geçersiz olabilir.", language)} />
