@@ -152,7 +152,10 @@ function ChatScreenInner() {
     if (!text || sendingRef.current) return;
     sendingRef.current = true;
     setBody("");
-    sendConversationMessage(currentConversation.id, text);
+    // Reddedilirse (askıda/rate-limit/kapalı konuşma) metni GERİ YÜKLE → sessiz kayıp yok;
+    // sebep syncError toast'unda görünür (composer'ın üstünde). Eskiden metin uçup gidiyordu.
+    const ok = sendConversationMessage(currentConversation.id, text);
+    if (!ok) setBody(text);
     setTimeout(() => { sendingRef.current = false; }, 250);
     // onContentSizeChange sona kaydırır; kaymalı çift-scroll jank'i olmasın.
   }

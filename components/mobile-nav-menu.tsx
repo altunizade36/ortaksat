@@ -91,7 +91,7 @@ export function MobileNavMenu() {
               {account.map((item) => <Row key={item.label} item={item} onPress={() => go(item.href)} />)}
               <View style={{ backgroundColor: colors.line, height: 1, marginVertical: 6 }} />
               {isAuthenticated ? (
-                <Row item={{ label: "Çıkış Yap", href: "/", icon: "logout" }} danger onPress={() => { setOpen(false); void signOut(); }} />
+                <Row item={{ label: "Çıkış Yap", href: "/", icon: "logout" }} danger onPress={() => { setOpen(false); void signOut(); router.replace("/"); }} />
               ) : (
                 <Row item={{ label: "Giriş Yap / Kayıt Ol", href: "/auth", icon: "login" }} accent onPress={() => go("/auth")} />
               )}

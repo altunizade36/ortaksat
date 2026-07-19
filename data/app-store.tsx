@@ -321,7 +321,7 @@ type AppStore = {
   unblockUser: (userId: string) => Promise<void>;
   startConversation: (listingId: string, receiverId: string, body?: string) => Conversation | undefined;
   sendMessage: (listingId: string, receiverId: string, body: string) => void;
-  sendConversationMessage: (conversationId: string, body: string, attachment?: { url: string; type: "image" | "file"; name?: string }) => void;
+  sendConversationMessage: (conversationId: string, body: string, attachment?: { url: string; type: "image" | "file"; name?: string }) => boolean;
   retryMessage: (messageId: string) => void;
   markConversationRead: (conversationId: string) => void;
   markNotificationRead: (notificationId: string) => void;
@@ -2121,16 +2121,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
         createOrReuseConversation(listingId, receiverId, body);
       },
       sendConversationMessage(conversationId, body, attachment) {
-        if (isSuspended) return;
+        // Reddedilen durumlarda FALSE dön → çağıran metni geri yükler (sessiz kayıp yok).
+        if (isSuspended) { setSyncError("Hesabın askıya alındığı için mesaj gönderemezsin."); return false; }
         const trimmed = body.trim();
-        if (!trimmed && !attachment) return;
+        if (!trimmed && !attachment) return false;
         // Spam koruması: aynı cihazdan aşırı mesaj gönderimini anında engelle.
-        if (!rateLimitSync("message_send")) { setSyncError("Çok hızlı mesaj gönderiyorsun. Lütfen biraz yavaşla."); return; }
+        if (!rateLimitSync("message_send")) { setSyncError("Çok hızlı mesaj gönderiyorsun. Lütfen biraz yavaşla."); return false; }
         haptic.light();
         const conversation = conversations.find((item) => item.id === conversationId);
-        if (!conversation || conversation.status !== "open") return;
+        if (!conversation || conversation.status !== "open") return false;
         const receiverId = conversation.participantIds.find((id) => id !== currentUser.id);
-        if (!receiverId) return;
+        if (!receiverId) return false;
         const message: Message = {
           id: newId("m", liveUser),
           conversationId,
@@ -2154,6 +2155,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (liveUser) insertMessage(message)
           .then((ok) => { if (!ok) handleSendFailure(message); })
           .catch(() => handleSendFailure(message));
+        return true;
       },
       retryMessage(messageId) {
         const msg = messages.find((m) => m.id === messageId && m.status === "failed");

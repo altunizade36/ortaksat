@@ -5,6 +5,7 @@ import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "rea
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
+import { shortDate } from "@/lib/locale";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -234,7 +235,7 @@ function NotificationsScreenInner() {
                             </View>
                             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{translateCopy(n.body, language)}</Text>
                             <View style={{ alignItems: "center", flexDirection: "row", gap: 10, marginTop: 2 }}>
-                              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{n.createdAt}</Text>
+                              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{shortDate(n.createdAt)}</Text>
                               <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{hasLink ? translateCopy(n.type === "message" ? "Mesaja git →" : "İlana git →", language) : read ? translateCopy("Görüntülendi", language) : translateCopy("Okundu işaretle", language)}</Text>
                             </View>
                           </View>
@@ -434,7 +435,7 @@ function NotificationsScreenInner() {
                 {translateCopy(notification.body, language)}
               </Text>
               <Text selectable style={{ color: colors.subtle, fontSize: 12 }}>
-                {notification.createdAt}
+                {shortDate(notification.createdAt)}
               </Text>
             </View>
           </View>

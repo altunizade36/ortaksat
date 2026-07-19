@@ -821,7 +821,7 @@ export default function ListingDetailScreen() {
                       placeholderTextColor={colors.subtle}
                       multiline
                       autoFocus={wantsApply}
-                      style={{ backgroundColor: colors.surface, borderColor: applicationNote.trim() ? colors.line : colors.warning, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 64, padding: 10, textAlignVertical: "top" }}
+                      style={{ backgroundColor: colors.surface, borderColor: applicationNote.trim() ? colors.line : colors.warning, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 64, padding: 10, textAlignVertical: "top" }}
                     />
                   </View>
                   {/* Kanal seçimi */}
@@ -848,7 +848,7 @@ export default function ListingDetailScreen() {
                         keyboardType="number-pad"
                         placeholder={translateCopy("ör. 500", language)}
                         placeholderTextColor={colors.subtle}
-                        style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
+                        style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
                       />
                     </View>
                     <View style={{ flex: 1.35, gap: 5 }}>
@@ -859,7 +859,7 @@ export default function ListingDetailScreen() {
                         autoCapitalize="none"
                         placeholder={translateCopy("@kullaniciadi", language)}
                         placeholderTextColor={colors.subtle}
-                        style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
+                        style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
                       />
                     </View>
                   </View>
@@ -871,7 +871,7 @@ export default function ListingDetailScreen() {
                       onChangeText={setApplicationAudience}
                       placeholder={translateCopy("ör. genç anneler, üniversite çevresi…", language)}
                       placeholderTextColor={colors.subtle}
-                      style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
+                      style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
                     />
                   </View>
                 </View>

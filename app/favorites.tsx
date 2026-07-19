@@ -279,7 +279,8 @@ function FavoritesScreenInner() {
           <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>({visibleListings.length - visibleCount})</Text>
         </Pressable>
       ) : null}
-      <PrimaryButton href="/(tabs)/explore" tone="secondary">{translateCopy("Keşfete dön", language)}</PrimaryButton>
+      {/* Boşken üstteki EmptyState CTA'sı zaten var; çift buton olmasın. */}
+      {favoriteListings.length > 0 ? <PrimaryButton href="/(tabs)/explore" tone="secondary">{translateCopy("Keşfete dön", language)}</PrimaryButton> : null}
     </ScrollView>
   );
 }
