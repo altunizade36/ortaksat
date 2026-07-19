@@ -34,6 +34,21 @@ function msgTime(createdAt: string) {
   const m = /\d{2}:\d{2}/.exec(createdAt);
   return m ? m[0] : "";
 }
+const MONTHS_SHORT_TR = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+// Inbox listesi zaman damgasi: bugun -> saat, dun -> "Dun", daha eski -> gun+ay.
+// (msgTime HEP HH:MM dondurdugu icin 3 gun onceki mesaj tarihsiz "14:30" gorunuyordu;
+//  "|| shortDate" fallback'i asla tetiklenmiyordu.)
+function inboxTime(createdAt: string) {
+  const day = createdAt.slice(0, 10); // "YYYY-MM-DD"
+  const today = localToday();
+  if (day === today) return msgTime(createdAt) || shortDate(createdAt);
+  const [ty, tm, td] = today.split("-").map(Number);
+  const yd = new Date(ty, tm - 1, td - 1); // yerel; ay/yil devri güvenli
+  const yStr = `${yd.getFullYear()}-${String(yd.getMonth() + 1).padStart(2, "0")}-${String(yd.getDate()).padStart(2, "0")}`;
+  if (day === yStr) return "Dün";
+  const p = day.split("-");
+  return p.length === 3 ? `${p[2]} ${MONTHS_SHORT_TR[Number(p[1]) - 1] ?? ""}`.trim() : shortDate(createdAt);
+}
 function messagePreview(m: Message | undefined): string {
   if (!m) return "";
   if (m.body) return m.body;
@@ -329,7 +344,7 @@ function MessagesScreenInner() {
                     <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                         <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{listing ? displayText(listing.title) : t("listingConversation")}</Text>
-                        <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{last ? msgTime(last.createdAt) || shortDate(last.createdAt) : ""}</Text>
+                        <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{last ? inboxTime(last.createdAt) : ""}</Text>
                       </View>
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{otherUser?.name ?? t("user")}</Text>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
@@ -611,7 +626,7 @@ function MessagesScreenInner() {
               <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                   <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{otherUser?.name ?? t("user")}</Text>
-                  <Text style={{ color: unreadCount ? colors.primary : colors.subtle, fontSize: 11, fontWeight: unreadCount ? "900" : "700" }}>{lastMessage ? msgTime(lastMessage.createdAt) || shortDate(lastMessage.createdAt) : ""}</Text>
+                  <Text style={{ color: unreadCount ? colors.primary : colors.subtle, fontSize: 11, fontWeight: unreadCount ? "900" : "700" }}>{lastMessage ? inboxTime(lastMessage.createdAt) : ""}</Text>
                 </View>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                   <Text numberOfLines={1} style={{ color: unreadCount ? colors.ink : colors.muted, flex: 1, fontSize: 13, fontWeight: unreadCount ? "800" : "500" }}>

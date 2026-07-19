@@ -2149,7 +2149,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setMessages((items) => [message, ...items]);
         setConversations((items) => items.map((item) => (item.id === conversationId ? { ...item, lastMessageAt: message.createdAt } : item)));
         const preview = trimmed || (attachment?.type === "file" ? `📎 ${attachment.name ?? "Dosya"}` : "📷 Görsel");
-        notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${preview}`);
+        // Metadata: bildirime tıklayınca DOĞRU sohbeti aç (conversationId olmadan en son
+        // aktif konuşma açılıp yanlış thread'e düşüyordu — birden fazla konuşma varken).
+        notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${preview}`, { conversationId, listingId: conversation.listingId });
         // Mesaj DB'ye yazılamazsa (bağlantı/RLS) baloncuğu SİLME → "failed" işaretle
         // ki kullanıcı görsün ve "tekrar dene" ile yeniden gönderebilsin (kayıp yok).
         if (liveUser) insertMessage(message)

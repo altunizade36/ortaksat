@@ -180,6 +180,26 @@ export default function ReferralLeadScreen() {
             {sent ? localize("Talep Gönderildi", "Request Sent") : sending ? localize("Gönderiliyor…", "Sending…") : localize("Satıcıya Talep Gönder", "Send Request")}
           </PrimaryButton>
         </Card>
+
+        {/* VİRAL KANCA: her paylaşılan link bir büyüme fırsatı. Ziyaretçiyi yalnız alıcı
+            olarak bırakma — kendisi de ORTAK (bu ürünü paylaşıp komisyon) veya SATICI (kendi
+            ürününü ekle) olabilsin. Döngüyü kendisi besler (K-faktörü > 0). */}
+        <Card>
+          <SectionTitle title={localize("Sen de kazan", "Earn too")} />
+          <Text style={{ color: colors.muted, fontSize: 13.5, lineHeight: 19, marginBottom: 4 }}>
+            {localize("OrtakSat'ta ürünleri paylaşıp her satıştan komisyon kazanırsın — ya da kendi ürününü satışa çıkarırsın. Ücretsiz.", "On OrtakSat you earn a commission on every sale you help drive — or list your own product. Free.")}
+          </Text>
+          {viewListingId ? (
+            <Pressable onPress={() => router.push(`/listing/${viewListingId}?apply=1`)} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", opacity: pressed ? 0.9 : 1, paddingVertical: 13 })}>
+              <MaterialCommunityIcons name="cash-multiple" size={18} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 14.5, fontWeight: "900" }}>{localize("Bu ürünü paylaş, kazan", "Share this product, earn")}</Text>
+            </Pressable>
+          ) : null}
+          <Pressable onPress={() => router.push("/create")} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", marginTop: 8, opacity: pressed ? 0.9 : 1, paddingVertical: 13 })}>
+            <MaterialCommunityIcons name="store-plus-outline" size={18} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 14.5, fontWeight: "900" }}>{localize("Kendi ürününü sat", "Sell your own product")}</Text>
+          </Pressable>
+        </Card>
       </ScrollView>
     </KeyboardAvoidingView>
   );

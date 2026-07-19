@@ -73,6 +73,11 @@ function NotificationsScreenInner() {
   const hrefForMeta = (meta?: NotificationMeta, type?: NotificationType): Href | null => {
     // Mesaj bildirimi → doğrudan ilgili sohbeti aç (en aksiyon-odaklı bildirim).
     if (type === "message") {
+      // Öncelik: bildirimin taşıdığı conversationId → DOĞRU sohbet (yanlış-thread bug'ı çözümü).
+      if (meta?.conversationId && conversations.some((c) => c.id === meta.conversationId && c.participantIds.includes(currentUser.id))) {
+        return { pathname: "/chat/[id]", params: { id: meta.conversationId } } as unknown as Href;
+      }
+      // Yedek (conversationId'siz eski bildirimler): ilan eşleşen/en son aktif konuşma.
       const convo = conversations
         .filter((c) => c.participantIds.includes(currentUser.id) && (!meta?.listingId || c.listingId === meta.listingId))
         .sort((a, b) => (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? ""))[0];

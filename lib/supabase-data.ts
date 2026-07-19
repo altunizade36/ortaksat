@@ -94,8 +94,8 @@ export function parseNotifMeta(raw: unknown): NotificationMeta | undefined {
   if (!raw || typeof raw !== "object") return undefined;
   const m = raw as Record<string, unknown>;
   const pick = (v: unknown) => (typeof v === "string" && v ? v : undefined);
-  const meta: NotificationMeta = { listingId: pick(m.listingId), leadId: pick(m.leadId), partnershipId: pick(m.partnershipId) };
-  return meta.listingId || meta.leadId || meta.partnershipId ? meta : undefined;
+  const meta: NotificationMeta = { listingId: pick(m.listingId), leadId: pick(m.leadId), partnershipId: pick(m.partnershipId), conversationId: pick(m.conversationId) };
+  return meta.listingId || meta.leadId || meta.partnershipId || meta.conversationId ? meta : undefined;
 }
 
 function toNumber(value: number | string | null | undefined, fallback = 0) {

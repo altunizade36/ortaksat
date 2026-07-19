@@ -234,7 +234,7 @@ export type Message = {
 
 // Bildirimin ilgili olduğu kayıtlar (derin link için). DB trigger notify_on_lead
 // bunları jsonb metadata olarak yazar; istemci bildirime tıklayınca ilana götürür.
-export type NotificationMeta = { listingId?: string; leadId?: string; partnershipId?: string };
+export type NotificationMeta = { listingId?: string; leadId?: string; partnershipId?: string; conversationId?: string };
 
 export type Notification = {
   id: string;
