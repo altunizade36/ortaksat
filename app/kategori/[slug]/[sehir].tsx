@@ -16,7 +16,7 @@ import { getCategoryIcon } from "@/lib/categories";
 import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, citySlug, findProvince, listingInCity } from "@/lib/cities";
 import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid } from "@/lib/layout";
+import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
 function descendantLabels(node: CategoryNode): string[] {
@@ -57,6 +57,7 @@ export default function CityCategoryScreen() {
   const sehir = Array.isArray(params.sehir) ? params.sehir[0] : params.sehir;
   const router = useRouter();
   const { width } = useWindowDimensions();
+  const isWideWeb = useIsWideWeb();
   // Hidrasyon güvenliği (React #418): mount'a kadar sabit genişlik → cardWidth
   // sunucu/istemci uyuşur; mount sonrası gerçek genişlik.
   const [mountedGate, setMountedGate] = useState(false);
@@ -126,7 +127,7 @@ export default function CityCategoryScreen() {
   });
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, paddingBottom: 40, paddingTop: 14 }}>
+    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, paddingBottom: 40, paddingHorizontal: isWideWeb ? 0 : 12, paddingTop: 14 }}>
       <Head>
         <title>{title}</title>
         <meta name="description" content={desc} />

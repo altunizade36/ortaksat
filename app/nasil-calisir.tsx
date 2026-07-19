@@ -98,7 +98,7 @@ function HowItWorksStatic() {
         <View style={{ alignItems: isWideWeb ? "center" : "flex-start", flex: 1.1, gap: 14, minWidth: 0 }}>
           <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 32, fontWeight: "900", lineHeight: 38, textAlign: isWideWeb ? "center" : "left" }}>{translateCopy("OrtakSat nasıl çalışır?", language)}</Text>
           <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 23, maxWidth: 520, textAlign: isWideWeb ? "center" : "left" }}>{translateCopy("OrtakSat, ürününüzü daha fazla kişiye ulaştırmanızı ve komisyonla birlikte kazanmanızı sağlayan güvenli bir ortak satış platformudur.", language)}</Text>
-          <View style={{ flexDirection: "row", gap: 12 }}>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             <Link href="/create" asChild>
               <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, paddingHorizontal: 24, paddingVertical: 13 }}>
                 <MaterialCommunityIcons name="store-plus-outline" size={18} color="#FFFFFF" />
@@ -138,7 +138,7 @@ function HowItWorksStatic() {
         <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Sık Sorulan Sorular", language)}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
           {FAQ.map((item) => (
-            <View key={item.q} style={{ flexBasis: 420, flexGrow: 1, maxWidth: 720 }}>
+            <View key={item.q} style={{ flexBasis: 240, flexGrow: 1, minWidth: 0, maxWidth: 720 }}>
               <Accordion title={translateCopy(item.q, language)} icon="comment-question-outline">
                 <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{translateCopy(item.a, language)}</Text>
               </Accordion>
@@ -164,7 +164,7 @@ function HowItWorksStatic() {
           <Text style={{ color: "#FFFFFF", fontSize: 22, fontWeight: "900" }}>{translateCopy("Hemen başlayın, birlikte kazanmaya başlayın!", language)}</Text>
           <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 14, fontWeight: "600" }}>{translateCopy("İlan verin veya ortak satıcı olun; ortakların kitlesiyle ürününüzü yayın.", language)}</Text>
         </View>
-        <View style={{ flexDirection: "row", gap: 12 }}>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
           <Link href="/create" asChild>
             <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 12, flexDirection: "row", gap: 8, paddingHorizontal: 22, paddingVertical: 13 }}>
               <MaterialCommunityIcons name="plus-circle-outline" size={18} color={colors.primaryDark} />

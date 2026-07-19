@@ -206,7 +206,7 @@ export default function SafeShoppingGuidePage() {
           <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Sık sorulan sorular", language)}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             {FAQ.map((item) => (
-              <View key={item.q} style={{ flexBasis: 440, flexGrow: 1, maxWidth: 760 }}>
+              <View key={item.q} style={{ flexBasis: 240, flexGrow: 1, minWidth: 0, maxWidth: 760 }}>
                 <Accordion title={translateCopy(item.q, language)} icon="comment-question-outline">
                   <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 21 }}>{translateCopy(item.a, language)}</Text>
                 </Accordion>

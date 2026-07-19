@@ -350,6 +350,11 @@ export default function ExploreScreen() {
   const activeListings = useMemo(() => {
     const provKey = provinceName ? locKey(provinceName) : "";
     const distKey = districtName ? locKey(districtName) : "";
+    // "Trend" GÖRELİ eşik (ana sayfayla tutarlı): mutlak 50 eşiği genç/düşük-hacimli
+    // katalogda hiçbir ilanı geçirmiyor → Trend çipi BOŞ ızgara veriyordu. Havuzun
+    // en aktifine göre eşik → her zaman "en trend" olanları gösterir.
+    const maxHot = filter === "hot" ? baseListings.reduce((mx, l) => Math.max(mx, l.leadCount + l.favoriteCount), 0) : 0;
+    const hotThreshold = Math.max(6, maxHot * 0.5);
     const nonText = baseListings.filter((listing) => {
       if (city && listing.location !== city) return false;
       // Yapısal id varsa kesin eşleşme; yoksa (eski ilan) serbest metne düş.
@@ -369,7 +374,7 @@ export default function ExploreScreen() {
       if (stockFilter === "low" && (listing.stockCount > 5 || listing.stockCount <= 0)) return false;
       if (statusOpen && listing.partnershipMode !== "open") return false;
       if (filter === "open" && listing.partnershipMode !== "open") return false;
-      if (filter === "hot" && listing.leadCount + listing.favoriteCount < 50) return false;
+      if (filter === "hot" && listing.leadCount + listing.favoriteCount < hotThreshold) return false;
       if (filter === "new" && !isNewListing(listing.createdAt)) return false;
       // Kategori-özel filtre: seçili kategori + facet (attribute) + sayısal aralık.
       if (catLabelSet) {

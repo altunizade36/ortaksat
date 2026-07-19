@@ -33,7 +33,17 @@ export function WebContainer({
   if (Platform.OS !== "web") return <>{children}</>;
 
   const wide = mounted ? isWideWeb : true;
-  if (!wide) return <>{children}</>;
+  // Mobil web: eskiden ÇIPLAK children dönüyordu → `padding` prop'u yok sayılıyor, yalnız
+  // WebContainer'a dayanan sayfalar (sss/hakkımızda/güvenli-alışveriş) kenara yapışık
+  // (x=0) render oluyordu. Artık mobilde de yatay kenar boşluğu uygulanır (yapı yine
+  // <View> → #418 hidrasyon güvenli, wide/narrow yapısal fark yok).
+  if (!wide) {
+    return (
+      <View style={[{ paddingHorizontal: Math.min(padding, 14), width: "100%" }, style]}>
+        {children}
+      </View>
+    );
+  }
 
   return (
     <View style={[{ alignSelf: "center", maxWidth: max, paddingHorizontal: padding, width: "100%" }, style]}>
