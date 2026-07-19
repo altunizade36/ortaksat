@@ -1,5 +1,5 @@
 import { useEffect, useRef } from "react";
-import { Animated, View, type ViewStyle } from "react-native";
+import { Animated, Platform, View, type ViewStyle } from "react-native";
 
 import { colors } from "@/components/colors";
 
@@ -10,8 +10,10 @@ export function Skeleton({ style }: { style?: ViewStyle }) {
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 720, useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0.5, duration: 720, useNativeDriver: true })
+        // Web'de native animasyon modülü yok → useNativeDriver:true her yüklemede konsola
+        // "useNativeDriver is not supported" uyarısı basıyordu. Opacity JS-driver'da da akıcı.
+        Animated.timing(pulse, { toValue: 1, duration: 720, useNativeDriver: Platform.OS !== "web" }),
+        Animated.timing(pulse, { toValue: 0.5, duration: 720, useNativeDriver: Platform.OS !== "web" })
       ])
     );
     loop.start();
