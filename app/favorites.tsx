@@ -36,7 +36,7 @@ function FavoritesScreenInner() {
   useEffect(() => { setVisibleCount(PAGE); }, [favTab, catFilter, sortMode, query]);
   const horizontalPadding = 12;
   const gap = 8;
-  const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 3 }).cardWidth;
+  const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 2 /* mobilde 2 sütun: 3 zorlarken 106px kartta fiyat kırpılıyordu */ }).cardWidth;
   const tokens = searchKey(query).split(" ").filter(Boolean);
   const myFavs = favorites.filter((favorite) => favorite.userId === currentUser.id);
 

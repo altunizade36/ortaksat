@@ -41,7 +41,7 @@ function FollowingInner() {
 
   const gap = 8;
   const horizontalPadding = 12;
-  const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 3 }).cardWidth;
+  const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 2 /* mobilde 2 sütun: 3 zorlarken 106px kartta fiyat kırpılıyordu */ }).cardWidth;
 
   // Takip edilen satıcıların aktif ilanlarını sunucudan getir (bellek penceresinde
   // olmayabilir → beslemesi eksik kalmasın). Yerel listelerle birleştirilir.

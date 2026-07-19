@@ -16,13 +16,13 @@ import { WebFooter } from "@/components/web-landing";
 import { money, moneyCompact, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { haptic } from "@/lib/haptics";
-import { fetchSellerPhone } from "@/lib/supabase-data";
+import { fetchSellerPhone, fetchListingsBySellers } from "@/lib/supabase-data";
 import { openUrlSafe } from "@/lib/link";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { displayText } from "@/lib/text";
 import { fetchReviewsForUser } from "@/lib/live-service";
 import { calculateUserTrustScores } from "@/lib/trust-score";
-import type { Listing, Review } from "@/lib/types";
+import type { Listing, Review, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 type StoreFilter = "active" | "all" | "partner";
@@ -67,7 +67,30 @@ export default function StoreScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [revealedPhone, setRevealedPhone] = useState<string | null>(null);
   const [revealingPhone, setRevealingPhone] = useState(false);
-  const seller = id ? findUser(id) : undefined;
+  // REMOTE FALLBACK: satıcı yüklü katalog penceresinde olmayabilir (paylaşılan üründen
+  // "Mağaza" → /store/<ownerId>). Eskiden findUser boş dönünce "Mağaza bulunamadı" YALANI
+  // görünüyordu. listing/[id] fetchListingById ile çözüyor; mağaza da sunucudan çeker.
+  const [fetchedSeller, setFetchedSeller] = useState<User | undefined>(undefined);
+  const [fetchedSellerListings, setFetchedSellerListings] = useState<Listing[]>([]);
+  useEffect(() => {
+    let alive = true;
+    if (!id || backendMode !== "supabase") return;
+    if (findUser(id) && listings.some((l) => l.ownerId === id)) return; // zaten bellekte
+    void fetchListingsBySellers([id]).then((res) => {
+      if (!alive || !res) return;
+      setFetchedSellerListings(res.listings);
+      setFetchedSeller(res.users.find((u) => u.id === id));
+    });
+    return () => { alive = false; };
+  }, [id, backendMode]);
+  const seller = (id ? findUser(id) : undefined) ?? fetchedSeller;
+  // Satıcının ilanları: bellek + sunucudan çekilen (tekilleştir).
+  const scopedListings = useMemo(() => {
+    const m = new Map<string, Listing>();
+    for (const l of listings) if (l.ownerId === id) m.set(l.id, l);
+    for (const l of fetchedSellerListings) m.set(l.id, l);
+    return Array.from(m.values());
+  }, [id, listings, fetchedSellerListings]);
   const isOwnStore = seller?.id === currentUser.id;
   const trust = seller ? calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: seller }) : undefined;
   // Ortak (partner) karnesi — kişinin başkalarının ürünlerini satarak/getirerek yaptığı iş.
@@ -79,8 +102,8 @@ export default function StoreScreen() {
   const partnerEarned = partnerSalesList.reduce((sum, s) => sum + s.commissionAmount, 0);
   const hasPartnerActivity = partnerAllPartnerships.length > 0 || partnerBroughtSales > 0;
   const sellerListings = useMemo(() => {
-    const arr = listings
-      .filter((listing) => listing.ownerId === id && listing.status !== "rejected")
+    const arr = scopedListings
+      .filter((listing) => listing.status !== "rejected")
       .filter((listing) => {
         if (filter === "active") return listing.status === "active";
         if (filter === "partner") return listing.status === "active" && listing.partnershipMode !== "invite";
@@ -90,8 +113,8 @@ export default function StoreScreen() {
     else if (storeSort === "priceDesc") arr.sort((a, b) => b.price - a.price);
     else arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt)); // "new"
     return arr;
-  }, [filter, id, listings, storeSort]);
-  const activeListings = listings.filter((listing) => listing.ownerId === id && listing.status === "active");
+  }, [filter, scopedListings, storeSort]);
+  const activeListings = scopedListings.filter((listing) => listing.status === "active");
   const totalCommission = activeListings.reduce((sum, listing) => {
     return sum + (listing.commissionType === "rate" ? Math.round((listing.price * listing.commissionValue) / 100) : listing.commissionValue);
   }, 0);
