@@ -1085,7 +1085,7 @@ export default function ExploreScreen() {
       onScroll={loadMoreIfNeeded}
       scrollEventThrottle={16}
       showsVerticalScrollIndicator={false}
-      contentContainerStyle={{ backgroundColor: colors.surface, paddingBottom: Platform.OS === "web" ? 28 : 102 }}
+      contentContainerStyle={{ backgroundColor: colors.surface, paddingBottom: (Platform.OS === "web" ? 28 : 102) + (compareIds.length > 0 ? 76 : 0) }}
       style={{ backgroundColor: colors.surface }}
     >
       {/* ÖLÜ KOD TEMİZLİĞİ: burası mobil/native dalı — geniş-web yukarıda ayrı bir
@@ -1105,7 +1105,7 @@ export default function ExploreScreen() {
               <Pressable accessibilityLabel={translateCopy("Kapat", language)} hitSlop={10} onPress={() => setShowMobileFilters(false)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 32, justifyContent: "center", position: "absolute", right: 14, top: 12, width: 32, zIndex: 5 }}>
                 <MaterialCommunityIcons name="close" size={19} color={colors.ink} />
               </Pressable>
-              <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8, paddingHorizontal: 14, paddingTop: 12 }}>
+              <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 8, paddingHorizontal: 14, paddingTop: 12 }}>
                 <FilterPanel
                   cities={cities} city={city} onCity={setCity}
                   minCommission={minCommission} onMinCommission={setMinCommission}

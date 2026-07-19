@@ -527,7 +527,7 @@ export default function ListingDetailScreen() {
   });
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: 96 }}>
+    <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: 96 }}>
       <Head>
         <title>{`${currentListing.title} — OrtakSat`}</title>
         <meta name="description" content={metaDesc} />
@@ -1205,7 +1205,10 @@ export default function ListingDetailScreen() {
       </Modal>
 
       <Modal visible={reportOpen} transparent animationType="fade" onRequestClose={() => setReportOpen(false)}>
-        <View style={{ backgroundColor: "rgba(16,24,40,0.55)", flex: 1, justifyContent: "center", padding: 20 }}>
+        {/* KAV + ScrollView: açıklama alanına odaklanınca klavye "Bildir" butonunu örtüyordu
+            (RN Modal ebeveynin KAV'ını miras almaz). Hemen üstteki teklif modalıyla aynı desen. */}
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ backgroundColor: "rgba(16,24,40,0.55)", flex: 1 }}>
+          <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={{ flexGrow: 1, justifyContent: "center", padding: 20 }}>
           <View style={{ alignSelf: "center", backgroundColor: colors.background, borderRadius: 18, gap: 14, maxWidth: 460, padding: 22, width: "100%" }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
               <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
@@ -1231,7 +1234,8 @@ export default function ListingDetailScreen() {
               <Pressable onPress={() => void submitReport()} style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bildir", language)}</Text></Pressable>
             </View>
           </View>
-        </View>
+          </ScrollView>
+        </KeyboardAvoidingView>
       </Modal>
 
       <Modal visible={lightbox} transparent animationType="fade" onRequestClose={() => { setLightbox(false); setZoomed(false); }}>
@@ -1276,7 +1280,7 @@ export default function ListingDetailScreen() {
               </Pressable>
               <View style={{ alignItems: "center", bottom: 26, flexDirection: "row", gap: 8, justifyContent: "center", left: 0, position: "absolute", right: 0 }}>
                 {gallery.map((_, i) => (
-                  <Pressable key={i} onPress={() => setActiveImage(i)} style={{ backgroundColor: i === galleryIdx ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 999, height: 8, width: i === galleryIdx ? 22 : 8 }} />
+                  <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${i + 1}. görsele git`} hitSlop={10} onPress={() => setActiveImage(i)} style={{ backgroundColor: i === galleryIdx ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 999, height: 8, width: i === galleryIdx ? 22 : 8 }} />
                 ))}
               </View>
             </>
