@@ -163,7 +163,7 @@ export default function ReferralLeadScreen() {
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16 }}>
         <EmptyState
           title={localize("Geçersiz ortak satış bağlantısı", "Invalid referral link")}
-          body={localize("Bu ilan pasif olabilir veya referans kodu artık geçerli olmayabilir.", "This listing may be inactive or the referral code is no longer valid.")}
+          body={localize("Bu ilan pasif olabilir veya bağlantı artık geçerli olmayabilir.", "This listing may be inactive or the link is no longer valid.")}
         />
         <Link href="/" asChild>
           <PrimaryButton>{localize("Keşfete Dön", "Back to Discover")}</PrimaryButton>

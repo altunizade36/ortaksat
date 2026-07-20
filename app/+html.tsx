@@ -22,7 +22,7 @@ export default function Root({ children }: PropsWithChildren) {
         <title>ortaksat — Ortak satışla kazan</title>
         <meta
           name="description"
-          content="ortaksat: ilanını aç, ortakların referans linkiyle paylaşsın, satışta komisyon kazan. Emlak, telefon, bilgisayar, inşaat, bisiklet ve daha fazlası tek platformda."
+          content="ortaksat: ilanını aç, ortaklar kendi yöntemiyle tanıtsın, satışta komisyon kazan. Emlak, telefon, bilgisayar, inşaat, bisiklet ve daha fazlası tek platformda."
         />
         <meta name="keywords" content="ortak satış, referans, komisyon, ilan, emlak, ikinci el, satıcı, affiliate" />
 
@@ -174,7 +174,7 @@ const orgJsonLd = JSON.stringify({
       alternateName: ["Ortaksat", "ortak sat", "Ortak Sat", "ortaksat.com"],
       url: "https://www.ortaksat.com",
       logo: "https://www.ortaksat.com/apple-touch-icon.png",
-      description: "Ortak satış pazaryeri: ilanını aç, ortakların referans linkiyle paylaşsın, satışta komisyon kazan."
+      description: "Ortak satış pazaryeri: ilanını aç, ortaklar kendi yöntemiyle tanıtsın, satışta komisyon kazan."
     },
     {
       "@type": "WebSite",

@@ -15,7 +15,7 @@ const SECTIONS: LegalSection[] = [
     bullets: [
       "Hesap bilgileri: e-posta adresi, ad-soyad/görünen ad, şifre (şifrelenmiş saklanır).",
       "İsteğe bağlı profil: telefon numarası, kısa açıklama (bio), sosyal medya kullanıcı adı, konum (il/ilçe).",
-      "İçerik verileri: yayınladığınız ilanlar, fotoğraflar, ortaklık başvuruları, mesajlar, talepler, yorumlar ve komisyon takip kayıtları.",
+      "İçerik verileri: yayınladığınız ilanlar, fotoğraflar, ortaklık başvuruları, mesajlar, talepler, yorumlar ve komisyon kayıtları.",
       "Kimlik/telefon doğrulama durumu (yalnızca 'doğrulandı/doğrulanmadı' bilgisi).",
       "Teknik veriler: cihaz/oturum bilgileri, IP tabanlı genel konum, kullanım günlükleri (güvenlik ve hata takibi için)."
     ]
