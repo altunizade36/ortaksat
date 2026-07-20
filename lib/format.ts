@@ -125,8 +125,12 @@ export function effectiveCommissionAmount(listing: Listing, partnership: Partner
   return safe(listing.commissionValue * qty);
 }
 
-export function shareUrl(listing: Listing, refCode: string) {
-  return `https://www.ortaksat.com/i/${listing.slug}?ref=${refCode}`;
+/** Ortağın paylaşım linki. `channel` (whatsapp/instagram/tiktok/share) verilirse `&c=` ile
+ *  eklenir → landing kanalı yakalayıp referral_clicks'e yazar (hangi kanal dönüşüm getiriyor
+ *  ölçülür; büyüme buna göre optimize edilir). */
+export function shareUrl(listing: Listing, refCode: string, channel?: string) {
+  const base = `https://www.ortaksat.com/i/${listing.slug}?ref=${refCode}`;
+  return channel ? `${base}&c=${encodeURIComponent(channel)}` : base;
 }
 
 // Düz ürün paylaşımı: herkesin açabileceği ürün detay sayfası (referans formu değil).
@@ -163,15 +167,23 @@ export function trPhoneIntl(phone: string | undefined | null): string {
   return d.length === 10 && d.startsWith("5") ? "90" + d : "";
 }
 
-export function listingShareTemplates(listing: Listing, url?: string) {
-  const link = url ?? `https://www.ortaksat.com/listing/${listing.id}`;
+/**
+ * Kanala özel paylaşım metinleri. `refCode` verilirse her kanal KENDİ kanal-etiketli linkini
+ * alır (dönüşüm ölçümü). Instagram metni BİO-YÖNELİMLİDİR: IG gönderi/açıklamasında ham URL
+ * TIKLANAMAZ → "link bio'da/profilde" der (ham link basıp ölü-uç yaratmaz; en büyük sosyal
+ * kanalda tıklama kaybını önler).
+ */
+export function listingShareTemplates(listing: Listing, url?: string, refCode?: string) {
+  const mk = (channel: string) => (refCode ? shareUrl(listing, refCode, channel) : (url ?? `https://www.ortaksat.com/listing/${listing.id}`));
   const commission = commissionText(listing);
   const firstPitch = listing.salesPitch[0] ?? listing.description;
 
   return {
-    instagram: listing.shareTemplates?.instagram || `${listing.title}\n${firstPitch}\nFiyat: ${money(listing.price)}\nOrtak satış linki: ${link}`,
-    whatsapp: listing.shareTemplates?.whatsapp || `Merhaba, ${listing.title} ürünü için detayları göndereyim.\nFiyat: ${money(listing.price)}\n${firstPitch}\nLink: ${link}`,
-    tiktok: listing.shareTemplates?.tiktok || `${listing.title} için kısa tanıtım: ${firstPitch} ${commission}. Detay linki profilde: ${link}`
+    // IG: ham link tıklanamaz → bio/profil yönlendirmesi + DM daveti (link yine yakalanır ama
+    // vurgu tıklanabilir yüzeyde). Satıcının özel şablonu varsa aynen korunur.
+    instagram: listing.shareTemplates?.instagram || `${listing.title}\n${firstPitch}\nFiyat: ${money(listing.price)}\n🔗 Satın alma linki profilimde (bio) — ya da DM'den yazın.\n${mk("instagram")}`,
+    whatsapp: listing.shareTemplates?.whatsapp || `Merhaba, ${listing.title} ürünü için detayları göndereyim.\nFiyat: ${money(listing.price)}\n${firstPitch}\nLink: ${mk("whatsapp")}`,
+    tiktok: listing.shareTemplates?.tiktok || `${listing.title} için kısa tanıtım: ${firstPitch} ${commission}. Detay linki profilde: ${mk("tiktok")}`
   };
 }
 

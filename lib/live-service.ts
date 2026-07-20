@@ -43,9 +43,11 @@ export async function updateUserVerificationLive(userId: string, field: "verifie
 }
 
 /** Referans linki tiklamasini kaydeder (anonim; RLS public insert). */
-export async function logReferralClick(listingId: string | undefined, partnershipId: string | undefined, refCode: string | undefined) {
+export async function logReferralClick(listingId: string | undefined, partnershipId: string | undefined, refCode: string | undefined, channel?: string) {
   if (!supabase || !partnershipId) return;
-  const { error } = await supabase.from("referral_clicks").insert({ listing_id: listingId ?? null, partnership_id: partnershipId, ref_code: refCode ?? null });
+  // channel (whatsapp/instagram/tiktok/share): hangi kanal dönüşüm getiriyor ölçümü.
+  const ch = channel ? String(channel).slice(0, 24) : null;
+  const { error } = await supabase.from("referral_clicks").insert({ listing_id: listingId ?? null, partnership_id: partnershipId, ref_code: refCode ?? null, channel: ch });
   if (error) console.warn("Referral click log failed", error);
 }
 

@@ -261,16 +261,16 @@ function PartnerScreenInner() {
   async function sharePartnership(listingId: string, refCode: string) {
     const listing = listings.find((item) => item.id === listingId);
     if (!listing) return;
-    const url = shareUrl(listing, refCode);
-    const r = await shareOrCopy({ title: listing.title, message: `${listingShareTemplates(listing, url).whatsapp}\n${url}`, url });
+    const url = shareUrl(listing, refCode, "share");
+    const r = await shareOrCopy({ title: listing.title, message: `${listingShareTemplates(listing, url, refCode).whatsapp}\n${url}`, url });
     if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Paylaşmak için istediğin yere yapıştırabilirsin.", language));
   }
 
   async function openWhatsapp(listingId: string, refCode: string) {
     const listing = listings.find((item) => item.id === listingId);
     if (!listing) return;
-    const url = shareUrl(listing, refCode);
-    const text = encodeURIComponent(`${listingShareTemplates(listing, url).whatsapp}\n${url}`);
+    const url = shareUrl(listing, refCode, "whatsapp");
+    const text = encodeURIComponent(`${listingShareTemplates(listing, url, refCode).whatsapp}\n${url}`);
     await openUrlSafe(`https://wa.me/?text=${text}`);
   }
 
@@ -919,7 +919,7 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
 }) {
   const { language, t } = useLanguage();
   const url = shareUrl(listing, partnership.refCode);
-  const templates = listingShareTemplates(listing, url);
+  const templates = listingShareTemplates(listing, url, partnership.refCode);
   const earned = listingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const sellerPaidCount = listingSales.filter((sale) => sale.status === "seller_paid").length;
   // Bu ortağın KİŞİSEL efektif komisyonu (override / kademeli / varsayılan) — bir satış, liste fiyatı.

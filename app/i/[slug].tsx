@@ -15,8 +15,9 @@ import { saveRefAttribution } from "@/lib/referral";
 import { useStore } from "@/lib/use-store";
 
 export default function ReferralLeadScreen() {
-  const params = useLocalSearchParams<{ slug: string; ref?: string }>();
+  const params = useLocalSearchParams<{ slug: string; ref?: string; c?: string }>();
   const slug = Array.isArray(params.slug) ? params.slug[0] : params.slug;
+  const channel = Array.isArray(params.c) ? params.c[0] : params.c; // paylaşım kanalı (whatsapp/instagram/...)
   const ref = Array.isArray(params.ref) ? params.ref[0] : params.ref;
   const { createLead, findUser, listings, partnerships } = useStore();
   const router = useRouter();
@@ -70,7 +71,7 @@ export default function ReferralLeadScreen() {
         // Tıklamayı kaydet (ortağın dönüşüm ölçümü için) + atfı sakla ki alıcı buradan
         // normal ilan detayına geçse bile ortak bağlantısı kaybolmasın.
         if (result?.partnershipId) {
-          void logReferralClick(result.listingId, result.partnershipId, ref);
+          void logReferralClick(result.listingId, result.partnershipId, ref, channel);
           // ANLAŞILAN atıf penceresini onurlandır (ortaklığın join'de kilitlenen snapshot'ı);
           // yoksa canlı ilandan, o da yoksa 30 varsayılan. Satıcı pencereyi sonradan kısaltsa
           // bile ortak anlaştığı krediyi kaybetmez.
