@@ -132,19 +132,9 @@ function SellerScreenInner() {
   const myPartnershipIds = partnerships.filter((partnership) => myListingIds.has(partnership.listingId)).map((partnership) => partnership.id);
   const partnershipIdsKey = myPartnershipIds.join(",");
 
-  useEffect(() => {
-    if (!partnershipIdsKey) {
-      setClickCounts({});
-      return;
-    }
-    let mounted = true;
-    void loadClickCounts(partnershipIdsKey.split(",")).then((counts) => {
-      if (mounted) setClickCounts(counts);
-    });
-    return () => {
-      mounted = false;
-    };
-  }, [partnershipIdsKey]);
+  // clickCounts (referral tıklama) fetch'i KALDIRILDI: model'de link/tıklama takibi YOK; metrik
+  // gösterilmiyor → ölü ağ isteği gereksizdi. clickCounts boş kalır (setClickCounts referansı korunur).
+  void setClickCounts;
   const myLeads = leads.filter((lead) => myListingIds.has(lead.listingId));
   // Yanıt bekleyen teklifler (en yenisi üstte) — satıcının en aksiyon-gerektiren işi.
   const [counterFor, setCounterFor] = useState<string | null>(null);

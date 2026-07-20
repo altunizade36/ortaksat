@@ -94,16 +94,9 @@ function PartnerScreenInner() {
   }, [tabParam]);
   const focusFirst = (a: { listingId: string }, b: { listingId: string }) => (focusId ? (a.listingId === focusId ? -1 : b.listingId === focusId ? 1 : 0) : 0);
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
-  const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
-  const myPartnershipKey = myPartnerships.map((p) => p.id).join(",");
-  useEffect(() => {
-    const ids = myPartnershipKey ? myPartnershipKey.split(",") : [];
-    if (ids.length === 0) { setClickCounts({}); return; }
-    let alive = true;
-    void loadClickCounts(ids).then((c) => { if (alive) setClickCounts(c); });
-    return () => { alive = false; };
-  }, [myPartnershipKey]);
-  const totalClicks = Object.values(clickCounts).reduce((a, b) => a + b, 0);
+  // clickCounts (referral tıklama) fetch'i KALDIRILDI: model'de link/tıklama takibi YOK; metrikler
+  // panelden çıkarıldı → ölü ağ isteği gereksizdi. Boş sabit kalır (aşağıdaki prop'lar 0 alır).
+  const clickCounts: Record<string, number> = {};
   const activePartnerships = myPartnerships.filter((item) => item.status === "active").slice().sort(focusFirst);
   const pendingPartnerships = myPartnerships.filter((item) => item.status === "pending");
   const mySales = sales.filter((sale) => myPartnerships.some((partnership) => partnership.id === sale.partnershipId));
@@ -128,7 +121,7 @@ function PartnerScreenInner() {
   // İçgörü hunisi (Faz "c"): Tıklama → Talep → Satış → Kazanç + dönüşüm oranları.
   const funnelEarn = waiting + approved + paid;
   const buyerConfirmedCount = mySales.filter((s) => s.buyerConfirmedAt || s.buyerConfirmStatus === "confirmed").length;
-  const funnelCard = (mounted && (totalClicks > 0 || mySales.length > 0 || myBroughtLeads.length > 0)) ? (
+  const funnelCard = (mounted && (mySales.length > 0 || myBroughtLeads.length > 0)) ? (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <MaterialCommunityIcons name="chart-timeline-variant" size={18} color={colors.primaryDark} />
