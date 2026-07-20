@@ -234,11 +234,18 @@ function PartnerScreenInner() {
     const result = joinListing(listingId);
     const ok = Boolean(result);
     if (ok) haptic.success(); else haptic.warning();
+    // DEĞER ANI: ortaklık ANINDA aktifse pasif "bağlantın hazır" alert'i yerine linki DOĞRUDAN
+    // paylaşıma aç — ortağın tek işi paylaşmak; onu paylaşım anına bir dokunuşla getir.
+    // (Satıcının yayın-sonrası satır-içi paylaşımıyla parite; ortak huninin aktivasyon noktası.)
+    if (ok && result?.status === "active" && result.refCode) {
+      void sharePartnership(listingId, result.refCode);
+      return;
+    }
     Alert.alert(
-      translateCopy(ok ? (result?.status === "active" ? "Ortaklık aktif" : "Başvuru gönderildi") : "İşlem yapılamadı", language),
+      translateCopy(ok ? "Başvuru gönderildi" : "İşlem yapılamadı", language),
       // Hata mesajı SABİT idi → store'un gerçek sebebi (engellendin, puan yetersiz, ilan
       // pasif…) yutuluyor, kullanıcı yanlış açıklama görüyordu. Önce authError'ı göster.
-      translateCopy(ok ? (result?.status === "active" ? "Paylaşım bağlantın hazır." : "Satıcı onayından sonra bağlantın açılır.") : (authError ?? "Kendi ilanına ortak olamazsın, giriş yapman gerekir veya ilan aktif değil."), language)
+      translateCopy(ok ? "Satıcı onayından sonra bağlantın açılır." : (authError ?? "Kendi ilanına ortak olamazsın, giriş yapman gerekir veya ilan aktif değil."), language)
     );
   }
 
