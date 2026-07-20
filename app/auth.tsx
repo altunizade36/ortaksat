@@ -131,6 +131,14 @@ export default function AuthScreen() {
   useEffect(() => {
     if (!isAuthenticated) return;
     const uid = currentUser?.id;
+    // AÇIK NİYET ÖNCELİĞİ: redirect varsa (ör. anonim "İlan Ver" → kayıt), kullanıcıyı welcome
+    // detour'una sokma; hedefine gönder. /create'te taslağı "devam et?" ile bekliyor = en iyi
+    // onboarding (rol seçici zaten menüden erişilebilir). Redirect'siz yeni üye /hosgeldin görür.
+    if (safeRedirect) {
+      if (uid) { try { markWelcomeSeen(uid); } catch { /* yut */ } }
+      router.replace(safeRedirect as never);
+      return;
+    }
     try {
       if (uid && !hasSeenWelcome(uid)) {
         markWelcomeSeen(uid);

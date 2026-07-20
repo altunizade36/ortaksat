@@ -88,6 +88,10 @@ const DEFAULT_COMMISSION_RANGE: [number, number] = [8, 20];
 // cihazda B kullanıcısına "yarım kalan ilanın var" diye açılıyordu.
 const DRAFT_PREFIX = "ortaksat_listing_draft_v1";
 const draftKeyFor = (userId?: string) => `${DRAFT_PREFIX}:${userId || "anon"}`;
+// Anonim kullanıcı "Yayınla" deyip kayda yönlendirilince taslak BURAYA yazılır; kayıt/giriş
+// sonrası /create'e dönünce kullanıcının kendi anahtarına taşınır (anon→user migrasyonu).
+// ANON_USER.id'den bağımsız sabit anahtar → hangi guest kimliği olursa olsun kaybolmaz.
+const ANON_PENDING_KEY = `${DRAFT_PREFIX}:anon-pending`;
 const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 gün
 
 type Values = Record<string, string | boolean | string[]>;
@@ -117,7 +121,7 @@ export function DesktopCreateFlow() {
   const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const router = useRouter();
-  const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, listings } = useStore();
+  const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, isAuthenticated, listings } = useStore();
   const DRAFT_KEY = draftKeyFor(currentUser?.id);
   const [step, setStep] = useState(0);
   const [path, setPath] = useState<CategoryNode[]>([]);
@@ -287,7 +291,18 @@ export function DesktopCreateFlow() {
   // İlk açılışta cihazdaki taslağı oku; kategori seçilmişse "devam et?" banner'ı göster.
   useEffect(() => {
     let alive = true;
-    AsyncStorage.getItem(DRAFT_KEY).then((raw) => {
+    (async () => {
+      let raw = await AsyncStorage.getItem(DRAFT_KEY);
+      // ANON→USER MİGRASYONU: anonimken "Yayınla" deyip kayıt olan kullanıcı /create'e
+      // dönünce, kendi anahtarında taslak yoksa anon-pending'i devral (emeği kaybolmasın).
+      if (!raw && isAuthenticated) {
+        const anon = await AsyncStorage.getItem(ANON_PENDING_KEY);
+        if (anon) {
+          raw = anon;
+          void AsyncStorage.setItem(DRAFT_KEY, anon);
+          void AsyncStorage.removeItem(ANON_PENDING_KEY);
+        }
+      }
       if (!alive) return;
       setDraftReady(true);
       if (!raw) return;
@@ -296,23 +311,26 @@ export function DesktopCreateFlow() {
         if (!d?.savedAt || Date.now() - d.savedAt > DRAFT_TTL_MS) { void AsyncStorage.removeItem(DRAFT_KEY); return; }
         if (Array.isArray(d.path) && d.path.length) setPendingDraft(d);
       } catch { void AsyncStorage.removeItem(DRAFT_KEY); }
-    }).catch(() => setDraftReady(true));
+    })().catch(() => { if (alive) setDraftReady(true); });
     return () => { alive = false; };
   }, []);
 
   // Değişiklikleri cihaza yaz (debounce). Sadece kategori seçilip form başladıysa ve
   // ilk yükleme bittiyse — böylece boş/eski taslağın üzerine hemen yazılmaz.
+  // Taslak nesnesini kur (hem debounce kaydı hem anonim-yayın kaydı kullanır — tek kaynak).
+  const buildDraft = (): DraftShape => ({
+    savedAt: Date.now(), step,
+    path: path.map((p) => ({ key: p.key, label: p.label, slug: p.slug, formKey: p.formKey, image: p.image })),
+    values, images, loc, visibility, currency, commissionType, commissionValue,
+    bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow,
+    // Eskiden kaydedilmiyorlardı: kademeli komisyon kurup ya da eksik kategori adı yazıp
+    // sayfadan çıkan kullanıcı, taslağı geri yüklediğinde ikisini de sessizce kaybediyordu.
+    tiers, customCategory
+  });
+
   useEffect(() => {
     if (!draftReady || !path.length || publishing) return;
-    const draft: DraftShape = {
-      savedAt: Date.now(), step,
-      path: path.map((p) => ({ key: p.key, label: p.label, slug: p.slug, formKey: p.formKey, image: p.image })),
-      values, images, loc, visibility, currency, commissionType, commissionValue,
-      bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow,
-      // Eskiden kaydedilmiyorlardı: kademeli komisyon kurup ya da eksik kategori adı yazıp
-      // sayfadan çıkan kullanıcı, taslağı geri yüklediğinde ikisini de sessizce kaybediyordu.
-      tiers, customCategory
-    };
+    const draft = buildDraft();
     const h = setTimeout(() => { void AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); }, 700);
     return () => clearTimeout(h);
   }, [DRAFT_KEY, draftReady, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow, tiers, customCategory, step, publishing]);
@@ -545,6 +563,16 @@ export function DesktopCreateFlow() {
     if (!loc.provinceId) { setError("İl seçmelisin."); setStep(2); return; }
     if (!loc.districtId) { setError("İlçe seçmelisin."); setStep(2); return; }
     if (!(commissionNum > 0)) { setError("Komisyon değeri sıfırdan büyük olmalı."); setStep(4); return; }
+
+    // ANONİM YAYIN: form GEÇERLİ ama giriş yok → taslağı anon-pending'e kaydet + Kayıt'a
+    // yönlendir (dönüşte /create'e döner, taslak migrasyonla korunur). Emeğini harcamış
+    // kullanıcıyı EN YÜKSEK motivasyon anında kayda alırız — kayıt duvarını başa değil sona koy.
+    if (!isAuthenticated) {
+      try { await AsyncStorage.setItem(ANON_PENDING_KEY, JSON.stringify(buildDraft())); } catch { /* yoksay */ }
+      setNotice("İlanını yayınlamak için ücretsiz hesabını oluştur — bilgilerin korunuyor.");
+      router.push("/auth?redirect=/create&mode=register");
+      return;
+    }
 
     setPublishing(true);
     try {

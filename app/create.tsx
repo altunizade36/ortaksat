@@ -30,10 +30,12 @@ export default function CreateListingScreen() {
       </View>
     );
   }
-  if (!isAuthenticated) return <AuthRequired mode="register" title={translateCopy("İlan vermek için giriş yapın", language)} body={translateCopy("Ücretsiz hesap aç, ürününü ortaklara ulaştır. Gezmeye giriş gerekmez; ilan vermek için gerekir.", language)} icon="store-plus-outline" mascot="package" />;
-  if (isSuspended) return <AuthRequired title={translateCopy("Hesabın askıya alındı", language)} body={translateCopy("Hesabın askıda olduğu için ilan veremezsin. İşlem yapabilmek için Yasal & Destek üzerinden bizimle iletişime geçebilirsin.", language)} icon="account-cancel-outline" />;
+  // ANONİM FORM: kayıt duvarını BAŞA koymuyoruz — ziyaretçi formu doldurabilir, kapı yalnız
+  // "Yayınla" anında çıkar (taslak korunur, dönüşte devam). Arz tarafının #1 sürtünmesini kaldırır.
+  // Askı/e-posta kapıları yalnız GİRİŞLİ kullanıcıya uygulanır (anon için emeğini bloklamaz).
+  if (isAuthenticated && isSuspended) return <AuthRequired title={translateCopy("Hesabın askıya alındı", language)} body={translateCopy("Hesabın askıda olduğu için ilan veremezsin. İşlem yapabilmek için Yasal & Destek üzerinden bizimle iletişime geçebilirsin.", language)} icon="account-cancel-outline" />;
   // Admin "e-posta doğrulama zorunlu" açıksa, doğrulanmamış hesap ilan veremez.
-  if (platformSettings.requireEmailVerification && !emailVerified) {
+  if (isAuthenticated && platformSettings.requireEmailVerification && !emailVerified) {
     return <AuthRequired title={translateCopy("E-posta doğrulaması gerekli", language)} body={translateCopy("İlan verebilmek için e-posta adresini doğrulaman gerekiyor. Kayıt sırasında gönderilen doğrulama bağlantısına tıkla, ardından tekrar giriş yap.", language)} icon="email-alert-outline" />;
   }
   return (
