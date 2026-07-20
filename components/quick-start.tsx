@@ -53,7 +53,7 @@ export function QuickStart({ role }: { role: "seller" | "partner" }) {
             </View>
             <View style={{ flex: 1, gap: 2, minWidth: 0, paddingTop: 1 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", width: 18 }}>
+                <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 999, height: 18, justifyContent: "center", width: 18 }}>
                   <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{i + 1}</Text>
                 </View>
                 <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy(s.title, language)}</Text>
@@ -65,7 +65,7 @@ export function QuickStart({ role }: { role: "seller" | "partner" }) {
       </View>
 
       <Link href={cfg.ctaHref} asChild>
-        <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 }}>
+        <Pressable style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 11, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 }}>
           <MaterialCommunityIcons name={cfg.ctaIcon} size={18} color="#FFFFFF" />
           <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy(cfg.ctaLabel, language)}</Text>
         </Pressable>

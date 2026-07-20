@@ -412,6 +412,7 @@ function ChatScreenInner() {
           <MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} />
         </Pressable>
         <TextInput
+          accessibilityLabel={translateCopy("Mesaj yaz", language)}
           value={body}
           onChangeText={(t) => { setBody(t); notifyTyping(); }}
           multiline

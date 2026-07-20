@@ -58,6 +58,8 @@ export function ErrorToast() {
   return (
     <Animated.View
       pointerEvents="box-none"
+      accessibilityLiveRegion="assertive"
+      role={"alert" as never}
       style={{
         bottom: 0,
         left: 0,
@@ -72,7 +74,9 @@ export function ErrorToast() {
     >
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel="Hatayı kapat"
+        // Erişilebilir ad = hata mesajının KENDİSİ (+ kapatma ipucu) — eskiden "Hatayı kapat"
+        // ad'ı mesajı ele geçirip ekran okuyucudan gizliyordu; liveRegion ile de duyurulur.
+        accessibilityLabel={`${msg}. Kapatmak için dokun.`}
         onPress={dismiss}
         style={{
           alignItems: "center",

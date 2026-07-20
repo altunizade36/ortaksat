@@ -231,7 +231,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
                 ) : null}
               </View>
 
-              <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 2, minHeight: 38, paddingHorizontal: 8 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 10, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 2, minHeight: 38, paddingHorizontal: 8 }}>
                 <MaterialCommunityIcons name="handshake-outline" size={16} color="#FFFFFF" />
                 <Text adjustsFontSizeToFit minimumFontScale={0.8} numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: 13, fontWeight: "900" }}>
                   {translateCopy(listing.partnershipMode === "open" ? "Hemen ortak ol" : "Ortaklık iste", language)}

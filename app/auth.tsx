@@ -514,8 +514,8 @@ export default function AuthScreen() {
                   </View>
                 )}
 
-                {formError ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>{formError}</Text> : null}
-                {authError ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "600" }}>{authError}</Text> : null}
+                {formError ? <Text accessibilityLiveRegion="polite" role={"alert" as never} style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>{formError}</Text> : null}
+                {authError ? <Text accessibilityLiveRegion="polite" role={"alert" as never} style={{ color: colors.accent, fontSize: 12.5, fontWeight: "600" }}>{authError}</Text> : null}
 
                 {mode !== "reset" ? (
                   <>

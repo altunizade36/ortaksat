@@ -78,7 +78,7 @@ export function GlobalSearchBar() {
           accessibilityLabel={translateCopy("Ara", language)}
           accessibilityRole="button"
           onPress={() => submitSearch()}
-          style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 5, height: 36, paddingHorizontal: 16 }}
+          style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 999, flexDirection: "row", gap: 5, height: 36, paddingHorizontal: 16 }}
         >
           <MaterialCommunityIcons name="magnify" size={17} color="#FFFFFF" />
           <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ara", language)}</Text>

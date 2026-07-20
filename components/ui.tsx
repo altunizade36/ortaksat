@@ -39,8 +39,10 @@ export function Card({ children }: PropsWithChildren) {
 
 export function PrimaryButton({ children, onPress, href, tone = "primary", icon }: ButtonProps) {
   const { language } = useLanguage();
+  // WCAG AA: beyaz metin colors.primary (#0EA5B7) üstünde ~2.9:1 (AA'yı geçmez). primaryDark
+  // (#0B7285 ~5:1) marka turkuazının koyu tonu → hue korunur, kontrast geçer. En sık buton.
   const backgroundColor =
-    tone === "primary" ? colors.primary : tone === "danger" ? colors.accent : tone === "soft" ? colors.primarySoft : colors.surface;
+    tone === "primary" ? colors.primaryDark : tone === "danger" ? colors.accent : tone === "soft" ? colors.primarySoft : colors.surface;
   const color = tone === "secondary" ? colors.ink : tone === "soft" ? colors.primaryDark : "#FFFFFF";
   const borderColor = tone === "secondary" ? colors.line : backgroundColor;
 
@@ -130,7 +132,7 @@ export function EmptyState({ title, body, action, mascot }: { title: string; bod
     <Pressable
       accessibilityRole={action.href ? "link" : "button"}
       onPress={action.onPress}
-      style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 10 })}
+      style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primaryDark, borderRadius: 10, flexDirection: "row", gap: 6, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 10 })}
     >
       {action.icon ? <MaterialCommunityIcons name={action.icon} size={16} color="#FFFFFF" /> : null}
       <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy(action.label, language)}</Text>

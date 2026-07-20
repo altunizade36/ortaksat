@@ -297,11 +297,15 @@ export function DesktopCreateFlow() {
       // dönünce, kendi anahtarında taslak yoksa anon-pending'i devral (emeği kaybolmasın).
       if (!raw && isAuthenticated) {
         const anon = await AsyncStorage.getItem(ANON_PENDING_KEY);
-        if (anon) {
+        // GÜVENLİK: anon-pending yalnız TAZE ise devral (kayıt akışı dakikalar sürer). Paylaşılan
+        // cihazda saatler sonra giren BAŞKA kullanıcı, önceki anonun taslağını DEVRALMASIN.
+        let fresh = false;
+        if (anon) { try { const d = JSON.parse(anon) as DraftShape; fresh = !!d?.savedAt && Date.now() - d.savedAt < 30 * 60 * 1000; } catch { fresh = false; } }
+        if (anon && fresh) {
           raw = anon;
           void AsyncStorage.setItem(DRAFT_KEY, anon);
-          void AsyncStorage.removeItem(ANON_PENDING_KEY);
         }
+        if (anon) void AsyncStorage.removeItem(ANON_PENDING_KEY); // tek kullanımlık: her hâlükârda temizle
       }
       if (!alive) return;
       setDraftReady(true);
@@ -1192,7 +1196,7 @@ export function DesktopCreateFlow() {
               </View>
               <View style={{ flex: 1, minWidth: 200 }}>
                 <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>{translateCopy("Komisyon", language)} {commissionType === "rate" ? translateCopy("oranı (%)", language) : translateCopy("tutarı (₺)", language)}</Text>
-                <TextInput value={commissionValue} onChangeText={setCommissionValue} keyboardType="numeric" style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                <TextInput accessibilityLabel={translateCopy("Komisyon değeri", language)} value={commissionValue} onChangeText={setCommissionValue} keyboardType="numeric" style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
               </View>
             </View>
 
@@ -1287,11 +1291,11 @@ export function DesktopCreateFlow() {
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                 <View style={{ flex: 1, minWidth: 150 }}>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>{translateCopy("Bonus tutarı", language)} ({CURRENCIES.find((c) => c.code === currency)?.symbol ?? "₺"})</Text>
-                  <TextInput value={bonusAmount} onChangeText={setBonusAmount} keyboardType="numeric" placeholder={translateCopy("Örn. 500", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                  <TextInput accessibilityLabel={translateCopy("Bonus tutarı", language)} value={bonusAmount} onChangeText={setBonusAmount} keyboardType="numeric" placeholder={translateCopy("Örn. 500", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
                 </View>
                 <View style={{ flex: 1, minWidth: 150 }}>
                   <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>{translateCopy("İlk kaç satış için?", language)}</Text>
-                  <TextInput value={bonusQuota} onChangeText={setBonusQuota} keyboardType="numeric" placeholder={translateCopy("Örn. 5", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                  <TextInput accessibilityLabel={translateCopy("Bonus kotası", language)} value={bonusQuota} onChangeText={setBonusQuota} keyboardType="numeric" placeholder={translateCopy("Örn. 5", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
                 </View>
               </View>
             </View>
@@ -1561,6 +1565,7 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
       ) : (
         <TextInput
           testID={`field-${field.key}`}
+          accessibilityLabel={field.label}
           value={String(value ?? "")}
           onChangeText={onChange}
           keyboardType={field.type === "number" ? "numeric" : "default"}
