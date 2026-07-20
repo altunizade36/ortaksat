@@ -27,6 +27,7 @@ import { tokenize } from "@/lib/search";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { SafetyNote } from "@/components/safety-note";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
+import { ErrorScreen } from "@/components/error-boundary";
 import { commissionAmount, commissionText, listingInviteCode, moneyIn, partnerInviteUrl, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
 import { categoryConversion } from "@/lib/conversion";
 import { VerificationBadges } from "@/components/verification-badges";
@@ -100,6 +101,8 @@ export default function ListingDetailScreen() {
   const storeListing = findListing(id);
   const [remote, setRemote] = useState<{ listing: Listing; owner?: User } | null>(null);
   const [fetching, setFetching] = useState(false);
+  const [fetchError, setFetchError] = useState(false); // ağ hatası (bulunamadı DEĞİL) → retry
+  const [retryTick, setRetryTick] = useState(0);
   // Başvuru formu — gerçek kullanıcı girdisi (eski sabit/tohum metinler kaldırıldı).
   const [applicationNote, setApplicationNote] = useState("");
   const [applicationChannel, setApplicationChannel] = useState("WhatsApp");
@@ -170,9 +173,13 @@ export default function ListingDetailScreen() {
     let active = true;
     if (storeListing || !id || !isSupabaseConfigured) return;
     setFetching(true);
+    setFetchError(false);
     fetchListingById(id)
       .then((res) => {
-        if (active) setRemote(res);
+        if (!active) return;
+        // Ağ hatası → "bulunamadı" gösterme, retry sun. Gerçekten yoksa (null) remote=null.
+        if (res && "error" in res) { setFetchError(true); setRemote(null); }
+        else setRemote(res);
       })
       .finally(() => {
         if (active) setFetching(false);
@@ -180,7 +187,7 @@ export default function ListingDetailScreen() {
     return () => {
       active = false;
     };
-  }, [id, storeListing]);
+  }, [id, storeListing, retryTick]);
 
   const listing = storeListing ?? remote?.listing;
 
@@ -243,6 +250,17 @@ export default function ListingDetailScreen() {
             <Skeleton style={{ height: 14, width: "75%" }} />
           </View>
         </ScrollView>
+      );
+    }
+    // AĞ HATASI: "bulunamadı" (silinmiş gibi) DEĞİL → retry sun. Paylaşılan linkte geçici
+    // ağ kesintisi ürünü "kaldırılmış" gösterip alıcıyı kaçırıyordu.
+    if (fetchError) {
+      return (
+        <ErrorScreen
+          title="İlan yüklenemedi"
+          body="Bağlantın kesilmiş olabilir; ilan kaldırılmış değil. Yeniden dene."
+          onRetry={() => setRetryTick((t) => t + 1)}
+        />
       );
     }
     return (

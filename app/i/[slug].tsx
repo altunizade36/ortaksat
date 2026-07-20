@@ -72,7 +72,7 @@ export default function ReferralLeadScreen() {
     }
     if (!viewListingId) return;
     void fetchListingById(viewListingId).then((r) => {
-      if (!alive || !r) return;
+      if (!alive || !r || "error" in r) return; // ağ hatası → snapshot görseline düş (graceful)
       setGallery([r.listing.image, ...(r.listing.adAssets ?? [])].filter(Boolean));
       setDescription(r.listing.description ?? "");
     });
