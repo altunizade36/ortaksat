@@ -984,7 +984,7 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
           </View>
           <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
           <PrimaryButton tone="soft" icon="cash-check" onPress={() => actions.claimSale(listing.id, listing.ownerId, listing.title)}>Sattım — satıcıya bildir</PrimaryButton>
-          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Satışını satıcı sisteme ekleyince komisyonun başlar. Referans linkinle satış yaptıysan buradan satıcıya bildir.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Satışını satıcı sisteme ekleyince komisyonun başlar. Kendi yönteminle bir satış yaptıysan buradan satıcıya bildir.", language)}</Text>
           <Pressable accessibilityRole="button" onPress={() => actions.leave(partnership.id, listing.title)} style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center", opacity: pressed ? 0.6 : 1, paddingVertical: 6 })}>
             <MaterialCommunityIcons name="exit-to-app" size={15} color={colors.muted} />
             <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortaklıktan ayrıl", language)}</Text>

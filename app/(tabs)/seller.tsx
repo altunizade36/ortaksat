@@ -767,9 +767,15 @@ function SellerScreenInner() {
                 </Text>
                 <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(listing.price, listing.currency)}</Text>
-                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
-                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("ortak kazancı", language)} {moneyIn(commissionAmount(listing), listing.currency)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}</Text>
-                  </View>
+                  {listing.partnershipMode !== "none" ? (
+                    <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+                      <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("ortak kazancı", language)} {moneyIn(commissionAmount(listing), listing.currency)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}</Text>
+                    </View>
+                  ) : (
+                    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 2 }}>
+                      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Normal ilan", language)}</Text>
+                    </View>
+                  )}
                 </View>
               </View>
             </View>
@@ -850,7 +856,7 @@ function SellerScreenInner() {
                 <MaterialCommunityIcons name={isExpanded ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
               </Pressable>
             ) : (
-              <Text selectable style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Bu ilana henüz talep gelmedi. Ortak satışa açıkça paylaşarak ilk talebi al.", language)}</Text>
+              <Text selectable style={{ color: colors.subtle, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Bu ilana henüz talep gelmedi. Ortakların ürününü tanıtması veya alıcının iletişime geçmesiyle talepler burada görünür.", language)}</Text>
             )}
 
             {isExpanded ? (
@@ -923,7 +929,7 @@ function SellerScreenInner() {
               return (
                 <>
                   <SectionTitle title="Ortaklar" action={`${activeList.length}`} />
-                  <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Referans linkiyle gelen alıcı site dışında (WhatsApp/elden) satın aldıysa, satışı ilgili ortağa ekle; komisyonu başlasın.", language)}</Text>
+                  <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Ortağın kendi yöntemiyle getirdiği alıcı site dışında (WhatsApp/elden) satın aldıysa, satışı ilgili ortağa ekle; komisyonu başlasın.", language)}</Text>
                   {activeList.map((p) => {
                     const partner = findUser(p.partnerId);
                     // Bu ortağın bu ilandaki performansı + satıcının ona borcu.

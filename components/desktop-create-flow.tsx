@@ -681,12 +681,14 @@ export function DesktopCreateFlow() {
         price,
         currency,
         commissionType,
-        commissionValue: commissionNum || 0,
-        commissionTiers: commissionType === "rate"
+        // NORMAL İLAN (partnershipMode="none"): komisyon/tier/bonus SIFIRLANIR — aksi halde
+        // toggle "15"i sıfırlamadığından kart/panel/önizlemede hayalet "%15 komisyon" görünüyordu.
+        commissionValue: partnershipMode === "none" ? 0 : commissionNum || 0,
+        commissionTiers: partnershipMode !== "none" && commissionType === "rate"
           ? tiers.map((tr) => ({ minSales: Math.max(0, Math.floor(Number(tr.minSales) || 0)), rate: Math.max(0, Math.min(90, Number(tr.rate) || 0)) })).filter((tr) => tr.rate > 0).sort((a, b) => a.minSales - b.minSales)
           : undefined,
-        bonusAmount: bonusNum > 0 && Number(bonusQuota) > 0 ? bonusNum : undefined,
-        bonusQuota: bonusNum > 0 && Number(bonusQuota) > 0 ? Number(bonusQuota) : undefined,
+        bonusAmount: partnershipMode !== "none" && bonusNum > 0 && Number(bonusQuota) > 0 ? bonusNum : undefined,
+        bonusQuota: partnershipMode !== "none" && bonusNum > 0 && Number(bonusQuota) > 0 ? Number(bonusQuota) : undefined,
         partnershipMode,
         attributes,
         category: leafLabel || path[0]?.label || "Genel",
@@ -745,6 +747,7 @@ export function DesktopCreateFlow() {
     const link = productUrl(l);
     const invite = partnerInviteUrl(l);
     const wa = listingShareTemplates(l, link).whatsapp;
+    const partnerable = l.partnershipMode !== "none"; // normal ilanda ortak-odaklı UI gösterme
     const copy = async (text: string) => {
       try { await Clipboard.setStringAsync(text); setShareCopied(true); setTimeout(() => setShareCopied(false), 1800); } catch { /* pano yok */ }
     };
@@ -758,7 +761,9 @@ export function DesktopCreateFlow() {
           <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 520, textAlign: "center" }}>
             {published.review
               ? translateCopy("Kısa bir kontrolden sonra yayına alınacak. Onaylanınca haber vereceğiz.", language)
-              : translateCopy("Şimdi en önemli adım: linki paylaş. İlanı gören ortaklar senin için satabilir; satışta komisyonu sen belirlersin.", language)}
+              : partnerable
+                ? translateCopy("İlanı gören ortaklar senin için satabilir; ürünü kendi yöntemleriyle tanıtır, satışta komisyonu sen belirlersin. Ürünü sen de paylaşabilirsin.", language)
+                : translateCopy("İlanın yayında. Alıcılar ürününü görüp seninle iletişime geçebilir; ürünü istediğin yerde paylaşabilirsin.", language)}
           </Text>
         </View>
 
@@ -779,16 +784,20 @@ export function DesktopCreateFlow() {
               <MaterialCommunityIcons name="content-copy" size={16} color={colors.muted} />
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Linki kopyala", language)}</Text>
             </Pressable>
+            {partnerable && l.partnershipMode === "invite" ? (
             <Pressable accessibilityRole="button" testID="publish-invite" onPress={() => void copy(invite)}
               style={({ pressed }) => ({ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 11 })}>
               <MaterialCommunityIcons name="account-plus-outline" size={16} color={colors.primaryDark} />
               <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Ortak davet linki", language)}</Text>
             </Pressable>
+            ) : null}
           </View>
           {shareCopied ? <Text style={{ color: colors.success, fontSize: 12, fontWeight: "800" }}>{translateCopy("Kopyalandı", language)}</Text> : null}
+          {partnerable && l.partnershipMode === "invite" ? (
           <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
-            {translateCopy("Ortak davet linkiyle gelen kişi doğrudan ortağın olur; yaptığı satışta komisyonu o kazanır.", language)}
+            {translateCopy("Sadece davetle: bu davet linkiyle gelen kişi ön-onaylı ortağın olur.", language)}
           </Text>
+          ) : null}
         </View>
 
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -1270,17 +1279,8 @@ export function DesktopCreateFlow() {
               </View>
             </View>
 
-            {/* Atıf (referans) penceresi — ortak linkinin kaç gün geçerli olacağı. */}
-            <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Atıf (referans) süresi", language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {["7", "15", "30", "60"].map((d) => {
-                  const on = attributionWindow === d;
-                  return <Pressable key={d} onPress={() => setAttributionWindow(d)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 15, paddingVertical: 8 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{d} {translateCopy("gün", language)}</Text></Pressable>;
-                })}
-              </View>
-              <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("Ortak linkine tıklayan alıcı bu süre içinde iletişime geçerse satış ortağa atfedilir.", language)}</Text>
-            </View>
+            {/* Atıf/referans-süresi kontrolü KALDIRILDI: model'de zorunlu referans linki/tıklama takibi
+                YOK. Satış, satıcının manuel kaydıyla ortağa bağlanır (attributionWindow içeride varsayılan). */}
 
             <View style={{ gap: 6 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("İletişim tercihi", language)}</Text>

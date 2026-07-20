@@ -15,7 +15,7 @@ type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 const trMoney = (n: number) => `${new Intl.NumberFormat("tr-TR").format(Math.max(0, Math.round(n)))} ₺`;
 const trNum = (n: number) => new Intl.NumberFormat("tr-TR", { maximumFractionDigits: n < 10 ? 1 : 0 }).format(Math.max(0, n));
 
-// Şeffaf huni senaryoları — erişim / tıklama / satış oranları.
+// Şeffaf huni senaryoları — erişim / görüntüleme / satış oranları.
 const SCENARIOS = {
   temkinli: { label: "Temkinli", reach: 0.2, ctr: 0.02, conv: 0.03 },
   dengeli: { label: "Dengeli", reach: 0.3, ctr: 0.03, conv: 0.04 },
@@ -130,7 +130,7 @@ export default function EarningsCalculatorPage() {
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "800", textTransform: "uppercase" }}>{translateCopy("Aylık huni", language)}</Text>
               <FunnelRow icon="eye-outline" label={translateCopy("Toplam erişim", language)} value={trNum(calc.reach)} />
-              <FunnelRow icon="cursor-default-click-outline" label={translateCopy("Ürüne tıklama", language)} value={trNum(calc.clicks)} />
+              <FunnelRow icon="cursor-default-click-outline" label={translateCopy("Ürünü görüntüleyen", language)} value={trNum(calc.clicks)} />
               <FunnelRow icon="cart-check" label={translateCopy("Satış", language)} value={trNum(calc.sales)} />
               <View style={{ backgroundColor: colors.line, height: 1 }} />
               <FunnelRow icon="cash" label={translateCopy("Kazanç", language)} value={trMoney(calc.monthly)} />

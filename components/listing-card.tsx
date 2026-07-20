@@ -20,6 +20,9 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
   // Ortak vitrininden gelen kartlar ref TAŞIR → ilan detay URL'den atfı yakalar (URL-garantili
   // first-touch; localStorage silinse/engellense bile ortak kredisi kaybolmaz). c=shop kanal ölçümü.
   const cardHref = refCode ? `/listing/${listing.id}?ref=${encodeURIComponent(refCode)}&c=shop` : `/listing/${listing.id}`;
+  // NORMAL İLAN (ortak satışa kapalı): komisyon rozeti + ortaklık pill + "Ortak ol" CTA GÖSTERİLMEZ;
+  // alıcı normal ilan sitesi gibi görür (İncele). Detay sayfasıyla tutarlı.
+  const partnerable = listing.partnershipMode !== "none";
   const { language, t } = useLanguage();
   const commission = commissionAmount(listing);
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
@@ -163,6 +166,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
                     </View>
                   ) : null}
                 </View>
+                {partnerable ? (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
                   <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
                     <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
@@ -183,6 +187,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
                     </View>
                   ) : null}
                 </View>
+                ) : null}
               </View>
 
               {/* Satıcı sinyali + konum: eskiden HEPSİ tek satırdaydı; 177px'lik kartta konum
@@ -232,9 +237,9 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
               </View>
 
               <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 10, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 2, minHeight: 38, paddingHorizontal: 8 }}>
-                <MaterialCommunityIcons name="handshake-outline" size={16} color="#FFFFFF" />
+                <MaterialCommunityIcons name={partnerable ? "handshake-outline" : "eye-outline"} size={16} color="#FFFFFF" />
                 <Text adjustsFontSizeToFit minimumFontScale={0.8} numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: 13, fontWeight: "900" }}>
-                  {translateCopy(listing.partnershipMode === "open" ? "Hemen ortak ol" : "Ortaklık iste", language)}
+                  {translateCopy(!partnerable ? "Ürünü İncele" : listing.partnershipMode === "open" ? "Hemen ortak ol" : "Ortaklık iste", language)}
                 </Text>
               </View>
             </View>
