@@ -36,13 +36,17 @@ test("SQL ile oluşturulan hesapla UI'dan giriş yapılabiliyor", async ({ page 
   expect(loggedIn, `giriş sonrası oturum açılmalı (url=${url})`).toBeTruthy();
 });
 
-test("giriş yapan kullanıcı /create sihirbazını görüyor (girişsizken kapı)", async ({ page }) => {
-  // Önce girişsiz: /create kapısı "giriş yapın" göstermeli.
+test("anonim /create FORMU görür (kapı Yayınla'da), giriş sonrası da form", async ({ page }) => {
+  // YENİ DAVRANIŞ: anonim kullanıcı ilan formunu doldurabilir; kayıt duvarı BAŞTA değil
+  // yalnız "Yayınla" anında çıkar. Yani /create'e girişsiz gelince FORM görünmeli, birincil
+  // kapı metni ("İlan vermek için giriş yapın") görünmemeli.
   await page.goto("/create", { waitUntil: "domcontentloaded" });
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(2500);
   const guestBody = (await page.locator("body").innerText()).toLowerCase();
   await page.screenshot({ path: "e2e-artifacts/create-guest.png", fullPage: true });
-  expect(guestBody.includes("giriş"), "girişsiz /create giriş kapısı göstermeli").toBeTruthy();
+  expect(guestBody.includes("i̇lan vermek için giriş yapın") || guestBody.includes("ilan vermek için giriş yapın"), "anonim /create BAŞTA kayıt duvarı GÖSTERMEMELİ (form görünmeli)").toBeFalsy();
+  const guestHasForm = ["başlık", "kategori", "fiyat", "ürün", "ileri", "adım", "ilan"].filter((w) => guestBody.includes(w)).length >= 2;
+  expect(guestHasForm, "anonim /create ilan formunu göstermeli").toBeTruthy();
 
   // Şimdi giriş yap, /create'e dön: sihirbaz/form görünmeli (kapı değil).
   const email = uniqueEmail("create");
