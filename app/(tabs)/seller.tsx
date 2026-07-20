@@ -1126,13 +1126,28 @@ function SellerScreenInner() {
         }}
         onClose={() => setSaleTarget(null)}
         onSubmit={(amount, quantity) => {
-          if (saleTarget) {
-            // Lead'den satış → miktar/tutar girilebilir (eskiden daima price×1 idi, yanlıştı).
-            haptic.success();
-            if (saleTarget.leadId) createSaleFromLead(saleTarget.leadId, { amount, quantity });
-            else recordSaleForPartner(saleTarget.partnershipId, { amount, quantity });
-          }
+          if (!saleTarget) return;
+          // Lead'den satış → miktar/tutar girilebilir (eskiden daima price×1 idi, yanlıştı).
+          haptic.success();
+          const sale = saleTarget.leadId
+            ? createSaleFromLead(saleTarget.leadId, { amount, quantity })
+            : recordSaleForPartner(saleTarget.partnershipId, { amount, quantity });
+          const productTitle = listings.find((x) => x.id === saleTarget.listingId)?.title ?? "";
           setSaleTarget(null);
+          // KRİTİK HANDOFF: satış kaydedildi → alıcı ONAY LİNKİNİ hemen gönder. Komisyon
+          // doğrulaması alıcı onayına bağlı; link gönderilmezse akış "onay bekleniyor"da takılır
+          // ("1. ödenen komisyon" = sistem çalışıyor kanıtı hiç gerçekleşmez). Kayıt anında yönlendir.
+          if (sale?.buyerConfirmToken) {
+            const token = sale.buyerConfirmToken;
+            Alert.alert(
+              translateCopy("Satış kaydedildi ✓", language),
+              translateCopy("Şimdi alıcıya onay linkini gönder — aldığını onayladığında komisyon doğrulanır.", language),
+              [
+                { text: translateCopy("Sonra", language), style: "cancel" },
+                { text: translateCopy("Onay linkini gönder", language), onPress: () => void shareOrCopy({ title: translateCopy("OrtakSat satış onayı", language), message: productTitle ? `"${productTitle}" siparişini onayla:` : translateCopy("Aldığın ürünü/hizmeti onayla:", language), url: `https://www.ortaksat.com/onay/${token}` }) }
+              ]
+            );
+          }
         }}
       />
     </ScrollView>
