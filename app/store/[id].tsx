@@ -12,6 +12,7 @@ import { JsonLd } from "@/components/json-ld";
 import { ListingCard } from "@/components/listing-card";
 import { ReviewCard } from "@/components/review-card";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
+import { ErrorScreen } from "@/components/error-boundary";
 import { WebFooter } from "@/components/web-landing";
 import { money, moneyCompact, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -74,20 +75,23 @@ export default function StoreScreen() {
   const [fetchedSellerListings, setFetchedSellerListings] = useState<Listing[]>([]);
   // Sunucudan çekim sürüyor mu — yükleme bitmeden "Mağaza bulunamadı" YALANINI flaşlamamak için.
   const [fetchingSeller, setFetchingSeller] = useState(false);
+  const [sellerFetchError, setSellerFetchError] = useState(false); // ağ hatası (bulunamadı DEĞİL)
+  const [sellerRetryTick, setSellerRetryTick] = useState(0);
   useEffect(() => {
     let alive = true;
     if (!id || backendMode !== "supabase") return;
     if (findUser(id) && listings.some((l) => l.ownerId === id)) return; // zaten bellekte
     setFetchingSeller(true);
+    setSellerFetchError(false);
     void fetchListingsBySellers([id]).then((res) => {
       if (!alive) return;
-      if (res) {
-        setFetchedSellerListings(res.listings);
-        setFetchedSeller(res.users.find((u) => u.id === id));
-      }
+      // null = AĞ HATASI (bulunamadı değil) → retry. {listings,users} = başarı (boş=gerçekten yok).
+      if (res === null) { setSellerFetchError(true); return; }
+      setFetchedSellerListings(res.listings);
+      setFetchedSeller(res.users.find((u) => u.id === id));
     }).finally(() => { if (alive) setFetchingSeller(false); });
     return () => { alive = false; };
-  }, [id, backendMode]);
+  }, [id, backendMode, sellerRetryTick]);
   const seller = (id ? findUser(id) : undefined) ?? fetchedSeller;
   // Satıcının ilanları: bellek + sunucudan çekilen (tekilleştir).
   const scopedListings = useMemo(() => {
@@ -225,6 +229,16 @@ export default function StoreScreen() {
           <ActivityIndicator size="large" color={colors.primary} />
           <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginTop: 12 }}>{translateCopy("Mağaza yükleniyor…", language)}</Text>
         </View>
+      );
+    }
+    // AĞ HATASI: "bulunamadı" (silinmiş gibi) DEĞİL → retry (ilan detayla tutarlı).
+    if (sellerFetchError) {
+      return (
+        <ErrorScreen
+          title="Mağaza yüklenemedi"
+          body="Bağlantın kesilmiş olabilir; mağaza kaldırılmış değil. Yeniden dene."
+          onRetry={() => setSellerRetryTick((t) => t + 1)}
+        />
       );
     }
     return (
