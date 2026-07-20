@@ -50,9 +50,9 @@ export const BLOG_POSTS: BlogPost[] = [
     featured: true,
     body: [
       "Ticaret Bakanlığı'nın 12 Mayıs 2026'da yayımladığı Türkiye'de E-Ticaretin Görünümü 2025 raporuna göre Türkiye'de e-ticaret hacmi 2025'te %52,2 artarak 4,57 trilyon TL'ye, işlem sayısı ise 5,94 milyar adede ulaştı. Bu tablo küçük satıcılar için tek bir anlama geliyor: talep dijitalde büyüyor ama rekabet de aynı hızda sertleşiyor.",
-      "Ortak satış, bu rekabette ürünün yalnızca satıcının hesabından değil, ürünü doğru anlatabilecek ortakların çevresinden de görünür olmasını sağlar. Burada başarı, 'herkese link dağıtmak' değil; ölçülebilir, dürüst ve kayıtlı bir süreç kurmaktır.",
+      "Ortak satış, bu rekabette ürünün yalnızca satıcının hesabından değil, ürünü doğru anlatabilecek ortakların çevresinden de görünür olmasını sağlar. Burada başarı, 'herkese rastgele ürün göndermek' değil; ölçülebilir, dürüst ve kayıtlı bir süreç kurmaktır.",
       "1. Ürünü ortak satışa gerçekten uygun seç. Her ürün ortak satış için doğru aday değildir. Kolay anlatılan, fotoğrafla anlaşılabilen, fiyatı net, teslimat koşulu açık ve stok durumu güvenilir ürünler daha iyi çalışır. Karmaşık hizmetlerde veya kişiye özel üretimlerde beklentiyi ayrıca yazmak gerekir.",
-      "2. Komisyonu satıcının marjına göre değil, ortağın emeğine göre de düşün. Ortak yalnızca link paylaşmaz; ürünü anlatır, soru yanıtlar, bazen alıcıyı ikna eder. Komisyon oranı bu emeği karşılamazsa ürün görünürlük kazanmaz. Yine de oran, satıcının maliyetini ve iade riskini sıfırlayacak kadar yüksek belirlenmemelidir.",
+      "2. Komisyonu satıcının marjına göre değil, ortağın emeğine göre de düşün. Ortak yalnızca ürünü paylaşmaz; ürünü anlatır, soru yanıtlar, bazen alıcıyı ikna eder. Komisyon oranı bu emeği karşılamazsa ürün görünürlük kazanmaz. Yine de oran, satıcının maliyetini ve iade riskini sıfırlayacak kadar yüksek belirlenmemelidir.",
       "3. İlan başlığını arama niyetine göre yaz. 'Çok temiz ürün' yerine marka, model, kapasite, durum ve şehir gibi bilgileri başlığa taşı. Örneğin 'iPhone 14 128 GB kutulu, pil sağlığı %91' gibi başlık hem alıcıya hem ortağa net konuşma zemini verir.",
       "4. Görselleri ortağın anlatabileceği kadar açık hazırla. Tek bir karanlık fotoğraf yerine ürünün ön, arka, detay, kusur ve kullanım halini göster. İkinci el üründe çizik, deformasyon veya eksik aksesuar saklanmamalı; saklanan kusur satış sonrası güveni bozar.",
       "5. Ortaklara hazır ama dürüst paylaşım metni ver. Instagram hikayesi, WhatsApp durumu ve kısa mesaj için farklı uzunlukta metin hazırlamak paylaşımı kolaylaştırır. Metinlerde stok, fiyat, teslimat ve komisyon bilgisi abartısız olmalı; reklam niteliği taşıyan paylaşımlarda iş birliği ilişkisi gizlenmemelidir.",
@@ -296,11 +296,11 @@ export const BLOG_POSTS: BlogPost[] = [
     featured: true,
     body: [
       "Instagram'da takipçisi olan çoğu kişi aynı soruyu sorar: 'Bu hesabı nasıl gelire çeviririm?' En düşük riskli yol, ürün satın alıp stok tutmadan, yalnızca doğru ürünü tanıtıp satışta komisyon kazanmaktır. Ortak satış tam olarak budur: ürünü sen üretmezsin, kargolamazsın; sadece güvendiğin ürünü kitlene doğru anlatırsın.",
-      "1. Kitleni tanı, ürünü ona göre seç. Takipçilerin ne tür içerikle etkileşiyor? Moda, teknoloji, ev-yaşam, bebek, spor... Kitlenin ilgisiyle uyumlu ürün seçmek, binlerce takipçiye rastgele ürün göstermekten çok daha fazla satış getirir. OrtakSat'ta ürünü seçip sana özel referans linkini alırsın.",
+      "1. Kitleni tanı, ürünü ona göre seç. Takipçilerin ne tür içerikle etkileşiyor? Moda, teknoloji, ev-yaşam, bebek, spor... Kitlenin ilgisiyle uyumlu ürün seçmek, binlerce takipçiye rastgele ürün göstermekten çok daha fazla satış getirir. OrtakSat'ta beğendiğin ürünü seçip ona ortak olursun (satıcı onaylayınca).",
       "2. Ürünü kendin gibi anlat. Hazır reklam metni kopyalamak yerine, ürünü neden beğendiğini kendi cümlelerinle söyle. 'Şu özelliği hoşuma gitti', 'şu fiyata bu iş görür' gibi samimi ve dürüst anlatım, cilalı reklamdan daha çok dönüşür.",
-      "3. Hikâye + sabit gönderi + DM üçlüsünü kullan. Hikâyede link etiketiyle hızlı ilgi topla, sabit gönderide detay ver, gelen sorulara DM'den net cevap yaz. Aynı ürünü farklı formatlarda birkaç kez göstermek, tek paylaşımdan çok daha etkilidir.",
-      "4. İş birliğini gizleme. Bir ürünü ortak olarak tanıtıyorsan bunu belirtmek hem yasal hem güven açısından doğrudur. 'Bu ürünün ortak satıcısıyım, linkten alırsanız bana da katkısı olur' demek kitlenle olan güveni güçlendirir, zayıflatmaz.",
-      "5. Sonucu ölç, kazandıranı çoğalt. Hangi ürün, hangi format ve hangi saat daha çok tıklama ve satış getirdi? OrtakSat panelinde tıklama ve satışların görünür; iyi çalışan paylaşımı tekrarla, çalışmayanı bırak.",
+      "3. Hikâye + sabit gönderi + DM üçlüsünü kullan. Hikâyede ürünü kısa tanıtıp hızlı ilgi topla, sabit gönderide detay ver, gelen sorulara DM'den net cevap yaz. Aynı ürünü farklı formatlarda birkaç kez göstermek, tek paylaşımdan çok daha etkilidir.",
+      "4. İş birliğini gizleme. Bir ürünü ortak olarak tanıtıyorsan bunu belirtmek hem yasal hem güven açısından doğrudur. 'Bu ürünün ortak satıcısıyım, benim aracılığımla alırsanız bana da katkısı olur' demek kitlenle olan güveni güçlendirir, zayıflatmaz.",
+      "5. Sonucu ölç, kazandıranı çoğalt. Hangi ürün, hangi format ve hangi saat daha çok ilgi ve satış getirdi? OrtakSat panelinde ortak olduğun ürünler ve satışların görünür; iyi çalışan paylaşımı tekrarla, çalışmayanı bırak.",
       "Ne kadar kazanacağın kitlene, ürünün komisyonuna ve paylaşım kalitene bağlıdır; garanti bir rakam yoktur. Ama sermaye koymadan, stok tutmadan başlayabildiğin için risk neredeyse sıfırdır. Kazanç Hesaplayıcı ile takipçi sayına göre kaba bir tahmin görebilirsin.",
       commonLegalNote
     ]
@@ -318,9 +318,9 @@ export const BLOG_POSTS: BlogPost[] = [
     image: img("1554224155-6726b3ff858f"),
     body: [
       "Ek gelir arayanların çoğu aynı engelle karşılaşır: başlamak için sermaye, stok veya teknik bilgi gerekiyor sanılır. Ortak satış bu engeli kaldırır. Ürünü sen almazsın; satıcının ürününü kitlene tanıtır, satış olursa komisyon kazanırsın.",
-      "Model basit işler: satıcı ürününü OrtakSat'a ekler ve komisyon oranını belirler. Sen ürüne ortak olursun, sana özel referans linki oluşur. Bu linki paylaşırsın; alıcı linkten gelip satın alırsa komisyon senin olur. Ödeme ve teslimat alıcı ile satıcı arasında yapılır; platform para tutmaz.",
+      "Model basit işler: satıcı ürününü OrtakSat'a ekler ve komisyon oranını belirler. Sen ürüne ortak olursun (satıcı onaylayınca); ürünü kendi yönteminle tanıtırsın. Getirdiğin müşteri satıcıyla iletişime geçip satın alırsa, satıcıyla anlaştığın komisyonu alırsın. Zorunlu bir takip linki yoktur; komisyon, satıcı ile ortak arasındaki karşılıklı anlaşmadır. Ödeme ve teslimat alıcı ile satıcı arasında yapılır; platform para tutmaz.",
       "Neden düşük risk? Çünkü kaybedeceğin bir sermaye yok. Yanlış ürün seçsen bile maddi zarara girmezsin; sadece o üründen satış gelmez. Bu yüzden ortak satış, ek gelire 'deneyerek' başlamak için en uygun modellerden biridir.",
-      "Nereden başlanır? Önce ilgi alanını ve ulaşabildiğin kitleyi belirle: bir Instagram hesabı, bir WhatsApp grubu, bir Telegram kanalı ya da yalnızca yakın çevren bile olabilir. Sonra bu kitleye uygun 2-3 ürün seçip linklerini paylaş.",
+      "Nereden başlanır? Önce ilgi alanını ve ulaşabildiğin kitleyi belirle: bir Instagram hesabı, bir WhatsApp grubu, bir Telegram kanalı ya da yalnızca yakın çevren bile olabilir. Sonra bu kitleye uygun 2-3 ürüne ortak olup kendi yönteminle tanıt.",
       "Gerçekçi ol: ilk günde büyük kazanç beklemek yerine, hangi ürünün ilgi çektiğini gözlemle. Küçük ama düzenli satışlar, tek seferlik büyük beklentiden daha sürdürülebilirdir. Kazandıran ürün ve paylaşım tarzını bulunca ölçeklersin.",
       "Dürüstlük en büyük sermayendir. Abartılı vaat, sahte indirim veya gizli iş birliği kısa vadede tıklama getirse de güveni bozar. Net fiyat, gerçek görsel ve açık iş birliği ifadesi uzun vadede daha çok kazandırır.",
       "Özetle: sıfır sermaye ile ek gelir mümkündür ama sihir değildir. Doğru kitle, doğru ürün ve dürüst iletişimle zamanla anlamlı bir gelir kanalı kurabilirsin.",
@@ -340,7 +340,7 @@ export const BLOG_POSTS: BlogPost[] = [
     image: img("1556742049-0cfed4f6a45d"),
     body: [
       "Küçük satıcının en büyük sorunu görünürlüktür: ürün iyi ama yeterince insana ulaşmıyor. Reklam vermek ise bütçe ister ve sonucu belirsizdir. Ortak satış, reklam yerine performansa dayalı bir satış ordusu kurmanı sağlar: yalnızca satış olursa komisyon ödersin.",
-      "Nasıl çalışır? Ürününü OrtakSat'a ücretsiz eklersin ve komisyon oranını belirlersin. Ortaklar ürüne katılır, kendi takipçisiyle referans linkini paylaşır. Alıcı linkten gelir, seninle iletişime geçer. Önden reklam maliyeti yoktur.",
+      "Nasıl çalışır? Ürününü OrtakSat'a ücretsiz eklersin ve komisyon oranını belirlersin. Ortaklar ürüne katılır (istersen başvuruları tek tek onaylarsın) ve ürünü kendi yöntemleriyle takipçilerine tanıtır. Getirdikleri müşteri seninle iletişime geçip satın alır; ortağa anlaştığınız komisyonu ödersin. Önden reklam maliyeti yoktur.",
       "İlanını ortaklara cazip yap. Ortak, kazancını göreceği için yüksek etkileşimli ilanları paylaşmak ister. Net başlık, gerçek ve bol fotoğraf, açık fiyat ve makul komisyon; ortağın 'bunu rahatça anlatırım' demesini sağlar.",
       "Komisyonu dengeli belirle. Çok düşük komisyon ortağı motive etmez, ürün paylaşılmaz. Çok yüksek komisyon ise marjını yer. Ürünün kârını ve iade riskini koruyan, ama ortağın emeğini de karşılayan bir oran en iyisidir.",
       "Hızlı yanıt ver. Ortak alıcıyı sana yönlendirdiğinde geç cevap verirsen hem satışı hem ortağın motivasyonunu kaybedersin. İlan açıklamasına uygun iletişim saatini ve gerçekçi yanıt süresini yaz.",
@@ -361,11 +361,11 @@ export const BLOG_POSTS: BlogPost[] = [
     dateShort: "4 Tem",
     image: img("1521791136064-7986c2920216"),
     body: [
-      "Kısa video, bugün ürün tanıtmanın en hızlı büyüyen yolu. TikTok ve Instagram Reels, tek bir iyi videoyla küçük hesapların bile geniş kitleye ulaşmasını sağlar. Ortak satışla birleşince bu erişim doğrudan gelire dönüşebilir: ürünü tanıt, referans linkini profil ya da açıklamaya koy, satışta komisyon kazan.",
+      "Kısa video, bugün ürün tanıtmanın en hızlı büyüyen yolu. TikTok ve Instagram Reels, tek bir iyi videoyla küçük hesapların bile geniş kitleye ulaşmasını sağlar. Ortak satışla birleşince bu erişim doğrudan gelire dönüşebilir: ürüne ortak ol, kendi yönteminle tanıt, sattığında anlaştığın komisyonu kazan.",
       "Doğru ürünü seç. Kısa videoda en iyi çalışan ürünler görselliği güçlü, faydası ilk saniyede anlaşılan ve fiyatı makul olanlardır. İzleyicinin 'bunu ben de isterim' dediği ürünler daha çok tıklama getirir.",
       "İlk 3 saniyede kanca kur. 'Bu üründen neden vazgeçemedim', 'X TL'ye bu iş görür mü?', 'evde mutlaka olması gereken şey' gibi net bir açılış izleyiciyi durdurur. Uzun girişler izlenmeden geçilir.",
       "Faydayı göster, özelliği say. Ürünün ne işe yaradığını kullanırken göstermek, teknik özellik sıralamaktan daha ikna edicidir. Gerçek kullanım, gerçek ortam, abartısız anlatım.",
-      "Net bir çağrı bırak. Videonun sonunda ne yapılacağını söyle: 'Profildeki linkten ulaşabilirsin', 'detaylar açıklamada'. Belirsiz bırakılan videolar ilgi toplasa da satışa dönmez.",
+      "Net bir çağrı bırak. Videonun sonunda ne yapılacağını söyle: 'Detaylar açıklamada', 'bilgi için bana yazın'. Belirsiz bırakılan videolar ilgi toplasa da satışa dönmez.",
       "İş birliğini belirt. Ortak olarak tanıtım yaptığını açıkça söylemek hem platform kurallarına hem güvene uygundur. Şeffaflık, izleyicinin sana ve ürüne güvenini artırır.",
       "Test et ve tekrarla. Hangi ürün, hangi kanca ve hangi uzunluk daha çok tıklama getirdi? OrtakSat panelinde satışları izleyip kazandıran formatı çoğaltmak, tek videoya güvenmekten çok daha sürdürülebilirdir.",
       commonLegalNote
@@ -386,7 +386,7 @@ export const BLOG_POSTS: BlogPost[] = [
       "Affiliate marketing, yani satış ortaklığı, bir ürünü sen üretmeden ya da stoklamadan tanıtıp satışa aracılık etmen ve satış gerçekleşince komisyon kazanmandır. Türkçesiyle: başkasının ürününü kendi kitlene önerirsin, senin önerinle satış olursa pay alırsın.",
       "Model üç tarafı buluşturur: ürünü olan satıcı, ürünü tanıtan ortak (sen) ve satın alan alıcı. Satıcı görünürlük ve satış kazanır, ortak emeğinin karşılığında komisyon alır, alıcı ise güvendiği birinin önerisiyle ürüne ulaşır. OrtakSat bu üçünü aracı olarak buluşturur; ödeme ve teslimatı taraflar kendi arasında yapar.",
       "Neden Türkiye için uygun? Çünkü başlamak için sermaye, şirket veya teknik bilgi gerekmez. Bir Instagram hesabı, bir WhatsApp grubu ya da yakın çevren bile ilk kitlendir. Riskin düşük olması, denemeyi kolaylaştırır.",
-      "Nasıl başlanır? Önce ulaşabildiğin kitleyi ve ilgi alanını belirle. Sonra bu kitleye uygun 2-3 ürün seç, sana özel referans linkini al ve dürüst bir şekilde tanıt. İlk hedefin büyük kazanç değil, hangi ürünün ilgi çektiğini öğrenmek olsun.",
+      "Nasıl başlanır? Önce ulaşabildiğin kitleyi ve ilgi alanını belirle. Sonra bu kitleye uygun 2-3 ürüne ortak ol (satıcı onaylayınca) ve dürüst bir şekilde kendi yönteminle tanıt. İlk hedefin büyük kazanç değil, hangi ürünün ilgi çektiğini öğrenmek olsun.",
       "En sık yapılan hata, herkese her ürünü göndermektir. Bu, hem güveni yıpratır hem de dönüşümü düşürür. Bunun yerine gerçekten inandığın, kitlenin işine yarayacak ürünleri seçmek uzun vadede çok daha fazla kazandırır.",
       "Kazancın; kitlenin büyüklüğüne, ürünün komisyonuna ve anlatım kalitene bağlıdır. Garanti bir rakam yoktur. Ama sermaye koymadan başlayabildiğin için, satış ortaklığı ek gelire adım atmanın en düşük riskli yollarından biridir.",
       commonLegalNote
@@ -405,8 +405,8 @@ export const BLOG_POSTS: BlogPost[] = [
     image: img("1521791136064-7986c2920216"),
     body: [
       "Öğrenciyken ek gelir aramak yaygın; ama çoğu 'iş' ya sermaye ya da esnek olmayan mesai ister. Oysa ders programına uyan, sıfır sermayeli ve evden yapılabilen yöntemler var. İşte gerçekçi olanlar.",
-      "1. Satış ortaklığı (affiliate). Sosyal medya hesabın varsa ürün seçip referans linkini paylaşırsın; satış olursa komisyon kazanırsın. Stok, para yatırma ve kargo yok. OrtakSat'ta bugün başlayabilirsin.",
-      "2. İçerik üretimi. TikTok/Reels'te ilgilendiğin bir konuda kısa videolar üretip, tanıttığın ürünlerin ortak linkini profiline koyabilirsin. Kitlen büyüdükçe kazancın da artar.",
+      "1. Satış ortaklığı (affiliate). Sosyal medya hesabın varsa bir ürüne ortak olup kendi yönteminle tanıtırsın; satış olursa anlaştığın komisyonu kazanırsın. Stok, para yatırma ve kargo yok. OrtakSat'ta bugün başlayabilirsin.",
+      "2. İçerik üretimi. TikTok/Reels'te ilgilendiğin bir konuda kısa videolar üretip, ortak olduğun ürünleri kendi yönteminle tanıtabilirsin. Kitlen büyüdükçe kazancın da artar.",
       "3. Freelance mikro işler. Çeviri, tasarım, metin yazımı gibi becerilerini serbest platformlarda saatlik değerlendirebilirsin. Bu sermaye istemez, sadece zaman ve beceri ister.",
       "4. Not/ders paylaşımı ve özel ders. Güçlü olduğun dersleri alt sınıflara online anlatmak hem gelir hem tecrübe kazandırır.",
       "5. İkinci el satışı. Kullanmadığın eşyaları satmak hızlı nakit sağlar; ilan açmayı öğrenmek de satış becerini geliştirir.",
@@ -417,8 +417,8 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "referans-linki-nedir-nasil-para-kazandirir",
     category: "Komisyon Rehberleri",
-    title: "Referans Linki Nedir ve Nasıl Para Kazandırır?",
-    excerpt: "Referans (ortak) linkinin ne işe yaradığını, satışı sana nasıl bağladığını ve komisyonun nasıl hesaplandığını örnekle anlatıyoruz.",
+    title: "Ortaklıkta Komisyonu Nasıl Kazanırsın? Satış Sana Nasıl Bağlanır?",
+    excerpt: "Ortak satışta komisyonun nasıl hesaplandığını, getirdiğin satışın sana nasıl bağlandığını ve zorunlu bir takip linki olmadan kazancını örnekle anlatıyoruz.",
     author: "OrtakSat Editör Ekibi",
     authorRole: "Editör",
     readMin: 5,
@@ -426,12 +426,12 @@ export const BLOG_POSTS: BlogPost[] = [
     dateShort: "30 Haz",
     image: img("1554224155-6726b3ff858f"),
     body: [
-      "Referans linki, bir ürüne ortak olduğunda sana özel oluşturulan bir bağlantıdır. Bu link, o ürünün sayfasına gider ama içinde 'seni' tanımlayan bir kod taşır. Böylece linkten gelen alıcı satın alırsa, satış sana bağlanır ve komisyonu kazanırsın.",
-      "Mantığı basit: satıcı ürünü ekler ve komisyon oranını belirler. Sen ürüne ortak olursun, referans linkin oluşur. Linki paylaşırsın; alıcı tıklar, satıcıyla iletişime geçer ve satış gerçekleşirse komisyon senin olur.",
-      "Örnek: Satıcı 2.000 TL'lik bir ürüne %10 komisyon tanımladı. Senin linkinden gelen bir alıcı ürünü aldı. Bu satıştan kazancın 200 TL olur. Komisyon oranını ve tutarını, paylaşmadan önce ilanda net görürsün.",
-      "Link neden önemli? Çünkü hangi ortağın satışı getirdiğini kanıtlar. Link olmadan 'ben getirdim' demek havada kalır. Referans linki, emeğini kayıt altına alan dijital imzandır.",
-      "Linkini nerede paylaşırsın? Instagram/TikTok profilinde, hikayede, WhatsApp durumunda, Telegram kanalında ya da mesajla. Önemli olan doğru kitleye, dürüst bir anlatımla ulaştırmaktır.",
-      "OrtakSat'ta ödeme ve komisyon platform üzerinden geçmez; komisyonu satış sonrası satıcı doğrudan sana öder. Link yalnızca atfı (kimin getirdiğini) kaydeder. Bu yüzden dürüst paylaşım ve iyi ürün seçimi kazancının anahtarıdır.",
+      "Ortak satışta komisyon, bir ürüne ortak olduğunda satıcıyla aranızdaki karşılıklı anlaşmadır. Ürünü sen üretmez, stoklamaz ya da kargolamazsın; güvendiğin ürünü kendi yönteminle kitlene tanıtırsın. Satış gerçekleşince, satıcıyla önceden anlaştığın komisyonu alırsın. OrtakSat'ta zorunlu bir referans linki, kodu veya takip sistemi yoktur.",
+      "Mantığı basit: satıcı ürünü ekler ve komisyon oranını belirler. Sen ürüne ortak olursun (satıcı onaylayınca). Ürünü sosyal medyanda, kendi çevrende ya da müşterilerine kendi yönteminle tanıtırsın; getirdiğin müşteri satıcıyla iletişime geçip satın alırsa, anlaştığınız komisyon senin olur.",
+      "Örnek: Satıcı 2.000 TL'lik bir ürüne %10 komisyon tanımladı. Senin tanıtımınla gelen bir alıcı ürünü aldı. Bu satıştan kazancın 200 TL olur. Komisyon oranını ve tutarını, ortak olmadan önce ilanda net görürsün.",
+      "Peki satış sana nasıl bağlanır? Zorunlu bir link yerine ortaklık kaydı ve iletişim esas alınır: ürüne ortak olduğun OrtakSat'ta kayıtlıdır ve getirdiğin alıcıyı satıcıyla platform içi mesajlaşmada buluşturman süreci kayıt altına alır. Böylece kimin getirdiği, satıcı ile ortak arasında açık ve kayıtlı kalır.",
+      "Ürünü nerede tanıtırsın? Instagram/TikTok profilinde, hikayede, WhatsApp durumunda, Telegram kanalında ya da doğrudan yakın çevrende. Önemli olan doğru kitleye dürüst bir anlatımla ulaşman ve alıcıyı satıcıyla buluşturmandır.",
+      "OrtakSat'ta ödeme ve komisyon platform üzerinden geçmez; komisyonu satış sonrası satıcı doğrudan sana öder. Platform yalnızca ortaklığı ve iletişimi kayıt altında tutar. Bu yüzden dürüst tanıtım ve iyi ürün seçimi kazancının anahtarıdır.",
       commonLegalNote
     ]
   },
@@ -450,8 +450,8 @@ export const BLOG_POSTS: BlogPost[] = [
       "Ortak satış için illa on binlerce takipçi gerekmez. WhatsApp ve Telegram gruplarındaki ilgili, güvenen küçük kitleler çoğu zaman büyük ama ilgisiz takipçiden daha çok satış getirir. Önemli olan doğru grupta, doğru ürünü, doğru şekilde paylaşmaktır.",
       "1. Doğru grubu seç. Site/mahalle, hobi, anne, öğrenci, ikinci el alışveriş grupları gibi ilgi alanı belli topluluklar en verimlisidir. Alakasız gruba ürün yağdırmak hem işe yaramaz hem seni spam'e düşürür.",
       "2. Grup kurallarına uy. Çoğu grubun paylaşım kuralı vardır. Kuralları çiğnemek seni gruptan attırır. Yöneticiyle konuşup ürün paylaşımına izin olup olmadığını öğren.",
-      "3. Ürünü kısa ve net anlat. Fiyat, ürünün ne işe yaradığı ve linki bir arada olsun. 'Şuna baktım, fiyatına göre iş görür' gibi samimi, abartısız bir cümle spam görünümlü uzun reklamdan daha çok tıklanır.",
-      "4. İş birliğini gizleme. 'Bu ürünün ortak satıcısıyım, linkten alırsanız bana da katkısı olur' demek güveni artırır. Şeffaflık, mesajlaşma gruplarında özellikle önemlidir çünkü topluluk birbirini tanır.",
+      "3. Ürünü kısa ve net anlat. Fiyat, ürünün ne işe yaradığı ve nasıl ulaşılacağı bir arada olsun. 'Şuna baktım, fiyatına göre iş görür' gibi samimi, abartısız bir cümle spam görünümlü uzun reklamdan daha çok ilgi görür.",
+      "4. İş birliğini gizleme. 'Bu ürünün ortak satıcısıyım, benim aracılığımla alırsanız bana da katkısı olur' demek güveni artırır. Şeffaflık, mesajlaşma gruplarında özellikle önemlidir çünkü topluluk birbirini tanır.",
       "5. Değer kat, sadece satma. Ara ara faydalı içerik, fırsat ve dürüst yorum paylaşmak seni 'sürekli reklam atan kişi' olmaktan çıkarır, 'iyi öneriler yapan kişi' yapar. Uzun vadede satışı bu güven getirir.",
       commonLegalNote
     ]
@@ -469,10 +469,10 @@ export const BLOG_POSTS: BlogPost[] = [
     image: img("1483985988355-763728e1935b"),
     body: [
       "Mikro-influencer, genelde 1.000–30.000 takipçili, ama kitlesiyle güçlü bağı olan içerik üreticisidir. Markalar bu hesapları sever çünkü etkileşimleri yüksektir. İyi haber: gelire çevirmek için büyük markalarla anlaşmayı beklemene gerek yok; ortak satışla bugün başlayabilirsin.",
-      "1. Nişini netleştir. Her şeyi paylaşan hesap kimseye satamaz. Moda, teknoloji, ev-yaşam, bebek, spor... kitleni tanı ve o alandaki ürünleri seç. OrtakSat'ta ürünü seçip referans linkini alırsın.",
+      "1. Nişini netleştir. Her şeyi paylaşan hesap kimseye satamaz. Moda, teknoloji, ev-yaşam, bebek, spor... kitleni tanı ve o alandaki ürünleri seç. OrtakSat'ta ürünü seçip ona ortak olursun (satıcı onaylayınca).",
       "2. Güvenini koru. Kitlenin sana güvenmesi en büyük sermayendir. Sadece gerçekten iyi bulduğun, kitleye faydalı ürünleri öner. Tek bir kötü öneri, aylarca kurduğun güveni sarsabilir.",
       "3. Ürünü kullanarak göster. 'Şunu aldım, şu işime yaradı' formatı, cilalı reklamdan çok daha ikna edicidir. Gerçek kullanım, gerçek ortam, abartısız anlatım.",
-      "4. Net çağrı yap. 'Detaylar profildeki linkte' ya da 'açıklamadan ulaşabilirsin' gibi ne yapılacağını açıkça söyle. Belirsiz bırakılan paylaşım ilgi toplasa da satışa dönmez.",
+      "4. Net çağrı yap. 'Detaylar açıklamada' ya da 'bilgi için bana yazın' gibi ne yapılacağını açıkça söyle. Belirsiz bırakılan paylaşım ilgi toplasa da satışa dönmez.",
       "5. Ölç ve tekrarla. Hangi ürün, hangi format ve hangi saat daha çok tıklama getirdi? Kazandıran paylaşımı çoğalt. İlk 1000 TL genelde birkaç iyi üründen, birkaç iyi paylaşımdan gelir; sırrı tutarlılıktır.",
       "Unutma: kazanç garantisi yoktur ve tek videoda zengin olunmaz. Ama küçük, güvenen bir kitleyle dürüst çalışırsan, mikro-influencer olmak istikrarlı bir ek gelir kanalına dönüşebilir.",
       commonLegalNote
