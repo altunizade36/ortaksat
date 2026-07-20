@@ -20,6 +20,8 @@ import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince, matchesLocationFilter } from "@/lib/locations";
+import { fetchListingsByCategory } from "@/lib/supabase-data";
+import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 function descendantLabels(node: CategoryNode): string[] {
@@ -81,7 +83,21 @@ export default function CategoryLandingScreen() {
   const [mountedGate, setMountedGate] = useState(false);
   useEffect(() => { setMountedGate(true); }, []);
   const layoutWidth = mountedGate ? width : 1024;
-  const { listings, categoryTree, findUser, marketplaceLoadFailed, retryMarketplace } = useStore();
+  const { listings, categoryTree, findUser, marketplaceHasMore, marketplaceLoadFailed, retryMarketplace } = useStore();
+  // ÖLÇEK (append-only, mount-sonrası): bellek penceresi DIŞINDA kalan kategori ilanları.
+  // Yalnız marketplaceHasMore iken (sunucuda daha çok ilan var) çekilir → küçük katalogda
+  // (hepsi yüklü) HİÇ tetiklenmez = sıfır davranış değişimi. SSG/hydration render'ı bellekten
+  // (değişmez); mount sonrası server-ilanlar EKLENİR (sonsuz-kaydırma gibi, #418 güvenli).
+  const [serverCat, setServerCat] = useState<{ listings: Listing[]; users: User[] }>({ listings: [], users: [] });
+  useEffect(() => {
+    let alive = true;
+    setServerCat({ listings: [], users: [] });
+    if (!mountedGate || !marketplaceHasMore || !node || !slug) return;
+    void fetchListingsByCategory(descendantLabels(node)).then((r) => {
+      if (alive && r) setServerCat(r);
+    });
+    return () => { alive = false; };
+  }, [mountedGate, marketplaceHasMore, slug]);
   const [visible, setVisible] = useState(PAGE);
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
   const [band, setBand] = useState<[number, number] | null>(null);
@@ -94,6 +110,10 @@ export default function CategoryLandingScreen() {
   const [attrFilters, setAttrFilters] = useState<Record<string, string[]>>({});
   // Sayısal aralık filtreleri kategoriye göre: emlak → m², vasıta → km/yıl.
   const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>({});
+
+  // Server-kategori ilanlarının sahipleri bellekte olmayabilir → merge çözücü.
+  const serverUserById = useMemo(() => { const m = new Map<string, User>(); for (const u of serverCat.users) m.set(u.id, u); return m; }, [serverCat.users]);
+  const resolveOwner = (ownerId: string) => findUser(ownerId) ?? serverUserById.get(ownerId);
 
   const trail = useMemo(() => (slug ? findTrail(categoryTree, slug) : undefined), [categoryTree, slug]);
   const node = trail ? trail[trail.length - 1] : undefined;
@@ -158,7 +178,12 @@ export default function CategoryLandingScreen() {
       return segs.length > 1 && segs.some((s) => nlabels.has(s));
     };
     const activeAttrKeys = Object.keys(attrFilters);
-    const out = listings.filter((l) => {
+    // Bellek + sunucu-kategori ilanları (append-only, id ile tekilleştir). Bellek önce (öncelik).
+    const seen = new Set<string>();
+    const source: Listing[] = [];
+    for (const l of listings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
+    for (const l of serverCat.listings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
+    const out = source.filter((l) => {
       if (l.status !== "active" || !matchCat(l.category)) return false;
       if (!matchesLocationFilter(l, loc.provinceId, loc.districtId)) return false;
       if (band && (l.price < band[0] || l.price > band[1])) return false;
@@ -195,7 +220,7 @@ export default function CategoryLandingScreen() {
       return Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || commissionAmount(b) - commissionAmount(a);
     });
     return out;
-  }, [listings, node, band, onlyOpen, sortMode, attrFilters, numRange, numFields, loc.provinceId, loc.districtId]);
+  }, [listings, serverCat.listings, node, band, onlyOpen, sortMode, attrFilters, numRange, numFields, loc.provinceId, loc.districtId]);
 
   useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, numRange, loc.provinceId, loc.districtId]);
   useEffect(() => { setAttrFilters({}); setNumRange({}); }, [slug]);
@@ -409,7 +434,7 @@ export default function CategoryLandingScreen() {
           <>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
               {items.slice(0, visible).map((l) => (
-                <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardWidth} />
+                <ListingCard key={l.id} listing={l} owner={resolveOwner(l.ownerId)} width={cardWidth} />
               ))}
             </View>
             {visible < items.length ? (

@@ -536,6 +536,25 @@ export async function fetchListingsBySellers(sellerIds: string[]): Promise<{ lis
   return { listings: feedListings, users: feedUsers };
 }
 
+// Kategori-bazlı sunucu fetch: bellek penceresi (MP_MAX=600) DIŞINDA kalan kategori ilanlarını
+// getirir → 1000+ ilanda kategori sayfası sessizce eksik/boş görünmesin. Yalnız marketplaceHasMore
+// iken çağrılır (küçük katalogda gereksiz). category EXACT eşleşme (in-memory fuzzy matchCat'e
+// EK; append-only supplement, mevcut davranışı DEĞİŞTİRMEZ).
+export async function fetchListingsByCategory(labels: string[]): Promise<{ listings: Listing[]; users: User[] } | null> {
+  if (!supabase) return null;
+  const uniq = Array.from(new Set(labels.filter(Boolean))).slice(0, 160); // URL uzunluk sınırı için cap
+  if (uniq.length === 0) return { listings: [], users: [] };
+  const { data, error } = await supabase
+    .from("listing_public_cards").select("*").in("category", uniq).order("created_at", { ascending: false }).limit(200);
+  if (error) return null;
+  const feedListings = ((data ?? []) as PublicListingCardRow[]).map(mapListing).filter((l) => l.status === "active");
+  const feedOwnerIds = Array.from(new Set(feedListings.map((l) => l.ownerId)));
+  if (feedOwnerIds.length === 0) return { listings: feedListings, users: [] };
+  const { data: feedProfiles } = await supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).in("id", feedOwnerIds);
+  const feedUsers = ((feedProfiles ?? []) as ProfileRow[]).map(mapProfile);
+  return { listings: feedListings, users: feedUsers };
+}
+
 export async function loadAccountSnapshot(userId: string): Promise<AccountSnapshot | null> {
   if (!supabase) return null;
 
