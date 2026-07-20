@@ -24,7 +24,7 @@ import { scoreListing } from "@/lib/search";
 import { useSavedSearches, type SavedFilters, type SavedSearch } from "@/lib/saved-searches";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { districtsOfProvince, getDistrict, getProvince, locKey, matchesLocationFilter, provinces } from "@/lib/locations";
-import { searchListings } from "@/lib/supabase-data";
+import { fetchListingsByCategory, searchListings } from "@/lib/supabase-data";
 import { displayText } from "@/lib/text";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -139,6 +139,11 @@ export default function ExploreScreen() {
   const [serverOffset, setServerOffset] = useState(0);
   const [serverHasMore, setServerHasMore] = useState(false);
   const [serverLoading, setServerLoading] = useState(false);
+  // ÖLÇEK (append-only): metin araması YOKKEN kategori filtresi bellek penceresini (MP_MAX=600)
+  // süzüyordu → 1000+ ilanda kategori-filtre sonucu eksik/boş görünebilir. Aktif kategori +
+  // marketplaceHasMore + metin-yok iken o kategorinin ilanlarını sunucudan çekip EKLE (dedupe).
+  // Küçük katalogda (hepsi yüklü) tetiklenmez; text-search yolu ayrı (serverResults) — karışmaz.
+  const [serverCat, setServerCat] = useState<{ listings: Listing[]; users: User[] }>({ listings: [], users: [] });
   const SERVER_PAGE = 40;
   const queryText = (params.q ?? "").trim();
 
@@ -189,7 +194,8 @@ export default function ExploreScreen() {
       });
     });
   };
-  const resolveOwner = (id: string) => serverOwners[id] ?? findUser(id);
+  const serverCatUserById = useMemo(() => { const m = new Map<string, User>(); for (const u of serverCat.users) m.set(u.id, u); return m; }, [serverCat.users]);
+  const resolveOwner = (id: string) => serverOwners[id] ?? findUser(id) ?? serverCatUserById.get(id);
   const feedFilters: Array<{ key: FeedFilter; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
     { key: "all", label: t("all"), icon: "grid" },
     { key: "commission", label: translateCopy("Yüksek komisyon", language), icon: "cash-plus" },
@@ -267,6 +273,19 @@ export default function ExploreScreen() {
     const seen = new Set<string>();
     return EXPLORE_NUM_FILTERS.filter((f) => keys.has(f.key) && !seen.has(f.label) && (seen.add(f.label), true));
   }, [catSchema]);
+
+  // ÖLÇEK server-fetch (append-only): aktif kategori + daha çok ilan var + metin-arama YOK iken
+  // o kategorinin ilanlarını sunucudan çek. mountedGate (post-mount → #418 güvenli); catNode?.slug
+  // deps (stabil → sonsuz-fetch yok). Text-search yolu (queryText>=2) serverResults'ı kullanır, ayrı.
+  useEffect(() => {
+    let alive = true;
+    setServerCat({ listings: [], users: [] });
+    if (!mountedGate || !catNode || !marketplaceHasMore || queryText.length >= 2) return;
+    void fetchListingsByCategory(collectDescendantLabels(catNode)).then((r) => {
+      if (alive && r) setServerCat(r);
+    });
+    return () => { alive = false; };
+  }, [mountedGate, catNode?.slug, marketplaceHasMore, queryText]);
   const catLabelSet = useMemo(() => (catNode ? new Set(collectDescendantLabels(catNode).map((s) => s.toLocaleLowerCase("tr-TR").trim()).filter((s) => s.length > 2)) : null), [catNode]);
   // Üst kategori: seç/kaldır (tekrar basınca temizle). Alt seviyeye in / breadcrumb'a dön.
   const selectTop = (key: string) => { setCatPath((cur) => (cur.length === 1 && cur[0] === key ? [] : [key])); setAttrFilters({}); setNumRange({}); };
@@ -345,7 +364,13 @@ export default function ExploreScreen() {
   }
 
   // q girildiyse temel set sunucu sonuclari (tum katalog); degilse yuklu katalog.
-  const baseListings = serverResults ?? marketplaceListings;
+  // serverResults (metin arama) varsa onu kullan; yoksa bellek + kategori-server ilanları (dedupe).
+  const baseListings = useMemo(() => {
+    if (serverResults) return serverResults;
+    if (serverCat.listings.length === 0) return marketplaceListings;
+    const seen = new Set(marketplaceListings.map((l) => l.id));
+    return [...marketplaceListings, ...serverCat.listings.filter((l) => !seen.has(l.id))];
+  }, [serverResults, marketplaceListings, serverCat.listings]);
 
   const activeListings = useMemo(() => {
     const provKey = provinceName ? locKey(provinceName) : "";
