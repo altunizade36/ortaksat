@@ -1330,7 +1330,7 @@ function SellerPipeline({
   const rows = [
     { icon: "account-plus-outline" as const, label: "Başvuru", value: applications, helper: "Satıcı onayı bekleyen ortaklar", tone: applications > 0 ? "warning" : "neutral" },
     { icon: "handshake-outline" as const, label: "Aktif ortak", value: activePartners, helper: "Linki açık ortak satıcılar", tone: activePartners > 0 ? "success" : "neutral" },
-    { icon: "account-clock-outline" as const, label: "Talep", value: leads, helper: "Ortak linkten gelen müşteriler", tone: leads > 0 ? "success" : "neutral" },
+    { icon: "account-clock-outline" as const, label: "Talep", value: leads, helper: "Ortağın getirdiği müşteriler", tone: leads > 0 ? "success" : "neutral" },
     { icon: "cart-check" as const, label: "Satış", value: sales, helper: "Satışa çevrilen talepler", tone: sales > 0 ? "success" : "neutral" },
     { icon: "cash-clock" as const, label: "Komisyon", value: paidSales + unpaidSales, helper: unpaidSales > 0 ? "Ödeme bekleyen komisyon var" : "Komisyon kuyruğu temiz", tone: unpaidSales > 0 ? "warning" : paidSales > 0 ? "success" : "neutral" }
   ];

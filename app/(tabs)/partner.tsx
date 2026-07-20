@@ -1239,7 +1239,7 @@ function GuvenBadge({ rating }: { rating: number }) {
 function HowPartnerWorks({ language }: { language: "tr" | "en" }) {
   const steps: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; n: string; title: string; body: string }> = [
     { icon: "cursor-default-click-outline", n: "1", title: "Ürüne ortak ol", body: "Beğendiğin ürünün yanındaki “Ortak ol”a bas — anında ortaklık (açık modda) ya da satıcı onayı." },
-    { icon: "link-variant", n: "2", title: "Paylaşım linkini al", body: "Ortak olunca sana özel referans bağlantın oluşur; “Bağlantılarım”da görürsün." },
+    { icon: "bullhorn-outline", n: "2", title: "Kendi yönteminle tanıt", body: "Ortak olunca ürünü sosyal medyanda, çevrende veya müşterilerine istediğin gibi tanıtırsın; zorunlu link/takip yok." },
     { icon: "cash-multiple", n: "3", title: "Paylaş & komisyon kazan", body: "Linki paylaş; satış olursa komisyonun panelinde kayda geçer, satıcı sana öder." }
   ];
   return (
