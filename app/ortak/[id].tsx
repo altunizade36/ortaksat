@@ -127,7 +127,7 @@ function Inner() {
         ) : (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap }}>
             {items.map((it) => (
-              <ListingCard key={it.listing.id} listing={it.listing} owner={findUser(it.listing.ownerId)} width={cardWidth} />
+              <ListingCard key={it.listing.id} listing={it.listing} owner={findUser(it.listing.ownerId)} width={cardWidth} refCode={it.refCode} />
             ))}
           </View>
         )}

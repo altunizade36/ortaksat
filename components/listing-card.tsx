@@ -16,7 +16,10 @@ import type { Listing, User } from "@/lib/types";
 
 type StatusTone = "success" | "accent" | "info" | "dark" | "gold";
 
-function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listing; owner?: User; width?: number; priceNote?: { text: string; down: boolean } }) {
+function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listing: Listing; owner?: User; width?: number; priceNote?: { text: string; down: boolean }; refCode?: string }) {
+  // Ortak vitrininden gelen kartlar ref TAŞIR → ilan detay URL'den atfı yakalar (URL-garantili
+  // first-touch; localStorage silinse/engellense bile ortak kredisi kaybolmaz). c=shop kanal ölçümü.
+  const cardHref = refCode ? `/listing/${listing.id}?ref=${encodeURIComponent(refCode)}&c=shop` : `/listing/${listing.id}`;
   const { language, t } = useLanguage();
   const commission = commissionAmount(listing);
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
@@ -74,7 +77,7 @@ function ListingCardBase({ listing, owner, width, priceNote }: { listing: Listin
 
   return (
     <View dataSet={{ vcard: "1" }} style={{ width }}>
-      <Link href={`/listing/${listing.id}`} asChild>
+      <Link href={cardHref as never} asChild>
         <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1, width: "100%" })}>
           <View
             dataSet={{ card: "listing" }}
