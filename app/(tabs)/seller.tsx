@@ -778,7 +778,6 @@ function SellerScreenInner() {
             <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 10, flexDirection: "row", flexWrap: "wrap", gap: 6, padding: 10 }}>
               <SellerStat label="Stok" value={`${listing.stockCount}`} warn={listing.stockCount <= 3 && listing.status === "active"} />
               <SellerStat label="Aktif ortak" value={`${activePartners}`} />
-              <SellerStat label="Link tıklama" value={`${listingClicks}`} />
               <SellerStat label="Talep" value={`${listingLeads.length}`} />
               <SellerStat label="Dönüşüm" value={`%${conversionRate}`} />
               <SellerStat label="Favori" value={`${listing.favoriteCount}`} />
@@ -940,7 +939,7 @@ function SellerScreenInner() {
                         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
                           <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
                             <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{partnerName}</Text>
-                            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>★ {partner?.rating ?? 0} · {clickCounts[p.id] ?? 0} {translateCopy("tıklama", language)} · {pLeads} {translateCopy("talep", language)} · {pSales.length} {translateCopy("satış", language)}</Text>
+                            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>★ {partner?.rating ?? 0} · {pLeads} {translateCopy("talep", language)} · {pSales.length} {translateCopy("satış", language)}</Text>
                             {p.commissionOverrideType && p.commissionOverrideValue ? (
                               <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{translateCopy("Özel komisyon", language)}: {p.commissionOverrideType === "rate" ? `%${p.commissionOverrideValue}` : moneyIn(p.commissionOverrideValue, listing.currency)}</Text>
                             ) : null}

@@ -137,8 +137,8 @@ function PartnerScreenInner() {
       </View>
       <View style={{ alignItems: "stretch", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {[
-          { icon: "cursor-default-click-outline" as const, label: translateCopy("Tıklama", language), value: `${totalClicks}`, rate: null as string | null },
-          { icon: "phone-in-talk-outline" as const, label: translateCopy("Talep", language), value: `${myBroughtLeads.length}`, rate: totalClicks > 0 ? `%${Math.min(100, Math.round((myBroughtLeads.length / totalClicks) * 100))}` : null },
+          { icon: "handshake-outline" as const, label: translateCopy("Ortaklık", language), value: `${activePartnerships.length}`, rate: null as string | null },
+          { icon: "phone-in-talk-outline" as const, label: translateCopy("Talep", language), value: `${myBroughtLeads.length}`, rate: null },
           { icon: "cart-check" as const, label: translateCopy("Satış", language), value: `${mySales.length}`, rate: myBroughtLeads.length > 0 ? `%${Math.min(100, Math.round((mySales.length / myBroughtLeads.length) * 100))}` : null },
           { icon: "cash-multiple" as const, label: translateCopy("Kazanç", language), value: money(funnelEarn), rate: null }
         ].map((s, i) => (
@@ -447,7 +447,7 @@ function PartnerScreenInner() {
                 { n: 1, i: "compass-outline" as const, t: "Sana uygun fırsatı bul", d: "Kategorine ve kitlene uygun ilanları filtrele." },
                 { n: 2, i: "file-check-outline" as const, t: "Ortaklık şartlarını kabul et", d: "Komisyon oranı, süre ve izinli kanallar sabitlenir." },
                 { n: 3, i: "link-variant" as const, t: "Kendi yönteminle tanıt", d: "Ürünü sosyal medyanda, çevrende veya müşterilerine istediğin gibi tanıt." },
-                { n: 4, i: "chart-line" as const, t: "Tıklama ve talepleri izle", d: "Yönlendirmelerin ve talepler panelinde görünür." },
+                { n: 4, i: "chart-line" as const, t: "Talep ve satışları izle", d: "Getirdiğin talepler ve satışlar panelinde görünür." },
                 { n: 5, i: "cash-check" as const, t: "Doğrulanan sonuçtan kazan", d: "Satış/talep doğrulanınca komisyonun hak edilir." }
               ].map((s) => (
                 <View key={s.n} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 200, flexGrow: 1, gap: 6, minWidth: 0, padding: 13 }}>
@@ -671,7 +671,7 @@ function PartnerScreenInner() {
             <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Performans özeti", language)}</Text>
             <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("Tüm zamanlar", language)}</Text>
           </View>
-          <PerfMetric icon="cursor-default-click-outline" label="Link tıklama" value={`${totalClicks}`} />
+          <PerfMetric icon="handshake-outline" label="Ortaklık" value={`${activePartnerships.length}`} />
           <PerfMetric icon="account-clock-outline" label="Talep" value={`${myLeadCount}`} />
           <PerfMetric icon="star-outline" label="Satış" value={`${mySales.length}`} />
           <PerfMetric icon="cash" label="Kazanç" value={money(approved + paid)} />
@@ -1030,19 +1030,17 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
 
       <SectionTitle title="Performans" />
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Metric label="Tıklama" value={`${clickCount}`} />
         <Metric label="Talep" value={`${listingLeads.length}`} />
+        <Metric label="Satış" value={`${listingSales.length}`} />
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Metric label="Satış" value={`${listingSales.length}`} />
         <Metric label="Kazanç" value={money(earned)} />
+        <Metric label="Ödenen" value={`${sellerPaidCount}`} />
       </View>
-      {/* Dönüşüm hunisi: tıklama → talep → satış (oranlarla). */}
-      {clickCount > 0 || listingLeads.length > 0 ? (
+      {/* Dönüşüm hunisi: talep → satış (link/tıklama takibi YOK — model gereği). */}
+      {listingLeads.length > 0 ? (
         <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 10, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 12, paddingVertical: 8 }}>
-          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{clickCount} {translateCopy("tıklama", language)}</Text>
-          <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{listingLeads.length} {translateCopy("talep", language)}{clickCount > 0 ? ` (%${Math.min(100, Math.round((listingLeads.length / clickCount) * 100))})` : ""}</Text>
+          <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{listingLeads.length} {translateCopy("talep", language)}</Text>
           <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
           <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{listingSales.length} {translateCopy("satış", language)}{listingLeads.length > 0 ? ` (%${Math.min(100, Math.round((listingSales.length / listingLeads.length) * 100))})` : ""}</Text>
         </View>
