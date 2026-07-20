@@ -725,34 +725,34 @@ export type ReferralLink = {
 export async function resolveReferralLink(slug: string, refCode: string): Promise<ReferralLink | null> {
   if (!supabase || !slug || !refCode) return null;
 
-  const { data, error } = await supabase
-    .from("referral_public_links")
-    .select("*")
-    .eq("slug", slug)
-    .eq("ref_code", refCode)
-    .maybeSingle();
+  // GÜVENLİK: doğrudan tablo SELECT'i yerine SECURITY DEFINER RPC — (slug, ref_code) çifti
+  // SUNUCUDA zorlanır, tek satır döner. Blanket anon SELECT kaldırıldığından tüm-tablo
+  // enumerasyonu (ad-soyad + satış hacmi dizini) artık mümkün değil.
+  const { data, error } = await supabase.rpc("resolve_referral_link", { p_slug: slug, p_ref_code: refCode });
+  const row = Array.isArray(data) ? data[0] : data;
 
-  if (error || !data) {
+  if (error || !row) {
     if (error) console.warn("Supabase referral resolve failed", error);
     return null;
   }
+  const data2 = row as Record<string, unknown> as typeof row & { ref_code: string; partnership_id: string; listing_id: string; slug: string; title: string; price: number; commission_type: string; commission_value: number; category: string; location: string; image_url: string | null; agreed_attribution_window_days: number | null; partner_name: string | null; partner_verified: boolean | null; partner_sales: number | null; seller_rating: number | null; seller_verified: boolean | null };
 
   return {
-    refCode: data.ref_code,
-    partnershipId: data.partnership_id,
-    listingId: data.listing_id,
-    slug: data.slug,
-    title: data.title,
-    price: Number(data.price ?? 0),
-    category: data.category,
-    location: data.location,
-    imageUrl: data.image_url ?? undefined,
-    attributionWindowDays: data.agreed_attribution_window_days ?? undefined,
-    partnerName: data.partner_name ?? undefined,
-    partnerVerified: data.partner_verified ?? undefined,
-    partnerSales: data.partner_sales ?? undefined,
-    sellerRating: data.seller_rating != null ? Number(data.seller_rating) : undefined,
-    sellerVerified: data.seller_verified ?? undefined
+    refCode: data2.ref_code,
+    partnershipId: data2.partnership_id,
+    listingId: data2.listing_id,
+    slug: data2.slug,
+    title: data2.title,
+    price: Number(data2.price ?? 0),
+    category: data2.category,
+    location: data2.location,
+    imageUrl: data2.image_url ?? undefined,
+    attributionWindowDays: data2.agreed_attribution_window_days ?? undefined,
+    partnerName: data2.partner_name ?? undefined,
+    partnerVerified: data2.partner_verified ?? undefined,
+    partnerSales: data2.partner_sales ?? undefined,
+    sellerRating: data2.seller_rating != null ? Number(data2.seller_rating) : undefined,
+    sellerVerified: data2.seller_verified ?? undefined
   };
 }
 
