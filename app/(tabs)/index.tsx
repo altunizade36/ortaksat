@@ -237,7 +237,7 @@ export default function HomeScreen() {
     >
       <Head>
         <title>OrtakSat — Komisyonla Ortak Satış Platformu | İlan Ver, Ortak Ol Kazan</title>
-        <meta name="description" content="OrtakSat: ürününü ücretsiz listele, komisyonunu belirle; ortaklar referans linkiyle paylaşıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan. Emlak, telefon, bilgisayar, giyim, ev ve daha fazlası." />
+        <meta name="description" content="OrtakSat: ürününü ücretsiz listele, komisyonunu belirle; ortaklar kendi yöntemiyle tanıtıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan. Emlak, telefon, bilgisayar, giyim, ev ve daha fazlası." />
         <link rel="canonical" href="https://www.ortaksat.com/" />
         <meta property="og:type" content="website" />
         <meta property="og:site_name" content="OrtakSat" />
@@ -588,7 +588,7 @@ function HomeSeoSkeleton() {
     <View style={{ backgroundColor: colors.background, flex: 1, paddingHorizontal: 20, paddingTop: 22 }}>
       <Head>
         <title>OrtakSat — Komisyonla Ortak Satış Platformu | İlan Ver, Ortak Ol Kazan</title>
-        <meta name="description" content="OrtakSat: ürününü ücretsiz listele, komisyonunu belirle; ortaklar referans linkiyle paylaşıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan." />
+        <meta name="description" content="OrtakSat: ürününü ücretsiz listele, komisyonunu belirle; ortaklar kendi yöntemiyle tanıtıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan." />
         <link rel="canonical" href="https://www.ortaksat.com/" />
       </Head>
       <View style={{ alignSelf: "center", gap: 16, maxWidth: 900, width: "100%" }}>
@@ -596,7 +596,7 @@ function HomeSeoSkeleton() {
           {translateCopy("Ürününü ortak satışa aç, ", language)}<Text style={{ color: colors.primary }}>{translateCopy("satışta komisyon kazan.", language)}</Text>
         </Text>
         <Text style={{ color: colors.muted, fontSize: 16, fontWeight: "600", lineHeight: 24, maxWidth: 640 }}>
-          {translateCopy("Ürününü ücretsiz listele, komisyonunu belirle; ortaklar referans linkiyle paylaşıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan. Emlak, vasıta, elektronik, ev & yaşam, moda ve daha fazlası tek platformda.", language)}
+          {translateCopy("Ürününü ücretsiz listele, komisyonunu belirle; ortaklar kendi yöntemiyle tanıtıp senin için satsın. Sıfır sermaye ile ortak ol, satışta komisyon kazan. Emlak, vasıta, elektronik, ev & yaşam, moda ve daha fazlası tek platformda.", language)}
         </Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
           <Link href="/create" asChild>

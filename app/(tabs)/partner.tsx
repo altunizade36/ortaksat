@@ -22,7 +22,7 @@ import { PartnerTier } from "@/components/partner-tier";
 import { QuickStart } from "@/components/quick-start";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
-import { commissionAmount, commissionText, effectiveCommissionAmount, listingShareTemplates, money, moneyIn, shareUrl } from "@/lib/format";
+import { commissionAmount, commissionText, effectiveCommissionAmount, listingShareTemplates, money, moneyIn, productUrl } from "@/lib/format";
 import { haptic } from "@/lib/haptics";
 import { loadClickCounts } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -176,7 +176,7 @@ function PartnerScreenInner() {
   // ÖRNEK/vitrin (demo) ilanlar ortaklığa KAPALI (joinListing engeller) → fırsat listesinden
   // de çıkarılır; aksi halde "Ortak ol" → çıkmaz ("örnek ilan, ortaklık kapalı"). Gerçek ürünler
   // eklendiğinde burada görünür ve çalışır.
-  const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id && l.partnershipMode !== "invite" && !l.demo);
+  const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id && l.partnershipMode !== "invite" && l.partnershipMode !== "none" && !l.demo);
   // Mobil liste (filtre paneli yok): en iyi fırsatlar önce — doğrulanmış/öne çıkan, sonra komisyon.
   const rankedOpportunities = useMemo(() => allOpportunities.slice().sort((a, b) => {
     const av = (a.featured ? 2 : 0) + ((findUser(a.ownerId)?.verifiedIdentity || findUser(a.ownerId)?.verifiedPhone) ? 1 : 0);
@@ -234,18 +234,23 @@ function PartnerScreenInner() {
     const result = joinListing(listingId);
     const ok = Boolean(result);
     if (ok) haptic.success(); else haptic.warning();
-    // DEĞER ANI: ortaklık ANINDA aktifse pasif "bağlantın hazır" alert'i yerine linki DOĞRUDAN
-    // paylaşıma aç — ortağın tek işi paylaşmak; onu paylaşım anına bir dokunuşla getir.
-    // (Satıcının yayın-sonrası satır-içi paylaşımıyla parite; ortak huninin aktivasyon noktası.)
-    if (ok && result?.status === "active" && result.refCode) {
-      void sharePartnership(listingId, result.refCode);
+    // DEĞER ANI (MODEL): ortak ürünü KENDİ YÖNTEMİYLE tanıtır — zorunlu link/takip YOK.
+    // Ortak olunca "nasıl kazanılır"ı anlat; istersen ürün sayfasını (düz link, takip yok) paylaş.
+    if (ok && result?.status === "active") {
+      const listing = listings.find((l) => l.id === listingId);
+      Alert.alert(
+        translateCopy("Ortak oldun 🎉", language),
+        translateCopy("Artık bu ürünü kendi yönteminle tanıtabilirsin — sosyal medyanda, çevrende veya müşterilerine. Sattığında satıcıya haber ver; komisyonun kaydedilir.", language),
+        [
+          { text: translateCopy("Tamam", language), style: "cancel" },
+          { text: translateCopy("Ürünü paylaş", language), onPress: () => { if (listing) void shareProduct(listing); } }
+        ]
+      );
       return;
     }
     Alert.alert(
-      translateCopy(ok ? "Başvuru gönderildi" : "İşlem yapılamadı", language),
-      // Hata mesajı SABİT idi → store'un gerçek sebebi (engellendin, puan yetersiz, ilan
-      // pasif…) yutuluyor, kullanıcı yanlış açıklama görüyordu. Önce authError'ı göster.
-      translateCopy(ok ? "Satıcı onayından sonra bağlantın açılır." : (authError ?? "Kendi ilanına ortak olamazsın, giriş yapman gerekir veya ilan aktif değil."), language)
+      translateCopy(ok ? "Talep gönderildi" : "İşlem yapılamadı", language),
+      translateCopy(ok ? "Satıcı onayından sonra ortak olursun; ürünü kendi yönteminle tanıtabilirsin." : (authError ?? "Kendi ilanına ortak olamazsın, giriş yapman gerekir veya ilan aktif değil."), language)
     );
   }
 
@@ -258,19 +263,25 @@ function PartnerScreenInner() {
     }
   }
 
-  async function sharePartnership(listingId: string, refCode: string) {
+  // Ürünü paylaş: DÜZ ürün sayfası linki (referans/takip YOK). Ortak ürünü kendi yöntemiyle
+  // tanıtır; platform yalnız ürün sayfasını paylaşmayı kolaylaştırır — tıklama takibi yapmaz.
+  async function shareProduct(listing: Listing) {
+    const url = productUrl(listing);
+    const pitch = listing.salesPitch?.[0] ? `\n${listing.salesPitch[0]}` : "";
+    const r = await shareOrCopy({ title: listing.title, message: `${listing.title} — ${money(listing.price)}${pitch}\n${url}`, url });
+    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Ürünü istediğin yerde paylaşabilirsin.", language));
+  }
+  // Eski imza korunur (çağrı yerleri); refCode YOK SAYILIR (link/takip modeli kaldırıldı).
+  async function sharePartnership(listingId: string, _refCode?: string) {
     const listing = listings.find((item) => item.id === listingId);
-    if (!listing) return;
-    const url = shareUrl(listing, refCode, "share");
-    const r = await shareOrCopy({ title: listing.title, message: `${listingShareTemplates(listing, url, refCode).whatsapp}\n${url}`, url });
-    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Paylaşmak için istediğin yere yapıştırabilirsin.", language));
+    if (listing) await shareProduct(listing);
   }
 
-  async function openWhatsapp(listingId: string, refCode: string) {
+  async function openWhatsapp(listingId: string, _refCode?: string) {
     const listing = listings.find((item) => item.id === listingId);
     if (!listing) return;
-    const url = shareUrl(listing, refCode, "whatsapp");
-    const text = encodeURIComponent(`${listingShareTemplates(listing, url, refCode).whatsapp}\n${url}`);
+    const url = productUrl(listing);
+    const text = encodeURIComponent(`${listing.title} — ${money(listing.price)}\n${url}`);
     await openUrlSafe(`https://wa.me/?text=${text}`);
   }
 
@@ -280,11 +291,11 @@ function PartnerScreenInner() {
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
   }
 
-  // Satışı ortak bildirir: satışları yalnız satıcı sisteme ekler; ortak, referansıyla
-  // yaptığı satışı satıcıya bildirip komisyonun başlatılmasını ister (güven döngüsü).
+  // Satışı ortak bildirir: satışı yalnız satıcı sisteme ekler; ortak, kendi yöntemiyle yaptığı
+  // satışı satıcıya bildirip komisyonun başlatılmasını ister (karşılıklı anlaşma → güven döngüsü).
   function claimSale(listingId: string, sellerId: string, title: string) {
     const seller = findUser(sellerId);
-    const conversation = startConversation(listingId, sellerId, `Merhaba${seller ? ` ${seller.name}` : ""}, "${title}" ürününü referans linkimle sattım. Satışı sisteme ekleyip komisyonumu başlatır mısın? Alıcı ve tutar bilgisini paylaşabilirim.`);
+    const conversation = startConversation(listingId, sellerId, `Merhaba${seller ? ` ${seller.name}` : ""}, "${title}" ürününe bir müşteri getirdim ve satış gerçekleşti. Satışı sisteme ekleyip komisyonumu başlatır mısın? Alıcı ve tutar bilgisini paylaşabilirim.`);
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
   }
 
@@ -302,7 +313,7 @@ function PartnerScreenInner() {
     leave: (partnershipId: string, title: string) => {
       Alert.alert(
         translateCopy("Ortaklıktan ayrıl", language),
-        `"${title}" ${translateCopy("ilanındaki ortaklıktan ayrılmak istediğine emin misin? Paylaşım linkin artık lead getirmez. Kazanılmış komisyonların korunur.", language)}`,
+        `"${title}" ${translateCopy("ilanındaki ortaklıktan ayrılmak istediğine emin misin? Bu ürünü artık ortak olarak tanıtamazsın. Kazanılmış komisyonların korunur.", language)}`,
         [
           { text: translateCopy("Vazgeç", language), style: "cancel" },
           { text: translateCopy("Ayrıl", language), style: "destructive", onPress: () => leavePartnership(partnershipId) }
@@ -372,7 +383,7 @@ function PartnerScreenInner() {
       { key: "pending", label: translateCopy("Başvurduğum ilanlar", language), count: pendingPartnerships.length },
       { key: "active", label: translateCopy("Aktif ortaklıklar", language), count: activePartnerships.length },
       { key: "earning", label: translateCopy("Kazançlarım", language) },
-      { key: "links", label: translateCopy("Özel bağlantılar", language) }
+      { key: "links", label: translateCopy("Ortak ürünlerim", language) }
     ];
     const stats = [
       { icon: "handshake" as const, value: `${activePartnerships.length}`, label: translateCopy("Aktif ortaklıklar", language), tint: [colors.primarySoft, colors.primaryDark] as [string, string] },
@@ -383,7 +394,7 @@ function PartnerScreenInner() {
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 40, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
-        <Seo title={translateCopy("Ortak Satış — Ürün paylaş, satışta komisyon kazan | OrtakSat", language)} description={translateCopy("Beğendiğin ürünlere ortak ol, referans linkini paylaş; satış gerçekleşince komisyonu kazan. Sıfır sermaye, ücretsiz başvuru. OrtakSat ortak satış platformu.", language)} path="/partner" />
+        <Seo title={translateCopy("Ortak Satış — Ürün paylaş, satışta komisyon kazan | OrtakSat", language)} description={translateCopy("Beğendiğin ürünlere ortak ol, kendi yönteminle tanıt; satış gerçekleşince komisyonu kazan. Sıfır sermaye, ücretsiz başvuru. Zorunlu link veya takip yok. OrtakSat ortak satış platformu.", language)} path="/partner" />
         {/* Hero */}
         <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 24 }}>
           <View style={{ flex: 1.5, gap: 12, justifyContent: "center", minWidth: 0 }}>
@@ -435,7 +446,7 @@ function PartnerScreenInner() {
               {[
                 { n: 1, i: "compass-outline" as const, t: "Sana uygun fırsatı bul", d: "Kategorine ve kitlene uygun ilanları filtrele." },
                 { n: 2, i: "file-check-outline" as const, t: "Ortaklık şartlarını kabul et", d: "Komisyon oranı, süre ve izinli kanallar sabitlenir." },
-                { n: 3, i: "link-variant" as const, t: "Özel bağlantını paylaş", d: "Sana özel referans linkini kitlenle paylaş." },
+                { n: 3, i: "link-variant" as const, t: "Kendi yönteminle tanıt", d: "Ürünü sosyal medyanda, çevrende veya müşterilerine istediğin gibi tanıt." },
                 { n: 4, i: "chart-line" as const, t: "Tıklama ve talepleri izle", d: "Yönlendirmelerin ve talepler panelinde görünür." },
                 { n: 5, i: "cash-check" as const, t: "Doğrulanan sonuçtan kazan", d: "Satış/talep doğrulanınca komisyonun hak edilir." }
               ].map((s) => (
@@ -539,10 +550,10 @@ function PartnerScreenInner() {
                         </View>
                       </View>
                     </View>
-                    {activePartnerships.length === 0 ? <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Aktif ortaklık bağlantın yok.", language)}</Text> :
+                    {activePartnerships.length === 0 ? <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Aktif ortaklığın yok.", language)}</Text> :
                     activePartnerships.map((p) => {
                       const l = listings.find((x) => x.id === p.listingId);
-                      return l ? <ShareRow key={p.id} title={l.title} url={shareUrl(l, p.refCode)} onCopy={() => void copyText("Bağlantı", shareUrl(l, p.refCode))} /> : null;
+                      return l ? <ShareRow key={p.id} title={l.title} url={productUrl(l)} onCopy={() => void copyText("Bağlantı", productUrl(l))} /> : null;
                     })}
                   </>
                 ) : (tab === "earning" ? mySales : tab === "active" ? activePartnerships : pendingPartnerships).length === 0 ? (
@@ -607,14 +618,14 @@ function PartnerScreenInner() {
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Paylaşım bağlantılarım", language)}</Text>
-                <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Tüm paylaşım bağlantılarını gör", language)} onPress={() => setTab("links")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tümünü gör", language)}</Text></Pressable>
+                <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Tüm ortaklıkları gör", language)} onPress={() => setTab("links")}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tümünü gör", language)}</Text></Pressable>
               </View>
               {activePartnerships.length === 0 ? (
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Ortak olduğunda paylaşım bağlantıların burada görünür.", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Ortak olduğun ürünler burada görünür.", language)}</Text>
               ) : (
                 activePartnerships.slice(0, 3).map((p) => {
                   const l = listings.find((x) => x.id === p.listingId);
-                  return l ? <ShareRow key={p.id} title={l.title} url={shareUrl(l, p.refCode)} onCopy={() => void copyText("Bağlantı", shareUrl(l, p.refCode))} compact /> : null;
+                  return l ? <ShareRow key={p.id} title={l.title} url={productUrl(l)} onCopy={() => void copyText("Bağlantı", productUrl(l))} compact /> : null;
                 })
               )}
               {/* Paylaşım linkleri ortak olunca otomatik üretilir; buradan yeni ürüne ortak olunur. */}
@@ -918,8 +929,8 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
   actions: PartnershipCardActions;
 }) {
   const { language, t } = useLanguage();
-  const url = shareUrl(listing, partnership.refCode);
-  const templates = listingShareTemplates(listing, url, partnership.refCode);
+  const url = productUrl(listing);
+  const templates = listingShareTemplates(listing, url); // düz ürün linki (referans/takip yok)
   const earned = listingSales.reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const sellerPaidCount = listingSales.filter((sale) => sale.status === "seller_paid").length;
   // Bu ortağın KİŞİSEL efektif komisyonu (override / kademeli / varsayılan) — bir satış, liste fiyatı.
@@ -956,13 +967,14 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
             <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 9, paddingVertical: 6 }}>
               <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
               <Text style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>
-                {translateCopy("Komisyon şartların kilitli — satıcı ilanı düzenlese de değişmez", language)} · {translateCopy("atıf", language)} {partnership.agreedAttributionWindowDays ?? listing.attributionWindowDays} {translateCopy("gün", language)}
+                {translateCopy("Komisyon şartların kilitli — satıcı ilanı düzenlese de anlaştığın komisyon değişmez.", language)}
               </Text>
             </View>
           ) : null}
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy("Ürünü kendi yönteminle tanıt — istersen ürün sayfasını paylaş (referans/takip yok):", language)}</Text>
           <Text selectable style={{ color: colors.info, fontSize: 13, lineHeight: 19 }}>{url}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-            <View style={{ flexBasis: "31%", flexGrow: 1 }}><PrimaryButton tone="secondary" onPress={() => actions.copy("Satış bağlantısı", url)}>Kopyala</PrimaryButton></View>
+            <View style={{ flexBasis: "31%", flexGrow: 1 }}><PrimaryButton tone="secondary" onPress={() => actions.copy("Ürün bağlantısı", url)}>Kopyala</PrimaryButton></View>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}><PrimaryButton tone="soft" onPress={() => actions.whatsapp(listing.id, partnership.refCode)}>WhatsApp</PrimaryButton></View>
             <View style={{ flexBasis: "31%", flexGrow: 1 }}><PrimaryButton onPress={() => actions.share(listing.id, partnership.refCode)}>Paylaş</PrimaryButton></View>
           </View>
@@ -1002,7 +1014,7 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
               <MaterialCommunityIcons name="account-off-outline" size={16} color={colors.muted} />
               <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy(partnership.status === "blocked" ? "Ortaklık kapatıldı" : partnership.status === "completed" ? "Ortaklık tamamlandı" : "Ortaklık sonlandırıldı", language)}</Text>
             </View>
-            <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{translateCopy(partnership.status === "blocked" ? "Bu ortaklık satıcı tarafından kapatıldı; paylaşım linkin artık aktif değil." : "Bu ortaklık sona erdi; paylaşım linkin artık lead getirmez.", language)}</Text>
+            <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{translateCopy(partnership.status === "blocked" ? "Bu ortaklık satıcı tarafından kapatıldı; bu ürünü artık ortak olarak tanıtamazsın." : "Bu ortaklık sona erdi; bu ürünü artık ortak olarak tanıtamazsın.", language)}</Text>
           </View>
           <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
         </View>
@@ -1143,9 +1155,9 @@ function PartnerActionBand({
       ? "Ödeme onayı ver"
       : leadCount > 0
         ? "Talepleri takip et"
-        : "Linkini paylaş";
+        : "Ürünü tanıt";
   const body = !active
-    ? "Onaylanınca paylaşım bağlantın açılır."
+    ? "Onaylanınca ortak olursun; ürünü kendi yönteminle tanıtırsın."
     : sellerPaidCount > 0
       ? "Satıcı ödeme bildirdi; aldıysan komisyonu kapat."
       : leadCount > 0

@@ -16,22 +16,22 @@ const BENEFITS: Array<{ icon: IconName; t: string; b: string }> = [
   { icon: "cash-remove", t: "Ücretsiz listeleme", b: "İlan açmak, komisyon belirlemek ve ortak toplamak tamamen ücretsiz. Aidat veya üyelik yok." },
   { icon: "account-group", t: "Bedava satış ordusu", b: "Onlarca ortak (influencer/sosyal medya kullanıcısı) ürününü kendi takipçisiyle paylaşır — sen tek kuruş reklam vermeden." },
   { icon: "shield-check", t: "Risksiz model", b: "Komisyonu yalnızca satış gerçekleşince, kendi belirlediğin oranda ödersin. Önden maliyet yok." },
-  { icon: "tune", t: "Kontrol sende", b: "Komisyon oranını, ortaklık türünü (anında/onaylı) ve stok limitini sen belirlersin." },
-  { icon: "chart-line", t: "Şeffaf takip", b: "İlanına kaç ortak katıldı, kaç tıklama ve talep geldi — panelinden canlı görürsün." },
+  { icon: "tune", t: "Kontrol sende", b: "Komisyon vermek senin tercihin; oranını, ortaklık türünü (anında/onaylı) ve stok limitini sen belirlersin." },
+  { icon: "chart-line", t: "Şeffaf takip", b: "İlanına kaç ortak katıldı, kaç talep ve satış geldi — panelinden canlı görürsün." },
   { icon: "handshake-outline", t: "Aracı platform", b: "OrtakSat para tutmaz, kargo yapmaz. Ödeme ve teslimatı alıcıyla kendi aranızda yaparsınız." }
 ];
 
 const STEPS: Array<{ icon: IconName; t: string; b: string }> = [
   { icon: "store-plus-outline", t: "1. Ürününü ekle", b: "Fotoğraf, fiyat ve açıklamayı gir. 5 dakikada yayında." },
   { icon: "percent", t: "2. Komisyon belirle", b: "Ortağa satış başına vereceğin yüzde veya sabit tutarı ayarla." },
-  { icon: "share-variant-outline", t: "3. Ortaklar paylaşsın", b: "Onaylı ortaklar sana özel referans linkiyle ürünü tanıtır." },
+  { icon: "share-variant-outline", t: "3. Ortaklar tanıtsın", b: "Onayladığın ortaklar ürünü kendi yöntemleriyle (sosyal medya, çevreleri, müşterileri) tanıtır." },
   { icon: "cash-check", t: "4. Satışta öde", b: "Alıcı gelir, satış olur; komisyonu anlaştığın kanaldan doğrudan ortağa ödersin." }
 ];
 
 const FAQ: Array<{ q: string; a: string }> = [
   { q: "İlan vermek ücretli mi?", a: "Hayır. OrtakSat'ta ilan açmak, komisyon belirlemek ve ortak toplamak ücretsizdir. Platform üyelik veya aidat almaz." },
   { q: "Komisyonu ne zaman öderim?", a: "Yalnızca satış gerçekleştiğinde. Komisyon oranını sen belirlersin ve ödemeyi satış sonrası, anlaştığın kanaldan doğrudan ortağa yaparsın. OrtakSat para tutmaz." },
-  { q: "Ortaklar ürünümü nasıl satıyor?", a: "Onayladığın ortaklara ürüne özel bir referans linki oluşur. Ortak bu linki sosyal medyada, WhatsApp'ta paylaşır; alıcı linkten gelir ve seninle iletişime geçer." },
+  { q: "Ortaklar ürünümü nasıl satıyor?", a: "Onayladığın ortak, ürünü kendi yöntemiyle (sosyal medyasında, çevresinde veya müşterilerine) tanıtır. Zorunlu referans linki veya takip sistemi yoktur; satış ve komisyon, seninle ortak arasındaki karşılıklı anlaşmaya dayanır." },
   { q: "Kargo ve ödemeyi OrtakSat mı yapıyor?", a: "Hayır. OrtakSat bir aracı ilan ve eşleşme platformudur; ödeme ve teslimatı alıcıyla kendi aranızda yaparsınız." },
   { q: "Hangi ürünler ortak satışa uygun?", a: "Fotoğrafla anlaşılan, fiyatı ve teslimatı net, stoğu güvenilir ürünler en iyi çalışır. Emlak, araç, elektronik, giyim, ev ürünleri ve daha fazlası uygundur." }
 ];

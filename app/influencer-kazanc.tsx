@@ -13,27 +13,27 @@ import { useIsWideWeb } from "@/lib/layout";
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 const BENEFITS: Array<{ icon: IconName; t: string; b: string }> = [
-  { icon: "wallet-outline", t: "Sıfır sermaye", b: "Ürün satın almazsın, para yatırmazsın. Yalnızca referans linkini paylaşırsın." },
+  { icon: "wallet-outline", t: "Sıfır sermaye", b: "Ürün satın almazsın, para yatırmazsın. Ürünü kendi yönteminle tanıtırsın." },
   { icon: "package-variant-closed-remove", t: "Stok & kargo yok", b: "Depo, paketleme, gönderi derdi yok. Teslimatı satıcı yapar; sen tanıtırsın." },
-  { icon: "clock-fast", t: "5 dakikada başla", b: "Kayıt ol, ürün seç, linkini al, paylaş. Bugün ilk linkini oluşturabilirsin." },
-  { icon: "cash-multiple", t: "Her satışta komisyon", b: "Linkinden gelen alıcı satın alırsa, satıcının belirlediği komisyon senin olur." },
-  { icon: "chart-line", t: "Şeffaf kazanç", b: "Tıklama ve satışların panelinde görünür; hangi paylaşım kazandırdı bilirsin." },
+  { icon: "clock-fast", t: "5 dakikada başla", b: "Kayıt ol, ürün seç, ortak ol. Bugün tanıtmaya başlayabilirsin." },
+  { icon: "cash-multiple", t: "Her satışta komisyon", b: "Senin tanıtımınla gelen alıcı satın alırsa, satıcının belirlediği komisyon senin olur." },
+  { icon: "chart-line", t: "Şeffaf kazanç", b: "Ortaklıkların ve satışların panelinde görünür; hangi ürün kazandırdı bilirsin." },
   { icon: "shield-check", t: "Güvenli & dürüst", b: "OrtakSat para tutmaz; komisyonu satıcı doğrudan sana öder. İş birliğini gizleme, güven kazan." }
 ];
 
 const STEPS: Array<{ icon: IconName; t: string; b: string }> = [
-  { icon: "account-plus-outline", t: "1. Ürüne katıl", b: "Beğendiğin ürüne ortak ol; anında ya da satıcı onayıyla linkin açılır." },
-  { icon: "link-variant", t: "2. Linkini al", b: "Sana özel referans linki oluşur — tüm satışlar sana bağlanır." },
-  { icon: "share-variant-outline", t: "3. Paylaş", b: "Instagram, TikTok, WhatsApp'ta paylaş. Hazır metinleri kopyala, kullan." },
+  { icon: "account-plus-outline", t: "1. Ortak ol talebi gönder", b: "Beğendiğin komisyonlu ürüne 'Ortak Ol' talebi gönder veya satıcıya mesaj at." },
+  { icon: "handshake-outline", t: "2. Anlaş", b: "Satıcı talebini kabul edince ortak olursun; komisyon ve şartları birlikte netleştirirsiniz." },
+  { icon: "share-variant-outline", t: "3. Kendi yönteminle tanıt", b: "Ürünü Instagram, TikTok, WhatsApp'ta veya kendi çevrende istediğin yöntemle tanıt." },
   { icon: "cash-plus", t: "4. Kazan", b: "Satış olunca komisyon panelinde kaydedilir; satıcı doğrudan sana öder." }
 ];
 
 const FAQ: Array<{ q: string; a: string }> = [
-  { q: "Para kazanmak için sermaye gerekir mi?", a: "Hayır. Ortak olmak için ürün satın almana veya para yatırmana gerek yok. Sadece referans linkini paylaşırsın; satış olursa komisyon kazanırsın." },
+  { q: "Para kazanmak için sermaye gerekir mi?", a: "Hayır. Ortak olmak için ürün satın almana veya para yatırmana gerek yok. Ürünü kendi yönteminle tanıtırsın; satış olursa komisyon kazanırsın." },
   { q: "Ne kadar kazanabilirim?", a: "Kazancın kitlene, paylaşım kalitene ve ürünün komisyonuna bağlıdır. Kazanç Hesaplayıcı ile takipçi sayına göre aylık tahmini görebilirsin. OrtakSat kazanç garantisi vermez." },
   { q: "Komisyonu kim öder?", a: "Satıcı öder. OrtakSat para tutmaz; satış sonrası komisyonu satıcı, anlaştığınız kanaldan doğrudan sana gönderir." },
   { q: "Takipçim az, yine de kazanabilir miyim?", a: "Evet. Küçük ama ilgili bir kitle de satış getirebilir. Doğru ürünü seçmek ve dürüst, net anlatmak takipçi sayısından daha önemlidir." },
-  { q: "Kaç ürünü aynı anda paylaşabilirim?", a: "İstediğin kadar. Farklı ürünlere ortak olabilir, hepsinin linkini ayrı ayrı paylaşabilirsin." }
+  { q: "Kaç ürünü aynı anda tanıtabilirim?", a: "İstediğin kadar. Farklı ürünlere ortak olabilir, hepsini ayrı ayrı tanıtabilirsin." }
 ];
 
 const faqLd = JSON.stringify({
@@ -46,7 +46,7 @@ export default function InfluencerLandingPage() {
   const isWideWeb = useIsWideWeb();
   const { language } = useLanguage();
   const title = translateCopy("Sosyal Medyadan Para Kazan — Influencer Ortak Programı | OrtakSat", language);
-  const desc = translateCopy("Instagram, TikTok veya WhatsApp hesabınla para kazan. Sıfır sermaye, stok yok, para yatırma yok — ürün seç, referans linkini paylaş, satışta komisyon kazan. Ücretsiz başla.", language);
+  const desc = translateCopy("Instagram, TikTok veya WhatsApp hesabınla para kazan. Sıfır sermaye, stok yok, para yatırma yok — ürün seç, ortak ol, kendi yönteminle tanıt, satışta komisyon kazan. Ücretsiz başla.", language);
   const url = "https://www.ortaksat.com/influencer-kazanc";
 
   return (
@@ -71,7 +71,7 @@ export default function InfluencerLandingPage() {
           </View>
           <Text style={{ color: "#FFFFFF", fontSize: isWideWeb ? 34 : 26, fontWeight: "900", lineHeight: isWideWeb ? 40 : 31 }}>{translateCopy("Sosyal medya hesabınla para kazan", language)}</Text>
           <Text style={{ color: "rgba(255,255,255,0.9)", fontSize: 15, fontWeight: "600", lineHeight: 23, maxWidth: 640 }}>
-            {translateCopy("Ürün seç, sana özel referans linkini paylaş; o linkten satış olursa komisyon senin. Depo, kargo, para yatırma yok — bugün başla.", language)}
+            {translateCopy("Komisyonlu ürün seç, ortak ol; ürünü kendi yönteminle tanıt, sattığında komisyonunu al. Depo, kargo, para yatırma yok — bugün başla.", language)}
           </Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
             <Link href="/partner" asChild>
@@ -134,8 +134,8 @@ export default function InfluencerLandingPage() {
         {/* CTA */}
         <View style={{ alignItems: isWideWeb ? "center" : "stretch", backgroundColor: colors.primarySoft, borderRadius: 18, flexDirection: isWideWeb ? "row" : "column", gap: 16, padding: 22 }}>
           <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
-            <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>{translateCopy("Bugün ilk linkini oluştur", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{translateCopy("Ücretsiz kayıt ol, ürün seç, paylaş, kazan.", language)}</Text>
+            <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>{translateCopy("Bugün ilk ortaklığını kur", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{translateCopy("Ücretsiz kayıt ol, ürün seç, tanıt, kazan.", language)}</Text>
           </View>
           <Link href="/partner" asChild>
             <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, paddingHorizontal: 24, paddingVertical: 13 }}>

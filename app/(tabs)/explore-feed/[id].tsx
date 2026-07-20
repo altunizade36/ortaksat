@@ -130,15 +130,11 @@ export default function ExploreFeedScreen() {
   }
 
   async function shareListing(listing: Listing) {
-    // Aktif ortaksan referans (komisyon) linkini, değilsen temiz ürün linkini paylaş.
-    // Ürünün OLMAYAN /i/{slug} referans formunu ref'siz paylaşmak anlamsızdı — düzeltildi.
-    const mine = partnerships.find((p) => p.listingId === listing.id && p.partnerId === currentUser.id && p.status === "active");
-    const url = mine ? shareUrl(listing, mine.refCode) : productUrl(listing);
-    const message = mine
-      ? `${listing.title}\n${money(listing.price)}\n${url}`
-      : `${listing.title}\n${money(listing.price)}\n${translateCopy("OrtakSat'ta gör:", language)} ${url}`;
+    // MODEL: referans/takip YOK → her zaman DÜZ ürün sayfası linki paylaşılır.
+    const url = productUrl(listing);
+    const message = `${listing.title}\n${money(listing.price)}\n${translateCopy("OrtakSat'ta gör:", language)} ${url}`;
     const r = await shareOrCopy({ title: listing.title, message, url });
-    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Paylaşmak için istediğin yere yapıştırabilirsin.", language));
+    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Ürünü istediğin yerde paylaşabilirsin.", language));
   }
 
   function submitComment(listing: Listing) {

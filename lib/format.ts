@@ -168,22 +168,18 @@ export function trPhoneIntl(phone: string | undefined | null): string {
 }
 
 /**
- * Kanala özel paylaşım metinleri. `refCode` verilirse her kanal KENDİ kanal-etiketli linkini
- * alır (dönüşüm ölçümü). Instagram metni BİO-YÖNELİMLİDİR: IG gönderi/açıklamasında ham URL
- * TIKLANAMAZ → "link bio'da/profilde" der (ham link basıp ölü-uç yaratmaz; en büyük sosyal
- * kanalda tıklama kaybını önler).
+ * Ortağın ürünü tanıtırken kullanabileceği HAZIR metinler. MODEL: zorunlu referans linki/kodu
+ * veya takip YOKTUR → düz ürün sayfası linki. Metin ALICI-YÜZÜDÜR (komisyon bilgisi içermez).
+ * (`refCode` param'ı geriye-uyumluluk için korunur ama artık kullanılmaz.)
  */
-export function listingShareTemplates(listing: Listing, url?: string, refCode?: string) {
-  const mk = (channel: string) => (refCode ? shareUrl(listing, refCode, channel) : (url ?? `https://www.ortaksat.com/listing/${listing.id}`));
-  const commission = commissionText(listing);
+export function listingShareTemplates(listing: Listing, url?: string, _refCode?: string) {
+  const link = url ?? `https://www.ortaksat.com/listing/${listing.id}`;
   const firstPitch = listing.salesPitch[0] ?? listing.description;
 
   return {
-    // IG: ham link tıklanamaz → bio/profil yönlendirmesi + DM daveti (link yine yakalanır ama
-    // vurgu tıklanabilir yüzeyde). Satıcının özel şablonu varsa aynen korunur.
-    instagram: listing.shareTemplates?.instagram || `${listing.title}\n${firstPitch}\nFiyat: ${money(listing.price)}\n🔗 Satın alma linki profilimde (bio) — ya da DM'den yazın.\n${mk("instagram")}`,
-    whatsapp: listing.shareTemplates?.whatsapp || `Merhaba, ${listing.title} ürünü için detayları göndereyim.\nFiyat: ${money(listing.price)}\n${firstPitch}\nLink: ${mk("whatsapp")}`,
-    tiktok: listing.shareTemplates?.tiktok || `${listing.title} için kısa tanıtım: ${firstPitch} ${commission}. Detay linki profilde: ${mk("tiktok")}`
+    instagram: listing.shareTemplates?.instagram || `${listing.title}\n${firstPitch}\nFiyat: ${money(listing.price)}\n${link}`,
+    whatsapp: listing.shareTemplates?.whatsapp || `Merhaba, ${listing.title} ürünü ilgini çekebilir.\nFiyat: ${money(listing.price)}\n${firstPitch}\n${link}`,
+    tiktok: listing.shareTemplates?.tiktok || `${listing.title} — ${firstPitch}\nFiyat: ${money(listing.price)}\n${link}`
   };
 }
 

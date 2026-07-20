@@ -22,7 +22,7 @@ const SELLER: { steps: Step[]; ctaLabel: string; ctaHref: Href; ctaIcon: IconNam
 const PARTNER: { steps: Step[]; ctaLabel: string; ctaHref: Href; ctaIcon: IconName } = {
   steps: [
     { icon: "magnify", title: "Fırsat seç", body: "Komisyonu yüksek ürünlere göz at, kitlene uygun olanı seç." },
-    { icon: "link-variant", title: "Ortak ol & paylaş", body: "Sana özel referans bağlantını al, WhatsApp/Instagram'da kendi kitlene paylaş." },
+    { icon: "link-variant", title: "Ortak ol & paylaş", body: "Ürünü kendi yönteminle tanıt — sosyal medyanda, çevrende veya müşterilerine." },
     { icon: "hand-coin-outline", title: "Kazan", body: "Getirdiğin satıştan komisyonu satıcıdan alırsın. Üyelik ücretsiz, stok/ödeme derdi yok." }
   ],
   ctaLabel: "Fırsatları keşfet",

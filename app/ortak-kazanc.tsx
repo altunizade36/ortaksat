@@ -71,7 +71,7 @@ export default function EarningsCalculatorPage() {
   }, [followers, posts, avgCommission, scenario]);
 
   const title = translateCopy("Ortak Kazanç Hesaplayıcı — Sosyal medyadan ne kadar kazanırsın? | OrtakSat", language);
-  const desc = translateCopy("OrtakSat ortak kazanç hesaplayıcı: takipçi sayını, aylık paylaşımını ve komisyonu gir, sıfır sermaye ile aylık tahmini kazancını gör. Stok yok, para yatırma yok — link paylaş, satışta komisyon kazan.", language);
+  const desc = translateCopy("OrtakSat ortak kazanç hesaplayıcı: takipçi sayını, aylık paylaşımını ve komisyonu gir, sıfır sermaye ile aylık tahmini kazancını gör. Stok yok, para yatırma yok — ürünü kendi yönteminle tanıt, satışta komisyon kazan.", language);
   const url = "https://www.ortaksat.com/ortak-kazanc";
 
   return (
@@ -95,7 +95,7 @@ export default function EarningsCalculatorPage() {
           </View>
           <Text style={{ color: colors.ink, fontSize: isWideWeb ? 30 : 25, fontWeight: "900", lineHeight: isWideWeb ? 36 : 30 }}>{translateCopy("Sosyal medyadan ayda ne kadar kazanabilirsin?", language)}</Text>
           <Text style={{ color: colors.muted, fontSize: 14.5, fontWeight: "600", lineHeight: 22, maxWidth: 640 }}>
-            {translateCopy("OrtakSat'ta ürün seçip referans linkini paylaşırsın; o linkten satış olursa komisyon senin. Aşağıdan tahmini kazancını hesapla.", language)}
+            {translateCopy("OrtakSat'ta komisyonlu ürün seçip ortak olursun; ürünü kendi yönteminle tanıtır, sattığında komisyonunu alırsın. Aşağıdan tahmini kazancını hesapla.", language)}
           </Text>
         </View>
 
@@ -103,7 +103,7 @@ export default function EarningsCalculatorPage() {
           {/* Girdiler */}
           <View style={{ flex: 1, gap: 12, minWidth: 0 }}>
             <Stepper label={translateCopy("Takipçi / kitle sayın", language)} value={followers} setValue={setFollowers} step={500} min={100} max={1000000} format={(n) => new Intl.NumberFormat("tr-TR").format(n)} />
-            <Stepper label={translateCopy("Aylık paylaşım (kaç ürün/link)", language)} value={posts} setValue={setPosts} step={1} min={1} max={120} format={(n) => `${n}`} />
+            <Stepper label={translateCopy("Aylık paylaşım (kaç ürün)", language)} value={posts} setValue={setPosts} step={1} min={1} max={120} format={(n) => `${n}`} />
             <Stepper label={translateCopy("Ortalama komisyon (satış başına)", language)} value={avgCommission} setValue={setAvgCommission} step={50} min={20} max={100000} format={trMoney} />
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 8, padding: 14 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Senaryo", language)}</Text>
@@ -130,7 +130,7 @@ export default function EarningsCalculatorPage() {
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
               <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "800", textTransform: "uppercase" }}>{translateCopy("Aylık huni", language)}</Text>
               <FunnelRow icon="eye-outline" label={translateCopy("Toplam erişim", language)} value={trNum(calc.reach)} />
-              <FunnelRow icon="cursor-default-click-outline" label={translateCopy("Link tıklaması", language)} value={trNum(calc.clicks)} />
+              <FunnelRow icon="cursor-default-click-outline" label={translateCopy("Ürüne tıklama", language)} value={trNum(calc.clicks)} />
               <FunnelRow icon="cart-check" label={translateCopy("Satış", language)} value={trNum(calc.sales)} />
               <View style={{ backgroundColor: colors.line, height: 1 }} />
               <FunnelRow icon="cash" label={translateCopy("Kazanç", language)} value={trMoney(calc.monthly)} />
@@ -146,10 +146,10 @@ export default function EarningsCalculatorPage() {
           <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Neden OrtakSat ortağı olmalısın?", language)}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             {([
-              { icon: "wallet-outline", t: "Sıfır sermaye", b: "Ürün almazsın, para yatırmazsın. Sadece link paylaşırsın." },
+              { icon: "wallet-outline", t: "Sıfır sermaye", b: "Ürün almazsın, para yatırmazsın. Ürünü kendi yönteminle tanıtırsın." },
               { icon: "package-variant-closed-remove", t: "Stok & kargo yok", b: "Depo, paketleme, gönderi yok. Teslimatı satıcı yapar." },
-              { icon: "clock-fast", t: "5 dakikada başla", b: "Ürünü seç, linkini al, paylaş. Bugün başlarsın." },
-              { icon: "chart-line", t: "Ölçülebilir kazanç", b: "Tıklama ve satışların panelinde şeffaf görünür." }
+              { icon: "clock-fast", t: "5 dakikada başla", b: "Ürünü seç, ortak ol, tanıtmaya başla. Bugün başlarsın." },
+              { icon: "chart-line", t: "Ölçülebilir kazanç", b: "Ortaklıkların ve satışların panelinde şeffaf görünür." }
             ] as const).map((c) => (
               <View key={c.t} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 240, flexGrow: 1, gap: 6, padding: 16 }}>
                 <MaterialCommunityIcons name={c.icon} size={22} color={colors.primaryDark} />
@@ -164,7 +164,7 @@ export default function EarningsCalculatorPage() {
         <View style={{ alignItems: isWideWeb ? "center" : "stretch", backgroundColor: colors.primarySoft, borderRadius: 18, flexDirection: isWideWeb ? "row" : "column", gap: 16, padding: 22 }}>
           <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
             <Text style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>{translateCopy("Kazanmaya bugün başla", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{translateCopy("Ücretsiz kayıt ol, ürün seç, linkini paylaş.", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{translateCopy("Ücretsiz kayıt ol, ürün seç, kendi yönteminle tanıt.", language)}</Text>
           </View>
           <View style={{ flexDirection: "row", gap: 10 }}>
             <Link href="/partner" asChild>

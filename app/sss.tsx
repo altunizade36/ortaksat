@@ -16,7 +16,7 @@ const FAQ: Array<{ heading: string; body: string }> = [
   },
   {
     heading: "Komisyonu kim belirler?",
-    body: "Komisyon oranını veya sabit tutarını ilanı açan satıcı belirler. Ortak, bağlantıyı paylaşmadan önce kazancını ilan detayında görür."
+    body: "Komisyon oranını veya sabit tutarını ilanı açan satıcı belirler; komisyon isteğe bağlıdır, satıcı isterse komisyonsuz normal ilan da verebilir. Ortak, ortak olmadan önce kazancını ilan detayında görür."
   },
   {
     heading: "Hangi ürünler satılabilir?",

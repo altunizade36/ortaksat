@@ -1855,6 +1855,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setAuthError("Bu ilana ortak olunamaz. İlan pasif olabilir veya kendi ilanın olabilir.");
           return undefined;
         }
+        // NORMAL İLAN (ortak satışa kapalı): ortaklık talebi alınmaz.
+        if (listing.partnershipMode === "none") {
+          setAuthError("Bu ilan normal ilandır; ortak satışa açık değildir.");
+          return undefined;
+        }
         const invited = listing.partnershipMode === "invite" && input?.inviteCode === listingInviteCode(listing);
         if (listing.partnershipMode === "invite" && !invited) {
           setAuthError("Bu ilan sadece davetle ortaklığa açıktır. Ortak olmak için satıcıdan davet linki iste.");

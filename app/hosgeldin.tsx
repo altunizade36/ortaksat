@@ -38,7 +38,7 @@ const ROLES: RoleCard[] = [
     tint: colors.infoSoft,
     accent: colors.info,
     title: "Kazanmak istiyorum (ortak)",
-    desc: "Ürün seç, linkini paylaş; satışta komisyon kazan. Sıfır sermaye.",
+    desc: "Ürün seç, ortak ol; kendi yönteminle tanıt, satışta komisyon kazan. Sıfır sermaye.",
     points: ["Stok/para yatırma yok", "5 dakikada başla", "Sosyal medyandan kazan"],
     cta: "Ortak Ol, Kazan",
     href: "/partner"

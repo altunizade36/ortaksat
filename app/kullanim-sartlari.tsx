@@ -12,7 +12,7 @@ const SECTIONS: LegalSection[] = [
     heading: "Hizmetin Tanımı",
     paragraphs: [
       "OrtakSat aracı bir ilan, eşleştirme ve iletişim platformudur. OrtakSat ürünlerin satıcısı DEĞİLDİR; ödeme almaz, para tutmaz, komisyon kesmez, kargo/teslimat yapmaz.",
-      "Platform yalnızca; ilan yayınlama, ortak satıcı eşleştirme, mesajlaşma, talep ve komisyon takip kaydı gibi teknik altyapı hizmetlerini sunar. Satış, ödeme, teslimat ve komisyon ödemesi tamamen kullanıcılar arasındaki anlaşmalardan ibarettir."
+      "Platform yalnızca; ilan yayınlama, ortak satıcı eşleştirme, mesajlaşma, talep ve komisyon kaydı gibi teknik altyapı hizmetlerini sunar. Satış, ödeme, teslimat ve komisyon ödemesi tamamen kullanıcılar arasındaki anlaşmalardan ibarettir."
     ]
   },
   {
@@ -41,8 +41,8 @@ const SECTIONS: LegalSection[] = [
   {
     heading: "Ortaklık ve Komisyon Modeli",
     paragraphs: [
-      "İlan sahibi (satıcı), ürün başına komisyon oranını/tutarını kendisi belirler. Ortak, ürünü kendi referans bağlantısıyla paylaşır; satış gerçekleşirse komisyon platformda kayıt altına alınır.",
-      "OrtakSat komisyonu tahsil etmez veya ödemez; komisyon ödemesi satıcı ile ortak arasında, platform dışında yapılır. Platform yalnızca anlaşma ve komisyon kaydını tutar. Ödemenin yapılmaması gibi taraflar arası anlaşmazlıklardan OrtakSat sorumlu değildir."
+      "İlan sahibi (satıcı), komisyon oranını/tutarını kendisi belirler; komisyon vermek isteğe bağlıdır, satıcı komisyonsuz normal bir ilan da verebilir. Ortak, ürünü kendi seçtiği yöntemle tanıtır; platformda zorunlu bir referans bağlantısı, referans kodu veya takip sistemi yoktur. Komisyon, satıcı ile ortak arasındaki karşılıklı anlaşmaya dayanır.",
+      "OrtakSat komisyonu tahsil etmez veya ödemez; komisyon ödemesi satıcı ile ortak arasında, platform dışında yapılır. OrtakSat bu ödemenin tarafı değildir; yalnızca tarafların oluşturduğu kaydı tutar. Ödemenin yapılmaması gibi taraflar arası anlaşmazlıklardan OrtakSat sorumlu değildir."
     ]
   },
   {

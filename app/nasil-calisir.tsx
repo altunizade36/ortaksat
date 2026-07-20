@@ -31,38 +31,38 @@ const ROLES: Role[] = [
     tint: colors.primarySoft,
     accent: colors.primaryDark,
     steps: [
-      { icon: "store-plus-outline", title: "İlan Oluşturun", body: "Ürün bilgilerinizi, fotoğraflarınızı ve fiyatınızı ekleyin." },
-      { icon: "percent", title: "Komisyon Belirleyin", body: "Ortak satıcılar için komisyon oranınızı ayarlayın." },
-      { icon: "check-decagram-outline", title: "Talepleri Onaylayın", body: "Ortak satıcı başvurularını inceleyin ve onaylayın." },
-      { icon: "chart-line", title: "Performansı Takip Edin", body: "Satışları, kazançları ve istatistikleri panelinizden takip edin." },
-      { icon: "cash-check", title: "Satış Tamamlandığında Kazanın", body: "Satış gerçekleştiğinde komisyonunuz otomatik hesabınıza yansır." }
+      { icon: "store-plus-outline", title: "Ücretsiz İlan Oluşturun", body: "Ürün veya hizmetinizi, fotoğraflarınızı ve fiyatınızı ekleyin." },
+      { icon: "percent", title: "Komisyon Belirleyin (isteğe bağlı)", body: "Satış ortağı için yüzde (%) veya sabit (₺) komisyon belirleyin — ya da komisyonsuz normal ilan verin." },
+      { icon: "check-decagram-outline", title: "Ortak Taleplerini Onaylayın", body: "Ortak olmak isteyenlerin talebini inceleyin, uygun gördüklerinizi kabul edin." },
+      { icon: "handshake-outline", title: "Şartları Birlikte Belirleyin", body: "Ortağınızla karşılıklı anlaşın; ürünü nasıl tanıtacağınıza platform karışmaz." },
+      { icon: "cash-check", title: "Satışta Komisyonu Ödeyin", body: "Ortak satış getirdiğinde, anlaştığınız komisyonu doğrudan ona ödersiniz. Kayıt panelde tutulur." }
     ],
-    footer: "Komisyonlar satış gerçekleştiğinde otomatik hesaplanır."
+    footer: "Komisyonu siz belirlersiniz; komisyonsuz normal ilan da verebilirsiniz."
   },
   {
-    title: "Ortak Satıcı",
-    subtitle: "Paylaş, tanıt, kazan!",
+    title: "Satış Ortağı",
+    subtitle: "Kendi ürünün olmadan, kendi yönteminle kazan.",
     icon: "account-group-outline",
     tint: colors.infoSoft,
     accent: colors.info,
     steps: [
-      { icon: "account-plus-outline", title: "Ortaklık Talebi Gönderin", body: "Beğendiğiniz ilanlara ortak satıcı olarak başvuru yapın." },
-      { icon: "link-variant", title: "Onay Alın ve Linkinizi Oluşturun", body: "Onaylandıktan sonra size özel paylaşım linkiniz oluşur." },
-      { icon: "share-variant-outline", title: "Linkinizi Paylaşın", body: "Linkinizi sosyal medya, WhatsApp veya dilediğiniz kanallarda paylaşın." },
-      { icon: "account-arrow-right-outline", title: "Alıcıyı Getirin", body: "Alıcı linkiniz üzerinden ürüne ulaşır ve satın alır." },
-      { icon: "cash-plus", title: "Komisyon Kazanın", body: "Satış tamamlandığında komisyonun panelde kayda geçer; satıcı, anlaştığınız kanaldan doğrudan sana öder." }
+      { icon: "magnify", title: "Komisyonlu İlanları İnceleyin", body: "Komisyon sunulan ilanları görün, kitlenize uygun ürünü seçin." },
+      { icon: "account-plus-outline", title: "Ortak Ol Talebi Gönderin", body: "Beğendiğiniz ilana 'Ortak Ol' talebi gönderin veya satıcıyla mesajlaşın." },
+      { icon: "handshake-outline", title: "Onay Alın, Anlaşın", body: "Satıcı talebinizi kabul ederse ortak olursunuz; komisyon ve şartları birlikte netleştirirsiniz." },
+      { icon: "bullhorn-outline", title: "Kendi Yönteminle Tanıtın", body: "Ürünü sosyal medyanızda, çevrenizde veya müşterilerinize istediğiniz yöntemle tanıtın. Zorunlu link veya takip sistemi yoktur." },
+      { icon: "cash-plus", title: "Satışta Komisyonu Alın", body: "Sattığınızda, önceden anlaştığınız komisyonu satıcıdan doğrudan alırsınız. Süreç panelde kayıt altındadır." }
     ],
-    footer: "Ne kadar çok satış, o kadar çok kazanç!"
+    footer: "Satış senin yönteminle olur; komisyon karşılıklı anlaşmaya dayanır."
   },
   {
     title: "Alıcı",
-    subtitle: "Güvenli alışveriş yapın.",
+    subtitle: "Normal ilan sitesi gibi, güvenle alışveriş.",
     icon: "shopping-outline",
     tint: colors.goldSoft,
     accent: colors.gold,
     steps: [
-      { icon: "magnify", title: "Ürünü Keşfedin", body: "Size önerilen veya link ile gelen ürünü inceleyin." },
-      { icon: "message-text-outline", title: "Satıcıyla İletişime Geçin", body: "Talep oluşturun; satıcıyla mesajlaşarak ürünü netleştirin." },
+      { icon: "magnify", title: "Ürünü Keşfedin", body: "Size önerilen ürünleri inceleyin; hiçbir ortaklık sistemi kullanmadan alışveriş yapın." },
+      { icon: "message-text-outline", title: "Satıcıyla İletişime Geçin", body: "Satıcıyla mesajlaşarak ürünü netleştirin, dilerseniz pazarlık yapın." },
       { icon: "handshake-outline", title: "Ödeme & Teslimatı Planlayın", body: "Ödeme ve teslimatı satıcıyla kendi aranızda kararlaştırırsınız." },
       { icon: "package-variant-closed", title: "Ürünü Teslim Alın", body: "Anlaştığınız şekilde ürünü teslim alın." },
       { icon: "star-outline", title: "Satıcıyı Değerlendirin", body: "Deneyiminizi puanlayarak topluluğa katkı sağlayın." }
@@ -72,11 +72,12 @@ const ROLES: Role[] = [
 ];
 
 const FAQ: Array<{ q: string; a: string }> = [
-  { q: "Komisyon ne zaman ve nasıl ödenir?", a: "Komisyon, satışı satıcı onayladığında ortak panelinde “onaylandı” olarak görünür. Ödemeyi satıcı, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sana yapar. Ortaksat para almaz veya tutmaz; yalnızca kaydı tutar." },
-  { q: "Komisyon oranı nasıl belirlenir?", a: "İlanı açan satıcı, ürün başına yüzde (%) veya sabit (₺) komisyonu kendisi belirler. Ortak, paylaşmadan önce kazancını ilanda görür." },
-  { q: "Ortak satıcı taleplerini nasıl yönetirim?", a: "Satıcı panelinden gelen ortaklık başvurularını inceleyip onaylayabilir veya reddedebilirsin. Onaylı ortağa özel referans linki oluşur." },
-  { q: "Ödeme yöntemleri nelerdir?", a: "İlk sürümde ödeme ve teslimat alıcı ile satıcı arasında yapılır; komisyon şartı ve süreç sistemde kayıt altına alınır." },
-  { q: "İade & iptal süreçleri nasıl işler?", a: "İade penceresi içinde iade olursa komisyon beklemeye alınır. Tüm adımlar panelden şeffaf biçimde takip edilir." }
+  { q: "Ortak, ürünü nasıl satar? Link mi kullanılır?", a: "Hayır. OrtakSat'ta zorunlu referans linki, referans kodu veya takip sistemi yoktur. Ortak; ürünü sosyal medyasında, kendi çevresinde veya müşterilerine istediği yöntemle tanıtır. Satış ve komisyon, satıcı ile ortak arasındaki karşılıklı anlaşmaya dayanır — platform satışın nasıl yapıldığına karışmaz." },
+  { q: "Komisyon ne zaman ve nasıl ödenir?", a: "Ortak satış getirdiğinde, satıcı satışı kaydeder ve komisyon ortak panelinde görünür. Ödemeyi satıcı, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan ortağa yapar. OrtakSat para almaz veya tutmaz; yalnızca kaydı tutar." },
+  { q: "Komisyon oranı nasıl belirlenir? Zorunlu mu?", a: "İlanı açan satıcı, ürün başına yüzde (%) veya sabit (₺) komisyonu kendisi belirler. Komisyon zorunlu değildir — satıcı isterse komisyonsuz, normal bir ilan da yayınlayabilir. Ortak, ortak olmadan önce kazancını ilanda görür." },
+  { q: "Ortaklık nasıl kurulur?", a: "Satış ortağı, beğendiği ilana 'Ortak Ol' talebi gönderir veya satıcıya mesaj atar. Satıcı uygun gördüğü kişileri kabul eder; iki taraf karşılıklı anlaşarak birlikte çalışmaya başlar." },
+  { q: "Alıcı ortaklık sistemini kullanmak zorunda mı?", a: "Hayır. Alıcı; ürünleri inceler, satıcıyla mesajlaşır, pazarlık yapar ve doğrudan satın alır — tıpkı normal bir ilan sitesindeki gibi. Ortaklık sistemi yalnızca satıcı ile satış ortağı arasındadır." },
+  { q: "İade & iptal süreçleri nasıl işler?", a: "İade penceresi içinde iade olursa komisyon beklemeye alınır. Ödeme ve teslimat taraflar arasında yapıldığından, iade koşullarını da satıcı ile alıcı kendi aralarında belirler. Kayıt panelde şeffaf biçimde tutulur." }
 ];
 
 export default function HowItWorksPage() {

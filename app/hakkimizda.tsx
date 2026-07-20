@@ -16,7 +16,7 @@ function AboutScreenStatic() {
       sections={[
         {
           heading: translateCopy("Ne yapıyoruz?", language),
-          body: translateCopy("Satıcılar ilanlarını açar; ortaklar bu ilanları kendi referans bağlantılarıyla kendi çevrelerine ulaştırır. Bir satış gerçekleştiğinde ortak, satıcının belirlediği komisyonu kazanır. Talep, satış ve komisyon süreçleri tek panelde şeffaf biçimde takip edilir.", language)
+          body: translateCopy("Satıcılar ilanlarını açar ve isterse satış ortağı için komisyon belirler; ortaklar beğendikleri ürünü kendi yöntemleriyle kendi çevrelerine tanıtır. Bir satış gerçekleştiğinde ortak, satıcıyla anlaştığı komisyonu kazanır. Platform satışın nasıl yapıldığına karışmaz; zorunlu link veya takip sistemi yoktur. Talep, satış ve komisyon süreçleri tek panelde şeffaf biçimde takip edilir.", language)
         },
         {
           heading: translateCopy("Kimler için?", language),

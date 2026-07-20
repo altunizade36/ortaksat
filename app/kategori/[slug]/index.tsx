@@ -251,7 +251,7 @@ export default function CategoryLandingScreen() {
     { q: `${node.label} ilanları OrtakSat'ta nasıl satılır?`, a: "İlanını ücretsiz eklersin ve komisyon oranını kendin belirlersin. Ortaklar ürününü kendi takipçisiyle paylaşır; satış olursa komisyonu anlaştığın kanaldan doğrudan ortağa ödersin. Ödeme ve teslimat alıcı ile satıcı arasında yapılır." },
     { q: `${node.label} kategorisinde komisyon oranını kim belirler?`, a: "İlanı açan satıcı belirler — yüzde (%) veya sabit tutar (₺) olarak. Ortak, paylaşmadan önce kazancını ilanda net görür." },
     { q: `OrtakSat ${node.label.toLocaleLowerCase("tr-TR")} alım satımında ödeme veya kargo yapar mı?`, a: "Hayır. OrtakSat aracı bir ilan ve eşleşme platformudur; para tutmaz, kargo yapmaz. Ödeme ve teslimatı alıcı ile satıcı kendi arasında yapar." },
-    { q: `${node.label} ürününü ortak olarak nasıl paylaşırım?`, a: "Ürüne ortak olursun ve sana özel bir referans linki oluşur. Bu linki Instagram, TikTok veya WhatsApp'ta paylaşırsın; linkten gelen alıcı satın alırsa komisyon senin olur." }
+    { q: `${node.label} ürününü ortak olarak nasıl paylaşırım?`, a: "Ürüne 'Ortak Ol' talebi gönderirsin; satıcı kabul edince ortak olursun. Ürünü Instagram, TikTok veya WhatsApp'ta KENDİ yönteminle tanıtırsın. Sattığında anlaştığın komisyonu satıcıdan alırsın — zorunlu link veya takip yok." }
   ];
   const faqLd = JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } })) });
   // BreadcrumbList — Ana Sayfa › Kategoriler › {Kategori} (Google breadcrumb zengin-sonucu).

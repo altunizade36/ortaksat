@@ -274,6 +274,9 @@ export default function ListingDetailScreen() {
   // "Sadece davetle" ilan: ortaklık yalnızca satıcının paylaştığı geçerli davet
   // linkiyle açılır. Geçerli kod URL'de varsa ziyaretçi anında (ön-onaylı) katılır.
   const isInviteMode = currentListing.partnershipMode === "invite";
+  // NORMAL İLAN (ortak satışa kapalı): ortak-UI'sı (komisyon/Ortak Ol/kazanç) gösterilmez;
+  // yalnız normal alıcı akışı (mesaj/iletişim/satın al) kalır.
+  const partnerable = currentListing.partnershipMode !== "none";
   const validInvite = isInviteMode && !!inviteParam && inviteParam === listingInviteCode(currentListing);
   const gallery = [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean);
   const galleryIdx = Math.min(activeImage, Math.max(0, gallery.length - 1));
@@ -367,14 +370,14 @@ export default function ListingDetailScreen() {
       return;
     }
     haptic.success();
-    Alert.alert(translateCopy(result.status === "active" ? "Ortaklık aktif" : "Başvuru gönderildi", language), translateCopy(result.status === "active" ? "Paylaşım bağlantın hazır." : "Satıcı kabul edince bağlantın aktif olacak.", language));
+    Alert.alert(translateCopy(result.status === "active" ? "Ortaklık aktif" : "Talep gönderildi", language), translateCopy(result.status === "active" ? "Artık ürünü kendi yönteminle tanıtabilirsin; sattığında komisyonunu alırsın." : "Satıcı kabul edince ortak olursun.", language));
   }
 
   async function handleShare() {
-    // Ortak aktif paylaşımıysa referans linki (komisyon takibi), değilse düz ürün linki.
-    const url = activeShareUrl ?? productUrl(currentListing);
+    // MODEL: referans/takip YOK → her zaman DÜZ ürün sayfası linki paylaşılır.
+    const url = productUrl(currentListing);
     const r = await shareOrCopy({ title: currentListing.title, message: `${currentListing.title}\n${moneyIn(currentListing.price, currentListing.currency)}\n${url}`, url });
-    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Paylaşmak için istediğin yere yapıştırabilirsin.", language));
+    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Ürünü istediğin yerde paylaşabilirsin.", language));
   }
 
 
@@ -486,8 +489,12 @@ export default function ListingDetailScreen() {
   const metaDesc = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
   const metaUrl = `https://www.ortaksat.com/listing/${currentListing.id}`;
   // Sosyal paylaşımda kazanç kancası — ortak linki paylaşınca önizlemede görünür.
-  const ogTitle = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)} · Ortak ol, ${commissionText(currentListing)} kazan | OrtakSat`;
-  const ogDesc = `${moneyIn(currentListing.price, currentListing.currency)} · ${commissionText(currentListing)}. Bu ürünü paylaş, satışta komisyon kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
+  const ogTitle = partnerable
+    ? `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)} · Ortak ol, ${commissionText(currentListing)} kazan | OrtakSat`
+    : `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)} | OrtakSat`;
+  const ogDesc = partnerable
+    ? `${moneyIn(currentListing.price, currentListing.currency)} · ${commissionText(currentListing)}. Bu ürünü kendi yönteminle tanıt, satışta komisyon kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`
+    : `${moneyIn(currentListing.price, currentListing.currency)} · ${currentListing.category}. Satıcıyla iletişime geç, güvenle satın al. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
   // JSON-LD Product şeması — Google zengin sonuç (fiyat, stok, kategori) için.
   // aggregateRating YALNIZCA gerçek (demo değil) ve gerçekten yorumu olan ilanlara
   // eklenir — sahte yıldız Google politikasını ve "sahte veri yasağı"nı ihlal eder.
@@ -657,7 +664,7 @@ export default function ListingDetailScreen() {
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             <StatusPill label={translateCopy(currentListing.category, language)} />
-            <StatusPill label={translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı", language)} tone={currentListing.partnershipMode === "open" ? "success" : "warning"} />
+            {partnerable ? <StatusPill label={translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı", language)} tone={currentListing.partnershipMode === "open" ? "success" : "warning"} /> : null}
           </View>
 
           <Text selectable accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 23, fontWeight: "900", lineHeight: 29 }}>{currentListing.title}</Text>
@@ -708,7 +715,8 @@ export default function ListingDetailScreen() {
           {/* Fiyat sayfanın en güçlü öğesi olmalı (ürün sayfası) — komisyon kutusu daha hafif. */}
           <Text selectable style={{ color: colors.ink, fontSize: 33, fontWeight: "900", letterSpacing: -0.5 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
 
-          {/* Ortak kazancı — modelin çekirdeği ama fiyattan daha hafif görsel ağırlıkta (kenarlıksız). */}
+          {/* Ortak kazancı — YALNIZ ortak satışa açık ilanlarda (normal ilanda gizli). */}
+          {partnerable ? (
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 4, padding: 12 }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
               <MaterialCommunityIcons name="cash-multiple" size={16} color={colors.primaryDark} />
@@ -730,6 +738,7 @@ export default function ListingDetailScreen() {
               );
             })()}
           </View>
+          ) : null}
 
           {/* İlan Bilgileri (Sahibinden tarzı) — kategoriye özel skaler özellikler,
               fiyatın hemen altında öne çıkarılır. Donanım (çok-seçim) dizileri hariç. */}
@@ -754,7 +763,7 @@ export default function ListingDetailScreen() {
           {/* Anahtar bilgiler */}
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Metric label={translateCopy("Stok", language)} value={`${currentListing.stockCount} ${translateCopy("adet", language)}`} />
-            <Metric label={translateCopy("Ortaklık", language)} value={translateCopy(currentListing.partnershipMode === "open" ? "Anında" : isInviteMode ? "Davetle" : "Onaylı", language)} />
+            <Metric label={translateCopy("Ortaklık", language)} value={translateCopy(!partnerable ? "Kapalı (normal ilan)" : currentListing.partnershipMode === "open" ? "Anında" : isInviteMode ? "Davetle" : "Onaylı", language)} />
           </View>
           <View style={{ flexDirection: "row", gap: 8 }}>
             <Metric label={translateCopy("İade", language)} value={`${currentListing.returnWindowDays} ${translateCopy("gün", language)}`} />
@@ -778,7 +787,7 @@ export default function ListingDetailScreen() {
                 </View>
               ) : null}
             </View>
-          ) : isDemo ? (
+          ) : !partnerable ? null : isDemo ? (
             <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
               <MaterialCommunityIcons name="lock-outline" size={16} color={colors.muted} />
               <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Örnek ilan — ortaklık ve iletişim kapalıdır.", language)}</Text>
@@ -787,7 +796,7 @@ export default function ListingDetailScreen() {
             <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 9, padding: 12 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
                 <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · paylaşım bağlantın hazır", language)}</Text>
+                <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · ürünü kendi yönteminle tanıt", language)}</Text>
               </View>
               {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
               {partnership?.agreedAt ? (
@@ -1002,7 +1011,7 @@ export default function ListingDetailScreen() {
 
       <View style={{ gap: 12, paddingHorizontal: isWideWeb ? 0 : 12 }}>
         {/* Etkileşimli kazanç hesaplayıcı */}
-        {!isOwner && !isDemo ? <EarningsCalculator listing={currentListing} isDemo={isDemo} onJoin={handleJoin} /> : null}
+        {!isOwner && !isDemo && partnerable ? <EarningsCalculator listing={currentListing} isDemo={isDemo} onJoin={handleJoin} /> : null}
 
         <AgreementCard listing={currentListing} partnership={partnership} />
 

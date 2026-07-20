@@ -8,7 +8,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 
 /**
  * Satıcının bir ortağa doğrudan satış eklemesi için tutar+adet modalı.
- * Ortak referans linkiyle gelen alıcı site dışında (WhatsApp/elden) satın aldıysa,
+ * Ortağın kendi yöntemiyle getirdiği alıcı site dışında (WhatsApp/elden) satın aldıysa,
  * satıcı burada satışı kaydedip ortağın komisyonunu başlatır. Platform para tutmaz;
  * bu kayıt yalnızca komisyon sürecini belgeler.
  */

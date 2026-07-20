@@ -1,6 +1,7 @@
 ﻿export type CommissionType = "rate" | "fixed";
 export type ListingStatus = "draft" | "pending_review" | "active" | "paused" | "sold" | "rejected" | "expired" | "archived";
-export type PartnershipMode = "open" | "approval" | "invite";
+// "none" = ortak satışa KAPALI, normal ilan (komisyon yok, ortaklık talebi alınmaz).
+export type PartnershipMode = "none" | "open" | "approval" | "invite";
 export type PartnershipStatus = "active" | "pending" | "rejected" | "blocked" | "cancelled" | "completed";
 export type LeadStatus = "new" | "contacted" | "interested" | "converted" | "lost";
 export type LeadSource = "whatsapp" | "instagram" | "web" | "phone";

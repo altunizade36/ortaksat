@@ -508,6 +508,8 @@ export function DesktopCreateFlow() {
     }
     if (step === 3) return images.length ? null : translateCopy("Devam etmek için en az 1 görsel ekle.", language);
     if (step === 4) {
+      // NORMAL İLAN (ortak satışa kapalı): komisyon gerekmez.
+      if (partnershipMode === "none") return null;
       if (!(commissionNum > 0)) return translateCopy("Komisyon değeri sıfırdan büyük olmalı.", language);
       // Absürt komisyon koruması (para modeli): oran %100'ü, sabit tutar ürün fiyatını aşamaz.
       if (commissionType === "rate" && commissionNum > 100) return translateCopy("Komisyon oranı %100'den büyük olamaz.", language);
@@ -566,7 +568,7 @@ export function DesktopCreateFlow() {
     if (images.length === 0) { setError("En az bir fotoğraf ekle."); setStep(3); return; }
     if (!loc.provinceId) { setError("İl seçmelisin."); setStep(2); return; }
     if (!loc.districtId) { setError("İlçe seçmelisin."); setStep(2); return; }
-    if (!(commissionNum > 0)) { setError("Komisyon değeri sıfırdan büyük olmalı."); setStep(4); return; }
+    if (partnershipMode !== "none" && !(commissionNum > 0)) { setError("Komisyon değeri sıfırdan büyük olmalı."); setStep(4); return; }
 
     // ANONİM YAYIN: form GEÇERLİ ama giriş yok → taslağı anon-pending'e kaydet + Kayıt'a
     // yönlendir (dönüşte /create'e döner, taslak migrasyonla korunur). Emeğini harcamış
@@ -755,7 +757,7 @@ export function DesktopCreateFlow() {
           </Text>
           <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 520, textAlign: "center" }}>
             {published.review
-              ? translateCopy("Kısa bir kontrolden sonra yayına alınacak. Onaylanınca haber vereceğiz — bu arada linkini şimdiden hazırlayabilirsin.", language)
+              ? translateCopy("Kısa bir kontrolden sonra yayına alınacak. Onaylanınca haber vereceğiz.", language)
               : translateCopy("Şimdi en önemli adım: linki paylaş. İlanı gören ortaklar senin için satabilir; satışta komisyonu sen belirlersin.", language)}
           </Text>
         </View>
@@ -1169,6 +1171,15 @@ export function DesktopCreateFlow() {
         {step === 4 ? (
           <View style={{ gap: 16 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Komisyon & Ortak Satış", language)}</Text>
+            {/* MODEL: ortak satış İSTEĞE BAĞLI — satıcı isterse komisyonsuz NORMAL ilan verir.
+                "Normal ilan"da ortaklık talebi alınmaz, komisyon gerekmez (partnershipMode="none"). */}
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              {([["approval", "Ortak satışa aç"], ["none", "Normal ilan"]] as const).map(([mode, lbl]) => {
+                const on = mode === "none" ? partnershipMode === "none" : partnershipMode !== "none";
+                return <Pressable key={mode} onPress={() => setPartnershipMode(mode === "none" ? "none" : (partnershipMode === "none" ? "approval" : partnershipMode))} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 12 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy(lbl, language)}</Text></Pressable>;
+              })}
+            </View>
+            {partnershipMode !== "none" ? (<>
             {/* Faz 4: bu kategoride komisyon HANGİ olayda hak edilir. */}
             {(() => {
               const conv = categoryConversion(leafLabel);
@@ -1341,6 +1352,12 @@ export function DesktopCreateFlow() {
               <MaterialCommunityIcons name="information-outline" size={16} color={colors.info} style={{ marginTop: 1 }} />
               <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Ortaksat para tutmaz; komisyon, satış sonrası satıcı ile ortak arasında doğrudan ödenir. Uygulama yalnızca kaydı tutar.", language)}</Text>
             </View>
+            </>) : (
+              <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 11, flexDirection: "row", gap: 9, padding: 12 }}>
+                <MaterialCommunityIcons name="tag-outline" size={17} color={colors.info} style={{ marginTop: 1 }} />
+                <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Normal ilan: ürünün doğrudan alıcılara açık. Ortak satış ve komisyon yoktur; alıcılar seninle iletişime geçip satın alır. İstediğin zaman ilanı düzenleyip ortak satışa açabilirsin.", language)}</Text>
+              </View>
+            )}
           </View>
         ) : null}
 
@@ -1386,7 +1403,7 @@ export function DesktopCreateFlow() {
                 <PreviewRow label={translateCopy("Kategori", language)} value={path.map((p) => translateCopy(p.label, language)).join(" › ")} />
                 <PreviewRow label={translateCopy("Konum", language)} value={formatLocation(loc, "neighborhood") || "—"} />
                 <PreviewRow label={translateCopy("Görsel", language)} value={`${images.length || "kategori görseli"} adet`} />
-                <PreviewRow label={translateCopy("Ortaklık", language)} value={partnershipMode === "open" ? translateCopy("Herkese açık", language) : partnershipMode === "approval" ? translateCopy("Onaylı", language) : translateCopy("Davetle", language)} />
+                <PreviewRow label={translateCopy("Ortaklık", language)} value={partnershipMode === "none" ? translateCopy("Ortak satış kapalı (normal ilan)", language) : partnershipMode === "open" ? translateCopy("Herkese açık", language) : partnershipMode === "approval" ? translateCopy("Onaylı", language) : translateCopy("Davetle", language)} />
                 {missingFields.length ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>Eksik zorunlu alan: {missingFields.map((f) => f.label).join(", ")}</Text> : <Text style={{ color: colors.success, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("✓ Tüm zorunlu alanlar dolu", language)}</Text>}
               </View>
             </View>
