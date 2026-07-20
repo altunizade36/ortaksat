@@ -25,13 +25,13 @@ const ROUTES = {
   "index.html": {
     title: "OrtakSat — Ortak satışla kazan: ilan ver, paylaş, komisyon al",
     description:
-      "İlanını ücretsiz aç, ortakların referans linkiyle paylaşsın, satış gerçekleşince komisyon kazan. Emlak, vasıta, elektronik, moda ve daha fazlası tek platformda.",
+      "İlanını ücretsiz aç, ortaklar kendi yöntemiyle tanıtsın, satış gerçekleşince komisyon kazan. Emlak, vasıta, elektronik, moda ve daha fazlası tek platformda.",
     canonical: "/"
   },
   "explore.html": {
     title: "İlanları keşfet — Emlak, vasıta, elektronik, moda | OrtakSat",
     description:
-      "Binlerce ilan arasında ara ve filtrele; beğendiğin ürüne ortak ol, referans linkinle paylaş, satışta komisyon kazan. OrtakSat'ta keşfet.",
+      "Binlerce ilan arasında ara ve filtrele; beğendiğin ürüne ortak ol, kendi yönteminle tanıt, satışta komisyon kazan. OrtakSat'ta keşfet.",
     canonical: "/explore"
   },
   "kategoriler.html": {
@@ -49,7 +49,7 @@ const ROUTES = {
   "partner.html": {
     title: "Ortak ol — Ürün paylaş, satışta komisyon kazan | OrtakSat",
     description:
-      "Sermaye yok, stok yok, risk yok. Beğendiğin ürünün referans linkini paylaş, alıcı senin linkinle alışveriş yapınca komisyonunu kazan. Ücretsiz ortak ol.",
+      "Sermaye yok, stok yok, risk yok. Beğendiğin ürüne ortak ol, kendi yönteminle tanıt, sattığında komisyonunu kazan. Ücretsiz, zorunlu link/takip yok.",
     canonical: "/partner"
   },
   "ortak-kazanc.html": {
@@ -67,7 +67,7 @@ const ROUTES = {
   "influencer-kazanc.html": {
     title: "Influencer kazancı — Takipçilerinle komisyon kazan | OrtakSat",
     description:
-      "Instagram, TikTok, YouTube veya WhatsApp gruplarındaki kitleni gelire dönüştür. Ürün seç, referans linkini paylaş, satışta komisyon kazan.",
+      "Instagram, TikTok, YouTube veya WhatsApp gruplarındaki kitleni gelire dönüştür. Ürün seç, kendi yönteminle tanıt, satışta komisyon kazan.",
     canonical: "/influencer-kazanc"
   },
   "alici.html": {
@@ -355,7 +355,7 @@ function catFaqLd(label) {
     [`${label} ilanları OrtakSat'ta nasıl satılır?`, "İlanını ücretsiz eklersin ve komisyon oranını kendin belirlersin. Ortaklar ürününü kendi takipçisiyle paylaşır; satış olursa komisyonu anlaştığın kanaldan doğrudan ortağa ödersin. Ödeme ve teslimat alıcı ile satıcı arasında yapılır."],
     [`${label} kategorisinde komisyon oranını kim belirler?`, "İlanı açan satıcı belirler — yüzde (%) veya sabit tutar (₺) olarak. Ortak, paylaşmadan önce kazancını ilanda net görür."],
     [`OrtakSat ${label.toLocaleLowerCase("tr-TR")} alım satımında ödeme veya kargo yapar mı?`, "Hayır. OrtakSat aracı bir ilan ve eşleşme platformudur; para tutmaz, kargo yapmaz. Ödeme ve teslimatı alıcı ile satıcı kendi arasında yapar."],
-    [`${label} ürününü ortak olarak nasıl paylaşırım?`, "Ürüne ortak olursun ve sana özel bir referans linki oluşur. Bu linki Instagram, TikTok veya WhatsApp'ta paylaşırsın; linkten gelen alıcı satın alırsa komisyon senin olur."]
+    [`${label} ürününü ortak olarak nasıl paylaşırım?`, "Ürüne ortak olursun; satıcı onaylayınca ürünü Instagram, TikTok veya WhatsApp'ta KENDİ yönteminle tanıtırsın. Sattığında anlaştığın komisyonu satıcıdan alırsın. Zorunlu link veya takip yoktur."]
   ];
   return JSON.stringify({ "@context": "https://schema.org", "@type": "FAQPage", mainEntity: faq.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) });
 }

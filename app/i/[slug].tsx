@@ -198,7 +198,7 @@ export default function ReferralLeadScreen() {
 
         <Card>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatusPill label={localize("Ortak satış bağlantısı", "Referral link")} tone="success" />
+            <StatusPill label={localize("Ortak satış ürünü", "Partner product")} tone="success" />
             {category ? <StatusPill label={category} /> : null}
           </View>
           <Text selectable style={{ color: colors.ink, fontSize: 25, fontWeight: "900", lineHeight: 31 }}>
