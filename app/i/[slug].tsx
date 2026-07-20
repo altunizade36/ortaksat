@@ -10,6 +10,7 @@ import { colors } from "@/components/colors";
 import { Card, EmptyState, Metric, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { money } from "@/lib/format";
 import { insertReferralLead, logReferralClick, resolveReferralLink, type ReferralLink } from "@/lib/live-service";
+import { fetchListingById } from "@/lib/supabase-data";
 import { localize } from "@/lib/locale";
 import { saveRefAttribution } from "@/lib/referral";
 import { useStore } from "@/lib/use-store";
@@ -28,6 +29,11 @@ export default function ReferralLeadScreen() {
   const [note, setNote] = useState(localize("Bu ürün için bilgi almak istiyorum.", "I want more information about this product."));
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
+  // Landing'i zenginleştir: tam ilan galerisi + açıklama (tek foto sosyalden gelen sıcak
+  // tıklamayı soğutuyordu). Local varsa bellekten, yoksa sunucudan çekilir.
+  const [gallery, setGallery] = useState<string[]>([]);
+  const [description, setDescription] = useState("");
+  const [galleryIdx, setGalleryIdx] = useState(0);
 
   const localListing = useMemo(() => listings.find((listing) => listing.slug === slug), [listings, slug]);
   const localPartnership = useMemo(
@@ -55,6 +61,23 @@ export default function ReferralLeadScreen() {
   useEffect(() => {
     if (localListing && localPartnership && ref) saveRefAttribution(localListing.id, localPartnership.id, ref, localPartnership.agreedAttributionWindowDays ?? localListing.attributionWindowDays);
   }, [localListing?.id, localPartnership?.id, ref]);
+
+  // Galeri + açıklama: local varsa bellekten, yoksa sunucudan (fetchListingById → adAssets/description).
+  useEffect(() => {
+    let alive = true;
+    if (localListing) {
+      setGallery([localListing.image, ...(localListing.adAssets ?? [])].filter(Boolean));
+      setDescription(localListing.description ?? "");
+      return;
+    }
+    if (!viewListingId) return;
+    void fetchListingById(viewListingId).then((r) => {
+      if (!alive || !r) return;
+      setGallery([r.listing.image, ...(r.listing.adAssets ?? [])].filter(Boolean));
+      setDescription(r.listing.description ?? "");
+    });
+    return () => { alive = false; };
+  }, [viewListingId, localListing?.id]);
 
   useEffect(() => {
     let mounted = true;
@@ -152,7 +175,26 @@ export default function ReferralLeadScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, marginHorizontal: "auto", maxWidth: 640, padding: 16, paddingBottom: 90, width: "100%" }}>
-        {image ? <Image source={{ uri: image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 18, height: 240 }} /> : null}
+        {/* GALERİ: kapak + ek fotoğraflar (tek foto sosyalden gelen sıcak tıklamayı soğutuyordu). */}
+        {(() => {
+          const imgs = gallery.length ? gallery : (image ? [image] : []);
+          const active = imgs[galleryIdx] ?? imgs[0];
+          if (!active) return null;
+          return (
+            <View style={{ gap: 8 }}>
+              <Image source={{ uri: active }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 18, height: 260 }} />
+              {imgs.length > 1 ? (
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                  {imgs.slice(0, 12).map((u, i) => (
+                    <Pressable key={`${u}-${i}`} onPress={() => setGalleryIdx(i)} accessibilityRole="button" accessibilityLabel={localize(`Fotoğraf ${i + 1}`, `Photo ${i + 1}`)} style={{ borderColor: i === galleryIdx ? colors.primary : colors.line, borderRadius: 10, borderWidth: i === galleryIdx ? 2 : 1, overflow: "hidden" }}>
+                      <Image source={{ uri: u }} contentFit="cover" style={{ height: 56, width: 56 }} />
+                    </Pressable>
+                  ))}
+                </ScrollView>
+              ) : null}
+            </View>
+          );
+        })()}
 
         <Card>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
@@ -198,6 +240,12 @@ export default function ReferralLeadScreen() {
             <Metric label={localize("Fiyat", "Price")} value={money(price)} />
             <Metric label={localize("Konum", "Location")} value={location ?? "-"} />
           </View>
+          {/* AÇIKLAMA: ürünü tanıt (arzu) — landing artık mini ürün sayfası, tek fotoda soğumaz. */}
+          {description ? (
+            <Text selectable numberOfLines={5} style={{ color: colors.ink, fontSize: 13.5, lineHeight: 19 }}>
+              {description}
+            </Text>
+          ) : null}
           <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
             {localize("Bu talep, ürünü paylaşan ortak satıcıya doğru şekilde bağlanır.", "This request is linked to the partner who shared the product.")}
           </Text>
