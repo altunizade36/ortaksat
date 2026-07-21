@@ -316,6 +316,9 @@ const KONUT_IC_OZELLIK = ["Ankastre Fırın", "Ankastre Ocak", "Davlumbaz", "Bul
 const KONUT_SITE_OZELLIK = ["Açık Otopark", "Kapalı Otopark", "Misafir Otoparkı", "Elektrikli Araç Şarjı", "Asansör", "Yük Asansörü", "Jeneratör", "Su Deposu", "Hidrofor", "7/24 Güvenlik", "Güvenlik Kamerası", "Kartlı Giriş", "Parmak İzi Giriş", "Kapıcı", "Resepsiyon", "Concierge", "Çocuk Parkı", "Kreş", "Basketbol Sahası", "Futbol Sahası", "Tenis Kortu", "Fitness Salonu", "Pilates/Yoga", "Açık Havuz", "Kapalı Havuz", "Çocuk Havuzu", "Sauna", "Hamam", "Spa", "Kafeterya", "Market", "Kuaför", "Yürüyüş Parkuru", "Bisiklet Yolu", "Peyzaj Alanı", "Süs Havuzu", "Kamelya", "Barbekü Alanı", "Ortak Bahçe", "Hobi Bahçesi", "Evcil Hayvan Alanı", "Yangın Merdiveni", "Acil Toplanma Alanı"];
 const MANZARA_OPTS = ["Deniz", "Boğaz", "Göl", "Nehir", "Baraj", "Orman", "Dağ", "Doğa", "Park", "Bahçe", "Havuz", "Şehir", "Cadde", "Meydan", "Marina", "Kale", "Tarihi Yapı", "Vadi", "Tarla", "Bağ", "Zeytinlik", "Yok"];
 const CEPHE_OPTS = ["Kuzey", "Güney", "Doğu", "Batı", "Kuzeydoğu", "Kuzeybatı", "Güneydoğu", "Güneybatı"];
+// Her TR emlak ilanında standart olan ama şemalarda EKSİK olan iki alan (konut + iş yeri + bina):
+const YAPI_TIPI_OPTS = ["Betonarme", "Çelik Konstrüksiyon", "Yığma", "Kagir", "Prefabrik", "Ahşap", "Tünel Kalıp", "Karkas"];
+const YAPI_DURUMU_OPTS = ["Sıfır (hiç kullanılmamış)", "İkinci El", "Yapım Aşamasında", "Projeden", "Restore Edilmiş", "Tadilat Gerekli"];
 // Sahibinden-vari emlak "Özellikler" gridleri (çok-seçim). Detay sayfasında çip olarak,
 // create/edit'te seçilebilir, kategori facet'inde (kapasite sınırı elverdiğince) filtrelenebilir.
 const EMLAK_IC_OZELLIK = ["ADSL / Fiber İnternet", "Ahşap Doğrama", "Akıllı Ev", "Alarm (Hırsız)", "Alarm (Yangın)", "Alüminyum Doğrama", "Amerikan Kapı", "Amerikan Mutfak", "Ankastre Fırın", "Barbekü", "Beyaz Eşya", "Boyalı", "Bulaşık Makinesi", "Buzdolabı", "Çamaşır Kurutma Makinesi", "Çamaşır Makinesi", "Çamaşır Odası", "Çelik Kapı", "Duşakabin", "Duvar Kağıdı", "Ebeveyn Banyosu", "Fırın", "Giyinme Odası", "Görüntülü Diyafon", "Gömme Dolap", "Hilton Banyo", "Isıcam", "Jakuzi", "Kartonpiyer", "Kiler", "Klima", "Laminat Zemin", "Membran", "Mobilya", "Mutfak (Ankastre)", "Panjur / Jaluzi", "Parke Zemin", "PVC Doğrama", "Seramik Zemin", "Set Üstü Ocak", "Spot Aydınlatma", "Şofben", "Termosifon", "Vestiyer", "Yüz Tanıma & Parmak İzi"];
@@ -399,7 +402,20 @@ const ISYERI_CORE: FieldDef[] = [
   { key: "swapReal", label: "Takas olur mu?", type: "bool", group: "Finansal & Tapu" },
   { key: "isletmeIcerik", label: "Devirde dahil olanlar", type: "multiselect", options: ISYERI_DURUM },
   { key: "ruhsat", label: "Ruhsat / belgeler", type: "multiselect", options: ISYERI_RUHSAT },
-  { key: "isyeriOzellik", label: "İş yeri özellikleri", type: "multiselect", options: ISYERI_OZELLIK }
+  { key: "isyeriOzellik", label: "İş yeri özellikleri", type: "multiselect", options: ISYERI_OZELLIK },
+  // EKSİKTİ: konutta olan ama iş yerinde olmayan, TİCARİ ALIM-SATIMDA belirleyici alanlar.
+  // (Krediye uygunluk/otopark/asansör ticari alıcının ilk sorduklarıdır; cephe/manzara vitrin değeri.)
+  { key: "yapiTipi", label: "Yapı tipi", type: "select", options: YAPI_TIPI_OPTS, group: "Bina & Kat" },
+  { key: "yapiDurumu", label: "Yapının durumu", type: "select", options: YAPI_DURUMU_OPTS, group: "Bina & Kat" },
+  { key: "parking", label: "Otopark", type: "select", options: ["Açık Otopark", "Kapalı Otopark", "Açık & Kapalı", "Yok"], group: "Bina & Kat" },
+  { key: "elevator", label: "Asansör var mı?", type: "bool", group: "Bina & Kat" },
+  { key: "security", label: "Güvenlik var mı?", type: "bool", group: "Bina & Kat" },
+  { key: "generator", label: "Jeneratör var mı?", type: "bool", group: "Bina & Kat" },
+  { key: "furnished", label: "Eşyalı / demirbaşlı mı?", type: "bool", group: "Bina & Kat" },
+  { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Finansal & Tapu" },
+  { key: "urbanTransform", label: "Kentsel dönüşüme uygun mu?", type: "bool", group: "Finansal & Tapu" },
+  { key: "facade", label: "Cephe / yön", type: "multiselect", options: CEPHE_OPTS },
+  { key: "view", label: "Manzara", type: "multiselect", options: MANZARA_OPTS }
 ];
 const RESTORAN_EXTRA: FieldDef[] = [
   { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m" },
@@ -467,6 +483,10 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "bathrooms", label: "Banyo sayısı", type: "number", group: "Temel Bilgiler" },
       { key: "wc", label: "WC sayısı", type: "number", group: "Temel Bilgiler" },
       { key: "buildingAge", label: "Bina yaşı", type: "select", options: ["0 (Sıfır)", "1-5", "6-10", "11-15", "16-20", "21-30", "31+"], group: "Bina & Kat" },
+      // EKSİKTİ: her TR emlak ilanında sorulan iki standart alan (alıcının deprem/yaş algısı ve
+      // "sıfır mı ikinci el mi" kararı için belirleyici).
+      { key: "yapiTipi", label: "Yapı tipi", type: "select", options: YAPI_TIPI_OPTS, group: "Bina & Kat" },
+      { key: "yapiDurumu", label: "Yapının durumu", type: "select", options: YAPI_DURUMU_OPTS, group: "Bina & Kat" },
       { key: "floor", label: "Bulunduğu kat", type: "text", group: "Bina & Kat" },
       { key: "floorCount", label: "Kat sayısı", type: "number", group: "Bina & Kat" },
       { key: "heating", label: "Isıtma tipi", type: "select", options: ["Yok", "Soba", "Doğalgaz Sobası", "Kat Kaloriferi", "Doğalgaz (Kombi)", "Merkezi", "Merkezi (Pay Ölçer)", "Yerden Isıtma", "Klima", "Güneş Enerjisi", "Jeotermal", "Şömine"], group: "Bina & Kat" },
@@ -593,6 +613,8 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "apartmentCount", label: "Daire sayısı", type: "number" },
       { key: "shopCount", label: "Dükkan sayısı", type: "number" },
       { key: "buildingAge", label: "Bina yaşı", type: "text" },
+      { key: "yapiTipi", label: "Yapı tipi", type: "select", options: YAPI_TIPI_OPTS },
+      { key: "yapiDurumu", label: "Yapının durumu", type: "select", options: YAPI_DURUMU_OPTS },
       { key: "monthlyIncome", label: "Aylık toplam kira getirisi", type: "number", suffix: "₺" },
       { key: "occupancyRate", label: "Doluluk oranı", type: "text", suffix: "%" },
       { key: "elevator", label: "Asansör var mı?", type: "bool" },
