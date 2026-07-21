@@ -59,6 +59,10 @@ async function measure(page: Page) {
 const CATS = ["otomobil", "konut", "cep telefonu", "bilgisayar", "mobilya", "kadın giyim", "iş makinesi", "motosiklet", "arsa", "iş yeri", "hizmet", "özel ders", "iş ilanı", "bebek", "spor", "kitap", "hayvan", "yedek parça"];
 
 test("TÜM KATEGORİLER: ilan verme formu şişme/taşma taraması (mobil)", async ({ page }) => {
+  // 18 kategori × (sayfa yükleme + arama + form render) — varsayılan 90sn yetmiyor.
+  // Kategori şemaları zenginleştikçe (Emlak/Vasıta tamamlamaları) her adım biraz uzadı;
+  // ölçümler YEŞİL olmasına rağmen test süre bütçesinden düşüyordu.
+  test.setTimeout(300_000);
   await page.setViewportSize({ width: VW, height: 844 });
   const email = uniqueEmail("allcat");
   await createConfirmedUser(email, PW, "E2E AllCat");
