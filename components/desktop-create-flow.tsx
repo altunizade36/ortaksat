@@ -126,6 +126,8 @@ export function DesktopCreateFlow() {
   const [step, setStep] = useState(0);
   // Mobilde alan-grubu aç/kapa (Emlak/Vasıta uzun formları). Anahtar yoksa varsayılan kullanılır.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  // "Donanım & Özellikler" (opsiyonel, en şişkin bölüm) mobilde varsayılan KAPALI.
+  const [openFeatures, setOpenFeatures] = useState(false);
   const [path, setPath] = useState<CategoryNode[]>([]);
   // "Diğer" seçildiğinde kullanıcı ARADIĞI kategoriyi yazar → admin ÖNERİ HAVUZUNA düşer.
   const [customCategory, setCustomCategory] = useState("");
@@ -1032,11 +1034,29 @@ export function DesktopCreateFlow() {
 
               {multiFields.length ? (
                 <FormSection title="Donanım & Özellikler" icon="star-outline" hint="Ürünün öne çıkan özelliklerini işaretle — alıcının güvenini artırır.">
-                  {/* SATIR-sarmalı olmalı: DField kökü flexBasis:"100%"+flexGrow:1 taşır ve bu
+                  {/* MOBİL: bu bölüm OPSİYONEL ama en şişkin kısım (Vasıta'da 4 dev multiselect →
+                      formu ~4700px'e çıkarıyordu). Mobilde varsayılan KAPALI, tek dokunuşla açılır.
+                      Geniş web'de her zaman açık (davranış değişmez).
+                      SATIR-sarmalı olmalı: DField kökü flexBasis:"100%"+flexGrow:1 taşır ve bu
                       SÜTUN konteynerde flexBasis ANA EKSEN=YÜKSEKLİK olarak yorumlanıyordu →
-                      her multiselect tam-yükseklik kutuya şişip (1406px) sayfayı ~9640px'e
-                      çıkarıyor, altta dev beyaz boşluk bırakıyordu (mobil web şikayeti). */}
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>{multiFields.map(renderField)}</View>
+                      her multiselect tam-yükseklik kutuya şişip sayfayı devasa yapıyordu. */}
+                  {!isWideWeb ? (
+                    <Pressable
+                      accessibilityRole="button"
+                      accessibilityLabel={`${translateCopy("Donanım & Özellikler", language)} — ${multiFields.length} ${translateCopy("bölüm", language)}`}
+                      onPress={() => setOpenFeatures((v) => !v)}
+                      style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 11 }}
+                    >
+                      <MaterialCommunityIcons name="star-outline" size={17} color={colors.primaryDark} />
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "800" }}>
+                        {openFeatures ? translateCopy("Donanımı gizle", language) : translateCopy("Donanım ve özellikleri ekle (isteğe bağlı)", language)}
+                      </Text>
+                      <MaterialCommunityIcons name={openFeatures ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
+                    </Pressable>
+                  ) : null}
+                  {isWideWeb || openFeatures ? (
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>{multiFields.map(renderField)}</View>
+                  ) : null}
                 </FormSection>
               ) : null}
 
