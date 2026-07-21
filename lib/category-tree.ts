@@ -75,6 +75,11 @@ export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vest
 export const HEATING_BRANDS = ["Baymak", "DemirDöküm", "Vaillant", "Buderus", "Bosch", "ECA", "Airfel", "Viessmann", "Warmhaus", "Diğer"];
 export const AC_BRANDS = ["Arçelik", "Vestel", "Samsung", "LG", "Bosch", "Daikin", "Mitsubishi", "Toshiba", "Baymak", "Gree", "Midea", "Beko", "Diğer"];
 const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "Lacivert", "Yeşil", "Kahverengi", "Bej", "Turuncu", "Diğer"];
+// VASITA ortak alanları — "Araç durumu" ve "Muayene" hiçbir vasıta şemasında YOKTU.
+// (Araç durumu, ikinci el araç aramasında en belirleyici filtredir; F.durum jenerik "Ürün durumu"
+// olduğu için araca uygun ayrı tanım kullanılır.)
+const VASITA_DURUM_FIELD = { key: "condition", label: "Araç durumu", type: "select", required: true, options: ["Sıfır", "İkinci El", "Yurt Dışından İthal", "Klasik / Koleksiyon"], group: "Araç Bilgileri" } as FieldDef;
+const VASITA_MUAYENE_FIELD = { key: "inspection", label: "Muayene", type: "select", options: ["Yeni Muayeneli", "Muayenesi Var", "Muayenesi Yok"], group: "Durum & Geçmiş" } as FieldDef;
 // Cep telefonu markaları (telefon şeması brand seçenekleriyle BİREBİR aynı olmalı ki
 // kategori yolundan seçilen marka forma otomatik dolsun). MODELS_BY_BRAND'de modeli
 // olanlar (iPhone/Samsung/Xiaomi/Huawei/Oppo/Realme) marka→model ağacı olur.
@@ -803,6 +808,8 @@ export const formSchemas: Record<string, FormSchema> = {
       F.title,
       { key: "brand", label: "Marka", type: "select", required: true, options: CAR_BRANDS, group: "Araç Bilgileri" },
       { key: "series", label: "Seri", type: "text", group: "Araç Bilgileri" },
+      VASITA_DURUM_FIELD,
+      VASITA_MUAYENE_FIELD,
       { ...F.model, group: "Araç Bilgileri" },
       { key: "year", label: "Yıl", type: "number", required: true, group: "Araç Bilgileri" },
       { key: "fuel", label: "Yakıt", type: "select", required: true, options: ["Benzin", "Dizel", "LPG", "Hibrit", "Elektrik"], group: "Araç Bilgileri" },
@@ -837,6 +844,10 @@ export const formSchemas: Record<string, FormSchema> = {
     fields: [
       F.title, { key: "brand", label: "Marka", type: "select", required: true, options: MOTO_BRANDS }, F.model,
       { key: "motoType", label: "Motosiklet tipi", type: "select", options: ["Naked", "Sport", "Touring", "Chopper", "Cruiser", "Enduro / Cross", "Scooter", "Cub", "ATV", "Elektrikli", "Trike"] },
+      VASITA_DURUM_FIELD,
+      { key: "fuel", label: "Yakıt", type: "select", options: ["Benzin", "Elektrik", "Hibrit"], group: "Araç Bilgileri" },
+      { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp", group: "Motor & Performans" },
+      VASITA_MUAYENE_FIELD,
       { key: "year", label: "Yıl", type: "number", required: true },
       { key: "km", label: "Kilometre", type: "number", required: true, suffix: "km" },
       { key: "engineCc", label: "Motor hacmi", type: "select", options: ["50 cc", "100 cc", "125 cc", "150 cc", "250 cc", "400 cc", "500 cc", "600 cc", "750 cc", "1000 cc", "1000 cc üzeri"] },
@@ -855,7 +866,24 @@ export const formSchemas: Record<string, FormSchema> = {
   vasitaGenel: {
     key: "vasitaGenel",
     title: "Araç bilgileri",
-    fields: [F.title, F.marka, F.model, { key: "year", label: "Yıl", type: "number", required: true }, { key: "km", label: "Kilometre", type: "number", suffix: "km" }, F.price, F.takas, F.desc]
+    // Karavan / ATV & UTV / Elektrikli Ulaşım / Engelli Araçları bu şemaya düşer. Eskiden yalnız
+    // marka-model-yıl-km vardı → bu ilanlar neredeyse özelliksiz kalıyordu. Gerçek araç çekirdeği:
+    fields: [
+      F.title, F.marka, F.model,
+      { key: "year", label: "Yıl", type: "number", required: true, group: "Araç Bilgileri" },
+      { key: "km", label: "Kilometre", type: "number", suffix: "km", group: "Araç Bilgileri" },
+      VASITA_DURUM_FIELD,
+      { key: "fuel", label: "Yakıt", type: "select", options: ["Benzin", "Dizel", "LPG", "Hibrit", "Elektrik", "Yok"], group: "Araç Bilgileri" },
+      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik", "Yok"], group: "Araç Bilgileri" },
+      { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp", group: "Motor & Performans" },
+      { key: "color", label: "Renk", type: "select", options: CAR_COLORS, group: "Araç Bilgileri" },
+      { key: "damage", label: "Hasar kaydı", type: "select", options: ["Yok", "Var", "Onarılmış"], group: "Durum & Geçmiş" },
+      VASITA_MUAYENE_FIELD,
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Satış & Ödeme" },
+      F.garanti,
+      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Satış & Ödeme" },
+      F.price, F.takas, F.desc
+    ]
   },
   // Ticari araç (panelvan/minibüs/kamyonet): Sahibinden-vari kasa/yük/çekiş alanları.
   ticari: {
@@ -872,6 +900,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"] },
       { key: "traction", label: "Çekiş", type: "select", options: ["Önden Çekiş", "Arkadan İtiş", "4x4"] },
       { key: "maxLoad", label: "İstiab / max yük", type: "text", suffix: "kg" },
+      VASITA_DURUM_FIELD,
       { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp" },
       { key: "seatCapacity", label: "Koltuk kapasitesi", type: "text" },
       { key: "color", label: "Renk", type: "select", options: CAR_COLORS },
@@ -912,6 +941,10 @@ export const formSchemas: Record<string, FormSchema> = {
     fields: [
       F.title,
       { key: "vesselType", label: "Tekne tipi", type: "select", options: ["Motoryat", "Yelkenli", "Sürat Teknesi", "Gulet", "Katamaran", "Şişme Bot / Zodyak", "Jet Ski", "Balıkçı Teknesi", "Fiber Tekne", "Ahşap Tekne"] },
+      VASITA_DURUM_FIELD,
+      { key: "damage", label: "Hasar kaydı", type: "select", options: ["Yok", "Var", "Onarılmış"] },
+      F.garanti,
+      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
       F.markaSerbest,
       { key: "year", label: "Üretim yılı", type: "number" },
       { key: "lengthM", label: "Boy", type: "text", suffix: "m" },
