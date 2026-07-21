@@ -16,41 +16,38 @@ async function login(page: Page, email: string) {
 
 /** Yerleşim teşhisi: yatay taşma + viewport'u aşan öğeler + dev boş alan. */
 async function diagnose(page: Page, label: string) {
+  // PERF: eskiden İKİ tam `body *` taraması vardı ve her öğede getComputedStyle + innerText
+  // çağrılıyordu — ikisi de senkron layout zorlar. Kategori formları zenginleştikçe (4700px+,
+  // binlerce öğe) bu enstrümantasyon RENDERER'I ÇÖKERTİYORDU ("Target page has been closed") →
+  // test, uygulamada olmayan bir hatayı raporluyordu. Artık: TEK tarama + üst sınır +
+  // getComputedStyle YOK (rect boyutu görünürlük göstergesi) + innerText yerine textContent.
   const d = await page.evaluate((vw) => {
     const de = document.documentElement;
     const overflowX = de.scrollWidth - vw;
-    // Viewport'un sağına taşan görünür öğeler
     const offenders: Array<{ tag: string; cls: string; right: number; w: number; text: string }> = [];
-    document.querySelectorAll<HTMLElement>("body *").forEach((el) => {
+    let maxBottom = 0;
+    const all = Array.from(document.querySelectorAll<HTMLElement>("body *")).slice(0, 4000);
+    for (const el of all) {
       const r = el.getBoundingClientRect();
-      if (r.width === 0 || r.height === 0) return;
-      const st = getComputedStyle(el);
-      if (st.visibility === "hidden" || st.display === "none") return;
-      if (r.right > vw + 1 || r.left < -1) {
-        if (el.children.length > 4) return; // konteynerleri değil yaprakları raporla
+      if (r.width === 0 || r.height === 0) continue; // görünmez/çökük → atla
+      const txt = (el.textContent || "").trim();
+      if (txt) maxBottom = Math.max(maxBottom, r.bottom + window.scrollY);
+      if ((r.right > vw + 1 || r.left < -1) && el.children.length <= 4 && offenders.length < 12) {
         offenders.push({
           tag: el.tagName.toLowerCase(),
           cls: (el.className || "").toString().slice(0, 40),
           right: Math.round(r.right),
           w: Math.round(r.width),
-          text: (el.innerText || "").trim().slice(0, 40)
+          text: txt.slice(0, 40)
         });
       }
-    });
-    // En alttaki gerçek içerik → altta kalan boş alan
-    let maxBottom = 0;
-    document.querySelectorAll<HTMLElement>("body *").forEach((el) => {
-      const r = el.getBoundingClientRect();
-      if (r.height > 0 && r.width > 0 && (el.innerText || "").trim()) {
-        maxBottom = Math.max(maxBottom, r.bottom + window.scrollY);
-      }
-    });
+    }
     return {
       pageHeight: de.scrollHeight,
       contentBottom: Math.round(maxBottom),
       blankBelow: Math.round(de.scrollHeight - maxBottom),
       overflowX,
-      offenders: offenders.slice(0, 12)
+      offenders
     };
   }, VW);
   console.log(`\n===== [${label}] =====`);
@@ -73,31 +70,31 @@ test("MOBİL WEB ilan verme akışı: taşma/boşluk/üst-üste binme teşhisi",
   // 1) Create sayfası — kategori seçici
   await page.goto("/create", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(3500);
-  await page.screenshot({ path: "e2e-artifacts/m1-picker.png", fullPage: true });
+  await page.screenshot({ path: "e2e-artifacts/m1-picker.png" });
   const d1 = await diagnose(page, "1 - kategori seçici");
 
   // 2) Kategori ara + seç (Otomobil → derin form)
   const search = page.getByPlaceholder(/ne satıyorsun/i).first();
   await search.fill("otomobil");
   await page.waitForTimeout(1500);
-  await page.screenshot({ path: "e2e-artifacts/m2-suggest.png", fullPage: true });
+  await page.screenshot({ path: "e2e-artifacts/m2-suggest.png" });
   await diagnose(page, "2 - öneri listesi");
 
   await page.getByText(/Otomobil/i).first().click({ timeout: 8000 }).catch(() => {});
   await page.waitForTimeout(3000);
-  await page.screenshot({ path: "e2e-artifacts/m3-form.png", fullPage: true });
+  await page.screenshot({ path: "e2e-artifacts/m3-form.png" });
   const d3 = await diagnose(page, "3 - kategori seçildi (FORM)");
 
   // 3) Formu doldur → sonraki adımlar
-  await page.getByPlaceholder(/başlık|ilan başlığı/i).first().fill("Test Audi A4 2020").catch(() => {});
+  await page.getByTestId("field-title").first().fill("Test Audi A4 2020").catch(() => {});
   await page.waitForTimeout(600);
-  await page.screenshot({ path: "e2e-artifacts/m4-filled.png", fullPage: true });
+  await page.screenshot({ path: "e2e-artifacts/m4-filled.png" });
   await diagnose(page, "4 - form dolduruldu");
 
   // "Devam"/"İleri" adımını dene
   await page.getByText(/^(Devam|İleri|Sonraki)/i).first().click({ timeout: 6000 }).catch(() => {});
   await page.waitForTimeout(2500);
-  await page.screenshot({ path: "e2e-artifacts/m5-step2.png", fullPage: true });
+  await page.screenshot({ path: "e2e-artifacts/m5-step2.png" });
   await diagnose(page, "5 - sonraki adım");
 
   // Taşma OLMAMALI
