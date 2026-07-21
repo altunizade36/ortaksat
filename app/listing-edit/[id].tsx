@@ -226,8 +226,10 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       tags: parsedTags.length > 0 ? parsedTags : ["ortak satış"],
       price: parsedPrice,
       commissionType,
-      commissionValue: parsedCommission,
-      commissionTiers: commissionType === "rate"
+      // NORMAL İLAN'a çevrilirse komisyon/tier/bonus SIFIRLANIR (create ile parite) — aksi halde
+      // kart/panelde hayalet komisyon kalırdı.
+      commissionValue: partnershipMode === "none" ? 0 : parsedCommission,
+      commissionTiers: partnershipMode !== "none" && commissionType === "rate"
         ? tiers.map((tr) => ({ minSales: Math.max(0, Math.floor(Number(tr.minSales) || 0)), rate: Math.max(0, Math.min(90, Number(tr.rate) || 0)) })).filter((tr) => tr.rate > 0).sort((a, b) => a.minSales - b.minSales)
         : undefined,
       partnershipMode,
@@ -238,8 +240,8 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       districtId: loc.districtId,
       addressVisibility: visibility,
       currency,
-      bonusAmount: hasBonus ? bonusNum : undefined,
-      bonusQuota: hasBonus ? quotaNum : undefined,
+      bonusAmount: partnershipMode !== "none" && hasBonus ? bonusNum : undefined,
+      bonusQuota: partnershipMode !== "none" && hasBonus ? quotaNum : undefined,
       image: uploadedImage || listing.image,
       stockCount: Math.max(0, parsedStock),
       minPartnerRating: Number.isFinite(parsedMinRating) ? parsedMinRating : 0,
@@ -354,6 +356,25 @@ function ListingEditForm({ listing }: { listing: Listing }) {
 
         <Card>
           <SectionTitle title={translateCopy("Ortaklık ve komisyon", language)} />
+          {/* BİRİNCİL SEÇİM (create ile parite): ortak satışa aç mı, normal ilan mı.
+              Eskiden yalnız Açık/Onaylı/Davetli vardı → NORMAL İLAN'a geçilemiyordu (tip destekliyor). */}
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            {([["approval", "Ortak satışa aç"], ["none", "Normal ilan"]] as const).map(([m, lbl]) => {
+              const on = m === "none" ? partnershipMode === "none" : partnershipMode !== "none";
+              return (
+                <Pressable key={m} accessibilityRole="button" onPress={() => setPartnershipMode(m as PartnershipMode)}
+                  style={{ alignItems: "center", backgroundColor: on ? colors.primaryDark : colors.surfaceAlt, borderColor: on ? colors.primaryDark : colors.line, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 11 }}>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+          {partnershipMode === "none" ? (
+            <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>
+              {translateCopy("Normal ilan: ürün doğrudan alıcılara açık; ortak satış ve komisyon yoktur. İstediğin zaman ortak satışa açabilirsin.", language)}
+            </Text>
+          ) : (
+          <>
           <Segmented options={[["open", "Açık"], ["approval", "Onaylı"], ["invite", "Davetli"]]} value={partnershipMode} onChange={(value) => setPartnershipMode(value as PartnershipMode)} />
           <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
             {translateCopy("Açık: herkes anında ortak olur. Onaylı: satıcı başvuruyu değerlendirir. Davetli: sadece seçilen ortaklar katılır.", language)}
@@ -401,7 +422,10 @@ function ListingEditForm({ listing }: { listing: Listing }) {
             </View>
           </View>
           <Field label="İade bekleme günü" value={returnWindowDays} onChangeText={setReturnWindowDays} keyboardType="numeric" />
-          <Field label="Atıf (referans) süresi (gün)" value={attributionWindowDays} onChangeText={setAttributionWindowDays} keyboardType="numeric" />
+          </>
+          )}
+          {/* "Atıf (referans) süresi" alanı KALDIRILDI: model'de zorunlu referans linki/tıklama
+              takibi yok (create ile parite). attributionWindowDays içeride varsayılanla korunur. */}
           <Field label="Etiketler" value={tags} onChangeText={setTags} />
           <Field label="Satış argümanları" value={pitch} onChangeText={setPitch} multiline />
           <SectionTitle title={translateCopy("Hazır paylaşım metinleri", language)} action={translateCopy("Ortak kullanır", language)} />
