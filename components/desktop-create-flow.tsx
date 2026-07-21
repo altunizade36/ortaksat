@@ -124,6 +124,8 @@ export function DesktopCreateFlow() {
   const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, isAuthenticated, listings } = useStore();
   const DRAFT_KEY = draftKeyFor(currentUser?.id);
   const [step, setStep] = useState(0);
+  // Mobilde alan-grubu aç/kapa (Emlak/Vasıta uzun formları). Anahtar yoksa varsayılan kullanılır.
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   const [path, setPath] = useState<CategoryNode[]>([]);
   // "Diğer" seçildiğinde kullanıcı ARADIĞI kategoriyi yazar → admin ÖNERİ HAVUZUNA düşer.
   const [customCategory, setCustomCategory] = useState("");
@@ -990,15 +992,39 @@ export function DesktopCreateFlow() {
                 return (
                   <FormSection title={schema.title} icon="clipboard-list-outline" hint="* işaretli alanlar zorunludur.">
                     <View style={{ gap: 20 }}>
-                      {buckets.map((bkt) => (
+                      {/* MOBİL: gruplar KATLANABİLİR. Emlak/Vasıta gibi zengin şemalarda (konut ~50,
+                          otomobil ~32 alan) hepsi açıkken form 4700px'lik bir duvar oluyordu.
+                          Açık kalanlar: İLK grup + ZORUNLU alan içeren gruplar (kullanıcı zorunluyu
+                          kaçırmasın). Geniş web'de davranış AYNI (hepsi açık, başlık tıklanamaz). */}
+                      {buckets.map((bkt, bi) => {
+                        const hasRequired = bkt.fields.some((f) => f.required);
+                        const defaultOpen = isWideWeb || bi === 0 || hasRequired;
+                        const open = openGroups[bkt.name] ?? defaultOpen;
+                        return (
                         <View key={bkt.name} style={{ gap: 11 }}>
-                          <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                          <Pressable
+                            accessibilityRole={isWideWeb ? undefined : "button"}
+                            accessibilityLabel={isWideWeb ? undefined : `${translateCopy(bkt.name, language)} — ${bkt.fields.length} ${translateCopy("alan", language)}`}
+                            disabled={isWideWeb}
+                            onPress={() => setOpenGroups((s) => ({ ...s, [bkt.name]: !open }))}
+                            style={{ alignItems: "center", flexDirection: "row", gap: 7, paddingVertical: isWideWeb ? 0 : 4 }}
+                          >
                             <View style={{ backgroundColor: colors.primary, borderRadius: 2, height: 14, width: 3 }} />
                             <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy(bkt.name, language)}</Text>
-                          </View>
-                          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{bkt.fields.map(renderField)}</View>
+                            {!isWideWeb ? (
+                              <>
+                                <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 1 }}>
+                                  <Text style={{ color: colors.muted, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>{bkt.fields.length}</Text>
+                                </View>
+                                <View style={{ flex: 1 }} />
+                                <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
+                              </>
+                            ) : null}
+                          </Pressable>
+                          {open ? <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{bkt.fields.map(renderField)}</View> : null}
                         </View>
-                      ))}
+                        );
+                      })}
                     </View>
                   </FormSection>
                 );
