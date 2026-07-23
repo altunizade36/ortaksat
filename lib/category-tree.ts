@@ -1102,48 +1102,78 @@ export const formSchemas: Record<string, FormSchema> = {
   alisverisGenel: {
     key: "alisverisGenel",
     title: "Ürün bilgileri",
-    fields: [F.title, { key: "brand", label: "Marka", type: "text" }, { key: "model", label: "Model", type: "text" }, F.durum, F.garanti, F.fatura, F.stok, F.renk, { key: "size", label: "Beden / ölçü", type: "text" }, F.kargo, F.price, F.pazarlik, F.takas, F.desc]
+    fields: [
+      F.title,
+      { key: "brand", label: "Marka", type: "text", group: "Temel Bilgiler" },
+      { key: "model", label: "Model", type: "text", group: "Temel Bilgiler" },
+      { ...F.durum, group: "Temel Bilgiler" },
+      { ...F.garanti, group: "Ürün Detayı" }, { ...F.fatura, group: "Ürün Detayı" }, { ...F.stok, group: "Ürün Detayı" }, { ...F.renk, group: "Ürün Detayı" },
+      { key: "size", label: "Beden / ölçü", type: "text", group: "Ürün Detayı" },
+      { ...F.kargo, group: "Satış & Teslimat" }, F.price, { ...F.pazarlik, group: "Satış & Teslimat" }, { ...F.takas, group: "Satış & Teslimat" }, F.desc
+    ]
   },
   telefon: {
     key: "telefon",
     title: "Cep telefonu bilgileri",
     fields: [
       F.title,
-      { key: "brand", label: "Marka", type: "select", required: true, options: PHONE_BRANDS },
-      { key: "model", label: "Model", type: "text", required: true },
-      { key: "storage", label: "Depolama", type: "select", required: true, options: ["16 GB", "32 GB", "64 GB", "128 GB", "256 GB", "512 GB", "1 TB"] },
-      { key: "ram", label: "RAM", type: "text" },
-      F.renk,
-      F.garanti, F.fatura,
-      { key: "box", label: "Kutu var mı?", type: "bool" },
-      { key: "battery", label: "Pil sağlığı (iPhone)", type: "text", suffix: "%" },
-      { key: "cosmetic", label: "Kozmetik durum", type: "select", options: ["Kusursuz", "Çok iyi", "İyi", "Yıpranmış"] },
-      { key: "partChanged", label: "Değişen parça var mı?", type: "bool" },
-      { key: "imei", label: "IMEI kayıt durumu", type: "select", options: ["Kayıtlı", "Kayıtsız", "Yurt dışı"] },
-      { key: "charger", label: "Şarj cihazı dahil mi?", type: "bool" },
-      { key: "condition", label: "Ürün durumu", type: "select", required: true, options: ["Sıfır", "İkinci el", "Yenilenmiş"] },
-      F.stok, F.price, F.kargo, F.desc
+      { key: "brand", label: "Marka", type: "select", required: true, options: PHONE_BRANDS, group: "Temel Bilgiler" },
+      { key: "model", label: "Model", type: "text", required: true, group: "Temel Bilgiler" },
+      { key: "storage", label: "Depolama", type: "select", required: true, options: ["16 GB", "32 GB", "64 GB", "128 GB", "256 GB", "512 GB", "1 TB"], group: "Temel Bilgiler" },
+      { key: "condition", label: "Ürün durumu", type: "select", required: true, options: ["Sıfır", "İkinci el", "Yenilenmiş"], group: "Temel Bilgiler" },
+      { key: "ram", label: "RAM", type: "text", group: "Temel Bilgiler" },
+      { ...F.renk, group: "Durum & Aksesuar" },
+      { key: "cosmetic", label: "Kozmetik durum", type: "select", options: ["Kusursuz", "Çok iyi", "İyi", "Yıpranmış"], group: "Durum & Aksesuar" },
+      { key: "battery", label: "Pil sağlığı (iPhone)", type: "text", suffix: "%", group: "Durum & Aksesuar" },
+      { key: "box", label: "Kutu var mı?", type: "bool", group: "Durum & Aksesuar" },
+      { key: "charger", label: "Şarj cihazı dahil mi?", type: "bool", group: "Durum & Aksesuar" },
+      { key: "partChanged", label: "Değişen parça var mı?", type: "bool", group: "Durum & Aksesuar" },
+      { key: "imei", label: "IMEI kayıt durumu", type: "select", options: ["Kayıtlı", "Kayıtsız", "Yurt dışı"], group: "Garanti & Belge" },
+      { ...F.garanti, group: "Garanti & Belge" }, { ...F.fatura, group: "Garanti & Belge" },
+      { ...F.stok, group: "Satış" }, { ...F.kargo, group: "Satış" }, F.price, F.desc
     ]
   },
   elektronik: {
     key: "elektronik",
     title: "Elektronik ürün bilgileri",
-    fields: [F.title, F.markaSerbest, F.model, F.durum, F.depolama, F.ram, F.renkSelect, F.garanti, F.fatura, F.kutu, URUN_OZELLIK_FIELD, F.stok, F.price, F.kargo, F.pazarlik, F.takas, GENEL_ETIKET_FIELD, F.desc]
+    fields: [F.title,
+      { ...F.markaSerbest, group: "Temel Bilgiler" }, { ...F.model, group: "Temel Bilgiler" }, { ...F.durum, group: "Temel Bilgiler" },
+      { ...F.depolama, group: "Teknik Özellikler" }, { ...F.ram, group: "Teknik Özellikler" }, { ...F.renkSelect, group: "Teknik Özellikler" },
+      { ...F.garanti, group: "Garanti & Belge" }, { ...F.fatura, group: "Garanti & Belge" }, { ...F.kutu, group: "Garanti & Belge" },
+      URUN_OZELLIK_FIELD,
+      { ...F.stok, group: "Satış & Teslimat" }, { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" }, { ...F.takas, group: "Satış & Teslimat" },
+      F.price, GENEL_ETIKET_FIELD, F.desc]
   },
   bilgisayar: {
     key: "bilgisayar",
     title: "Bilgisayar bilgileri",
-    fields: [F.title, F.markaSerbest, F.model, F.durum, F.islemci, F.ram, F.depolama, F.ekranKarti, F.ekranBoyutu, F.cozunurluk, F.garanti, F.fatura, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+    fields: [F.title,
+      { ...F.markaSerbest, group: "Temel Bilgiler" }, { ...F.model, group: "Temel Bilgiler" }, { ...F.durum, group: "Temel Bilgiler" },
+      { ...F.islemci, group: "Donanım" }, { ...F.ram, group: "Donanım" }, { ...F.depolama, group: "Donanım" }, { ...F.ekranKarti, group: "Donanım" }, { ...F.ekranBoyutu, group: "Donanım" }, { ...F.cozunurluk, group: "Donanım" },
+      { ...F.garanti, group: "Garanti & Belge" }, { ...F.fatura, group: "Garanti & Belge" },
+      { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" }, { ...F.takas, group: "Satış & Teslimat" },
+      F.price, F.desc]
   },
   televizyon: {
     key: "televizyon",
     title: "Televizyon bilgileri",
-    fields: [F.title, F.markaSerbest, F.model, F.durum, F.ekranBoyutu, F.cozunurluk, { key: "panel", label: "Panel tipi", type: "select", options: ["LED", "QLED", "OLED", "Neo QLED", "NanoCell"] }, { key: "smart", label: "Smart TV mi?", type: "bool" }, F.garanti, F.fatura, F.price, F.kargo, F.pazarlik, F.desc]
+    fields: [F.title,
+      { ...F.markaSerbest, group: "Temel Bilgiler" }, { ...F.model, group: "Temel Bilgiler" }, { ...F.durum, group: "Temel Bilgiler" },
+      { ...F.ekranBoyutu, group: "Ekran" }, { ...F.cozunurluk, group: "Ekran" }, { key: "panel", label: "Panel tipi", type: "select", options: ["LED", "QLED", "OLED", "Neo QLED", "NanoCell"], group: "Ekran" }, { key: "smart", label: "Smart TV mi?", type: "bool", group: "Ekran" },
+      { ...F.garanti, group: "Garanti & Belge" }, { ...F.fatura, group: "Garanti & Belge" },
+      { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" },
+      F.price, F.desc]
   },
   beyazEsya: {
     key: "beyazEsya",
     title: "Beyaz eşya bilgileri",
-    fields: [F.title, { key: "brand", label: "Marka", type: "select", options: WHITE_GOODS_BRANDS }, F.model, F.durum, F.enerji, F.kapasite, F.renkSelect, F.garanti, F.fatura, URUN_OZELLIK_FIELD, F.price, F.kargo, F.pazarlik, F.takas, GENEL_ETIKET_FIELD, F.desc]
+    fields: [F.title,
+      { key: "brand", label: "Marka", type: "select", options: WHITE_GOODS_BRANDS, group: "Temel Bilgiler" }, { ...F.model, group: "Temel Bilgiler" }, { ...F.durum, group: "Temel Bilgiler" },
+      { ...F.enerji, group: "Teknik Özellikler" }, { ...F.kapasite, group: "Teknik Özellikler" }, { ...F.renkSelect, group: "Teknik Özellikler" },
+      { ...F.garanti, group: "Garanti & Belge" }, { ...F.fatura, group: "Garanti & Belge" },
+      URUN_OZELLIK_FIELD,
+      { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" }, { ...F.takas, group: "Satış & Teslimat" },
+      F.price, GENEL_ETIKET_FIELD, F.desc]
   },
   // Klima ve kombi/ısıtma markaları beyaz eşyadan farklı; kendi marka seçenekleriyle
   // ayrı şema (aksi halde Daikin/Mitsubishi/Vaillant gibi markalar seçilemiyordu).
@@ -1160,7 +1190,12 @@ export const formSchemas: Record<string, FormSchema> = {
   moda: {
     key: "moda",
     title: "Giyim bilgileri",
-    fields: [F.title, F.markaSerbest, F.durum, F.beden, F.renkSelect, F.cinsiyet, MODA_SEZON, MODA_DESEN, MODA_KESIM, F.materyal, F.stok, F.price, F.kargo, F.pazarlik, F.takas, GENEL_ETIKET_FIELD, F.desc]
+    fields: [F.title,
+      { ...F.markaSerbest, group: "Temel Bilgiler" }, { ...F.durum, group: "Temel Bilgiler" },
+      { ...F.beden, group: "Beden & Renk" }, { ...F.renkSelect, group: "Beden & Renk" }, { ...F.cinsiyet, group: "Beden & Renk" },
+      { ...MODA_SEZON, group: "Ürün Detayı" }, { ...MODA_DESEN, group: "Ürün Detayı" }, { ...MODA_KESIM, group: "Ürün Detayı" }, { ...F.materyal, group: "Ürün Detayı" },
+      { ...F.stok, group: "Satış & Teslimat" }, { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" }, { ...F.takas, group: "Satış & Teslimat" },
+      F.price, GENEL_ETIKET_FIELD, F.desc]
   },
   ayakkabi: {
     key: "ayakkabi",
@@ -1205,7 +1240,12 @@ export const formSchemas: Record<string, FormSchema> = {
   aksesuar: {
     key: "aksesuar",
     title: "Saat, gözlük & takı bilgileri",
-    fields: [F.title, F.markaSerbest, F.model, F.durum, F.renkSelect, F.cinsiyet, F.materyal, F.garanti, F.fatura, F.kutu, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+    fields: [F.title,
+      { ...F.markaSerbest, group: "Temel Bilgiler" }, { ...F.model, group: "Temel Bilgiler" }, { ...F.durum, group: "Temel Bilgiler" },
+      { ...F.renkSelect, group: "Özellikler" }, { ...F.cinsiyet, group: "Özellikler" }, { ...F.materyal, group: "Özellikler" },
+      { ...F.garanti, group: "Garanti & Belge" }, { ...F.fatura, group: "Garanti & Belge" }, { ...F.kutu, group: "Garanti & Belge" },
+      { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" }, { ...F.takas, group: "Satış & Teslimat" },
+      F.price, F.desc]
   },
   kozmetik: {
     key: "kozmetik",
@@ -1217,14 +1257,24 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Makine / sanayi bilgileri",
     fields: [
       { key: "title", label: "Makine / ürün adı", type: "text", required: true },
-      F.marka, F.model,
-      { key: "year", label: "Üretim yılı", type: "number" },
-      { key: "workHours", label: "Çalışma saati", type: "number", suffix: "saat" },
-      F.durum, F.garanti,
-      { key: "service", label: "Servis geçmişi", type: "text" },
-      F.price,
-      { key: "transport", label: "Nakliye bilgisi", type: "text" },
-      F.desc
+      { key: "machineType", label: "Makine türü", type: "select", options: ["Ekskavatör", "Kazıcı Yükleyici (Beko Loder)", "Lastikli Yükleyici (Loder)", "Mini Yükleyici", "Dozer", "Greyder", "Silindir", "Forklift", "Telehandler", "Mobil Vinç", "Kule Vinç", "Delici / Sondaj", "Asfalt Makinesi", "Beton Pompası", "Beton Santrali", "Transmikser", "Kırıcı / Konkasör", "Jeneratör", "Kompresör", "Kaynak Makinesi", "Su Pompası", "Çim / Bahçe Makinesi", "Diğer"], group: "Temel Bilgiler" },
+      { ...F.marka, group: "Temel Bilgiler" }, { ...F.model, group: "Temel Bilgiler" },
+      { key: "year", label: "Üretim yılı", type: "number", group: "Temel Bilgiler" },
+      { ...F.durum, group: "Temel Bilgiler" },
+      { key: "power", label: "Motor gücü", type: "number", suffix: "HP", group: "Teknik Özellikler" },
+      { key: "operatingWeight", label: "Operasyon ağırlığı", type: "number", suffix: "ton", group: "Teknik Özellikler" },
+      { key: "workHours", label: "Çalışma saati", type: "number", suffix: "saat", group: "Teknik Özellikler" },
+      { key: "fuel", label: "Yakıt", type: "select", options: ["Dizel", "Benzin", "Elektrik", "LPG", "Hibrit"], group: "Teknik Özellikler" },
+      { key: "cabin", label: "Kabinli mi?", type: "bool", group: "Teknik Özellikler" },
+      { key: "ac", label: "Klima var mı?", type: "bool", group: "Teknik Özellikler" },
+      { key: "operatorIncluded", label: "Operatör dahil mi?", type: "bool", group: "Teknik Özellikler" },
+      { ...F.garanti, group: "Belge & Servis" },
+      { key: "service", label: "Servis geçmişi", type: "text", group: "Belge & Servis" },
+      { key: "plated", label: "Plakalı / trafiğe kayıtlı mı?", type: "bool", group: "Belge & Servis" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Bayiden", "Firmadan", "Yetkili Satıcıdan"], group: "Belge & Servis" },
+      { key: "transport", label: "Nakliye bilgisi", type: "text", group: "Satış" },
+      { ...F.takas, group: "Satış" },
+      F.price, F.desc
     ]
   },
   hizmet: {
