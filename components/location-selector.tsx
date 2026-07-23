@@ -130,7 +130,9 @@ function NeighborhoodField({ districtId, value, onChange }: { districtId?: numbe
   }, [districtId]);
 
   const hasData = list.length > 0;
-  const results = open ? list.filter((n) => locKey(n.name).includes(locKey(query))).slice(0, 40) : [];
+  // Mahalle sayısı ilçeye göre yüzlerce olabilir; 40'lık kırpma "mahalleler eksik"e yol
+  // açıyordu. Üst sınır performans için kaldı ama listenin tamamına yakınını kapsıyor.
+  const results = open ? list.filter((n) => locKey(n.name).includes(locKey(query))).slice(0, 500) : [];
 
   // (Eski "açılınca sayfayı listeye kaydır" hack'i KALDIRILDI — liste artık çapalı
   //  katmanda açılıyor, kaydırmaya gerek yok.)
@@ -202,7 +204,10 @@ function ComboBox({
   const { language } = useLanguage();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const results = open ? search(query).slice(0, 40) : [];
+  // KIRPMA KALDIRILDI: eskiden `.slice(0, 40)` vardı → 81 ilin yalnız 40'ı listeleniyor,
+  // kalanı SADECE arama ile bulunabiliyordu ("iller eksik, bir kısmı görünüyor" şikayeti).
+  // İl 81, ilçe en fazla 39 — tamamını göstermek sorun değil.
+  const results = open ? search(query) : [];
   // ÇAPALI AÇILIR LİSTE: liste artık AKIŞTA değil, tetikleyicinin ekran konumuna
   // çapalanmış bir katmanda (Modal/portal) açılır. Böylece sayfayı AŞAĞI İTMEZ ve
   // `overflow:hidden` olan kart/panel içinde KIRPILMAZ ("il/ilçe görünmüyor" sorunu).

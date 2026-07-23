@@ -24,6 +24,7 @@ import { ListingQA } from "@/components/listing-qa";
 import { ShareRow } from "@/components/share-row";
 import { Skeleton } from "@/components/skeleton";
 import { tokenize } from "@/lib/search";
+import { ImageWatermark } from "@/components/image-watermark";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { SafetyNote } from "@/components/safety-note";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
@@ -626,6 +627,8 @@ export default function ListingDetailScreen() {
               style={{ position: "relative" }}
             >
               <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
+              {/* Kaynak filigranı — dosyaya gömülmez, yalnız görüntüleme katmanı (ürün bozulmaz). */}
+              <ImageWatermark rows={isWideWeb ? 5 : 4} cols={3} size={isWideWeb ? 14 : 12} />
               <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
                 <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Büyüt", language)}{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
@@ -1291,6 +1294,8 @@ export default function ListingDetailScreen() {
               style={{ height: "100%", transform: [{ scale: zoomed ? 2.2 : 1 }], width: "100%" }}
               contentFit="contain"
             />
+            {/* Tam ekranda da filigran — kopyalama/ekran görüntüsü buradan alınır. */}
+            <ImageWatermark rows={6} cols={3} size={15} />
           </Pressable>
           <View style={{ alignItems: "center", bottom: 74, left: 0, position: "absolute", right: 0 }}>
             <View style={{ backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}>
