@@ -399,7 +399,7 @@ const ETIKET_FIELD: FieldDef = { key: "etiketler", label: "İlan etiketleri", ty
 // ofis) formları paylaşır (etiketler + açıklama alt-formda ayrıca eklenir).
 const ISYERI_CORE: FieldDef[] = [
   F.title,
-  { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"] },
+  { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"], group: "Temel Bilgiler" },
   F.price,
   { key: "grossM2", label: "m² (brüt)", type: "number", required: true, suffix: "m²", group: "Temel Bilgiler" },
   { key: "netM2", label: "m² (net)", type: "number", suffix: "m²", group: "Temel Bilgiler" },
@@ -440,23 +440,23 @@ const ISYERI_CORE: FieldDef[] = [
   { key: "view", label: "Manzara", type: "multiselect", options: MANZARA_OPTS }
 ];
 const RESTORAN_EXTRA: FieldDef[] = [
-  { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m" },
-  { key: "masaSayisi", label: "Masa sayısı", type: "number" },
-  { key: "sandalyeSayisi", label: "Sandalye sayısı", type: "number" },
-  { key: "kapaliKapasite", label: "Kapalı alan kapasitesi", type: "number", suffix: "kişi" },
-  { key: "acikKapasite", label: "Açık alan kapasitesi", type: "number", suffix: "kişi" },
+  { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m", group: "İşletme Detayı" },
+  { key: "masaSayisi", label: "Masa sayısı", type: "number", group: "İşletme Detayı" },
+  { key: "sandalyeSayisi", label: "Sandalye sayısı", type: "number", group: "İşletme Detayı" },
+  { key: "kapaliKapasite", label: "Kapalı alan kapasitesi", type: "number", suffix: "kişi", group: "İşletme Detayı" },
+  { key: "acikKapasite", label: "Açık alan kapasitesi", type: "number", suffix: "kişi", group: "İşletme Detayı" },
   { key: "restoranOzellik", label: "Restoran özellikleri", type: "multiselect", options: ["Bahçe", "Teras", "Çocuk Alanı", "Vale", "Paket Servis", "Motor Kurye Alanı", "Bacası Var", "Endüstriyel Mutfak", "Soğuk Oda", "Fırın", "Izgara", "Pizza Fırını", "Hamurhane", "Alkollü Ruhsat", "Canlı Müzik Ruhsatı"] }
 ];
 const FABRIKA_EXTRA: FieldDef[] = [
-  { key: "kapaliAlan", label: "Kapalı alan", type: "number", suffix: "m²" },
-  { key: "acikAlan", label: "Açık alan", type: "number", suffix: "m²" },
-  { key: "uretimHatti", label: "Üretim hattı sayısı", type: "number" },
-  { key: "elektrikGucu", label: "Elektrik gücü", type: "text", suffix: "kVA" },
+  { key: "kapaliAlan", label: "Kapalı alan", type: "number", suffix: "m²", group: "İşletme Detayı" },
+  { key: "acikAlan", label: "Açık alan", type: "number", suffix: "m²", group: "İşletme Detayı" },
+  { key: "uretimHatti", label: "Üretim hattı sayısı", type: "number", group: "İşletme Detayı" },
+  { key: "elektrikGucu", label: "Elektrik gücü", type: "text", suffix: "kVA", group: "İşletme Detayı" },
   { key: "fabrikaOzellik", label: "Fabrika teknik özellikleri", type: "multiselect", options: ["Trafo", "Vinç", "Tır Rampası", "Forklift Alanı", "Yükleme Rampası", "İdari Ofis", "Yemekhane", "Personel Soyunma", "Güvenlik Kulübesi", "Arıtma Tesisi", "Bacalı Üretim", "Gaz Hattı", "Basınçlı Hava Sistemi"] }
 ];
 const OFIS_EXTRA: FieldDef[] = [
-  { key: "meetingRooms", label: "Toplantı odası sayısı", type: "number" },
-  { key: "managerRooms", label: "Yönetici odası sayısı", type: "number" },
+  { key: "meetingRooms", label: "Toplantı odası sayısı", type: "number", group: "İşletme Detayı" },
+  { key: "managerRooms", label: "Yönetici odası sayısı", type: "number", group: "İşletme Detayı" },
   { key: "ofisOzellik", label: "Ofis özellikleri", type: "multiselect", options: ["Açık Ofis", "Kapalı Ofis", "Server Odası", "Klima", "Fiber İnternet", "Kartlı Geçiş", "Resepsiyon", "Bekleme Alanı", "Mutfak", "WC", "Arşiv", "Balkon", "Teras", "Otopark", "Vale", "Concierge"] }
 ];
 
@@ -557,7 +557,7 @@ export const formSchemas: Record<string, FormSchema> = {
   isyeri: {
     key: "isyeri",
     title: "İş yeri bilgileri",
-    fields: [...ISYERI_CORE, { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m" },
+    fields: [...ISYERI_CORE, { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m", group: "İşletme Detayı" },
       { key: "interiorFeatures", label: "İç özellikler", type: "multiselect", options: EMLAK_IC_OZELLIK },
       { key: "exteriorFeatures", label: "Dış özellikler", type: "multiselect", options: EMLAK_DIS_OZELLIK },
       { key: "neighborhood", label: "Muhit / çevre", type: "multiselect", options: EMLAK_MUHIT },
@@ -645,7 +645,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "deed", label: "Tapu durumu", type: "select", options: ARSA_TAPU, group: "Tapu & Parsel" },
       { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Satış & Ödeme" },
       { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "Müteahhitten", "Bankadan", "İcradan", "Belediyeden", "TOKİ'den"], group: "Satış & Ödeme" },
-      F.takas,
+      { ...F.takas, group: "Satış & Ödeme" },
       ETIKET_FIELD,
       F.desc
     ]
@@ -896,24 +896,27 @@ export const formSchemas: Record<string, FormSchema> = {
     key: "motosiklet",
     title: "Motosiklet bilgileri",
     fields: [
-      F.title, { key: "brand", label: "Marka", type: "select", required: true, options: MOTO_BRANDS }, F.model,
-      { key: "motoType", label: "Motosiklet tipi", type: "select", options: ["Naked", "Sport", "Touring", "Chopper", "Cruiser", "Enduro / Cross", "Scooter", "Cub", "ATV", "Elektrikli", "Trike"] },
+      F.title,
+      { key: "brand", label: "Marka", type: "select", required: true, options: MOTO_BRANDS, group: "Araç Bilgileri" },
+      { ...F.model, group: "Araç Bilgileri" },
+      { key: "motoType", label: "Motosiklet tipi", type: "select", options: ["Naked", "Sport", "Touring", "Chopper", "Cruiser", "Enduro / Cross", "Scooter", "Cub", "ATV", "Elektrikli", "Trike"], group: "Araç Bilgileri" },
       VASITA_DURUM_FIELD,
-      { key: "fuel", label: "Yakıt", type: "select", options: ["Benzin", "Elektrik", "Hibrit"], group: "Araç Bilgileri" },
+      { key: "year", label: "Yıl", type: "number", required: true, group: "Araç Bilgileri" },
+      { key: "km", label: "Kilometre", type: "number", required: true, suffix: "km", group: "Araç Bilgileri" },
+      { key: "color", label: "Renk", type: "select", options: CAR_COLORS, group: "Araç Bilgileri" },
+      { key: "license", label: "Ehliyet sınıfı", type: "select", options: ["A1", "A2", "A", "B (ATV)"], group: "Araç Bilgileri" },
+      { key: "fuel", label: "Yakıt", type: "select", options: ["Benzin", "Elektrik", "Hibrit"], group: "Motor & Performans" },
       { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp", group: "Motor & Performans" },
+      { key: "engineCc", label: "Motor hacmi", type: "select", options: ["50 cc", "100 cc", "125 cc", "150 cc", "250 cc", "400 cc", "500 cc", "600 cc", "750 cc", "1000 cc", "1000 cc üzeri"], group: "Motor & Performans" },
+      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"], group: "Motor & Performans" },
+      { key: "cooling", label: "Soğutma", type: "select", options: ["Hava", "Sıvı", "Yağ"], group: "Motor & Performans" },
       VASITA_MUAYENE_FIELD,
-      { key: "year", label: "Yıl", type: "number", required: true },
-      { key: "km", label: "Kilometre", type: "number", required: true, suffix: "km" },
-      { key: "engineCc", label: "Motor hacmi", type: "select", options: ["50 cc", "100 cc", "125 cc", "150 cc", "250 cc", "400 cc", "500 cc", "600 cc", "750 cc", "1000 cc", "1000 cc üzeri"] },
-      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"] },
-      { key: "cooling", label: "Soğutma", type: "select", options: ["Hava", "Sıvı", "Yağ"] },
-      { key: "license", label: "Ehliyet sınıfı", type: "select", options: ["A1", "A2", "A", "B (ATV)"] },
-      { key: "color", label: "Renk", type: "select", options: CAR_COLORS },
-      { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Değişen Var", "Hasar Kayıtlı"] },
+      { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Değişen Var", "Hasar Kayıtlı"], group: "Durum & Geçmiş" },
+      { ...F.garanti, group: "Durum & Geçmiş" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Durum & Geçmiş" },
+      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Durum & Geçmiş" },
       { key: "motoFeatures", label: "Donanım", type: "multiselect", options: ["ABS", "Rölanti Kontrol", "Dijital Gösterge", "LED Far", "USB Şarj", "Yol Bilgisayarı", "Kayışlı", "Zincirli", "Şaftlı", "Sele Isıtma", "Rüzgar Siperi", "Yan Çanta", "Top Case", "Alarm"] },
-      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"] },
-      F.garanti, F.price, F.takas,
-      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
+      F.price, { ...F.takas, group: "Satış" },
       VASITA_ETIKET_FIELD, F.desc
     ]
   },
@@ -923,7 +926,8 @@ export const formSchemas: Record<string, FormSchema> = {
     // Karavan / ATV & UTV / Elektrikli Ulaşım / Engelli Araçları bu şemaya düşer. Eskiden yalnız
     // marka-model-yıl-km vardı → bu ilanlar neredeyse özelliksiz kalıyordu. Gerçek araç çekirdeği:
     fields: [
-      F.title, F.marka, F.model,
+      F.title,
+      { ...F.marka, group: "Araç Bilgileri" }, { ...F.model, group: "Araç Bilgileri" },
       { key: "year", label: "Yıl", type: "number", required: true, group: "Araç Bilgileri" },
       { key: "km", label: "Kilometre", type: "number", suffix: "km", group: "Araç Bilgileri" },
       VASITA_DURUM_FIELD,
@@ -934,9 +938,9 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "damage", label: "Hasar kaydı", type: "select", options: ["Yok", "Var", "Onarılmış"], group: "Durum & Geçmiş" },
       VASITA_MUAYENE_FIELD,
       { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Satış & Ödeme" },
-      F.garanti,
+      { ...F.garanti, group: "Durum & Geçmiş" },
       { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Satış & Ödeme" },
-      F.price, F.takas, F.desc
+      F.price, { ...F.takas, group: "Satış & Ödeme" }, F.desc
     ]
   },
   // Ticari araç (panelvan/minibüs/kamyonet): Sahibinden-vari kasa/yük/çekiş alanları.
@@ -945,24 +949,25 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Ticari araç bilgileri",
     fields: [
       F.title,
-      { key: "brand", label: "Marka", type: "select", required: true, options: COMMERCIAL_BRANDS },
-      F.model,
-      { key: "year", label: "Yıl", type: "number", required: true },
-      { key: "km", label: "Kilometre", type: "number", required: true, suffix: "km" },
-      { key: "bodyType", label: "Kasa tipi", type: "select", options: ["Panelvan", "Minibüs", "Kamyonet", "Kombi Van", "Camlı Van", "Şasi Kabin", "Frigorifik", "Damperli", "Tenteli", "Kapalı Kasa"] },
-      { key: "fuel", label: "Yakıt", type: "select", required: true, options: ["Dizel", "Benzin", "LPG", "Elektrik", "Hibrit"] },
-      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"] },
-      { key: "traction", label: "Çekiş", type: "select", options: ["Önden Çekiş", "Arkadan İtiş", "4x4"] },
-      { key: "maxLoad", label: "İstiab / max yük", type: "text", suffix: "kg" },
+      { key: "brand", label: "Marka", type: "select", required: true, options: COMMERCIAL_BRANDS, group: "Araç Bilgileri" },
+      { ...F.model, group: "Araç Bilgileri" },
+      { key: "year", label: "Yıl", type: "number", required: true, group: "Araç Bilgileri" },
+      { key: "km", label: "Kilometre", type: "number", required: true, suffix: "km", group: "Araç Bilgileri" },
+      { key: "bodyType", label: "Kasa tipi", type: "select", options: ["Panelvan", "Minibüs", "Kamyonet", "Kombi Van", "Camlı Van", "Şasi Kabin", "Frigorifik", "Damperli", "Tenteli", "Kapalı Kasa"], group: "Araç Bilgileri" },
       VASITA_DURUM_FIELD,
-      { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp" },
-      { key: "seatCapacity", label: "Koltuk kapasitesi", type: "text" },
-      { key: "color", label: "Renk", type: "select", options: CAR_COLORS },
-      { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Değişen Var", "Hasar Kayıtlı"] },
-      { key: "inspection", label: "Muayene", type: "select", options: ["Yeni Muayeneli", "Muayenesi Var", "Muayenesi Yok"] },
-      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"] },
-      F.garanti, F.price, F.takas,
-      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool" },
+      { key: "color", label: "Renk", type: "select", options: CAR_COLORS, group: "Araç Bilgileri" },
+      { key: "seatCapacity", label: "Koltuk kapasitesi", type: "text", group: "Araç Bilgileri" },
+      { key: "fuel", label: "Yakıt", type: "select", required: true, options: ["Dizel", "Benzin", "LPG", "Elektrik", "Hibrit"], group: "Motor & Şanzıman" },
+      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"], group: "Motor & Şanzıman" },
+      { key: "traction", label: "Çekiş", type: "select", options: ["Önden Çekiş", "Arkadan İtiş", "4x4"], group: "Motor & Şanzıman" },
+      { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp", group: "Motor & Şanzıman" },
+      { key: "maxLoad", label: "İstiab / max yük", type: "text", suffix: "kg", group: "Motor & Şanzıman" },
+      { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Değişen Var", "Hasar Kayıtlı"], group: "Durum & Belge" },
+      { key: "inspection", label: "Muayene", type: "select", options: ["Yeni Muayeneli", "Muayenesi Var", "Muayenesi Yok"], group: "Durum & Belge" },
+      { ...F.garanti, group: "Durum & Belge" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Durum & Belge" },
+      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Durum & Belge" },
+      F.price, { ...F.takas, group: "Satış" },
       VASITA_ETIKET_FIELD, F.desc
     ]
   },
@@ -1085,17 +1090,17 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "compatEngine", label: "Uyumlu motor / hacim", type: "text", group: "Uyumluluk", placeholder: "ör. 1.6 TDI" },
       { key: "compatBody", label: "Uyumlu kasa tipi", type: "text", group: "Uyumluluk", placeholder: "ör. Sedan, HB" },
 
-      F.durum,
-      F.garanti,
+      { ...F.durum, group: "Durum & Garanti" },
+      { ...F.garanti, group: "Durum & Garanti" },
       { key: "warrantyMonths", label: "Garanti süresi (ay)", type: "number", group: "Durum & Garanti" },
-      F.fatura,
+      { ...F.fatura, group: "Durum & Garanti" },
       { key: "returnable", label: "İade / değişim kabul", type: "bool", group: "Durum & Garanti" },
 
       { key: "installService", label: "Montaj hizmeti var mı?", type: "bool", group: "Satış & Teslimat" },
-      F.stok,
+      { ...F.stok, group: "Satış & Teslimat" },
       F.price,
-      F.pazarlik,
-      F.kargo,
+      { ...F.pazarlik, group: "Satış & Teslimat" },
+      { ...F.kargo, group: "Satış & Teslimat" },
       { key: "etiketler", label: "İlan etiketleri", type: "multiselect", options: PARCA_ETIKET },
       F.desc
     ]
@@ -1438,7 +1443,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "commercialUse", label: "Ticari kullanım hakkı", type: "bool", group: "Fiyat & Teslim" },
       { key: "invoiceable", label: "Fatura kesilir", type: "bool", group: "Fiyat & Teslim" },
 
-      { key: "portfolio", label: "Portfolyo linki", type: "text", placeholder: "Örnek çalışma bağlantısı (opsiyonel)" },
+      { key: "portfolio", label: "Portfolyo linki", type: "text", placeholder: "Örnek çalışma bağlantısı (opsiyonel)", group: "Fiyat & Teslim" },
       F.desc
     ]
   }
