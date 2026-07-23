@@ -71,9 +71,12 @@ const AKS_TAM = ["İç Aksesuar", "Dış Aksesuar", "Performans", "Elektronik", 
 const AKS_KISA = ["İç Aksesuar", "Dış Aksesuar", "Bakım & Onarım Ürünleri"];
 
 // ---- marka/değer listeleri ----------------------------------------------
-export const CAR_BRANDS = ["Alfa Romeo", "Aston Martin", "Audi", "Bentley", "BMW", "BYD", "Cadillac", "Chery", "Chevrolet", "Chrysler", "Citroën", "Cupra", "Dacia", "Daihatsu", "DFSK", "Dodge", "DS Automobiles", "Ferrari", "Fiat", "Fisker", "Ford", "Geely", "Genesis", "GMC", "Honda", "Hongqi", "Hyundai", "Infiniti", "Isuzu", "Jaguar", "Jeep", "Kia", "Lada", "Lamborghini", "Lancia", "Land Rover", "Leapmotor", "Lexus", "Lotus", "Lucid", "Mahindra", "Maserati", "Maybach", "Mazda", "McLaren", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "NIO", "Nissan", "Opel", "Ora", "Peugeot", "Porsche", "Proton", "Renault", "Rolls-Royce", "Seat", "Seres", "Škoda", "Skywell", "Smart", "SsangYong", "Subaru", "Suzuki", "Tesla", "Tofaş", "Togg", "Toyota", "Volkswagen", "Volvo", "Diğer"];
-export const CAR_BODY_TYPES = ["Sedan", "Hatchback (5 Kapı)", "Hatchback (3 Kapı)", "Station Wagon", "SUV & Arazi", "Crossover", "Coupe", "Cabrio & Roadster", "MPV & Minivan", "Pickup", "Panelvan", "Elektrikli", "Hibrit", "Klasik", "Modifiye"];
-export const MOTO_TYPES = ["Scooter", "Maxi Scooter", "Naked", "Sport / Racing", "Touring", "Cruiser", "Chopper", "Enduro", "Motocross", "Trail / Adventure", "Café Racer", "Custom", "Trike", "ATV", "UTV", "Elektrikli Motosiklet", "Moped", "Cub / Kanatlı"];
+export const CAR_BRANDS = ["Alfa Romeo", "Aston Martin", "Audi", "Bentley", "BMW", "BYD", "Cadillac", "Chery", "Chevrolet", "Chrysler", "Citroën", "Cupra", "Dacia", "Daihatsu", "DFSK", "Dodge", "DS Automobiles", "Ferrari", "Fiat", "Fisker", "Ford", "Geely", "Genesis", "GMC", "Honda", "Hongqi", "Hyundai", "Infiniti", "Isuzu", "Jaguar", "Jeep", "Kia", "Lada", "Lamborghini", "Lancia", "Land Rover", "Leapmotor", "Lexus", "Lotus", "Lucid", "Mahindra", "Maserati", "Maybach", "Mazda", "McLaren", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "NIO", "Nissan", "Opel", "Ora", "Peugeot", "Porsche", "Proton", "Renault", "Rolls-Royce", "Seat", "Seres", "Škoda", "Skywell", "Smart", "SsangYong", "Subaru", "Suzuki", "Tesla", "Tofaş", "Togg", "Toyota", "Volkswagen", "Volvo", "Jaecoo", "Jetour", "Lynk & Co", "XPeng", "Zeekr", "Omoda", "Diğer"];
+// Kasa tipi = yalnız GÖVDE biçimi. Yakıt (Elektrikli/Hibrit) ve durum (Klasik/Modifiye) ÇIKARILDI —
+// bunlar fuel/condition alanı, kasa değil (attribute-yaprak temizliği).
+export const CAR_BODY_TYPES = ["Sedan", "Hatchback (5 Kapı)", "Hatchback (3 Kapı)", "Station Wagon", "SUV & Arazi", "Crossover", "Coupe", "Cabrio & Roadster", "MPV & Minivan", "Pickup", "Panelvan", "Roadster"];
+// ATV/UTV ÇIKARILDI — kendi "ATV & UTV" dalı var (aksi halde motosiklet+vasitaGenel çift şema).
+export const MOTO_TYPES = ["Scooter", "Maxi Scooter", "Naked", "Sport / Racing", "Touring", "Cruiser", "Chopper", "Enduro", "Motocross", "Trail / Adventure", "Café Racer", "Custom", "Trike", "Elektrikli Motosiklet", "Moped", "Cub / Kanatlı"];
 export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Ducati", "Triumph", "Harley-Davidson", "Aprilia", "Vespa", "Piaggio", "Benelli", "Royal Enfield", "Moto Guzzi", "Bajaj", "TVS", "CFMoto", "SYM", "Kymco", "Mondial", "Kuba", "RKS", "Arora", "Yuki", "Motolux", "Falcon", "Zontes", "Voge", "QJ Motor", "Keeway", "Hero", "Lifan", "Husqvarna", "Indian", "MV Agusta", "Bimota", "Can-Am", "Segway Powersports", "Diğer"];
 export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vestel", "Samsung", "LG", "Profilo", "Altus", "Grundig", "Regal", "Silverline", "Electrolux", "Whirlpool", "Simfer", "Kumtel", "Luxell", "Sharp", "Hisense", "Midea", "Candy", "Indesit", "Ariston", "Diğer"];
 // Kombi/klima markaları (beyaz eşyadan farklı).
@@ -85,6 +88,11 @@ const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "
 // olduğu için araca uygun ayrı tanım kullanılır.)
 const VASITA_DURUM_FIELD = { key: "condition", label: "Araç durumu", type: "select", required: true, options: ["Sıfır", "İkinci El", "Yurt Dışından İthal", "Klasik / Koleksiyon"], group: "Araç Bilgileri" } as FieldDef;
 const VASITA_MUAYENE_FIELD = { key: "inspection", label: "Muayene", type: "select", options: ["Yeni Muayeneli", "Muayenesi Var", "Muayenesi Yok"], group: "Durum & Geçmiş" } as FieldDef;
+// PAYLAŞIMLI HASAR — eskiden 6 şemada 4 farklı opsiyon+label seti vardı → tek "Hasar durumu" facet'i
+// 4'e bölünüyordu. Kanonik set (tüm motorlu araçlar). traktör "mekanik durum" ayrı key'de kalır.
+const VASITA_HASAR_FIELD = { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Boyalı", "Değişen Var", "Hasar Kayıtlı", "Ağır Hasar / Pert"], group: "Durum & Geçmiş" } as FieldDef;
+// Kanonik yakıt seti (kara aracı). Domaine özgü alt kümeler (moto/deniz) kendi listesini korur.
+const VASITA_YAKIT = ["Benzin", "Dizel", "LPG", "Hibrit", "Elektrik"];
 // Cep telefonu markaları (telefon şeması brand seçenekleriyle BİREBİR aynı olmalı ki
 // kategori yolundan seçilen marka forma otomatik dolsun). MODELS_BY_BRAND'de modeli
 // olanlar (iPhone/Samsung/Xiaomi/Huawei/Oppo/Realme) marka→model ağacı olur.
@@ -290,7 +298,7 @@ const F = {
   title: { key: "title", label: "İlan başlığı", type: "text", required: true, placeholder: "Kısa ve net bir başlık" } as FieldDef,
   price: { key: "price", label: "Fiyat", type: "number", required: true, suffix: "₺" } as FieldDef,
   desc: { key: "description", label: "Açıklama", type: "textarea", required: true, placeholder: "Ürünü/ilanı detaylı anlat" } as FieldDef,
-  durum: { key: "condition", label: "Ürün durumu", type: "select", required: true, options: ["Sıfır", "İkinci el", "Yenilenmiş"] } as FieldDef,
+  durum: { key: "condition", label: "Ürün durumu", type: "select", required: true, options: ["Sıfır", "İkinci El", "Yenilenmiş"] } as FieldDef,
   garanti: { key: "warranty", label: "Garanti durumu", type: "select", options: ["Garantili", "Garantisiz", "Yok"] } as FieldDef,
   fatura: { key: "invoice", label: "Fatura var mı?", type: "bool" } as FieldDef,
   stok: { key: "stock", label: "Stok adedi", type: "number" } as FieldDef,
@@ -878,17 +886,17 @@ export const formSchemas: Record<string, FormSchema> = {
       VASITA_MUAYENE_FIELD,
       { ...F.model, group: "Araç Bilgileri" },
       { key: "year", label: "Yıl", type: "number", required: true, group: "Araç Bilgileri" },
-      { key: "fuel", label: "Yakıt", type: "select", required: true, options: ["Benzin", "Dizel", "LPG", "Hibrit", "Elektrik"], group: "Araç Bilgileri" },
+      { key: "fuel", label: "Yakıt", type: "select", required: true, options: VASITA_YAKIT, group: "Araç Bilgileri" },
       { key: "gear", label: "Vites", type: "select", required: true, options: ["Manuel", "Otomatik", "Yarı Otomatik"], group: "Araç Bilgileri" },
       { key: "km", label: "Kilometre", type: "number", required: true, suffix: "km", group: "Araç Bilgileri" },
-      { key: "body", label: "Kasa tipi", type: "select", options: ["Sedan", "Hatchback", "Station Wagon", "SUV", "Coupe", "Cabrio", "MPV", "Pickup"], group: "Araç Bilgileri" },
+      { key: "bodyType", label: "Kasa tipi", type: "select", options: ["Sedan", "Hatchback", "Station Wagon", "SUV & Arazi", "Crossover", "Coupe", "Cabrio & Roadster", "MPV & Minivan", "Pickup"], group: "Araç Bilgileri" },
       { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp", group: "Motor & Performans" },
       { key: "engineCc", label: "Motor hacmi", type: "text", suffix: "cc", group: "Motor & Performans" },
       { key: "traction", label: "Çekiş", type: "select", options: ["Önden Çekiş", "Arkadan İtiş", "4x4 / AWD"], group: "Motor & Performans" },
       { key: "color", label: "Renk", type: "select", options: CAR_COLORS, group: "Araç Bilgileri" },
       { key: "seats", label: "Koltuk sayısı", type: "select", options: ["2", "4", "5", "6", "7", "8", "8+"], group: "Araç Bilgileri" },
       { ...F.garanti, group: "Durum & Geçmiş" },
-      { key: "damage", label: "Ağır hasar kaydı", type: "select", options: ["Yok", "Var", "Ağır Hasar Kayıtlı"], group: "Durum & Geçmiş" },
+      VASITA_HASAR_FIELD,
       { key: "tramer", label: "Tramer tutarı", type: "text", suffix: "₺", placeholder: "ör. 0 / 15.000", group: "Durum & Geçmiş" },
       { key: "paint", label: "Boya / değişen özeti", type: "text", placeholder: "Örn. Tamamı orijinal / 2 parça boyalı", group: "Durum & Geçmiş" },
       { key: "plate", label: "Plaka / uyruk", type: "select", options: ["Türkiye Plakalı", "Yabancı Plakalı", "Mavi Plaka (Ticari)"], group: "Satış & Ödeme" },
@@ -923,7 +931,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"], group: "Motor & Performans" },
       { key: "cooling", label: "Soğutma", type: "select", options: ["Hava", "Sıvı", "Yağ"], group: "Motor & Performans" },
       VASITA_MUAYENE_FIELD,
-      { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Değişen Var", "Hasar Kayıtlı"], group: "Durum & Geçmiş" },
+      VASITA_HASAR_FIELD,
       { ...F.garanti, group: "Durum & Geçmiş" },
       { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Durum & Geçmiş" },
       { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Durum & Geçmiş" },
@@ -947,7 +955,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik", "Yok"], group: "Araç Bilgileri" },
       { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp", group: "Motor & Performans" },
       { key: "color", label: "Renk", type: "select", options: CAR_COLORS, group: "Araç Bilgileri" },
-      { key: "damage", label: "Hasar kaydı", type: "select", options: ["Yok", "Var", "Onarılmış"], group: "Durum & Geçmiş" },
+      VASITA_HASAR_FIELD,
       VASITA_MUAYENE_FIELD,
       { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Satış & Ödeme" },
       { ...F.garanti, group: "Durum & Geçmiş" },
@@ -968,17 +976,17 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "bodyType", label: "Kasa tipi", type: "select", options: ["Panelvan", "Minibüs", "Kamyonet", "Kombi Van", "Camlı Van", "Şasi Kabin", "Frigorifik", "Damperli", "Tenteli", "Kapalı Kasa"], group: "Araç Bilgileri" },
       VASITA_DURUM_FIELD,
       { key: "color", label: "Renk", type: "select", options: CAR_COLORS, group: "Araç Bilgileri" },
-      { key: "seatCapacity", label: "Koltuk kapasitesi", type: "text", group: "Araç Bilgileri" },
-      { key: "fuel", label: "Yakıt", type: "select", required: true, options: ["Dizel", "Benzin", "LPG", "Elektrik", "Hibrit"], group: "Motor & Şanzıman" },
+      { key: "seats", label: "Koltuk sayısı", type: "select", options: ["2", "3", "5", "6", "8", "9", "14", "16", "19+"], group: "Araç Bilgileri" },
+      { key: "fuel", label: "Yakıt", type: "select", required: true, options: VASITA_YAKIT, group: "Motor & Şanzıman" },
       { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"], group: "Motor & Şanzıman" },
-      { key: "traction", label: "Çekiş", type: "select", options: ["Önden Çekiş", "Arkadan İtiş", "4x4"], group: "Motor & Şanzıman" },
+      { key: "traction", label: "Çekiş", type: "select", options: ["Önden Çekiş", "Arkadan İtiş", "4x4 / AWD"], group: "Motor & Şanzıman" },
       { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp", group: "Motor & Şanzıman" },
       { key: "maxLoad", label: "İstiab / max yük", type: "text", suffix: "kg", group: "Motor & Şanzıman" },
-      { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Değişen Var", "Hasar Kayıtlı"], group: "Durum & Belge" },
-      { key: "inspection", label: "Muayene", type: "select", options: ["Yeni Muayeneli", "Muayenesi Var", "Muayenesi Yok"], group: "Durum & Belge" },
-      { ...F.garanti, group: "Durum & Belge" },
-      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Durum & Belge" },
-      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Durum & Belge" },
+      VASITA_HASAR_FIELD,
+      VASITA_MUAYENE_FIELD,
+      { ...F.garanti, group: "Durum & Geçmiş" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Durum & Geçmiş" },
+      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Durum & Geçmiş" },
       F.price, { ...F.takas, group: "Satış" },
       VASITA_ETIKET_FIELD, F.desc
     ]
@@ -999,10 +1007,10 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "fuel", label: "Yakıt", type: "select", options: ["Dizel", "Benzin", "LPG", "Elektrik"], group: "Motor & Şanzıman" },
       { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"], group: "Motor & Şanzıman" },
       { key: "cabin", label: "Kabin", type: "select", options: ["Çift Kabin", "Tek Kabin", "Yataklı Kabin"], group: "Motor & Şanzıman" },
-      { key: "tireCondition", label: "Lastik durumu", type: "text", suffix: "%", group: "Durum & Belge" },
-      { key: "damage", label: "Hasar durumu", type: "select", options: ["Orijinal / Hasarsız", "Değişen Var", "Hasar Kayıtlı"], group: "Durum & Belge" },
-      { key: "inspection", label: "Muayene", type: "select", options: ["Yeni Muayeneli", "Muayenesi Var", "Muayenesi Yok"], group: "Durum & Belge" },
-      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Durum & Belge" },
+      { key: "tireCondition", label: "Lastik durumu", type: "text", suffix: "%", group: "Durum & Geçmiş" },
+      VASITA_HASAR_FIELD,
+      VASITA_MUAYENE_FIELD,
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Durum & Geçmiş" },
       F.price, { ...F.takas, group: "Satış" }, VASITA_ETIKET_FIELD, F.desc
     ]
   },
@@ -1025,10 +1033,10 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "fuel", label: "Yakıt", type: "select", options: ["Dizel", "Benzin", "Elektrik", "Yelken"], group: "Teknik Özellikler" },
       { key: "cabins", label: "Kabin sayısı", type: "select", options: ["0", "1", "2", "3", "4", "4+"], group: "Teknik Özellikler" },
       { key: "capacity", label: "Kişi kapasitesi", type: "text", group: "Teknik Özellikler" },
-      { key: "damage", label: "Hasar kaydı", type: "select", options: ["Yok", "Var", "Onarılmış"], group: "Durum & Belge" },
-      { ...F.garanti, group: "Durum & Belge" },
-      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Durum & Belge" },
-      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Durum & Belge" },
+      VASITA_HASAR_FIELD,
+      { ...F.garanti, group: "Durum & Geçmiş" },
+      { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Durum & Geçmiş" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Yetkili Bayiden"], group: "Durum & Geçmiş" },
       F.price, { ...F.takas, group: "Satış" }, F.desc
     ]
   },
@@ -1045,8 +1053,8 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "workHours", label: "Çalışma saati", type: "number", suffix: "saat", group: "Teknik Özellikler" },
       { key: "traction", label: "Çekiş", type: "select", options: ["2WD (Arkadan İtiş)", "4WD (Çift Çeker)"], group: "Teknik Özellikler" },
       { key: "cabin", label: "Kabin", type: "select", options: ["Kabinli", "Kabinsiz", "Gölgelikli"], group: "Teknik Özellikler" },
-      { key: "damage", label: "Durum", type: "select", options: ["Çalışır / Sorunsuz", "Bakım Gerektirir", "Parça / Hurda"], group: "Durum & Belge" },
-      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Bayiden"], group: "Durum & Belge" },
+      { key: "mechanicalCondition", label: "Mekanik durum", type: "select", options: ["Çalışır / Sorunsuz", "Bakım Gerektirir", "Parça / Hurda"], group: "Durum & Geçmiş" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Bayiden"], group: "Durum & Geçmiş" },
       F.price, { ...F.takas, group: "Satış" }, VASITA_ETIKET_FIELD, F.desc
     ]
   },
@@ -1061,8 +1069,8 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "brand", label: "Marka", type: "text", group: "Araç" },
       { key: "model", label: "Model", type: "text", group: "Araç" },
       { key: "year", label: "Model yılı", type: "number", group: "Araç" },
-      { key: "fuel", label: "Yakıt", type: "select", options: ["Benzin", "Dizel", "LPG", "Hibrit", "Elektrik"], group: "Araç" },
-      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik"], group: "Araç" },
+      { key: "fuel", label: "Yakıt", type: "select", options: VASITA_YAKIT, group: "Araç" },
+      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik", "Yarı Otomatik"], group: "Araç" },
       { key: "seats", label: "Koltuk sayısı", type: "select", options: ["2", "4", "5", "6", "7", "8", "8+"], group: "Araç" },
       { key: "carClass", label: "Araç sınıfı", type: "select", options: ["Ekonomik", "Orta", "Üst", "Lüks / Premium", "SUV", "Ticari", "VIP"], group: "Araç" },
       { key: "price", label: "Günlük kiralama ücreti", type: "number", required: true, suffix: "₺", group: "Ücret & Depozito" },
@@ -1668,20 +1676,22 @@ export const categoryTree: CategoryNode[] = [
   node("Vasıta", [
     node("Otomobil (Markaya Göre)", brandModelNodes(CAR_BRANDS, MODELS_BY_BRAND, "otomobil"), "otomobil"),
     node("Otomobil (Kasa Tipine Göre)", leaves(CAR_BODY_TYPES, "otomobil"), "otomobil"),
-    node("Arazi, SUV & Pickup", leaves(["Toyota", "Nissan", "Ford", "Hyundai", "Kia", "Volkswagen", "Dacia", "Suzuki", "Jeep", "Land Rover", "Mitsubishi", "Chery", "MG", "BMW", "Mercedes-Benz", "Audi", "Volvo", "Porsche", "Range Rover", "Diğer"], "otomobil"), "otomobil"),
-    node("Elektrikli & Hibrit Araçlar", leaves(["Elektrikli Otomobil", "Hibrit (HEV)", "Plug-in Hibrit (PHEV)", "Menzil Artırıcılı (EREV)", "Elektrikli SUV", "Elektrikli Ticari", "Şarj Ekipmanı"], "otomobil"), "otomobil"),
+    // Düz marka-yaprağı (model seçilemiyordu) → brand→model. "Range Rover" ÇIKARILDI (Land Rover'ın MODELİ).
+    node("Arazi, SUV & Pickup", brandModelNodes(["Audi", "BMW", "Chery", "Citroën", "Dacia", "Ford", "Honda", "Hyundai", "Jeep", "Kia", "Land Rover", "Mazda", "Mercedes-Benz", "MG", "Mitsubishi", "Nissan", "Opel", "Peugeot", "Porsche", "Renault", "Suzuki", "Toyota", "Volkswagen", "Volvo", "BYD", "Togg", "Tesla", "Diğer"], MODELS_BY_BRAND, "otomobil"), "otomobil"),
+    // "Şarj Ekipmanı" ÇIKARILDI (araç değil aksesuar → Yedek Parça'da).
+    node("Elektrikli & Hibrit Araçlar", leaves(["Elektrikli Otomobil", "Hibrit (HEV)", "Plug-in Hibrit (PHEV)", "Menzil Artırıcılı (EREV)", "Elektrikli SUV", "Elektrikli Ticari"], "otomobil"), "otomobil"),
     node("Motosiklet (Markaya Göre)", brandModelNodes(MOTO_BRANDS, MOTO_MODELS, "motosiklet"), "motosiklet"),
     node("Motosiklet (Türe Göre)", leaves(MOTO_TYPES, "motosiklet"), "motosiklet"),
     node("Ticari Araçlar", brandModelNodes(COMMERCIAL_BRANDS, COMMERCIAL_MODELS, "ticari"), "ticari"),
     node("Minivan & Panelvan", leaves(["Panelvan", "Minivan", "Kombi Van", "Camlı Van", "Yük Vanı", "Yolcu Vanı"], "ticari"), "ticari"),
-    node("Ağır Vasıta", leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Dorse", "Römork (Ticari)", "Tanker", "Frigorifik", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "agirVasita"), "agirVasita"),
+    node("Ağır Vasıta", leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Oto Kurtarıcı & Taşıyıcı", "Dorse (Lowbed)", "Dorse (Damperli)", "Dorse (Tenteli)", "Dorse (Frigorifik)", "Dorse (Silobas)", "Dorse (Tanker)", "Römork (Ticari)", "Tanker", "Frigorifik", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "agirVasita"), "agirVasita"),
     node("Deniz Araçları", [
       node("Yat", leaves(["Motoryat", "Yelkenli Yat", "Katamaran", "Trawler", "Mega Yat", "Gulet", "Klasik Yat", "Ahşap Yat", "Süper Yat"], "deniz"), "deniz"),
       ...leaves(["Sürat Teknesi", "Yelkenli", "Şişme Bot & Zodyak", "Jet Ski", "Balıkçı Teknesi", "Fiber Tekne", "Ahşap Tekne", "Kano & Kayak", "SUP & Sörf", "Römork (Deniz)"], "deniz"),
       node("Tekne Motoru", brandModelNodes(MARINE_ENGINE_BRANDS, {}, "deniz"), "deniz")
     ], "deniz"),
-    node("Karavan", leaves(["Motokaravan", "Çekme Karavan", "Van Karavan", "Off-road Karavan", "Kamp Römorku", "Karavan Aksesuarı"], "vasitaGenel"), "vasitaGenel"),
-    node("ATV & UTV", leaves(["ATV", "UTV", "Buggy", "Elektrikli ATV", "Çocuk ATV"], "vasitaGenel"), "vasitaGenel"),
+    node("Karavan", leaves(["Motokaravan", "Çekme Karavan", "Van Karavan", "Off-road Karavan", "Kamp Römorku"], "vasitaGenel"), "vasitaGenel"),
+    node("ATV & UTV", leaves(["ATV", "UTV", "Buggy", "Elektrikli ATV", "Paletli ATV"], "vasitaGenel"), "vasitaGenel"),
     node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Elektrikli Bisiklet", "Elektrikli Motosiklet", "Hoverboard", "Segway", "Elektrikli Golf Aracı"], "vasitaGenel"), "vasitaGenel"),
     node("Klasik & Koleksiyon Araçlar", leaves(["Klasik Otomobil", "Klasik Motosiklet", "Antika Araç", "Restorasyonluk Araç", "Amerikan Klasik", "Anadol / Murat / Şahin", "Jeep & Willys"], "otomobil"), "otomobil"),
     node("Engelli Araçları", leaves(["Engelli Otomobil (ÖTV'siz)", "Adaptasyonlu Araç", "Engelli Scooter", "Akülü Sandalye"], "vasitaGenel"), "vasitaGenel"),
@@ -1690,7 +1700,14 @@ export const categoryTree: CategoryNode[] = [
     // kendi minimal şeması (havaAraci: uçuş saati/motor tipi/koltuk — km/vites değil).
     node("Hava Araçları", leaves(["Uçak (Tek Motor)", "Uçak (Çift Motor)", "Jet", "Helikopter", "Planör", "Microlight / Ultralight", "Paramotor", "Yamaç Paraşütü", "Balon", "Amfibik Uçak", "Profesyonel Drone", "Diğer Hava Aracı"], "havaAraci"), "havaAraci"),
     // HASARLI & PERT — tek yapraktı, Sahibinden gibi araç tipine göre açıldı (otomobil şeması: hasar/tramer alanları var).
-    node("Hasarlı & Pert Araçlar", leaves(["Hasarlı Otomobil", "Pert Kayıtlı Otomobil", "Ağır Hasarlı Otomobil", "Hasarlı SUV & Arazi", "Hasarlı Ticari Araç", "Hasarlı Motosiklet", "Kaza Yapmış Araç", "Yanmış Araç", "Sel / Su Basmış Araç", "Sigortadan Çıkma Araç", "Parça (Kanibal) Araç", "Motoru Arızalı Araç"], "otomobil"), "otomobil"),
+    // Hasar-NEDENİ attribute'ları (Yanmış/Sel/Kaza/Motoru Arızalı) ÇIKARILDI → `damage` alanı değeri.
+    // Her araç tipi DOĞRU şemaya (Hasarlı Motosiklet artık motosiklet, Ticari→ticari, Ağır→agirVasita).
+    node("Hasarlı & Pert Araçlar", [
+      ...leaves(["Hasarlı Otomobil", "Pert Kayıtlı Otomobil", "Ağır Hasarlı Otomobil", "Hasarlı SUV & Arazi"], "otomobil"),
+      leaf("Hasarlı Ticari Araç", "ticari"),
+      leaf("Hasarlı Ağır Vasıta", "agirVasita"),
+      leaf("Hasarlı Motosiklet", "motosiklet")
+    ], "otomobil"),
     // KİRALIK — tek yapraktı; Sahibinden gibi tam alt-ağaç + kiralamaya özel şema (aracKiralik).
     node("Kiralık Araçlar", [
       node("Otomobil Kiralama", leaves(["Günlük Kiralık", "Haftalık Kiralık", "Aylık Kiralık", "Uzun Dönem Kiralama", "Şoförlü Kiralama", "Filo Kiralama", "Ekonomik Segment", "Lüks & Premium"], "aracKiralik"), "aracKiralik"),
