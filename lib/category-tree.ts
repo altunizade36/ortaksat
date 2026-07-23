@@ -64,6 +64,11 @@ function brandGroupNodes(brands: string[], groups: string[], formKey: string): C
 
 // Otomobil yedek parça grupları (marka bazlı listelenir).
 const CAR_PART_GROUPS = ["Motor Parçaları", "Fren Sistemi", "Süspansiyon & Rot-Balans", "Şanzıman & Debriyaj", "Egzoz Sistemi", "Soğutma & Radyatör", "Elektrik & Aydınlatma", "Kaporta & Dış Aksam", "Far & Stop", "Cam & Ayna", "İç Aksam & Döşeme", "Filtreler", "Triger & Kayış Seti", "Amortisör", "Yakıt Sistemi", "Klima & Kalorifer", "Marş & Alternatör", "Turbo & Yağlama"];
+// Sahibinden yedek-parça "parça sistemi" seviyesi (araç tipinin altında, en derin seçilebilir düzey).
+const OTO_PARCA_SISTEM = ["Ateşleme & Yakıt", "Egzoz", "Elektrik", "Filtre", "Fren & Debriyaj", "Isıtma & Havalandırma & Klima", "Kaporta & Karoser", "Mekanik", "Motor", "Şanzıman & Vites", "Yürüyen & Direksiyon"];
+const MOTO_PARCA_SISTEM = ["Motor", "Ateşleme & Yakıt", "Elektrik", "Egzoz", "Fren", "Şanzıman & Zincir", "Süspansiyon", "Gövde & Kaporta", "Gidon & Kumanda", "Far & Sinyal", "Ayna & Cam"];
+const AKS_TAM = ["İç Aksesuar", "Dış Aksesuar", "Performans", "Elektronik", "Bakım & Onarım Ürünleri"];
+const AKS_KISA = ["İç Aksesuar", "Dış Aksesuar", "Bakım & Onarım Ürünleri"];
 
 // ---- marka/değer listeleri ----------------------------------------------
 export const CAR_BRANDS = ["Alfa Romeo", "Aston Martin", "Audi", "Bentley", "BMW", "BYD", "Cadillac", "Chery", "Chevrolet", "Chrysler", "Citroën", "Cupra", "Dacia", "Daihatsu", "DFSK", "Dodge", "DS Automobiles", "Ferrari", "Fiat", "Fisker", "Ford", "Geely", "Genesis", "GMC", "Honda", "Hongqi", "Hyundai", "Infiniti", "Isuzu", "Jaguar", "Jeep", "Kia", "Lada", "Lamborghini", "Lancia", "Land Rover", "Leapmotor", "Lexus", "Lotus", "Lucid", "Mahindra", "Maserati", "Maybach", "Mazda", "McLaren", "Mercedes-Benz", "MG", "Mini", "Mitsubishi", "NIO", "Nissan", "Opel", "Ora", "Peugeot", "Porsche", "Proton", "Renault", "Rolls-Royce", "Seat", "Seres", "Škoda", "Skywell", "Smart", "SsangYong", "Subaru", "Suzuki", "Tesla", "Tofaş", "Togg", "Toyota", "Volkswagen", "Volvo", "Diğer"];
@@ -1578,7 +1583,11 @@ export const categoryTree: CategoryNode[] = [
       node("Satılık", leaves(["Otel", "Butik Otel", "Apart Otel", "Pansiyon", "Motel", "Hostel", "Tatil Köyü", "Kamp Alanı", "Bungalov Tesisi", "Glamping Tesisi", "Termal Otel", "Dağ Oteli", "Sahil Oteli", "Plaj Tesisi", "Aquapark", "Karavan Parkı"], "turistik"), "turistik"),
       node("Kiralık", leaves(["Otel", "Butik Otel", "Apart Otel", "Pansiyon", "Kamp Alanı", "Bungalov Tesisi", "Tatil Köyü", "Sezonluk Otel", "Plaj Tesisi", "Restoranlı Tesis"], "turistik"), "turistik")
     ], "turistik"),
-    node("Devre Mülk", leaves(["Satılık Devre Mülk", "Kiralık Devre Mülk", "Termal Devre Mülk", "Otel Devre Mülk", "Tatil Köyü Devre Mülk", "Yazlık Devre Mülk", "Kışlık Devre Mülk", "Haftalık", "Sezonluk", "Ömür Boyu Kullanımlı", "Süreli Kullanımlı"], "devremulk"), "devremulk"),
+    // Sahibinden gibi Satılık/Kiralık düğümü (eskiden düz leaf listesiydi).
+    node("Devre Mülk", [
+      node("Satılık", leaves(["Termal Devre Mülk", "Otel Devre Mülk", "Tatil Köyü Devre Mülk", "Yazlık Devre Mülk", "Kışlık Devre Mülk", "Dağ Evi Devre Mülk", "Sahil Devre Mülk", "Haftalık Kullanımlı", "Sezonluk Kullanımlı", "Ömür Boyu Kullanımlı", "Süreli Kullanımlı"], "devremulk"), "devremulk"),
+      node("Kiralık", leaves(["Haftalık", "Sezonluk", "Yazlık", "Kışlık", "Termal", "Tatil Köyü"], "devremulk"), "devremulk")
+    ], "devremulk"),
     node("Günlük / Sezonluk Kiralık", [
       node("Günlük", leaves(["Günlük Daire", "Günlük Rezidans", "Günlük Villa", "Günlük Yazlık", "Günlük Bungalov", "Günlük Tiny House", "Günlük Dağ Evi", "Günlük Göl Evi", "Havuzlu Villa", "Suit", "Oda", "Apart", "Pansiyon Odası"], "gunlukKiralik"), "gunlukKiralik"),
       node("Sezonluk", leaves(["Sezonluk Yazlık", "Sezonluk Villa", "Sezonluk Daire", "Sezonluk Bungalov", "Aylık Yazlık", "Haftalık Yazlık", "Yaz Sezonu", "Kış Sezonu"], "gunlukKiralik"), "gunlukKiralik")
@@ -1645,17 +1654,48 @@ export const categoryTree: CategoryNode[] = [
     ], "aracKiralik")
   ], "vasitaGenel", IMG("1503376780353-7e6692767b70")),
 
+  // SAHİBİNDEN-PARİTE (2026-07-23): Ekipman türü → kategori → araç tipi → parça sistemi.
+  // Eski düz "Markaya Göre / Parça Grubuna Göre" yapısı → 3 ekipman türü altında yeniden kuruldu.
+  // Marka SEO'su "Markaya Göre" alt-düğümü olarak KORUNDU (brandGroupNodes, 1476 yaprak).
   node("Yedek Parça, Aksesuar & Tuning", [
-    node("Otomobil Yedek Parça (Markaya Göre)", brandGroupNodes(CAR_BRANDS, CAR_PART_GROUPS, "yedekParca"), "yedekParca"),
-    node("Parça Grubuna Göre", leaves(CAR_PART_GROUPS, "yedekParca"), "yedekParca"),
-    node("Motosiklet Yedek Parça", leaves(["Motor", "Zincir & Dişli", "Fren", "Lastik & Jant", "Far & Sinyal", "Ayna", "Egzoz", "Gidon & Kumanda", "Şanzıman", "Elektrik"], "yedekParca"), "yedekParca"),
-    node("Ağır Vasıta & Ticari Parça", leaves(["Kamyon Parçası", "Otobüs Parçası", "Traktör Parçası", "İş Makinesi Parçası", "Römork Parçası"], "yedekParca"), "yedekParca"),
-    node("Jant & Lastik", leaves(["Yaz Lastiği", "Kış Lastiği", "4 Mevsim Lastik", "Çelik Jant", "Alaşım (Alüminyum) Jant", "Bijon & Somun", "Lastik Zinciri", "İç Lastik"], "yedekParca"), "yedekParca"),
-    node("Araç Aksesuarları", leaves(["İç Aksesuar", "Dış Aksesuar", "Kılıf & Paspas", "Telefon Tutucu", "Araç İçi Organizer", "Bagaj & Portbagaj", "Çeki Demiri", "Branda"], "yedekParca"), "yedekParca"),
-    node("Ses & Görüntü Sistemleri", leaves(["Oto Teyp", "Hoparlör", "Amfi", "Subwoofer", "Multimedya Ekran", "Anten", "Kablo & Aksesuar"], "yedekParca"), "yedekParca"),
-    node("Oto Elektronik", leaves(["Akü", "Sensör", "Araç Kamerası", "Park Sensörü", "Navigasyon", "Alarm & İmmobilizer", "Xenon & LED", "Beyin (ECU)"], "yedekParca"), "yedekParca"),
-    node("Tuning & Performans", leaves(["Body Kit", "Spoiler", "Performans Filtre", "Spor Egzoz", "Coilover / Süspansiyon", "Chip Tuning / Yazılım", "Direksiyon & Vites"], "yedekParca"), "yedekParca"),
-    node("Bakım & Sarf", leaves(["Motor Yağı", "Antifriz", "Silecek", "Fren Balatası", "Filtre Seti", "Buji", "Cam Suyu & Katkı", "Temizlik & Bakım"], "yedekParca"), "yedekParca")
+    node("Otomotiv Ekipmanları", [
+      node("Yedek Parça", [
+        node("Otomobil & Arazi Aracı", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
+        node("Minivan & Panelvan", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
+        node("Ticari Araçlar", [
+          node("Minibüs & Otobüs", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
+          node("Kamyon & Çekici", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
+          node("Kamyonet & Pickup", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
+          node("Oto Kurtarıcı & Taşıyıcı", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
+          node("Treyler", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca")
+        ], "yedekParca"),
+        node("Karavan", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
+        node("Go Kart", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
+        node("Markaya Göre", brandGroupNodes(CAR_BRANDS, CAR_PART_GROUPS, "yedekParca"), "yedekParca")
+      ], "yedekParca"),
+      node("Aksesuar & Tuning", [
+        node("Otomobil & Arazi Aracı", leaves(AKS_TAM, "yedekParca"), "yedekParca"),
+        node("Minivan & Panelvan", leaves(AKS_KISA, "yedekParca"), "yedekParca"),
+        node("Ticari Araçlar", [
+          node("Minibüs & Otobüs", leaves(AKS_KISA, "yedekParca"), "yedekParca"),
+          node("Kamyon & Çekici", leaves(AKS_KISA, "yedekParca"), "yedekParca"),
+          node("Kamyonet & Pickup", leaves(AKS_KISA, "yedekParca"), "yedekParca")
+        ], "yedekParca"),
+        node("Karavan", leaves(AKS_KISA, "yedekParca"), "yedekParca")
+      ], "yedekParca"),
+      node("Jant & Lastik", leaves(["Jant", "Lastik (Yaz)", "Lastik (Kış)", "Lastik (4 Mevsim)", "Jant & Lastik Takımları", "Jant Kapakları", "Bijon & Somun", "Lastik Zinciri", "Aksesuar & Ekipman"], "yedekParca"), "yedekParca"),
+      node("Ses & Görüntü Sistemleri", leaves(["Oto Teyp / Multimedya", "Hoparlör", "Amfi", "Subwoofer", "Ekran / Navigasyon", "Kamera & Park Sensörü", "Anten", "Kablo & Montaj Malzemesi"], "yedekParca"), "yedekParca")
+    ], "yedekParca"),
+    node("Motosiklet Ekipmanları", [
+      node("Yedek Parça", leaves(MOTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
+      node("Aksesuar & Tuning", leaves(["Kask", "Motosiklet Giyim", "Çanta & Bagaj", "Koruma Demiri", "İç Aksesuar", "Dış Aksesuar", "Performans", "Bakım & Onarım Ürünleri"], "yedekParca"), "yedekParca"),
+      node("Lastik & Jant", leaves(["Ön Lastik", "Arka Lastik", "Jant", "Jant & Lastik Takımı", "İç Lastik"], "yedekParca"), "yedekParca")
+    ], "yedekParca"),
+    node("Deniz Aracı Ekipmanları", [
+      node("Yedek Parça", leaves(["Motor Parçası", "Şaft & Pervane", "Elektrik & Elektronik", "Yakıt Sistemi", "Dümen & Direksiyon", "Gövde & Kaporta", "Soğutma Sistemi"], "yedekParca"), "yedekParca"),
+      node("Aksesuar & Donanım", leaves(["Can Yeleği & Güvenlik", "Halat & Palamar", "Çıpa & Demir", "Fender & Usturmaça", "Navigasyon & Elektronik", "Aydınlatma", "Tekne Örtüsü & Branda", "Temizlik & Bakım"], "yedekParca"), "yedekParca"),
+      node("Motor & Şaft", leaves(["Dıştan Takma Motor", "İçten Takma Motor", "Pervane", "Şaft", "Motor Yedek Parça"], "yedekParca"), "yedekParca")
+    ], "yedekParca")
   ], "yedekParca", IMG("1486262715619-67b85e0b08d3")),
 
   node("İkinci El & Sıfır Alışveriş", [
