@@ -6,6 +6,7 @@ import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { colors } from "@/components/colors";
 import { OptionSheet } from "@/components/option-sheet";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useIsWideWeb } from "@/lib/layout";
 import { districtsOfProvince, locKey, provinces, searchDistricts, searchProvinces } from "@/lib/locations";
 import { fetchNeighborhoods, type Neighborhood } from "@/lib/location-service";
 
@@ -207,6 +208,12 @@ function ComboBox({
   // `overflow:hidden` olan kart/panel içinde KIRPILMAZ ("il/ilçe görünmüyor" sorunu).
   // Eski çözüm sayfayı listeye kaydırmaktı — istenmeyen davranış buydu.
   const { ref: anchorRef, rect: anchorRect, measure } = useAnchor(open);
+  // DAR EKRAN = alttan açılan tam sayfa (native VE telefon tarayıcısı). Eskiden koşul
+  // `Platform.OS !== "web"` idi → telefonun TARAYICISINDAN girenler küçük çapalı popover
+  // alıyordu; autoFocus klavyeyi açınca viewport değişip liste yeniden konumlanıyor,
+  // kullanıcı aşağı inerken liste yukarı sıçrıyordu ("il/ilçe ararken kayma").
+  const isWideWeb = useIsWideWeb();
+  const useSheet = Platform.OS !== "web" || !isWideWeb;
   const openList = () => { if (disabled) return; measure(); setQuery(""); setOpen(true); };
 
   return (
@@ -229,8 +236,9 @@ function ComboBox({
         </Pressable>
       </View>
 
-      {/* NATIVE: alttan açılan seçim sayfası + arama (81 il / ilçeler tam görünür). */}
-      {Platform.OS !== "web" ? (
+      {/* DAR EKRAN (native + telefon tarayıcısı): alttan açılan seçim sayfası + arama
+          (81 il / ilçeler tam görünür, klavye açılınca liste sıçramaz). */}
+      {useSheet ? (
         <OptionSheet
           visible={open}
           title={label}

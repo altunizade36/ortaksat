@@ -20,7 +20,16 @@ export function useAnchor(active = false) {
   const measure = useCallback(() => {
     ref.current?.measureInWindow?.((x, y, width, height) => {
       // Ölçüm bazen 0 döner (henüz layout olmamış) — o durumda eskiyi koru.
-      if (width > 0 || height > 0) setRect({ x, y, width, height });
+      if (!(width > 0 || height > 0)) return;
+      // KAYMA HATASI: eskiden her ölçümde YENİ nesne set ediliyordu. scroll dinleyicisi
+      // capture:true olduğu için açılır listenin KENDİ iç kaydırması da tetikliyor →
+      // her karede yeni rect → Modal içeriği sürekli yeniden render → kullanıcı listede
+      // aşağı inerken liste yukarı sıçrıyordu. Değer değişmediyse ÖNCEKİ nesneyi koru.
+      setRect((prev) =>
+        prev && prev.x === x && prev.y === y && prev.width === width && prev.height === height
+          ? prev
+          : { x, y, width, height }
+      );
     });
   }, []);
 
