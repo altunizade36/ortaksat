@@ -1141,6 +1141,38 @@ export const formSchemas: Record<string, FormSchema> = {
       { ...F.kargo, group: "Satış & Teslimat" }, F.price, { ...F.pazarlik, group: "Satış & Teslimat" }, { ...F.takas, group: "Satış & Teslimat" }, F.desc
     ]
   },
+  // YAPI MARKET (malzeme/hırdavat/boya/tesisat/bahçe): jenerik "alisverisGenel"e düşüyordu →
+  // miktar/birim (m²/adet/kg) + durum/garanti eklendi. Gruplu → mobilde katlanır.
+  yapiMarket: {
+    key: "yapiMarket",
+    title: "Yapı market / ürün bilgileri",
+    fields: [
+      F.title,
+      { ...F.durum, group: "Temel Bilgiler" }, { ...F.markaSerbest, group: "Temel Bilgiler" }, { ...F.model, group: "Temel Bilgiler" },
+      { key: "quantity", label: "Miktar", type: "number", group: "Ürün Detayı" },
+      { key: "unit", label: "Birim", type: "select", options: ["Adet", "m²", "m", "m³", "kg", "Litre", "Paket", "Kutu", "Takım", "Rulo", "Torba", "Palet"], group: "Ürün Detayı" },
+      { key: "material", label: "Malzeme / cins", type: "text", placeholder: "ör. seramik, ahşap, PVC", group: "Ürün Detayı" },
+      { ...F.garanti, group: "Garanti & Belge" }, { ...F.fatura, group: "Garanti & Belge" },
+      { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" }, { ...F.takas, group: "Satış & Teslimat" },
+      F.price, GENEL_ETIKET_FIELD, F.desc
+    ]
+  },
+  // ELEKTRİKLİ EL ALETİ (matkap/testere/taşlama/bahçe motoru): güç/voltaj/akü belirleyici.
+  elektrikliAlet: {
+    key: "elektrikliAlet",
+    title: "Elektrikli alet bilgileri",
+    fields: [
+      F.title,
+      { ...F.durum, group: "Temel Bilgiler" }, { ...F.markaSerbest, group: "Temel Bilgiler" }, { ...F.model, group: "Temel Bilgiler" },
+      { key: "power", label: "Güç", type: "text", suffix: "W", group: "Teknik Özellikler" },
+      { key: "voltage", label: "Voltaj / akü", type: "select", options: ["12V", "18V", "20V", "24V", "36V", "220V (Kablolu)", "Diğer"], group: "Teknik Özellikler" },
+      { key: "battery", label: "Akülü mü?", type: "select", options: ["Kablolu", "Akülü", "Akülü (Aküsüz satılıyor)", "Benzinli"], group: "Teknik Özellikler" },
+      { key: "rpm", label: "Devir / kapasite", type: "text", placeholder: "ör. 3000 rpm / 20 mm", group: "Teknik Özellikler" },
+      { ...F.garanti, group: "Garanti & Belge" }, { ...F.fatura, group: "Garanti & Belge" }, { ...F.kutu, group: "Garanti & Belge" },
+      { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" }, { ...F.takas, group: "Satış & Teslimat" },
+      F.price, GENEL_ETIKET_FIELD, F.desc
+    ]
+  },
   telefon: {
     key: "telefon",
     title: "Cep telefonu bilgileri",
@@ -1989,47 +2021,47 @@ export const categoryTree: CategoryNode[] = [
       "Daire Testere", "Şerit Testere", "Taşlama / Spiral", "Avuç Taşlama", "Zımpara Makinesi",
       "Planya", "El Frezesi", "Sıcak Hava Tabancası", "Tutkal Tabancası", "Lehim İstasyonu",
       "Basınçlı Yıkama Makinesi", "Ağaç Kesme Testeresi", "Atölye Vakumu"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "elektrikliAlet"), "elektrikliAlet"),
     node("El Aletleri (Manuel)", leaves([
       "Tornavida Seti", "Anahtar Takımı", "Lokma Takımı", "Pense & Kerpeten", "Çekiç & Balyoz",
       "El Testeresi", "Mengene", "İşkence", "Şerit Metre", "Su Terazisi", "Lazer Metre",
       "Lazer Hizalama", "Alet Çantası", "Takım Dolabı", "El Aleti Seti"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "yapiMarket"), "yapiMarket"),
     node("Hırdavat", leaves([
       "Vida & Cıvata", "Dübel", "Somun & Pul", "Menteşe", "Kilit", "Kapı Kolu", "Çilingir Malzemesi",
       "Yapıştırıcı", "Silikon & Mastik", "Bant & İzole", "Zincir & Halat", "Kelepçe", "Ray & Tekerlek",
       "Sarf Malzeme"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "yapiMarket"), "yapiMarket"),
     node("Boya & Yüzey", leaves([
       "İç Cephe Boyası", "Dış Cephe Boyası", "Ahşap Boyası & Vernik", "Metal Boyası", "Astar",
       "Sprey Boya", "Rulo & Fırça", "Boya Tabancası", "Macun & Dolgu", "Duvar Kağıdı",
       "Dekoratif Sıva", "Zımpara & Yüzey Hazırlık"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "yapiMarket"), "yapiMarket"),
     node("Yapı Malzemeleri", leaves([
       "Fayans & Seramik", "Granit & Mermer", "Parke & Laminat", "PVC Zemin", "Halıfleks",
       "Alçıpan", "Alçı & Sıva", "Çimento & Kum", "Tuğla & Briket", "Isı Yalıtımı", "Su Yalıtımı",
       "Ses Yalıtımı", "Çatı Malzemesi", "Kiremit & Oluk", "Kapı", "Pencere & PVC Doğrama"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "yapiMarket"), "yapiMarket"),
     node("Elektrik & Aydınlatma", leaves([
       "Kablo", "Priz & Anahtar", "Sigorta & Pano", "Ampul & LED", "Avize", "Spot & Downlight",
       "Bahçe Aydınlatması", "Sensörlü Aydınlatma", "Uzatma Kablosu", "Adaptör & Trafo (Aydınlatma)"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "yapiMarket"), "yapiMarket"),
     node("Tesisat & Su", leaves([
       "Batarya & Musluk", "Duş Sistemi", "Klozet & Lavabo", "Rezervuar", "Boru & Fitting",
       "Su Deposu", "Hidrofor", "Su Arıtma", "Kombi & Radyatör", "Petek & Vana", "Sifon & Gider"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "yapiMarket"), "yapiMarket"),
     node("Bahçe & Peyzaj", leaves([
       "Çim Biçme Makinesi (Benzinli)", "Çim Biçme Makinesi (Elektrikli)", "Robot Çim Biçme",
       "Misinalı Tırpan", "Çit Budama Makinesi", "Ağaç Kesme Motoru", "Yaprak Üfleme",
       "Toprak Frezesi", "Sulama Sistemi", "Damla Sulama", "Hortum & Fıskiye", "Bahçe Aletleri",
       "Tohum & Fide", "Saksı & Toprak", "Gübre & İlaç", "Sera & Örtü", "Çit & Tel", "Bahçe Mobilyası",
       "Şezlong & Salıncak", "Barbekü & Mangal", "Bahçe Havuzu", "Peyzaj Taşı & Çakıl"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "yapiMarket"), "yapiMarket"),
     node("Güvenlik & İş Güvenliği", leaves([
       "Çelik Kapı Aksesuarı", "Kasa", "Alarm Sistemi", "Güvenlik Kamerası", "Baret & Eldiven",
       "İş Ayakkabısı", "Koruyucu Gözlük & Maske", "Yangın Söndürücü"
-    ], "alisverisGenel"), "alisverisGenel")
-  ], "alisverisGenel", IMG("1581092160562-40aa08e78837")),
+    ], "yapiMarket"), "yapiMarket")
+  ], "yapiMarket", IMG("1581092160562-40aa08e78837")),
 
   node("Müzik Enstrümanları", [
     node("Gitar & Telli Çalgılar", leaves([
