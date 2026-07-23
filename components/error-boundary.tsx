@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link } from "expo-router";
+import { useEffect } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -67,6 +68,25 @@ export function RouteErrorBoundary({ error, retry }: { error: Error; retry: () =
   const msg = String(error?.message || error || "");
   const isChunkError = /Loading chunk|ChunkLoadError|Failed to fetch dynamically|error loading dynamically imported|importing a module script failed/i.test(msg);
   const canReload = typeof window !== "undefined" && typeof window.location?.reload === "function";
+
+  // BAYAT CHUNK OTO-KURTARMA: her yeni deploy'da chunk dosya adları değişir; kullanıcının
+  // AÇIK sekmesi artık var olmayan bir chunk'ı isteyince route render'ı patlar ve site
+  // "rastgele yerlerde bozuluyor" gibi görünür. Kullanıcıdan "Tekrar dene"ye basmasını
+  // beklemek yerine BİR KEZ otomatik yeniden yükle (sessionStorage ile döngü koruması).
+  useEffect(() => {
+    if (!isChunkError || !canReload) return;
+    try {
+      const KEY = "chunk-reload-at";
+      const last = Number(sessionStorage.getItem(KEY) || 0);
+      // 30 sn içinde ikinci kez olduysa gerçek bir sorun var → ekranı göster, döngüye girme.
+      if (Date.now() - last < 30_000) return;
+      sessionStorage.setItem(KEY, String(Date.now()));
+      window.location.reload();
+    } catch {
+      /* sessionStorage kapalıysa sessizce ekranı göster */
+    }
+  }, [isChunkError, canReload]);
+
   return (
     <ErrorScreen
       title={isChunkError ? "Sayfa yüklenemedi" : "Bir şeyler ters gitti"}

@@ -369,7 +369,11 @@ export function DesktopCreateFlow() {
     setPendingDraft(null);
   };
 
-  const MAX_BYTES = 5 * 1024 * 1024; // 5 MB
+  // Yükleme sırasında görsel ZATEN otomatik sıkıştırılıyor (lib/live-service compressImageBlob:
+  // 1600px + kademeli kalite → 5 MB altına iner, bozmadan). Bu yüzden 5 MB'ta REDDETMEK gereksizdi
+  // ve kullanıcı kaçırıyordu ("5 MB sınırını aştı" hatası). Sadece tarayıcıyı kilitleyecek
+  // absürt dosyalar için üst sınır bırakıldı; arası otomatik optimize edilir.
+  const MAX_BYTES = 32 * 1024 * 1024; // 32 MB (yalnız absürt dosya koruması)
 
   /** Seçilen görselleri (boyut sınırı + adet sınırı ile) listeye ekler. Galeri ve kamera ortak kullanır. */
   /**
@@ -420,7 +424,7 @@ export function DesktopCreateFlow() {
 
   function addAssets(assets: Array<{ uri: string; fileSize?: number }>) {
     const tooBig = assets.some((a) => typeof a.fileSize === "number" && a.fileSize > MAX_BYTES);
-    if (tooBig) setError(translateCopy("Bazı görseller 5 MB sınırını aşıyor ve eklenmedi. Lütfen daha küçük dosyalar seçin.", language));
+    if (tooBig) setError(translateCopy("Bazı görseller çok büyük (32 MB üzeri) ve eklenmedi. Diğerleri otomatik optimize edilir.", language));
     const uris = assets
       .filter((a) => !(typeof a.fileSize === "number" && a.fileSize > MAX_BYTES))
       .map((a) => a.uri)
