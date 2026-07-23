@@ -78,6 +78,25 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
   // İlan etiketleri (Acil / Fırsat / Yatırımlık…) — renkli vurgu rozetleri (spec 72).
   const etiketler = Array.isArray(listing.attributes?.etiketler) ? (listing.attributes!.etiketler as string[]).slice(0, 2) : [];
 
+  // KART STANDARDI (Sahibinden gibi tek tip): eskiden etiketler(2) + attrSpecs(3) ayrı ayrı
+  // basılıyordu → (a) "Sıfır" hem etiket hem `condition` çipi olarak İKİ KEZ çıkıyor,
+  // (b) "Diğer" gibi anlamsız marka/model çipleri geliyor, (c) nitelikli ilan 5 çip alırken
+  // niteliksiz ilan 0 çip alıyor ve KART BOYLARI TUTMUYORdu. Artık: mükerrerler elenir,
+  // çöp değerler atılır ve toplam 3 çiple sınırlanır → bütün kartlar aynı yükseklikte.
+  const JUNK = new Set(["diğer", "diger", "bilinmiyor", "belirtilmemiş", "yok", "-"]);
+  const norm = (v: string) => v.trim().toLocaleLowerCase("tr-TR");
+  const shownTags = etiketler.filter((e) => e && !JUNK.has(norm(e)));
+  const seen = new Set(shownTags.map(norm));
+  const shownSpecs = attrSpecs
+    .filter((s) => {
+      const k = norm(s);
+      if (!s || JUNK.has(k) || seen.has(k)) return false;
+      if (s.length > 22) return false; // uzun model dizesi kartı bozuyordu
+      seen.add(k);
+      return true;
+    })
+    .slice(0, Math.max(0, 3 - shownTags.length));
+
   return (
     <View dataSet={{ vcard: "1" }} style={{ width }}>
       <Link href={cardHref as never} asChild>
@@ -109,7 +128,11 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
               />
               {/* Demo ilan: tam-genişlik sarı uyarı çubuğu yerine zarif köşe "ÖRNEK" pili
                   (dürüst — detay sayfasında tam açıklama banner'ı var; feed gerçek pazar gibi durur). */}
-              <View style={{ position: "absolute", top: 10, left: 10, right: 10, flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 6 }}>
+              {/* ÜST-SOL rozet YALNIZ. Görsel üstündeki kategori pili KALDIRILDI: (a) kategori
+                  zaten görselin ALTINDA yazıyor (mükerrer), (b) sağdaki kalp(right:8)/
+                  karşılaştır(right:50) düğmeleriyle ÇAKIŞIYORdu (metin kesiliyordu).
+                  `right: 92` ile rozet de artık ikonların altına girmez. */}
+              <View style={{ position: "absolute", top: 10, left: 10, right: 92, flexDirection: "row", alignItems: "flex-start" }}>
                 {listing.demo ? (
                   <View style={{ alignItems: "center", backgroundColor: "rgba(245,197,24,0.96)", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3, shadowColor: "#000000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 3 }}>
                     <MaterialCommunityIcons name="eye-outline" size={10} color="#1A1A00" />
@@ -118,11 +141,6 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
                 ) : (
                   <StatusBadge label={statusLabel} tone={statusTone} />
                 )}
-                <View style={{ backgroundColor: "rgba(255,255,255,0.94)", borderRadius: 999, paddingHorizontal: 9, paddingVertical: 4 }}>
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 10, fontWeight: "900" }}>
-                    {translateCopy(rootCat || getCategoryShortLabel(listing.category), language)}
-                  </Text>
-                </View>
               </View>
             </View>
 
@@ -139,20 +157,20 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
               <Text numberOfLines={2} selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "800", lineHeight: 19, minHeight: 38 }}>
                 {displayText(listing.title)}
               </Text>
-              {attrSpecs.length || etiketler.length ? (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-                  {etiketler.map((e) => (
-                    <View key={e} style={{ backgroundColor: colors.accentSoft, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
-                      <Text numberOfLines={1} style={{ color: colors.accent, fontSize: 10.5, fontWeight: "900" }}>{e}</Text>
-                    </View>
-                  ))}
-                  {attrSpecs.map((s) => (
-                    <View key={s} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 6, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2 }}>
-                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{s}</Text>
-                    </View>
-                  ))}
-                </View>
-              ) : null}
+              {/* TEK SATIR, SABİT YÜKSEKLİK: çip olmasa bile yer ayrılır → ızgaradaki tüm
+                  kartlar aynı hizada başlar (ekran görüntüsündeki "biri uzun biri kısa" sorunu). */}
+              <View style={{ flexDirection: "row", gap: 4, height: 18, overflow: "hidden" }}>
+                {shownTags.map((e) => (
+                  <View key={"t" + e} style={{ backgroundColor: colors.accentSoft, borderRadius: 6, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <Text numberOfLines={1} style={{ color: colors.accent, fontSize: 10.5, fontWeight: "900" }}>{e}</Text>
+                  </View>
+                ))}
+                {shownSpecs.map((s) => (
+                  <View key={"s" + s} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 6, borderWidth: 1, paddingHorizontal: 6, paddingVertical: 2 }}>
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{s}</Text>
+                  </View>
+                ))}
+              </View>
 
               <View style={{ gap: 5 }}>
                 <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
