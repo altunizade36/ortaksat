@@ -40,8 +40,11 @@ test("KATEGORİ GÖRÜNÜM (masaüstü)", async ({ browser }) => {
   await page.waitForTimeout(1200);
   await page.getByText("Satılık", { exact: true }).first().click().catch(() => {});
   await page.waitForTimeout(1200);
-  // Bir yaprağa in (Daire tipik). Yoksa görünen ilk alt öğeyi seç.
-  await page.getByText(/Daire|Konut|Villa|Müstakil/).first().click().catch(() => {});
+  // Daire'nin de çocukları var (oda sayısı: 1+0, 1+1, 2+1…) → Daire YAPRAK DEĞİL, bir seviye daha in.
+  // NOT: regex "Konut" KIRILIMDAKİ (breadcrumb) linki eşleştirip geri sıçratıyordu → kesin metin kullan.
+  await page.getByText("Daire", { exact: true }).first().click().catch(() => {});
+  await page.waitForTimeout(1200);
+  await page.getByText("2+1", { exact: true }).first().click().catch(() => {}); // gerçek yaprak → forma geç
   await page.waitForTimeout(2500);
   await shot(page, "d3-form-adimi");
 

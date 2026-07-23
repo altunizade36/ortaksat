@@ -198,8 +198,11 @@ html, body { margin: 0; padding: 0; }
 /* iOS Safari yatay/dikey döndürmede metni şişirmesin; app gibi sabit kalsın. */
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* Mobil tarayıcıda input odağında iOS'un otomatik yakınlaştırmasını engelle:
-   16px altındaki alanlar odaklanınca sayfa zıplar. Telefonlarda tabanı 16px yap. */
-@media (max-width: 480px) {
+   16px altındaki alanlar odaklanınca sayfa zıplar. Telefonlarda tabanı 16px yap.
+   EŞİK 760px: mobil layout eşiğiyle (WIDE_WEB_BREAKPOINT, lib/layout.ts) AYNI olmalı —
+   eskiden 480px'ti; 481–760px (yatay/geniş telefon) mobil layout alıp inputlar 14px'e
+   dönüyor → iOS odakta zoom/kayma yapıyordu. */
+@media (max-width: 760px) {
   input, textarea, select { font-size: 16px !important; }
 }
 /* Butonlarda iOS uzun-basış "kopyala/paylaş" balonunu kapat — app hissi. */

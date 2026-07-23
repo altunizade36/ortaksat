@@ -1071,6 +1071,29 @@ export const formSchemas: Record<string, FormSchema> = {
       VASITA_ETIKET_FIELD, F.desc
     ]
   },
+  // HAVA ARACI — uçak/helikopter/planör/paramotor. Kara aracı değil: km/vites yok; uçuş saati,
+  // motor tipi, koltuk, tescil belgesi var. Gruplu → mobilde katlanır.
+  havaAraci: {
+    key: "havaAraci",
+    title: "Hava aracı bilgileri",
+    fields: [
+      F.title,
+      { key: "craftType", label: "Araç tipi", type: "select", options: ["Uçak (Tek Motor)", "Uçak (Çift Motor)", "Jet", "Helikopter", "Planör", "Microlight / Ultralight", "Paramotor", "Yamaç Paraşütü", "Balon", "Amfibik", "Drone", "Diğer"], group: "Araç Bilgileri" },
+      { ...F.markaSerbest, group: "Araç Bilgileri" },
+      { ...F.model, group: "Araç Bilgileri" },
+      { key: "year", label: "Üretim yılı", type: "number", group: "Araç Bilgileri" },
+      { key: "condition", label: "Durum", type: "select", options: ["Sıfır", "İkinci El", "Restorasyonluk"], group: "Araç Bilgileri" },
+      { key: "engineType", label: "Motor tipi", type: "select", options: ["Pistonlu", "Turboprop", "Jet / Turbofan", "Elektrik", "Motorsuz"], group: "Teknik Özellikler" },
+      { key: "enginePower", label: "Motor gücü", type: "text", suffix: "hp", group: "Teknik Özellikler" },
+      { key: "flightHours", label: "Toplam uçuş saati", type: "number", suffix: "saat", group: "Teknik Özellikler" },
+      { key: "seats", label: "Koltuk sayısı", type: "select", options: ["1", "2", "3", "4", "5", "6", "7+"], group: "Teknik Özellikler" },
+      { key: "range", label: "Menzil", type: "text", suffix: "km", group: "Teknik Özellikler" },
+      { ...F.garanti, group: "Belge & Tescil" },
+      { key: "registration", label: "Tescil / uçuşa elverişlilik belgesi", type: "select", options: ["Var (Geçerli)", "Var (Süresi Dolmuş)", "Yok"], group: "Belge & Tescil" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Bayiden", "Firmadan"], group: "Belge & Tescil" },
+      F.price, { ...F.takas, group: "Satış" }, VASITA_ETIKET_FIELD, F.desc
+    ]
+  },
   // EN BÜYÜK KATEGORİ (1393 yaprak) — eskiden yalnız 10 alanla sığ kalıyordu.
   // Parça aramasında belirleyici olan alanlar (parça no, uyumluluk, konum) eklendi.
   yedekParca: {
@@ -1572,6 +1595,9 @@ export const categoryTree: CategoryNode[] = [
     node("Klasik & Koleksiyon Araçlar", leaves(["Klasik Otomobil", "Klasik Motosiklet", "Antika Araç", "Restorasyonluk Araç", "Amerikan Klasik", "Anadol / Murat / Şahin", "Jeep & Willys"], "otomobil"), "otomobil"),
     node("Engelli Araçları", leaves(["Engelli Otomobil (ÖTV'siz)", "Adaptasyonlu Araç", "Engelli Scooter", "Akülü Sandalye"], "vasitaGenel"), "vasitaGenel"),
     node("Traktör & Tarım Araçları", brandModelNodes(["New Holland", "Massey Ferguson", "John Deere", "Case IH", "Fiat", "Ford", "Deutz-Fahr", "Kubota", "Same", "Landini", "Tümosan", "Erkunt", "Başak", "TürkTraktör", "Hattat", "Claas", "Valtra", "Diğer"], {}, "traktor"), "traktor"),
+    // HAVA ARAÇLARI — Sahibinden Vasıta altında standart alt kategori; bizde eksikti. Düşük hacim,
+    // kendi minimal şeması (havaAraci: uçuş saati/motor tipi/koltuk — km/vites değil).
+    node("Hava Araçları", leaves(["Uçak (Tek Motor)", "Uçak (Çift Motor)", "Jet", "Helikopter", "Planör", "Microlight / Ultralight", "Paramotor", "Yamaç Paraşütü", "Balon", "Amfibik Uçak", "Profesyonel Drone", "Diğer Hava Aracı"], "havaAraci"), "havaAraci"),
     // HASARLI & PERT — tek yapraktı, Sahibinden gibi araç tipine göre açıldı (otomobil şeması: hasar/tramer alanları var).
     node("Hasarlı & Pert Araçlar", leaves(["Hasarlı Otomobil", "Pert Kayıtlı Otomobil", "Ağır Hasarlı Otomobil", "Hasarlı SUV & Arazi", "Hasarlı Ticari Araç", "Hasarlı Motosiklet", "Kaza Yapmış Araç", "Yanmış Araç", "Sel / Su Basmış Araç", "Sigortadan Çıkma Araç", "Parça (Kanibal) Araç", "Motoru Arızalı Araç"], "otomobil"), "otomobil"),
     // KİRALIK — tek yapraktı; Sahibinden gibi tam alt-ağaç + kiralamaya özel şema (aracKiralik).

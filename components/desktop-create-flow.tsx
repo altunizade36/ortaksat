@@ -379,9 +379,9 @@ export function DesktopCreateFlow() {
   function addImageUrl() {
     const u = imageDraft.trim();
     if (!u) return;
-    if (!/^https?:\/\/.+/i.test(u)) { setError("Görsel bağlantısı http:// veya https:// ile başlamalı."); return; }
-    if (images.includes(u)) { setError("Bu görsel zaten ekli."); return; }
-    if (images.length >= MAX_PHOTOS) { setError(`En fazla ${MAX_PHOTOS} görsel ekleyebilirsin.`); return; }
+    if (!/^https?:\/\/.+/i.test(u)) { setError(translateCopy("Görsel bağlantısı http:// veya https:// ile başlamalı.", language)); return; }
+    if (images.includes(u)) { setError(translateCopy("Bu görsel zaten ekli.", language)); return; }
+    if (images.length >= MAX_PHOTOS) { setError(`${translateCopy("En fazla", language)} ${MAX_PHOTOS} ${translateCopy("görsel ekleyebilirsin.", language)}`); return; }
     setError(null);
     setImages((s) => [...s, u]);
     setImageDraft("");
@@ -503,6 +503,10 @@ export function DesktopCreateFlow() {
       const descReq = schema?.fields.some((f) => f.key === "description" && f.required);
       const d = String(values.description ?? "").trim();
       if (descReq && d.length < LIMITS.description.min) return `${translateCopy("Açıklama en az", language)} ${LIMITS.description.min} ${translateCopy("karakter olmalı", language)}.`;
+      // FİYAT SAĞLIĞI (kapıda): zorunlu fiyat alanına "0"/"abc"/"-5" yazılınca boş-değil olduğu için
+      // adım 1 geçiliyor, kullanıcı tüm adımları tamamlayıp Yayınla'ya basınca adım 1'e geri fırlatılıyordu.
+      const priceReq = schema?.fields.some((f) => f.key === priceKey && f.required);
+      if (priceReq && priceNum < LIMITS.price.min) return translateCopy("Geçerli bir fiyat gir.", language);
       return null;
     }
     if (step === 2) {
@@ -527,7 +531,7 @@ export function DesktopCreateFlow() {
   async function publish() {
     if (!schema) {
       // Eskiden sessizce return ediyordu: "Yayınla" tıklanıyor, hiçbir şey olmuyordu.
-      setError("Kategori formu yüklenemedi. Kategoriyi tekrar seç.");
+      setError(translateCopy("Kategori formu yüklenemedi. Kategoriyi tekrar seç.", language));
       setStep(0);
       return;
     }
@@ -569,10 +573,10 @@ export function DesktopCreateFlow() {
     }
     // Savunmacı yayın-anı kontrolü: adım-navigasyonu atlansa/draft bozulsa bile
     // eksik foto/konum/komisyonlu ilan yayınlanmasın (canNext'e ek güvenlik).
-    if (images.length === 0) { setError("En az bir fotoğraf ekle."); setStep(3); return; }
-    if (!loc.provinceId) { setError("İl seçmelisin."); setStep(2); return; }
-    if (!loc.districtId) { setError("İlçe seçmelisin."); setStep(2); return; }
-    if (partnershipMode !== "none" && !(commissionNum > 0)) { setError("Komisyon değeri sıfırdan büyük olmalı."); setStep(4); return; }
+    if (images.length === 0) { setError(translateCopy("En az bir fotoğraf ekle.", language)); setStep(3); return; }
+    if (!loc.provinceId) { setError(translateCopy("İl seçmelisin.", language)); setStep(2); return; }
+    if (!loc.districtId) { setError(translateCopy("İlçe seçmelisin.", language)); setStep(2); return; }
+    if (partnershipMode !== "none" && !(commissionNum > 0)) { setError(translateCopy("Komisyon değeri sıfırdan büyük olmalı.", language)); setStep(4); return; }
 
     // ANONİM YAYIN: form GEÇERLİ ama giriş yok → taslağı anon-pending'e kaydet + Kayıt'a
     // yönlendir (dönüşte /create'e döner, taslak migrasyonla korunur). Emeğini harcamış
@@ -731,8 +735,8 @@ export function DesktopCreateFlow() {
       console.warn("İlan yayınlanamadı", e);
       setError(
         (e as Error)?.message?.includes("Network")
-          ? "Bağlantı koptu. İlanın taslakta duruyor — internetin gelince tekrar dene."
-          : "İlan yayınlanamadı. Taslağın korundu, tekrar deneyebilirsin."
+          ? translateCopy("Bağlantı koptu. İlanın taslakta duruyor — internetin gelince tekrar dene.", language)
+          : translateCopy("İlan yayınlanamadı. Taslağın korundu, tekrar deneyebilirsin.", language)
       );
       setStep(5);
     } finally {
@@ -896,7 +900,7 @@ export function DesktopCreateFlow() {
       )}
 
       {/* Body */}
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, padding: 22 }}>
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, padding: isWideWeb ? 22 : 14 }}>
         {step === 0 ? <CategoryPicker value={path} onChange={(p) => { setPath(p); if (p.length) setStep(1); }} /> : null}
 
         {step === 1 && schema ? (() => {
@@ -1171,12 +1175,12 @@ export function DesktopCreateFlow() {
                 </Text>
               </View>
             ) : null}
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
                 {images.length}/{MAX_PHOTOS} {translateCopy("fotoğraf", language)}
               </Text>
               {images.length > 0 && images.length < RECOMMENDED_PHOTOS ? (
-                <Text style={{ color: colors.goldInk, fontSize: 11.5, fontWeight: "700" }}>
+                <Text style={{ color: colors.goldInk, flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: "700" }}>
                   · {translateCopy("En az 3 fotoğraflı ilanlar belirgin şekilde daha çok ilgi görüyor.", language)}
                 </Text>
               ) : null}
@@ -1330,7 +1334,7 @@ export function DesktopCreateFlow() {
 
             <View style={{ gap: 6 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("İletişim tercihi", language)}</Text>
-              <View style={{ flexDirection: "row", gap: 8 }}>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {([["message", "Mesaj"], ["whatsapp", "WhatsApp"], ["phone", "Telefon"]] as const).map(([k, lbl]) => {
                   const on = contactMethod === k;
                   return <Pressable key={k} onPress={() => setContactMethod(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}><MaterialCommunityIcons name={k === "whatsapp" ? "whatsapp" : k === "phone" ? "phone" : "message-text-outline"} size={15} color={on ? "#FFFFFF" : colors.primary} /><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
@@ -1417,7 +1421,7 @@ export function DesktopCreateFlow() {
               </View>
             </View>
             <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
-              <View style={{ borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden", width: 280 }}>
+              <View style={{ borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden", flexBasis: 280, maxWidth: 280, minWidth: 0, flexShrink: 1 }}>
                 <View style={{ backgroundColor: colors.line, height: 170, width: "100%" }}><SafeRemoteImage uri={coverImage} style={{ height: "100%", width: "100%" }} contentFit="cover" /></View>
                 <View style={{ gap: 6, padding: 14 }}>
                   <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{path.map((p) => translateCopy(p.label, language)).join(" › ")}</Text>
@@ -1427,22 +1431,29 @@ export function DesktopCreateFlow() {
                       açık artırma→startPrice) `values.price` undefined → önizleme ₺0 gösteriyordu.
                       Yayınla priceKey kullanıyor; bu satırlar da aynı türetilmiş değeri kullanmalı. */}
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(priceNum, currency)}</Text>
-                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 8, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 9, paddingVertical: 6 }}>
-                    <MaterialCommunityIcons name="cash-multiple" size={14} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11, fontWeight: "800" }}>{translateCopy("Ortak kazancı", language)}</Text>
-                    <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{moneyIn(perSaleCommission, currency)}</Text>
-                  </View>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{formatLocation(loc, visibility) || translateCopy("Konum belirtilmedi", language)}</Text>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                    <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
-                      <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{commissionType === "rate" ? `%${commissionValue} komisyon` : `${moneyIn(commissionNum || 0, currency)} komisyon`}</Text>
+                  {/* NORMAL İLAN (partnershipMode==="none") → komisyon YOK. Eskiden bu bloklar koşulsuz
+                      render olup "Ortak kazancı ₺X" + "%15 komisyon" gösteriyordu; oysa yayınlanan ilan
+                      commissionValue:0 ve sağdaki PreviewRow "Ortak satış kapalı" diyor → çelişki. */}
+                  {partnershipMode !== "none" ? (
+                    <View style={{ backgroundColor: colors.primarySoft, borderRadius: 8, flexDirection: "row", alignItems: "center", gap: 6, paddingHorizontal: 9, paddingVertical: 6 }}>
+                      <MaterialCommunityIcons name="cash-multiple" size={14} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11, fontWeight: "800" }}>{translateCopy("Ortak kazancı", language)}</Text>
+                      <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{moneyIn(perSaleCommission, currency)}</Text>
                     </View>
-                    {bonusNum > 0 && Number(bonusQuota) > 0 ? (
-                      <View style={{ backgroundColor: colors.warningSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
-                        <Text style={{ color: colors.warning, fontSize: 11, fontWeight: "900" }}>ilk {Number(bonusQuota)} satışa +{moneyIn(bonusNum, currency)} bonus</Text>
+                  ) : null}
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{formatLocation(loc, visibility) || translateCopy("Konum belirtilmedi", language)}</Text>
+                  {partnershipMode !== "none" ? (
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                      <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+                        <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "900" }}>{commissionType === "rate" ? `%${commissionValue} komisyon` : `${moneyIn(commissionNum || 0, currency)} komisyon`}</Text>
                       </View>
-                    ) : null}
-                  </View>
+                      {bonusNum > 0 && Number(bonusQuota) > 0 ? (
+                        <View style={{ backgroundColor: colors.warningSoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+                          <Text style={{ color: colors.warning, fontSize: 11, fontWeight: "900" }}>ilk {Number(bonusQuota)} satışa +{moneyIn(bonusNum, currency)} bonus</Text>
+                        </View>
+                      ) : null}
+                    </View>
+                  ) : null}
                 </View>
               </View>
               <View style={{ flex: 1, gap: 8, minWidth: 240 }}>

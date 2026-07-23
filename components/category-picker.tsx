@@ -149,9 +149,12 @@ export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onC
           {top ? (
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 240, flexGrow: 1.6, minWidth: 0, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
               {!isWideWeb ? (
-                <Pressable onPress={() => setTrail([])} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 11 }}>
+                // GERİ = BİR SEVİYE YUKARI (Sahibinden-mobil paritesi). Eskiden setTrail([]) ile
+                // KÖKE atıyor + hep top.label gösteriyordu → derinde (Vasıta>Otomobil>BMW) "‹ Vasıta"
+                // deyip tek dokunuşta en başa fırlatıyordu. Şimdi mevcut seviyeyi gösterir, bir üste döner.
+                <Pressable onPress={() => setTrail(trail.slice(0, -1))} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 11 }}>
                   <MaterialCommunityIcons name="chevron-left" size={18} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy(top.label, language)}</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy(trail.length > 1 ? current.label : "Tüm kategoriler", language)}</Text>
                 </Pressable>
               ) : null}
               <ScrollView nestedScrollEnabled style={{ maxHeight: isWideWeb ? 440 : 420 }}>
