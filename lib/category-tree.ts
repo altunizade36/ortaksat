@@ -1032,6 +1032,39 @@ export const formSchemas: Record<string, FormSchema> = {
       F.price, F.takas, VASITA_ETIKET_FIELD, F.desc
     ]
   },
+  // ARAÇ KİRALAMA — satış değil KİRALAMA. Kendine özgü alanlar: günlük/haftalık/aylık ücret,
+  // depozito, km limiti, şoförlü mü, min. sürücü yaşı/ehliyet, sigorta/HGS dahil mi, teslim/yakıt
+  // politikası. F.price = günlük kiralama ücreti. Gruplu → mobilde katlanır.
+  aracKiralik: {
+    key: "aracKiralik",
+    title: "Araç kiralama bilgileri",
+    fields: [
+      F.title,
+      { key: "brand", label: "Marka", type: "text", group: "Araç" },
+      { key: "model", label: "Model", type: "text", group: "Araç" },
+      { key: "year", label: "Model yılı", type: "number", group: "Araç" },
+      { key: "fuel", label: "Yakıt", type: "select", options: ["Benzin", "Dizel", "LPG", "Hibrit", "Elektrik"], group: "Araç" },
+      { key: "gear", label: "Vites", type: "select", options: ["Manuel", "Otomatik"], group: "Araç" },
+      { key: "seats", label: "Koltuk sayısı", type: "select", options: ["2", "4", "5", "6", "7", "8", "8+"], group: "Araç" },
+      { key: "carClass", label: "Araç sınıfı", type: "select", options: ["Ekonomik", "Orta", "Üst", "Lüks / Premium", "SUV", "Ticari", "VIP"], group: "Araç" },
+      { key: "price", label: "Günlük kiralama ücreti", type: "number", required: true, suffix: "₺", group: "Ücret & Depozito" },
+      { key: "weeklyPrice", label: "Haftalık ücret", type: "number", suffix: "₺", group: "Ücret & Depozito" },
+      { key: "monthlyPrice", label: "Aylık ücret", type: "number", suffix: "₺", group: "Ücret & Depozito" },
+      { key: "longTermPrice", label: "Uzun dönem (aylık)", type: "number", suffix: "₺", group: "Ücret & Depozito" },
+      { key: "deposit", label: "Depozito / teminat", type: "number", suffix: "₺", group: "Ücret & Depozito" },
+      { key: "minRentDays", label: "Min. kiralama süresi", type: "select", options: ["1 gün", "2 gün", "3 gün", "1 hafta", "1 ay", "Uzun dönem"], group: "Kiralama Koşulları" },
+      { key: "kmLimit", label: "Günlük km limiti", type: "select", options: ["Limitsiz", "100 km", "150 km", "200 km", "250 km", "300 km", "Aylık paket"], group: "Kiralama Koşulları" },
+      { key: "withDriver", label: "Şoförlü mü?", type: "select", options: ["Şoförsüz", "Şoförlü", "İkisi de mümkün"], group: "Kiralama Koşulları" },
+      { key: "minAge", label: "Min. sürücü yaşı", type: "select", options: ["21", "23", "25", "27", "30"], group: "Kiralama Koşulları" },
+      { key: "minLicense", label: "Min. ehliyet yılı", type: "select", options: ["1 yıl", "2 yıl", "3 yıl", "5 yıl"], group: "Kiralama Koşulları" },
+      { key: "insuranceIncluded", label: "Kasko / sigorta dahil mi?", type: "bool", group: "Dahil Olanlar" },
+      { key: "hgsIncluded", label: "HGS / OGS dahil mi?", type: "bool", group: "Dahil Olanlar" },
+      { key: "fuelPolicy", label: "Yakıt politikası", type: "select", options: ["Dolu al - dolu ver", "Dolu al - boş ver", "Kadar kullan - öde"], group: "Dahil Olanlar" },
+      { key: "deliveryPlace", label: "Teslim yeri", type: "multiselect", options: ["Ofisten Teslim", "Adrese Teslim", "Havalimanı Teslim", "Otel Teslim", "Şehir Dışı Teslim"], group: "Dahil Olanlar" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Rent a Car Firmasından", "Filo Firmasından"], group: "Dahil Olanlar" },
+      VASITA_ETIKET_FIELD, F.desc
+    ]
+  },
   // EN BÜYÜK KATEGORİ (1393 yaprak) — eskiden yalnız 10 alanla sığ kalıyordu.
   // Parça aramasında belirleyici olan alanlar (parça no, uyumluluk, konum) eklendi.
   yedekParca: {
@@ -1483,8 +1516,19 @@ export const categoryTree: CategoryNode[] = [
     node("Klasik & Koleksiyon Araçlar", leaves(["Klasik Otomobil", "Klasik Motosiklet", "Antika Araç", "Restorasyonluk Araç", "Amerikan Klasik", "Anadol / Murat / Şahin", "Jeep & Willys"], "otomobil"), "otomobil"),
     node("Engelli Araçları", leaves(["Engelli Otomobil (ÖTV'siz)", "Adaptasyonlu Araç", "Engelli Scooter", "Akülü Sandalye"], "vasitaGenel"), "vasitaGenel"),
     node("Traktör & Tarım Araçları", brandModelNodes(["New Holland", "Massey Ferguson", "John Deere", "Case IH", "Fiat", "Ford", "Deutz-Fahr", "Kubota", "Same", "Landini", "Tümosan", "Erkunt", "Başak", "TürkTraktör", "Hattat", "Claas", "Valtra", "Diğer"], {}, "traktor"), "traktor"),
-    leaf("Hasarlı & Pert Araçlar", "otomobil"),
-    leaf("Kiralık Araçlar", "vasitaGenel")
+    // HASARLI & PERT — tek yapraktı, Sahibinden gibi araç tipine göre açıldı (otomobil şeması: hasar/tramer alanları var).
+    node("Hasarlı & Pert Araçlar", leaves(["Hasarlı Otomobil", "Pert Kayıtlı Otomobil", "Ağır Hasarlı Otomobil", "Hasarlı SUV & Arazi", "Hasarlı Ticari Araç", "Hasarlı Motosiklet", "Kaza Yapmış Araç", "Yanmış Araç", "Sel / Su Basmış Araç", "Sigortadan Çıkma Araç", "Parça (Kanibal) Araç", "Motoru Arızalı Araç"], "otomobil"), "otomobil"),
+    // KİRALIK — tek yapraktı; Sahibinden gibi tam alt-ağaç + kiralamaya özel şema (aracKiralik).
+    node("Kiralık Araçlar", [
+      node("Otomobil Kiralama", leaves(["Günlük Kiralık", "Haftalık Kiralık", "Aylık Kiralık", "Uzun Dönem Kiralama", "Şoförlü Kiralama", "Filo Kiralama", "Ekonomik Segment", "Lüks & Premium"], "aracKiralik"), "aracKiralik"),
+      node("SUV & Arazi Kiralama", leaves(["Günlük", "Aylık", "Uzun Dönem", "Şoförlü", "Off-road"], "aracKiralik"), "aracKiralik"),
+      node("Minivan & Panelvan Kiralama", leaves(["Minivan", "Panelvan", "8+1 Araç", "Yolcu Vanı", "Yük Vanı"], "aracKiralik"), "aracKiralik"),
+      node("Ticari Araç Kiralama", leaves(["Kamyonet", "Kamyon", "Çekici (TIR)", "Frigorifik", "Damperli", "Nakliye Aracı"], "aracKiralik"), "aracKiralik"),
+      node("Otobüs & Minibüs Kiralama", leaves(["Otobüs (Şoförlü)", "Midibüs", "Minibüs", "VIP Minibüs", "Tur & Gezi Aracı", "Personel Servisi"], "aracKiralik"), "aracKiralik"),
+      node("Motosiklet & Scooter Kiralama", leaves(["Motosiklet", "Scooter", "Elektrikli Scooter", "Motokurye Aracı"], "aracKiralik"), "aracKiralik"),
+      node("Karavan Kiralama", leaves(["Motokaravan", "Çekme Karavan", "Van Karavan"], "aracKiralik"), "aracKiralik"),
+      ...leaves(["Lüks & VIP Araç", "Düğün Arabası", "Elektrikli Araç Kiralama", "Klasik Araç Kiralama"], "aracKiralik")
+    ], "aracKiralik")
   ], "vasitaGenel", IMG("1503376780353-7e6692767b70")),
 
   node("Yedek Parça, Aksesuar & Tuning", [
