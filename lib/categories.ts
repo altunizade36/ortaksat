@@ -327,8 +327,9 @@ const CATEGORY_ICONS: Record<string, IconName> = {
   "Motosiklet (Türe Göre)": "motorbike",
   "Ağır Vasıta": "truck-outline",
   "Yat": "sail-boat",
-  "ATV & UTV": "car-outline",
-  "Klasik & Koleksiyon Araçlar": "car-convertible",
+  "ATV": "car-outline",
+  "UTV": "car-outline",
+  "Klasik Araçlar": "car-convertible",
   "Yalı": "home-city-outline",
   "Köşk & Konak": "home-city-outline",
   "Çiftlik & Bağ Evi": "barn"
