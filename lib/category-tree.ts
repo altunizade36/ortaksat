@@ -351,6 +351,23 @@ const ARSA_TAPU = ["Müstakil Tapulu", "Hisseli Tapu", "Tahsisli", "Kooperatif",
 const ISYERI_RUHSAT = ["İşyeri Açma Ruhsatı", "Gıda Ruhsatı", "Turizm Belgesi", "Sağlık Bakanlığı Ruhsatı", "Tarım Bakanlığı Ruhsatı", "Üretim İzni", "İmalat Ruhsatı", "Sanayi Sicili", "ISO Belgesi", "CE Belgesi", "TSE Belgesi", "Yangın Raporu", "İtfaiye Uygunluk", "ÇED Belgesi"];
 const ISYERI_DURUM = ["Boş", "Kiracılı", "Faal İşletme", "Devren", "Franchise", "Marka Hakları Dahil", "Personel Dahil", "Makineler Dahil", "Stok Dahil", "Ruhsat Dahil"];
 const ISYERI_OZELLIK = ["Asansör", "Yük Asansörü", "Vinç Sistemi", "Jeneratör", "Trafo", "Yangın Sistemi", "Kamera Sistemi", "Alarm", "Fiber İnternet", "Tır Girişi", "Forklift Girişi", "Yükleme Rampası", "Soyunma Odası", "Personel Alanı", "Mutfak", "WC", "Depo Alanı", "Endüstriyel Mutfak", "Vitrin", "Otopark", "Kartlı Geçiş", "Resepsiyon"];
+// DEVREN İŞ YERİ (faal işletme devri) — Sahibinden tarzı iş-türü taksonomisi. Satılık/Kiralık
+// "mülk tipine" göredir; DEVREN ise "hangi işletme" olduğuna göredir (kafe/eczane/kuaför…).
+const ISYERI_DEVREN_TYPES = [
+  "Acente", "Akaryakıt İstasyonu", "Aktar & Baharatçı", "Anaokulu & Kreş", "Araç Galerisi & Servis", "Atölye", "AVM Standı",
+  "Balıkçı", "Bar", "Bijuteri & Takıcı", "Börekçi", "Büfe", "Cep Telefonu Dükkanı", "Çamaşırhane", "Çay Ocağı",
+  "Çiçekçi & Fidanlık", "Çiftlik", "Çiğ Köfteci", "Düğün Salonu", "Dükkan & Mağaza", "Eczane", "Elektrikçi & Hırdavatçı",
+  "Elektronik Mağazası", "Enerji Santrali", "Etkinlik Alanı", "Fabrika & Üretim Tesisi", "Fotoğraf Stüdyosu",
+  "Gece Kulübü & Disko", "Giyim Mağazası", "Gözlükçü", "Güzellik Merkezi", "Halı Yıkama", "Hamam / Sauna & Spa",
+  "Huzur Evi", "İnternet & Oyun Kafe", "Kafe", "Kantin", "Kasap", "Kıraathane", "Kırtasiye", "Kozmetik Mağazası",
+  "Kuaför & Berber", "Kurs & Eğitim Merkezi", "Kuru Temizleme", "Kuruyemişçi", "Kuyumcu", "Lokanta & Restoran",
+  "Lunapark", "Maden Ocağı", "Manav", "Market", "Matbaa", "Medikal Market", "Modaevi", "Muayenehane",
+  "Nakliyat & Kargo", "Nalbur", "Ofis & Büro", "Okul", "Oto Servis & Bakım", "Oto Yedek Parça", "Oto Yıkama & Kuaför",
+  "Pastane / Fırın & Tatlıcı", "Pazar Yeri", "Pet Shop", "Piknik Alanı & Kahvaltı Bahçesi", "Prova & Kayıt Stüdyosu",
+  "Radyo İstasyonu & TV Kanalı", "Saat Mağazası", "Sağlık Merkezi", "Sebze & Meyve Hali", "Soğuk Hava Deposu",
+  "Spor Tesisi", "Su & Tüp Bayisi", "Şans Oyunları Bayisi", "Şarküteri", "Taksi Durağı", "Tamirhane", "Tekel Bayisi",
+  "Teknik Servis", "Terzi", "Toplantı & Etkinlik Salonu", "Tuhafiye", "Veteriner", "Yurt", "Züccaciye", "Diğer İşletme"
+];
 
 // ---- proje satış modülü (spec 48–60) -------------------------------------
 const PROJE_TIPI = ["Konut Projesi", "Daire Projesi", "Residence Projesi", "Villa Projesi", "Müstakil Ev Projesi", "Karma Yaşam Projesi", "Sosyal Konut Projesi", "Tiny House Projesi", "Bungalov Projesi", "Ticari Proje", "Ofis Projesi", "Plaza Projesi", "İş Merkezi", "AVM Projesi", "Sanayi Sitesi", "Lojistik Merkezi", "Depo Projesi", "Konut + AVM", "Konut + Ofis", "Konut + Otel", "Yaşam Merkezi", "Akıllı Şehir Projesi"];
@@ -547,6 +564,36 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "transport", label: "Ulaşım", type: "multiselect", options: EMLAK_ULASIM },
       { key: "accessibility", label: "Engelliye / yaşlıya uygun", type: "multiselect", options: EMLAK_ENGELLI },
       ETIKET_FIELD, F.desc]
+  },
+  // DEVREN İŞ YERİ — mülk değil FAAL İŞLETME devri. Kendine özgü alanlar (Sahibinden "Devren" mantığı):
+  // devir bedeli, işletme yaşı, ciro/gider, personel, müşteri portföyü, devre dahil olanlar, kira/depozito,
+  // sözleşme kalan süre, ruhsat, devir sebebi. Gruplu → mobilde katlanır.
+  isyeriDevren: {
+    key: "isyeriDevren",
+    title: "Devren işletme bilgileri",
+    fields: [
+      F.title,
+      { key: "listingType", label: "Devir tipi", type: "select", required: true, options: ["Devren Satılık", "Devren Kiralık"], group: "Temel Bilgiler" },
+      F.price,
+      { key: "grossM2", label: "İşletme alanı (m²)", type: "number", suffix: "m²", group: "Temel Bilgiler" },
+      { key: "businessAge", label: "Kaç yıldır faal?", type: "select", options: ["Yeni açıldı", "1 yıldan az", "1-3 yıl", "3-5 yıl", "5-10 yıl", "10+ yıl"], group: "İşletme" },
+      { key: "monthlyRevenue", label: "Aylık ciro", type: "number", suffix: "₺", group: "İşletme" },
+      { key: "monthlyExpense", label: "Aylık gider (kira hariç)", type: "number", suffix: "₺", group: "İşletme" },
+      { key: "staffCount", label: "Personel sayısı", type: "number", group: "İşletme" },
+      { key: "customerBase", label: "Müşteri portföyü", type: "select", options: ["Yok", "Az", "Orta", "Yüksek", "Sadık Müşteri Kitlesi"], group: "İşletme" },
+      { key: "reason", label: "Devir sebebi", type: "select", options: ["Şehir değişikliği", "Sağlık", "Sektör değişikliği", "Emeklilik", "Ortaklık ayrılığı", "Başka iş", "Belirtmek istemiyorum"], group: "İşletme" },
+      { key: "isletmeIcerik", label: "Devre dahil olanlar", type: "multiselect", options: ISYERI_DURUM, group: "Devir Kapsamı" },
+      { key: "equipmentIncluded", label: "Ekipman / demirbaş dahil mi?", type: "bool", group: "Devir Kapsamı" },
+      { key: "stockIncluded", label: "Stok / emtia dahil mi?", type: "bool", group: "Devir Kapsamı" },
+      { key: "brandIncluded", label: "Marka / isim hakkı dahil mi?", type: "bool", group: "Devir Kapsamı" },
+      { key: "staffStays", label: "Personel devam edecek mi?", type: "bool", group: "Devir Kapsamı" },
+      { key: "monthlyRent", label: "Aylık kira", type: "number", suffix: "₺", group: "Kira & Sözleşme" },
+      { key: "deposit", label: "Depozito", type: "number", suffix: "₺", group: "Kira & Sözleşme" },
+      { key: "leaseRemaining", label: "Kira sözleşmesi kalan süre", type: "select", options: ["Yeni sözleşme yapılacak", "6 aydan az", "6-12 ay", "1-3 yıl", "3+ yıl", "Mülk sahibine ait değil"], group: "Kira & Sözleşme" },
+      { key: "ruhsat", label: "Ruhsat / belgeler", type: "multiselect", options: ISYERI_RUHSAT, group: "Belge & Ruhsat" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "İşletme Sahibinden", "Emlak Ofisinden"], group: "Belge & Ruhsat" },
+      ETIKET_FIELD, F.desc
+    ]
   },
   isyeriRestoran: {
     key: "isyeriRestoran",
@@ -1358,7 +1405,10 @@ export const categoryTree: CategoryNode[] = [
     node("İş Yeri", [
       node("Satılık", isyeriBranch("isyeri"), "isyeri"),
       node("Kiralık", isyeriBranch("isyeri"), "isyeri"),
-      leaf("Devren İş Yeri", "isyeri")
+      // DEVREN (faal işletme devri) — Sahibinden gibi iş-türüne göre. isyeriDevren şeması:
+      // mülk değil İŞLETME odaklı (devir bedeli, ciro, personel, ekipman, sözleşme…).
+      node("Devren Satılık", leaves(ISYERI_DEVREN_TYPES, "isyeriDevren"), "isyeriDevren"),
+      node("Devren Kiralık", leaves(ISYERI_DEVREN_TYPES, "isyeriDevren"), "isyeriDevren")
     ], "isyeri"),
     node("Arsa / Arazi", [
       node("Satılık", [
