@@ -1278,6 +1278,41 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Anne & bebek ürün bilgileri",
     fields: [F.title, F.markaSerbest, F.durum, F.yasGrubu, F.cinsiyet, F.renkSelect, F.garanti, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
   },
+  // EVCİL HAYVAN ÜRÜNÜ (mama/kafes/tasma/akvaryum/bakım): jenerikten çıkarıldı. Hangi hayvan +
+  // ürün kategorisi + uygun boyut belirleyici. Gruplu → mobilde katlanır.
+  petUrun: {
+    key: "petUrun",
+    title: "Evcil hayvan ürünü bilgileri",
+    fields: [
+      F.title,
+      { key: "petType", label: "Hangi hayvan için?", type: "select", options: ["Kedi", "Köpek", "Kuş", "Balık / Akvaryum", "Kemirgen", "Sürüngen / Egzotik", "Çiftlik Hayvanı", "Genel / Tümü"], group: "Temel Bilgiler" },
+      { key: "productCat", label: "Ürün kategorisi", type: "select", options: ["Mama & Yem", "Ödül & Vitamin", "Kafes & Kulübe", "Tasma & Gezdirme", "Taşıma Çantası", "Akvaryum & Ekipman", "Yatak & Ev", "Oyuncak", "Bakım & Hijyen", "Tuvalet & Kum", "Sağlık & İlaç", "Diğer"], group: "Temel Bilgiler" },
+      { ...F.markaSerbest, group: "Temel Bilgiler" },
+      { ...F.durum, group: "Temel Bilgiler" },
+      { key: "suitableFor", label: "Uygun boyut / yaş", type: "select", options: ["Yavru", "Yetişkin", "Küçük Irk", "Orta Irk", "Büyük Irk", "Farketmez"], group: "Ürün Detayı" },
+      { key: "quantity", label: "Miktar / ağırlık", type: "text", placeholder: "ör. 3 kg, 12 adet", group: "Ürün Detayı" },
+      { key: "expiry", label: "Son kullanma (mama)", type: "text", placeholder: "ay/yıl", group: "Ürün Detayı" },
+      { ...F.stok, group: "Satış & Teslimat" }, { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" },
+      F.price, F.desc
+    ]
+  },
+  // OYUNCAK (çocuk): yaş grubu + tür + cinsiyet belirleyici (jenerikten çıkarıldı).
+  oyuncak: {
+    key: "oyuncak",
+    title: "Oyuncak bilgileri",
+    fields: [
+      F.title,
+      { key: "toyType", label: "Oyuncak türü", type: "select", options: ["Eğitici", "Peluş", "Yapı & Bloklar", "Uzaktan Kumandalı", "Figür & Bebek", "Puzzle & Zeka", "Kutu Oyunu", "Oyun Seti", "Araç Oyuncak", "Su & Kum", "Elektronik", "Bebek Oyuncağı", "Diğer"], group: "Temel Bilgiler" },
+      { ...F.yasGrubu, group: "Temel Bilgiler" },
+      { ...F.cinsiyet, group: "Temel Bilgiler" },
+      { ...F.markaSerbest, group: "Temel Bilgiler" },
+      { ...F.durum, group: "Ürün Detayı" },
+      { key: "pieces", label: "Parça sayısı", type: "number", group: "Ürün Detayı" },
+      { key: "battery", label: "Pil gerekir mi?", type: "bool", group: "Ürün Detayı" },
+      { ...F.stok, group: "Satış & Teslimat" }, { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" },
+      F.price, F.desc
+    ]
+  },
   spor: {
     key: "spor",
     title: "Spor & outdoor bilgileri",
@@ -1789,10 +1824,10 @@ export const categoryTree: CategoryNode[] = [
     ], "koleksiyon"),
     node("Süpermarket & Gıda", leaves(["Temel Gıda", "Kahvaltılık", "Atıştırmalık & Şekerleme", "Bakliyat & Makarna", "Konserve & Hazır Yemek", "Kahve & Çay", "İçecek", "Su & Maden Suyu", "Süt & Süt Ürünleri", "Bebek Maması & Gıdası", "Organik & Glutensiz", "Baharat & Sos", "Zeytin & Zeytinyağı", "Bal & Reçel", "Kuruyemiş & Kurutulmuş Gıda", "Deterjan & Temizlik", "Kağıt Ürünleri", "Kişisel Temizlik & Hijyen"], "alisverisGenel"), "alisverisGenel"),
     node("Ofis & Kırtasiye", leaves(["Kırtasiye Malzemesi", "Defter & Bloknot", "Kalem & Yazı Gereçleri", "Ofis Mobilyası", "Yazıcı & Sarf Malzeme", "Dosyalama & Arşiv", "Sunum & Pano", "Hesap Makinesi", "Ofis Elektroniği", "Okul Malzemesi"], "alisverisGenel"), "alisverisGenel"),
-    node("Oyuncak", leaves(["Eğitici Oyuncak", "Peluş Oyuncak", "Yapı & Bloklar (Lego)", "Uzaktan Kumandalı", "Bebek & Figür", "Puzzle & Zeka Oyunları", "Kutu Oyunları", "Oyun Seti", "Araba & Araç Oyuncak", "Su & Kum Oyuncakları", "Elektronik Oyuncak", "Bebek Oyuncakları (0-3 yaş)"], "alisverisGenel"), "alisverisGenel"),
+    node("Oyuncak", leaves(["Eğitici Oyuncak", "Peluş Oyuncak", "Yapı & Bloklar (Lego)", "Uzaktan Kumandalı", "Bebek & Figür", "Puzzle & Zeka Oyunları", "Kutu Oyunları", "Oyun Seti", "Araba & Araç Oyuncak", "Su & Kum Oyuncakları", "Elektronik Oyuncak", "Bebek Oyuncakları (0-3 yaş)"], "oyuncak"), "oyuncak"),
     node("Bahçe & Yaşam", leaves(["Bahçe Mobilyası", "Şemsiye & Gölgelik", "Barbekü & Mangal", "Saksı & Çiçeklik", "Yapay Çiçek & Bitki", "Bahçe Dekorasyonu", "Havuz & Şişme", "Kamp & Piknik"], "alisverisGenel"), "alisverisGenel"),
-    node("Dijital Ürünler", leaves(["Yazılım Lisansı", "Dijital Eğitim", "E-kitap", "Tasarım Dosyası", "Oyun Kodu", "Tema & Şablon", "Dijital Hesap", "Online Hizmet"], "alisverisGenel"), "alisverisGenel"),
-    node("Evcil Hayvan Ürünleri", leaves(["Kedi Ürünleri", "Köpek Ürünleri", "Kuş Ürünleri", "Balık & Akvaryum", "Kemirgen Ürünleri", "Mama & Yem", "Kafes & Aksesuar", "Pet Bakım & Hijyen", "Tasma & Gezdirme", "Oyuncak & Kaşıma"], "alisverisGenel"), "alisverisGenel"),
+    node("Dijital Ürünler", leaves(["Yazılım Lisansı", "Dijital Eğitim", "E-kitap", "Tasarım Dosyası", "Oyun Kodu", "Tema & Şablon", "Dijital Hesap", "Online Hizmet"], "dijitalHizmet"), "dijitalHizmet"),
+    node("Evcil Hayvan Ürünleri", leaves(["Kedi Ürünleri", "Köpek Ürünleri", "Kuş Ürünleri", "Balık & Akvaryum", "Kemirgen Ürünleri", "Mama & Yem", "Kafes & Aksesuar", "Pet Bakım & Hijyen", "Tasma & Gezdirme", "Oyuncak & Kaşıma"], "petUrun"), "petUrun"),
     leaf("Hediyelik Ürünler", "alisverisGenel"),
     leaf("Diğer Alışveriş", "alisverisGenel")
   ], "alisverisGenel", IMG("1498049794561-7780e7231661")),
@@ -1957,20 +1992,20 @@ export const categoryTree: CategoryNode[] = [
       "Kedi Maması (Kuru)", "Kedi Maması (Yaş)", "Köpek Maması (Kuru)", "Köpek Maması (Yaş)",
       "Kuş Yemi", "Balık Yemi", "Kemirgen Yemi", "Ödül & Ödül Maması", "Vitamin & Takviye",
       "Mama Kabı & Suluk", "Otomatik Mama Makinesi"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "petUrun"), "petUrun"),
     node("Kafes, Tasma & Taşıma", leaves([
       "Kedi Taşıma Çantası", "Köpek Taşıma Kafesi", "Kuş Kafesi", "Kemirgen Kafesi",
       "Tasma & Göğüs Tasması", "Gezdirme Kayışı", "Ağızlık", "Kedi Tuvaleti & Kum",
       "Kedi Tırmalama", "Kulübe & Yatak"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "petUrun"), "petUrun"),
     node("Akvaryum & Terrarium", leaves([
       "Akvaryum", "Akvaryum Filtresi", "Isıtıcı", "Aydınlatma", "Hava Motoru", "Dekor & Kum",
       "Terrarium", "Su Testi & Bakım"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "petUrun"), "petUrun"),
     node("Bakım & Oyuncak", leaves([
       "Pet Şampuanı", "Tarak & Fırça", "Tırnak Makası", "Tüy Toplayıcı", "Diş Bakımı",
       "Kedi Oyuncağı", "Köpek Oyuncağı", "Kuş Oyuncağı"
-    ], "alisverisGenel"), "alisverisGenel"),
+    ], "petUrun"), "petUrun"),
     node("Veteriner & Hizmetler", leaves([
       "Veteriner Hizmetleri", "Aşı & Muayene", "Pet Kuaför", "Pet Oteli", "Evcil Hayvan Bakıcısı",
       "Köpek Eğitmeni", "Pet Taksi", "Pet Fotoğrafçısı"
@@ -1978,7 +2013,7 @@ export const categoryTree: CategoryNode[] = [
     node("Çiftlik & Hayvancılık Ekipmanı", leaves([
       "Yemlik & Suluk (Çiftlik)", "Kuluçka Makinesi", "Süt Sağım Ekipmanı", "Kümes Malzemesi",
       "Ahır Malzemesi", "Arıcılık Ekipmanı", "Kovan & Bal Ürünleri"
-    ], "alisverisGenel"), "alisverisGenel")
+    ], "petUrun"), "petUrun")
   ], "hayvan", IMG("1450778869180-41d0601e046e")),
 
   node("Arayanlar / Talep İlanları", [
