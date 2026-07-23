@@ -1656,7 +1656,6 @@ export const categoryTree: CategoryNode[] = [
       node("Satılık", leaves(["Komple Bina", "Apartman", "Müstakil Bina", "İş Hanı", "Plaza", "Rezidans Binası", "Otel Binası", "Yurt Binası", "Okul Binası", "Hastane Binası", "Klinik Binası", "Fabrika Binası", "Depo Binası", "Tarihi Bina", "Restorasyonluk Bina", "Kentsel Dönüşüme Uygun", "Kiracılı Bina", "Karma Kullanımlı Bina"], "bina"), "bina"),
       node("Kiralık", leaves(["Komple Bina", "Apartman", "İş Hanı", "Plaza", "Okul Binası", "Yurt Binası", "Hastane / Klinik Binası", "Depo Binası", "Fabrika Binası", "Otel Binası", "Kurumsal Kullanıma Uygun"], "bina"), "bina")
     ], "bina"),
-    node("Projeler", leaves(["Yeni Konut Projesi", "Daire Projesi", "Villa Projesi", "Rezidans Projesi", "Karma Proje", "Ofis Projesi", "Ticari Alan Projesi", "AVM Projesi", "Arsa Projesi", "Kentsel Dönüşüm Projesi", "Kooperatif Projesi", "Tatil Projesi", "Tiny House Projesi", "Bungalov Projesi", "Devremülk Projesi"], "proje"), "proje"),
     node("Turistik Tesis", [
       node("Satılık", leaves(["Otel", "Apart Otel", "Butik Otel", "Motel", "Pansiyon", "Kamp Yeri (Mocamp)", "Tatil Köyü"], "turistik"), "turistik"),
       // Kiralık, Satılık ile HİZALANDI (eskiden 6 tip eksikti: Motel/Hostel/Glamping/Termal/Dağ/Sahil/Aquapark/Karavan Parkı).
@@ -1677,6 +1676,7 @@ export const categoryTree: CategoryNode[] = [
       node("Kiralık", leaves(["Konteyner", "Tiny House", "Prefabrik Ev", "Şantiye Konteyneri", "Ofis Konteyneri", "Yaşam Konteyneri", "Bungalov"], "prefabrik"), "prefabrik")
     ], "prefabrik"),
     node("Emlak Hizmetleri", leaves(["Emlak Danışmanı", "Gayrimenkul Değerleme", "Ekspertiz Hizmeti", "Tapu Takip", "Kentsel Dönüşüm Danışmanlığı", "Mimari Proje", "İç Mimarlık", "Tadilat Hizmeti", "Boya Badana", "Nakliye / Evden Eve", "Temizlik Hizmeti", "Fotoğraf / Video Çekimi", "Drone Çekimi", "3D Sanal Tur", "Kiracı Bulma", "Mülk Yönetimi", "Site Yönetimi"], "emlakHizmet"), "emlakHizmet"),
+    node("Projeler", leaves(["Yeni Konut Projesi", "Daire Projesi", "Villa Projesi", "Rezidans Projesi", "Karma Proje", "Ofis Projesi", "Ticari Alan Projesi", "AVM Projesi", "Arsa Projesi", "Kentsel Dönüşüm Projesi", "Kooperatif Projesi", "Tatil Projesi", "Tiny House Projesi", "Bungalov Projesi", "Devremülk Projesi"], "proje"), "proje"),
     // KALDIRILDI — "Ortak Satışa Açık Emlak" bir ATTRIBUTE'tü (ilanın ortak satışa açık olup olmaması),
     // kategori dalına terfi ettirilmişti. `partnershipMode` alanı bunu zaten taşıyor; dal olarak durması
     // aynı dairenin hem Konut>Satılık>Daire hem buradan girilebilmesine (duplikasyon) yol açıyordu.
@@ -1684,17 +1684,17 @@ export const categoryTree: CategoryNode[] = [
   ], "konut", IMG("1560518883-ce09059eeffa")),
 
   node("Vasıta", [
-    node("Otomobil (Markaya Göre)", brandModelNodes(CAR_BRANDS, MODELS_BY_BRAND, "otomobil"), "otomobil"),
-    node("Otomobil (Kasa Tipine Göre)", leaves(CAR_BODY_TYPES, "otomobil"), "otomobil"),
+    // Sahibinden'de tek başlık: "Otomobil" (marka→model). Kasa tipi kategori dalı DEĞİL,
+    // formda `bodyType` alanı — ikili giriş yolu (duplikasyon) kaldırıldı.
+    node("Otomobil", brandModelNodes(CAR_BRANDS, MODELS_BY_BRAND, "otomobil"), "otomobil"),
     // Düz marka-yaprağı (model seçilemiyordu) → brand→model. "Range Rover" ÇIKARILDI (Land Rover'ın MODELİ).
     node("Arazi, SUV & Pickup", brandModelNodes(["Audi", "BMW", "Chery", "Citroën", "Dacia", "Ford", "Honda", "Hyundai", "Jeep", "Kia", "Land Rover", "Mazda", "Mercedes-Benz", "MG", "Mitsubishi", "Nissan", "Opel", "Peugeot", "Porsche", "Renault", "Suzuki", "Toyota", "Volkswagen", "Volvo", "BYD", "Togg", "Tesla", "Diğer"], MODELS_BY_BRAND, "otomobil"), "otomobil"),
     // "Şarj Ekipmanı" ÇIKARILDI (araç değil aksesuar → Yedek Parça'da).
     node("Elektrikli Araçlar", leaves(["Elektrikli Otomobil", "Hibrit (HEV)", "Plug-in Hibrit (PHEV)", "Menzil Artırıcılı (EREV)", "Elektrikli SUV", "Elektrikli Ticari"], "otomobil"), "otomobil"),
-    node("Motosiklet (Markaya Göre)", brandModelNodes(MOTO_BRANDS, MOTO_MODELS, "motosiklet"), "motosiklet"),
-    node("Motosiklet (Türe Göre)", leaves(MOTO_TYPES, "motosiklet"), "motosiklet"),
-    node("Ticari Araçlar", brandModelNodes(COMMERCIAL_BRANDS, COMMERCIAL_MODELS, "ticari"), "ticari"),
+    // Sahibinden'de tek başlık: "Motosiklet" (marka→model). Tür, formda `motoType` alanı.
+    node("Motosiklet", brandModelNodes(MOTO_BRANDS, MOTO_MODELS, "motosiklet"), "motosiklet"),
     node("Minivan & Panelvan", leaves(["Panelvan", "Minivan", "Kombi Van", "Camlı Van", "Yük Vanı", "Yolcu Vanı"], "ticari"), "ticari"),
-    node("Ağır Vasıta", leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Oto Kurtarıcı & Taşıyıcı", "Dorse (Lowbed)", "Dorse (Damperli)", "Dorse (Tenteli)", "Dorse (Frigorifik)", "Dorse (Silobas)", "Dorse (Tanker)", "Römork (Ticari)", "Tanker", "Frigorifik", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "agirVasita"), "agirVasita"),
+    node("Ticari Araçlar", brandModelNodes(COMMERCIAL_BRANDS, COMMERCIAL_MODELS, "ticari"), "ticari"),
     node("Deniz Araçları", [
       node("Yat", leaves(["Motoryat", "Yelkenli Yat", "Katamaran", "Trawler", "Mega Yat", "Gulet", "Klasik Yat", "Ahşap Yat", "Süper Yat"], "deniz"), "deniz"),
       ...leaves(["Sürat Teknesi", "Yelkenli", "Şişme Bot & Zodyak", "Jet Ski", "Balıkçı Teknesi", "Fiber Tekne", "Ahşap Tekne", "Kano & Kayak", "SUP & Sörf", "Römork (Deniz)"], "deniz"),
@@ -1703,10 +1703,8 @@ export const categoryTree: CategoryNode[] = [
     node("Karavan", leaves(["Motokaravan", "Çekme Karavan", "Van Karavan", "Off-road Karavan", "Kamp Römorku"], "vasitaGenel"), "vasitaGenel"),
     node("ATV", leaves(["ATV", "Elektrikli ATV", "Paletli ATV", "Çocuk ATV (Elektrikli)"], "vasitaGenel"), "vasitaGenel"),
     node("UTV", leaves(["UTV", "Buggy", "Side-by-Side", "Elektrikli UTV"], "vasitaGenel"), "vasitaGenel"),
-    node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Elektrikli Bisiklet", "Elektrikli Motosiklet", "Hoverboard", "Segway", "Elektrikli Golf Aracı"], "vasitaGenel"), "vasitaGenel"),
     node("Klasik Araçlar", leaves(["Klasik Otomobil", "Klasik Motosiklet", "Antika Araç", "Restorasyonluk Araç", "Amerikan Klasik", "Anadol / Murat / Şahin", "Jeep & Willys"], "otomobil"), "otomobil"),
     node("Engelli Plakalı Araçlar", leaves(["Engelli Otomobil (ÖTV'siz)", "Adaptasyonlu Araç", "Engelli Scooter", "Akülü Sandalye"], "vasitaGenel"), "vasitaGenel"),
-    node("Traktör & Tarım Araçları", brandModelNodes(["New Holland", "Massey Ferguson", "John Deere", "Case IH", "Fiat", "Ford", "Deutz-Fahr", "Kubota", "Same", "Landini", "Tümosan", "Erkunt", "Başak", "TürkTraktör", "Hattat", "Claas", "Valtra", "Diğer"], {}, "traktor"), "traktor"),
     // HAVA ARAÇLARI — Sahibinden Vasıta altında standart alt kategori; bizde eksikti. Düşük hacim,
     // kendi minimal şeması (havaAraci: uçuş saati/motor tipi/koltuk — km/vites değil).
     node("Hava Araçları", leaves(["Uçak (Tek Motor)", "Uçak (Çift Motor)", "Jet", "Helikopter", "Planör", "Microlight / Ultralight", "Paramotor", "Yamaç Paraşütü", "Balon", "Amfibik Uçak", "Profesyonel Drone", "Diğer Hava Aracı"], "havaAraci"), "havaAraci"),
@@ -1720,6 +1718,10 @@ export const categoryTree: CategoryNode[] = [
       leaf("Hasarlı Motosiklet", "motosiklet")
     ], "otomobil"),
     // KİRALIK — tek yapraktı; Sahibinden gibi tam alt-ağaç + kiralamaya özel şema (aracKiralik).
+    // ——— Sahibinden listesinde OLMAYAN ek dallarımız: Sahibinden sırasının ALTINA alındı ———
+    node("Ağır Vasıta", leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Oto Kurtarıcı & Taşıyıcı", "Dorse (Lowbed)", "Dorse (Damperli)", "Dorse (Tenteli)", "Dorse (Frigorifik)", "Dorse (Silobas)", "Dorse (Tanker)", "Römork (Ticari)", "Tanker", "Frigorifik", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "agirVasita"), "agirVasita"),
+    node("Traktör & Tarım Araçları", brandModelNodes(["New Holland", "Massey Ferguson", "John Deere", "Case IH", "Fiat", "Ford", "Deutz-Fahr", "Kubota", "Same", "Landini", "Tümosan", "Erkunt", "Başak", "TürkTraktör", "Hattat", "Claas", "Valtra", "Diğer"], {}, "traktor"), "traktor"),
+    node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Elektrikli Bisiklet", "Elektrikli Motosiklet", "Hoverboard", "Segway", "Elektrikli Golf Aracı"], "vasitaGenel"), "vasitaGenel"),
     node("Kiralık Araçlar", [
       node("Otomobil Kiralama", leaves(["Günlük Kiralık", "Haftalık Kiralık", "Aylık Kiralık", "Uzun Dönem Kiralama", "Şoförlü Kiralama", "Filo Kiralama", "Ekonomik Segment", "Lüks & Premium"], "aracKiralik"), "aracKiralik"),
       node("SUV & Arazi Kiralama", leaves(["Günlük", "Aylık", "Uzun Dönem", "Şoförlü", "Off-road"], "aracKiralik"), "aracKiralik"),
