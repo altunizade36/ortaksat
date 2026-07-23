@@ -5,7 +5,7 @@
 export const categoriesDict: Record<string, string> = {
   "Emlak": "Real Estate",
   "Vasıta": "Vehicles",
-  "Yedek Parça, Aksesuar & Tuning": "Spare Parts, Accessories & Tuning",
+  "Yedek Parça, Aksesuar, Donanım & Tuning": "Spare Parts, Accessories, Hardware & Tuning",
   "İkinci El & Sıfır Alışveriş": "Used & New Shopping",
   "İş Makineleri & Sanayi": "Construction Machinery & Industrial",
   "Ustalar & Hizmetler": "Tradespeople & Services",

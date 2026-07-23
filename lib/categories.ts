@@ -224,7 +224,7 @@ const CATEGORY_ICONS: Record<string, IconName> = {
   // Üst kategoriler
   "Emlak": "home-city-outline",
   "Vasıta": "car-outline",
-  "Yedek Parça, Aksesuar & Tuning": "car-wrench",
+  "Yedek Parça, Aksesuar, Donanım & Tuning": "car-wrench",
   "İkinci El & Sıfır Alışveriş": "shopping-outline",
   "İş Makineleri & Sanayi": "excavator",
   "Ustalar & Hizmetler": "account-hard-hat",

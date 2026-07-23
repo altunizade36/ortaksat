@@ -25,7 +25,7 @@ test("YEDEK PARÇA derin drill (masaüstü iki-panel)", async ({ browser }) => {
   await page.goto("/create", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(3000);
 
-  const steps = ["Yedek Parça, Aksesuar & Tuning", "Otomotiv Ekipmanları", "Yedek Parça", "Otomobil & Arazi Aracı", "Motor"];
+  const steps = ["Yedek Parça, Aksesuar, Donanım & Tuning", "Otomotiv Ekipmanları", "Yedek Parça", "Otomobil & Arazi Aracı", "Motor"];
   for (const s of steps) {
     await page.getByText(s, { exact: true }).first().click({ timeout: 8000 }).catch(() => {});
     await page.waitForTimeout(900);

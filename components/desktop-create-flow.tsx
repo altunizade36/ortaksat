@@ -42,7 +42,7 @@ const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1
 const SUGGESTED_COMMISSION: Record<string, [number, number]> = {
   "Emlak": [1, 3],
   "Vasıta": [2, 6],
-  "Yedek Parça, Aksesuar & Tuning": [8, 15],
+  "Yedek Parça, Aksesuar, Donanım & Tuning": [8, 15],
   "İkinci El & Sıfır Alışveriş": [8, 18],
   "İş Makineleri & Sanayi": [3, 10],
   "Ustalar & Hizmetler": [10, 20],
@@ -59,7 +59,7 @@ const SUGGESTED_COMMISSION: Record<string, [number, number]> = {
 const TITLE_EXAMPLES: Record<string, string> = {
   "Emlak": "Örn. Bahçelievler'de 3+1 Ara Kat Cephe Daire",
   "Vasıta": "Örn. 2018 BMW 320i, 45.000 km, tam bakımlı",
-  "Yedek Parça, Aksesuar & Tuning": "Örn. Passat B8 Orijinal Far Takımı, sıfır",
+  "Yedek Parça, Aksesuar, Donanım & Tuning": "Örn. Passat B8 Orijinal Far Takımı, sıfır",
   "İkinci El & Sıfır Alışveriş": "Örn. iPhone 13 128GB, kutulu, garantili",
   "İş Makineleri & Sanayi": "Örn. 2015 CAT 320D Ekskavatör, 6.500 saat",
   "Ustalar & Hizmetler": "Örn. Boya Badana ve Alçı Ustası — İstanbul",

@@ -1659,7 +1659,7 @@ export const categoryTree: CategoryNode[] = [
   // SAHİBİNDEN-PARİTE (2026-07-23): Ekipman türü → kategori → araç tipi → parça sistemi.
   // Eski düz "Markaya Göre / Parça Grubuna Göre" yapısı → 3 ekipman türü altında yeniden kuruldu.
   // Marka SEO'su "Markaya Göre" alt-düğümü olarak KORUNDU (brandGroupNodes, 1476 yaprak).
-  node("Yedek Parça, Aksesuar & Tuning", [
+  node("Yedek Parça, Aksesuar, Donanım & Tuning", [
     node("Otomotiv Ekipmanları", [
       node("Yedek Parça", [
         node("Otomobil & Arazi Aracı", leaves(OTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
@@ -2476,7 +2476,7 @@ function key(value: string) {
 // isn't a category label (e.g. "araba" → Vasıta > Otomobil).
 const HINTS: Array<{ words: string[]; path: string[] }> = [
   { words: ["iphone", "telefon", "samsung", "xiaomi", "cep telefonu"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "Cep Telefonu"] },
-  { words: ["arac ici kamera", "arac kamerasi", "dashcam"], path: ["Yedek Parça, Aksesuar & Tuning", "Araç Kamerası"] },
+  { words: ["arac ici kamera", "arac kamerasi", "dashcam"], path: ["Yedek Parça, Aksesuar, Donanım & Tuning", "Otomotiv Ekipmanları", "Ses & Görüntü Sistemleri", "Kamera & Park Sensörü"] },
   { words: ["araba", "otomobil", "araç", "arac"], path: ["Vasıta", "Otomobil"] },
   { words: ["kose koltuk", "koltuk", "kanepe"], path: ["İkinci El & Sıfır Alışveriş", "Ev & Yaşam", "Mobilya"] },
   { words: ["daire", "ev", "kiralik", "satilik", "konut"], path: ["Emlak", "Konut"] },

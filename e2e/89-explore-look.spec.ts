@@ -25,7 +25,7 @@ test("KEŞFET görünüm (mobil)", async ({ browser }) => {
   await shoot(page, "m-explore", "/explore");
 
   // Kategori filtresi KAPALI başlamalı → çipler görünmemeli; ilk ilan kartı erken gelmeli.
-  const catChipVisible = await page.getByText("Yedek Parça, Aksesuar & Tuning").first().isVisible().catch(() => false);
+  const catChipVisible = await page.getByText("Yedek Parça, Aksesuar, Donanım & Tuning").first().isVisible().catch(() => false);
   console.log(`kategori çipi (kapalıyken) görünür mü: ${catChipVisible}`);
   expect(catChipVisible, "kategori çipleri kapalıyken görünmemeli").toBeFalsy();
 
@@ -40,7 +40,7 @@ test("KEŞFET görünüm (mobil)", async ({ browser }) => {
   // Başlığa dokun → kategori çipleri açılmalı (işlev korundu)
   await page.getByText("Kategoriye göre filtrele").first().click();
   await page.waitForTimeout(700);
-  const catChipAfter = await page.getByText("Yedek Parça, Aksesuar & Tuning").first().isVisible().catch(() => false);
+  const catChipAfter = await page.getByText("Yedek Parça, Aksesuar, Donanım & Tuning").first().isVisible().catch(() => false);
   console.log(`açınca kategori çipi görünür mü: ${catChipAfter}`);
   expect(catChipAfter, "başlığa dokununca çipler açılmalı").toBeTruthy();
   await page.screenshot({ path: `${OUT}/m-explore-opened.png`, fullPage: true }).catch(() => {});
