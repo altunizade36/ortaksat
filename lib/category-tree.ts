@@ -1392,7 +1392,11 @@ const isyeriBranch = (fk: string): CategoryNode[] => [
   node("Eğitim & Kurs", leaves(["Kreş", "Anaokulu", "Kurs Merkezi", "Dershane", "Etüt Merkezi", "Dil Kursu", "Sürücü Kursu", "Spor Kursu", "Okul Binası"], fk), fk),
   node("Spor & Sosyal Tesis", leaves(["Spor Salonu", "Fitness Salonu", "Pilates Salonu", "Yoga Salonu", "Halı Saha", "Yüzme Havuzu Tesisi", "Düğün Salonu", "Organizasyon Salonu", "Oyun Salonu", "Çocuk Oyun Merkezi"], fk), fk),
   node("Oto & Akaryakıt", leaves(["Oto Galeri", "Oto Yıkama", "Oto Servis", "Oto Ekspertiz", "Lastikçi", "Benzin İstasyonu", "LPG İstasyonu", "Elektrikli Şarj İstasyonu", "Otopark", "Kapalı Otopark"], fk), fk),
-  node("Tarım & Hayvancılık İşletmesi", leaves(["Çiftlik", "Tavuk Çiftliği", "Büyükbaş Çiftliği", "Küçükbaş Çiftliği", "Süt Üretim Tesisi", "Sera", "Mantar Üretim", "Balık Çiftliği", "Arıcılık Tesisi"], fk), fk)
+  node("Tarım & Hayvancılık İşletmesi", leaves(["Çiftlik", "Tavuk Çiftliği", "Büyükbaş Çiftliği", "Küçükbaş Çiftliği", "Süt Üretim Tesisi", "Sera", "Mantar Üretim", "Balık Çiftliği", "Arıcılık Tesisi"], fk), fk),
+  // Sahibinden İş Yeri mülk-tiplerinden eksik olan standalone ticari alanlar (grup yapımıza eklendi):
+  node("Plaza & İş Hanı & Rezidans", leaves(["Plaza", "Plaza Katı & Ofisi", "İş Hanı", "İş Hanı Katı & Ofisi", "Rezidans Katı & Ofisi", "Komple Bina", "Kat Karşılığı Ticari", "Ticari Apartman Dairesi", "Ticari Villa"], fk), fk),
+  node("Otopark & Garaj", leaves(["Açık Otopark", "Kapalı Otopark", "Katlı Otopark", "AVM Otoparkı", "Garaj", "Kapalı Garaj", "Park Yeri", "Vale Otoparkı"], fk), fk),
+  node("Diğer Ticari & Alan", leaves(["Maden Ocağı", "Taş Ocağı", "Pazar Yeri", "Toplantı & Etkinlik Salonu", "Enerji Santrali (GES/RES)", "AVM Standı", "Reklam Panosu Alanı", "Baz İstasyonu Alanı", "ATM Yeri", "Büfe / Kiosk", "Konteyner Ofis"], fk), fk)
 ];
 
 // ---- the tree ------------------------------------------------------------
