@@ -322,6 +322,11 @@ const F = {
 // ---- emlak zengin özellik listeleri (çoklu seçim) ------------------------
 // Profesyonel emlak portalı seviyesi; forma "İç Özellikler / Site Özellikleri /
 // Manzara / Cephe / Ulaşım / Çevre / Enerji / Yapı Güvenliği" grupları olarak gelir.
+// PAYLAŞIMLI EMLAK SABİTLERİ — şemalar-arası tutarsızlığı gidermek için (oda/bina yaşı/ısıtma
+// eskiden her şemada farklı tip/opsiyondaydı → facet parçalanıyordu). Tek kaynak.
+const ODA_SAYISI_OPTS = ["Stüdyo (1+0)", "1+1", "1.5+1", "2+1", "2.5+1", "3+1", "3.5+1", "4+1", "4.5+1", "5+1", "6+1", "7+1", "8+1 ve üzeri"];
+const BINA_YASI_OPTS = ["0 (Sıfır)", "1-5", "6-10", "11-15", "16-20", "21-30", "31+"];
+const ISITMA_OPTS = ["Yok", "Soba", "Doğalgaz Sobası", "Kat Kaloriferi", "Doğalgaz (Kombi)", "Merkezi", "Merkezi (Pay Ölçer)", "Yerden Isıtma", "Klima", "Fancoil", "Güneş Enerjisi", "Jeotermal", "Şömine", "VRV / VRF"];
 const KONUT_IC_OZELLIK = ["Ankastre Fırın", "Ankastre Ocak", "Davlumbaz", "Bulaşık Makinesi", "Çamaşır Makinesi", "Kurutma Makinesi", "Buzdolabı", "Mikrodalga", "Klima", "VRF Klima", "Fiber İnternet", "Akıllı Ev Sistemi", "Akıllı Kilit", "Görüntülü Diafon", "Alarm Sistemi", "Yangın Alarmı", "Duman Dedektörü", "Kamera Sistemi", "Elektrikli Panjur", "Otomatik Perde", "Giyinme Odası", "Kiler", "Çamaşır Odası", "Ebeveyn Banyosu", "Jakuzi", "Sauna", "Şömine", "Amerikan Mutfak", "Ankastre Mutfak", "Ada Mutfak", "Granit Tezgah", "Laminat Parke", "Masif Parke", "Seramik Zemin", "Çelik Kapı", "Spot Aydınlatma", "LED Aydınlatma", "Kartonpiyer", "Asma Tavan", "Yerden Isıtma", "Isı Pompası", "Güneş Enerjisi", "Beyaz Eşyalı", "Perde Dahil", "Avize Dahil", "Yeni Boyanmış"];
 const KONUT_SITE_OZELLIK = ["Açık Otopark", "Kapalı Otopark", "Misafir Otoparkı", "Elektrikli Araç Şarjı", "Asansör", "Yük Asansörü", "Jeneratör", "Su Deposu", "Hidrofor", "7/24 Güvenlik", "Güvenlik Kamerası", "Kartlı Giriş", "Parmak İzi Giriş", "Kapıcı", "Resepsiyon", "Concierge", "Çocuk Parkı", "Kreş", "Basketbol Sahası", "Futbol Sahası", "Tenis Kortu", "Fitness Salonu", "Pilates/Yoga", "Açık Havuz", "Kapalı Havuz", "Çocuk Havuzu", "Sauna", "Hamam", "Spa", "Kafeterya", "Market", "Kuaför", "Yürüyüş Parkuru", "Bisiklet Yolu", "Peyzaj Alanı", "Süs Havuzu", "Kamelya", "Barbekü Alanı", "Ortak Bahçe", "Hobi Bahçesi", "Evcil Hayvan Alanı", "Yangın Merdiveni", "Acil Toplanma Alanı"];
 const MANZARA_OPTS = ["Deniz", "Boğaz", "Göl", "Nehir", "Baraj", "Orman", "Dağ", "Doğa", "Park", "Bahçe", "Havuz", "Şehir", "Cadde", "Meydan", "Marina", "Kale", "Tarihi Yapı", "Vadi", "Tarla", "Bağ", "Zeytinlik", "Yok"];
@@ -390,7 +395,7 @@ const DEVREMULK_TESIS = ["Açık Havuz", "Kapalı Havuz", "Termal Havuz", "Aqua 
 // ---- turistik tesis (spec 63) --------------------------------------------
 const TURISTIK_TUR = ["Otel", "Butik Otel", "Apart Otel", "Motel", "Pansiyon", "Hostel", "Kamp Alanı", "Glamping", "Karavan Parkı", "Dağ Oteli", "Yayla Tesisi", "Termal Tesis", "Tatil Köyü", "Bungalov Tesisi", "Marina Tesisi"];
 const TURISTIK_ALAN = ["Açık Havuz", "Kapalı Havuz", "Çocuk Havuzu", "Spa", "Hamam", "Sauna", "Fitness", "Restoran", "A La Carte", "Lobby Bar", "Havuz Bar", "Beach Bar", "Toplantı Salonu", "Kongre Salonu", "Düğün Salonu", "Çocuk Parkı", "Oyun Salonu", "Mini Club", "Disco", "Açık Otopark", "Kapalı Otopark"];
-const TURISTIK_ODA = ["Standart Oda", "Deluxe Oda", "Family Room", "Suit", "King Suit", "Presidential Suit", "Engelli Odası"];
+const TURISTIK_ODA = ["Standart Oda", "Deluxe Oda", "Aile Odası (Family Room)", "Süit", "King Süit", "Kral Dairesi (Presidential Suite)", "Engelli Odası"];
 
 // ---- lüks konut & akıllı ev (spec 64–65) ---------------------------------
 const LUKS_OZELLIK = ["Akıllı Ev Sistemi", "Parmak İzi Giriş", "Yüz Tanıma", "Özel Asansör", "Özel Garaj", "Şarap Mahzeni", "Sinema Salonu", "Oyun Odası", "Bilardo Salonu", "Kütüphane", "Hobi Atölyesi", "Spa", "Hamam", "Sauna", "Buhar Odası", "Masaj Odası", "Kapalı Havuz", "Sonsuzluk Havuzu", "Isıtmalı Havuz", "Helikopter Pisti", "Tekne İskelesi", "Özel Plaj", "Misafir Evi", "Personel Lojmanı", "Panik Odası", "Çelik Kasa Odası"];
@@ -413,8 +418,8 @@ const ISYERI_CORE: FieldDef[] = [
   { key: "floor", label: "Bulunduğu kat", type: "text", group: "Bina & Kat" },
   { key: "floorCount", label: "Kat sayısı", type: "number", group: "Bina & Kat" },
   { key: "ceilingHeight", label: "Tavan yüksekliği", type: "text", suffix: "m", group: "Bina & Kat" },
-  { key: "buildingAge", label: "Bina yaşı", type: "text", group: "Bina & Kat" },
-  { key: "heating", label: "Isıtma", type: "select", options: ["Doğalgaz", "Merkezi", "Klima", "Yerden Isıtma", "Yok"], group: "Bina & Kat" },
+  { key: "buildingAge", label: "Bina yaşı", type: "select", options: BINA_YASI_OPTS, group: "Bina & Kat" },
+  { key: "heating", label: "Isıtma", type: "select", options: ISITMA_OPTS, group: "Bina & Kat" },
   { key: "caddeUzeri", label: "Cadde üzeri mi?", type: "bool", group: "Konum & Erişim" },
   { key: "avmIcinde", label: "AVM içinde mi?", type: "bool", group: "Konum & Erişim" },
   { key: "sanayiSitesi", label: "Sanayi sitesinde mi?", type: "bool", group: "Konum & Erişim" },
@@ -464,6 +469,14 @@ const OFIS_EXTRA: FieldDef[] = [
   { key: "managerRooms", label: "Yönetici odası sayısı", type: "number", group: "İşletme Detayı" },
   { key: "ofisOzellik", label: "Ofis özellikleri", type: "multiselect", options: ["Açık Ofis", "Kapalı Ofis", "Server Odası", "Klima", "Fiber İnternet", "Kartlı Geçiş", "Resepsiyon", "Bekleme Alanı", "Mutfak", "WC", "Arşiv", "Balkon", "Teras", "Otopark", "Vale", "Concierge"] }
 ];
+// TÜM iş yeri tiplerine ortak konum/erişim multiselect'leri (restoran/fabrika/ofis'te EKSİKTİ).
+// isyeri'nin konut-özgü interiorFeatures'ı KALDIRILDI (iş yerinde "Ebeveyn Banyosu" anlamsızdı).
+const ISYERI_KONUM_EXTRA: FieldDef[] = [
+  { key: "exteriorFeatures", label: "Dış / bina özellikleri", type: "multiselect", options: EMLAK_DIS_OZELLIK },
+  { key: "neighborhood", label: "Muhit / çevre", type: "multiselect", options: EMLAK_MUHIT },
+  { key: "transport", label: "Ulaşım", type: "multiselect", options: EMLAK_ULASIM },
+  { key: "accessibility", label: "Engelliye / yaşlıya uygun", type: "multiselect", options: EMLAK_ENGELLI }
+];
 
 // ---- vasıta donanım listeleri (arabam.com/Sahibinden seviyesi) -----------
 const ARAC_GUVENLIK = ["ABS", "ESP / VSA", "ASR", "Sürücü Hava Yastığı", "Yolcu Hava Yastığı", "Yan Hava Yastığı", "Perde Hava Yastığı", "Dizel Partikül Filtresi", "Yokuş Kalkış Desteği", "Lastik Basınç Sensörü", "Çocuk Kilidi", "Isofix", "Alarm", "Immobilizer", "Merkezi Kilit", "Kör Nokta Uyarı", "Şerit Takip", "Çarpışma Önleme", "Gece Görüş", "Yaya Algılama"];
@@ -505,18 +518,17 @@ export const formSchemas: Record<string, FormSchema> = {
       F.price,
       { key: "grossM2", label: "m² (brüt)", type: "number", required: true, suffix: "m²", group: "Temel Bilgiler" },
       { key: "netM2", label: "m² (net)", type: "number", suffix: "m²", group: "Temel Bilgiler" },
-      { key: "rooms", label: "Oda sayısı", type: "select", required: true, options: ["Stüdyo", "1+0", "1+1", "2+1", "3+1", "4+1", "5+1", "6+1", "7+1", "8+1 ve üzeri"], group: "Temel Bilgiler" },
+      { key: "rooms", label: "Oda sayısı", type: "select", required: true, options: ODA_SAYISI_OPTS, group: "Temel Bilgiler" },
       { key: "salon", label: "Salon sayısı", type: "number", group: "Temel Bilgiler" },
       { key: "bathrooms", label: "Banyo sayısı", type: "number", group: "Temel Bilgiler" },
       { key: "wc", label: "WC sayısı", type: "number", group: "Temel Bilgiler" },
-      { key: "buildingAge", label: "Bina yaşı", type: "select", options: ["0 (Sıfır)", "1-5", "6-10", "11-15", "16-20", "21-30", "31+"], group: "Bina & Kat" },
-      // EKSİKTİ: her TR emlak ilanında sorulan iki standart alan (alıcının deprem/yaş algısı ve
-      // "sıfır mı ikinci el mi" kararı için belirleyici).
+      { key: "buildingAge", label: "Bina yaşı", type: "select", options: BINA_YASI_OPTS, group: "Bina & Kat" },
       { key: "yapiTipi", label: "Yapı tipi", type: "select", options: YAPI_TIPI_OPTS, group: "Bina & Kat" },
       { key: "yapiDurumu", label: "Yapının durumu", type: "select", options: YAPI_DURUMU_OPTS, group: "Bina & Kat" },
+      { key: "earthquake", label: "Deprem yönetmeliğine uygun mu?", type: "bool", group: "Bina & Kat" },
       { key: "floor", label: "Bulunduğu kat", type: "text", group: "Bina & Kat" },
       { key: "floorCount", label: "Kat sayısı", type: "number", group: "Bina & Kat" },
-      { key: "heating", label: "Isıtma tipi", type: "select", options: ["Yok", "Soba", "Doğalgaz Sobası", "Kat Kaloriferi", "Doğalgaz (Kombi)", "Merkezi", "Merkezi (Pay Ölçer)", "Yerden Isıtma", "Klima", "Güneş Enerjisi", "Jeotermal", "Şömine"], group: "Bina & Kat" },
+      { key: "heating", label: "Isıtma tipi", type: "select", options: ISITMA_OPTS, group: "Bina & Kat" },
       { key: "parking", label: "Otopark", type: "select", options: ["Açık Otopark", "Kapalı Otopark", "Açık & Kapalı", "Yok"], group: "Bina & Kat" },
       { key: "elevator", label: "Asansör var mı?", type: "bool", group: "Bina & Kat" },
       { key: "security", label: "Güvenlik var mı?", type: "bool", group: "Bina & Kat" },
@@ -543,16 +555,15 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "facade", label: "Cephe / yön", type: "multiselect", options: CEPHE_OPTS },
       { key: "view", label: "Manzara", type: "multiselect", options: MANZARA_OPTS },
       { key: "housingType", label: "Konut tipi", type: "multiselect", options: EMLAK_KONUT_TIPI },
-      { key: "interiorFeatures", label: "İç özellikler", type: "multiselect", options: EMLAK_IC_OZELLIK },
-      { key: "exteriorFeatures", label: "Dış özellikler", type: "multiselect", options: EMLAK_DIS_OZELLIK },
+      // REDUNDANS GİDERİLDİ (2026-07-23): interiorFeatures(EMLAK_IC)↔konutInteriorFeatures(KONUT_IC),
+      // exteriorFeatures(EMLAK_DIS)↔siteFeatures(KONUT_SITE), environment↔neighborhood, transportNearby↔transport
+      // çiftleri aynı şeyi soruyordu → her çiftten biri kaldırıldı (form 4 grid küçüldü, facet bölünmedi).
+      { key: "konutInteriorFeatures", label: "İç mekân özellikleri", type: "multiselect", options: KONUT_IC_OZELLIK },
+      { key: "siteFeatures", label: "Site & sosyal özellikler", type: "multiselect", options: KONUT_SITE_OZELLIK },
       { key: "neighborhood", label: "Muhit / çevre", type: "multiselect", options: EMLAK_MUHIT },
       { key: "transport", label: "Ulaşım", type: "multiselect", options: EMLAK_ULASIM },
       { key: "accessibility", label: "Engelliye / yaşlıya uygun", type: "multiselect", options: EMLAK_ENGELLI },
-      { key: "konutInteriorFeatures", label: "İç mekân donanımı", type: "multiselect", options: KONUT_IC_OZELLIK },
-      { key: "siteFeatures", label: "Site & sosyal özellikler", type: "multiselect", options: KONUT_SITE_OZELLIK },
       { key: "buildingSafety", label: "Deprem & yapı güvenliği", type: "multiselect", options: YAPI_GUVENLIK },
-      { key: "transportNearby", label: "Ulaşıma yakınlık", type: "multiselect", options: ULASIM_OPTS },
-      { key: "environment", label: "Çevrede olanlar", type: "multiselect", options: CEVRE_OPTS },
       { key: "smartHome", label: "Akıllı ev sistemleri", type: "multiselect", options: AKILLI_EV },
       { key: "luxuryFeatures", label: "Lüks özellikler", type: "multiselect", options: LUKS_OZELLIK },
       ETIKET_FIELD,
@@ -563,11 +574,7 @@ export const formSchemas: Record<string, FormSchema> = {
     key: "isyeri",
     title: "İş yeri bilgileri",
     fields: [...ISYERI_CORE, { key: "vitrinM", label: "Vitrin metresi", type: "text", suffix: "m", group: "İşletme Detayı" },
-      { key: "interiorFeatures", label: "İç özellikler", type: "multiselect", options: EMLAK_IC_OZELLIK },
-      { key: "exteriorFeatures", label: "Dış özellikler", type: "multiselect", options: EMLAK_DIS_OZELLIK },
-      { key: "neighborhood", label: "Muhit / çevre", type: "multiselect", options: EMLAK_MUHIT },
-      { key: "transport", label: "Ulaşım", type: "multiselect", options: EMLAK_ULASIM },
-      { key: "accessibility", label: "Engelliye / yaşlıya uygun", type: "multiselect", options: EMLAK_ENGELLI },
+      ...ISYERI_KONUM_EXTRA,
       ETIKET_FIELD, F.desc]
   },
   // DEVREN İŞ YERİ — mülk değil FAAL İŞLETME devri. Kendine özgü alanlar (Sahibinden "Devren" mantığı):
@@ -596,24 +603,24 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "deposit", label: "Depozito", type: "number", suffix: "₺", group: "Kira & Sözleşme" },
       { key: "leaseRemaining", label: "Kira sözleşmesi kalan süre", type: "select", options: ["Yeni sözleşme yapılacak", "6 aydan az", "6-12 ay", "1-3 yıl", "3+ yıl", "Mülk sahibine ait değil"], group: "Kira & Sözleşme" },
       { key: "ruhsat", label: "Ruhsat / belgeler", type: "multiselect", options: ISYERI_RUHSAT, group: "Belge & Ruhsat" },
-      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "İşletme Sahibinden", "Emlak Ofisinden"], group: "Belge & Ruhsat" },
+      { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "İşletme Sahibinden", "Emlak Ofisinden"], group: "Belge & Ruhsat" },
       ETIKET_FIELD, F.desc
     ]
   },
   isyeriRestoran: {
     key: "isyeriRestoran",
     title: "Restoran / Cafe bilgileri",
-    fields: [...ISYERI_CORE, ...RESTORAN_EXTRA, ETIKET_FIELD, F.desc]
+    fields: [...ISYERI_CORE, ...RESTORAN_EXTRA, ...ISYERI_KONUM_EXTRA, ETIKET_FIELD, F.desc]
   },
   isyeriFabrika: {
     key: "isyeriFabrika",
     title: "Fabrika / üretim tesisi bilgileri",
-    fields: [...ISYERI_CORE, ...FABRIKA_EXTRA, ETIKET_FIELD, F.desc]
+    fields: [...ISYERI_CORE, ...FABRIKA_EXTRA, ...ISYERI_KONUM_EXTRA, ETIKET_FIELD, F.desc]
   },
   isyeriOfis: {
     key: "isyeriOfis",
     title: "Ofis / büro bilgileri",
-    fields: [...ISYERI_CORE, ...OFIS_EXTRA, ETIKET_FIELD, F.desc]
+    fields: [...ISYERI_CORE, ...OFIS_EXTRA, ...ISYERI_KONUM_EXTRA, ETIKET_FIELD, F.desc]
   },
   arsa: {
     key: "arsa",
@@ -650,7 +657,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "deed", label: "Tapu durumu", type: "select", options: ARSA_TAPU, group: "Tapu & Parsel" },
       { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Satış & Ödeme" },
       { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "Müteahhitten", "Bankadan", "İcradan", "Belediyeden", "TOKİ'den"], group: "Satış & Ödeme" },
-      { ...F.takas, group: "Satış & Ödeme" },
+      { key: "swapReal", label: "Takas olur mu?", type: "bool", group: "Satış & Ödeme" },
       ETIKET_FIELD,
       F.desc
     ]
@@ -669,12 +676,12 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "unitCount", label: "Bağımsız bölüm sayısı", type: "number", group: "Bina & Kat" },
       { key: "apartmentCount", label: "Daire sayısı", type: "number", group: "Bina & Kat" },
       { key: "shopCount", label: "Dükkan sayısı", type: "number", group: "Bina & Kat" },
-      { key: "buildingAge", label: "Bina yaşı", type: "select", options: ["0 (Sıfır)", "1-5", "6-10", "11-15", "16-20", "21-30", "31+"], group: "Yapı & Donatı" },
+      { key: "buildingAge", label: "Bina yaşı", type: "select", options: BINA_YASI_OPTS, group: "Yapı & Donatı" },
       { key: "yapiTipi", label: "Yapı tipi", type: "select", options: YAPI_TIPI_OPTS, group: "Yapı & Donatı" },
       { key: "yapiDurumu", label: "Yapının durumu", type: "select", options: YAPI_DURUMU_OPTS, group: "Yapı & Donatı" },
       // GÜÇLENDİRME: komple bina alıcısı bunları sorar ama şemada YOKTU (ısıtma/otopark/
       // kullanım durumu/kimden/kredi/takas). buildingAge de text→select (filtrelenebilir olur).
-      { key: "heating", label: "Isıtma tipi", type: "select", options: ["Yok", "Doğalgaz (Kombi)", "Merkezi", "Merkezi (Pay Ölçer)", "Kat Kaloriferi", "Klima", "Soba", "Yerden Isıtma"], group: "Yapı & Donatı" },
+      { key: "heating", label: "Isıtma tipi", type: "select", options: ISITMA_OPTS, group: "Yapı & Donatı" },
       { key: "parking", label: "Otopark", type: "select", options: ["Açık Otopark", "Kapalı Otopark", "Açık & Kapalı", "Yok"], group: "Yapı & Donatı" },
       { key: "monthlyIncome", label: "Aylık toplam kira getirisi", type: "number", suffix: "₺", group: "Getiri & Kullanım" },
       { key: "occupancyRate", label: "Doluluk oranı", type: "select", options: ["Boş", "%1-25", "%26-50", "%51-75", "%76-99", "Tam Dolu"], group: "Getiri & Kullanım" },
@@ -684,7 +691,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "urbanTransform", label: "Kentsel dönüşüme uygun mu?", type: "bool", group: "Güvenlik & Uygunluk" },
       { key: "buildingSafety", label: "Deprem & yapı güvenliği", type: "multiselect", options: YAPI_GUVENLIK, group: "Güvenlik & Uygunluk" },
       { key: "deed", label: "Tapu durumu", type: "select", options: ["Kat Mülkiyetli", "Kat İrtifaklı", "Arsa Tapulu", "Hisseli Tapu", "Müstakil Tapu", "Bilinmiyor"], group: "Finansal & Tapu" },
-      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "Müteahhitten", "Bankadan"], group: "Finansal & Tapu" },
+      { key: "seller", label: "Kimden", type: "select", options: ["Sahibinden", "Emlak Ofisinden", "Müteahhitten", "Bankadan"], group: "Finansal & Tapu" },
       { key: "creditEligible", label: "Krediye uygun mu?", type: "bool", group: "Finansal & Tapu" },
       { key: "swapReal", label: "Takas olur mu?", type: "bool", group: "Finansal & Tapu" },
       ETIKET_FIELD,
@@ -731,7 +738,7 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Turistik tesis bilgileri",
     fields: [
       F.title,
-      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"], group: "Temel" },
+      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"], group: "Temel Bilgiler" },
       F.price,
       { key: "facilityKind", label: "Tesis türü", type: "select", required: true, options: TURISTIK_TUR, group: "Tesis" },
       { key: "roomCount", label: "Oda sayısı", type: "number", group: "Tesis" },
@@ -746,7 +753,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "closedM2", label: "Kapalı alan", type: "number", suffix: "m²", group: "Alan & Konum" },
       { key: "openM2", label: "Açık alan", type: "number", suffix: "m²", group: "Alan & Konum" },
       { key: "seaDistance", label: "Denize mesafe", type: "text", group: "Alan & Konum" },
-      { key: "occupancyRate", label: "Doluluk oranı", type: "text", suffix: "%", group: "İşletme" },
+      { key: "occupancyRate", label: "Doluluk oranı", type: "select", options: ["Boş", "%1-25", "%26-50", "%51-75", "%76-99", "Tam Dolu"], group: "İşletme" },
       { key: "yearlyRevenue", label: "Yıllık ciro", type: "number", suffix: "₺", group: "İşletme" },
       { key: "staffLodging", label: "Personel lojmanı var mı?", type: "bool", group: "İşletme" },
       { key: "brandTransfer", label: "Marka / işletme devri var mı?", type: "bool", group: "İşletme" },
@@ -760,7 +767,7 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Devre mülk bilgileri",
     fields: [
       F.title,
-      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"], group: "Temel" },
+      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık", "Devren"], group: "Temel Bilgiler" },
       F.price,
       { key: "facilityName", label: "Tesis adı", type: "text", group: "Kullanım" },
       { key: "accommodation", label: "Konaklama türü", type: "select", options: DEVREMULK_KONAKLAMA, group: "Kullanım" },
@@ -769,14 +776,14 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "weekNo", label: "Hafta numarası", type: "text", group: "Kullanım" },
       { key: "usageType", label: "Kullanım hakkı türü", type: "select", options: ["Tapulu", "Tapusuz (Sözleşmeli)", "Ömür Boyu", "Süreli", "Yıllık"], group: "Kullanım" },
       { key: "capacity", label: "Kişi kapasitesi", type: "number", group: "Kapasite" },
-      { key: "rooms", label: "Oda sayısı", type: "select", options: ["Stüdyo", "1+0", "1+1", "2+1", "3+1", "4+1", "5+1", "6+ oda"], group: "Kapasite" },
+      { key: "rooms", label: "Oda sayısı", type: "select", options: ODA_SAYISI_OPTS, group: "Kapasite" },
       { key: "startDate", label: "Kullanım hakkı başlangıç", type: "text", group: "Süre & Hak" },
       { key: "endDate", label: "Kullanım hakkı bitiş", type: "text", group: "Süre & Hak" },
       { key: "dues", label: "Yıllık aidat", type: "number", suffix: "₺", group: "Finansal" },
       { key: "transferFee", label: "Devir ücreti / masrafı", type: "number", suffix: "₺", group: "Finansal" },
       { key: "amenities", label: "Tesis özellikleri", type: "multiselect", options: DEVREMULK_TESIS },
       { key: "rentable", label: "Kiraya verilebilir mi?", type: "bool", group: "Haklar" },
-      { key: "swapRight", label: "Takas hakkı var mı?", type: "bool", group: "Haklar" },
+      { key: "swapReal", label: "Takas olur mu?", type: "bool", group: "Haklar" },
       ETIKET_FIELD,
       F.desc
     ]
@@ -793,7 +800,7 @@ export const formSchemas: Record<string, FormSchema> = {
       { key: "maxGuests", label: "Maksimum kişi sayısı", type: "number", required: true, group: "Fiyat & Konaklama" },
       { key: "deposit", label: "Depozito", type: "number", suffix: "₺", group: "Fiyat & Konaklama" },
       { key: "cancelPolicy", label: "İptal koşulu", type: "text", group: "Fiyat & Konaklama" },
-      { key: "rooms", label: "Oda sayısı", type: "select", options: ["Stüdyo", "1+0", "1+1", "2+1", "3+1", "4+1", "5+1", "6+ oda"], group: "Konut Özellikleri" },
+      { key: "rooms", label: "Oda sayısı", type: "select", options: ODA_SAYISI_OPTS, group: "Konut Özellikleri" },
       { key: "beds", label: "Yatak sayısı", type: "number", group: "Konut Özellikleri" },
       { key: "furnished", label: "Eşyalı mı?", type: "bool", group: "Konut Özellikleri" },
       { key: "amenities", label: "Olanaklar", type: "text", placeholder: "Wi-Fi, klima, havuz, otopark, mutfak…", group: "Olanaklar & Kurallar" },
@@ -829,9 +836,9 @@ export const formSchemas: Record<string, FormSchema> = {
     fields: [
       F.title,
       { key: "structureType", label: "Yapı tipi", type: "select", required: true, options: ["Prefabrik Ev", "Tiny House", "Konteyner Ev", "Modüler Ev", "Çelik Ev", "Ahşap Ev", "Bungalov", "Yaşam Konteyneri", "Ofis Konteyneri"], group: "Temel Bilgiler" },
-      { key: "listingType", label: "Satılık / Kiralık", type: "select", required: true, options: ["Satılık", "Kiralık"], group: "Temel Bilgiler" },
-      { key: "m2", label: "m²", type: "number", suffix: "m²", group: "Temel Bilgiler" },
-      { key: "rooms", label: "Oda sayısı", type: "select", options: ["Stüdyo", "1+0", "1+1", "2+1", "3+1", "4+1", "5+1", "6+ oda"], group: "Temel Bilgiler" },
+      { key: "listingType", label: "İlan tipi", type: "select", required: true, options: ["Satılık", "Kiralık"], group: "Temel Bilgiler" },
+      { key: "m2", label: "m²", type: "number", required: true, suffix: "m²", group: "Temel Bilgiler" },
+      { key: "rooms", label: "Oda sayısı", type: "select", options: ODA_SAYISI_OPTS, group: "Temel Bilgiler" },
       { key: "material", label: "Malzeme tipi", type: "text", group: "Temel Bilgiler" },
       { key: "condition", label: "Durum", type: "select", options: ["Sıfır", "İkinci El", "Kurulu Halde"], group: "Temel Bilgiler" },
       { key: "installIncluded", label: "Kurulum dahil mi?", type: "bool", group: "Donanım & Tesisat" },
@@ -1545,13 +1552,20 @@ export const formSchemas: Record<string, FormSchema> = {
 };
 
 // ---- emlak alt-tip listeleri ---------------------------------------------
-const DAIRE_TYPES = ["1+0 (Stüdyo)", "1+1", "1.5+1", "2+1", "2.5+1", "3+1", "3.5+1", "4+1", "4.5+1", "5+1 ve üzeri", "Bahçe Katı", "Çatı Katı (Teras)", "Çatı Dubleksi", "Dubleks", "Ters Dubleks", "Tripleks", "Loft Daire", "Ara Kat", "Giriş Kat", "Yüksek Giriş", "Sıfır (Yeni)", "İkinci El", "Eşyalı", "Site İçinde", "Güvenlikli Site", "Havuzlu Site", "Lüks Daire", "Deniz Manzaralı", "Doğa Manzaralı", "Merkezi Konumda", "Yatırımlık", "Kiracılı", "Krediye Uygun"];
-const REZIDANS_TYPES = ["1+1 Rezidans", "2+1 Rezidans", "3+1 Rezidans", "Stüdyo Rezidans", "Lüks Rezidans", "Otel Konseptli", "Eşyalı Rezidans", "Güvenlikli Rezidans", "Sosyal Tesisli", "Akıllı Ev Sistemli", "Manzaralı Rezidans"];
-const MUSTAKIL_TYPES = ["Bahçeli Ev", "Tek Katlı", "İki Katlı", "Üç Katlı", "Köy Evi", "Taş Ev", "Ahşap Ev", "Kerpiç Ev", "Betonarme Ev", "Dağ Evi", "Göl Evi", "Deniz Kenarı Ev", "Doğa İçinde Ev", "Çiftlik Evi", "Hobi Bahçeli Ev", "Bağ Evi", "Yayla Evi", "Tarihi Ev", "Restorasyonluk Ev"];
-const VILLA_TYPES = ["Müstakil Villa", "İkiz Villa", "Sıra Villa", "Tripleks Villa", "Dubleks Villa", "Lüks Villa", "Havuzlu Villa", "Bahçeli Villa", "Site İçinde Villa", "Güvenlikli Villa", "Deniz Manzaralı Villa", "Doğa Manzaralı Villa", "Akıllı Villa", "Ultra Lüks Villa", "Yazlık Villa", "Kışlık Villa"];
-const YAZLIK_TYPES = ["Denize Sıfır", "Denize Yakın", "Site İçinde", "Havuzlu", "Bahçeli", "Dubleks", "Müstakil", "Ege Bölgesi", "Akdeniz Bölgesi"];
-const KONUT_OZEL = ["Kooperatif Dairesi", "Kooperatif Hissesi", "Loft Konut", "Teraslı Konut", "Akıllı Ev", "Ekolojik Ev", "Bungalov Ev", "Tiny House", "Prefabrik Ev", "Konteyner Ev", "Modüler Ev", "Çelik Ev", "Devremülk", "Hisseli Konut", "Karşılıklı Kat", "Kat İrtifaklı", "Kat Mülkiyetli"];
-const YALI_TYPES = ["Boğaz Yalısı", "Müstakil Yalı", "Yalı Dairesi", "Yalı Katı", "Yalı Bahçe Katı", "Tarihi Yalı", "Restorasyonluk Yalı", "Deniz Kenarı Yalı", "Korunması Gerekli Yalı"];
+// TİP LİSTELERİ = yalnız YAPISAL tip (oda düzeni / kat / yapı). Attribute'lar (Eşyalı, Havuzlu,
+// Lüks, Manzaralı, Krediye Uygun, Sıfır/İkinci El…) ÇIKARILDI — bunlar konut formunda zaten
+// multiselect facet (housingType/siteFeatures/interiorFeatures/deed vb.). Sahibinden'de de tip≠attribute.
+const DAIRE_TYPES = ["1+0 (Stüdyo)", "1+1", "1.5+1", "2+1", "2.5+1", "3+1", "3.5+1", "4+1", "4.5+1", "5+1", "5.5+1", "6+1 ve üzeri", "Bahçe Katı", "Giriş Kat", "Yüksek Giriş", "Ara Kat", "En Üst Kat", "Çatı Katı", "Çatı Dubleksi", "Dubleks", "Ters Dubleks", "Tripleks", "Forleks", "Loft Daire", "Müstakil Kat"];
+const REZIDANS_TYPES = ["Stüdyo Rezidans", "1+1 Rezidans", "2+1 Rezidans", "3+1 Rezidans", "4+1 Rezidans", "5+1 ve üzeri Rezidans", "Dubleks Rezidans", "Loft Rezidans"];
+const MUSTAKIL_TYPES = ["Bahçeli Ev", "Tek Katlı Ev", "İki Katlı Ev", "Üç Katlı Ev", "Dubleks Müstakil", "Köy Evi", "Taş Ev", "Ahşap Ev", "Kerpiç Ev", "Betonarme Ev", "Deniz Kenarı Ev", "Tarihi Ev", "Restorasyonluk Ev"];
+const VILLA_TYPES = ["Müstakil Villa", "İkiz Villa", "Sıra Villa", "Dubleks Villa", "Tripleks Villa", "Bahçe Dubleks Villa", "Çatı Dubleks Villa"];
+const YAZLIK_TYPES = ["Yazlık Daire", "Müstakil Yazlık", "Dubleks Yazlık", "Yazlık Villa", "Bungalov Yazlık", "Yazlık Rezidans"];
+// Prefabrik/Konteyner/Modüler + Devremülk BURADAN ÇIKARILDI — ayrı üst-düğümleri var (prefabrik/
+// devremulk formKey). Tapu durumu (Kat İrtifaklı/Mülkiyetli/Hisseli) = deed alanı, tip değil.
+const KONUT_OZEL = ["Kooperatif Dairesi", "Teras Evi", "Su Kenarı Evi", "Ekolojik / Sürdürülebilir Ev", "Konut + İşyeri (Karma)", "Bağımsız Bölüm"];
+const YALI_TYPES = ["Boğaz Yalısı", "Müstakil Yalı", "Tarihi Yalı", "Restorasyonluk Yalı", "Deniz Kenarı Yalı", "Korunması Gerekli Yalı"];
+const YALI_DAIRESI_TYPES = ["Boğaz Yalı Dairesi", "Deniz Manzaralı Yalı Dairesi", "Müstakil Yalı Dairesi", "Yalı Bahçe Katı", "Yalı Ara Kat", "Yalı Çatı Katı"];
+const LOFT_TYPES = ["Stüdyo Loft", "Tek Katlı Loft", "Dubleks Loft", "Endüstriyel Loft", "Bahçe Loft", "Teras Loft"];
 const KOSK_KONAK_TYPES = ["Tarihi Köşk", "Ahşap Köşk", "Bahçeli Köşk", "Müstakil Konak", "Tarihi Konak", "Kagir Konak", "Restorasyonluk Konak", "Butik Otel/Konak Uygun"];
 const CIFTLIK_EV_TYPES = ["Çiftlik Evi", "Bağ Evi", "Hobi Bahçeli Ev", "Yayla Evi", "Dağ Evi", "Göl Evi", "Orman İçi Ev", "Zeytinlik Evi", "Tarla İçinde Ev", "Doğa İçinde Ev"];
 const konutBranch = (fk: string): CategoryNode[] => [
@@ -1560,9 +1574,11 @@ const konutBranch = (fk: string): CategoryNode[] => [
   node("Müstakil Ev", leaves(MUSTAKIL_TYPES, fk), fk),
   node("Villa", leaves(VILLA_TYPES, fk), fk),
   node("Yalı", leaves(YALI_TYPES, fk), fk),
+  node("Yalı Dairesi", leaves(YALI_DAIRESI_TYPES, fk), fk),
   node("Köşk & Konak", leaves(KOSK_KONAK_TYPES, fk), fk),
   node("Çiftlik & Bağ Evi", leaves(CIFTLIK_EV_TYPES, fk), fk),
   node("Yazlık", leaves(YAZLIK_TYPES, fk), fk),
+  node("Loft", leaves(LOFT_TYPES, fk), fk),
   node("Özel Konut Tipleri", leaves(KONUT_OZEL, fk), fk)
 ];
 const isyeriBranch = (fk: string): CategoryNode[] => [
@@ -1578,7 +1594,7 @@ const isyeriBranch = (fk: string): CategoryNode[] => [
   node("Oto & Akaryakıt", leaves(["Oto Galeri", "Oto Yıkama", "Oto Servis", "Oto Ekspertiz", "Lastikçi", "Benzin İstasyonu", "LPG İstasyonu", "Elektrikli Şarj İstasyonu", "Otopark", "Kapalı Otopark"], fk), fk),
   node("Tarım & Hayvancılık İşletmesi", leaves(["Çiftlik", "Tavuk Çiftliği", "Büyükbaş Çiftliği", "Küçükbaş Çiftliği", "Süt Üretim Tesisi", "Sera", "Mantar Üretim", "Balık Çiftliği", "Arıcılık Tesisi"], fk), fk),
   // Sahibinden İş Yeri mülk-tiplerinden eksik olan standalone ticari alanlar (grup yapımıza eklendi):
-  node("Plaza & İş Hanı & Rezidans", leaves(["Plaza", "Plaza Katı & Ofisi", "İş Hanı", "İş Hanı Katı & Ofisi", "Rezidans Katı & Ofisi", "Komple Bina", "Kat Karşılığı Ticari", "Ticari Apartman Dairesi", "Ticari Villa"], fk), fk),
+  node("Plaza & İş Hanı & Rezidans", leaves(["Plaza", "Plaza Katı & Ofisi", "İş Hanı", "İş Hanı Katı & Ofisi", "Rezidans Katı & Ofisi", "Komple Bina", "Kat Karşılığı Ticari", "Ticari Apartman Dairesi", "Ticari Villa", "Ticari Köşk & Konak", "AVM / Alışveriş Merkezi (Komple)"], fk), fk),
   node("Otopark & Garaj", leaves(["Açık Otopark", "Kapalı Otopark", "Katlı Otopark", "AVM Otoparkı", "Garaj", "Kapalı Garaj", "Park Yeri", "Vale Otoparkı"], fk), fk),
   node("Diğer Ticari & Alan", leaves(["Maden Ocağı", "Taş Ocağı", "Pazar Yeri", "Toplantı & Etkinlik Salonu", "Enerji Santrali (GES/RES)", "AVM Standı", "Reklam Panosu Alanı", "Baz İstasyonu Alanı", "ATM Yeri", "Büfe / Kiosk", "Konteyner Ofis"], fk), fk)
 ];
@@ -1588,7 +1604,9 @@ export const categoryTree: CategoryNode[] = [
   node("Emlak", [
     node("Konut", [
       node("Satılık", konutBranch("konut"), "konut"),
-      node("Kiralık", konutBranch("konut"), "konut")
+      node("Kiralık", konutBranch("konut"), "konut"),
+      // Sahibinden'de Konut'un 3. kardeşi (eskiden ayrı üst-düğümdü, kullanıcı burada arar).
+      node("Turistik Günlük Kiralık", konutBranch("gunlukKiralik"), "gunlukKiralik")
     ], "konut"),
     node("İş Yeri", [
       node("Satılık", isyeriBranch("isyeri"), "isyeri"),
@@ -1606,8 +1624,7 @@ export const categoryTree: CategoryNode[] = [
         node("Tarla", leaves(["Ekilebilir Tarla", "Sulak Tarla", "Kuru Tarla", "Yola Cepheli Tarla", "Elektriği Olan Tarla", "Suyu Olan Tarla", "GES'e Uygun Tarla", "Hobi Bahçesine Uygun"], "arsa"), "arsa"),
         node("Bahçe & Bağ & Zeytinlik", leaves(["Hobi Bahçesi", "Meyve Bahçesi", "Zeytinlik", "Fındıklık", "Ceviz Bahçesi", "Narenciye Bahçesi", "Üzüm Bağı", "Organik Tarım Alanı"], "arsa"), "arsa"),
         node("Çiftlik & Doğa Arazisi", leaves(["Çiftlik Arazisi", "Hayvancılık Arazisi", "Sera Arazisi", "Yayla Arazisi", "Orman Kenarı", "Dere Kenarı", "Göl Kenarı", "Deniz Manzaralı", "Kamp/Bungalov Alanına Uygun"], "arsa"), "arsa"),
-        node("Hisseli & Özel Durumlu", leaves(["Hisseli Arsa", "Hisseli Tarla", "Müstakil Parsel", "İfrazlı Arsa", "Şuyulu Arsa", "Tapu Tahsisli", "Zilliyet Arazi", "Köy Yerleşik Alanı", "Sit Alanında Arazi"], "arsa"), "arsa"),
-        node("Kat Karşılığı & Yatırım", leaves(["Kat Karşılığı Arsa", "Hasılat Paylaşımlı", "Müteahhide Uygun", "Kentsel Dönüşüme Uygun", "Yatırımlık Arsa", "Prim Potansiyelli"], "arsa"), "arsa")
+        node("Hisseli & Özel Durumlu", leaves(["Hisseli Arsa", "Hisseli Tarla", "Müstakil Parsel", "İfrazlı Arsa", "Şuyulu Arsa", "Tapu Tahsisli", "Zilliyet Arazi", "Köy Yerleşik Alanı", "Sit Alanında Arazi"], "arsa"), "arsa")
       ], "arsa"),
       node("Kiralık", leaves(["Kiralık Arsa", "Kiralık Tarla", "Kiralık Bahçe", "Depolama Alanı", "Açık Otopark Alanı", "Şantiye Alanı", "Tarım Arazisi", "Sera Alanı", "Reklam Panosu Alanı", "Konteyner Alanı", "Kamp Alanı", "Etkinlik Alanı"], "arsa"), "arsa")
     ], "arsa"),
@@ -1625,10 +1642,6 @@ export const categoryTree: CategoryNode[] = [
       node("Satılık", leaves(["Termal Devre Mülk", "Otel Devre Mülk", "Tatil Köyü Devre Mülk", "Yazlık Devre Mülk", "Kışlık Devre Mülk", "Dağ Evi Devre Mülk", "Sahil Devre Mülk", "Haftalık Kullanımlı", "Sezonluk Kullanımlı", "Ömür Boyu Kullanımlı", "Süreli Kullanımlı"], "devremulk"), "devremulk"),
       node("Kiralık", leaves(["Haftalık", "Sezonluk", "Yazlık", "Kışlık", "Termal", "Tatil Köyü"], "devremulk"), "devremulk")
     ], "devremulk"),
-    node("Günlük / Sezonluk Kiralık", [
-      node("Günlük", leaves(["Günlük Daire", "Günlük Rezidans", "Günlük Villa", "Günlük Yazlık", "Günlük Bungalov", "Günlük Tiny House", "Günlük Dağ Evi", "Günlük Göl Evi", "Havuzlu Villa", "Suit", "Oda", "Apart", "Pansiyon Odası"], "gunlukKiralik"), "gunlukKiralik"),
-      node("Sezonluk", leaves(["Sezonluk Yazlık", "Sezonluk Villa", "Sezonluk Daire", "Sezonluk Bungalov", "Aylık Yazlık", "Haftalık Yazlık", "Yaz Sezonu", "Kış Sezonu"], "gunlukKiralik"), "gunlukKiralik")
-    ], "gunlukKiralik"),
     node("Oda / Yurt / Pansiyon", [
       node("Kiralık Oda", leaves(["Paylaşımlı Oda", "Tek Kişilik Oda", "Çift Kişilik Oda", "Öğrenciye Oda", "Çalışana Oda", "Kadına Oda", "Erkeğe Oda", "Aile Yanı Oda", "Eşyalı Oda", "Faturalar Dahil"], "odaYurt"), "odaYurt"),
       node("Yurt", leaves(["Kız Öğrenci Yurdu", "Erkek Öğrenci Yurdu", "Karma Yurt", "Özel Yurt", "Apart Yurt", "İşçi Yurdu", "Personel Yurdu"], "odaYurt"), "odaYurt"),
