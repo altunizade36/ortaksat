@@ -1564,6 +1564,8 @@ export const categoryTree: CategoryNode[] = [
       node("Devren Kiralık", leaves(ISYERI_DEVREN_TYPES, "isyeriDevren"), "isyeriDevren")
     ], "isyeri"),
     node("Arsa / Arazi", [
+      // Sahibinden Arsa'da üst-seviye seçenek (Satılık/Kiralık kardeşi).
+      node("Kat Karşılığı Satılık", leaves(["Kat Karşılığı Arsa", "Hasılat Paylaşımlı Arsa", "Müteahhide Uygun Arsa", "Kentsel Dönüşüm Arsası", "Konut İmarlı (Kat Karşılığı)", "Ticari İmarlı (Kat Karşılığı)"], "arsa"), "arsa"),
       node("Satılık", [
         node("İmarlı Arsa", leaves(["Konut İmarlı", "Villa İmarlı", "Apartman İmarlı", "Toplu Konut İmarlı", "Ticari İmarlı", "Dükkan İmarlı", "AVM İmarlı", "Akaryakıt İmarlı", "Turizm İmarlı", "Sanayi İmarlı", "Depolama İmarlı", "Sağlık Alanı İmarlı", "Eğitim Alanı İmarlı"], "arsa"), "arsa"),
         node("Tarla", leaves(["Ekilebilir Tarla", "Sulak Tarla", "Kuru Tarla", "Yola Cepheli Tarla", "Elektriği Olan Tarla", "Suyu Olan Tarla", "GES'e Uygun Tarla", "Hobi Bahçesine Uygun"], "arsa"), "arsa"),
