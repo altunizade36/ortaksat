@@ -94,9 +94,18 @@ function PartnerScreenInner() {
   }, [tabParam]);
   const focusFirst = (a: { listingId: string }, b: { listingId: string }) => (focusId ? (a.listingId === focusId ? -1 : b.listingId === focusId ? 1 : 0) : 0);
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
-  // clickCounts (referral tıklama) fetch'i KALDIRILDI: model'de link/tıklama takibi YOK; metrikler
-  // panelden çıkarıldı → ölü ağ isteği gereksizdi. Boş sabit kalır (aşağıdaki prop'lar 0 alır).
-  const clickCounts: Record<string, number> = {};
+  // Y12: tıklama (referral_clicks) verisi GERİ AÇILDI. K1, tıklamayı KURCALANAMAZ + partner-özel
+  // okunur yaptı (record_referral_click RPC + "rc partner reads own clicks" RLS) → huni artık
+  // GÜVENİLİR: Tıklama → Talep → Satış → Kazanç. loadClickCounts yalnız KENDİ partnership'lerini okur.
+  const idsKey = myPartnerships.map((p) => p.id).sort().join(",");
+  const [clickCounts, setClickCounts] = useState<Record<string, number>>({});
+  useEffect(() => {
+    const ids = idsKey ? idsKey.split(",") : [];
+    if (ids.length === 0) { setClickCounts({}); return; }
+    let alive = true;
+    void loadClickCounts(ids).then((c) => { if (alive) setClickCounts(c); });
+    return () => { alive = false; };
+  }, [idsKey]);
   const activePartnerships = myPartnerships.filter((item) => item.status === "active").slice().sort(focusFirst);
   const pendingPartnerships = myPartnerships.filter((item) => item.status === "pending");
   const mySales = sales.filter((sale) => myPartnerships.some((partnership) => partnership.id === sale.partnershipId));
@@ -120,8 +129,9 @@ function PartnerScreenInner() {
   }, [myBroughtLeads]);
   // İçgörü hunisi (Faz "c"): Tıklama → Talep → Satış → Kazanç + dönüşüm oranları.
   const funnelEarn = waiting + approved + paid;
+  const totalClicks = Object.values(clickCounts).reduce((sum, n) => sum + n, 0);
   const buyerConfirmedCount = mySales.filter((s) => s.buyerConfirmedAt || s.buyerConfirmStatus === "confirmed").length;
-  const funnelCard = (mounted && (mySales.length > 0 || myBroughtLeads.length > 0)) ? (
+  const funnelCard = (mounted && (mySales.length > 0 || myBroughtLeads.length > 0 || totalClicks > 0)) ? (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <MaterialCommunityIcons name="chart-timeline-variant" size={18} color={colors.primaryDark} />
@@ -130,8 +140,8 @@ function PartnerScreenInner() {
       </View>
       <View style={{ alignItems: "stretch", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
         {[
-          { icon: "handshake-outline" as const, label: translateCopy("Ortaklık", language), value: `${activePartnerships.length}`, rate: null as string | null },
-          { icon: "phone-in-talk-outline" as const, label: translateCopy("Talep", language), value: `${myBroughtLeads.length}`, rate: null },
+          { icon: "cursor-default-click-outline" as const, label: translateCopy("Tıklama", language), value: `${totalClicks}`, rate: null as string | null },
+          { icon: "phone-in-talk-outline" as const, label: translateCopy("Talep", language), value: `${myBroughtLeads.length}`, rate: totalClicks > 0 ? `%${Math.min(100, Math.round((myBroughtLeads.length / totalClicks) * 100))}` : null },
           { icon: "cart-check" as const, label: translateCopy("Satış", language), value: `${mySales.length}`, rate: myBroughtLeads.length > 0 ? `%${Math.min(100, Math.round((mySales.length / myBroughtLeads.length) * 100))}` : null },
           { icon: "cash-multiple" as const, label: translateCopy("Kazanç", language), value: money(funnelEarn), rate: null }
         ].map((s, i) => (

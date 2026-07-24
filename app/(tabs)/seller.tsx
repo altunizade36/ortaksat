@@ -132,9 +132,17 @@ function SellerScreenInner() {
   const myPartnershipIds = partnerships.filter((partnership) => myListingIds.has(partnership.listingId)).map((partnership) => partnership.id);
   const partnershipIdsKey = myPartnershipIds.join(",");
 
-  // clickCounts (referral tıklama) fetch'i KALDIRILDI: model'de link/tıklama takibi YOK; metrik
-  // gösterilmiyor → ölü ağ isteği gereksizdi. clickCounts boş kalır (setClickCounts referansı korunur).
-  void setClickCounts;
+  // Y12: tıklama (referral_clicks) verisi GERİ AÇILDI. K1, tıklamayı KURCALANAMAZ + ilan-sahibi
+  // okunur yaptı ("rc partner or owner reads clicks" RLS). Satıcı, ortaklarının GERÇEK tık
+  // performansını (ilan başına) görür. loadClickCounts yalnız satıcının ilanlarına ait
+  // partnership'leri okur (RLS ile korunur).
+  useEffect(() => {
+    const ids = partnershipIdsKey ? partnershipIdsKey.split(",") : [];
+    if (ids.length === 0) { setClickCounts({}); return; }
+    let alive = true;
+    void loadClickCounts(ids).then((c) => { if (alive) setClickCounts(c); });
+    return () => { alive = false; };
+  }, [partnershipIdsKey]);
   const myLeads = leads.filter((lead) => myListingIds.has(lead.listingId));
   // Yanıt bekleyen teklifler (en yenisi üstte) — satıcının en aksiyon-gerektiren işi.
   const [counterFor, setCounterFor] = useState<string | null>(null);
@@ -774,6 +782,7 @@ function SellerScreenInner() {
             <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 10, flexDirection: "row", flexWrap: "wrap", gap: 6, padding: 10 }}>
               <SellerStat label="Stok" value={`${listing.stockCount}`} warn={listing.stockCount <= 3 && listing.status === "active"} />
               <SellerStat label="Aktif ortak" value={`${activePartners}`} />
+              <SellerStat label="Tıklama" value={`${listingClicks}`} />
               <SellerStat label="Talep" value={`${listingLeads.length}`} />
               <SellerStat label="Dönüşüm" value={`%${conversionRate}`} />
               <SellerStat label="Favori" value={`${listing.favoriteCount}`} />
