@@ -120,7 +120,14 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   Dacia: ["Sandero", "Duster", "Logan", "Jogger", "Lodgy", "Dokker", "Spring"],
   Tesla: ["Model 3", "Model Y", "Model S", "Model X", "Cybertruck"],
   Togg: ["T10X", "T10F"],
-  BYD: ["Atto 3", "Seal", "Dolphin", "Han", "Tang", "Song Plus", "Seal U"],
+  BYD: ["Atto 3", "Seal", "Dolphin", "Han", "Tang", "Song Plus", "Seal U", "Yuan Plus", "Sealion 7"],
+  // Yeni eklenen Çin/EV markaları — model listeleri (eskiden yalnız "Diğer Model" veriyordu).
+  Jaecoo: ["J7", "J8", "J5"],
+  Jetour: ["Dashing", "X70", "X90", "T2", "T1"],
+  "Lynk & Co": ["01", "02", "03", "05", "06", "09"],
+  XPeng: ["G6", "G9", "P7", "X9", "G3i"],
+  Zeekr: ["001", "X", "007", "009"],
+  Omoda: ["5", "E5", "7", "9"],
   // Cep telefonu
   iPhone: ["iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro Max", "iPhone 15", "iPhone 14", "iPhone 13", "iPhone 12", "iPhone 11", "iPhone SE"],
   Samsung: ["Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy S23 Ultra", "Galaxy S23", "Galaxy S22", "Galaxy A55", "Galaxy A35", "Galaxy A25", "Galaxy A15", "Galaxy A05", "Galaxy M Serisi", "Galaxy Z Fold5", "Galaxy Z Flip5", "Galaxy Note 20", "Galaxy S21 FE"],

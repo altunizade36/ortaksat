@@ -6,6 +6,7 @@ import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { colors } from "@/components/colors";
 import { OptionSheet } from "@/components/option-sheet";
 import { modelsForSchema, type FieldDef } from "@/lib/category-tree";
+import { useIsWideWeb } from "@/lib/layout";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 
 type AttrValue = string | boolean | string[];
@@ -78,6 +79,7 @@ function AField({ field, value, onChange }: { field: FieldDef; value: AttrValue 
 
 function ASelect({ value, options, onChange }: { value: string; options: string[]; onChange: (v: string) => void }) {
   const { language } = useLanguage();
+  const isWideWeb = useIsWideWeb();
   const [open, setOpen] = useState(false);
   // ÇAPALI AÇILIR LİSTE: liste eskiden EBEVEYNE göre absolute'du (top:52) → kapsayıcı
   // `overflow:hidden` ise KIRPILIYOR, ekran altındaysa dışarı taşıyordu; sayfa da
@@ -93,8 +95,9 @@ function ASelect({ value, options, onChange }: { value: string; options: string[
           <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
         </Pressable>
       </View>
-      {/* NATIVE: alttan açılan seçim sayfası (mobil standardı). */}
-      {Platform.OS !== "web" ? (
+      {/* DAR EKRAN (native + telefon tarayıcısı): alttan seçim sayfası — mobil-web'de küçük
+          popover yerine tam sayfa (kayma/kırpma yok, il/ilçe seçici ile aynı standart). */}
+      {Platform.OS !== "web" || !isWideWeb ? (
         <OptionSheet
           visible={open}
           title={translateCopy("Seçin", language)}

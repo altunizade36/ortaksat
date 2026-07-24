@@ -1660,6 +1660,7 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
 
 function DSelect({ label, value, options, onChange, placeholder }: { label: string; value: string; options: string[]; onChange: (v: string) => void; placeholder?: string }) {
   const { language } = useLanguage();
+  const isWideWeb = useIsWideWeb();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   // ÇAPALI AÇILIR LİSTE: liste artık AKIŞTA değil. Eskiden inline açılıyor, altındaki
@@ -1680,8 +1681,11 @@ function DSelect({ label, value, options, onChange, placeholder }: { label: stri
           <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
         </Pressable>
       </View>
-      {/* NATIVE: alttan açılan seçim sayfası (mobil standardı). */}
-      {Platform.OS !== "web" ? (
+      {/* DAR EKRAN (native + telefon TARAYICISI): alttan açılan seçim sayfası. Eskiden koşul
+          `Platform.OS !== "web"` idi → mobil-web'de marka/yakıt/durum select'leri küçük çapalı
+          popover + autoFocus arama açıyordu; klavye açılınca viewport değişip liste sıçruyordu
+          (form içi "klavye açılınca kayma" şikayeti). Artık il/ilçe seçici gibi alttan sayfa. */}
+      {Platform.OS !== "web" || !isWideWeb ? (
         <OptionSheet
           visible={open}
           title={label || placeholder || translateCopy("Seçin", language)}
