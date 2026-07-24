@@ -29,7 +29,10 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
   const isHighConversion = conversionScore >= 18;
   const isNew = isNewListing(listing.createdAt);
   const featured = Boolean(listing.featured);
-  const statusLabel = featured ? translateCopy("★ Öne Çıkan", language) : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? t("newListing") : `${compactNumber(listing.partnerCount)} ${t("partners")}`;
+  // "0 ortak" ASLA gösterilmez (çirkin + kötü pazarlama: "kimse ilgilenmemiş" izlenimi).
+  // Ortak varsa sayısını, yoksa "Yeni" göster.
+  // Rozet metni KISA olmalı (dar kartta kesilmesin): "Yeni ilan"→"Yeni".
+  const statusLabel = featured ? translateCopy("★ Öne Çıkan", language) : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? translateCopy("Yeni", language) : listing.partnerCount > 0 ? `${compactNumber(listing.partnerCount)} ${t("partners")}` : translateCopy("Yeni", language);
   const statusTone: StatusTone = featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
   // Kartın kategori etiketleri ilanın GERÇEK ağaç kategorisinden gelir. Eski sezgisel
   // inferListingSubcategory tree-ilanlarda yanlış eşliyordu (kamera → "Araç elektroniği").
@@ -78,24 +81,30 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
   // İlan etiketleri (Acil / Fırsat / Yatırımlık…) — renkli vurgu rozetleri (spec 72).
   const etiketler = Array.isArray(listing.attributes?.etiketler) ? (listing.attributes!.etiketler as string[]).slice(0, 2) : [];
 
-  // KART STANDARDI (Sahibinden gibi tek tip): eskiden etiketler(2) + attrSpecs(3) ayrı ayrı
-  // basılıyordu → (a) "Sıfır" hem etiket hem `condition` çipi olarak İKİ KEZ çıkıyor,
-  // (b) "Diğer" gibi anlamsız marka/model çipleri geliyor, (c) nitelikli ilan 5 çip alırken
-  // niteliksiz ilan 0 çip alıyor ve KART BOYLARI TUTMUYORdu. Artık: mükerrerler elenir,
-  // çöp değerler atılır ve toplam 3 çiple sınırlanır → bütün kartlar aynı yükseklikte.
+  // KART ÇİPLERİ (Sahibinden gibi tek tip). Giderilen sorunlar:
+  //  (a) "Sıfır" hem etiket hem `condition` çipi → İKİ KEZ; (b) "Diğer" gibi çöp çip;
+  //  (c) DURUM ÇELİŞKİSİ: "Sıfır" + "Az Kullanılmış" birlikte (bir ürün ikisi birden olamaz);
+  //  (d) dar kartta 3. çip ortadan kesiliyordu ("Scheppach"→"Sch"). Çözüm: çöp+mükerrer ele,
+  //  DURUM türü çipten yalnız BİRİ, uzun çipler atılır, TOPLAM 2 çip (dar kartta kesilmeden sığar).
   const JUNK = new Set(["diğer", "diger", "bilinmiyor", "belirtilmemiş", "yok", "-"]);
+  // Durum/kondisyon kelimeleri — bunlardan kartta en fazla BİR tane gösterilir (çelişki engeli).
+  const COND = new Set(["sıfır", "sifir", "ikinci el", "az kullanılmış", "az kullanilmis", "yenilenmiş", "yenilenmis", "sıfır ayarında", "kusursuz", "çok iyi", "iyi", "yıpranmış", "yıpranmis"]);
   const norm = (v: string) => v.trim().toLocaleLowerCase("tr-TR");
-  const shownTags = etiketler.filter((e) => e && !JUNK.has(norm(e)));
-  const seen = new Set(shownTags.map(norm));
-  const shownSpecs = attrSpecs
-    .filter((s) => {
+  const seen = new Set<string>();
+  let condShown = false;
+  const pick = (arr: string[], out: string[], max: number) => {
+    for (const s of arr) {
+      if (out.length >= max) break;
       const k = norm(s);
-      if (!s || JUNK.has(k) || seen.has(k)) return false;
-      if (s.length > 22) return false; // uzun model dizesi kartı bozuyordu
-      seen.add(k);
-      return true;
-    })
-    .slice(0, Math.max(0, 3 - shownTags.length));
+      if (!s || JUNK.has(k) || seen.has(k) || s.length > 16) continue;
+      if (COND.has(k)) { if (condShown) continue; condShown = true; }
+      seen.add(k); out.push(s);
+    }
+  };
+  const shownTags: string[] = [];
+  pick(etiketler, shownTags, 1);        // en fazla 1 promosyon/durum etiketi
+  const shownSpecs: string[] = [];
+  pick(attrSpecs, shownSpecs, 2 - shownTags.length); // kalanı bilgilendirici spec (toplam 2)
 
   return (
     <View dataSet={{ vcard: "1" }} style={{ width }}>
@@ -235,14 +244,14 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
                         {compactNumber(sellerSales)} {translateCopy("satış", language)}
                       </Text>
                     </>
-                  ) : (
+                  ) : listing.partnerCount > 0 ? (
                     <>
                       <MaterialCommunityIcons name="account-group-outline" size={13} color={colors.subtle} />
                       <Text numberOfLines={1} selectable style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>
                         {compactNumber(listing.partnerCount)} {translateCopy("ortak", language)}
                       </Text>
                     </>
-                  )}
+                  ) : null /* 0 ortak/0 satış: sağ taraf boş → "Yeni satıcı" tam sığar; ortaklık "Ortaklık iste" butonunda */}
                 </View>
                 {displayText(listing.location) ? (
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
@@ -300,7 +309,9 @@ function isNewListing(value: string) {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return false;
   const age = REFERENCE_NOW - date.getTime();
-  return age >= 0 && age <= 7 * 24 * 60 * 60 * 1000;
+  // age < 0 = referanstan SONRA oluşturulmuş → kesinlikle YENİ (referans bayatlasa bile
+  // gerçek yeni ilanlar "0 ortak" değil "Yeni" görür). 7 günden yeniyse de yeni.
+  return age <= 7 * 24 * 60 * 60 * 1000;
 }
 
 function StatusBadge({ label, tone }: { label: string; tone: StatusTone }) {
@@ -308,7 +319,7 @@ function StatusBadge({ label, tone }: { label: string; tone: StatusTone }) {
     tone === "success" ? "rgba(14,165,183,0.96)" : tone === "accent" ? "rgba(239,68,68,0.96)" : tone === "info" ? "rgba(37,99,235,0.96)" : tone === "gold" ? "rgba(202,138,4,0.97)" : "rgba(15,23,42,0.78)";
 
   return (
-    <View style={{ alignSelf: "flex-start", backgroundColor, borderRadius: 999, maxWidth: "72%", paddingHorizontal: 10, paddingVertical: 5 }}>
+    <View style={{ alignSelf: "flex-start", backgroundColor, borderRadius: 999, maxWidth: "100%", paddingHorizontal: 10, paddingVertical: 5 }}>
       <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "900" }}>
         {label}
       </Text>

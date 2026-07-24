@@ -31,7 +31,10 @@ export function setActiveLanguage(lang: "tr" | "en") {
  * "Yeni" badge). Using a literal date — not Date.now() — guarantees the static
  * export HTML and the client render agree, avoiding a hydration mismatch (#418).
  */
-export const REFERENCE_NOW = Date.parse("2026-06-30T00:00:00Z");
+// BAYATLAMIŞTI: 2026-06-30 sabitti; gerçek ilanlar bu tarihten SONRA (2026-07+) oluşturulunca
+// age negatif → hiçbiri "yeni" sayılmıyor, kartta "0 ortak" çıkıyor + "2 gün önce" tarihleri
+// bozuluyordu. Güncel tarihe alındı (literal → SSG/istemci uyumlu, #418 yok). Periyodik güncellenir.
+export const REFERENCE_NOW = Date.parse("2026-07-24T00:00:00Z");
 
 export function localize(tr: string, en: string) {
   return activeLanguage === "en" ? en : tr;
