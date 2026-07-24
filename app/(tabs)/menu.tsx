@@ -38,6 +38,7 @@ const partnerGroup: MenuGroup = {
     { label: "Paylaşım bağlantılarım", href: { pathname: "/(tabs)/partner", params: { tab: "links" } } as unknown as Href },
     { label: "Kazançlarım", href: "/earnings" },
     { label: "Satış takibi", href: "/(tabs)/seller" },
+    { label: "Arkadaşını davet et", href: "/davet" as unknown as Href },
     { label: "Ortak satış eğitimleri", href: "/nasil-calisir" }
   ]
 };

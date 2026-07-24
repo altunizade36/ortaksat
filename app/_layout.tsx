@@ -13,6 +13,7 @@ import { colors } from "@/components/colors";
 import { CompareBar } from "@/components/compare-bar";
 import { PresenceHeartbeat } from "@/components/presence-heartbeat";
 import { PushRegistrar } from "@/components/push-registrar";
+import { InviteCapture } from "@/components/invite-capture";
 import { ErrorToast } from "@/components/error-toast";
 import { AlertHost } from "@/components/alert-host";
 import { GlobalSeo } from "@/components/global-seo";
@@ -112,6 +113,7 @@ function RootStack() {
       <CompareBar />
       <PresenceHeartbeat />
       <PushRegistrar />
+      <InviteCapture />{/* Y8: giriş sonrası saklanan davet kodunu yakalar */}
       <ErrorToast />
       <AlertHost />
     </View>

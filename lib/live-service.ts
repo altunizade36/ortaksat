@@ -90,6 +90,32 @@ export async function recordListingView(listingId: string | undefined) {
   if (error) console.warn("Record listing view failed", error);
 }
 
+// Y8: kullanıcı-daveti (arkadaşını davet et). Platform PARA TUTMAZ → sahte ödeme yok; değer
+// ağ büyümesi (davet edilen kişi ürünlerine ortak olur ya da sen onun ilanına ortak olursun).
+export type MyInvite = { id: string; fullName: string; joinedAt: string; hasListing: boolean; isPartner: boolean };
+
+/** Giriş yapan kullanıcının davet edenini (invited_by) ayarlar — ilk-dokunuş sabit, kendi kodu geçersiz. */
+export async function captureInvite(inviteCode: string): Promise<boolean> {
+  if (!supabase || !inviteCode) return false;
+  const { data, error } = await supabase.rpc("capture_invite", { p_invite_code: inviteCode.trim() });
+  if (error) { console.warn("capture_invite failed", error); return false; }
+  return Boolean(data);
+}
+
+/** Davet ettiğim kullanıcılar + durumları (ilan verdi mi / ortak oldu mu). */
+export async function loadMyInvites(): Promise<MyInvite[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("my_invites");
+  if (error || !data) return [];
+  return (data as Array<{ id: string; full_name: string; joined_at: string; has_listing: boolean; is_partner: boolean }>).map((r) => ({
+    id: r.id,
+    fullName: r.full_name ?? "OrtakSat kullanıcısı",
+    joinedAt: r.joined_at,
+    hasListing: Boolean(r.has_listing),
+    isPartner: Boolean(r.is_partner)
+  }));
+}
+
 /** Mağaza takibi (follows). follower_count trigger ile güncellenir. */
 export async function followSellerLive(sellerId: string): Promise<boolean> {
   if (!supabase) return true;

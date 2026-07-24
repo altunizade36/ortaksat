@@ -16,6 +16,7 @@
     { "source": "/chat/:id", "destination": "/chat/[id]" },
     { "source": "/store/:id", "destination": "/store/[id]" },
     { "source": "/ortak/:id", "destination": "/ortak/[id]" },
+    { "source": "/davet/:code", "destination": "/davet/[code]" },
     { "source": "/explore-feed/:id", "destination": "/explore-feed/[id]" }
   ],
   "headers": [
