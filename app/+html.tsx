@@ -174,7 +174,18 @@ const orgJsonLd = JSON.stringify({
       alternateName: ["Ortaksat", "ortak sat", "Ortak Sat", "ortaksat.com"],
       url: "https://www.ortaksat.com",
       logo: "https://www.ortaksat.com/apple-touch-icon.png",
-      description: "Ortak satış pazaryeri: ilanını aç, ortaklar kendi yöntemiyle tanıtsın, satışta komisyon kazan."
+      description: "Ortak satış pazaryeri: ilanını aç, ortaklar kendi yöntemiyle tanıtsın, satışta komisyon kazan.",
+      // Marka bilinirliği / Google knowledge-panel için: gerçek destek e-postası +
+      // hizmet bölgesi. sameAs (sosyal profil) EKLENMEDİ — henüz gerçek hesap yok;
+      // sahte/kırık link Google güvenini düşürür. Hesap açılınca sameAs eklenecek.
+      email: "destek@ortaksat.com",
+      areaServed: { "@type": "Country", name: "Türkiye" },
+      contactPoint: {
+        "@type": "ContactPoint",
+        contactType: "customer support",
+        email: "destek@ortaksat.com",
+        availableLanguage: ["Turkish", "English"]
+      }
     },
     {
       "@type": "WebSite",
