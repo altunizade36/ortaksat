@@ -727,6 +727,20 @@ export default function ListingDetailScreen() {
               <Text style={{ color: colors.primaryDark, fontSize: 17, fontWeight: "900" }}>{moneyIn(commission, currentListing.currency)}</Text>
             </View>
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy("Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.", language)}</Text>
+            {/* Y5: Sosyal kanıt (kaç ortak tanıtıyor) + atıf penceresi şeffaflığı (K1 ile anlamlı:
+                referansın kaç gün boyunca sana kredi olduğu). Ortak, isteğinden ÖNCE değeri görür. */}
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 5, marginTop: 2 }}>
+              {currentListing.partnerCount > 0 ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <MaterialCommunityIcons name="account-group" size={13} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.partnerCount} {translateCopy("ortak tanıtıyor", language)}</Text>
+                </View>
+              ) : null}
+              <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+                <MaterialCommunityIcons name="clock-outline" size={13} color={colors.muted} />
+                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Atıf penceresi", language)}: {currentListing.attributionWindowDays} {translateCopy("gün", language)}</Text>
+              </View>
+            </View>
             {/* Faz 4: kategori-bazlı dönüşüm olayı — komisyon HANGİ olayda hak edilir. */}
             {(() => {
               const conv = categoryConversion(currentListing.category);
@@ -772,6 +786,25 @@ export default function ListingDetailScreen() {
             <Metric label={translateCopy("İade", language)} value={`${currentListing.returnWindowDays} ${translateCopy("gün", language)}`} />
             <Metric label={translateCopy("Komisyon vadesi", language)} value={`${currentListing.commissionDueDays} ${translateCopy("gün", language)}`} />
           </View>
+
+          {/* Y5: Ortaklık şartları — satıcının ortaklardan beklentileri (partnerRules). Ortak,
+              istek göndermeden ÖNCE kuralları görür → sürtünme + yanlış-eşleşme azalır. YALNIZ
+              ortak satışa açık ilanda ve kural tanımlıysa gösterilir. */}
+          {partnerable && currentListing.partnerRules.length > 0 ? (
+            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                <MaterialCommunityIcons name="clipboard-check-outline" size={16} color={colors.primaryDark} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaklık şartları", language)}</Text>
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{translateCopy("Satıcının ortaklardan beklentileri:", language)}</Text>
+              {currentListing.partnerRules.map((rule, i) => (
+                <View key={`${i}-${rule}`} style={{ alignItems: "flex-start", flexDirection: "row", gap: 7 }}>
+                  <MaterialCommunityIcons name="check-circle-outline" size={14} color={colors.primary} style={{ marginTop: 1 }} />
+                  <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", lineHeight: 17 }}>{translateCopy(rule, language)}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
 
           {/* Durum-duyarlı ana aksiyon (apply=1 ile buraya kaydırılır) */}
           <View ref={joinAnchorRef} />
