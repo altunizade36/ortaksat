@@ -1835,6 +1835,7 @@ function ExploreTileBase({ favorited, height, inCompare, item, language, onCompa
       accessibilityRole="link"
       accessibilityLabel={`${displayText(listing.title)} — ${money(listing.price)}`}
       onPress={onPress}
+      dataSet={{ card: "listing", tile: "1" }}
       style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, height, opacity: pressed ? 0.92 : 1, overflow: "hidden", shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 3 }, shadowOpacity: 0.06, shadowRadius: 10, width: size })}
     >
       {/* Görsel — TAM KARE (aspectRatio:1, ListingCard'la aynı). Eskiden height:size idi ve
