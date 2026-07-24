@@ -58,6 +58,38 @@ export async function logReferralClick(_listingId: string | undefined, partnersh
   if (error) console.warn("Referral click log failed", error);
 }
 
+// Y6: cihaz-stabil izleyici anahtarı (günlük-dedup için). Web'de localStorage'da kalıcı;
+// native/ortamda localStorage yoksa oturum-stabil rastgele anahtar (yine de dedup sağlar).
+let _viewerKey: string | null = null;
+function viewerKey(): string {
+  if (_viewerKey) return _viewerKey;
+  const gen = () =>
+    (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function"
+      ? globalThis.crypto.randomUUID()
+      : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`);
+  try {
+    if (typeof localStorage !== "undefined") {
+      let k = localStorage.getItem("ortaksat_vk");
+      if (!k) { k = gen(); localStorage.setItem("ortaksat_vk", k); }
+      _viewerKey = k;
+      return k;
+    }
+  } catch {
+    /* localStorage erişilemez → oturum-stabil anahtara düş */
+  }
+  _viewerKey = gen();
+  return _viewerKey;
+}
+
+/** Y6: İlan görüntülenmesini kaydeder. SUNUCU-doğrulamalı RPC (record_listing_view):
+ *  owner kendi ilanını saymaz, aynı izleyici günde bir sayılır (şişirme-dirençli),
+ *  listing_public_stats.view_count artırılır. Fire-and-forget. */
+export async function recordListingView(listingId: string | undefined) {
+  if (!supabase || !listingId) return;
+  const { error } = await supabase.rpc("record_listing_view", { p_listing_id: listingId, p_viewer_key: viewerKey() });
+  if (error) console.warn("Record listing view failed", error);
+}
+
 /** Mağaza takibi (follows). follower_count trigger ile güncellenir. */
 export async function followSellerLive(sellerId: string): Promise<boolean> {
   if (!supabase) return true;

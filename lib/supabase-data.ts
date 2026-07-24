@@ -44,6 +44,7 @@ type PublicListingCardRow = {
   lead_count: number | string | null;
   favorite_count: number | string | null;
   review_count: number | string | null;
+  view_count: number | string | null;
   featured?: boolean | null;
 };
 
@@ -183,6 +184,7 @@ function mapListing(row: PublicListingCardRow): Listing {
     leadCount: toNumber(row.lead_count),
     favoriteCount: toNumber(row.favorite_count),
     reviewCount: toNumber(row.review_count),
+    viewCount: toNumber(row.view_count),
     deliveryNote: repairTurkishText(row.delivery_note ?? ""),
     contactMethod: row.contact_method,
     createdAt: row.created_at.slice(0, 10),

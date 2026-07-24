@@ -93,6 +93,7 @@ export const listings: Listing[] = [
     leadCount: 28,
     favoriteCount: 76,
     reviewCount: 11,
+    viewCount: 0,
     deliveryNote: "24 saat içinde kargo.",
     contactMethod: "message",
     createdAt: "2026-06-01"
@@ -124,6 +125,7 @@ export const listings: Listing[] = [
     leadCount: 19,
     favoriteCount: 45,
     reviewCount: 7,
+    viewCount: 0,
     deliveryNote: "Kargo satıcı tarafından hazırlanır.",
     contactMethod: "whatsapp",
     createdAt: "2026-06-02"
@@ -155,6 +157,7 @@ export const listings: Listing[] = [
     leadCount: 41,
     favoriteCount: 102,
     reviewCount: 18,
+    viewCount: 0,
     deliveryNote: "Aynı gün kargoya verilebilir.",
     contactMethod: "message",
     createdAt: "2026-06-03"
@@ -185,6 +188,7 @@ export const listings: Listing[] = [
     leadCount: 13,
     favoriteCount: 37,
     reviewCount: 6,
+    viewCount: 0,
     deliveryNote: "Kargo veya şehir içi teslim konuşulur.",
     contactMethod: "phone",
     createdAt: "2026-06-03"
@@ -215,6 +219,7 @@ export const listings: Listing[] = [
     leadCount: 17,
     favoriteCount: 52,
     reviewCount: 8,
+    viewCount: 0,
     deliveryNote: "Koruyucu paketleme ile gönderilir.",
     contactMethod: "message",
     createdAt: "2026-06-04"
@@ -245,6 +250,7 @@ export const listings: Listing[] = [
     leadCount: 25,
     favoriteCount: 83,
     reviewCount: 12,
+    viewCount: 0,
     deliveryNote: "Kargo 24 saat içinde çıkar.",
     contactMethod: "whatsapp",
     createdAt: "2026-06-04"
@@ -275,6 +281,7 @@ export const listings: Listing[] = [
     leadCount: 10,
     favoriteCount: 34,
     reviewCount: 5,
+    viewCount: 0,
     deliveryNote: "Taşıma askısı ile gönderilir.",
     contactMethod: "message",
     createdAt: "2026-06-05"
@@ -306,6 +313,7 @@ export const listings: Listing[] = [
     leadCount: 37,
     favoriteCount: 97,
     reviewCount: 15,
+    viewCount: 0,
     deliveryNote: "Kutulu şekilde kargolanır.",
     contactMethod: "whatsapp",
     createdAt: "2026-06-05"
@@ -337,6 +345,7 @@ export const listings: Listing[] = [
     leadCount: 32,
     favoriteCount: 88,
     reviewCount: 16,
+    viewCount: 0,
     deliveryNote: "Aynı gün kargo, İstanbul içi kurye opsiyonu.",
     contactMethod: "whatsapp",
     createdAt: "2026-05-28"
@@ -367,6 +376,7 @@ export const listings: Listing[] = [
     leadCount: 21,
     favoriteCount: 54,
     reviewCount: 9,
+    viewCount: 0,
     deliveryNote: "Satıcı kargoyu 24 saat içinde hazırlar.",
     contactMethod: "message",
     createdAt: "2026-05-30"
@@ -397,6 +407,7 @@ export const listings: Listing[] = [
     leadCount: 8,
     favoriteCount: 31,
     reviewCount: 5,
+    viewCount: 0,
     deliveryNote: "Alıcıyla şehir içi elden teslim veya kargo konuşulur.",
     contactMethod: "phone",
     createdAt: "2026-05-25"
@@ -427,6 +438,7 @@ export const listings: Listing[] = [
     leadCount: 4,
     favoriteCount: 19,
     reviewCount: 4,
+    viewCount: 0,
     deliveryNote: "Hediye kutusu ile 24 saat içinde kargoya verilir.",
     contactMethod: "message",
     createdAt: "2026-05-31"

@@ -37,7 +37,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
-import { insertReferralLead, logReferralClick, resolveReferralLink } from "@/lib/live-service";
+import { insertReferralLead, logReferralClick, recordListingView, resolveReferralLink } from "@/lib/live-service";
 import { getRefAttribution, saveRefAttribution } from "@/lib/referral";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { getRecent, pushRecent, subscribeRecent } from "@/lib/recent";
@@ -194,7 +194,11 @@ export default function ListingDetailScreen() {
 
   // Son gezilen ilanları kaydet — "Son Gezdiklerin" için.
   useEffect(() => {
-    if (listing?.id) pushRecent(listing.id);
+    if (listing?.id) {
+      pushRecent(listing.id);
+      // Y6: görüntülenme kaydı — owner-hariç, sunucuda günlük-dedup (şişirme-dirençli).
+      void recordListingView(listing.id);
+    }
   }, [listing?.id]);
 
   // Ortak referans yakalama: URL'de ?ref= / ?p= varsa (ya da landing'de saklanmışsa)
@@ -717,6 +721,24 @@ export default function ListingDetailScreen() {
 
           {/* Fiyat sayfanın en güçlü öğesi olmalı (ürün sayfası) — komisyon kutusu daha hafif. */}
           <Text selectable style={{ color: colors.ink, fontSize: 33, fontWeight: "900", letterSpacing: -0.5 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
+
+          {/* Y6: sosyal kanıt — görüntülenme + favori (yalnız >0, "0 görüntülenme" gösterilmez). */}
+          {(currentListing.viewCount > 0 || currentListing.favoriteCount > 0) ? (
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+              {currentListing.viewCount > 0 ? (
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                  <MaterialCommunityIcons name="eye-outline" size={14} color={colors.subtle} />
+                  <Text style={{ color: colors.muted, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "700" }}>{currentListing.viewCount} {translateCopy("kez görüntülendi", language)}</Text>
+                </View>
+              ) : null}
+              {currentListing.favoriteCount > 0 ? (
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                  <MaterialCommunityIcons name="heart-outline" size={14} color={colors.subtle} />
+                  <Text style={{ color: colors.muted, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "700" }}>{currentListing.favoriteCount} {translateCopy("favori", language)}</Text>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
 
           {/* Ortak kazancı — YALNIZ ortak satışa açık ilanlarda (normal ilanda gizli). */}
           {partnerable ? (

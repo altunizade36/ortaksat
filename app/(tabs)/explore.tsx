@@ -30,7 +30,7 @@ import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 type FeedFilter = "all" | "open" | "hot" | "new" | "commission";
-type SortMode = "recommended" | "priceAsc" | "priceDesc" | "commission" | "commissionRate" | "rating" | "new";
+type SortMode = "recommended" | "priceAsc" | "priceDesc" | "commission" | "commissionRate" | "rating" | "new" | "mostViewed";
 
 // Kategori-filtre sayısal aralık alanları (m²/km/yıl) — paylaşılan tek kaynak.
 const EXPLORE_NUM_FILTERS = NUM_RANGE_FILTERS;
@@ -73,9 +73,10 @@ const SORT_LABELS: Record<SortMode, string> = {
   commission: "Kazanç",
   commissionRate: "Komisyon %",
   rating: "Puan",
-  new: "En yeni"
+  new: "En yeni",
+  mostViewed: "En çok görüntülenen"
 };
-const SORT_ORDER: SortMode[] = ["recommended", "commission", "commissionRate", "new", "priceAsc", "priceDesc", "rating"];
+const SORT_ORDER: SortMode[] = ["recommended", "commission", "commissionRate", "new", "mostViewed", "priceAsc", "priceDesc", "rating"];
 const INITIAL_EXPLORE_ITEMS = 20;
 const EXPLORE_PAGE_SIZE = 16;
 
@@ -121,7 +122,7 @@ export default function ExploreScreen() {
   // Mobilde "Kategoriye göre filtrele" varsayılan KAPALI: ~18 kategori çipi ilanları
   // ekranın çok altına itiyordu. Kategori seçiliyken açık kalır (drill filtreleri görünsün).
   const [catFilterOpen, setCatFilterOpen] = useState(false);
-  const [sortMode, setSortMode] = useState<SortMode>(() => (["priceAsc", "priceDesc", "commission", "commissionRate", "rating", "new"].includes(sp(params.sort)) ? (sp(params.sort) as SortMode) : "recommended"));
+  const [sortMode, setSortMode] = useState<SortMode>(() => (["priceAsc", "priceDesc", "commission", "commissionRate", "rating", "new", "mostViewed"].includes(sp(params.sort)) ? (sp(params.sort) as SortMode) : "recommended"));
   const [onlyVerified, setOnlyVerified] = useState(() => sp(params.verified) === "1");
   // Ana sayfa filtre paritesi: komisyon ORANI (%), satıcı puanı, öne çıkanlar.
   const [minRate, setMinRate] = useState(() => Number(sp(params.rate)) || 0);
@@ -470,6 +471,7 @@ export default function ExploreScreen() {
     else if (sortMode === "commissionRate") sorted.sort((a, b) => commissionRatePct(b) - commissionRatePct(a));
     else if (sortMode === "rating") sorted.sort((a, b) => (findUser(b.ownerId)?.rating ?? 0) - (findUser(a.ownerId)?.rating ?? 0));
     else if (sortMode === "new") sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    else if (sortMode === "mostViewed") sorted.sort((a, b) => b.viewCount - a.viewCount);
     return sorted;
   }, [activeListings, sortMode, findUser]);
   // "Yeni eklenen" = en yeni ilanlar (gerçek). Önceden en-az-stoklu 3 ilan sahte
@@ -497,6 +499,7 @@ export default function ExploreScreen() {
     else if (sortMode === "commissionRate") arr.sort((a, b) => commissionRatePct(b) - commissionRatePct(a));
     else if (sortMode === "rating") arr.sort((a, b) => (findUser(b.ownerId)?.rating ?? 0) - (findUser(a.ownerId)?.rating ?? 0));
     else if (sortMode === "new") arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    else if (sortMode === "mostViewed") arr.sort((a, b) => b.viewCount - a.viewCount);
     return arr;
   }, [activeListings, sortMode, findUser]);
 

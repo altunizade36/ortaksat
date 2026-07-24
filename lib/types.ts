@@ -90,6 +90,8 @@ export type Listing = {
   leadCount: number;
   favoriteCount: number;
   reviewCount: number;
+  // Y6: ilanın toplam görüntülenme sayısı (owner-hariç, günlük-dedup; sosyal kanıt + "en çok görüntülenen").
+  viewCount: number;
   deliveryNote: string;
   contactMethod: "whatsapp" | "phone" | "message";
   createdAt: string;

@@ -1492,6 +1492,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
           ...input,
           id,
           ownerId: currentUser.id,
+          viewCount: 0, // Y6: yeni ilan 0 görüntülenmeyle başlar (sunucuda record_listing_view ile artar)
           title: displayText(input.title),
           description: repairTurkishText(input.description),
           salesPitch: input.salesPitch.map(repairTurkishText),
