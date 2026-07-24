@@ -1820,7 +1820,10 @@ function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner
 
 function ExploreTileBase({ favorited, height, inCompare, item, language, onCompare, onFav, onPress, onVisual, order, size, t }: { favorited?: boolean; height: number; inCompare?: boolean; item: ExploreMedia; language: "tr" | "en"; onCompare?: () => void; onFav?: () => void; onPress: () => void; onVisual?: () => void; order: number; size: number; t: (key: string) => string }) {
   const { listing } = item;
-  const featured = item.index === 0 || order % 12 === 0;
+  // "Vitrin ürünü" rozeti GERÇEK featured bayrağından gelir. Eskiden `index===0 || order%12===0`
+  // (POZİSYON) idi → yeni gerçek ilanlar üstte olduğu için "Vitrin ürünü" (sanki demo/vitrin)
+  // etiketi alıyordu — yanıltıcıydı. Artık yalnız DB'de featured olan ilanlar bu rozeti alır.
+  const featured = Boolean(listing.featured);
   const conversionScore = listing.leadCount + listing.partnerCount * 2 + Math.round(listing.favoriteCount / 8);
   const status = getExploreStatus(item, listing, featured, conversionScore, t);
   const commission = commissionAmount(listing);
@@ -1902,9 +1905,11 @@ function ExploreTileBase({ favorited, height, inCompare, item, language, onCompa
         <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>
           {translateCopy(subcategory, language)}
         </Text>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "space-between" }}>
-          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{moneyCompact(listing.price)}</Text>
-          <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{displayText(listing.location)}</Text>
+        {/* FİYAT ASLA KIRPILMAZ: eskiden fiyat+konum yarışıyordu, dar 2-sütun kartta fiyat
+            "₺5.0..." diye kesiliyordu. Fiyat flexShrink:0 (tam), konum kalan yeri alıp kısalır. */}
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+          <Text numberOfLines={1} style={{ color: colors.ink, flexShrink: 0, fontSize: 14.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{moneyCompact(listing.price)}</Text>
+          <Text numberOfLines={1} style={{ color: colors.subtle, flex: 1, fontSize: 10.5, fontWeight: "700", textAlign: "right" }}>{displayText(listing.location)}</Text>
         </View>
         {commission > 0 ? (
           <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 7, flexDirection: "row", gap: 4, paddingHorizontal: 7, paddingVertical: 3 }}>
@@ -1931,6 +1936,9 @@ function getExploreStatus(item: ExploreMedia, listing: Listing, featured: boolea
   if (listing.partnershipMode === "open") return { icon: "flash", label: t("openForPartners"), tone: "primary" };
   if (conversionScore >= 18) return { icon: "trending-up", label: t("trendProduct"), tone: "warning" };
   if (featured) return { icon: "star-circle", label: t("showcaseProduct"), tone: "dark" };
+  // Son çare "Ürün görseli" ANLAMSIZ dolguydu (zaten ürün görseli). Komisyonlu ilanlar bunu
+  // alıyordu → anlamlı "Ortaklığa açık" (mevcut i18n anahtarı, EN/TR doğru). Komisyonsuz → nötr.
+  if (commissionAmount(listing) > 0) return { icon: "cash-multiple", label: t("openForPartners"), tone: "primary" };
   return { icon: "tag-outline", label: t("productImage"), tone: "dark" };
 }
 
