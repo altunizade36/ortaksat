@@ -11,7 +11,9 @@ import { translateCopy } from "@/lib/i18n";
 export function BrandFilter({ label, options, selected, onToggle, language }: { label: string; options: string[]; selected: string[]; onToggle: (b: string) => void; language: "tr" | "en" }) {
   const [q, setQ] = useState("");
   const needle = q.trim().toLocaleLowerCase("tr-TR");
-  const shown = (needle ? options.filter((o) => o.toLocaleLowerCase("tr-TR").includes(needle)) : options).slice(0, 60);
+  // Kırpma 60→200: 79 otomobil markasının son ~19'u (Toyota→Zeekr) filtrede yalnız arama ile
+  // görünüyordu ("markalar eksik"). 200 tüm marka listelerini kapsar, arama zaten daraltıyor.
+  const shown = (needle ? options.filter((o) => o.toLocaleLowerCase("tr-TR").includes(needle)) : options).slice(0, 200);
   return (
     <View style={{ gap: 6, width: "100%" }}>
       <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>
