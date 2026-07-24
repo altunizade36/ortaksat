@@ -38,6 +38,13 @@ export function ErrorScreen({
         </View>
         <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900", textAlign: "center" }}>{translateCopy(title, language)}</Text>
         <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, textAlign: "center" }}>{translateCopy(body, language)}</Text>
+        {/* AdBlock/eklenti ipucu: reklam engelleyiciler bazı script/modülleri bloklayıp render'ı
+            bozabiliyor. Oto-kurtarma + veri temizleme çözmezse eyleme dönük tek gerçek yol budur. */}
+        {onHardReset ? (
+          <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600", lineHeight: 17, textAlign: "center" }}>
+            {translateCopy("Reklam engelleyici (AdBlock/uBlock) bu sayfada soruna yol açabilir. Sorun sürerse eklentiyi bu site için kapatıp tekrar dene.", language)}
+          </Text>
+        ) : null}
         {detail ? (
           <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600", textAlign: "center" }} numberOfLines={3}>
             {detail}
