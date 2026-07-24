@@ -1046,9 +1046,15 @@ function SellerScreenInner() {
                     <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Satış iptal edildi", language)}</Text>
                   </View>
                 ) : sale.status === "disputed" ? (
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <View style={{ flex: 1 }}><PrimaryButton tone="soft" onPress={() => confirmPaidSale(sale.id)}>Yeniden Ödedim</PrimaryButton></View>
-                    <View style={{ flex: 1 }}><PrimaryButton tone="secondary" onPress={() => updateSaleStatus(sale.id, "cancelled")}>İptal Et</PrimaryButton></View>
+                  // Y1: Satıcı, anlaşmazlıktaki (borçlu) komisyonu TEK TARAFLI İPTAL EDEMEZ — ortağın
+                  // hakkı korunur. Çözüm ya ödeme ("Yeniden Ödedim") ya da yönetim değerlendirmesidir
+                  // (admin panelinde Çöz·Onayla / İptal). Sunucu (guard_commission_paid) da bunu zorlar.
+                  <View style={{ gap: 8 }}>
+                    <PrimaryButton tone="soft" onPress={() => confirmPaidSale(sale.id)}>Yeniden Ödedim</PrimaryButton>
+                    <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 8, flexDirection: "row", gap: 6, justifyContent: "center", paddingHorizontal: 10, paddingVertical: 8 }}>
+                      <MaterialCommunityIcons name="shield-account-outline" size={14} color={colors.warning} />
+                      <Text style={{ color: colors.warning, flex: 1, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Anlaşmazlık yönetim tarafından değerlendiriliyor. Ödemeyi yaptıysanız “Yeniden Ödedim” ile çözebilirsiniz.", language)}</Text>
+                    </View>
                   </View>
                 ) : sale.status === "seller_paid" ? (
                   <View style={{ gap: 8 }}>
