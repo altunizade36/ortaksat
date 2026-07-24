@@ -7,6 +7,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BrandFilter } from "@/components/brand-filter";
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
+import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
@@ -420,6 +421,9 @@ export function HomeDesktop() {
           </LinearGradient>
 
         </View>
+
+        {/* Y11: onboarding kontrol listesi (masaüstü) — giriş yapmış + adımları eksik kullanıcıya görünür. */}
+        <OnboardingChecklist />
 
         {/* Ortak-satış: nasıl kazanılır + en çok kazandıran fırsatlar */}
         {topEarn.length > 0 ? (
