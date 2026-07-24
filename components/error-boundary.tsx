@@ -16,13 +16,15 @@ export function ErrorScreen({
   body = "Beklenmeyen bir hata oluştu. İnternet bağlantını kontrol edip tekrar deneyebilirsin.",
   detail,
   onRetry,
-  retryLabel = "Tekrar dene"
+  retryLabel = "Tekrar dene",
+  onHardReset
 }: {
   title?: string;
   body?: string;
   detail?: string;
   onRetry?: () => void;
   retryLabel?: string;
+  onHardReset?: () => void;
 }) {
   const { language } = useLanguage();
   return (
@@ -48,6 +50,18 @@ export function ErrorScreen({
           >
             <MaterialCommunityIcons name="refresh" size={18} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy(retryLabel, language)}</Text>
+          </Pressable>
+        ) : null}
+        {/* KESİN KURTARMA: bayat yerel durum (eski kategori kaydı, bozuk taslak, silinmiş
+            ilan referansı…) render'ı bozduğunda tek dokunuşta temizler. Hangi bileşenin
+            bozulduğunu bilmeye gerek kalmadan kullanıcı kurtulur. */}
+        {onHardReset ? (
+          <Pressable
+            onPress={onHardReset}
+            style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12, width: "100%" }}
+          >
+            <MaterialCommunityIcons name="broom" size={17} color={colors.muted} />
+            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy("Verileri temizle ve yenile", language)}</Text>
           </Pressable>
         ) : null}
         <Link href="/" asChild>
@@ -87,15 +101,39 @@ export function RouteErrorBoundary({ error, retry }: { error: Error; retry: () =
     }
   }, [isChunkError, canReload]);
 
+  // Bayat yerel durumu (eski kategori kaydı / bozuk taslak / silinmiş referans) tek dokunuşta
+  // temizler ve yeniler. Hangi bileşenin `undefined` olduğunu bilmeye gerek yok — çökme yerel
+  // duruma bağlıysa bu KESİN çözer. (Oturum çerezine dokunmaz; yalnız uygulama önbellekleri.)
+  const hardReset = canReload
+    ? () => {
+        try {
+          // Supabase oturum anahtarları (`sb-*`) KORUNUR → kullanıcı çıkış yapmaz; yalnız
+          // uygulama önbellekleri (recent/compare/saved/draft…) temizlenir.
+          const keep: Array<[string, string]> = [];
+          for (let i = 0; i < localStorage.length; i++) {
+            const k = localStorage.key(i);
+            if (k && (k.startsWith("sb-") || k.includes("supabase"))) { const v = localStorage.getItem(k); if (v != null) keep.push([k, v]); }
+          }
+          localStorage.clear();
+          sessionStorage.clear();
+          for (const [k, v] of keep) localStorage.setItem(k, v);
+        } catch { /* özel mod */ }
+        window.location.href = "/";
+      }
+    : undefined;
+
   return (
     <ErrorScreen
       title={isChunkError ? "Sayfa yüklenemedi" : "Bir şeyler ters gitti"}
       body={isChunkError ? "Bağlantın kesildiği için sayfa yüklenemedi. Yeniden dene." : undefined}
-      detail={__DEV__ ? error?.message : undefined}
+      // Hata mesajını ARTIK canlıda da göster (kısa) → tekrarlarsa kullanıcı ekran görüntüsüyle
+      // tam nedeni iletebilir. React #130 vb. minified olsa da hangi hata olduğu görünür.
+      detail={msg ? msg.slice(0, 160) : undefined}
       onRetry={() => {
         if (isChunkError && canReload) { window.location.reload(); return; }
         void retry();
       }}
+      onHardReset={!isChunkError ? hardReset : undefined}
     />
   );
 }
