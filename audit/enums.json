@@ -1,0 +1,7357 @@
+{
+  "schemaEnums": {
+    "konut.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "Satılık",
+        "Kiralık",
+        "Günlük Kiralık",
+        "Devren",
+        "Kat Karşılığı",
+        "Projeden Satılık",
+        "Takaslı"
+      ]
+    },
+    "konut.rooms": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 13,
+      "options": [
+        "Stüdyo (1+0)",
+        "1+1",
+        "1.5+1",
+        "2+1",
+        "2.5+1",
+        "3+1",
+        "3.5+1",
+        "4+1",
+        "4.5+1",
+        "5+1",
+        "6+1",
+        "7+1",
+        "8+1 ve üzeri"
+      ]
+    },
+    "konut.buildingAge": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "0 (Sıfır)",
+        "1-5",
+        "6-10",
+        "11-15",
+        "16-20",
+        "21-30",
+        "31+"
+      ]
+    },
+    "konut.yapiTipi": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "Betonarme",
+        "Çelik Konstrüksiyon",
+        "Yığma",
+        "Kagir",
+        "Prefabrik",
+        "Ahşap",
+        "Tünel Kalıp",
+        "Karkas"
+      ]
+    },
+    "konut.yapiDurumu": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Sıfır (hiç kullanılmamış)",
+        "İkinci El",
+        "Yapım Aşamasında",
+        "Projeden",
+        "Restore Edilmiş",
+        "Tadilat Gerekli"
+      ]
+    },
+    "konut.heating": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 14,
+      "options": [
+        "Yok",
+        "Soba",
+        "Doğalgaz Sobası",
+        "Kat Kaloriferi",
+        "Doğalgaz (Kombi)",
+        "Merkezi",
+        "Merkezi (Pay Ölçer)",
+        "Yerden Isıtma",
+        "Klima",
+        "Fancoil",
+        "Güneş Enerjisi",
+        "Jeotermal",
+        "Şömine",
+        "VRV / VRF"
+      ]
+    },
+    "konut.parking": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Açık Otopark",
+        "Kapalı Otopark",
+        "Açık & Kapalı",
+        "Yok"
+      ]
+    },
+    "konut.usage": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Sahibi Kullanıyor",
+        "Kısmen Dolu"
+      ]
+    },
+    "konut.from": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Sahibinden",
+        "Emlak Ofisinden",
+        "İnşaat Firmasından",
+        "Bankadan",
+        "Yetkili Kurumdan"
+      ]
+    },
+    "konut.deed": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "Kat Mülkiyetli",
+        "Kat İrtifaklı",
+        "Arsa Tapulu",
+        "Hisseli Tapu",
+        "Müstakil Tapu",
+        "Kooperatif Hisseli",
+        "İntifa Hakkı",
+        "İpotekli",
+        "Bilinmiyor"
+      ]
+    },
+    "konut.energyClass": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "select",
+      "optionCount": 11,
+      "options": [
+        "A+++",
+        "A++",
+        "A+",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F",
+        "G",
+        "Belirtilmemiş"
+      ]
+    },
+    "konut.facade": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 8,
+      "options": [
+        "Kuzey",
+        "Güney",
+        "Doğu",
+        "Batı",
+        "Kuzeydoğu",
+        "Kuzeybatı",
+        "Güneydoğu",
+        "Güneybatı"
+      ]
+    },
+    "konut.view": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 22,
+      "options": [
+        "Deniz",
+        "Boğaz",
+        "Göl",
+        "Nehir",
+        "Baraj",
+        "Orman",
+        "Dağ",
+        "Doğa",
+        "Park",
+        "Bahçe",
+        "Havuz",
+        "Şehir",
+        "Cadde",
+        "Meydan",
+        "Marina",
+        "Kale",
+        "Tarihi Yapı",
+        "Vadi",
+        "Tarla",
+        "Bağ",
+        "Zeytinlik",
+        "Yok"
+      ]
+    },
+    "konut.housingType": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 14,
+      "options": [
+        "Ara Kat",
+        "Ara Kat Dubleks",
+        "Bahçe Dubleks",
+        "Bahçe Katı",
+        "Çatı Dubleks",
+        "Dubleks",
+        "En Üst Kat",
+        "Forleks",
+        "Giriş Katı",
+        "Müstakil",
+        "Teras Dubleks",
+        "Tripleks",
+        "Villa Tipi",
+        "Yüksek Giriş"
+      ]
+    },
+    "konut.konutInteriorFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 46,
+      "options": [
+        "Ankastre Fırın",
+        "Ankastre Ocak",
+        "Davlumbaz",
+        "Bulaşık Makinesi",
+        "Çamaşır Makinesi",
+        "Kurutma Makinesi",
+        "Buzdolabı",
+        "Mikrodalga",
+        "Klima",
+        "VRF Klima",
+        "Fiber İnternet",
+        "Akıllı Ev Sistemi",
+        "Akıllı Kilit",
+        "Görüntülü Diafon",
+        "Alarm Sistemi",
+        "Yangın Alarmı",
+        "Duman Dedektörü",
+        "Kamera Sistemi",
+        "Elektrikli Panjur",
+        "Otomatik Perde",
+        "Giyinme Odası",
+        "Kiler",
+        "Çamaşır Odası",
+        "Ebeveyn Banyosu",
+        "Jakuzi",
+        "Sauna",
+        "Şömine",
+        "Amerikan Mutfak",
+        "Ankastre Mutfak",
+        "Ada Mutfak",
+        "Granit Tezgah",
+        "Laminat Parke",
+        "Masif Parke",
+        "Seramik Zemin",
+        "Çelik Kapı",
+        "Spot Aydınlatma",
+        "LED Aydınlatma",
+        "Kartonpiyer",
+        "Asma Tavan",
+        "Yerden Isıtma",
+        "Isı Pompası",
+        "Güneş Enerjisi",
+        "Beyaz Eşyalı",
+        "Perde Dahil",
+        "Avize Dahil",
+        "Yeni Boyanmış"
+      ]
+    },
+    "konut.siteFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 43,
+      "options": [
+        "Açık Otopark",
+        "Kapalı Otopark",
+        "Misafir Otoparkı",
+        "Elektrikli Araç Şarjı",
+        "Asansör",
+        "Yük Asansörü",
+        "Jeneratör",
+        "Su Deposu",
+        "Hidrofor",
+        "7/24 Güvenlik",
+        "Güvenlik Kamerası",
+        "Kartlı Giriş",
+        "Parmak İzi Giriş",
+        "Kapıcı",
+        "Resepsiyon",
+        "Concierge",
+        "Çocuk Parkı",
+        "Kreş",
+        "Basketbol Sahası",
+        "Futbol Sahası",
+        "Tenis Kortu",
+        "Fitness Salonu",
+        "Pilates/Yoga",
+        "Açık Havuz",
+        "Kapalı Havuz",
+        "Çocuk Havuzu",
+        "Sauna",
+        "Hamam",
+        "Spa",
+        "Kafeterya",
+        "Market",
+        "Kuaför",
+        "Yürüyüş Parkuru",
+        "Bisiklet Yolu",
+        "Peyzaj Alanı",
+        "Süs Havuzu",
+        "Kamelya",
+        "Barbekü Alanı",
+        "Ortak Bahçe",
+        "Hobi Bahçesi",
+        "Evcil Hayvan Alanı",
+        "Yangın Merdiveni",
+        "Acil Toplanma Alanı"
+      ]
+    },
+    "konut.neighborhood": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 23,
+      "options": [
+        "Alışveriş Merkezi",
+        "Belediye",
+        "Cami",
+        "Market",
+        "Cemevi",
+        "Denize Sıfır",
+        "Eczane",
+        "Eğlence Merkezi",
+        "Göle Sıfır",
+        "Hastane",
+        "İbadethane",
+        "İlkokul",
+        "İtfaiye",
+        "Kilise",
+        "Lise",
+        "Park",
+        "Plaj",
+        "Polis Merkezi",
+        "Sağlık Ocağı",
+        "Semt Pazarı",
+        "Spor Salonu",
+        "Şehir Merkezi",
+        "Üniversite"
+      ]
+    },
+    "konut.transport": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 17,
+      "options": [
+        "Anayol",
+        "Boğaz Köprüleri",
+        "Cadde",
+        "Deniz Otobüsü",
+        "Dolmuş",
+        "E-5",
+        "Havaalanı",
+        "İskele",
+        "Marmaray",
+        "Metro",
+        "Metrobüs",
+        "Minibüs",
+        "Otobüs Durağı",
+        "Sahil",
+        "TEM",
+        "Tramvay",
+        "Tren İstasyonu"
+      ]
+    },
+    "konut.accessibility": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Araç Park Yeri",
+        "Engelli Uygun Asansör",
+        "Engelli Uygun Banyo",
+        "Engelli Uygun Mutfak",
+        "Engelli Uygun Park",
+        "Geniş Koridor",
+        "Giriş / Rampa",
+        "Priz / Elektrik Anahtarı",
+        "Tutamak / Korkuluk",
+        "Tuvalet",
+        "Yaşlıya Uygun"
+      ]
+    },
+    "konut.buildingSafety": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 12,
+      "options": [
+        "Deprem Yönetmeliğine Uygun",
+        "Zemin Etüdü Yapıldı",
+        "Fore Kazık",
+        "Radye Temel",
+        "Perde Beton",
+        "Çelik Konstrüksiyon",
+        "Güçlendirme Yapıldı",
+        "Yapı Denetimli",
+        "İskan Alınmış",
+        "Yapı Kullanma İzin Belgesi Var",
+        "Kentsel Dönüşüme Uygun",
+        "Riskli Yapı Değil"
+      ]
+    },
+    "konut.smartHome": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 20,
+      "options": [
+        "Apple HomeKit",
+        "Google Home",
+        "Amazon Alexa",
+        "Samsung SmartThings",
+        "KNX",
+        "Zigbee",
+        "Z-Wave",
+        "Matter",
+        "Akıllı Aydınlatma",
+        "Akıllı Klima",
+        "Akıllı Isıtma",
+        "Akıllı Perde",
+        "Akıllı Panjur",
+        "Akıllı Kilit",
+        "Akıllı Garaj",
+        "Akıllı Sulama",
+        "Enerji Takibi",
+        "Su Kaçağı Sensörü",
+        "Gaz Kaçağı Sensörü",
+        "Duman Sensörü"
+      ]
+    },
+    "konut.luxuryFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 26,
+      "options": [
+        "Akıllı Ev Sistemi",
+        "Parmak İzi Giriş",
+        "Yüz Tanıma",
+        "Özel Asansör",
+        "Özel Garaj",
+        "Şarap Mahzeni",
+        "Sinema Salonu",
+        "Oyun Odası",
+        "Bilardo Salonu",
+        "Kütüphane",
+        "Hobi Atölyesi",
+        "Spa",
+        "Hamam",
+        "Sauna",
+        "Buhar Odası",
+        "Masaj Odası",
+        "Kapalı Havuz",
+        "Sonsuzluk Havuzu",
+        "Isıtmalı Havuz",
+        "Helikopter Pisti",
+        "Tekne İskelesi",
+        "Özel Plaj",
+        "Misafir Evi",
+        "Personel Lojmanı",
+        "Panik Odası",
+        "Çelik Kasa Odası"
+      ]
+    },
+    "konut.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 533,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "isyeri.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Satılık",
+        "Kiralık",
+        "Devren"
+      ]
+    },
+    "isyeri.buildingAge": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "0 (Sıfır)",
+        "1-5",
+        "6-10",
+        "11-15",
+        "16-20",
+        "21-30",
+        "31+"
+      ]
+    },
+    "isyeri.heating": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "select",
+      "optionCount": 14,
+      "options": [
+        "Yok",
+        "Soba",
+        "Doğalgaz Sobası",
+        "Kat Kaloriferi",
+        "Doğalgaz (Kombi)",
+        "Merkezi",
+        "Merkezi (Pay Ölçer)",
+        "Yerden Isıtma",
+        "Klima",
+        "Fancoil",
+        "Güneş Enerjisi",
+        "Jeotermal",
+        "Şömine",
+        "VRV / VRF"
+      ]
+    },
+    "isyeri.usage": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Faal İşletme",
+        "Sahibi Kullanıyor"
+      ]
+    },
+    "isyeri.from": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sahibinden",
+        "Emlak Ofisinden",
+        "Müteahhitten",
+        "Bankadan"
+      ]
+    },
+    "isyeri.deed": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "Kat Mülkiyetli",
+        "Kat İrtifaklı",
+        "Arsa Tapulu",
+        "Hisseli Tapu",
+        "Müstakil Tapu",
+        "Kooperatif Hisseli",
+        "İntifa Hakkı",
+        "İpotekli",
+        "Bilinmiyor"
+      ]
+    },
+    "isyeri.isletmeIcerik": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Faal İşletme",
+        "Devren",
+        "Franchise",
+        "Marka Hakları Dahil",
+        "Personel Dahil",
+        "Makineler Dahil",
+        "Stok Dahil",
+        "Ruhsat Dahil"
+      ]
+    },
+    "isyeri.ruhsat": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "multiselect",
+      "optionCount": 14,
+      "options": [
+        "İşyeri Açma Ruhsatı",
+        "Gıda Ruhsatı",
+        "Turizm Belgesi",
+        "Sağlık Bakanlığı Ruhsatı",
+        "Tarım Bakanlığı Ruhsatı",
+        "Üretim İzni",
+        "İmalat Ruhsatı",
+        "Sanayi Sicili",
+        "ISO Belgesi",
+        "CE Belgesi",
+        "TSE Belgesi",
+        "Yangın Raporu",
+        "İtfaiye Uygunluk",
+        "ÇED Belgesi"
+      ]
+    },
+    "isyeri.isyeriOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "multiselect",
+      "optionCount": 22,
+      "options": [
+        "Asansör",
+        "Yük Asansörü",
+        "Vinç Sistemi",
+        "Jeneratör",
+        "Trafo",
+        "Yangın Sistemi",
+        "Kamera Sistemi",
+        "Alarm",
+        "Fiber İnternet",
+        "Tır Girişi",
+        "Forklift Girişi",
+        "Yükleme Rampası",
+        "Soyunma Odası",
+        "Personel Alanı",
+        "Mutfak",
+        "WC",
+        "Depo Alanı",
+        "Endüstriyel Mutfak",
+        "Vitrin",
+        "Otopark",
+        "Kartlı Geçiş",
+        "Resepsiyon"
+      ]
+    },
+    "isyeri.yapiTipi": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "Betonarme",
+        "Çelik Konstrüksiyon",
+        "Yığma",
+        "Kagir",
+        "Prefabrik",
+        "Ahşap",
+        "Tünel Kalıp",
+        "Karkas"
+      ]
+    },
+    "isyeri.yapiDurumu": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Sıfır (hiç kullanılmamış)",
+        "İkinci El",
+        "Yapım Aşamasında",
+        "Projeden",
+        "Restore Edilmiş",
+        "Tadilat Gerekli"
+      ]
+    },
+    "isyeri.parking": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Açık Otopark",
+        "Kapalı Otopark",
+        "Açık & Kapalı",
+        "Yok"
+      ]
+    },
+    "isyeri.facade": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "multiselect",
+      "optionCount": 8,
+      "options": [
+        "Kuzey",
+        "Güney",
+        "Doğu",
+        "Batı",
+        "Kuzeydoğu",
+        "Kuzeybatı",
+        "Güneydoğu",
+        "Güneybatı"
+      ]
+    },
+    "isyeri.view": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "multiselect",
+      "optionCount": 22,
+      "options": [
+        "Deniz",
+        "Boğaz",
+        "Göl",
+        "Nehir",
+        "Baraj",
+        "Orman",
+        "Dağ",
+        "Doğa",
+        "Park",
+        "Bahçe",
+        "Havuz",
+        "Şehir",
+        "Cadde",
+        "Meydan",
+        "Marina",
+        "Kale",
+        "Tarihi Yapı",
+        "Vadi",
+        "Tarla",
+        "Bağ",
+        "Zeytinlik",
+        "Yok"
+      ]
+    },
+    "isyeri.exteriorFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "multiselect",
+      "optionCount": 24,
+      "options": [
+        "Araç Şarj İstasyonu",
+        "24 Saat Güvenlik",
+        "Apartman Görevlisi",
+        "Buhar Odası",
+        "Çocuk Oyun Parkı",
+        "Hamam",
+        "Hidrofor",
+        "Isı Yalıtımı",
+        "Jeneratör",
+        "Kablo TV",
+        "Kamera Sistemi",
+        "Kapıcı",
+        "Köpek Parkı",
+        "Kreş",
+        "Müştemilat",
+        "Sauna",
+        "Siding",
+        "Spor Alanı",
+        "Su Deposu",
+        "Tenis Kortu",
+        "Uydu",
+        "Yangın Merdiveni",
+        "Yüzme Havuzu (Açık)",
+        "Yüzme Havuzu (Kapalı)"
+      ]
+    },
+    "isyeri.neighborhood": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "multiselect",
+      "optionCount": 23,
+      "options": [
+        "Alışveriş Merkezi",
+        "Belediye",
+        "Cami",
+        "Market",
+        "Cemevi",
+        "Denize Sıfır",
+        "Eczane",
+        "Eğlence Merkezi",
+        "Göle Sıfır",
+        "Hastane",
+        "İbadethane",
+        "İlkokul",
+        "İtfaiye",
+        "Kilise",
+        "Lise",
+        "Park",
+        "Plaj",
+        "Polis Merkezi",
+        "Sağlık Ocağı",
+        "Semt Pazarı",
+        "Spor Salonu",
+        "Şehir Merkezi",
+        "Üniversite"
+      ]
+    },
+    "isyeri.transport": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "multiselect",
+      "optionCount": 17,
+      "options": [
+        "Anayol",
+        "Boğaz Köprüleri",
+        "Cadde",
+        "Deniz Otobüsü",
+        "Dolmuş",
+        "E-5",
+        "Havaalanı",
+        "İskele",
+        "Marmaray",
+        "Metro",
+        "Metrobüs",
+        "Minibüs",
+        "Otobüs Durağı",
+        "Sahil",
+        "TEM",
+        "Tramvay",
+        "Tren İstasyonu"
+      ]
+    },
+    "isyeri.accessibility": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Araç Park Yeri",
+        "Engelli Uygun Asansör",
+        "Engelli Uygun Banyo",
+        "Engelli Uygun Mutfak",
+        "Engelli Uygun Park",
+        "Geniş Koridor",
+        "Giriş / Rampa",
+        "Priz / Elektrik Anahtarı",
+        "Tutamak / Korkuluk",
+        "Tuvalet",
+        "Yaşlıya Uygun"
+      ]
+    },
+    "isyeri.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 597,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "isyeriDevren.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 607,
+      "type": "select",
+      "optionCount": 2,
+      "options": [
+        "Devren Satılık",
+        "Devren Kiralık"
+      ]
+    },
+    "isyeriDevren.businessAge": {
+      "file": "lib/category-tree.ts",
+      "line": 607,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Yeni açıldı",
+        "1 yıldan az",
+        "1-3 yıl",
+        "3-5 yıl",
+        "5-10 yıl",
+        "10+ yıl"
+      ]
+    },
+    "isyeriDevren.customerBase": {
+      "file": "lib/category-tree.ts",
+      "line": 607,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Yok",
+        "Az",
+        "Orta",
+        "Yüksek",
+        "Sadık Müşteri Kitlesi"
+      ]
+    },
+    "isyeriDevren.reason": {
+      "file": "lib/category-tree.ts",
+      "line": 607,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "Şehir değişikliği",
+        "Sağlık",
+        "Sektör değişikliği",
+        "Emeklilik",
+        "Ortaklık ayrılığı",
+        "Başka iş",
+        "Belirtmek istemiyorum"
+      ]
+    },
+    "isyeriDevren.isletmeIcerik": {
+      "file": "lib/category-tree.ts",
+      "line": 607,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Faal İşletme",
+        "Devren",
+        "Franchise",
+        "Marka Hakları Dahil",
+        "Personel Dahil",
+        "Makineler Dahil",
+        "Stok Dahil",
+        "Ruhsat Dahil"
+      ]
+    },
+    "isyeriDevren.leaseRemaining": {
+      "file": "lib/category-tree.ts",
+      "line": 607,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Yeni sözleşme yapılacak",
+        "6 aydan az",
+        "6-12 ay",
+        "1-3 yıl",
+        "3+ yıl",
+        "Mülk sahibine ait değil"
+      ]
+    },
+    "isyeriDevren.ruhsat": {
+      "file": "lib/category-tree.ts",
+      "line": 607,
+      "type": "multiselect",
+      "optionCount": 14,
+      "options": [
+        "İşyeri Açma Ruhsatı",
+        "Gıda Ruhsatı",
+        "Turizm Belgesi",
+        "Sağlık Bakanlığı Ruhsatı",
+        "Tarım Bakanlığı Ruhsatı",
+        "Üretim İzni",
+        "İmalat Ruhsatı",
+        "Sanayi Sicili",
+        "ISO Belgesi",
+        "CE Belgesi",
+        "TSE Belgesi",
+        "Yangın Raporu",
+        "İtfaiye Uygunluk",
+        "ÇED Belgesi"
+      ]
+    },
+    "isyeriDevren.from": {
+      "file": "lib/category-tree.ts",
+      "line": 607,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sahibinden",
+        "İşletme Sahibinden",
+        "Emlak Ofisinden"
+      ]
+    },
+    "isyeriDevren.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 607,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "isyeriRestoran.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Satılık",
+        "Kiralık",
+        "Devren"
+      ]
+    },
+    "isyeriRestoran.buildingAge": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "0 (Sıfır)",
+        "1-5",
+        "6-10",
+        "11-15",
+        "16-20",
+        "21-30",
+        "31+"
+      ]
+    },
+    "isyeriRestoran.heating": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "select",
+      "optionCount": 14,
+      "options": [
+        "Yok",
+        "Soba",
+        "Doğalgaz Sobası",
+        "Kat Kaloriferi",
+        "Doğalgaz (Kombi)",
+        "Merkezi",
+        "Merkezi (Pay Ölçer)",
+        "Yerden Isıtma",
+        "Klima",
+        "Fancoil",
+        "Güneş Enerjisi",
+        "Jeotermal",
+        "Şömine",
+        "VRV / VRF"
+      ]
+    },
+    "isyeriRestoran.usage": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Faal İşletme",
+        "Sahibi Kullanıyor"
+      ]
+    },
+    "isyeriRestoran.from": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sahibinden",
+        "Emlak Ofisinden",
+        "Müteahhitten",
+        "Bankadan"
+      ]
+    },
+    "isyeriRestoran.deed": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "Kat Mülkiyetli",
+        "Kat İrtifaklı",
+        "Arsa Tapulu",
+        "Hisseli Tapu",
+        "Müstakil Tapu",
+        "Kooperatif Hisseli",
+        "İntifa Hakkı",
+        "İpotekli",
+        "Bilinmiyor"
+      ]
+    },
+    "isyeriRestoran.isletmeIcerik": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Faal İşletme",
+        "Devren",
+        "Franchise",
+        "Marka Hakları Dahil",
+        "Personel Dahil",
+        "Makineler Dahil",
+        "Stok Dahil",
+        "Ruhsat Dahil"
+      ]
+    },
+    "isyeriRestoran.ruhsat": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 14,
+      "options": [
+        "İşyeri Açma Ruhsatı",
+        "Gıda Ruhsatı",
+        "Turizm Belgesi",
+        "Sağlık Bakanlığı Ruhsatı",
+        "Tarım Bakanlığı Ruhsatı",
+        "Üretim İzni",
+        "İmalat Ruhsatı",
+        "Sanayi Sicili",
+        "ISO Belgesi",
+        "CE Belgesi",
+        "TSE Belgesi",
+        "Yangın Raporu",
+        "İtfaiye Uygunluk",
+        "ÇED Belgesi"
+      ]
+    },
+    "isyeriRestoran.isyeriOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 22,
+      "options": [
+        "Asansör",
+        "Yük Asansörü",
+        "Vinç Sistemi",
+        "Jeneratör",
+        "Trafo",
+        "Yangın Sistemi",
+        "Kamera Sistemi",
+        "Alarm",
+        "Fiber İnternet",
+        "Tır Girişi",
+        "Forklift Girişi",
+        "Yükleme Rampası",
+        "Soyunma Odası",
+        "Personel Alanı",
+        "Mutfak",
+        "WC",
+        "Depo Alanı",
+        "Endüstriyel Mutfak",
+        "Vitrin",
+        "Otopark",
+        "Kartlı Geçiş",
+        "Resepsiyon"
+      ]
+    },
+    "isyeriRestoran.yapiTipi": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "Betonarme",
+        "Çelik Konstrüksiyon",
+        "Yığma",
+        "Kagir",
+        "Prefabrik",
+        "Ahşap",
+        "Tünel Kalıp",
+        "Karkas"
+      ]
+    },
+    "isyeriRestoran.yapiDurumu": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Sıfır (hiç kullanılmamış)",
+        "İkinci El",
+        "Yapım Aşamasında",
+        "Projeden",
+        "Restore Edilmiş",
+        "Tadilat Gerekli"
+      ]
+    },
+    "isyeriRestoran.parking": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Açık Otopark",
+        "Kapalı Otopark",
+        "Açık & Kapalı",
+        "Yok"
+      ]
+    },
+    "isyeriRestoran.facade": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 8,
+      "options": [
+        "Kuzey",
+        "Güney",
+        "Doğu",
+        "Batı",
+        "Kuzeydoğu",
+        "Kuzeybatı",
+        "Güneydoğu",
+        "Güneybatı"
+      ]
+    },
+    "isyeriRestoran.view": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 22,
+      "options": [
+        "Deniz",
+        "Boğaz",
+        "Göl",
+        "Nehir",
+        "Baraj",
+        "Orman",
+        "Dağ",
+        "Doğa",
+        "Park",
+        "Bahçe",
+        "Havuz",
+        "Şehir",
+        "Cadde",
+        "Meydan",
+        "Marina",
+        "Kale",
+        "Tarihi Yapı",
+        "Vadi",
+        "Tarla",
+        "Bağ",
+        "Zeytinlik",
+        "Yok"
+      ]
+    },
+    "isyeriRestoran.restoranOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 15,
+      "options": [
+        "Bahçe",
+        "Teras",
+        "Çocuk Alanı",
+        "Vale",
+        "Paket Servis",
+        "Motor Kurye Alanı",
+        "Bacası Var",
+        "Endüstriyel Mutfak",
+        "Soğuk Oda",
+        "Fırın",
+        "Izgara",
+        "Pizza Fırını",
+        "Hamurhane",
+        "Alkollü Ruhsat",
+        "Canlı Müzik Ruhsatı"
+      ]
+    },
+    "isyeriRestoran.exteriorFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 24,
+      "options": [
+        "Araç Şarj İstasyonu",
+        "24 Saat Güvenlik",
+        "Apartman Görevlisi",
+        "Buhar Odası",
+        "Çocuk Oyun Parkı",
+        "Hamam",
+        "Hidrofor",
+        "Isı Yalıtımı",
+        "Jeneratör",
+        "Kablo TV",
+        "Kamera Sistemi",
+        "Kapıcı",
+        "Köpek Parkı",
+        "Kreş",
+        "Müştemilat",
+        "Sauna",
+        "Siding",
+        "Spor Alanı",
+        "Su Deposu",
+        "Tenis Kortu",
+        "Uydu",
+        "Yangın Merdiveni",
+        "Yüzme Havuzu (Açık)",
+        "Yüzme Havuzu (Kapalı)"
+      ]
+    },
+    "isyeriRestoran.neighborhood": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 23,
+      "options": [
+        "Alışveriş Merkezi",
+        "Belediye",
+        "Cami",
+        "Market",
+        "Cemevi",
+        "Denize Sıfır",
+        "Eczane",
+        "Eğlence Merkezi",
+        "Göle Sıfır",
+        "Hastane",
+        "İbadethane",
+        "İlkokul",
+        "İtfaiye",
+        "Kilise",
+        "Lise",
+        "Park",
+        "Plaj",
+        "Polis Merkezi",
+        "Sağlık Ocağı",
+        "Semt Pazarı",
+        "Spor Salonu",
+        "Şehir Merkezi",
+        "Üniversite"
+      ]
+    },
+    "isyeriRestoran.transport": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 17,
+      "options": [
+        "Anayol",
+        "Boğaz Köprüleri",
+        "Cadde",
+        "Deniz Otobüsü",
+        "Dolmuş",
+        "E-5",
+        "Havaalanı",
+        "İskele",
+        "Marmaray",
+        "Metro",
+        "Metrobüs",
+        "Minibüs",
+        "Otobüs Durağı",
+        "Sahil",
+        "TEM",
+        "Tramvay",
+        "Tren İstasyonu"
+      ]
+    },
+    "isyeriRestoran.accessibility": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Araç Park Yeri",
+        "Engelli Uygun Asansör",
+        "Engelli Uygun Banyo",
+        "Engelli Uygun Mutfak",
+        "Engelli Uygun Park",
+        "Geniş Koridor",
+        "Giriş / Rampa",
+        "Priz / Elektrik Anahtarı",
+        "Tutamak / Korkuluk",
+        "Tuvalet",
+        "Yaşlıya Uygun"
+      ]
+    },
+    "isyeriRestoran.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 634,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "isyeriFabrika.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Satılık",
+        "Kiralık",
+        "Devren"
+      ]
+    },
+    "isyeriFabrika.buildingAge": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "0 (Sıfır)",
+        "1-5",
+        "6-10",
+        "11-15",
+        "16-20",
+        "21-30",
+        "31+"
+      ]
+    },
+    "isyeriFabrika.heating": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "select",
+      "optionCount": 14,
+      "options": [
+        "Yok",
+        "Soba",
+        "Doğalgaz Sobası",
+        "Kat Kaloriferi",
+        "Doğalgaz (Kombi)",
+        "Merkezi",
+        "Merkezi (Pay Ölçer)",
+        "Yerden Isıtma",
+        "Klima",
+        "Fancoil",
+        "Güneş Enerjisi",
+        "Jeotermal",
+        "Şömine",
+        "VRV / VRF"
+      ]
+    },
+    "isyeriFabrika.usage": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Faal İşletme",
+        "Sahibi Kullanıyor"
+      ]
+    },
+    "isyeriFabrika.from": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sahibinden",
+        "Emlak Ofisinden",
+        "Müteahhitten",
+        "Bankadan"
+      ]
+    },
+    "isyeriFabrika.deed": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "Kat Mülkiyetli",
+        "Kat İrtifaklı",
+        "Arsa Tapulu",
+        "Hisseli Tapu",
+        "Müstakil Tapu",
+        "Kooperatif Hisseli",
+        "İntifa Hakkı",
+        "İpotekli",
+        "Bilinmiyor"
+      ]
+    },
+    "isyeriFabrika.isletmeIcerik": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Faal İşletme",
+        "Devren",
+        "Franchise",
+        "Marka Hakları Dahil",
+        "Personel Dahil",
+        "Makineler Dahil",
+        "Stok Dahil",
+        "Ruhsat Dahil"
+      ]
+    },
+    "isyeriFabrika.ruhsat": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 14,
+      "options": [
+        "İşyeri Açma Ruhsatı",
+        "Gıda Ruhsatı",
+        "Turizm Belgesi",
+        "Sağlık Bakanlığı Ruhsatı",
+        "Tarım Bakanlığı Ruhsatı",
+        "Üretim İzni",
+        "İmalat Ruhsatı",
+        "Sanayi Sicili",
+        "ISO Belgesi",
+        "CE Belgesi",
+        "TSE Belgesi",
+        "Yangın Raporu",
+        "İtfaiye Uygunluk",
+        "ÇED Belgesi"
+      ]
+    },
+    "isyeriFabrika.isyeriOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 22,
+      "options": [
+        "Asansör",
+        "Yük Asansörü",
+        "Vinç Sistemi",
+        "Jeneratör",
+        "Trafo",
+        "Yangın Sistemi",
+        "Kamera Sistemi",
+        "Alarm",
+        "Fiber İnternet",
+        "Tır Girişi",
+        "Forklift Girişi",
+        "Yükleme Rampası",
+        "Soyunma Odası",
+        "Personel Alanı",
+        "Mutfak",
+        "WC",
+        "Depo Alanı",
+        "Endüstriyel Mutfak",
+        "Vitrin",
+        "Otopark",
+        "Kartlı Geçiş",
+        "Resepsiyon"
+      ]
+    },
+    "isyeriFabrika.yapiTipi": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "Betonarme",
+        "Çelik Konstrüksiyon",
+        "Yığma",
+        "Kagir",
+        "Prefabrik",
+        "Ahşap",
+        "Tünel Kalıp",
+        "Karkas"
+      ]
+    },
+    "isyeriFabrika.yapiDurumu": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Sıfır (hiç kullanılmamış)",
+        "İkinci El",
+        "Yapım Aşamasında",
+        "Projeden",
+        "Restore Edilmiş",
+        "Tadilat Gerekli"
+      ]
+    },
+    "isyeriFabrika.parking": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Açık Otopark",
+        "Kapalı Otopark",
+        "Açık & Kapalı",
+        "Yok"
+      ]
+    },
+    "isyeriFabrika.facade": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 8,
+      "options": [
+        "Kuzey",
+        "Güney",
+        "Doğu",
+        "Batı",
+        "Kuzeydoğu",
+        "Kuzeybatı",
+        "Güneydoğu",
+        "Güneybatı"
+      ]
+    },
+    "isyeriFabrika.view": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 22,
+      "options": [
+        "Deniz",
+        "Boğaz",
+        "Göl",
+        "Nehir",
+        "Baraj",
+        "Orman",
+        "Dağ",
+        "Doğa",
+        "Park",
+        "Bahçe",
+        "Havuz",
+        "Şehir",
+        "Cadde",
+        "Meydan",
+        "Marina",
+        "Kale",
+        "Tarihi Yapı",
+        "Vadi",
+        "Tarla",
+        "Bağ",
+        "Zeytinlik",
+        "Yok"
+      ]
+    },
+    "isyeriFabrika.fabrikaOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 13,
+      "options": [
+        "Trafo",
+        "Vinç",
+        "Tır Rampası",
+        "Forklift Alanı",
+        "Yükleme Rampası",
+        "İdari Ofis",
+        "Yemekhane",
+        "Personel Soyunma",
+        "Güvenlik Kulübesi",
+        "Arıtma Tesisi",
+        "Bacalı Üretim",
+        "Gaz Hattı",
+        "Basınçlı Hava Sistemi"
+      ]
+    },
+    "isyeriFabrika.exteriorFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 24,
+      "options": [
+        "Araç Şarj İstasyonu",
+        "24 Saat Güvenlik",
+        "Apartman Görevlisi",
+        "Buhar Odası",
+        "Çocuk Oyun Parkı",
+        "Hamam",
+        "Hidrofor",
+        "Isı Yalıtımı",
+        "Jeneratör",
+        "Kablo TV",
+        "Kamera Sistemi",
+        "Kapıcı",
+        "Köpek Parkı",
+        "Kreş",
+        "Müştemilat",
+        "Sauna",
+        "Siding",
+        "Spor Alanı",
+        "Su Deposu",
+        "Tenis Kortu",
+        "Uydu",
+        "Yangın Merdiveni",
+        "Yüzme Havuzu (Açık)",
+        "Yüzme Havuzu (Kapalı)"
+      ]
+    },
+    "isyeriFabrika.neighborhood": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 23,
+      "options": [
+        "Alışveriş Merkezi",
+        "Belediye",
+        "Cami",
+        "Market",
+        "Cemevi",
+        "Denize Sıfır",
+        "Eczane",
+        "Eğlence Merkezi",
+        "Göle Sıfır",
+        "Hastane",
+        "İbadethane",
+        "İlkokul",
+        "İtfaiye",
+        "Kilise",
+        "Lise",
+        "Park",
+        "Plaj",
+        "Polis Merkezi",
+        "Sağlık Ocağı",
+        "Semt Pazarı",
+        "Spor Salonu",
+        "Şehir Merkezi",
+        "Üniversite"
+      ]
+    },
+    "isyeriFabrika.transport": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 17,
+      "options": [
+        "Anayol",
+        "Boğaz Köprüleri",
+        "Cadde",
+        "Deniz Otobüsü",
+        "Dolmuş",
+        "E-5",
+        "Havaalanı",
+        "İskele",
+        "Marmaray",
+        "Metro",
+        "Metrobüs",
+        "Minibüs",
+        "Otobüs Durağı",
+        "Sahil",
+        "TEM",
+        "Tramvay",
+        "Tren İstasyonu"
+      ]
+    },
+    "isyeriFabrika.accessibility": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Araç Park Yeri",
+        "Engelli Uygun Asansör",
+        "Engelli Uygun Banyo",
+        "Engelli Uygun Mutfak",
+        "Engelli Uygun Park",
+        "Geniş Koridor",
+        "Giriş / Rampa",
+        "Priz / Elektrik Anahtarı",
+        "Tutamak / Korkuluk",
+        "Tuvalet",
+        "Yaşlıya Uygun"
+      ]
+    },
+    "isyeriFabrika.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 639,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "isyeriOfis.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Satılık",
+        "Kiralık",
+        "Devren"
+      ]
+    },
+    "isyeriOfis.buildingAge": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "0 (Sıfır)",
+        "1-5",
+        "6-10",
+        "11-15",
+        "16-20",
+        "21-30",
+        "31+"
+      ]
+    },
+    "isyeriOfis.heating": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "select",
+      "optionCount": 14,
+      "options": [
+        "Yok",
+        "Soba",
+        "Doğalgaz Sobası",
+        "Kat Kaloriferi",
+        "Doğalgaz (Kombi)",
+        "Merkezi",
+        "Merkezi (Pay Ölçer)",
+        "Yerden Isıtma",
+        "Klima",
+        "Fancoil",
+        "Güneş Enerjisi",
+        "Jeotermal",
+        "Şömine",
+        "VRV / VRF"
+      ]
+    },
+    "isyeriOfis.usage": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Faal İşletme",
+        "Sahibi Kullanıyor"
+      ]
+    },
+    "isyeriOfis.from": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sahibinden",
+        "Emlak Ofisinden",
+        "Müteahhitten",
+        "Bankadan"
+      ]
+    },
+    "isyeriOfis.deed": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "Kat Mülkiyetli",
+        "Kat İrtifaklı",
+        "Arsa Tapulu",
+        "Hisseli Tapu",
+        "Müstakil Tapu",
+        "Kooperatif Hisseli",
+        "İntifa Hakkı",
+        "İpotekli",
+        "Bilinmiyor"
+      ]
+    },
+    "isyeriOfis.isletmeIcerik": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Faal İşletme",
+        "Devren",
+        "Franchise",
+        "Marka Hakları Dahil",
+        "Personel Dahil",
+        "Makineler Dahil",
+        "Stok Dahil",
+        "Ruhsat Dahil"
+      ]
+    },
+    "isyeriOfis.ruhsat": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 14,
+      "options": [
+        "İşyeri Açma Ruhsatı",
+        "Gıda Ruhsatı",
+        "Turizm Belgesi",
+        "Sağlık Bakanlığı Ruhsatı",
+        "Tarım Bakanlığı Ruhsatı",
+        "Üretim İzni",
+        "İmalat Ruhsatı",
+        "Sanayi Sicili",
+        "ISO Belgesi",
+        "CE Belgesi",
+        "TSE Belgesi",
+        "Yangın Raporu",
+        "İtfaiye Uygunluk",
+        "ÇED Belgesi"
+      ]
+    },
+    "isyeriOfis.isyeriOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 22,
+      "options": [
+        "Asansör",
+        "Yük Asansörü",
+        "Vinç Sistemi",
+        "Jeneratör",
+        "Trafo",
+        "Yangın Sistemi",
+        "Kamera Sistemi",
+        "Alarm",
+        "Fiber İnternet",
+        "Tır Girişi",
+        "Forklift Girişi",
+        "Yükleme Rampası",
+        "Soyunma Odası",
+        "Personel Alanı",
+        "Mutfak",
+        "WC",
+        "Depo Alanı",
+        "Endüstriyel Mutfak",
+        "Vitrin",
+        "Otopark",
+        "Kartlı Geçiş",
+        "Resepsiyon"
+      ]
+    },
+    "isyeriOfis.yapiTipi": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "Betonarme",
+        "Çelik Konstrüksiyon",
+        "Yığma",
+        "Kagir",
+        "Prefabrik",
+        "Ahşap",
+        "Tünel Kalıp",
+        "Karkas"
+      ]
+    },
+    "isyeriOfis.yapiDurumu": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Sıfır (hiç kullanılmamış)",
+        "İkinci El",
+        "Yapım Aşamasında",
+        "Projeden",
+        "Restore Edilmiş",
+        "Tadilat Gerekli"
+      ]
+    },
+    "isyeriOfis.parking": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Açık Otopark",
+        "Kapalı Otopark",
+        "Açık & Kapalı",
+        "Yok"
+      ]
+    },
+    "isyeriOfis.facade": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 8,
+      "options": [
+        "Kuzey",
+        "Güney",
+        "Doğu",
+        "Batı",
+        "Kuzeydoğu",
+        "Kuzeybatı",
+        "Güneydoğu",
+        "Güneybatı"
+      ]
+    },
+    "isyeriOfis.view": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 22,
+      "options": [
+        "Deniz",
+        "Boğaz",
+        "Göl",
+        "Nehir",
+        "Baraj",
+        "Orman",
+        "Dağ",
+        "Doğa",
+        "Park",
+        "Bahçe",
+        "Havuz",
+        "Şehir",
+        "Cadde",
+        "Meydan",
+        "Marina",
+        "Kale",
+        "Tarihi Yapı",
+        "Vadi",
+        "Tarla",
+        "Bağ",
+        "Zeytinlik",
+        "Yok"
+      ]
+    },
+    "isyeriOfis.ofisOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 16,
+      "options": [
+        "Açık Ofis",
+        "Kapalı Ofis",
+        "Server Odası",
+        "Klima",
+        "Fiber İnternet",
+        "Kartlı Geçiş",
+        "Resepsiyon",
+        "Bekleme Alanı",
+        "Mutfak",
+        "WC",
+        "Arşiv",
+        "Balkon",
+        "Teras",
+        "Otopark",
+        "Vale",
+        "Concierge"
+      ]
+    },
+    "isyeriOfis.exteriorFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 24,
+      "options": [
+        "Araç Şarj İstasyonu",
+        "24 Saat Güvenlik",
+        "Apartman Görevlisi",
+        "Buhar Odası",
+        "Çocuk Oyun Parkı",
+        "Hamam",
+        "Hidrofor",
+        "Isı Yalıtımı",
+        "Jeneratör",
+        "Kablo TV",
+        "Kamera Sistemi",
+        "Kapıcı",
+        "Köpek Parkı",
+        "Kreş",
+        "Müştemilat",
+        "Sauna",
+        "Siding",
+        "Spor Alanı",
+        "Su Deposu",
+        "Tenis Kortu",
+        "Uydu",
+        "Yangın Merdiveni",
+        "Yüzme Havuzu (Açık)",
+        "Yüzme Havuzu (Kapalı)"
+      ]
+    },
+    "isyeriOfis.neighborhood": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 23,
+      "options": [
+        "Alışveriş Merkezi",
+        "Belediye",
+        "Cami",
+        "Market",
+        "Cemevi",
+        "Denize Sıfır",
+        "Eczane",
+        "Eğlence Merkezi",
+        "Göle Sıfır",
+        "Hastane",
+        "İbadethane",
+        "İlkokul",
+        "İtfaiye",
+        "Kilise",
+        "Lise",
+        "Park",
+        "Plaj",
+        "Polis Merkezi",
+        "Sağlık Ocağı",
+        "Semt Pazarı",
+        "Spor Salonu",
+        "Şehir Merkezi",
+        "Üniversite"
+      ]
+    },
+    "isyeriOfis.transport": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 17,
+      "options": [
+        "Anayol",
+        "Boğaz Köprüleri",
+        "Cadde",
+        "Deniz Otobüsü",
+        "Dolmuş",
+        "E-5",
+        "Havaalanı",
+        "İskele",
+        "Marmaray",
+        "Metro",
+        "Metrobüs",
+        "Minibüs",
+        "Otobüs Durağı",
+        "Sahil",
+        "TEM",
+        "Tramvay",
+        "Tren İstasyonu"
+      ]
+    },
+    "isyeriOfis.accessibility": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Araç Park Yeri",
+        "Engelli Uygun Asansör",
+        "Engelli Uygun Banyo",
+        "Engelli Uygun Mutfak",
+        "Engelli Uygun Park",
+        "Geniş Koridor",
+        "Giriş / Rampa",
+        "Priz / Elektrik Anahtarı",
+        "Tutamak / Korkuluk",
+        "Tuvalet",
+        "Yaşlıya Uygun"
+      ]
+    },
+    "isyeriOfis.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 644,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "arsa.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Satılık",
+        "Kiralık",
+        "Kat Karşılığı"
+      ]
+    },
+    "arsa.zoning": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "select",
+      "optionCount": 16,
+      "options": [
+        "İmarlı",
+        "İmarsız",
+        "Kısmi İmarlı",
+        "Uygulama İmar Planlı",
+        "Nazım İmar Planlı",
+        "Kentsel Dönüşüm Alanı",
+        "Koruma Alanı",
+        "Sit Alanı",
+        "Tarım Alanı",
+        "Orman Alanı",
+        "Mera",
+        "Kıyı Bandı",
+        "Turizm Alanı",
+        "Organize Sanayi Bölgesi",
+        "Serbest Bölge",
+        "Plansız"
+      ]
+    },
+    "arsa.imarTuru": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "select",
+      "optionCount": 17,
+      "options": [
+        "Konut",
+        "Ticaret",
+        "Ticaret + Konut",
+        "Sanayi",
+        "Küçük Sanayi",
+        "Depolama",
+        "Akaryakıt",
+        "Eğitim",
+        "Sağlık",
+        "Spor",
+        "Turizm",
+        "Otel",
+        "Villa",
+        "Tarım",
+        "Hayvancılık",
+        "Enerji",
+        "Karma Kullanım"
+      ]
+    },
+    "arsa.yapiNizami": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Ayrık",
+        "Bitişik",
+        "Blok"
+      ]
+    },
+    "arsa.parselSekli": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Dikdörtgen",
+        "Kare",
+        "Üçgen",
+        "Yamuk",
+        "Düzensiz"
+      ]
+    },
+    "arsa.egim": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Düz",
+        "Hafif Eğimli",
+        "Eğimli",
+        "Çok Eğimli"
+      ]
+    },
+    "arsa.roadStatus": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "Asfalt",
+        "Beton",
+        "Stabilize",
+        "Toprak Yol",
+        "Kadastro Yolu",
+        "Yol Açılacak",
+        "Yol Yok"
+      ]
+    },
+    "arsa.altyapi": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "multiselect",
+      "optionCount": 13,
+      "options": [
+        "Elektrik",
+        "Trafo Yakın",
+        "Sanayi Elektriği",
+        "Şehir Suyu",
+        "Artezyen",
+        "Kuyu",
+        "Sulama Kanalı",
+        "Doğalgaz (Kapıda)",
+        "Doğalgaz (Sokakta)",
+        "Kanalizasyon",
+        "Fosseptik",
+        "Fiber",
+        "Telefon Hattı"
+      ]
+    },
+    "arsa.dogalOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "multiselect",
+      "optionCount": 15,
+      "options": [
+        "Deniz Manzarası",
+        "Göl Manzarası",
+        "Orman Manzarası",
+        "Dağ Manzarası",
+        "Şehir Manzarası",
+        "Vadi",
+        "Nehir",
+        "Dere",
+        "Şelale",
+        "Meyve Bahçesi",
+        "Zeytinlik",
+        "Fındıklık",
+        "Cevizlik",
+        "Bağ",
+        "Lavanta Bahçesi"
+      ]
+    },
+    "arsa.tarimOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Sulanabilir",
+        "Kuru Tarım",
+        "Organik Tarım",
+        "Seraya Uygun",
+        "Hayvancılığa Uygun",
+        "Meyveciliğe Uygun",
+        "Bağcılığa Uygun",
+        "Arıcılığa Uygun",
+        "Balık Çiftliğine Uygun",
+        "GES Uygun",
+        "RES Uygun"
+      ]
+    },
+    "arsa.deed": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "select",
+      "optionCount": 11,
+      "options": [
+        "Müstakil Tapulu",
+        "Hisseli Tapu",
+        "Tahsisli",
+        "Kooperatif",
+        "İntifa Hakkı",
+        "Elbirliği Mülkiyeti",
+        "Paylı Mülkiyet",
+        "İpotekli",
+        "Hacizli",
+        "Şerhli",
+        "Temiz Tapu"
+      ]
+    },
+    "arsa.from": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "Sahibinden",
+        "Emlak Ofisinden",
+        "Müteahhitten",
+        "Bankadan",
+        "İcradan",
+        "Belediyeden",
+        "TOKİ'den"
+      ]
+    },
+    "arsa.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 649,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "bina.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Satılık",
+        "Kiralık",
+        "Devren"
+      ]
+    },
+    "bina.buildingAge": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "0 (Sıfır)",
+        "1-5",
+        "6-10",
+        "11-15",
+        "16-20",
+        "21-30",
+        "31+"
+      ]
+    },
+    "bina.yapiTipi": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "Betonarme",
+        "Çelik Konstrüksiyon",
+        "Yığma",
+        "Kagir",
+        "Prefabrik",
+        "Ahşap",
+        "Tünel Kalıp",
+        "Karkas"
+      ]
+    },
+    "bina.yapiDurumu": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Sıfır (hiç kullanılmamış)",
+        "İkinci El",
+        "Yapım Aşamasında",
+        "Projeden",
+        "Restore Edilmiş",
+        "Tadilat Gerekli"
+      ]
+    },
+    "bina.heating": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "select",
+      "optionCount": 14,
+      "options": [
+        "Yok",
+        "Soba",
+        "Doğalgaz Sobası",
+        "Kat Kaloriferi",
+        "Doğalgaz (Kombi)",
+        "Merkezi",
+        "Merkezi (Pay Ölçer)",
+        "Yerden Isıtma",
+        "Klima",
+        "Fancoil",
+        "Güneş Enerjisi",
+        "Jeotermal",
+        "Şömine",
+        "VRV / VRF"
+      ]
+    },
+    "bina.parking": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Açık Otopark",
+        "Kapalı Otopark",
+        "Açık & Kapalı",
+        "Yok"
+      ]
+    },
+    "bina.occupancyRate": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Boş",
+        "%1-25",
+        "%26-50",
+        "%51-75",
+        "%76-99",
+        "Tam Dolu"
+      ]
+    },
+    "bina.usage": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Boş",
+        "Kiracılı",
+        "Sahibi Kullanıyor",
+        "Kısmen Dolu"
+      ]
+    },
+    "bina.buildingSafety": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "multiselect",
+      "optionCount": 12,
+      "options": [
+        "Deprem Yönetmeliğine Uygun",
+        "Zemin Etüdü Yapıldı",
+        "Fore Kazık",
+        "Radye Temel",
+        "Perde Beton",
+        "Çelik Konstrüksiyon",
+        "Güçlendirme Yapıldı",
+        "Yapı Denetimli",
+        "İskan Alınmış",
+        "Yapı Kullanma İzin Belgesi Var",
+        "Kentsel Dönüşüme Uygun",
+        "Riskli Yapı Değil"
+      ]
+    },
+    "bina.deed": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "Kat Mülkiyetli",
+        "Kat İrtifaklı",
+        "Arsa Tapulu",
+        "Hisseli Tapu",
+        "Müstakil Tapu",
+        "Kooperatif Hisseli",
+        "İntifa Hakkı",
+        "İpotekli",
+        "Bilinmiyor"
+      ]
+    },
+    "bina.from": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sahibinden",
+        "Emlak Ofisinden",
+        "Müteahhitten",
+        "Bankadan"
+      ]
+    },
+    "bina.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 689,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "proje.projectType": {
+      "file": "lib/category-tree.ts",
+      "line": 725,
+      "type": "select",
+      "optionCount": 22,
+      "options": [
+        "Konut Projesi",
+        "Daire Projesi",
+        "Residence Projesi",
+        "Villa Projesi",
+        "Müstakil Ev Projesi",
+        "Karma Yaşam Projesi",
+        "Sosyal Konut Projesi",
+        "Tiny House Projesi",
+        "Bungalov Projesi",
+        "Ticari Proje",
+        "Ofis Projesi",
+        "Plaza Projesi",
+        "İş Merkezi",
+        "AVM Projesi",
+        "Sanayi Sitesi",
+        "Lojistik Merkezi",
+        "Depo Projesi",
+        "Konut + AVM",
+        "Konut + Ofis",
+        "Konut + Otel",
+        "Yaşam Merkezi",
+        "Akıllı Şehir Projesi"
+      ]
+    },
+    "proje.projectStatus": {
+      "file": "lib/category-tree.ts",
+      "line": 725,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Ön Talep",
+        "Satışta",
+        "Lansmanda",
+        "İnşaat Devam Ediyor",
+        "Teslime Hazır",
+        "Tamamlandı"
+      ]
+    },
+    "proje.amenities": {
+      "file": "lib/category-tree.ts",
+      "line": 725,
+      "type": "multiselect",
+      "optionCount": 34,
+      "options": [
+        "Açık Havuz",
+        "Kapalı Havuz",
+        "Çocuk Havuzu",
+        "Fitness",
+        "Sauna",
+        "Spa",
+        "Hamam",
+        "Buhar Odası",
+        "Yoga Salonu",
+        "Pilates",
+        "Basketbol",
+        "Futbol",
+        "Tenis",
+        "Voleybol",
+        "Squash",
+        "Koşu Parkuru",
+        "Bisiklet Yolu",
+        "Yürüyüş Alanı",
+        "Çocuk Parkı",
+        "Kreş",
+        "Anaokulu",
+        "Kütüphane",
+        "Sinema",
+        "Oyun Salonu",
+        "Hobi Odası",
+        "Misafir Odası",
+        "Toplantı Salonu",
+        "Çok Amaçlı Salon",
+        "Barbekü",
+        "Piknik Alanı",
+        "Gölet",
+        "Peyzaj Alanı",
+        "Süs Havuzu",
+        "Evcil Hayvan Parkı"
+      ]
+    },
+    "proje.security": {
+      "file": "lib/category-tree.ts",
+      "line": 725,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "7/24 Güvenlik",
+        "Kamera",
+        "Plaka Tanıma",
+        "Kartlı Giriş",
+        "Parmak İzi",
+        "Yüz Tanıma",
+        "Site Duvarı",
+        "Güvenlik Noktası",
+        "Yangın Alarmı",
+        "Sprinkler",
+        "Acil Çıkış"
+      ]
+    },
+    "proje.energy": {
+      "file": "lib/category-tree.ts",
+      "line": 725,
+      "type": "multiselect",
+      "optionCount": 9,
+      "options": [
+        "Güneş Paneli",
+        "Yağmur Suyu Toplama",
+        "Gri Su Sistemi",
+        "Isı Pompası",
+        "Elektrikli Araç Şarjı",
+        "Akıllı Sayaç",
+        "Akıllı Ev",
+        "Merkezi Klima",
+        "VRF"
+      ]
+    },
+    "proje.payment": {
+      "file": "lib/category-tree.ts",
+      "line": 725,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Peşin",
+        "Taksit",
+        "Firma Finansmanı",
+        "Banka Kredisi",
+        "Katılım Finansmanı",
+        "Döviz",
+        "Altın",
+        "Kripto",
+        "Senet",
+        "Araç Takası",
+        "Arsa Takası"
+      ]
+    },
+    "proje.campaign": {
+      "file": "lib/category-tree.ts",
+      "line": 725,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Lansman İndirimi",
+        "Peşin İndirimi",
+        "Faizsiz Taksit",
+        "Mobilya Hediyesi",
+        "Beyaz Eşya Hediyesi",
+        "Tapu Masrafı Dahil",
+        "Aidat Hediyesi",
+        "Araç Hediyesi",
+        "Tatil Hediyesi",
+        "Çekiliş Kampanyası"
+      ]
+    },
+    "proje.iskanStatus": {
+      "file": "lib/category-tree.ts",
+      "line": 725,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "İskan Alındı",
+        "İskan Sürecinde",
+        "Kat İrtifaklı"
+      ]
+    },
+    "proje.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 725,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "turistik.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 760,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Satılık",
+        "Kiralık",
+        "Devren"
+      ]
+    },
+    "turistik.facilityKind": {
+      "file": "lib/category-tree.ts",
+      "line": 760,
+      "type": "select",
+      "optionCount": 15,
+      "options": [
+        "Otel",
+        "Butik Otel",
+        "Apart Otel",
+        "Motel",
+        "Pansiyon",
+        "Hostel",
+        "Kamp Alanı",
+        "Glamping",
+        "Karavan Parkı",
+        "Dağ Oteli",
+        "Yayla Tesisi",
+        "Termal Tesis",
+        "Tatil Köyü",
+        "Bungalov Tesisi",
+        "Marina Tesisi"
+      ]
+    },
+    "turistik.starCount": {
+      "file": "lib/category-tree.ts",
+      "line": 760,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "Butik",
+        "Sertifikasız"
+      ]
+    },
+    "turistik.roomTypes": {
+      "file": "lib/category-tree.ts",
+      "line": 760,
+      "type": "multiselect",
+      "optionCount": 7,
+      "options": [
+        "Standart Oda",
+        "Deluxe Oda",
+        "Aile Odası (Family Room)",
+        "Süit",
+        "King Süit",
+        "Kral Dairesi (Presidential Suite)",
+        "Engelli Odası"
+      ]
+    },
+    "turistik.facilityAreas": {
+      "file": "lib/category-tree.ts",
+      "line": 760,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Açık Havuz",
+        "Kapalı Havuz",
+        "Çocuk Havuzu",
+        "Spa",
+        "Hamam",
+        "Sauna",
+        "Fitness",
+        "Restoran",
+        "A La Carte",
+        "Lobby Bar",
+        "Havuz Bar",
+        "Beach Bar",
+        "Toplantı Salonu",
+        "Kongre Salonu",
+        "Düğün Salonu",
+        "Çocuk Parkı",
+        "Oyun Salonu",
+        "Mini Club",
+        "Disco",
+        "Açık Otopark",
+        "Kapalı Otopark"
+      ]
+    },
+    "turistik.occupancyRate": {
+      "file": "lib/category-tree.ts",
+      "line": 760,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Boş",
+        "%1-25",
+        "%26-50",
+        "%51-75",
+        "%76-99",
+        "Tam Dolu"
+      ]
+    },
+    "turistik.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 760,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "devremulk.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 789,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Satılık",
+        "Kiralık",
+        "Devren"
+      ]
+    },
+    "devremulk.accommodation": {
+      "file": "lib/category-tree.ts",
+      "line": 789,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "Otel Odası",
+        "Apart Daire",
+        "Villa",
+        "Residence",
+        "Bungalov",
+        "Tiny House",
+        "Dağ Evi"
+      ]
+    },
+    "devremulk.usageForm": {
+      "file": "lib/category-tree.ts",
+      "line": 789,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Haftalık",
+        "10 Günlük",
+        "15 Günlük",
+        "Aylık",
+        "Sezonluk",
+        "Yıllık"
+      ]
+    },
+    "devremulk.usagePeriod": {
+      "file": "lib/category-tree.ts",
+      "line": 789,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "Yaz",
+        "Kış",
+        "Bahar",
+        "Sonbahar",
+        "Yılbaşı",
+        "Bayram",
+        "Tüm Yıl"
+      ]
+    },
+    "devremulk.usageType": {
+      "file": "lib/category-tree.ts",
+      "line": 789,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Tapulu",
+        "Tapusuz (Sözleşmeli)",
+        "Ömür Boyu",
+        "Süreli",
+        "Yıllık"
+      ]
+    },
+    "devremulk.rooms": {
+      "file": "lib/category-tree.ts",
+      "line": 789,
+      "type": "select",
+      "optionCount": 13,
+      "options": [
+        "Stüdyo (1+0)",
+        "1+1",
+        "1.5+1",
+        "2+1",
+        "2.5+1",
+        "3+1",
+        "3.5+1",
+        "4+1",
+        "4.5+1",
+        "5+1",
+        "6+1",
+        "7+1",
+        "8+1 ve üzeri"
+      ]
+    },
+    "devremulk.amenities": {
+      "file": "lib/category-tree.ts",
+      "line": 789,
+      "type": "multiselect",
+      "optionCount": 20,
+      "options": [
+        "Açık Havuz",
+        "Kapalı Havuz",
+        "Termal Havuz",
+        "Aqua Park",
+        "Sauna",
+        "Hamam",
+        "Spa",
+        "Fitness",
+        "Çocuk Kulübü",
+        "Restoran",
+        "Kafe",
+        "Market",
+        "Mini Club",
+        "Tenis Kortu",
+        "Basketbol",
+        "Futbol",
+        "Animasyon",
+        "Canlı Müzik",
+        "Plaj",
+        "İskele"
+      ]
+    },
+    "devremulk.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 789,
+      "type": "multiselect",
+      "optionCount": 21,
+      "options": [
+        "Acil",
+        "Yeni",
+        "Fırsat",
+        "Yatırımlık",
+        "Masrafsız",
+        "Pazarlık Payı Var",
+        "Takasa Açık",
+        "Krediye Uygun",
+        "Deniz Manzaralı",
+        "Şehir Merkezinde",
+        "Metroya Yakın",
+        "Sahile Yakın",
+        "Site İçinde",
+        "Eşyalı",
+        "Lüks",
+        "Sıfır",
+        "Yapım Aşamasında",
+        "Hemen Teslim",
+        "İskanlı",
+        "Tapusu Hazır",
+        "Yüksek Kira Getirili"
+      ]
+    },
+    "gunlukKiralik.rooms": {
+      "file": "lib/category-tree.ts",
+      "line": 815,
+      "type": "select",
+      "optionCount": 13,
+      "options": [
+        "Stüdyo (1+0)",
+        "1+1",
+        "1.5+1",
+        "2+1",
+        "2.5+1",
+        "3+1",
+        "3.5+1",
+        "4+1",
+        "4.5+1",
+        "5+1",
+        "6+1",
+        "7+1",
+        "8+1 ve üzeri"
+      ]
+    },
+    "gunlukKiralik.heating": {
+      "file": "lib/category-tree.ts",
+      "line": 815,
+      "type": "select",
+      "optionCount": 14,
+      "options": [
+        "Yok",
+        "Soba",
+        "Doğalgaz Sobası",
+        "Kat Kaloriferi",
+        "Doğalgaz (Kombi)",
+        "Merkezi",
+        "Merkezi (Pay Ölçer)",
+        "Yerden Isıtma",
+        "Klima",
+        "Fancoil",
+        "Güneş Enerjisi",
+        "Jeotermal",
+        "Şömine",
+        "VRV / VRF"
+      ]
+    },
+    "gunlukKiralik.suitableFor": {
+      "file": "lib/category-tree.ts",
+      "line": 815,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Herkese",
+        "Aileye",
+        "Çiftlere",
+        "Öğrenciye",
+        "Kurumsal / İş Seyahati"
+      ]
+    },
+    "gunlukKiralik.gunlukOlanak": {
+      "file": "lib/category-tree.ts",
+      "line": 815,
+      "type": "multiselect",
+      "optionCount": 50,
+      "options": [
+        "Wi-Fi",
+        "Klima",
+        "Isıtma",
+        "Mutfak",
+        "Ankastre Mutfak",
+        "Bulaşık Makinesi",
+        "Çamaşır Makinesi",
+        "Kurutma Makinesi",
+        "Buzdolabı",
+        "Fırın",
+        "Mikrodalga",
+        "Su Isıtıcı",
+        "TV",
+        "Netflix / Smart TV",
+        "Şömine",
+        "Jakuzi",
+        "Sauna",
+        "Özel Havuz",
+        "Ortak Havuz",
+        "Çocuk Havuzu",
+        "Bahçe",
+        "Teras",
+        "Balkon",
+        "Barbekü / Mangal",
+        "Kamelya",
+        "Otopark",
+        "Kapalı Otopark",
+        "Elektrikli Araç Şarjı",
+        "Asansör",
+        "Engelli Erişimi",
+        "Bebek Yatağı",
+        "Mama Sandalyesi",
+        "Çocuk Oyun Alanı",
+        "Havlu & Nevresim",
+        "Bornoz & Terlik",
+        "Saç Kurutma Makinesi",
+        "Ütü",
+        "Kasa",
+        "Alarm / Güvenlik",
+        "7/24 Güvenlik",
+        "Resepsiyon",
+        "Günlük Temizlik",
+        "Deniz Manzarası",
+        "Denize Sıfır",
+        "Sahil Erişimi",
+        "Jeneratör",
+        "Su Deposu",
+        "Kablo TV",
+        "Ses Yalıtımı",
+        "Sigara İçilebilir Alan"
+      ]
+    },
+    "gunlukKiralik.view": {
+      "file": "lib/category-tree.ts",
+      "line": 815,
+      "type": "multiselect",
+      "optionCount": 22,
+      "options": [
+        "Deniz",
+        "Boğaz",
+        "Göl",
+        "Nehir",
+        "Baraj",
+        "Orman",
+        "Dağ",
+        "Doğa",
+        "Park",
+        "Bahçe",
+        "Havuz",
+        "Şehir",
+        "Cadde",
+        "Meydan",
+        "Marina",
+        "Kale",
+        "Tarihi Yapı",
+        "Vadi",
+        "Tarla",
+        "Bağ",
+        "Zeytinlik",
+        "Yok"
+      ]
+    },
+    "odaYurt.roomType": {
+      "file": "lib/category-tree.ts",
+      "line": 848,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Tek Kişilik",
+        "Çift Kişilik",
+        "Paylaşımlı",
+        "Aile Yanı"
+      ]
+    },
+    "odaYurt.gender": {
+      "file": "lib/category-tree.ts",
+      "line": 848,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kadın",
+        "Erkek",
+        "Karma",
+        "Farketmez"
+      ]
+    },
+    "prefabrik.structureType": {
+      "file": "lib/category-tree.ts",
+      "line": 868,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "Prefabrik Ev",
+        "Tiny House",
+        "Konteyner Ev",
+        "Modüler Ev",
+        "Çelik Ev",
+        "Ahşap Ev",
+        "Bungalov",
+        "Yaşam Konteyneri",
+        "Ofis Konteyneri"
+      ]
+    },
+    "prefabrik.listingType": {
+      "file": "lib/category-tree.ts",
+      "line": 868,
+      "type": "select",
+      "optionCount": 2,
+      "options": [
+        "Satılık",
+        "Kiralık"
+      ]
+    },
+    "prefabrik.rooms": {
+      "file": "lib/category-tree.ts",
+      "line": 868,
+      "type": "select",
+      "optionCount": 13,
+      "options": [
+        "Stüdyo (1+0)",
+        "1+1",
+        "1.5+1",
+        "2+1",
+        "2.5+1",
+        "3+1",
+        "3.5+1",
+        "4+1",
+        "4.5+1",
+        "5+1",
+        "6+1",
+        "7+1",
+        "8+1 ve üzeri"
+      ]
+    },
+    "prefabrik.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 868,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Kurulu Halde"
+      ]
+    },
+    "emlakHizmet.providerType": {
+      "file": "lib/category-tree.ts",
+      "line": 889,
+      "type": "select",
+      "optionCount": 2,
+      "options": [
+        "Firma",
+        "Şahıs"
+      ]
+    },
+    "emlakHizmet.pricing": {
+      "file": "lib/category-tree.ts",
+      "line": 889,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sabit Fiyat",
+        "Teklif Usulü",
+        "Görüşülür"
+      ]
+    },
+    "otomobil.brand": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 79,
+      "options": [
+        "Alfa Romeo",
+        "Aston Martin",
+        "Audi",
+        "Bentley",
+        "BMW",
+        "BYD",
+        "Cadillac",
+        "Chery",
+        "Chevrolet",
+        "Chrysler",
+        "Citroën",
+        "Cupra",
+        "Dacia",
+        "Daihatsu",
+        "DFSK",
+        "Dodge",
+        "DS Automobiles",
+        "Ferrari",
+        "Fiat",
+        "Fisker",
+        "Ford",
+        "Geely",
+        "Genesis",
+        "GMC",
+        "Honda",
+        "Hongqi",
+        "Hyundai",
+        "Infiniti",
+        "Isuzu",
+        "Jaguar",
+        "Jeep",
+        "Kia",
+        "Lada",
+        "Lamborghini",
+        "Lancia",
+        "Land Rover",
+        "Leapmotor",
+        "Lexus",
+        "Lotus",
+        "Lucid",
+        "Mahindra",
+        "Maserati",
+        "Maybach",
+        "Mazda",
+        "McLaren",
+        "Mercedes-Benz",
+        "MG",
+        "Mini",
+        "Mitsubishi",
+        "NIO",
+        "Nissan",
+        "Opel",
+        "Ora",
+        "Peugeot",
+        "Porsche",
+        "Proton",
+        "Renault",
+        "Rolls-Royce",
+        "Seat",
+        "Seres",
+        "Škoda",
+        "Skywell",
+        "Smart",
+        "SsangYong",
+        "Subaru",
+        "Suzuki",
+        "Tesla",
+        "Tofaş",
+        "Togg",
+        "Toyota",
+        "Volkswagen",
+        "Volvo",
+        "Jaecoo",
+        "Jetour",
+        "Lynk & Co",
+        "XPeng",
+        "Zeekr",
+        "Omoda",
+        "Diğer"
+      ]
+    },
+    "otomobil.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yurt Dışından İthal",
+        "Klasik / Koleksiyon"
+      ]
+    },
+    "otomobil.inspection": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Yeni Muayeneli",
+        "Muayenesi Var",
+        "Muayenesi Yok"
+      ]
+    },
+    "otomobil.fuel": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Benzin",
+        "Dizel",
+        "LPG",
+        "Hibrit",
+        "Elektrik"
+      ]
+    },
+    "otomobil.gear": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Manuel",
+        "Otomatik",
+        "Yarı Otomatik"
+      ]
+    },
+    "otomobil.bodyType": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "Sedan",
+        "Hatchback",
+        "Station Wagon",
+        "SUV & Arazi",
+        "Crossover",
+        "Coupe",
+        "Cabrio & Roadster",
+        "MPV & Minivan",
+        "Pickup"
+      ]
+    },
+    "otomobil.traction": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Önden Çekiş",
+        "Arkadan İtiş",
+        "4x4 / AWD"
+      ]
+    },
+    "otomobil.color": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 12,
+      "options": [
+        "Beyaz",
+        "Siyah",
+        "Gri",
+        "Gümüş",
+        "Kırmızı",
+        "Mavi",
+        "Lacivert",
+        "Yeşil",
+        "Kahverengi",
+        "Bej",
+        "Turuncu",
+        "Diğer"
+      ]
+    },
+    "otomobil.seats": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "2",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "8+"
+      ]
+    },
+    "otomobil.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "otomobil.damage": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Orijinal / Hasarsız",
+        "Boyalı",
+        "Değişen Var",
+        "Hasar Kayıtlı",
+        "Ağır Hasar / Pert"
+      ]
+    },
+    "otomobil.plate": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Türkiye Plakalı",
+        "Yabancı Plakalı",
+        "Mavi Plaka (Ticari)"
+      ]
+    },
+    "otomobil.from": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sahibinden",
+        "Galeriden",
+        "Yetkili Bayiden"
+      ]
+    },
+    "otomobil.safetyFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "multiselect",
+      "optionCount": 20,
+      "options": [
+        "ABS",
+        "ESP / VSA",
+        "ASR",
+        "Sürücü Hava Yastığı",
+        "Yolcu Hava Yastığı",
+        "Yan Hava Yastığı",
+        "Perde Hava Yastığı",
+        "Dizel Partikül Filtresi",
+        "Yokuş Kalkış Desteği",
+        "Lastik Basınç Sensörü",
+        "Çocuk Kilidi",
+        "Isofix",
+        "Alarm",
+        "Immobilizer",
+        "Merkezi Kilit",
+        "Kör Nokta Uyarı",
+        "Şerit Takip",
+        "Çarpışma Önleme",
+        "Gece Görüş",
+        "Yaya Algılama"
+      ]
+    },
+    "otomobil.comfortFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "multiselect",
+      "optionCount": 25,
+      "options": [
+        "Hız Sabitleyici",
+        "Adaptif Hız Sabitleyici",
+        "Geri Görüş Kamerası",
+        "360° Kamera",
+        "Park Sensörü (Arka)",
+        "Park Sensörü (Ön)",
+        "Otomatik Park",
+        "Deri Koltuk",
+        "Kumaş Koltuk",
+        "Hafızalı Koltuklar",
+        "Isıtmalı Koltuklar",
+        "Soğutmalı Koltuklar",
+        "Elektrikli Koltuklar",
+        "Klima",
+        "Dijital / Çift Bölgeli Klima",
+        "Start/Stop",
+        "Anahtarsız Giriş",
+        "Sunroof",
+        "Panoramik Cam Tavan",
+        "Elektrikli Ön Camlar",
+        "Elektrikli Arka Camlar",
+        "Katlanır Aynalar",
+        "Isıtmalı Direksiyon",
+        "Ambiyans Aydınlatma",
+        "Elektrikli Bagaj"
+      ]
+    },
+    "otomobil.mediaFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Navigasyon",
+        "Apple CarPlay",
+        "Android Auto",
+        "Bluetooth",
+        "USB / AUX",
+        "Dokunmatik Ekran",
+        "Dijital Gösterge",
+        "Head-up Display",
+        "Kablosuz Şarj",
+        "Premium Ses Sistemi",
+        "Arka Eğlence Sistemi"
+      ]
+    },
+    "otomobil.exteriorFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "LED Farlar",
+        "Xenon Farlar",
+        "Matrix / Adaptif Far",
+        "Sis Farları",
+        "Far Yıkama",
+        "Alaşım Jant",
+        "Hardtop",
+        "Römork / Çeki Demiri",
+        "Yağmur Sensörü",
+        "Otomatik Katlanır Ayna",
+        "Krom Paket"
+      ]
+    },
+    "otomobil.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 905,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Sıfır",
+        "Garantili",
+        "Değişensiz",
+        "Boyasız",
+        "Tramersiz",
+        "Faturalı",
+        "Takasa Uygun",
+        "Acil Satılık",
+        "Klasik / Koleksiyon",
+        "Engelli Kullanımına Uygun",
+        "İlk Sahibinden"
+      ]
+    },
+    "motosiklet.brand": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 40,
+      "options": [
+        "Honda",
+        "Yamaha",
+        "Kawasaki",
+        "Suzuki",
+        "KTM",
+        "BMW",
+        "Ducati",
+        "Triumph",
+        "Harley-Davidson",
+        "Aprilia",
+        "Vespa",
+        "Piaggio",
+        "Benelli",
+        "Royal Enfield",
+        "Moto Guzzi",
+        "Bajaj",
+        "TVS",
+        "CFMoto",
+        "SYM",
+        "Kymco",
+        "Mondial",
+        "Kuba",
+        "RKS",
+        "Arora",
+        "Yuki",
+        "Motolux",
+        "Falcon",
+        "Zontes",
+        "Voge",
+        "QJ Motor",
+        "Keeway",
+        "Hero",
+        "Lifan",
+        "Husqvarna",
+        "Indian",
+        "MV Agusta",
+        "Bimota",
+        "Can-Am",
+        "Segway Powersports",
+        "Diğer"
+      ]
+    },
+    "motosiklet.motoType": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 11,
+      "options": [
+        "Naked",
+        "Sport",
+        "Touring",
+        "Chopper",
+        "Cruiser",
+        "Enduro / Cross",
+        "Scooter",
+        "Cub",
+        "ATV",
+        "Elektrikli",
+        "Trike"
+      ]
+    },
+    "motosiklet.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yurt Dışından İthal",
+        "Klasik / Koleksiyon"
+      ]
+    },
+    "motosiklet.color": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 12,
+      "options": [
+        "Beyaz",
+        "Siyah",
+        "Gri",
+        "Gümüş",
+        "Kırmızı",
+        "Mavi",
+        "Lacivert",
+        "Yeşil",
+        "Kahverengi",
+        "Bej",
+        "Turuncu",
+        "Diğer"
+      ]
+    },
+    "motosiklet.license": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "A1",
+        "A2",
+        "A",
+        "B (ATV)"
+      ]
+    },
+    "motosiklet.fuel": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Benzin",
+        "Elektrik",
+        "Hibrit"
+      ]
+    },
+    "motosiklet.engineCc": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 11,
+      "options": [
+        "50 cc",
+        "100 cc",
+        "125 cc",
+        "150 cc",
+        "250 cc",
+        "400 cc",
+        "500 cc",
+        "600 cc",
+        "750 cc",
+        "1000 cc",
+        "1000 cc üzeri"
+      ]
+    },
+    "motosiklet.gear": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Manuel",
+        "Otomatik",
+        "Yarı Otomatik"
+      ]
+    },
+    "motosiklet.cooling": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Hava",
+        "Sıvı",
+        "Yağ"
+      ]
+    },
+    "motosiklet.inspection": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Yeni Muayeneli",
+        "Muayenesi Var",
+        "Muayenesi Yok"
+      ]
+    },
+    "motosiklet.damage": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Orijinal / Hasarsız",
+        "Boyalı",
+        "Değişen Var",
+        "Hasar Kayıtlı",
+        "Ağır Hasar / Pert"
+      ]
+    },
+    "motosiklet.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "motosiklet.from": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sahibinden",
+        "Galeriden",
+        "Yetkili Bayiden"
+      ]
+    },
+    "motosiklet.motoFeatures": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "multiselect",
+      "optionCount": 14,
+      "options": [
+        "ABS",
+        "Rölanti Kontrol",
+        "Dijital Gösterge",
+        "LED Far",
+        "USB Şarj",
+        "Yol Bilgisayarı",
+        "Kayışlı",
+        "Zincirli",
+        "Şaftlı",
+        "Sele Isıtma",
+        "Rüzgar Siperi",
+        "Yan Çanta",
+        "Top Case",
+        "Alarm"
+      ]
+    },
+    "motosiklet.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 942,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Sıfır",
+        "Garantili",
+        "Değişensiz",
+        "Boyasız",
+        "Tramersiz",
+        "Faturalı",
+        "Takasa Uygun",
+        "Acil Satılık",
+        "Klasik / Koleksiyon",
+        "Engelli Kullanımına Uygun",
+        "İlk Sahibinden"
+      ]
+    },
+    "vasitaGenel.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 970,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yurt Dışından İthal",
+        "Klasik / Koleksiyon"
+      ]
+    },
+    "vasitaGenel.fuel": {
+      "file": "lib/category-tree.ts",
+      "line": 970,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Benzin",
+        "Dizel",
+        "LPG",
+        "Hibrit",
+        "Elektrik",
+        "Yok"
+      ]
+    },
+    "vasitaGenel.gear": {
+      "file": "lib/category-tree.ts",
+      "line": 970,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Manuel",
+        "Otomatik",
+        "Yarı Otomatik",
+        "Yok"
+      ]
+    },
+    "vasitaGenel.color": {
+      "file": "lib/category-tree.ts",
+      "line": 970,
+      "type": "select",
+      "optionCount": 12,
+      "options": [
+        "Beyaz",
+        "Siyah",
+        "Gri",
+        "Gümüş",
+        "Kırmızı",
+        "Mavi",
+        "Lacivert",
+        "Yeşil",
+        "Kahverengi",
+        "Bej",
+        "Turuncu",
+        "Diğer"
+      ]
+    },
+    "vasitaGenel.damage": {
+      "file": "lib/category-tree.ts",
+      "line": 970,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Orijinal / Hasarsız",
+        "Boyalı",
+        "Değişen Var",
+        "Hasar Kayıtlı",
+        "Ağır Hasar / Pert"
+      ]
+    },
+    "vasitaGenel.inspection": {
+      "file": "lib/category-tree.ts",
+      "line": 970,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Yeni Muayeneli",
+        "Muayenesi Var",
+        "Muayenesi Yok"
+      ]
+    },
+    "vasitaGenel.from": {
+      "file": "lib/category-tree.ts",
+      "line": 970,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sahibinden",
+        "Galeriden",
+        "Yetkili Bayiden"
+      ]
+    },
+    "vasitaGenel.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 970,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "ticari.brand": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 12,
+      "options": [
+        "Ford",
+        "Mercedes-Benz",
+        "Volkswagen",
+        "Fiat",
+        "Renault",
+        "Peugeot",
+        "Citroën",
+        "Iveco",
+        "Opel",
+        "Hyundai",
+        "Isuzu",
+        "Diğer"
+      ]
+    },
+    "ticari.bodyType": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 10,
+      "options": [
+        "Panelvan",
+        "Minibüs",
+        "Kamyonet",
+        "Kombi Van",
+        "Camlı Van",
+        "Şasi Kabin",
+        "Frigorifik",
+        "Damperli",
+        "Tenteli",
+        "Kapalı Kasa"
+      ]
+    },
+    "ticari.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yurt Dışından İthal",
+        "Klasik / Koleksiyon"
+      ]
+    },
+    "ticari.color": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 12,
+      "options": [
+        "Beyaz",
+        "Siyah",
+        "Gri",
+        "Gümüş",
+        "Kırmızı",
+        "Mavi",
+        "Lacivert",
+        "Yeşil",
+        "Kahverengi",
+        "Bej",
+        "Turuncu",
+        "Diğer"
+      ]
+    },
+    "ticari.seats": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "2",
+        "3",
+        "5",
+        "6",
+        "8",
+        "9",
+        "14",
+        "16",
+        "19+"
+      ]
+    },
+    "ticari.fuel": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Benzin",
+        "Dizel",
+        "LPG",
+        "Hibrit",
+        "Elektrik"
+      ]
+    },
+    "ticari.gear": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Manuel",
+        "Otomatik",
+        "Yarı Otomatik"
+      ]
+    },
+    "ticari.traction": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Önden Çekiş",
+        "Arkadan İtiş",
+        "4x4 / AWD"
+      ]
+    },
+    "ticari.damage": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Orijinal / Hasarsız",
+        "Boyalı",
+        "Değişen Var",
+        "Hasar Kayıtlı",
+        "Ağır Hasar / Pert"
+      ]
+    },
+    "ticari.inspection": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Yeni Muayeneli",
+        "Muayenesi Var",
+        "Muayenesi Yok"
+      ]
+    },
+    "ticari.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "ticari.from": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sahibinden",
+        "Galeriden",
+        "Yetkili Bayiden"
+      ]
+    },
+    "ticari.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 994,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Sıfır",
+        "Garantili",
+        "Değişensiz",
+        "Boyasız",
+        "Tramersiz",
+        "Faturalı",
+        "Takasa Uygun",
+        "Acil Satılık",
+        "Klasik / Koleksiyon",
+        "Engelli Kullanımına Uygun",
+        "İlk Sahibinden"
+      ]
+    },
+    "agirVasita.vehicleType": {
+      "file": "lib/category-tree.ts",
+      "line": 1022,
+      "type": "select",
+      "optionCount": 11,
+      "options": [
+        "Kamyon",
+        "Çekici (TIR)",
+        "Kamyonet",
+        "Otobüs",
+        "Midibüs",
+        "Dorse",
+        "Römork",
+        "Tanker",
+        "Damperli",
+        "Beton Mikseri",
+        "Vinçli"
+      ]
+    },
+    "agirVasita.axle": {
+      "file": "lib/category-tree.ts",
+      "line": 1022,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "4x2",
+        "6x2",
+        "6x4",
+        "8x2",
+        "8x4",
+        "10x4"
+      ]
+    },
+    "agirVasita.fuel": {
+      "file": "lib/category-tree.ts",
+      "line": 1022,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Dizel",
+        "Benzin",
+        "LPG",
+        "Elektrik"
+      ]
+    },
+    "agirVasita.gear": {
+      "file": "lib/category-tree.ts",
+      "line": 1022,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Manuel",
+        "Otomatik",
+        "Yarı Otomatik"
+      ]
+    },
+    "agirVasita.cabin": {
+      "file": "lib/category-tree.ts",
+      "line": 1022,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Çift Kabin",
+        "Tek Kabin",
+        "Yataklı Kabin"
+      ]
+    },
+    "agirVasita.damage": {
+      "file": "lib/category-tree.ts",
+      "line": 1022,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Orijinal / Hasarsız",
+        "Boyalı",
+        "Değişen Var",
+        "Hasar Kayıtlı",
+        "Ağır Hasar / Pert"
+      ]
+    },
+    "agirVasita.inspection": {
+      "file": "lib/category-tree.ts",
+      "line": 1022,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Yeni Muayeneli",
+        "Muayenesi Var",
+        "Muayenesi Yok"
+      ]
+    },
+    "agirVasita.from": {
+      "file": "lib/category-tree.ts",
+      "line": 1022,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sahibinden",
+        "Galeriden",
+        "Yetkili Bayiden"
+      ]
+    },
+    "agirVasita.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1022,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Sıfır",
+        "Garantili",
+        "Değişensiz",
+        "Boyasız",
+        "Tramersiz",
+        "Faturalı",
+        "Takasa Uygun",
+        "Acil Satılık",
+        "Klasik / Koleksiyon",
+        "Engelli Kullanımına Uygun",
+        "İlk Sahibinden"
+      ]
+    },
+    "deniz.vesselType": {
+      "file": "lib/category-tree.ts",
+      "line": 1045,
+      "type": "select",
+      "optionCount": 10,
+      "options": [
+        "Motoryat",
+        "Yelkenli",
+        "Sürat Teknesi",
+        "Gulet",
+        "Katamaran",
+        "Şişme Bot / Zodyak",
+        "Jet Ski",
+        "Balıkçı Teknesi",
+        "Fiber Tekne",
+        "Ahşap Tekne"
+      ]
+    },
+    "deniz.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1045,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yurt Dışından İthal",
+        "Klasik / Koleksiyon"
+      ]
+    },
+    "deniz.material": {
+      "file": "lib/category-tree.ts",
+      "line": 1045,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Fiber (GRP)",
+        "Ahşap",
+        "Alüminyum",
+        "Çelik",
+        "PVC / Şişme"
+      ]
+    },
+    "deniz.engineType": {
+      "file": "lib/category-tree.ts",
+      "line": 1045,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "İçten Takma",
+        "Dıştan Takma",
+        "Motorsuz"
+      ]
+    },
+    "deniz.fuel": {
+      "file": "lib/category-tree.ts",
+      "line": 1045,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Dizel",
+        "Benzin",
+        "Elektrik",
+        "Yelken"
+      ]
+    },
+    "deniz.cabins": {
+      "file": "lib/category-tree.ts",
+      "line": 1045,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "0",
+        "1",
+        "2",
+        "3",
+        "4",
+        "4+"
+      ]
+    },
+    "deniz.damage": {
+      "file": "lib/category-tree.ts",
+      "line": 1045,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Orijinal / Hasarsız",
+        "Boyalı",
+        "Değişen Var",
+        "Hasar Kayıtlı",
+        "Ağır Hasar / Pert"
+      ]
+    },
+    "deniz.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1045,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "deniz.from": {
+      "file": "lib/category-tree.ts",
+      "line": 1045,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sahibinden",
+        "Galeriden",
+        "Yetkili Bayiden"
+      ]
+    },
+    "traktor.vehicleType": {
+      "file": "lib/category-tree.ts",
+      "line": 1071,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "Traktör",
+        "Biçerdöver",
+        "Çapa Makinesi",
+        "Balya Makinesi",
+        "Pulluk",
+        "Römork",
+        "İlaçlama Makinesi",
+        "Süt Sağım Makinesi",
+        "Diğer Tarım Ekipmanı"
+      ]
+    },
+    "traktor.traction": {
+      "file": "lib/category-tree.ts",
+      "line": 1071,
+      "type": "select",
+      "optionCount": 2,
+      "options": [
+        "2WD (Arkadan İtiş)",
+        "4WD (Çift Çeker)"
+      ]
+    },
+    "traktor.cabin": {
+      "file": "lib/category-tree.ts",
+      "line": 1071,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Kabinli",
+        "Kabinsiz",
+        "Gölgelikli"
+      ]
+    },
+    "traktor.mechanicalCondition": {
+      "file": "lib/category-tree.ts",
+      "line": 1071,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Çalışır / Sorunsuz",
+        "Bakım Gerektirir",
+        "Parça / Hurda"
+      ]
+    },
+    "traktor.from": {
+      "file": "lib/category-tree.ts",
+      "line": 1071,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sahibinden",
+        "Galeriden",
+        "Bayiden"
+      ]
+    },
+    "traktor.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1071,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Sıfır",
+        "Garantili",
+        "Değişensiz",
+        "Boyasız",
+        "Tramersiz",
+        "Faturalı",
+        "Takasa Uygun",
+        "Acil Satılık",
+        "Klasik / Koleksiyon",
+        "Engelli Kullanımına Uygun",
+        "İlk Sahibinden"
+      ]
+    },
+    "aracKiralik.fuel": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Benzin",
+        "Dizel",
+        "LPG",
+        "Hibrit",
+        "Elektrik"
+      ]
+    },
+    "aracKiralik.gear": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Manuel",
+        "Otomatik",
+        "Yarı Otomatik"
+      ]
+    },
+    "aracKiralik.seats": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "2",
+        "4",
+        "5",
+        "6",
+        "7",
+        "8",
+        "8+"
+      ]
+    },
+    "aracKiralik.carClass": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "Ekonomik",
+        "Orta",
+        "Üst",
+        "Lüks / Premium",
+        "SUV",
+        "Ticari",
+        "VIP"
+      ]
+    },
+    "aracKiralik.minRentDays": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "1 gün",
+        "2 gün",
+        "3 gün",
+        "1 hafta",
+        "1 ay",
+        "Uzun dönem"
+      ]
+    },
+    "aracKiralik.kmLimit": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "Limitsiz",
+        "100 km",
+        "150 km",
+        "200 km",
+        "250 km",
+        "300 km",
+        "Aylık paket"
+      ]
+    },
+    "aracKiralik.withDriver": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Şoförsüz",
+        "Şoförlü",
+        "İkisi de mümkün"
+      ]
+    },
+    "aracKiralik.minAge": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "21",
+        "23",
+        "25",
+        "27",
+        "30"
+      ]
+    },
+    "aracKiralik.minLicense": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "1 yıl",
+        "2 yıl",
+        "3 yıl",
+        "5 yıl"
+      ]
+    },
+    "aracKiralik.fuelPolicy": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Dolu al - dolu ver",
+        "Dolu al - boş ver",
+        "Kadar kullan - öde"
+      ]
+    },
+    "aracKiralik.deliveryPlace": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "multiselect",
+      "optionCount": 5,
+      "options": [
+        "Ofisten Teslim",
+        "Adrese Teslim",
+        "Havalimanı Teslim",
+        "Otel Teslim",
+        "Şehir Dışı Teslim"
+      ]
+    },
+    "aracKiralik.from": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sahibinden",
+        "Rent a Car Firmasından",
+        "Filo Firmasından"
+      ]
+    },
+    "aracKiralik.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1091,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Sıfır",
+        "Garantili",
+        "Değişensiz",
+        "Boyasız",
+        "Tramersiz",
+        "Faturalı",
+        "Takasa Uygun",
+        "Acil Satılık",
+        "Klasik / Koleksiyon",
+        "Engelli Kullanımına Uygun",
+        "İlk Sahibinden"
+      ]
+    },
+    "havaAraci.craftType": {
+      "file": "lib/category-tree.ts",
+      "line": 1123,
+      "type": "select",
+      "optionCount": 12,
+      "options": [
+        "Uçak (Tek Motor)",
+        "Uçak (Çift Motor)",
+        "Jet",
+        "Helikopter",
+        "Planör",
+        "Microlight / Ultralight",
+        "Paramotor",
+        "Yamaç Paraşütü",
+        "Balon",
+        "Amfibik",
+        "Drone",
+        "Diğer"
+      ]
+    },
+    "havaAraci.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1123,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Restorasyonluk"
+      ]
+    },
+    "havaAraci.engineType": {
+      "file": "lib/category-tree.ts",
+      "line": 1123,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Pistonlu",
+        "Turboprop",
+        "Jet / Turbofan",
+        "Elektrik",
+        "Motorsuz"
+      ]
+    },
+    "havaAraci.seats": {
+      "file": "lib/category-tree.ts",
+      "line": 1123,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "1",
+        "2",
+        "3",
+        "4",
+        "5",
+        "6",
+        "7+"
+      ]
+    },
+    "havaAraci.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1123,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "havaAraci.registration": {
+      "file": "lib/category-tree.ts",
+      "line": 1123,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Var (Geçerli)",
+        "Var (Süresi Dolmuş)",
+        "Yok"
+      ]
+    },
+    "havaAraci.from": {
+      "file": "lib/category-tree.ts",
+      "line": 1123,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sahibinden",
+        "Bayiden",
+        "Firmadan"
+      ]
+    },
+    "havaAraci.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1123,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "Sıfır",
+        "Garantili",
+        "Değişensiz",
+        "Boyasız",
+        "Tramersiz",
+        "Faturalı",
+        "Takasa Uygun",
+        "Acil Satılık",
+        "Klasik / Koleksiyon",
+        "Engelli Kullanımına Uygun",
+        "İlk Sahibinden"
+      ]
+    },
+    "yedekParca.origin": {
+      "file": "lib/category-tree.ts",
+      "line": 1146,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Orijinal (OEM)",
+        "Muadil / Eşdeğer",
+        "Yan Sanayi",
+        "Çıkma (Orijinal)",
+        "Yenilenmiş (Refurbished)"
+      ]
+    },
+    "yedekParca.partPosition": {
+      "file": "lib/category-tree.ts",
+      "line": 1146,
+      "type": "select",
+      "optionCount": 13,
+      "options": [
+        "Fark etmez",
+        "Ön",
+        "Arka",
+        "Sağ",
+        "Sol",
+        "Ön Sağ",
+        "Ön Sol",
+        "Arka Sağ",
+        "Arka Sol",
+        "Üst",
+        "Alt",
+        "İç",
+        "Dış"
+      ]
+    },
+    "yedekParca.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1146,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "yedekParca.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1146,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "yedekParca.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1146,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "yedekParca.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1146,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Orijinal",
+        "Sıfır",
+        "Garantili",
+        "Faturalı",
+        "Az Kullanılmış",
+        "Kutusunda",
+        "Montaj Dahil",
+        "Ücretsiz Kargo",
+        "Takasa Uygun",
+        "Acil"
+      ]
+    },
+    "alisverisGenel.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1178,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "alisverisGenel.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1178,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "alisverisGenel.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1178,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "yapiMarket.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1193,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "yapiMarket.unit": {
+      "file": "lib/category-tree.ts",
+      "line": 1193,
+      "type": "select",
+      "optionCount": 12,
+      "options": [
+        "Adet",
+        "m²",
+        "m",
+        "m³",
+        "kg",
+        "Litre",
+        "Paket",
+        "Kutu",
+        "Takım",
+        "Rulo",
+        "Torba",
+        "Palet"
+      ]
+    },
+    "yapiMarket.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1193,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "yapiMarket.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1193,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "yapiMarket.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1193,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Sıfır",
+        "Az Kullanılmış",
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Ücretsiz Kargo",
+        "Pazarlık Payı Var",
+        "Takasa Uygun",
+        "Acil"
+      ]
+    },
+    "elektrikliAlet.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1208,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "elektrikliAlet.voltage": {
+      "file": "lib/category-tree.ts",
+      "line": 1208,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "12V",
+        "18V",
+        "20V",
+        "24V",
+        "36V",
+        "220V (Kablolu)",
+        "Diğer"
+      ]
+    },
+    "elektrikliAlet.battery": {
+      "file": "lib/category-tree.ts",
+      "line": 1208,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kablolu",
+        "Akülü",
+        "Akülü (Aküsüz satılıyor)",
+        "Benzinli"
+      ]
+    },
+    "elektrikliAlet.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1208,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "elektrikliAlet.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1208,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "elektrikliAlet.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1208,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Sıfır",
+        "Az Kullanılmış",
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Ücretsiz Kargo",
+        "Pazarlık Payı Var",
+        "Takasa Uygun",
+        "Acil"
+      ]
+    },
+    "telefon.brand": {
+      "file": "lib/category-tree.ts",
+      "line": 1223,
+      "type": "select",
+      "optionCount": 22,
+      "options": [
+        "iPhone",
+        "Samsung",
+        "Xiaomi",
+        "Huawei",
+        "Oppo",
+        "Realme",
+        "Vivo",
+        "Tecno",
+        "Honor",
+        "OnePlus",
+        "Nothing",
+        "General Mobile",
+        "Reeder",
+        "Poco",
+        "Infinix",
+        "Google",
+        "Sony",
+        "Nokia",
+        "Casper",
+        "TCL",
+        "Alcatel",
+        "Diğer"
+      ]
+    },
+    "telefon.storage": {
+      "file": "lib/category-tree.ts",
+      "line": 1223,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "16 GB",
+        "32 GB",
+        "64 GB",
+        "128 GB",
+        "256 GB",
+        "512 GB",
+        "1 TB"
+      ]
+    },
+    "telefon.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1223,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci el",
+        "Yenilenmiş"
+      ]
+    },
+    "telefon.cosmetic": {
+      "file": "lib/category-tree.ts",
+      "line": 1223,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kusursuz",
+        "Çok iyi",
+        "İyi",
+        "Yıpranmış"
+      ]
+    },
+    "telefon.imei": {
+      "file": "lib/category-tree.ts",
+      "line": 1223,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Kayıtlı",
+        "Kayıtsız",
+        "Yurt dışı"
+      ]
+    },
+    "telefon.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1223,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "telefon.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1223,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "elektronik.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1244,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "elektronik.storage": {
+      "file": "lib/category-tree.ts",
+      "line": 1244,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "16 GB",
+        "32 GB",
+        "64 GB",
+        "128 GB",
+        "256 GB",
+        "512 GB",
+        "1 TB",
+        "2 TB"
+      ]
+    },
+    "elektronik.ram": {
+      "file": "lib/category-tree.ts",
+      "line": 1244,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "2 GB",
+        "3 GB",
+        "4 GB",
+        "6 GB",
+        "8 GB",
+        "12 GB",
+        "16 GB",
+        "32 GB",
+        "64 GB"
+      ]
+    },
+    "elektronik.color": {
+      "file": "lib/category-tree.ts",
+      "line": 1244,
+      "type": "select",
+      "optionCount": 15,
+      "options": [
+        "Siyah",
+        "Beyaz",
+        "Gri",
+        "Mavi",
+        "Kırmızı",
+        "Yeşil",
+        "Sarı",
+        "Turuncu",
+        "Mor",
+        "Pembe",
+        "Kahverengi",
+        "Bej",
+        "Lacivert",
+        "Çok Renkli",
+        "Diğer"
+      ]
+    },
+    "elektronik.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1244,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "elektronik.urunOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 1244,
+      "type": "multiselect",
+      "optionCount": 8,
+      "options": [
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Şarj Aleti / Adaptör Dahil",
+        "Kılıf / Kap Dahil",
+        "Ekran Koruyucu",
+        "Servis Bakımlı"
+      ]
+    },
+    "elektronik.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1244,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "elektronik.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1244,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Sıfır",
+        "Az Kullanılmış",
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Ücretsiz Kargo",
+        "Pazarlık Payı Var",
+        "Takasa Uygun",
+        "Acil"
+      ]
+    },
+    "bilgisayar.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1255,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "bilgisayar.ram": {
+      "file": "lib/category-tree.ts",
+      "line": 1255,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "2 GB",
+        "3 GB",
+        "4 GB",
+        "6 GB",
+        "8 GB",
+        "12 GB",
+        "16 GB",
+        "32 GB",
+        "64 GB"
+      ]
+    },
+    "bilgisayar.storage": {
+      "file": "lib/category-tree.ts",
+      "line": 1255,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "16 GB",
+        "32 GB",
+        "64 GB",
+        "128 GB",
+        "256 GB",
+        "512 GB",
+        "1 TB",
+        "2 TB"
+      ]
+    },
+    "bilgisayar.resolution": {
+      "file": "lib/category-tree.ts",
+      "line": 1255,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "HD",
+        "Full HD",
+        "2K/QHD",
+        "4K/UHD",
+        "8K"
+      ]
+    },
+    "bilgisayar.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1255,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "bilgisayar.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1255,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "televizyon.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1265,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "televizyon.resolution": {
+      "file": "lib/category-tree.ts",
+      "line": 1265,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "HD",
+        "Full HD",
+        "2K/QHD",
+        "4K/UHD",
+        "8K"
+      ]
+    },
+    "televizyon.panel": {
+      "file": "lib/category-tree.ts",
+      "line": 1265,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "LED",
+        "QLED",
+        "OLED",
+        "Neo QLED",
+        "NanoCell"
+      ]
+    },
+    "televizyon.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1265,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "televizyon.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1265,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "beyazEsya.brand": {
+      "file": "lib/category-tree.ts",
+      "line": 1275,
+      "type": "select",
+      "optionCount": 24,
+      "options": [
+        "Arçelik",
+        "Beko",
+        "Bosch",
+        "Siemens",
+        "Vestel",
+        "Samsung",
+        "LG",
+        "Profilo",
+        "Altus",
+        "Grundig",
+        "Regal",
+        "Silverline",
+        "Electrolux",
+        "Whirlpool",
+        "Simfer",
+        "Kumtel",
+        "Luxell",
+        "Sharp",
+        "Hisense",
+        "Midea",
+        "Candy",
+        "Indesit",
+        "Ariston",
+        "Diğer"
+      ]
+    },
+    "beyazEsya.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1275,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "beyazEsya.energy": {
+      "file": "lib/category-tree.ts",
+      "line": 1275,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "A+++",
+        "A++",
+        "A+",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    "beyazEsya.color": {
+      "file": "lib/category-tree.ts",
+      "line": 1275,
+      "type": "select",
+      "optionCount": 15,
+      "options": [
+        "Siyah",
+        "Beyaz",
+        "Gri",
+        "Mavi",
+        "Kırmızı",
+        "Yeşil",
+        "Sarı",
+        "Turuncu",
+        "Mor",
+        "Pembe",
+        "Kahverengi",
+        "Bej",
+        "Lacivert",
+        "Çok Renkli",
+        "Diğer"
+      ]
+    },
+    "beyazEsya.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1275,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "beyazEsya.urunOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 1275,
+      "type": "multiselect",
+      "optionCount": 8,
+      "options": [
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Şarj Aleti / Adaptör Dahil",
+        "Kılıf / Kap Dahil",
+        "Ekran Koruyucu",
+        "Servis Bakımlı"
+      ]
+    },
+    "beyazEsya.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1275,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "beyazEsya.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1275,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Sıfır",
+        "Az Kullanılmış",
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Ücretsiz Kargo",
+        "Pazarlık Payı Var",
+        "Takasa Uygun",
+        "Acil"
+      ]
+    },
+    "klima.brand": {
+      "file": "lib/category-tree.ts",
+      "line": 1288,
+      "type": "select",
+      "optionCount": 13,
+      "options": [
+        "Arçelik",
+        "Vestel",
+        "Samsung",
+        "LG",
+        "Bosch",
+        "Daikin",
+        "Mitsubishi",
+        "Toshiba",
+        "Baymak",
+        "Gree",
+        "Midea",
+        "Beko",
+        "Diğer"
+      ]
+    },
+    "klima.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1288,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "klima.energy": {
+      "file": "lib/category-tree.ts",
+      "line": 1288,
+      "type": "select",
+      "optionCount": 9,
+      "options": [
+        "A+++",
+        "A++",
+        "A+",
+        "A",
+        "B",
+        "C",
+        "D",
+        "E",
+        "F"
+      ]
+    },
+    "klima.btu": {
+      "file": "lib/category-tree.ts",
+      "line": 1288,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "9.000 BTU",
+        "12.000 BTU",
+        "18.000 BTU",
+        "24.000 BTU",
+        "Diğer"
+      ]
+    },
+    "klima.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1288,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "klima.urunOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 1288,
+      "type": "multiselect",
+      "optionCount": 8,
+      "options": [
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Şarj Aleti / Adaptör Dahil",
+        "Kılıf / Kap Dahil",
+        "Ekran Koruyucu",
+        "Servis Bakımlı"
+      ]
+    },
+    "klima.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1288,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "klima.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1288,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Sıfır",
+        "Az Kullanılmış",
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Ücretsiz Kargo",
+        "Pazarlık Payı Var",
+        "Takasa Uygun",
+        "Acil"
+      ]
+    },
+    "kombi.brand": {
+      "file": "lib/category-tree.ts",
+      "line": 1293,
+      "type": "select",
+      "optionCount": 10,
+      "options": [
+        "Baymak",
+        "DemirDöküm",
+        "Vaillant",
+        "Buderus",
+        "Bosch",
+        "ECA",
+        "Airfel",
+        "Viessmann",
+        "Warmhaus",
+        "Diğer"
+      ]
+    },
+    "kombi.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1293,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "kombi.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1293,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "kombi.urunOzellik": {
+      "file": "lib/category-tree.ts",
+      "line": 1293,
+      "type": "multiselect",
+      "optionCount": 8,
+      "options": [
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Şarj Aleti / Adaptör Dahil",
+        "Kılıf / Kap Dahil",
+        "Ekran Koruyucu",
+        "Servis Bakımlı"
+      ]
+    },
+    "kombi.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1293,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "kombi.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1293,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Sıfır",
+        "Az Kullanılmış",
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Ücretsiz Kargo",
+        "Pazarlık Payı Var",
+        "Takasa Uygun",
+        "Acil"
+      ]
+    },
+    "moda.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1298,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "moda.size": {
+      "file": "lib/category-tree.ts",
+      "line": 1298,
+      "type": "select",
+      "optionCount": 16,
+      "options": [
+        "XS",
+        "S",
+        "M",
+        "L",
+        "XL",
+        "XXL",
+        "3XL",
+        "34",
+        "36",
+        "38",
+        "40",
+        "42",
+        "44",
+        "46",
+        "48",
+        "Standart"
+      ]
+    },
+    "moda.color": {
+      "file": "lib/category-tree.ts",
+      "line": 1298,
+      "type": "select",
+      "optionCount": 15,
+      "options": [
+        "Siyah",
+        "Beyaz",
+        "Gri",
+        "Mavi",
+        "Kırmızı",
+        "Yeşil",
+        "Sarı",
+        "Turuncu",
+        "Mor",
+        "Pembe",
+        "Kahverengi",
+        "Bej",
+        "Lacivert",
+        "Çok Renkli",
+        "Diğer"
+      ]
+    },
+    "moda.gender": {
+      "file": "lib/category-tree.ts",
+      "line": 1298,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Kadın",
+        "Erkek",
+        "Unisex",
+        "Kız Çocuk",
+        "Erkek Çocuk",
+        "Bebek"
+      ]
+    },
+    "moda.sezon": {
+      "file": "lib/category-tree.ts",
+      "line": 1298,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "İlkbahar / Yaz",
+        "Sonbahar / Kış",
+        "4 Mevsim"
+      ]
+    },
+    "moda.desen": {
+      "file": "lib/category-tree.ts",
+      "line": 1298,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "Düz",
+        "Çizgili",
+        "Kareli",
+        "Çiçekli",
+        "Desenli",
+        "Baskılı",
+        "Ekose"
+      ]
+    },
+    "moda.kesim": {
+      "file": "lib/category-tree.ts",
+      "line": 1298,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Slim Fit",
+        "Regular Fit",
+        "Oversize",
+        "Skinny",
+        "Straight",
+        "Bol Kesim"
+      ]
+    },
+    "moda.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1298,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "moda.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1298,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Sıfır",
+        "Az Kullanılmış",
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Ücretsiz Kargo",
+        "Pazarlık Payı Var",
+        "Takasa Uygun",
+        "Acil"
+      ]
+    },
+    "ayakkabi.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1308,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "ayakkabi.shoeSize": {
+      "file": "lib/category-tree.ts",
+      "line": 1308,
+      "type": "select",
+      "optionCount": 12,
+      "options": [
+        "35",
+        "36",
+        "37",
+        "38",
+        "39",
+        "40",
+        "41",
+        "42",
+        "43",
+        "44",
+        "45",
+        "46"
+      ]
+    },
+    "ayakkabi.color": {
+      "file": "lib/category-tree.ts",
+      "line": 1308,
+      "type": "select",
+      "optionCount": 15,
+      "options": [
+        "Siyah",
+        "Beyaz",
+        "Gri",
+        "Mavi",
+        "Kırmızı",
+        "Yeşil",
+        "Sarı",
+        "Turuncu",
+        "Mor",
+        "Pembe",
+        "Kahverengi",
+        "Bej",
+        "Lacivert",
+        "Çok Renkli",
+        "Diğer"
+      ]
+    },
+    "ayakkabi.gender": {
+      "file": "lib/category-tree.ts",
+      "line": 1308,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Kadın",
+        "Erkek",
+        "Unisex",
+        "Kız Çocuk",
+        "Erkek Çocuk",
+        "Bebek"
+      ]
+    },
+    "ayakkabi.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1308,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "mobilya.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1313,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "mobilya.stil": {
+      "file": "lib/category-tree.ts",
+      "line": 1313,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "Modern",
+        "Klasik",
+        "Country",
+        "Avangard",
+        "Vintage",
+        "Endüstriyel",
+        "Rustik",
+        "Art Deco"
+      ]
+    },
+    "mobilya.color": {
+      "file": "lib/category-tree.ts",
+      "line": 1313,
+      "type": "select",
+      "optionCount": 15,
+      "options": [
+        "Siyah",
+        "Beyaz",
+        "Gri",
+        "Mavi",
+        "Kırmızı",
+        "Yeşil",
+        "Sarı",
+        "Turuncu",
+        "Mor",
+        "Pembe",
+        "Kahverengi",
+        "Bej",
+        "Lacivert",
+        "Çok Renkli",
+        "Diğer"
+      ]
+    },
+    "mobilya.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1313,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "mobilya.etiketler": {
+      "file": "lib/category-tree.ts",
+      "line": 1313,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Sıfır",
+        "Az Kullanılmış",
+        "Garantili",
+        "Faturalı",
+        "Kutusunda",
+        "Aksesuarları Tam",
+        "Ücretsiz Kargo",
+        "Pazarlık Payı Var",
+        "Takasa Uygun",
+        "Acil"
+      ]
+    },
+    "bebek.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1318,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "bebek.ageGroup": {
+      "file": "lib/category-tree.ts",
+      "line": 1318,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "0-6 ay",
+        "6-12 ay",
+        "1-2 yaş",
+        "2-4 yaş",
+        "4-6 yaş",
+        "6+ yaş"
+      ]
+    },
+    "bebek.gender": {
+      "file": "lib/category-tree.ts",
+      "line": 1318,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Kadın",
+        "Erkek",
+        "Unisex",
+        "Kız Çocuk",
+        "Erkek Çocuk",
+        "Bebek"
+      ]
+    },
+    "bebek.color": {
+      "file": "lib/category-tree.ts",
+      "line": 1318,
+      "type": "select",
+      "optionCount": 15,
+      "options": [
+        "Siyah",
+        "Beyaz",
+        "Gri",
+        "Mavi",
+        "Kırmızı",
+        "Yeşil",
+        "Sarı",
+        "Turuncu",
+        "Mor",
+        "Pembe",
+        "Kahverengi",
+        "Bej",
+        "Lacivert",
+        "Çok Renkli",
+        "Diğer"
+      ]
+    },
+    "bebek.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1318,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "bebek.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1318,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "petUrun.petType": {
+      "file": "lib/category-tree.ts",
+      "line": 1325,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "Kedi",
+        "Köpek",
+        "Kuş",
+        "Balık / Akvaryum",
+        "Kemirgen",
+        "Sürüngen / Egzotik",
+        "Çiftlik Hayvanı",
+        "Genel / Tümü"
+      ]
+    },
+    "petUrun.productCat": {
+      "file": "lib/category-tree.ts",
+      "line": 1325,
+      "type": "select",
+      "optionCount": 12,
+      "options": [
+        "Mama & Yem",
+        "Ödül & Vitamin",
+        "Kafes & Kulübe",
+        "Tasma & Gezdirme",
+        "Taşıma Çantası",
+        "Akvaryum & Ekipman",
+        "Yatak & Ev",
+        "Oyuncak",
+        "Bakım & Hijyen",
+        "Tuvalet & Kum",
+        "Sağlık & İlaç",
+        "Diğer"
+      ]
+    },
+    "petUrun.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1325,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "petUrun.suitableFor": {
+      "file": "lib/category-tree.ts",
+      "line": 1325,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Yavru",
+        "Yetişkin",
+        "Küçük Irk",
+        "Orta Irk",
+        "Büyük Irk",
+        "Farketmez"
+      ]
+    },
+    "petUrun.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1325,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "oyuncak.toyType": {
+      "file": "lib/category-tree.ts",
+      "line": 1342,
+      "type": "select",
+      "optionCount": 13,
+      "options": [
+        "Eğitici",
+        "Peluş",
+        "Yapı & Bloklar",
+        "Uzaktan Kumandalı",
+        "Figür & Bebek",
+        "Puzzle & Zeka",
+        "Kutu Oyunu",
+        "Oyun Seti",
+        "Araç Oyuncak",
+        "Su & Kum",
+        "Elektronik",
+        "Bebek Oyuncağı",
+        "Diğer"
+      ]
+    },
+    "oyuncak.ageGroup": {
+      "file": "lib/category-tree.ts",
+      "line": 1342,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "0-6 ay",
+        "6-12 ay",
+        "1-2 yaş",
+        "2-4 yaş",
+        "4-6 yaş",
+        "6+ yaş"
+      ]
+    },
+    "oyuncak.gender": {
+      "file": "lib/category-tree.ts",
+      "line": 1342,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Kadın",
+        "Erkek",
+        "Unisex",
+        "Kız Çocuk",
+        "Erkek Çocuk",
+        "Bebek"
+      ]
+    },
+    "oyuncak.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1342,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "oyuncak.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1342,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "spor.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1358,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "spor.color": {
+      "file": "lib/category-tree.ts",
+      "line": 1358,
+      "type": "select",
+      "optionCount": 15,
+      "options": [
+        "Siyah",
+        "Beyaz",
+        "Gri",
+        "Mavi",
+        "Kırmızı",
+        "Yeşil",
+        "Sarı",
+        "Turuncu",
+        "Mor",
+        "Pembe",
+        "Kahverengi",
+        "Bej",
+        "Lacivert",
+        "Çok Renkli",
+        "Diğer"
+      ]
+    },
+    "spor.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1358,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "muzik.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1363,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "muzik.color": {
+      "file": "lib/category-tree.ts",
+      "line": 1363,
+      "type": "select",
+      "optionCount": 15,
+      "options": [
+        "Siyah",
+        "Beyaz",
+        "Gri",
+        "Mavi",
+        "Kırmızı",
+        "Yeşil",
+        "Sarı",
+        "Turuncu",
+        "Mor",
+        "Pembe",
+        "Kahverengi",
+        "Bej",
+        "Lacivert",
+        "Çok Renkli",
+        "Diğer"
+      ]
+    },
+    "muzik.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1363,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "medikal.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1368,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "medikal.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1368,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "medikal.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1368,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "kitap.language": {
+      "file": "lib/category-tree.ts",
+      "line": 1373,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Türkçe",
+        "İngilizce",
+        "Almanca",
+        "Arapça",
+        "Diğer"
+      ]
+    },
+    "kitap.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1373,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sıfır",
+        "Az kullanılmış",
+        "İkinci el",
+        "Sahaf / eski baskı"
+      ]
+    },
+    "kitap.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1373,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "koleksiyon.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1378,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Kusursuz",
+        "Çok iyi",
+        "İyi",
+        "Orta",
+        "Restore edilmiş"
+      ]
+    },
+    "koleksiyon.authenticity": {
+      "file": "lib/category-tree.ts",
+      "line": 1378,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Orijinal",
+        "Replika",
+        "Belgeli",
+        "Bilinmiyor"
+      ]
+    },
+    "koleksiyon.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1378,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "aksesuar.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1383,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "aksesuar.color": {
+      "file": "lib/category-tree.ts",
+      "line": 1383,
+      "type": "select",
+      "optionCount": 15,
+      "options": [
+        "Siyah",
+        "Beyaz",
+        "Gri",
+        "Mavi",
+        "Kırmızı",
+        "Yeşil",
+        "Sarı",
+        "Turuncu",
+        "Mor",
+        "Pembe",
+        "Kahverengi",
+        "Bej",
+        "Lacivert",
+        "Çok Renkli",
+        "Diğer"
+      ]
+    },
+    "aksesuar.gender": {
+      "file": "lib/category-tree.ts",
+      "line": 1383,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Kadın",
+        "Erkek",
+        "Unisex",
+        "Kız Çocuk",
+        "Erkek Çocuk",
+        "Bebek"
+      ]
+    },
+    "aksesuar.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1383,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "aksesuar.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1383,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "kozmetik.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1393,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır (Ambalajlı)",
+        "Açılmış - Az kullanılmış",
+        "Tester"
+      ]
+    },
+    "kozmetik.shipping": {
+      "file": "lib/category-tree.ts",
+      "line": 1393,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Kargo var",
+        "Şehir içi elden",
+        "Alıcı öder",
+        "Ücretsiz kargo"
+      ]
+    },
+    "isMakinesi.machineType": {
+      "file": "lib/category-tree.ts",
+      "line": 1398,
+      "type": "select",
+      "optionCount": 23,
+      "options": [
+        "Ekskavatör",
+        "Kazıcı Yükleyici (Beko Loder)",
+        "Lastikli Yükleyici (Loder)",
+        "Mini Yükleyici",
+        "Dozer",
+        "Greyder",
+        "Silindir",
+        "Forklift",
+        "Telehandler",
+        "Mobil Vinç",
+        "Kule Vinç",
+        "Delici / Sondaj",
+        "Asfalt Makinesi",
+        "Beton Pompası",
+        "Beton Santrali",
+        "Transmikser",
+        "Kırıcı / Konkasör",
+        "Jeneratör",
+        "Kompresör",
+        "Kaynak Makinesi",
+        "Su Pompası",
+        "Çim / Bahçe Makinesi",
+        "Diğer"
+      ]
+    },
+    "isMakinesi.condition": {
+      "file": "lib/category-tree.ts",
+      "line": 1398,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Sıfır",
+        "İkinci El",
+        "Yenilenmiş"
+      ]
+    },
+    "isMakinesi.fuel": {
+      "file": "lib/category-tree.ts",
+      "line": 1398,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Dizel",
+        "Benzin",
+        "Elektrik",
+        "LPG",
+        "Hibrit"
+      ]
+    },
+    "isMakinesi.warranty": {
+      "file": "lib/category-tree.ts",
+      "line": 1398,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Garantili",
+        "Garantisiz",
+        "Yok"
+      ]
+    },
+    "isMakinesi.from": {
+      "file": "lib/category-tree.ts",
+      "line": 1398,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sahibinden",
+        "Bayiden",
+        "Firmadan",
+        "Yetkili Satıcıdan"
+      ]
+    },
+    "hizmet.serviceType": {
+      "file": "lib/category-tree.ts",
+      "line": 1423,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Yerinde",
+        "Uzaktan",
+        "Randevulu",
+        "Atölyede"
+      ]
+    },
+    "hizmet.teamSize": {
+      "file": "lib/category-tree.ts",
+      "line": 1423,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Tek kişi",
+        "2-3 kişi",
+        "4-10 kişi",
+        "10+ kişi"
+      ]
+    },
+    "hizmet.priceType": {
+      "file": "lib/category-tree.ts",
+      "line": 1423,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Sabit",
+        "Saatlik",
+        "Günlük",
+        "Metrekare başı",
+        "Proje bazlı",
+        "Teklif al"
+      ]
+    },
+    "hizmet.payment": {
+      "file": "lib/category-tree.ts",
+      "line": 1423,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Nakit",
+        "Havale / EFT",
+        "Kredi Kartı",
+        "Kapıda Ödeme",
+        "Taksitli"
+      ]
+    },
+    "hizmet.serviceScope": {
+      "file": "lib/category-tree.ts",
+      "line": 1423,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Ücretsiz Keşif",
+        "Malzeme Dahil",
+        "İşçilik Garantili",
+        "Acil / 7-24",
+        "Hafta Sonu Çalışır",
+        "Fatura Kesilir",
+        "Sigortalı Ekip",
+        "Sözleşmeli",
+        "Nakliye Dahil",
+        "Temizlik Dahil"
+      ]
+    },
+    "ders.level": {
+      "file": "lib/category-tree.ts",
+      "line": 1448,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Okul Öncesi",
+        "İlkokul",
+        "Ortaokul",
+        "Lise",
+        "Üniversite",
+        "Yetişkin"
+      ]
+    },
+    "ders.format": {
+      "file": "lib/category-tree.ts",
+      "line": 1448,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Online",
+        "Yüz yüze",
+        "Hibrit"
+      ]
+    },
+    "ders.lessonType": {
+      "file": "lib/category-tree.ts",
+      "line": 1448,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Birebir",
+        "Grup (2-4)",
+        "Grup (5+)"
+      ]
+    },
+    "ders.duration": {
+      "file": "lib/category-tree.ts",
+      "line": 1448,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "30 dk",
+        "45 dk",
+        "60 dk",
+        "90 dk",
+        "120 dk"
+      ]
+    },
+    "ders.examPrep": {
+      "file": "lib/category-tree.ts",
+      "line": 1448,
+      "type": "multiselect",
+      "optionCount": 11,
+      "options": [
+        "YKS / TYT-AYT",
+        "LGS",
+        "KPSS",
+        "ALES",
+        "DGS",
+        "YDS / YÖKDİL",
+        "IELTS",
+        "TOEFL",
+        "SAT",
+        "Okul Dersleri",
+        "Sınav Yok"
+      ]
+    },
+    "isIlani.workType": {
+      "file": "lib/category-tree.ts",
+      "line": 1472,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Tam Zamanlı",
+        "Yarı Zamanlı",
+        "Freelance",
+        "Staj",
+        "Dönemsel / Proje"
+      ]
+    },
+    "isIlani.workModel": {
+      "file": "lib/category-tree.ts",
+      "line": 1472,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Ofiste",
+        "Hibrit",
+        "Tamamen Uzaktan"
+      ]
+    },
+    "isIlani.positionLevel": {
+      "file": "lib/category-tree.ts",
+      "line": 1472,
+      "type": "select",
+      "optionCount": 7,
+      "options": [
+        "Stajyer",
+        "Uzman Yardımcısı",
+        "Uzman",
+        "Kıdemli Uzman",
+        "Takım Lideri",
+        "Müdür",
+        "Direktör"
+      ]
+    },
+    "isIlani.experience": {
+      "file": "lib/category-tree.ts",
+      "line": 1472,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Deneyimsiz",
+        "1-3 yıl",
+        "3-5 yıl",
+        "5-10 yıl",
+        "10+ yıl"
+      ]
+    },
+    "isIlani.education": {
+      "file": "lib/category-tree.ts",
+      "line": 1472,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Fark etmez",
+        "Lise",
+        "Önlisans",
+        "Lisans",
+        "Yüksek Lisans",
+        "Doktora"
+      ]
+    },
+    "isIlani.military": {
+      "file": "lib/category-tree.ts",
+      "line": 1472,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Fark etmez",
+        "Yapılmış",
+        "Muaf",
+        "Tecilli"
+      ]
+    },
+    "isIlani.license": {
+      "file": "lib/category-tree.ts",
+      "line": 1472,
+      "type": "select",
+      "optionCount": 6,
+      "options": [
+        "Gerekmez",
+        "B",
+        "C",
+        "D",
+        "E",
+        "SRC"
+      ]
+    },
+    "isIlani.benefitList": {
+      "file": "lib/category-tree.ts",
+      "line": 1472,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Yemek Kartı",
+        "Yol / Servis",
+        "Özel Sağlık Sigortası",
+        "Prim / Bonus",
+        "Esnek Mesai",
+        "Uzaktan Çalışma",
+        "Eğitim Desteği",
+        "Bilgisayar / Telefon",
+        "Yıllık İzin +",
+        "Kreş Desteği"
+      ]
+    },
+    "yardimci.careType": {
+      "file": "lib/category-tree.ts",
+      "line": 1496,
+      "type": "select",
+      "optionCount": 8,
+      "options": [
+        "Çocuk Bakımı",
+        "Yaşlı Bakımı",
+        "Hasta Bakımı",
+        "Ev İşleri",
+        "Temizlik",
+        "Yemek",
+        "Şoförlük",
+        "Bahçe / Tadilat"
+      ]
+    },
+    "yardimci.workType": {
+      "file": "lib/category-tree.ts",
+      "line": 1496,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Yatılı",
+        "Gündüzlü",
+        "Saatlik",
+        "Part-time",
+        "Hafta Sonu"
+      ]
+    },
+    "yardimci.salaryType": {
+      "file": "lib/category-tree.ts",
+      "line": 1496,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Aylık",
+        "Haftalık",
+        "Günlük",
+        "Saatlik"
+      ]
+    },
+    "yardimci.duties": {
+      "file": "lib/category-tree.ts",
+      "line": 1496,
+      "type": "multiselect",
+      "optionCount": 10,
+      "options": [
+        "Çocuk Bakımı",
+        "Yaşlı Bakımı",
+        "Hasta Bakımı",
+        "Ev Temizliği",
+        "Yemek Yapma",
+        "Ütü / Çamaşır",
+        "Alışveriş",
+        "Şoförlük",
+        "Bahçe Bakımı",
+        "Evcil Hayvan Bakımı"
+      ]
+    },
+    "hayvan.adType": {
+      "file": "lib/category-tree.ts",
+      "line": 1520,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Sahiplendirme",
+        "Ürün satışı",
+        "Hizmet",
+        "Kayıp ilanı"
+      ]
+    },
+    "hayvan.gender": {
+      "file": "lib/category-tree.ts",
+      "line": 1520,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Erkek",
+        "Dişi",
+        "Belirtilmemiş"
+      ]
+    },
+    "hayvan.size": {
+      "file": "lib/category-tree.ts",
+      "line": 1520,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Mini",
+        "Küçük",
+        "Orta",
+        "Büyük",
+        "Dev"
+      ]
+    },
+    "hayvan.vaccine": {
+      "file": "lib/category-tree.ts",
+      "line": 1520,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Tam",
+        "Eksik",
+        "Yok"
+      ]
+    },
+    "hayvan.neutered": {
+      "file": "lib/category-tree.ts",
+      "line": 1520,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Kısırlaştırıldı",
+        "Kısırlaştırılmadı",
+        "Uygun değil"
+      ]
+    },
+    "hayvan.training": {
+      "file": "lib/category-tree.ts",
+      "line": 1520,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Eğitimsiz",
+        "Tuvalet eğitimli",
+        "Temel itaat",
+        "İleri eğitim"
+      ]
+    },
+    "hayvan.suitableFor": {
+      "file": "lib/category-tree.ts",
+      "line": 1520,
+      "type": "multiselect",
+      "optionCount": 7,
+      "options": [
+        "Çocuklu Eve Uygun",
+        "Apartman Dairesine Uygun",
+        "Bahçeli Ev Gerekir",
+        "Diğer Hayvanlarla Uyumlu",
+        "Deneyimli Sahip Arıyor",
+        "Sadece Ev İçi",
+        "Alerjik Dostu"
+      ]
+    },
+    "arayan.wantedCondition": {
+      "file": "lib/category-tree.ts",
+      "line": 1545,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Fark etmez",
+        "Sıfır",
+        "İkinci el",
+        "Yenilenmiş"
+      ]
+    },
+    "arayan.urgency": {
+      "file": "lib/category-tree.ts",
+      "line": 1545,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "Acil",
+        "Bu hafta",
+        "Bu ay",
+        "Fark etmez"
+      ]
+    },
+    "arayan.deliveryPref": {
+      "file": "lib/category-tree.ts",
+      "line": 1545,
+      "type": "select",
+      "optionCount": 3,
+      "options": [
+        "Kargo",
+        "Elden teslim",
+        "Fark etmez"
+      ]
+    },
+    "dijitalHizmet.deliveryTime": {
+      "file": "lib/category-tree.ts",
+      "line": 1565,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "24 saat",
+        "2-3 gün",
+        "1 hafta",
+        "2 hafta+",
+        "Görüşülür"
+      ]
+    },
+    "dijitalHizmet.revisions": {
+      "file": "lib/category-tree.ts",
+      "line": 1565,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "1",
+        "2",
+        "3",
+        "Sınırsız",
+        "Görüşülür"
+      ]
+    },
+    "dijitalHizmet.priceType": {
+      "file": "lib/category-tree.ts",
+      "line": 1565,
+      "type": "select",
+      "optionCount": 5,
+      "options": [
+        "Sabit",
+        "Saatlik",
+        "Paket",
+        "Proje bazlı",
+        "Teklif al"
+      ]
+    },
+    "dijitalHizmet.deliveryMethod": {
+      "file": "lib/category-tree.ts",
+      "line": 1565,
+      "type": "select",
+      "optionCount": 4,
+      "options": [
+        "E-posta",
+        "Bulut (link)",
+        "Platform mesajı",
+        "Görüşülür"
+      ]
+    }
+  },
+  "standaloneEnums": {
+    "CAR_BODY_TYPES": {
+      "file": "lib/category-tree.ts",
+      "line": 81,
+      "count": 12,
+      "values": [
+        "Sedan",
+        "Hatchback (5 Kapı)",
+        "Hatchback (3 Kapı)",
+        "Station Wagon",
+        "SUV & Arazi",
+        "Crossover",
+        "Coupe",
+        "Cabrio & Roadster",
+        "MPV & Minivan",
+        "Pickup",
+        "Panelvan",
+        "Roadster"
+      ]
+    },
+    "MOTO_TYPES": {
+      "file": "lib/category-tree.ts",
+      "line": 83,
+      "count": 16,
+      "values": [
+        "Scooter",
+        "Maxi Scooter",
+        "Naked",
+        "Sport / Racing",
+        "Touring",
+        "Cruiser",
+        "Chopper",
+        "Enduro",
+        "Motocross",
+        "Trail / Adventure",
+        "Café Racer",
+        "Custom",
+        "Trike",
+        "Elektrikli Motosiklet",
+        "Moped",
+        "Cub / Kanatlı"
+      ]
+    }
+  },
+  "_summary": {
+    "schemaEnums": 438,
+    "standaloneEnums": 2
+  }
+}

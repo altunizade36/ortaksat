@@ -1,0 +1,32 @@
+{
+  "generatedFrom": "GERÇEK sistem — category-tree.ts + explore.tsx otomatik denetim",
+  "counts": {
+    "topCategories": 16,
+    "totalNodes": 7034,
+    "leaves": 6415,
+    "brandArrays": 14,
+    "uniqueBrands": 234,
+    "modelMaps": 5,
+    "totalModels": 1120,
+    "schemas": 56,
+    "listingFields": 1126,
+    "selectFields": 330,
+    "multiselectFields": 108,
+    "boolFields": 197,
+    "emptyEnums": 0,
+    "sortModes": 7,
+    "urlFilterParams": 17
+  },
+  "checks": {
+    "Eksik kategori (formKey'siz yaprak)": 0,
+    "Boş enum": 0,
+    "Kardeş slug çakışması": 0,
+    "Boş dal": 0,
+    "Tanımsız formKey": 0,
+    "Kullanılmayan şema": 0,
+    "Mükerrer model/enum": 0
+  },
+  "bySeverity": {},
+  "criticalCount": 0,
+  "findings": []
+}

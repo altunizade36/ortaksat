@@ -1,0 +1,602 @@
+{
+  "file": "app/(tabs)/explore.tsx",
+  "sortModes": {
+    "count": 7,
+    "modes": [
+      "recommended",
+      "commission",
+      "commissionRate",
+      "new",
+      "priceAsc",
+      "priceDesc",
+      "rating"
+    ],
+    "labels": {
+      "recommended": "Önerilen",
+      "priceAsc": "Fiyat ↑",
+      "priceDesc": "Fiyat ↓",
+      "commission": "Kazanç",
+      "commissionRate": "Komisyon %",
+      "rating": "Puan",
+      "new": "En yeni"
+    }
+  },
+  "urlFilterParams": {
+    "count": 17,
+    "params": [
+      "q",
+      "province",
+      "district",
+      "price",
+      "comm",
+      "rate",
+      "rating",
+      "featured",
+      "stock",
+      "verified",
+      "open",
+      "sort",
+      "cat",
+      "city",
+      "tab",
+      "attr",
+      "num"
+    ]
+  },
+  "perSchemaFilterableFields": {
+    "konut": [
+      "listingType",
+      "rooms",
+      "buildingAge",
+      "yapiTipi",
+      "yapiDurumu",
+      "heating",
+      "parking",
+      "usage",
+      "from",
+      "deed",
+      "energyClass",
+      "facade",
+      "view",
+      "housingType",
+      "konutInteriorFeatures",
+      "siteFeatures",
+      "neighborhood",
+      "transport",
+      "accessibility",
+      "buildingSafety",
+      "smartHome",
+      "luxuryFeatures",
+      "etiketler"
+    ],
+    "isyeri": [
+      "listingType",
+      "buildingAge",
+      "heating",
+      "usage",
+      "from",
+      "deed",
+      "isletmeIcerik",
+      "ruhsat",
+      "isyeriOzellik",
+      "yapiTipi",
+      "yapiDurumu",
+      "parking",
+      "facade",
+      "view",
+      "exteriorFeatures",
+      "neighborhood",
+      "transport",
+      "accessibility",
+      "etiketler"
+    ],
+    "isyeriDevren": [
+      "listingType",
+      "businessAge",
+      "customerBase",
+      "reason",
+      "isletmeIcerik",
+      "leaseRemaining",
+      "ruhsat",
+      "from",
+      "etiketler"
+    ],
+    "isyeriRestoran": [
+      "listingType",
+      "buildingAge",
+      "heating",
+      "usage",
+      "from",
+      "deed",
+      "isletmeIcerik",
+      "ruhsat",
+      "isyeriOzellik",
+      "yapiTipi",
+      "yapiDurumu",
+      "parking",
+      "facade",
+      "view",
+      "restoranOzellik",
+      "exteriorFeatures",
+      "neighborhood",
+      "transport",
+      "accessibility",
+      "etiketler"
+    ],
+    "isyeriFabrika": [
+      "listingType",
+      "buildingAge",
+      "heating",
+      "usage",
+      "from",
+      "deed",
+      "isletmeIcerik",
+      "ruhsat",
+      "isyeriOzellik",
+      "yapiTipi",
+      "yapiDurumu",
+      "parking",
+      "facade",
+      "view",
+      "fabrikaOzellik",
+      "exteriorFeatures",
+      "neighborhood",
+      "transport",
+      "accessibility",
+      "etiketler"
+    ],
+    "isyeriOfis": [
+      "listingType",
+      "buildingAge",
+      "heating",
+      "usage",
+      "from",
+      "deed",
+      "isletmeIcerik",
+      "ruhsat",
+      "isyeriOzellik",
+      "yapiTipi",
+      "yapiDurumu",
+      "parking",
+      "facade",
+      "view",
+      "ofisOzellik",
+      "exteriorFeatures",
+      "neighborhood",
+      "transport",
+      "accessibility",
+      "etiketler"
+    ],
+    "arsa": [
+      "listingType",
+      "zoning",
+      "imarTuru",
+      "yapiNizami",
+      "parselSekli",
+      "egim",
+      "roadStatus",
+      "altyapi",
+      "dogalOzellik",
+      "tarimOzellik",
+      "deed",
+      "from",
+      "etiketler"
+    ],
+    "bina": [
+      "listingType",
+      "buildingAge",
+      "yapiTipi",
+      "yapiDurumu",
+      "heating",
+      "parking",
+      "occupancyRate",
+      "usage",
+      "buildingSafety",
+      "deed",
+      "from",
+      "etiketler"
+    ],
+    "proje": [
+      "projectType",
+      "projectStatus",
+      "amenities",
+      "security",
+      "energy",
+      "payment",
+      "campaign",
+      "iskanStatus",
+      "etiketler"
+    ],
+    "turistik": [
+      "listingType",
+      "facilityKind",
+      "starCount",
+      "roomTypes",
+      "facilityAreas",
+      "occupancyRate",
+      "etiketler"
+    ],
+    "devremulk": [
+      "listingType",
+      "accommodation",
+      "usageForm",
+      "usagePeriod",
+      "usageType",
+      "rooms",
+      "amenities",
+      "etiketler"
+    ],
+    "gunlukKiralik": [
+      "rooms",
+      "heating",
+      "suitableFor",
+      "gunlukOlanak",
+      "view"
+    ],
+    "odaYurt": [
+      "roomType",
+      "gender"
+    ],
+    "prefabrik": [
+      "structureType",
+      "listingType",
+      "rooms",
+      "condition"
+    ],
+    "emlakHizmet": [
+      "providerType",
+      "pricing"
+    ],
+    "otomobil": [
+      "brand",
+      "condition",
+      "inspection",
+      "fuel",
+      "gear",
+      "bodyType",
+      "traction",
+      "color",
+      "seats",
+      "warranty",
+      "damage",
+      "plate",
+      "from",
+      "safetyFeatures",
+      "comfortFeatures",
+      "mediaFeatures",
+      "exteriorFeatures",
+      "etiketler"
+    ],
+    "motosiklet": [
+      "brand",
+      "motoType",
+      "condition",
+      "color",
+      "license",
+      "fuel",
+      "engineCc",
+      "gear",
+      "cooling",
+      "inspection",
+      "damage",
+      "warranty",
+      "from",
+      "motoFeatures",
+      "etiketler"
+    ],
+    "vasitaGenel": [
+      "condition",
+      "fuel",
+      "gear",
+      "color",
+      "damage",
+      "inspection",
+      "from",
+      "warranty"
+    ],
+    "ticari": [
+      "brand",
+      "bodyType",
+      "condition",
+      "color",
+      "seats",
+      "fuel",
+      "gear",
+      "traction",
+      "damage",
+      "inspection",
+      "warranty",
+      "from",
+      "etiketler"
+    ],
+    "agirVasita": [
+      "vehicleType",
+      "axle",
+      "fuel",
+      "gear",
+      "cabin",
+      "damage",
+      "inspection",
+      "from",
+      "etiketler"
+    ],
+    "deniz": [
+      "vesselType",
+      "condition",
+      "material",
+      "engineType",
+      "fuel",
+      "cabins",
+      "damage",
+      "warranty",
+      "from"
+    ],
+    "traktor": [
+      "vehicleType",
+      "traction",
+      "cabin",
+      "mechanicalCondition",
+      "from",
+      "etiketler"
+    ],
+    "aracKiralik": [
+      "fuel",
+      "gear",
+      "seats",
+      "carClass",
+      "minRentDays",
+      "kmLimit",
+      "withDriver",
+      "minAge",
+      "minLicense",
+      "fuelPolicy",
+      "deliveryPlace",
+      "from",
+      "etiketler"
+    ],
+    "havaAraci": [
+      "craftType",
+      "condition",
+      "engineType",
+      "seats",
+      "warranty",
+      "registration",
+      "from",
+      "etiketler"
+    ],
+    "yedekParca": [
+      "origin",
+      "partPosition",
+      "condition",
+      "warranty",
+      "shipping",
+      "etiketler"
+    ],
+    "alisverisGenel": [
+      "condition",
+      "warranty",
+      "shipping"
+    ],
+    "yapiMarket": [
+      "condition",
+      "unit",
+      "warranty",
+      "shipping",
+      "etiketler"
+    ],
+    "elektrikliAlet": [
+      "condition",
+      "voltage",
+      "battery",
+      "warranty",
+      "shipping",
+      "etiketler"
+    ],
+    "telefon": [
+      "brand",
+      "storage",
+      "condition",
+      "cosmetic",
+      "imei",
+      "warranty",
+      "shipping"
+    ],
+    "elektronik": [
+      "condition",
+      "storage",
+      "ram",
+      "color",
+      "warranty",
+      "urunOzellik",
+      "shipping",
+      "etiketler"
+    ],
+    "bilgisayar": [
+      "condition",
+      "ram",
+      "storage",
+      "resolution",
+      "warranty",
+      "shipping"
+    ],
+    "televizyon": [
+      "condition",
+      "resolution",
+      "panel",
+      "warranty",
+      "shipping"
+    ],
+    "beyazEsya": [
+      "brand",
+      "condition",
+      "energy",
+      "color",
+      "warranty",
+      "urunOzellik",
+      "shipping",
+      "etiketler"
+    ],
+    "klima": [
+      "brand",
+      "condition",
+      "energy",
+      "btu",
+      "warranty",
+      "urunOzellik",
+      "shipping",
+      "etiketler"
+    ],
+    "kombi": [
+      "brand",
+      "condition",
+      "warranty",
+      "urunOzellik",
+      "shipping",
+      "etiketler"
+    ],
+    "moda": [
+      "condition",
+      "size",
+      "color",
+      "gender",
+      "sezon",
+      "desen",
+      "kesim",
+      "shipping",
+      "etiketler"
+    ],
+    "ayakkabi": [
+      "condition",
+      "shoeSize",
+      "color",
+      "gender",
+      "shipping"
+    ],
+    "mobilya": [
+      "condition",
+      "stil",
+      "color",
+      "shipping",
+      "etiketler"
+    ],
+    "bebek": [
+      "condition",
+      "ageGroup",
+      "gender",
+      "color",
+      "warranty",
+      "shipping"
+    ],
+    "petUrun": [
+      "petType",
+      "productCat",
+      "condition",
+      "suitableFor",
+      "shipping"
+    ],
+    "oyuncak": [
+      "toyType",
+      "ageGroup",
+      "gender",
+      "condition",
+      "shipping"
+    ],
+    "spor": [
+      "condition",
+      "color",
+      "shipping"
+    ],
+    "muzik": [
+      "condition",
+      "color",
+      "shipping"
+    ],
+    "medikal": [
+      "condition",
+      "warranty",
+      "shipping"
+    ],
+    "kitap": [
+      "language",
+      "condition",
+      "shipping"
+    ],
+    "koleksiyon": [
+      "condition",
+      "authenticity",
+      "shipping"
+    ],
+    "aksesuar": [
+      "condition",
+      "color",
+      "gender",
+      "warranty",
+      "shipping"
+    ],
+    "kozmetik": [
+      "condition",
+      "shipping"
+    ],
+    "isMakinesi": [
+      "machineType",
+      "condition",
+      "fuel",
+      "warranty",
+      "from"
+    ],
+    "hizmet": [
+      "serviceType",
+      "teamSize",
+      "priceType",
+      "payment",
+      "serviceScope"
+    ],
+    "ders": [
+      "level",
+      "format",
+      "lessonType",
+      "duration",
+      "examPrep"
+    ],
+    "isIlani": [
+      "workType",
+      "workModel",
+      "positionLevel",
+      "experience",
+      "education",
+      "military",
+      "license",
+      "benefitList"
+    ],
+    "yardimci": [
+      "careType",
+      "workType",
+      "salaryType",
+      "duties"
+    ],
+    "hayvan": [
+      "adType",
+      "gender",
+      "size",
+      "vaccine",
+      "neutered",
+      "training",
+      "suitableFor"
+    ],
+    "arayan": [
+      "wantedCondition",
+      "urgency",
+      "deliveryPref"
+    ],
+    "dijitalHizmet": [
+      "deliveryTime",
+      "revisions",
+      "priceType",
+      "deliveryMethod"
+    ]
+  },
+  "_summary": {
+    "sortModes": 7,
+    "urlParams": 17
+  }
+}

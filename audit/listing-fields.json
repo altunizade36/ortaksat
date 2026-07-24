@@ -1,0 +1,8340 @@
+{
+  "konut": {
+    "file": "lib/category-tree.ts",
+    "line": 533,
+    "title": "Konut bilgileri",
+    "fieldCount": 54,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "listingType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 7
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "grossM2",
+        "label": "m² (brüt)",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "netM2",
+        "label": "m² (net)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "rooms",
+        "label": "Oda sayısı",
+        "type": "select",
+        "required": true,
+        "optionCount": 13
+      },
+      {
+        "key": "salon",
+        "label": "Salon sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "bathrooms",
+        "label": "Banyo sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "wc",
+        "label": "WC sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "buildingAge",
+        "label": "Bina yaşı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "yapiTipi",
+        "label": "Yapı tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "yapiDurumu",
+        "label": "Yapının durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "earthquake",
+        "label": "Deprem yönetmeliğine uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floor",
+        "label": "Bulunduğu kat",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floorCount",
+        "label": "Kat sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "heating",
+        "label": "Isıtma tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "parking",
+        "label": "Otopark",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "elevator",
+        "label": "Asansör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "security",
+        "label": "Güvenlik var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "generator",
+        "label": "Jeneratör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "pool",
+        "label": "Havuz var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "gym",
+        "label": "Spor salonu var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "disabledFriendly",
+        "label": "Engelliye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "balcony",
+        "label": "Balkon var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "terrace",
+        "label": "Teras var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "garden",
+        "label": "Bahçe var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "furnished",
+        "label": "Eşyalı mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "usage",
+        "label": "Kullanım durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "inSite",
+        "label": "Site içinde mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "siteName",
+        "label": "Site / proje adı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "dues",
+        "label": "Aidat",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "deposit",
+        "label": "Depozito (kiralıkta)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "rentalIncome",
+        "label": "Aylık kira getirisi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urbanTransform",
+        "label": "Kentsel dönüşüme uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas / kat karşılığı olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "deed",
+        "label": "Tapu durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "ada",
+        "label": "Ada no",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "parsel",
+        "label": "Parsel no",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "energyClass",
+        "label": "Enerji sınıfı",
+        "type": "select",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "facade",
+        "label": "Cephe / yön",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "view",
+        "label": "Manzara",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 22
+      },
+      {
+        "key": "housingType",
+        "label": "Konut tipi",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "konutInteriorFeatures",
+        "label": "İç mekân özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 46
+      },
+      {
+        "key": "siteFeatures",
+        "label": "Site & sosyal özellikler",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 43
+      },
+      {
+        "key": "neighborhood",
+        "label": "Muhit / çevre",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 23
+      },
+      {
+        "key": "transport",
+        "label": "Ulaşım",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 17
+      },
+      {
+        "key": "accessibility",
+        "label": "Engelliye / yaşlıya uygun",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "buildingSafety",
+        "label": "Deprem & yapı güvenliği",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 12
+      },
+      {
+        "key": "smartHome",
+        "label": "Akıllı ev sistemleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 20
+      },
+      {
+        "key": "luxuryFeatures",
+        "label": "Lüks özellikler",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 26
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "isyeri": {
+    "file": "lib/category-tree.ts",
+    "line": 597,
+    "title": "İş yeri bilgileri",
+    "fieldCount": 45,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "listingType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "grossM2",
+        "label": "m² (brüt)",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "netM2",
+        "label": "m² (net)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sectionCount",
+        "label": "Bölüm / oda sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "wc",
+        "label": "WC sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floor",
+        "label": "Bulunduğu kat",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floorCount",
+        "label": "Kat sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "ceilingHeight",
+        "label": "Tavan yüksekliği",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "buildingAge",
+        "label": "Bina yaşı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "heating",
+        "label": "Isıtma tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "caddeUzeri",
+        "label": "Cadde üzeri mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "avmIcinde",
+        "label": "AVM içinde mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sanayiSitesi",
+        "label": "Sanayi sitesinde mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "aracGirisi",
+        "label": "Araç girişine uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "deposit",
+        "label": "Depozito (kiralıkta)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "dues",
+        "label": "Aidat",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "devrenBedeli",
+        "label": "Devren bedeli",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "rentalIncome",
+        "label": "Aylık kira getirisi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "usage",
+        "label": "İşletme durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "deed",
+        "label": "Tapu durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "isletmeIcerik",
+        "label": "Devirde dahil olanlar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "ruhsat",
+        "label": "Ruhsat / belgeler",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "isyeriOzellik",
+        "label": "İş yeri özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 22
+      },
+      {
+        "key": "yapiTipi",
+        "label": "Yapı tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "yapiDurumu",
+        "label": "Yapının durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "parking",
+        "label": "Otopark",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "elevator",
+        "label": "Asansör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "security",
+        "label": "Güvenlik var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "generator",
+        "label": "Jeneratör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "furnished",
+        "label": "Eşyalı / demirbaşlı mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urbanTransform",
+        "label": "Kentsel dönüşüme uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "facade",
+        "label": "Cephe / yön",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "view",
+        "label": "Manzara",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 22
+      },
+      {
+        "key": "vitrinM",
+        "label": "Vitrin metresi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "exteriorFeatures",
+        "label": "Dış / bina özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 24
+      },
+      {
+        "key": "neighborhood",
+        "label": "Muhit / çevre",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 23
+      },
+      {
+        "key": "transport",
+        "label": "Ulaşım",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 17
+      },
+      {
+        "key": "accessibility",
+        "label": "Engelliye / yaşlıya uygun",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "isyeriDevren": {
+    "file": "lib/category-tree.ts",
+    "line": 607,
+    "title": "Devren işletme bilgileri",
+    "fieldCount": 22,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "listingType",
+        "label": "Devir tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 2
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "grossM2",
+        "label": "İşletme alanı (m²)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "businessAge",
+        "label": "Kaç yıldır faal?",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "monthlyRevenue",
+        "label": "Aylık ciro",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "monthlyExpense",
+        "label": "Aylık gider (kira hariç)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "staffCount",
+        "label": "Personel sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "customerBase",
+        "label": "Müşteri portföyü",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "reason",
+        "label": "Devir sebebi",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "isletmeIcerik",
+        "label": "Devre dahil olanlar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "equipmentIncluded",
+        "label": "Ekipman / demirbaş dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "stockIncluded",
+        "label": "Stok / emtia dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "brandIncluded",
+        "label": "Marka / isim hakkı dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "staffStays",
+        "label": "Personel devam edecek mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "monthlyRent",
+        "label": "Aylık kira",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "deposit",
+        "label": "Depozito",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "leaseRemaining",
+        "label": "Kira sözleşmesi kalan süre",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "ruhsat",
+        "label": "Ruhsat / belgeler",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "isyeriRestoran": {
+    "file": "lib/category-tree.ts",
+    "line": 634,
+    "title": "Restoran / Cafe bilgileri",
+    "fieldCount": 50,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "listingType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "grossM2",
+        "label": "m² (brüt)",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "netM2",
+        "label": "m² (net)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sectionCount",
+        "label": "Bölüm / oda sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "wc",
+        "label": "WC sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floor",
+        "label": "Bulunduğu kat",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floorCount",
+        "label": "Kat sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "ceilingHeight",
+        "label": "Tavan yüksekliği",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "buildingAge",
+        "label": "Bina yaşı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "heating",
+        "label": "Isıtma tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "caddeUzeri",
+        "label": "Cadde üzeri mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "avmIcinde",
+        "label": "AVM içinde mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sanayiSitesi",
+        "label": "Sanayi sitesinde mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "aracGirisi",
+        "label": "Araç girişine uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "deposit",
+        "label": "Depozito (kiralıkta)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "dues",
+        "label": "Aidat",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "devrenBedeli",
+        "label": "Devren bedeli",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "rentalIncome",
+        "label": "Aylık kira getirisi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "usage",
+        "label": "İşletme durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "deed",
+        "label": "Tapu durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "isletmeIcerik",
+        "label": "Devirde dahil olanlar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "ruhsat",
+        "label": "Ruhsat / belgeler",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "isyeriOzellik",
+        "label": "İş yeri özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 22
+      },
+      {
+        "key": "yapiTipi",
+        "label": "Yapı tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "yapiDurumu",
+        "label": "Yapının durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "parking",
+        "label": "Otopark",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "elevator",
+        "label": "Asansör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "security",
+        "label": "Güvenlik var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "generator",
+        "label": "Jeneratör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "furnished",
+        "label": "Eşyalı / demirbaşlı mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urbanTransform",
+        "label": "Kentsel dönüşüme uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "facade",
+        "label": "Cephe / yön",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "view",
+        "label": "Manzara",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 22
+      },
+      {
+        "key": "vitrinM",
+        "label": "Vitrin metresi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "masaSayisi",
+        "label": "Masa sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sandalyeSayisi",
+        "label": "Sandalye sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "kapaliKapasite",
+        "label": "Kapalı alan kapasitesi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "acikKapasite",
+        "label": "Açık alan kapasitesi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "restoranOzellik",
+        "label": "Restoran özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "exteriorFeatures",
+        "label": "Dış / bina özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 24
+      },
+      {
+        "key": "neighborhood",
+        "label": "Muhit / çevre",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 23
+      },
+      {
+        "key": "transport",
+        "label": "Ulaşım",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 17
+      },
+      {
+        "key": "accessibility",
+        "label": "Engelliye / yaşlıya uygun",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "isyeriFabrika": {
+    "file": "lib/category-tree.ts",
+    "line": 639,
+    "title": "Fabrika / üretim tesisi bilgileri",
+    "fieldCount": 49,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "listingType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "grossM2",
+        "label": "m² (brüt)",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "netM2",
+        "label": "m² (net)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sectionCount",
+        "label": "Bölüm / oda sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "wc",
+        "label": "WC sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floor",
+        "label": "Bulunduğu kat",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floorCount",
+        "label": "Kat sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "ceilingHeight",
+        "label": "Tavan yüksekliği",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "buildingAge",
+        "label": "Bina yaşı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "heating",
+        "label": "Isıtma tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "caddeUzeri",
+        "label": "Cadde üzeri mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "avmIcinde",
+        "label": "AVM içinde mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sanayiSitesi",
+        "label": "Sanayi sitesinde mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "aracGirisi",
+        "label": "Araç girişine uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "deposit",
+        "label": "Depozito (kiralıkta)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "dues",
+        "label": "Aidat",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "devrenBedeli",
+        "label": "Devren bedeli",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "rentalIncome",
+        "label": "Aylık kira getirisi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "usage",
+        "label": "İşletme durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "deed",
+        "label": "Tapu durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "isletmeIcerik",
+        "label": "Devirde dahil olanlar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "ruhsat",
+        "label": "Ruhsat / belgeler",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "isyeriOzellik",
+        "label": "İş yeri özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 22
+      },
+      {
+        "key": "yapiTipi",
+        "label": "Yapı tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "yapiDurumu",
+        "label": "Yapının durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "parking",
+        "label": "Otopark",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "elevator",
+        "label": "Asansör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "security",
+        "label": "Güvenlik var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "generator",
+        "label": "Jeneratör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "furnished",
+        "label": "Eşyalı / demirbaşlı mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urbanTransform",
+        "label": "Kentsel dönüşüme uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "facade",
+        "label": "Cephe / yön",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "view",
+        "label": "Manzara",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 22
+      },
+      {
+        "key": "kapaliAlan",
+        "label": "Kapalı alan",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "acikAlan",
+        "label": "Açık alan",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "uretimHatti",
+        "label": "Üretim hattı sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "elektrikGucu",
+        "label": "Elektrik gücü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "fabrikaOzellik",
+        "label": "Fabrika teknik özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 13
+      },
+      {
+        "key": "exteriorFeatures",
+        "label": "Dış / bina özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 24
+      },
+      {
+        "key": "neighborhood",
+        "label": "Muhit / çevre",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 23
+      },
+      {
+        "key": "transport",
+        "label": "Ulaşım",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 17
+      },
+      {
+        "key": "accessibility",
+        "label": "Engelliye / yaşlıya uygun",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "isyeriOfis": {
+    "file": "lib/category-tree.ts",
+    "line": 644,
+    "title": "Ofis / büro bilgileri",
+    "fieldCount": 47,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "listingType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "grossM2",
+        "label": "m² (brüt)",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "netM2",
+        "label": "m² (net)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sectionCount",
+        "label": "Bölüm / oda sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "wc",
+        "label": "WC sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floor",
+        "label": "Bulunduğu kat",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floorCount",
+        "label": "Kat sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "ceilingHeight",
+        "label": "Tavan yüksekliği",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "buildingAge",
+        "label": "Bina yaşı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "heating",
+        "label": "Isıtma tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "caddeUzeri",
+        "label": "Cadde üzeri mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "avmIcinde",
+        "label": "AVM içinde mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sanayiSitesi",
+        "label": "Sanayi sitesinde mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "aracGirisi",
+        "label": "Araç girişine uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "deposit",
+        "label": "Depozito (kiralıkta)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "dues",
+        "label": "Aidat",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "devrenBedeli",
+        "label": "Devren bedeli",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "rentalIncome",
+        "label": "Aylık kira getirisi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "usage",
+        "label": "İşletme durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "deed",
+        "label": "Tapu durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "isletmeIcerik",
+        "label": "Devirde dahil olanlar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "ruhsat",
+        "label": "Ruhsat / belgeler",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "isyeriOzellik",
+        "label": "İş yeri özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 22
+      },
+      {
+        "key": "yapiTipi",
+        "label": "Yapı tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "yapiDurumu",
+        "label": "Yapının durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "parking",
+        "label": "Otopark",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "elevator",
+        "label": "Asansör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "security",
+        "label": "Güvenlik var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "generator",
+        "label": "Jeneratör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "furnished",
+        "label": "Eşyalı / demirbaşlı mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urbanTransform",
+        "label": "Kentsel dönüşüme uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "facade",
+        "label": "Cephe / yön",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "view",
+        "label": "Manzara",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 22
+      },
+      {
+        "key": "meetingRooms",
+        "label": "Toplantı odası sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "managerRooms",
+        "label": "Yönetici odası sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "ofisOzellik",
+        "label": "Ofis özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 16
+      },
+      {
+        "key": "exteriorFeatures",
+        "label": "Dış / bina özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 24
+      },
+      {
+        "key": "neighborhood",
+        "label": "Muhit / çevre",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 23
+      },
+      {
+        "key": "transport",
+        "label": "Ulaşım",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 17
+      },
+      {
+        "key": "accessibility",
+        "label": "Engelliye / yaşlıya uygun",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "arsa": {
+    "file": "lib/category-tree.ts",
+    "line": 649,
+    "title": "Arsa bilgileri",
+    "fieldCount": 34,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "listingType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "m2",
+        "label": "m²",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "zoning",
+        "label": "İmar durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 16
+      },
+      {
+        "key": "imarTuru",
+        "label": "İmar türü",
+        "type": "select",
+        "required": false,
+        "optionCount": 17
+      },
+      {
+        "key": "hisseOrani",
+        "label": "Satılık hisse oranı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "taks",
+        "label": "TAKS",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "kaks",
+        "label": "KAKS (Emsal)",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "gabari",
+        "label": "Gabari (yükseklik)",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "maxKat",
+        "label": "Maksimum kat",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "yapiNizami",
+        "label": "Yapı nizamı",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "ada",
+        "label": "Ada",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "parsel",
+        "label": "Parsel",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "pafta",
+        "label": "Pafta",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "parselSekli",
+        "label": "Parsel şekli",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "egim",
+        "label": "Eğim durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "roadStatus",
+        "label": "Yol durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "kosePartsel",
+        "label": "Köşe parsel mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "ifraz",
+        "label": "İfraz edilebilir mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "tevhit",
+        "label": "Tevhit edilebilir mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "zeminEtut",
+        "label": "Zemin etüdü yapıldı mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "altyapi",
+        "label": "Altyapı",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 13
+      },
+      {
+        "key": "dogalOzellik",
+        "label": "Doğal özellikler / manzara",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "tarimOzellik",
+        "label": "Tarımsal uygunluk",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "denizMesafe",
+        "label": "Denize mesafe",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "merkezMesafe",
+        "label": "Merkeze mesafe",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "anaYolMesafe",
+        "label": "Ana yola mesafe",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "deed",
+        "label": "Tapu durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "bina": {
+    "file": "lib/category-tree.ts",
+    "line": 689,
+    "title": "Bina bilgileri",
+    "fieldCount": 28,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "listingType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "totalGrossM2",
+        "label": "Toplam brüt m²",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "landM2",
+        "label": "Arsa m²",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "totalFloors",
+        "label": "Toplam kat sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "basementFloors",
+        "label": "Bodrum kat sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "unitCount",
+        "label": "Bağımsız bölüm sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "apartmentCount",
+        "label": "Daire sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shopCount",
+        "label": "Dükkan sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "buildingAge",
+        "label": "Bina yaşı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "yapiTipi",
+        "label": "Yapı tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "yapiDurumu",
+        "label": "Yapının durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "heating",
+        "label": "Isıtma tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "parking",
+        "label": "Otopark",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "monthlyIncome",
+        "label": "Aylık toplam kira getirisi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "occupancyRate",
+        "label": "Doluluk oranı",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "usage",
+        "label": "Kullanım durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "elevator",
+        "label": "Asansör var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "earthquake",
+        "label": "Deprem yönetmeliğine uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urbanTransform",
+        "label": "Kentsel dönüşüme uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "buildingSafety",
+        "label": "Deprem & yapı güvenliği",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 12
+      },
+      {
+        "key": "deed",
+        "label": "Tapu durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "proje": {
+    "file": "lib/category-tree.ts",
+    "line": 725,
+    "title": "Proje bilgileri",
+    "fieldCount": 29,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "projectName",
+        "label": "Proje adı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "projectType",
+        "label": "Proje tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 22
+      },
+      {
+        "key": "company",
+        "label": "Firma adı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "projectStatus",
+        "label": "Proje durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 6
+      },
+      {
+        "key": "constructionPct",
+        "label": "İnşaat seviyesi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "startDate",
+        "label": "Proje başlangıç tarihi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "deliveryDate",
+        "label": "Teslim tarihi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "priceMin",
+        "label": "Fiyat (min)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "priceMax",
+        "label": "Fiyat (max)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "totalLandM2",
+        "label": "Toplam arsa alanı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "totalUnits",
+        "label": "Toplam konut sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "commercialUnits",
+        "label": "Ticari ünite sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "blockCount",
+        "label": "Blok sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floorCount",
+        "label": "Kat sayısı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "unitTypes",
+        "label": "Daire tipleri",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "m2Range",
+        "label": "m² aralığı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "downPayment",
+        "label": "Peşinat oranı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "amenities",
+        "label": "Sosyal donatılar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 34
+      },
+      {
+        "key": "security",
+        "label": "Güvenlik sistemleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "energy",
+        "label": "Enerji & altyapı",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "payment",
+        "label": "Ödeme seçenekleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "campaign",
+        "label": "Kampanyalar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "iskanStatus",
+        "label": "İskan durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "salesPhone",
+        "label": "Satış ofisi telefonu",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "website",
+        "label": "Web sitesi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "turistik": {
+    "file": "lib/category-tree.ts",
+    "line": 760,
+    "title": "Turistik tesis bilgileri",
+    "fieldCount": 23,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "listingType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "facilityKind",
+        "label": "Tesis türü",
+        "type": "select",
+        "required": true,
+        "optionCount": 15
+      },
+      {
+        "key": "roomCount",
+        "label": "Oda sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "bedCapacity",
+        "label": "Yatak kapasitesi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "suiteCount",
+        "label": "Suit sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "starCount",
+        "label": "Yıldız sayısı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "roomTypes",
+        "label": "Oda tipleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "facilityAreas",
+        "label": "Tesis alanları",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "tourismCert",
+        "label": "Turizm belgesi var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "businessLicense",
+        "label": "İşletme ruhsatı var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "alcoholLicense",
+        "label": "Alkollü ruhsat var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "closedM2",
+        "label": "Kapalı alan",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "openM2",
+        "label": "Açık alan",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "seaDistance",
+        "label": "Denize mesafe",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "occupancyRate",
+        "label": "Doluluk oranı",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "yearlyRevenue",
+        "label": "Yıllık ciro",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "staffLodging",
+        "label": "Personel lojmanı var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "brandTransfer",
+        "label": "Marka / işletme devri var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "equipmentIncluded",
+        "label": "Ekipman dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "devremulk": {
+    "file": "lib/category-tree.ts",
+    "line": 789,
+    "title": "Devre mülk bilgileri",
+    "fieldCount": 20,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "listingType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "facilityName",
+        "label": "Tesis adı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "accommodation",
+        "label": "Konaklama türü",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "usageForm",
+        "label": "Kullanım şekli",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "usagePeriod",
+        "label": "Kullanım dönemi",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "weekNo",
+        "label": "Hafta numarası",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "usageType",
+        "label": "Kullanım hakkı türü",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "capacity",
+        "label": "Kişi kapasitesi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "rooms",
+        "label": "Oda sayısı",
+        "type": "select",
+        "required": false,
+        "optionCount": 13
+      },
+      {
+        "key": "startDate",
+        "label": "Kullanım hakkı başlangıç",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "endDate",
+        "label": "Kullanım hakkı bitiş",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "dues",
+        "label": "Yıllık aidat",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "transferFee",
+        "label": "Devir ücreti / masrafı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "amenities",
+        "label": "Tesis özellikleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 20
+      },
+      {
+        "key": "rentable",
+        "label": "Kiraya verilebilir mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 21
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "gunlukKiralik": {
+    "file": "lib/category-tree.ts",
+    "line": 815,
+    "title": "Günlük / sezonluk kiralık bilgileri",
+    "fieldCount": 26,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "nightlyPrice",
+        "label": "Gecelik fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "weeklyPrice",
+        "label": "Haftalık fiyat",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "monthlyPrice",
+        "label": "Aylık fiyat",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "minStay",
+        "label": "Min. konaklama (gece)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "maxGuests",
+        "label": "Maksimum kişi sayısı",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "deposit",
+        "label": "Depozito",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "cancelPolicy",
+        "label": "İptal koşulu",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "cleaningFee",
+        "label": "Temizlik ücreti",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "grossM2",
+        "label": "m² (brüt)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "rooms",
+        "label": "Oda sayısı",
+        "type": "select",
+        "required": false,
+        "optionCount": 13
+      },
+      {
+        "key": "beds",
+        "label": "Yatak sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "bathrooms",
+        "label": "Banyo sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "floor",
+        "label": "Bulunduğu kat",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "heating",
+        "label": "Isıtma tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "furnished",
+        "label": "Eşyalı mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "denizMesafe",
+        "label": "Denize mesafe",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "merkezMesafe",
+        "label": "Merkeze mesafe",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "pets",
+        "label": "Evcil hayvan kabul",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "smoking",
+        "label": "Sigara içilebilir mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "suitableFor",
+        "label": "Kimlere uygun",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "checkin",
+        "label": "Giriş saati",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "checkout",
+        "label": "Çıkış saati",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "gunlukOlanak",
+        "label": "Olanaklar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 50
+      },
+      {
+        "key": "view",
+        "label": "Manzara",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 22
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "odaYurt": {
+    "file": "lib/category-tree.ts",
+    "line": 848,
+    "title": "Oda / yurt / pansiyon bilgileri",
+    "fieldCount": 14,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "perPersonPrice",
+        "label": "Kişi başı fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "roomType",
+        "label": "Oda tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "capacity",
+        "label": "Kişi kapasitesi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "deposit",
+        "label": "Depozito",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "furnished",
+        "label": "Eşyalı mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sharedBath",
+        "label": "Banyo ortak mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "sharedKitchen",
+        "label": "Mutfak ortak mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "billsIncluded",
+        "label": "Faturalar dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "internet",
+        "label": "İnternet dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "meals",
+        "label": "Yemek / kahvaltı dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "gender",
+        "label": "Cinsiyet tercihi",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "uniDistance",
+        "label": "Üniversiteye mesafe",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "prefabrik": {
+    "file": "lib/category-tree.ts",
+    "line": 868,
+    "title": "Prefabrik / tiny house / konteyner bilgileri",
+    "fieldCount": 16,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "structureType",
+        "label": "Yapı tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 9
+      },
+      {
+        "key": "listingType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 2
+      },
+      {
+        "key": "m2",
+        "label": "m²",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "rooms",
+        "label": "Oda sayısı",
+        "type": "select",
+        "required": false,
+        "optionCount": 13
+      },
+      {
+        "key": "material",
+        "label": "Malzeme tipi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Durum",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "installIncluded",
+        "label": "Kurulum dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "transportIncluded",
+        "label": "Nakliye dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "insulation",
+        "label": "Isı yalıtımı var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "electricity",
+        "label": "Elektrik tesisatı var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "water",
+        "label": "Su tesisatı var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "movable",
+        "label": "Taşınabilir mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti süresi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "emlakHizmet": {
+    "file": "lib/category-tree.ts",
+    "line": 889,
+    "title": "Emlak hizmeti bilgileri",
+    "fieldCount": 10,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "serviceType",
+        "label": "Hizmet tipi",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "serviceArea",
+        "label": "Hizmet verilen il / ilçe",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "providerType",
+        "label": "Firma / şahıs",
+        "type": "select",
+        "required": false,
+        "optionCount": 2
+      },
+      {
+        "key": "experience",
+        "label": "Deneyim (yıl)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "startPrice",
+        "label": "Başlangıç fiyatı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "pricing",
+        "label": "Fiyatlandırma",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "certificate",
+        "label": "Yetki belgesi var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "portfolio",
+        "label": "Portföy / referans linki",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "otomobil": {
+    "file": "lib/category-tree.ts",
+    "line": 905,
+    "title": "Araç bilgileri",
+    "fieldCount": 31,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "select",
+        "required": true,
+        "optionCount": 79
+      },
+      {
+        "key": "series",
+        "label": "Seri",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Araç durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 4
+      },
+      {
+        "key": "inspection",
+        "label": "Muayene",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "year",
+        "label": "Yıl",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "fuel",
+        "label": "Yakıt",
+        "type": "select",
+        "required": true,
+        "optionCount": 5
+      },
+      {
+        "key": "gear",
+        "label": "Vites",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "km",
+        "label": "Kilometre",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "bodyType",
+        "label": "Kasa tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "enginePower",
+        "label": "Motor gücü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "engineCc",
+        "label": "Motor hacmi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "traction",
+        "label": "Çekiş",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 12
+      },
+      {
+        "key": "seats",
+        "label": "Koltuk sayısı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "damage",
+        "label": "Hasar durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "tramer",
+        "label": "Tramer tutarı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "paint",
+        "label": "Boya / değişen özeti",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "plate",
+        "label": "Plaka / uyruk",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "safetyFeatures",
+        "label": "Güvenlik donanımı",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 20
+      },
+      {
+        "key": "comfortFeatures",
+        "label": "İç donanım & konfor",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 25
+      },
+      {
+        "key": "mediaFeatures",
+        "label": "Multimedya",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "exteriorFeatures",
+        "label": "Dış donanım",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "motosiklet": {
+    "file": "lib/category-tree.ts",
+    "line": 942,
+    "title": "Motosiklet bilgileri",
+    "fieldCount": 24,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "select",
+        "required": true,
+        "optionCount": 40
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "motoType",
+        "label": "Motosiklet tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "condition",
+        "label": "Araç durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 4
+      },
+      {
+        "key": "year",
+        "label": "Yıl",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "km",
+        "label": "Kilometre",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 12
+      },
+      {
+        "key": "license",
+        "label": "Ehliyet sınıfı",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "fuel",
+        "label": "Yakıt",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "enginePower",
+        "label": "Motor gücü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "engineCc",
+        "label": "Motor hacmi",
+        "type": "select",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "gear",
+        "label": "Vites",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "cooling",
+        "label": "Soğutma",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "inspection",
+        "label": "Muayene",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "damage",
+        "label": "Hasar durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "motoFeatures",
+        "label": "Donanım",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 14
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "vasitaGenel": {
+    "file": "lib/category-tree.ts",
+    "line": 970,
+    "title": "Araç bilgileri",
+    "fieldCount": 18,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "year",
+        "label": "Yıl",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "km",
+        "label": "Kilometre",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Araç durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 4
+      },
+      {
+        "key": "fuel",
+        "label": "Yakıt",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "gear",
+        "label": "Vites",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "enginePower",
+        "label": "Motor gücü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 12
+      },
+      {
+        "key": "damage",
+        "label": "Hasar durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "inspection",
+        "label": "Muayene",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "ticari": {
+    "file": "lib/category-tree.ts",
+    "line": 994,
+    "title": "Ticari araç bilgileri",
+    "fieldCount": 23,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "select",
+        "required": true,
+        "optionCount": 12
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "year",
+        "label": "Yıl",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "km",
+        "label": "Kilometre",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "bodyType",
+        "label": "Kasa tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "condition",
+        "label": "Araç durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 4
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 12
+      },
+      {
+        "key": "seats",
+        "label": "Koltuk sayısı",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "fuel",
+        "label": "Yakıt",
+        "type": "select",
+        "required": true,
+        "optionCount": 5
+      },
+      {
+        "key": "gear",
+        "label": "Vites",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "traction",
+        "label": "Çekiş",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "enginePower",
+        "label": "Motor gücü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "maxLoad",
+        "label": "İstiab / max yük",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "damage",
+        "label": "Hasar durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "inspection",
+        "label": "Muayene",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "agirVasita": {
+    "file": "lib/category-tree.ts",
+    "line": 1022,
+    "title": "Ağır vasıta bilgileri",
+    "fieldCount": 20,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "vehicleType",
+        "label": "Araç tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "year",
+        "label": "Yıl",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "km",
+        "label": "Kilometre",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "axle",
+        "label": "Dingil",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "engineCc",
+        "label": "Motor hacmi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "enginePower",
+        "label": "Motor gücü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "fuel",
+        "label": "Yakıt",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "gear",
+        "label": "Vites",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "cabin",
+        "label": "Kabin",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "tireCondition",
+        "label": "Lastik durumu",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "damage",
+        "label": "Hasar durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "inspection",
+        "label": "Muayene",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "deniz": {
+    "file": "lib/category-tree.ts",
+    "line": 1045,
+    "title": "Deniz aracı bilgileri",
+    "fieldCount": 21,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "vesselType",
+        "label": "Tekne tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "condition",
+        "label": "Araç durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 4
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "year",
+        "label": "Üretim yılı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "lengthM",
+        "label": "Boy",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "beamM",
+        "label": "En",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "material",
+        "label": "Gövde malzemesi",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "engineType",
+        "label": "Motor tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "enginePower",
+        "label": "Motor gücü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "engineHours",
+        "label": "Motor saati",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "fuel",
+        "label": "Yakıt",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "cabins",
+        "label": "Kabin sayısı",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "capacity",
+        "label": "Kişi kapasitesi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "damage",
+        "label": "Hasar durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "creditEligible",
+        "label": "Krediye uygun mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "traktor": {
+    "file": "lib/category-tree.ts",
+    "line": 1071,
+    "title": "Traktör / tarım aracı bilgileri",
+    "fieldCount": 15,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "vehicleType",
+        "label": "Tip",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "year",
+        "label": "Yıl",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "enginePower",
+        "label": "Motor gücü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "workHours",
+        "label": "Çalışma saati",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "traction",
+        "label": "Çekiş",
+        "type": "select",
+        "required": false,
+        "optionCount": 2
+      },
+      {
+        "key": "cabin",
+        "label": "Kabin",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "mechanicalCondition",
+        "label": "Mekanik durum",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "aracKiralik": {
+    "file": "lib/category-tree.ts",
+    "line": 1091,
+    "title": "Araç kiralama bilgileri",
+    "fieldCount": 25,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "year",
+        "label": "Model yılı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "fuel",
+        "label": "Yakıt",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "gear",
+        "label": "Vites",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "seats",
+        "label": "Koltuk sayısı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "carClass",
+        "label": "Araç sınıfı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "price",
+        "label": "Günlük kiralama ücreti",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "weeklyPrice",
+        "label": "Haftalık ücret",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "monthlyPrice",
+        "label": "Aylık ücret",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "longTermPrice",
+        "label": "Uzun dönem (aylık)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "deposit",
+        "label": "Depozito / teminat",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "minRentDays",
+        "label": "Min. kiralama süresi",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "kmLimit",
+        "label": "Günlük km limiti",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "withDriver",
+        "label": "Şoförlü mü?",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "minAge",
+        "label": "Min. sürücü yaşı",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "minLicense",
+        "label": "Min. ehliyet yılı",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "insuranceIncluded",
+        "label": "Kasko / sigorta dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "hgsIncluded",
+        "label": "HGS / OGS dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "fuelPolicy",
+        "label": "Yakıt politikası",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "deliveryPlace",
+        "label": "Teslim yeri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "havaAraci": {
+    "file": "lib/category-tree.ts",
+    "line": 1123,
+    "title": "Hava aracı bilgileri",
+    "fieldCount": 18,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "craftType",
+        "label": "Araç tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 12
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "year",
+        "label": "Üretim yılı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Durum",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "engineType",
+        "label": "Motor tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "enginePower",
+        "label": "Motor gücü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "flightHours",
+        "label": "Toplam uçuş saati",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "seats",
+        "label": "Koltuk sayısı",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "range",
+        "label": "Menzil",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "registration",
+        "label": "Tescil / uçuşa elverişlilik belgesi",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "yedekParca": {
+    "file": "lib/category-tree.ts",
+    "line": 1146,
+    "title": "Parça / aksesuar bilgileri",
+    "fieldCount": 23,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "partNo",
+        "label": "Parça numarası (OEM)",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "partBrand",
+        "label": "Parça markası",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "origin",
+        "label": "Parça tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 5
+      },
+      {
+        "key": "partPosition",
+        "label": "Takıldığı konum",
+        "type": "select",
+        "required": false,
+        "optionCount": 13
+      },
+      {
+        "key": "packQty",
+        "label": "Paket içeriği (adet)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "compatBrand",
+        "label": "Uyumlu marka",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "compatModel",
+        "label": "Uyumlu model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "compatYear",
+        "label": "Uyumlu yıl aralığı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "compatEngine",
+        "label": "Uyumlu motor / hacim",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "compatBody",
+        "label": "Uyumlu kasa tipi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "warrantyMonths",
+        "label": "Garanti süresi (ay)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "returnable",
+        "label": "İade / değişim kabul",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "installService",
+        "label": "Montaj hizmeti var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "stock",
+        "label": "Stok adedi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "alisverisGenel": {
+    "file": "lib/category-tree.ts",
+    "line": 1178,
+    "title": "Ürün bilgileri",
+    "fieldCount": 14,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "stock",
+        "label": "Stok adedi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "size",
+        "label": "Beden / ölçü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "yapiMarket": {
+    "file": "lib/category-tree.ts",
+    "line": 1193,
+    "title": "Yapı market / ürün bilgileri",
+    "fieldCount": 15,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "quantity",
+        "label": "Miktar",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "unit",
+        "label": "Birim",
+        "type": "select",
+        "required": false,
+        "optionCount": 12
+      },
+      {
+        "key": "material",
+        "label": "Malzeme / cins",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "elektrikliAlet": {
+    "file": "lib/category-tree.ts",
+    "line": 1208,
+    "title": "Elektrikli alet bilgileri",
+    "fieldCount": 17,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "power",
+        "label": "Güç",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "voltage",
+        "label": "Voltaj / akü",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "battery",
+        "label": "Akülü mü?",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "rpm",
+        "label": "Devir / kapasite",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "box",
+        "label": "Kutulu mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "telefon": {
+    "file": "lib/category-tree.ts",
+    "line": 1223,
+    "title": "Cep telefonu bilgileri",
+    "fieldCount": 19,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "select",
+        "required": true,
+        "optionCount": 22
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "storage",
+        "label": "Depolama",
+        "type": "select",
+        "required": true,
+        "optionCount": 7
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "ram",
+        "label": "RAM",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "cosmetic",
+        "label": "Kozmetik durum",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "battery",
+        "label": "Pil sağlığı (iPhone)",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "box",
+        "label": "Kutu var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "charger",
+        "label": "Şarj cihazı dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "partChanged",
+        "label": "Değişen parça var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "imei",
+        "label": "IMEI kayıt durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "stock",
+        "label": "Stok adedi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "elektronik": {
+    "file": "lib/category-tree.ts",
+    "line": 1244,
+    "title": "Elektronik ürün bilgileri",
+    "fieldCount": 18,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "storage",
+        "label": "Depolama",
+        "type": "select",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "ram",
+        "label": "RAM",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "box",
+        "label": "Kutulu mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urunOzellik",
+        "label": "Ürün özellikleri / dahil olanlar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "stock",
+        "label": "Stok adedi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "bilgisayar": {
+    "file": "lib/category-tree.ts",
+    "line": 1255,
+    "title": "Bilgisayar bilgileri",
+    "fieldCount": 17,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "cpu",
+        "label": "İşlemci",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "ram",
+        "label": "RAM",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "storage",
+        "label": "Depolama",
+        "type": "select",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "gpu",
+        "label": "Ekran kartı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "screenSize",
+        "label": "Ekran boyutu",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "resolution",
+        "label": "Çözünürlük",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "televizyon": {
+    "file": "lib/category-tree.ts",
+    "line": 1265,
+    "title": "Televizyon bilgileri",
+    "fieldCount": 14,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "screenSize",
+        "label": "Ekran boyutu",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "resolution",
+        "label": "Çözünürlük",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "panel",
+        "label": "Panel tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "smart",
+        "label": "Smart TV mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "beyazEsya": {
+    "file": "lib/category-tree.ts",
+    "line": 1275,
+    "title": "Beyaz eşya bilgileri",
+    "fieldCount": 16,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "select",
+        "required": false,
+        "optionCount": 24
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "energy",
+        "label": "Enerji sınıfı",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "capacity",
+        "label": "Kapasite",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urunOzellik",
+        "label": "Ürün özellikleri / dahil olanlar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "klima": {
+    "file": "lib/category-tree.ts",
+    "line": 1288,
+    "title": "Klima bilgileri",
+    "fieldCount": 15,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "select",
+        "required": false,
+        "optionCount": 13
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "energy",
+        "label": "Enerji sınıfı",
+        "type": "select",
+        "required": false,
+        "optionCount": 9
+      },
+      {
+        "key": "btu",
+        "label": "Kapasite (BTU)",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urunOzellik",
+        "label": "Ürün özellikleri / dahil olanlar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "kombi": {
+    "file": "lib/category-tree.ts",
+    "line": 1293,
+    "title": "Kombi & ısıtma bilgileri",
+    "fieldCount": 14,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "select",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "capacityKw",
+        "label": "Kapasite",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urunOzellik",
+        "label": "Ürün özellikleri / dahil olanlar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "moda": {
+    "file": "lib/category-tree.ts",
+    "line": 1298,
+    "title": "Giyim bilgileri",
+    "fieldCount": 17,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "size",
+        "label": "Beden",
+        "type": "select",
+        "required": false,
+        "optionCount": 16
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "gender",
+        "label": "Cinsiyet",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "sezon",
+        "label": "Sezon",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "desen",
+        "label": "Desen",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "kesim",
+        "label": "Kalıp / kesim",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "material",
+        "label": "Materyal",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "stock",
+        "label": "Stok adedi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "ayakkabi": {
+    "file": "lib/category-tree.ts",
+    "line": 1308,
+    "title": "Ayakkabı & çanta bilgileri",
+    "fieldCount": 13,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "shoeSize",
+        "label": "Numara (EU)",
+        "type": "select",
+        "required": false,
+        "optionCount": 12
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "gender",
+        "label": "Cinsiyet",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "material",
+        "label": "Materyal",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "stock",
+        "label": "Stok adedi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "mobilya": {
+    "file": "lib/category-tree.ts",
+    "line": 1313,
+    "title": "Mobilya & ev bilgileri",
+    "fieldCount": 13,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "stil",
+        "label": "Stil",
+        "type": "select",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "material",
+        "label": "Materyal",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "dimensions",
+        "label": "Ölçüler (En×Boy×Yükseklik)",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "etiketler",
+        "label": "İlan etiketleri",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "bebek": {
+    "file": "lib/category-tree.ts",
+    "line": 1318,
+    "title": "Anne & bebek ürün bilgileri",
+    "fieldCount": 12,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "ageGroup",
+        "label": "Yaş grubu",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "gender",
+        "label": "Cinsiyet",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "petUrun": {
+    "file": "lib/category-tree.ts",
+    "line": 1325,
+    "title": "Evcil hayvan ürünü bilgileri",
+    "fieldCount": 13,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "petType",
+        "label": "Hangi hayvan için?",
+        "type": "select",
+        "required": false,
+        "optionCount": 8
+      },
+      {
+        "key": "productCat",
+        "label": "Ürün kategorisi",
+        "type": "select",
+        "required": false,
+        "optionCount": 12
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "suitableFor",
+        "label": "Uygun boyut / yaş",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "quantity",
+        "label": "Miktar / ağırlık",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "expiry",
+        "label": "Son kullanma (mama)",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "stock",
+        "label": "Stok adedi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "oyuncak": {
+    "file": "lib/category-tree.ts",
+    "line": 1342,
+    "title": "Oyuncak bilgileri",
+    "fieldCount": 13,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "toyType",
+        "label": "Oyuncak türü",
+        "type": "select",
+        "required": false,
+        "optionCount": 13
+      },
+      {
+        "key": "ageGroup",
+        "label": "Yaş grubu",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "gender",
+        "label": "Cinsiyet",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "pieces",
+        "label": "Parça sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "battery",
+        "label": "Pil gerekir mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "stock",
+        "label": "Stok adedi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "spor": {
+    "file": "lib/category-tree.ts",
+    "line": 1358,
+    "title": "Spor & outdoor bilgileri",
+    "fieldCount": 10,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "sportType",
+        "label": "Tür",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "muzik": {
+    "file": "lib/category-tree.ts",
+    "line": 1363,
+    "title": "Müzik enstrümanı bilgileri",
+    "fieldCount": 11,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "instType",
+        "label": "Enstrüman türü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "medikal": {
+    "file": "lib/category-tree.ts",
+    "line": 1368,
+    "title": "Sağlık & medikal ürün bilgileri",
+    "fieldCount": 10,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "kitap": {
+    "file": "lib/category-tree.ts",
+    "line": 1373,
+    "title": "Kitap & yayın bilgileri",
+    "fieldCount": 11,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "author",
+        "label": "Yazar",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "publisher",
+        "label": "Yayınevi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "genre",
+        "label": "Tür",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "language",
+        "label": "Dil",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "condition",
+        "label": "Durum",
+        "type": "select",
+        "required": true,
+        "optionCount": 4
+      },
+      {
+        "key": "stock",
+        "label": "Stok adedi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "koleksiyon": {
+    "file": "lib/category-tree.ts",
+    "line": 1378,
+    "title": "Koleksiyon & antika bilgileri",
+    "fieldCount": 11,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "collectType",
+        "label": "Koleksiyon türü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "year",
+        "label": "Yıl / dönem",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "origin",
+        "label": "Menşei / ülke",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Durum",
+        "type": "select",
+        "required": true,
+        "optionCount": 5
+      },
+      {
+        "key": "authenticity",
+        "label": "Orijinallik",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "aksesuar": {
+    "file": "lib/category-tree.ts",
+    "line": 1383,
+    "title": "Saat, gözlük & takı bilgileri",
+    "fieldCount": 15,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "color",
+        "label": "Renk",
+        "type": "select",
+        "required": false,
+        "optionCount": 15
+      },
+      {
+        "key": "gender",
+        "label": "Cinsiyet",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "material",
+        "label": "Materyal",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "invoice",
+        "label": "Fatura var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "box",
+        "label": "Kutulu mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "negotiable",
+        "label": "Pazarlık olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "kozmetik": {
+    "file": "lib/category-tree.ts",
+    "line": 1393,
+    "title": "Kozmetik & parfüm bilgileri",
+    "fieldCount": 9,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "cosmeticType",
+        "label": "Ürün türü",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "volume",
+        "label": "Hacim / miktar",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "stock",
+        "label": "Stok adedi",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "shipping",
+        "label": "Kargo / teslimat",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "isMakinesi": {
+    "file": "lib/category-tree.ts",
+    "line": 1398,
+    "title": "Makine / sanayi bilgileri",
+    "fieldCount": 21,
+    "fields": [
+      {
+        "key": "title",
+        "label": "Makine / ürün adı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "machineType",
+        "label": "Makine türü",
+        "type": "select",
+        "required": false,
+        "optionCount": 23
+      },
+      {
+        "key": "brand",
+        "label": "Marka",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "model",
+        "label": "Model",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "year",
+        "label": "Üretim yılı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "condition",
+        "label": "Ürün durumu",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "power",
+        "label": "Motor gücü",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "operatingWeight",
+        "label": "Operasyon ağırlığı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "workHours",
+        "label": "Çalışma saati",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "fuel",
+        "label": "Yakıt",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "cabin",
+        "label": "Kabinli mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "ac",
+        "label": "Klima var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "operatorIncluded",
+        "label": "Operatör dahil mi?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "warranty",
+        "label": "Garanti durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "service",
+        "label": "Servis geçmişi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "plated",
+        "label": "Plakalı / trafiğe kayıtlı mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "from",
+        "label": "Kimden",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "transport",
+        "label": "Nakliye bilgisi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "swap",
+        "label": "Takas olur mu?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "hizmet": {
+    "file": "lib/category-tree.ts",
+    "line": 1423,
+    "title": "Hizmet bilgileri",
+    "fieldCount": 16,
+    "fields": [
+      {
+        "key": "title",
+        "label": "Hizmet başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "serviceType",
+        "label": "Hizmet tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 4
+      },
+      {
+        "key": "serviceArea",
+        "label": "Hizmet bölgesi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "teamSize",
+        "label": "Ekip büyüklüğü",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "workHours",
+        "label": "Çalışma saatleri",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "emergency",
+        "label": "Acil / 7-24 servis",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "priceType",
+        "label": "Fiyat tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 6
+      },
+      {
+        "key": "price",
+        "label": "Başlangıç fiyatı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "freeQuote",
+        "label": "Ücretsiz keşif / teklif",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "payment",
+        "label": "Ödeme yöntemi",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "experience",
+        "label": "Deneyim (yıl)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "certificate",
+        "label": "Sertifika / belge var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "insured",
+        "label": "Sigortalı ekip",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "warrantyMonths",
+        "label": "İşçilik garantisi (ay)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "serviceScope",
+        "label": "Hizmet kapsamı",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "ders": {
+    "file": "lib/category-tree.ts",
+    "line": 1448,
+    "title": "Ders bilgileri",
+    "fieldCount": 15,
+    "fields": [
+      {
+        "key": "title",
+        "label": "Ders başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "branch",
+        "label": "Branş",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "level",
+        "label": "Eğitim seviyesi",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "format",
+        "label": "Ders şekli",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "lessonType",
+        "label": "Ders tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "duration",
+        "label": "Ders süresi",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "price",
+        "label": "Saatlik ücret",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "packageAvailable",
+        "label": "Paket / abonelik var mı?",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "trialLesson",
+        "label": "Ücretsiz deneme dersi",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "availability",
+        "label": "Uygun günler / saatler",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "experience",
+        "label": "Deneyim (yıl)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "graduation",
+        "label": "Mezuniyet / sertifika",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "materials",
+        "label": "Materyal / kaynak sağlanır",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "examPrep",
+        "label": "Sınav hazırlık",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 11
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "isIlani": {
+    "file": "lib/category-tree.ts",
+    "line": 1472,
+    "title": "İş ilanı bilgileri",
+    "fieldCount": 15,
+    "fields": [
+      {
+        "key": "title",
+        "label": "Pozisyon adı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "company",
+        "label": "Şirket adı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "department",
+        "label": "Departman",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "workType",
+        "label": "Çalışma tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 5
+      },
+      {
+        "key": "workModel",
+        "label": "Çalışma modeli",
+        "type": "select",
+        "required": true,
+        "optionCount": 3
+      },
+      {
+        "key": "positionLevel",
+        "label": "Pozisyon seviyesi",
+        "type": "select",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "salary",
+        "label": "Maaş aralığı",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "benefits",
+        "label": "Yan haklar (serbest metin)",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "experience",
+        "label": "Deneyim seviyesi",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "education",
+        "label": "Eğitim seviyesi",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "languages",
+        "label": "Yabancı dil",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "military",
+        "label": "Askerlik durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "license",
+        "label": "Ehliyet",
+        "type": "select",
+        "required": false,
+        "optionCount": 6
+      },
+      {
+        "key": "benefitList",
+        "label": "Sunulan yan haklar",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "yardimci": {
+    "file": "lib/category-tree.ts",
+    "line": 1496,
+    "title": "Yardımcı / bakım talebi",
+    "fieldCount": 15,
+    "fields": [
+      {
+        "key": "title",
+        "label": "Aranan kişi / hizmet",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "careType",
+        "label": "Bakım / iş tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 8
+      },
+      {
+        "key": "workType",
+        "label": "Çalışma şekli",
+        "type": "select",
+        "required": true,
+        "optionCount": 5
+      },
+      {
+        "key": "schedule",
+        "label": "Gün / saat bilgisi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "personCount",
+        "label": "Bakılacak kişi sayısı",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "ageRange",
+        "label": "Yaş aralığı (bakılacak)",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "salary",
+        "label": "Maaş / ücret",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "salaryType",
+        "label": "Ücret tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "insurance",
+        "label": "Sigorta yapılacak",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "experience",
+        "label": "Deneyim beklentisi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "reference",
+        "label": "Referans şart",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "driving",
+        "label": "Ehliyet şart",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "language",
+        "label": "Dil beklentisi",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "duties",
+        "label": "Beklenen görevler",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 10
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "hayvan": {
+    "file": "lib/category-tree.ts",
+    "line": 1520,
+    "title": "Hayvan ilanı bilgileri",
+    "fieldCount": 16,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "adType",
+        "label": "İlan tipi",
+        "type": "select",
+        "required": true,
+        "optionCount": 4
+      },
+      {
+        "key": "species",
+        "label": "Tür",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "breed",
+        "label": "Irk",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "age",
+        "label": "Yaş",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "gender",
+        "label": "Cinsiyet",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "size",
+        "label": "Boyut",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "vaccine",
+        "label": "Aşı durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "neutered",
+        "label": "Kısırlaştırma",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "microchip",
+        "label": "Mikroçip takılı",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "healthReport",
+        "label": "Sağlık raporu var",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "pedigree",
+        "label": "Pedigri / şecere belgesi",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "training",
+        "label": "Eğitim durumu",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "price",
+        "label": "Ücret (varsa)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "suitableFor",
+        "label": "Uygun olduğu ortam",
+        "type": "multiselect",
+        "required": false,
+        "optionCount": 7
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "arayan": {
+    "file": "lib/category-tree.ts",
+    "line": 1545,
+    "title": "Talep bilgileri",
+    "fieldCount": 12,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "wanted",
+        "label": "Aradığın ürün/hizmet",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "wantedBrand",
+        "label": "Tercih edilen marka/model",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "wantedCondition",
+        "label": "İstenen durum",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "quantity",
+        "label": "Adet",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "prefs",
+        "label": "Tercih edilen özellikler",
+        "type": "textarea",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "budgetMin",
+        "label": "Bütçe (en az)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "budgetMax",
+        "label": "Bütçe (en çok)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "urgency",
+        "label": "Aciliyet",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "deliveryPref",
+        "label": "Teslim tercihi",
+        "type": "select",
+        "required": false,
+        "optionCount": 3
+      },
+      {
+        "key": "swapOffer",
+        "label": "Takas teklif edebilirim",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "dijitalHizmet": {
+    "file": "lib/category-tree.ts",
+    "line": 1565,
+    "title": "Dijital hizmet bilgileri",
+    "fieldCount": 14,
+    "fields": [
+      {
+        "key": "title",
+        "label": "İlan başlığı",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "serviceType",
+        "label": "Hizmet/ürün türü",
+        "type": "text",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "deliveryTime",
+        "label": "Teslim süresi",
+        "type": "select",
+        "required": true,
+        "optionCount": 5
+      },
+      {
+        "key": "revisions",
+        "label": "Revizyon sayısı",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "tools",
+        "label": "Kullanılan araç / teknoloji",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "experience",
+        "label": "Deneyim (yıl)",
+        "type": "number",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "price",
+        "label": "Fiyat",
+        "type": "number",
+        "required": true,
+        "optionCount": 0
+      },
+      {
+        "key": "priceType",
+        "label": "Fiyat tipi",
+        "type": "select",
+        "required": false,
+        "optionCount": 5
+      },
+      {
+        "key": "deliveryMethod",
+        "label": "Dosya teslim şekli",
+        "type": "select",
+        "required": false,
+        "optionCount": 4
+      },
+      {
+        "key": "sourceFiles",
+        "label": "Kaynak dosyalar dahil",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "commercialUse",
+        "label": "Ticari kullanım hakkı",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "invoiceable",
+        "label": "Fatura kesilir",
+        "type": "bool",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "portfolio",
+        "label": "Portfolyo linki",
+        "type": "text",
+        "required": false,
+        "optionCount": 0
+      },
+      {
+        "key": "description",
+        "label": "Açıklama",
+        "type": "textarea",
+        "required": true,
+        "optionCount": 0
+      }
+    ]
+  },
+  "_summary": {
+    "schemas": 56,
+    "totalFields": 1126,
+    "select": 330,
+    "multiselect": 108,
+    "bool": 197,
+    "emptyOptions": 0
+  }
+}

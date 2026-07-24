@@ -1,0 +1,118 @@
+{
+  "generatedFrom": "CANLI Playwright — www.ortaksat.com (web 1366 + mobil 390)",
+  "note": "İlan SUBMIT edilmedi (canlıya çöp veri yasak); create akışının açıldığı/form alanlarının render olduğu doğrulandı.",
+  "web": {
+    "profile": "web",
+    "viewport": {
+      "width": 1366,
+      "height": 900
+    },
+    "checks": {
+      "explorePageOpens": {
+        "pass": true,
+        "cardCount": 20,
+        "crashed": false
+      },
+      "searchWorks": {
+        "pass": true,
+        "resultCount": 2
+      },
+      "filterFilteredEmptyState": true,
+      "filterWorks": {
+        "pass": true,
+        "resultCount": 5
+      },
+      "createFlowWorks": {
+        "pass": true,
+        "hasCategoryPicker": true,
+        "hasInput": true
+      },
+      "sortUiPresent": true,
+      "filterUiPresent": true,
+      "searchUiPresent": true
+    },
+    "passed": 7,
+    "total": 7
+  },
+  "mobile": {
+    "profile": "mobile",
+    "viewport": {
+      "width": 390,
+      "height": 844
+    },
+    "checks": {
+      "explorePageOpens": {
+        "pass": true,
+        "cardCount": 20,
+        "crashed": false
+      },
+      "searchWorks": {
+        "pass": true,
+        "resultCount": 2
+      },
+      "filterFilteredEmptyState": true,
+      "filterWorks": {
+        "pass": true,
+        "resultCount": 5
+      },
+      "createFlowWorks": {
+        "pass": true,
+        "hasCategoryPicker": true,
+        "hasInput": true
+      },
+      "sortUiPresent": true,
+      "filterUiPresent": true,
+      "searchUiPresent": true
+    },
+    "passed": 7,
+    "total": 7
+  },
+  "webMobileParity": {
+    "explorePageOpens": {
+      "web": true,
+      "mobile": true,
+      "match": true
+    },
+    "searchWorks": {
+      "web": true,
+      "mobile": true,
+      "match": true
+    },
+    "filterFilteredEmptyState": {
+      "web": true,
+      "mobile": true,
+      "match": true
+    },
+    "filterWorks": {
+      "web": true,
+      "mobile": true,
+      "match": true
+    },
+    "createFlowWorks": {
+      "web": true,
+      "mobile": true,
+      "match": true
+    },
+    "sortUiPresent": {
+      "web": true,
+      "mobile": true,
+      "match": true
+    },
+    "filterUiPresent": {
+      "web": true,
+      "mobile": true,
+      "match": true
+    },
+    "searchUiPresent": {
+      "web": true,
+      "mobile": true,
+      "match": true
+    }
+  },
+  "parityMismatch": [],
+  "overall": {
+    "webPass": "7/7",
+    "mobilePass": "7/7",
+    "parityMismatchCount": 0
+  }
+}

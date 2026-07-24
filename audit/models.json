@@ -1,0 +1,2322 @@
+{
+  "MODELS_BY_BRAND": {
+    "file": "lib/category-tree.ts",
+    "line": 107,
+    "brandCount": 91,
+    "totalModels": 741,
+    "perBrand": {
+      "Renault": {
+        "file": "lib/category-tree.ts",
+        "line": 109,
+        "count": 15,
+        "models": [
+          "Clio",
+          "Megane",
+          "Fluence",
+          "Symbol",
+          "Captur",
+          "Austral",
+          "Taliant",
+          "Kadjar",
+          "Talisman",
+          "Zoe",
+          "Koleos",
+          "Latitude",
+          "Laguna",
+          "Scenic",
+          "Twingo"
+        ]
+      },
+      "Fiat": {
+        "file": "lib/category-tree.ts",
+        "line": 110,
+        "count": 14,
+        "models": [
+          "Egea",
+          "Linea",
+          "Doblo",
+          "Fiorino",
+          "Panda",
+          "500",
+          "500L",
+          "500X",
+          "Punto",
+          "Tipo",
+          "Bravo",
+          "Albea",
+          "Palio",
+          "Marea"
+        ]
+      },
+      "Volkswagen": {
+        "file": "lib/category-tree.ts",
+        "line": 111,
+        "count": 16,
+        "models": [
+          "Golf",
+          "Polo",
+          "Passat",
+          "Jetta",
+          "Tiguan",
+          "T-Roc",
+          "T-Cross",
+          "Touareg",
+          "Transporter",
+          "Caddy",
+          "Arteon",
+          "Scirocco",
+          "Bora",
+          "Beetle",
+          "ID.4",
+          "ID.3"
+        ]
+      },
+      "Toyota": {
+        "file": "lib/category-tree.ts",
+        "line": 112,
+        "count": 12,
+        "models": [
+          "Corolla",
+          "Yaris",
+          "Yaris Cross",
+          "C-HR",
+          "RAV4",
+          "Hilux",
+          "Camry",
+          "Auris",
+          "Avensis",
+          "Land Cruiser",
+          "Proace",
+          "bZ4X"
+        ]
+      },
+      "Hyundai": {
+        "file": "lib/category-tree.ts",
+        "line": 113,
+        "count": 13,
+        "models": [
+          "i10",
+          "i20",
+          "i30",
+          "Accent",
+          "Elantra",
+          "Tucson",
+          "Bayon",
+          "Kona",
+          "Getz",
+          "Santa Fe",
+          "ix35",
+          "Accent Blue",
+          "IONIQ"
+        ]
+      },
+      "Ford": {
+        "file": "lib/category-tree.ts",
+        "line": 114,
+        "count": 13,
+        "models": [
+          "Focus",
+          "Fiesta",
+          "Mondeo",
+          "Courier",
+          "Transit",
+          "Kuga",
+          "Puma",
+          "Ranger",
+          "EcoSport",
+          "Explorer",
+          "Tourneo",
+          "C-Max",
+          "Connect"
+        ]
+      },
+      "Honda": {
+        "file": "lib/category-tree.ts",
+        "line": 115,
+        "count": 9,
+        "models": [
+          "Civic",
+          "City",
+          "Accord",
+          "CR-V",
+          "Jazz",
+          "HR-V",
+          "ZR-V",
+          "e:Ny1",
+          "Insight"
+        ]
+      },
+      "BMW": {
+        "file": "lib/category-tree.ts",
+        "line": 116,
+        "count": 20,
+        "models": [
+          "1 Serisi",
+          "2 Serisi",
+          "3 Serisi",
+          "4 Serisi",
+          "5 Serisi",
+          "6 Serisi",
+          "7 Serisi",
+          "8 Serisi",
+          "X1",
+          "X2",
+          "X3",
+          "X4",
+          "X5",
+          "X6",
+          "X7",
+          "i3",
+          "i4",
+          "iX",
+          "Z4",
+          "M Serisi"
+        ]
+      },
+      "Mercedes-Benz": {
+        "file": "lib/category-tree.ts",
+        "line": 117,
+        "count": 18,
+        "models": [
+          "A Serisi",
+          "B Serisi",
+          "C Serisi",
+          "E Serisi",
+          "S Serisi",
+          "CLA",
+          "CLS",
+          "GLA",
+          "GLB",
+          "GLC",
+          "GLE",
+          "GLS",
+          "G Serisi",
+          "EQC",
+          "EQE",
+          "AMG",
+          "Vito",
+          "Sprinter"
+        ]
+      },
+      "Audi": {
+        "file": "lib/category-tree.ts",
+        "line": 118,
+        "count": 17,
+        "models": [
+          "A1",
+          "A3",
+          "A4",
+          "A5",
+          "A6",
+          "A7",
+          "A8",
+          "Q2",
+          "Q3",
+          "Q5",
+          "Q7",
+          "Q8",
+          "TT",
+          "R8",
+          "e-tron",
+          "RS Serisi",
+          "S Serisi"
+        ]
+      },
+      "Opel": {
+        "file": "lib/category-tree.ts",
+        "line": 119,
+        "count": 10,
+        "models": [
+          "Corsa",
+          "Astra",
+          "Insignia",
+          "Mokka",
+          "Crossland",
+          "Grandland",
+          "Vectra",
+          "Zafira",
+          "Meriva",
+          "Combo Life"
+        ]
+      },
+      "Peugeot": {
+        "file": "lib/category-tree.ts",
+        "line": 120,
+        "count": 13,
+        "models": [
+          "208",
+          "301",
+          "308",
+          "2008",
+          "3008",
+          "5008",
+          "508",
+          "Partner",
+          "Rifter",
+          "207",
+          "206",
+          "406",
+          "e-208"
+        ]
+      },
+      "Citroën": {
+        "file": "lib/category-tree.ts",
+        "line": 121,
+        "count": 10,
+        "models": [
+          "C3",
+          "C4",
+          "C5 Aircross",
+          "C5 X",
+          "Berlingo",
+          "C-Elysee",
+          "C3 Aircross",
+          "DS3",
+          "DS4",
+          "Xsara"
+        ]
+      },
+      "Nissan": {
+        "file": "lib/category-tree.ts",
+        "line": 122,
+        "count": 9,
+        "models": [
+          "Qashqai",
+          "Juke",
+          "Micra",
+          "X-Trail",
+          "Note",
+          "Navara",
+          "Leaf",
+          "Pulsar",
+          "Primera"
+        ]
+      },
+      "Kia": {
+        "file": "lib/category-tree.ts",
+        "line": 123,
+        "count": 11,
+        "models": [
+          "Rio",
+          "Ceed",
+          "Sportage",
+          "Stonic",
+          "Picanto",
+          "Cerato",
+          "Sorento",
+          "Niro",
+          "Soul",
+          "EV6",
+          "Venga"
+        ]
+      },
+      "Dacia": {
+        "file": "lib/category-tree.ts",
+        "line": 124,
+        "count": 7,
+        "models": [
+          "Sandero",
+          "Duster",
+          "Logan",
+          "Jogger",
+          "Lodgy",
+          "Dokker",
+          "Spring"
+        ]
+      },
+      "Tesla": {
+        "file": "lib/category-tree.ts",
+        "line": 125,
+        "count": 6,
+        "models": [
+          "Model 3",
+          "Model Y",
+          "Model S",
+          "Model X",
+          "Cybertruck",
+          "Roadster"
+        ]
+      },
+      "Togg": {
+        "file": "lib/category-tree.ts",
+        "line": 126,
+        "count": 2,
+        "models": [
+          "T10X",
+          "T10F"
+        ]
+      },
+      "BYD": {
+        "file": "lib/category-tree.ts",
+        "line": 127,
+        "count": 9,
+        "models": [
+          "Atto 3",
+          "Seal",
+          "Dolphin",
+          "Han",
+          "Tang",
+          "Song Plus",
+          "Seal U",
+          "Yuan Plus",
+          "Sealion 7"
+        ]
+      },
+      "Jaecoo": {
+        "file": "lib/category-tree.ts",
+        "line": 129,
+        "count": 4,
+        "models": [
+          "J5",
+          "J6",
+          "J7",
+          "J8"
+        ]
+      },
+      "Jetour": {
+        "file": "lib/category-tree.ts",
+        "line": 130,
+        "count": 7,
+        "models": [
+          "Dashing",
+          "X70",
+          "X70 Plus",
+          "X90",
+          "X90 Plus",
+          "T2",
+          "T1"
+        ]
+      },
+      "Lynk & Co": {
+        "file": "lib/category-tree.ts",
+        "line": 131,
+        "count": 7,
+        "models": [
+          "01",
+          "02",
+          "03",
+          "05",
+          "06",
+          "08",
+          "09"
+        ]
+      },
+      "XPeng": {
+        "file": "lib/category-tree.ts",
+        "line": 132,
+        "count": 6,
+        "models": [
+          "G6",
+          "G9",
+          "P7",
+          "P5",
+          "X9",
+          "G3i"
+        ]
+      },
+      "Zeekr": {
+        "file": "lib/category-tree.ts",
+        "line": 133,
+        "count": 6,
+        "models": [
+          "001",
+          "X",
+          "007",
+          "009",
+          "7X",
+          "Mix"
+        ]
+      },
+      "Omoda": {
+        "file": "lib/category-tree.ts",
+        "line": 134,
+        "count": 5,
+        "models": [
+          "5",
+          "E5",
+          "7",
+          "9",
+          "C5"
+        ]
+      },
+      "iPhone": {
+        "file": "lib/category-tree.ts",
+        "line": 136,
+        "count": 10,
+        "models": [
+          "iPhone 16 Pro Max",
+          "iPhone 16 Pro",
+          "iPhone 16",
+          "iPhone 15 Pro Max",
+          "iPhone 15",
+          "iPhone 14",
+          "iPhone 13",
+          "iPhone 12",
+          "iPhone 11",
+          "iPhone SE"
+        ]
+      },
+      "Samsung": {
+        "file": "lib/category-tree.ts",
+        "line": 137,
+        "count": 16,
+        "models": [
+          "Galaxy S24 Ultra",
+          "Galaxy S24+",
+          "Galaxy S24",
+          "Galaxy S23 Ultra",
+          "Galaxy S23",
+          "Galaxy S22",
+          "Galaxy A55",
+          "Galaxy A35",
+          "Galaxy A25",
+          "Galaxy A15",
+          "Galaxy A05",
+          "Galaxy M Serisi",
+          "Galaxy Z Fold5",
+          "Galaxy Z Flip5",
+          "Galaxy Note 20",
+          "Galaxy S21 FE"
+        ]
+      },
+      "Xiaomi": {
+        "file": "lib/category-tree.ts",
+        "line": 138,
+        "count": 9,
+        "models": [
+          "14 Pro",
+          "14",
+          "13T Pro",
+          "13T",
+          "Redmi Note 13 Pro",
+          "Redmi Note 13",
+          "Redmi Note 12",
+          "Redmi 13C",
+          "Redmi 12"
+        ]
+      },
+      "Poco": {
+        "file": "lib/category-tree.ts",
+        "line": 139,
+        "count": 7,
+        "models": [
+          "Poco X6 Pro",
+          "Poco X6",
+          "Poco F5",
+          "Poco F5 Pro",
+          "Poco C65",
+          "Poco M6 Pro",
+          "Poco X5 Pro"
+        ]
+      },
+      "Huawei": {
+        "file": "lib/category-tree.ts",
+        "line": 140,
+        "count": 5,
+        "models": [
+          "P60",
+          "P50",
+          "Mate 50",
+          "Nova 12",
+          "Nova 11"
+        ]
+      },
+      "Oppo": {
+        "file": "lib/category-tree.ts",
+        "line": 141,
+        "count": 5,
+        "models": [
+          "Reno 11",
+          "Reno 10",
+          "A98",
+          "A78",
+          "A58"
+        ]
+      },
+      "Realme": {
+        "file": "lib/category-tree.ts",
+        "line": 142,
+        "count": 5,
+        "models": [
+          "C67",
+          "C55",
+          "11 Pro",
+          "GT Neo",
+          "Number serisi"
+        ]
+      },
+      "Chevrolet": {
+        "file": "lib/category-tree.ts",
+        "line": 144,
+        "count": 11,
+        "models": [
+          "Cruze",
+          "Aveo",
+          "Spark",
+          "Captiva",
+          "Trax",
+          "Lacetti",
+          "Kalos",
+          "Epica",
+          "Nubira",
+          "Malibu",
+          "Camaro"
+        ]
+      },
+      "Seat": {
+        "file": "lib/category-tree.ts",
+        "line": 145,
+        "count": 9,
+        "models": [
+          "Ibiza",
+          "Leon",
+          "Arona",
+          "Ateca",
+          "Toledo",
+          "Cordoba",
+          "Altea",
+          "Alhambra",
+          "Tarraco"
+        ]
+      },
+      "Škoda": {
+        "file": "lib/category-tree.ts",
+        "line": 146,
+        "count": 11,
+        "models": [
+          "Octavia",
+          "Superb",
+          "Fabia",
+          "Kamiq",
+          "Karoq",
+          "Scala",
+          "Kodiaq",
+          "Rapid",
+          "Yeti",
+          "Roomster",
+          "Enyaq"
+        ]
+      },
+      "Volvo": {
+        "file": "lib/category-tree.ts",
+        "line": 147,
+        "count": 10,
+        "models": [
+          "XC40",
+          "XC60",
+          "XC90",
+          "S60",
+          "S90",
+          "V40",
+          "V60",
+          "V90",
+          "C40",
+          "EX30"
+        ]
+      },
+      "Suzuki": {
+        "file": "lib/category-tree.ts",
+        "line": 148,
+        "count": 11,
+        "models": [
+          "Swift",
+          "Vitara",
+          "SX4",
+          "SX4 S-Cross",
+          "Baleno",
+          "Jimny",
+          "Grand Vitara",
+          "Alto",
+          "Splash",
+          "Ignis",
+          "Celerio"
+        ]
+      },
+      "Mitsubishi": {
+        "file": "lib/category-tree.ts",
+        "line": 149,
+        "count": 9,
+        "models": [
+          "Lancer",
+          "ASX",
+          "Outlander",
+          "Eclipse Cross",
+          "L200",
+          "Space Star",
+          "Colt",
+          "Pajero",
+          "Attrage"
+        ]
+      },
+      "Mini": {
+        "file": "lib/category-tree.ts",
+        "line": 150,
+        "count": 7,
+        "models": [
+          "Cooper",
+          "Cooper S",
+          "Countryman",
+          "Clubman",
+          "Cabrio",
+          "John Cooper Works",
+          "Paceman"
+        ]
+      },
+      "Land Rover": {
+        "file": "lib/category-tree.ts",
+        "line": 151,
+        "count": 8,
+        "models": [
+          "Range Rover",
+          "Range Rover Sport",
+          "Range Rover Velar",
+          "Evoque",
+          "Discovery",
+          "Discovery Sport",
+          "Defender",
+          "Freelander"
+        ]
+      },
+      "Jeep": {
+        "file": "lib/category-tree.ts",
+        "line": 152,
+        "count": 7,
+        "models": [
+          "Renegade",
+          "Compass",
+          "Cherokee",
+          "Grand Cherokee",
+          "Wrangler",
+          "Avenger",
+          "Commander"
+        ]
+      },
+      "Mazda": {
+        "file": "lib/category-tree.ts",
+        "line": 153,
+        "count": 9,
+        "models": [
+          "2",
+          "3",
+          "6",
+          "CX-3",
+          "CX-30",
+          "CX-5",
+          "CX-60",
+          "MX-5",
+          "CX-9"
+        ]
+      },
+      "Alfa Romeo": {
+        "file": "lib/category-tree.ts",
+        "line": 154,
+        "count": 8,
+        "models": [
+          "Giulietta",
+          "Giulia",
+          "Stelvio",
+          "Mito",
+          "Tonale",
+          "159",
+          "147",
+          "Brera"
+        ]
+      },
+      "MG": {
+        "file": "lib/category-tree.ts",
+        "line": 155,
+        "count": 8,
+        "models": [
+          "ZS",
+          "HS",
+          "MG4",
+          "MG5",
+          "MG3",
+          "Marvel R",
+          "MG7",
+          "EHS"
+        ]
+      },
+      "Chery": {
+        "file": "lib/category-tree.ts",
+        "line": 156,
+        "count": 8,
+        "models": [
+          "Tiggo 7",
+          "Tiggo 7 Pro",
+          "Tiggo 8",
+          "Tiggo 8 Pro",
+          "Omoda 5",
+          "Omoda E5",
+          "Tiggo 4",
+          "Tiggo 2"
+        ]
+      },
+      "Porsche": {
+        "file": "lib/category-tree.ts",
+        "line": 157,
+        "count": 7,
+        "models": [
+          "911",
+          "Cayenne",
+          "Macan",
+          "Panamera",
+          "Taycan",
+          "Boxster",
+          "Cayman"
+        ]
+      },
+      "Jaguar": {
+        "file": "lib/category-tree.ts",
+        "line": 158,
+        "count": 7,
+        "models": [
+          "XE",
+          "XF",
+          "XJ",
+          "F-Pace",
+          "E-Pace",
+          "I-Pace",
+          "F-Type"
+        ]
+      },
+      "Lexus": {
+        "file": "lib/category-tree.ts",
+        "line": 159,
+        "count": 9,
+        "models": [
+          "IS",
+          "ES",
+          "LS",
+          "UX",
+          "NX",
+          "RX",
+          "RZ",
+          "LC",
+          "CT"
+        ]
+      },
+      "Cupra": {
+        "file": "lib/category-tree.ts",
+        "line": 160,
+        "count": 6,
+        "models": [
+          "Formentor",
+          "Leon",
+          "Born",
+          "Ateca",
+          "Terramar",
+          "Tavascan"
+        ]
+      },
+      "DS Automobiles": {
+        "file": "lib/category-tree.ts",
+        "line": 161,
+        "count": 6,
+        "models": [
+          "DS3",
+          "DS3 Crossback",
+          "DS4",
+          "DS7",
+          "DS7 Crossback",
+          "DS9"
+        ]
+      },
+      "SsangYong": {
+        "file": "lib/category-tree.ts",
+        "line": 162,
+        "count": 8,
+        "models": [
+          "Tivoli",
+          "Korando",
+          "Rexton",
+          "Musso",
+          "Actyon",
+          "Rodius",
+          "Kyron",
+          "Torres"
+        ]
+      },
+      "Subaru": {
+        "file": "lib/category-tree.ts",
+        "line": 163,
+        "count": 8,
+        "models": [
+          "Impreza",
+          "XV",
+          "Forester",
+          "Outback",
+          "Legacy",
+          "BRZ",
+          "WRX",
+          "Levorg"
+        ]
+      },
+      "Isuzu": {
+        "file": "lib/category-tree.ts",
+        "line": 164,
+        "count": 9,
+        "models": [
+          "D-Max",
+          "MU-X",
+          "NPR",
+          "NLR",
+          "NKR",
+          "NQR",
+          "Novociti",
+          "Trooper",
+          "Rodeo"
+        ]
+      },
+      "Infiniti": {
+        "file": "lib/category-tree.ts",
+        "line": 165,
+        "count": 12,
+        "models": [
+          "Q30",
+          "Q50",
+          "Q60",
+          "Q70",
+          "QX30",
+          "QX50",
+          "QX55",
+          "QX60",
+          "QX70",
+          "QX80",
+          "FX",
+          "EX"
+        ]
+      },
+      "Aston Martin": {
+        "file": "lib/category-tree.ts",
+        "line": 166,
+        "count": 9,
+        "models": [
+          "DB11",
+          "DB12",
+          "DBS",
+          "DBX",
+          "Vantage",
+          "Vanquish",
+          "Rapide",
+          "DB9",
+          "Valhalla"
+        ]
+      },
+      "Bentley": {
+        "file": "lib/category-tree.ts",
+        "line": 167,
+        "count": 8,
+        "models": [
+          "Continental GT",
+          "Continental GTC",
+          "Flying Spur",
+          "Bentayga",
+          "Mulsanne",
+          "Batur",
+          "Arnage",
+          "Azure"
+        ]
+      },
+      "Ferrari": {
+        "file": "lib/category-tree.ts",
+        "line": 168,
+        "count": 9,
+        "models": [
+          "Roma",
+          "Portofino",
+          "296 GTB",
+          "F8",
+          "SF90",
+          "Purosangue",
+          "812",
+          "Daytona SP3",
+          "Roma Spider"
+        ]
+      },
+      "Lamborghini": {
+        "file": "lib/category-tree.ts",
+        "line": 169,
+        "count": 8,
+        "models": [
+          "Huracán",
+          "Urus",
+          "Aventador",
+          "Revuelto",
+          "Gallardo",
+          "Murciélago",
+          "Countach",
+          "Temerario"
+        ]
+      },
+      "Maserati": {
+        "file": "lib/category-tree.ts",
+        "line": 170,
+        "count": 7,
+        "models": [
+          "Ghibli",
+          "Levante",
+          "Quattroporte",
+          "Grecale",
+          "MC20",
+          "GranTurismo",
+          "GranCabrio"
+        ]
+      },
+      "Lada": {
+        "file": "lib/category-tree.ts",
+        "line": 171,
+        "count": 10,
+        "models": [
+          "Vesta",
+          "Granta",
+          "Niva",
+          "Niva Travel",
+          "Largus",
+          "Kalina",
+          "Priora",
+          "Samara",
+          "XRAY",
+          "4x4"
+        ]
+      },
+      "Smart": {
+        "file": "lib/category-tree.ts",
+        "line": 172,
+        "count": 6,
+        "models": [
+          "ForTwo",
+          "ForFour",
+          "#1",
+          "#3",
+          "#5",
+          "Roadster"
+        ]
+      },
+      "Daihatsu": {
+        "file": "lib/category-tree.ts",
+        "line": 173,
+        "count": 10,
+        "models": [
+          "Terios",
+          "Sirion",
+          "Materia",
+          "Cuore",
+          "YRV",
+          "Charade",
+          "Feroza",
+          "Gran Max",
+          "Copen",
+          "Move"
+        ]
+      },
+      "Vivo": {
+        "file": "lib/category-tree.ts",
+        "line": 175,
+        "count": 5,
+        "models": [
+          "Y36",
+          "Y22",
+          "V29",
+          "V27",
+          "X90"
+        ]
+      },
+      "Tecno": {
+        "file": "lib/category-tree.ts",
+        "line": 176,
+        "count": 4,
+        "models": [
+          "Camon 20",
+          "Spark 10",
+          "Pova 5",
+          "Phantom X2"
+        ]
+      },
+      "General Mobile": {
+        "file": "lib/category-tree.ts",
+        "line": 177,
+        "count": 4,
+        "models": [
+          "GM 24",
+          "GM 23",
+          "GM 22",
+          "GM 21"
+        ]
+      },
+      "OnePlus": {
+        "file": "lib/category-tree.ts",
+        "line": 178,
+        "count": 4,
+        "models": [
+          "12",
+          "11",
+          "Nord 3",
+          "Nord CE 3"
+        ]
+      },
+      "Nothing": {
+        "file": "lib/category-tree.ts",
+        "line": 179,
+        "count": 3,
+        "models": [
+          "Phone (2)",
+          "Phone (2a)",
+          "Phone (1)"
+        ]
+      },
+      "Reeder": {
+        "file": "lib/category-tree.ts",
+        "line": 180,
+        "count": 3,
+        "models": [
+          "S19 Max Pro",
+          "P13 Blue Max",
+          "S23 Pro"
+        ]
+      },
+      "Cadillac": {
+        "file": "lib/category-tree.ts",
+        "line": 182,
+        "count": 12,
+        "models": [
+          "Escalade",
+          "CT4",
+          "CT5",
+          "CT6",
+          "XT4",
+          "XT5",
+          "XT6",
+          "ATS",
+          "CTS",
+          "SRX",
+          "BLS",
+          "Lyriq"
+        ]
+      },
+      "Chrysler": {
+        "file": "lib/category-tree.ts",
+        "line": 183,
+        "count": 7,
+        "models": [
+          "300C",
+          "Voyager",
+          "Grand Voyager",
+          "PT Cruiser",
+          "Sebring",
+          "Pacifica",
+          "Crossfire"
+        ]
+      },
+      "DFSK": {
+        "file": "lib/category-tree.ts",
+        "line": 184,
+        "count": 10,
+        "models": [
+          "Glory 580",
+          "Glory 500",
+          "Glory 330",
+          "K01",
+          "K05",
+          "C31",
+          "C32",
+          "Fengon 500",
+          "Mini Truck",
+          "Seres 3"
+        ]
+      },
+      "Dodge": {
+        "file": "lib/category-tree.ts",
+        "line": 185,
+        "count": 8,
+        "models": [
+          "Charger",
+          "Challenger",
+          "Durango",
+          "Journey",
+          "Nitro",
+          "Ram",
+          "Caliber",
+          "Avenger"
+        ]
+      },
+      "Fisker": {
+        "file": "lib/category-tree.ts",
+        "line": 186,
+        "count": 2,
+        "models": [
+          "Ocean",
+          "Karma"
+        ]
+      },
+      "Geely": {
+        "file": "lib/category-tree.ts",
+        "line": 187,
+        "count": 7,
+        "models": [
+          "Coolray",
+          "Emgrand",
+          "Tugella",
+          "Okavango",
+          "Atlas",
+          "Monjaro",
+          "Geometry C"
+        ]
+      },
+      "Genesis": {
+        "file": "lib/category-tree.ts",
+        "line": 188,
+        "count": 6,
+        "models": [
+          "G70",
+          "G80",
+          "G90",
+          "GV60",
+          "GV70",
+          "GV80"
+        ]
+      },
+      "GMC": {
+        "file": "lib/category-tree.ts",
+        "line": 189,
+        "count": 6,
+        "models": [
+          "Sierra",
+          "Yukon",
+          "Acadia",
+          "Terrain",
+          "Canyon",
+          "Hummer EV"
+        ]
+      },
+      "Hongqi": {
+        "file": "lib/category-tree.ts",
+        "line": 190,
+        "count": 8,
+        "models": [
+          "H5",
+          "H9",
+          "E-HS9",
+          "HS5",
+          "HS7",
+          "H7",
+          "HS3",
+          "E-QM5"
+        ]
+      },
+      "Lancia": {
+        "file": "lib/category-tree.ts",
+        "line": 191,
+        "count": 6,
+        "models": [
+          "Ypsilon",
+          "Delta",
+          "Musa",
+          "Thema",
+          "Kappa",
+          "Lybra"
+        ]
+      },
+      "Leapmotor": {
+        "file": "lib/category-tree.ts",
+        "line": 192,
+        "count": 6,
+        "models": [
+          "T03",
+          "C10",
+          "C11",
+          "C01",
+          "B10",
+          "C16"
+        ]
+      },
+      "Lotus": {
+        "file": "lib/category-tree.ts",
+        "line": 193,
+        "count": 7,
+        "models": [
+          "Emira",
+          "Evora",
+          "Elise",
+          "Exige",
+          "Eletre",
+          "Emeya",
+          "Evija"
+        ]
+      },
+      "Lucid": {
+        "file": "lib/category-tree.ts",
+        "line": 194,
+        "count": 2,
+        "models": [
+          "Air",
+          "Gravity"
+        ]
+      },
+      "Mahindra": {
+        "file": "lib/category-tree.ts",
+        "line": 195,
+        "count": 6,
+        "models": [
+          "Scorpio",
+          "XUV500",
+          "XUV700",
+          "Thar",
+          "Pik-Up",
+          "KUV100"
+        ]
+      },
+      "Maybach": {
+        "file": "lib/category-tree.ts",
+        "line": 196,
+        "count": 6,
+        "models": [
+          "S580",
+          "S680",
+          "GLS 600",
+          "EQS 680 SUV",
+          "57",
+          "62"
+        ]
+      },
+      "McLaren": {
+        "file": "lib/category-tree.ts",
+        "line": 197,
+        "count": 7,
+        "models": [
+          "720S",
+          "570S",
+          "650S",
+          "GT",
+          "Artura",
+          "750S",
+          "765LT"
+        ]
+      },
+      "NIO": {
+        "file": "lib/category-tree.ts",
+        "line": 198,
+        "count": 6,
+        "models": [
+          "ET5",
+          "ET7",
+          "ES6",
+          "ES8",
+          "EL7",
+          "EC6"
+        ]
+      },
+      "Ora": {
+        "file": "lib/category-tree.ts",
+        "line": 199,
+        "count": 6,
+        "models": [
+          "Funky Cat",
+          "03",
+          "07",
+          "Good Cat",
+          "Ballet Cat",
+          "Lightning Cat"
+        ]
+      },
+      "Proton": {
+        "file": "lib/category-tree.ts",
+        "line": 200,
+        "count": 6,
+        "models": [
+          "Saga",
+          "Persona",
+          "X50",
+          "X70",
+          "Gen-2",
+          "Savvy"
+        ]
+      },
+      "Rolls-Royce": {
+        "file": "lib/category-tree.ts",
+        "line": 201,
+        "count": 6,
+        "models": [
+          "Phantom",
+          "Ghost",
+          "Wraith",
+          "Cullinan",
+          "Dawn",
+          "Spectre"
+        ]
+      },
+      "Seres": {
+        "file": "lib/category-tree.ts",
+        "line": 202,
+        "count": 6,
+        "models": [
+          "3",
+          "5",
+          "SF5",
+          "Aito M5",
+          "Aito M7",
+          "Aito M9"
+        ]
+      },
+      "Skywell": {
+        "file": "lib/category-tree.ts",
+        "line": 203,
+        "count": 2,
+        "models": [
+          "ET5",
+          "BE11"
+        ]
+      },
+      "Tofaş": {
+        "file": "lib/category-tree.ts",
+        "line": 204,
+        "count": 9,
+        "models": [
+          "Şahin",
+          "Doğan",
+          "Kartal",
+          "Serçe",
+          "Murat 124",
+          "Murat 131",
+          "Tempra",
+          "Tipo",
+          "Uno"
+        ]
+      }
+    }
+  },
+  "MOTO_MODELS": {
+    "file": "lib/category-tree.ts",
+    "line": 208,
+    "brandCount": 39,
+    "totalModels": 228,
+    "perBrand": {
+      "Honda": {
+        "file": "lib/category-tree.ts",
+        "line": 115,
+        "count": 13,
+        "models": [
+          "CBR",
+          "CB",
+          "CBF",
+          "PCX",
+          "Forza",
+          "Africa Twin",
+          "NC",
+          "CRF",
+          "Rebel",
+          "Dio",
+          "Activa",
+          "CG",
+          "SH"
+        ]
+      },
+      "Yamaha": {
+        "file": "lib/category-tree.ts",
+        "line": 210,
+        "count": 11,
+        "models": [
+          "YZF-R",
+          "MT",
+          "NMAX",
+          "XMAX",
+          "Tenere",
+          "Tracer",
+          "Crypton",
+          "Cygnus",
+          "PW",
+          "TMAX",
+          "YBR"
+        ]
+      },
+      "Kawasaki": {
+        "file": "lib/category-tree.ts",
+        "line": 211,
+        "count": 8,
+        "models": [
+          "Ninja",
+          "Z",
+          "Versys",
+          "Vulcan",
+          "KLX",
+          "W",
+          "Z H2",
+          "Eliminator"
+        ]
+      },
+      "Suzuki": {
+        "file": "lib/category-tree.ts",
+        "line": 148,
+        "count": 8,
+        "models": [
+          "GSX-R",
+          "GSX-S",
+          "V-Strom",
+          "Burgman",
+          "Address",
+          "Hayabusa",
+          "Katana",
+          "DR"
+        ]
+      },
+      "KTM": {
+        "file": "lib/category-tree.ts",
+        "line": 213,
+        "count": 7,
+        "models": [
+          "Duke",
+          "RC",
+          "Adventure",
+          "SX",
+          "EXC",
+          "Super Duke",
+          "390"
+        ]
+      },
+      "BMW": {
+        "file": "lib/category-tree.ts",
+        "line": 116,
+        "count": 8,
+        "models": [
+          "G 310 R",
+          "G 310 GS",
+          "F 750 GS",
+          "F 850 GS",
+          "R 1250 GS",
+          "S 1000 RR",
+          "R nineT",
+          "C 400"
+        ]
+      },
+      "Ducati": {
+        "file": "lib/category-tree.ts",
+        "line": 215,
+        "count": 7,
+        "models": [
+          "Panigale",
+          "Monster",
+          "Multistrada",
+          "Diavel",
+          "Scrambler",
+          "Streetfighter",
+          "Hypermotard"
+        ]
+      },
+      "Triumph": {
+        "file": "lib/category-tree.ts",
+        "line": 216,
+        "count": 6,
+        "models": [
+          "Street Triple",
+          "Speed Triple",
+          "Bonneville",
+          "Tiger",
+          "Trident",
+          "Rocket 3"
+        ]
+      },
+      "Harley-Davidson": {
+        "file": "lib/category-tree.ts",
+        "line": 217,
+        "count": 7,
+        "models": [
+          "Sportster",
+          "Street",
+          "Iron 883",
+          "Fat Boy",
+          "Road King",
+          "Softail",
+          "Pan America"
+        ]
+      },
+      "Aprilia": {
+        "file": "lib/category-tree.ts",
+        "line": 218,
+        "count": 6,
+        "models": [
+          "RS",
+          "Tuono",
+          "SR",
+          "Shiver",
+          "Tuareg",
+          "SXR"
+        ]
+      },
+      "Vespa": {
+        "file": "lib/category-tree.ts",
+        "line": 219,
+        "count": 5,
+        "models": [
+          "Primavera",
+          "Sprint",
+          "GTS",
+          "LX",
+          "Elettrica"
+        ]
+      },
+      "Piaggio": {
+        "file": "lib/category-tree.ts",
+        "line": 220,
+        "count": 5,
+        "models": [
+          "Medley",
+          "Beverly",
+          "Liberty",
+          "MP3",
+          "Zip"
+        ]
+      },
+      "Benelli": {
+        "file": "lib/category-tree.ts",
+        "line": 221,
+        "count": 7,
+        "models": [
+          "TNT",
+          "TRK",
+          "Leoncino",
+          "302",
+          "502",
+          "180S",
+          "Imperiale"
+        ]
+      },
+      "Royal Enfield": {
+        "file": "lib/category-tree.ts",
+        "line": 222,
+        "count": 6,
+        "models": [
+          "Classic 350",
+          "Meteor 350",
+          "Hunter 350",
+          "Himalayan",
+          "Continental GT",
+          "Interceptor"
+        ]
+      },
+      "Moto Guzzi": {
+        "file": "lib/category-tree.ts",
+        "line": 223,
+        "count": 4,
+        "models": [
+          "V7",
+          "V9",
+          "V85 TT",
+          "California"
+        ]
+      },
+      "Bajaj": {
+        "file": "lib/category-tree.ts",
+        "line": 224,
+        "count": 5,
+        "models": [
+          "Pulsar",
+          "Dominar",
+          "Boxer",
+          "Avenger",
+          "CT"
+        ]
+      },
+      "TVS": {
+        "file": "lib/category-tree.ts",
+        "line": 225,
+        "count": 4,
+        "models": [
+          "Apache",
+          "Ntorq",
+          "Raider",
+          "Jupiter"
+        ]
+      },
+      "CFMoto": {
+        "file": "lib/category-tree.ts",
+        "line": 226,
+        "count": 6,
+        "models": [
+          "150NK",
+          "250NK",
+          "650NK",
+          "700CL-X",
+          "800MT",
+          "450SR"
+        ]
+      },
+      "SYM": {
+        "file": "lib/category-tree.ts",
+        "line": 227,
+        "count": 5,
+        "models": [
+          "Symphony",
+          "Jet",
+          "Fiddle",
+          "Maxsym",
+          "Cruisym"
+        ]
+      },
+      "Kymco": {
+        "file": "lib/category-tree.ts",
+        "line": 228,
+        "count": 5,
+        "models": [
+          "Agility",
+          "People",
+          "Downtown",
+          "Xciting",
+          "Like"
+        ]
+      },
+      "Mondial": {
+        "file": "lib/category-tree.ts",
+        "line": 229,
+        "count": 6,
+        "models": [
+          "Drift",
+          "150 MG",
+          "Roadster",
+          "XCR",
+          "SMX",
+          "Turbo"
+        ]
+      },
+      "Kuba": {
+        "file": "lib/category-tree.ts",
+        "line": 230,
+        "count": 4,
+        "models": [
+          "Milano",
+          "Titan",
+          "GTS",
+          "Fantic"
+        ]
+      },
+      "RKS": {
+        "file": "lib/category-tree.ts",
+        "line": 231,
+        "count": 4,
+        "models": [
+          "Beta",
+          "Titanic",
+          "Falcon",
+          "Roadstar"
+        ]
+      },
+      "Arora": {
+        "file": "lib/category-tree.ts",
+        "line": 232,
+        "count": 4,
+        "models": [
+          "Cappella",
+          "Titan",
+          "Vertu",
+          "Speedmax"
+        ]
+      },
+      "Yuki": {
+        "file": "lib/category-tree.ts",
+        "line": 233,
+        "count": 3,
+        "models": [
+          "YK",
+          "Panter",
+          "Sirius"
+        ]
+      },
+      "Motolux": {
+        "file": "lib/category-tree.ts",
+        "line": 234,
+        "count": 3,
+        "models": [
+          "Efsane",
+          "Panama",
+          "Star"
+        ]
+      },
+      "Falcon": {
+        "file": "lib/category-tree.ts",
+        "line": 235,
+        "count": 3,
+        "models": [
+          "Serdar",
+          "Motoran",
+          "Dark"
+        ]
+      },
+      "Zontes": {
+        "file": "lib/category-tree.ts",
+        "line": 236,
+        "count": 8,
+        "models": [
+          "310R",
+          "310T",
+          "310X",
+          "350GK",
+          "350T",
+          "125U",
+          "155U",
+          "703F"
+        ]
+      },
+      "Voge": {
+        "file": "lib/category-tree.ts",
+        "line": 237,
+        "count": 7,
+        "models": [
+          "300R",
+          "300AC",
+          "500R",
+          "525DSX",
+          "650DS",
+          "900DSX",
+          "SR4"
+        ]
+      },
+      "QJ Motor": {
+        "file": "lib/category-tree.ts",
+        "line": 238,
+        "count": 6,
+        "models": [
+          "SRK 250",
+          "SRK 400",
+          "SRT 550",
+          "SRV 550",
+          "SRK 600",
+          "SRK 700"
+        ]
+      },
+      "Keeway": {
+        "file": "lib/category-tree.ts",
+        "line": 239,
+        "count": 6,
+        "models": [
+          "RKF 125",
+          "RKS 125",
+          "RKV 200",
+          "Superlight 200",
+          "Vieste 300",
+          "K-Light"
+        ]
+      },
+      "Hero": {
+        "file": "lib/category-tree.ts",
+        "line": 240,
+        "count": 6,
+        "models": [
+          "Splendor",
+          "HF Deluxe",
+          "Glamour",
+          "Xpulse 200",
+          "Destini",
+          "Maestro"
+        ]
+      },
+      "Husqvarna": {
+        "file": "lib/category-tree.ts",
+        "line": 241,
+        "count": 6,
+        "models": [
+          "Svartpilen",
+          "Vitpilen",
+          "701",
+          "TE",
+          "FE",
+          "Norden 901"
+        ]
+      },
+      "Indian": {
+        "file": "lib/category-tree.ts",
+        "line": 242,
+        "count": 6,
+        "models": [
+          "Scout",
+          "Chief",
+          "Chieftain",
+          "Roadmaster",
+          "FTR",
+          "Springfield"
+        ]
+      },
+      "MV Agusta": {
+        "file": "lib/category-tree.ts",
+        "line": 243,
+        "count": 6,
+        "models": [
+          "Brutale",
+          "F3",
+          "F4",
+          "Dragster",
+          "Turismo Veloce",
+          "Rush"
+        ]
+      },
+      "Bimota": {
+        "file": "lib/category-tree.ts",
+        "line": 244,
+        "count": 3,
+        "models": [
+          "Tesi",
+          "KB4",
+          "DB"
+        ]
+      },
+      "Can-Am": {
+        "file": "lib/category-tree.ts",
+        "line": 245,
+        "count": 4,
+        "models": [
+          "Ryker",
+          "Spyder",
+          "Maverick",
+          "Outlander"
+        ]
+      },
+      "Lifan": {
+        "file": "lib/category-tree.ts",
+        "line": 246,
+        "count": 5,
+        "models": [
+          "KP",
+          "KPT",
+          "KPR",
+          "KPM",
+          "KPS"
+        ]
+      },
+      "Segway Powersports": {
+        "file": "lib/category-tree.ts",
+        "line": 247,
+        "count": 5,
+        "models": [
+          "Snarler",
+          "Villain",
+          "Fugleman",
+          "UT10",
+          "AT6"
+        ]
+      }
+    }
+  },
+  "COMPUTER_MODELS": {
+    "file": "lib/category-tree.ts",
+    "line": 252,
+    "brandCount": 13,
+    "totalModels": 62,
+    "perBrand": {
+      "Apple": {
+        "file": "lib/category-tree.ts",
+        "line": 253,
+        "count": 5,
+        "models": [
+          "MacBook Air",
+          "MacBook Pro",
+          "iMac",
+          "Mac Mini",
+          "Mac Studio"
+        ]
+      },
+      "Asus": {
+        "file": "lib/category-tree.ts",
+        "line": 254,
+        "count": 6,
+        "models": [
+          "ROG",
+          "TUF Gaming",
+          "Zenbook",
+          "Vivobook",
+          "ProArt",
+          "ExpertBook"
+        ]
+      },
+      "Lenovo": {
+        "file": "lib/category-tree.ts",
+        "line": 255,
+        "count": 6,
+        "models": [
+          "ThinkPad",
+          "IdeaPad",
+          "Legion",
+          "Yoga",
+          "LOQ",
+          "ThinkBook"
+        ]
+      },
+      "HP": {
+        "file": "lib/category-tree.ts",
+        "line": 256,
+        "count": 7,
+        "models": [
+          "Pavilion",
+          "Omen",
+          "Victus",
+          "EliteBook",
+          "ProBook",
+          "Envy",
+          "Spectre"
+        ]
+      },
+      "Dell": {
+        "file": "lib/category-tree.ts",
+        "line": 257,
+        "count": 6,
+        "models": [
+          "XPS",
+          "Inspiron",
+          "Latitude",
+          "Alienware",
+          "Vostro",
+          "G Serisi"
+        ]
+      },
+      "Acer": {
+        "file": "lib/category-tree.ts",
+        "line": 258,
+        "count": 5,
+        "models": [
+          "Aspire",
+          "Nitro",
+          "Predator",
+          "Swift",
+          "TravelMate"
+        ]
+      },
+      "MSI": {
+        "file": "lib/category-tree.ts",
+        "line": 259,
+        "count": 6,
+        "models": [
+          "Katana",
+          "Stealth",
+          "Raider",
+          "Modern",
+          "Cyborg",
+          "Thin"
+        ]
+      },
+      "Monster": {
+        "file": "lib/category-tree.ts",
+        "line": 260,
+        "count": 3,
+        "models": [
+          "Tulpar",
+          "Abra",
+          "Semruk"
+        ]
+      },
+      "Huawei": {
+        "file": "lib/category-tree.ts",
+        "line": 140,
+        "count": 4,
+        "models": [
+          "MateBook D",
+          "MateBook X",
+          "MateBook 14",
+          "MateBook 16"
+        ]
+      },
+      "Samsung": {
+        "file": "lib/category-tree.ts",
+        "line": 137,
+        "count": 3,
+        "models": [
+          "Galaxy Book",
+          "Galaxy Book Pro",
+          "Galaxy Book 4"
+        ]
+      },
+      "Casper": {
+        "file": "lib/category-tree.ts",
+        "line": 263,
+        "count": 3,
+        "models": [
+          "Excalibur",
+          "Nirvana",
+          "Nirvana X"
+        ]
+      },
+      "Toshiba": {
+        "file": "lib/category-tree.ts",
+        "line": 264,
+        "count": 4,
+        "models": [
+          "Satellite",
+          "Tecra",
+          "Portégé",
+          "Dynabook"
+        ]
+      },
+      "Gigabyte": {
+        "file": "lib/category-tree.ts",
+        "line": 265,
+        "count": 4,
+        "models": [
+          "Aorus",
+          "Aero",
+          "G5",
+          "G6"
+        ]
+      }
+    }
+  },
+  "TV_MODELS": {
+    "file": "lib/category-tree.ts",
+    "line": 270,
+    "brandCount": 11,
+    "totalModels": 45,
+    "perBrand": {
+      "Samsung": {
+        "file": "lib/category-tree.ts",
+        "line": 137,
+        "count": 6,
+        "models": [
+          "Crystal UHD",
+          "QLED",
+          "Neo QLED",
+          "OLED",
+          "The Frame",
+          "DU/CU Serisi"
+        ]
+      },
+      "LG": {
+        "file": "lib/category-tree.ts",
+        "line": 272,
+        "count": 5,
+        "models": [
+          "OLED",
+          "QNED",
+          "NanoCell",
+          "UHD",
+          "UR/UT Serisi"
+        ]
+      },
+      "Sony": {
+        "file": "lib/category-tree.ts",
+        "line": 273,
+        "count": 4,
+        "models": [
+          "Bravia",
+          "OLED",
+          "X Serisi",
+          "A Serisi"
+        ]
+      },
+      "TCL": {
+        "file": "lib/category-tree.ts",
+        "line": 274,
+        "count": 5,
+        "models": [
+          "QLED",
+          "Mini LED",
+          "C Serisi",
+          "P Serisi",
+          "S Serisi"
+        ]
+      },
+      "Xiaomi": {
+        "file": "lib/category-tree.ts",
+        "line": 138,
+        "count": 5,
+        "models": [
+          "TV A2",
+          "TV A Pro",
+          "TV P1",
+          "TV Q2",
+          "TV S Pro"
+        ]
+      },
+      "Vestel": {
+        "file": "lib/category-tree.ts",
+        "line": 276,
+        "count": 3,
+        "models": [
+          "Satellite",
+          "Regal",
+          "Smart"
+        ]
+      },
+      "Philips": {
+        "file": "lib/category-tree.ts",
+        "line": 277,
+        "count": 4,
+        "models": [
+          "Ambilight",
+          "The One",
+          "OLED",
+          "PUS Serisi"
+        ]
+      },
+      "Arçelik": {
+        "file": "lib/category-tree.ts",
+        "line": 278,
+        "count": 4,
+        "models": [
+          "Crystal",
+          "OLED",
+          "QLED",
+          "A Serisi"
+        ]
+      },
+      "Beko": {
+        "file": "lib/category-tree.ts",
+        "line": 279,
+        "count": 3,
+        "models": [
+          "Crystal",
+          "QLED",
+          "B Serisi"
+        ]
+      },
+      "Grundig": {
+        "file": "lib/category-tree.ts",
+        "line": 280,
+        "count": 3,
+        "models": [
+          "Vision",
+          "OLED",
+          "QLED"
+        ]
+      },
+      "Panasonic": {
+        "file": "lib/category-tree.ts",
+        "line": 281,
+        "count": 3,
+        "models": [
+          "OLED",
+          "LX Serisi",
+          "MX Serisi"
+        ]
+      }
+    }
+  },
+  "COMMERCIAL_MODELS": {
+    "file": "lib/category-tree.ts",
+    "line": 286,
+    "brandCount": 11,
+    "totalModels": 44,
+    "perBrand": {
+      "Ford": {
+        "file": "lib/category-tree.ts",
+        "line": 114,
+        "count": 5,
+        "models": [
+          "Transit",
+          "Transit Custom",
+          "Courier",
+          "Ranger",
+          "Cargo"
+        ]
+      },
+      "Mercedes-Benz": {
+        "file": "lib/category-tree.ts",
+        "line": 117,
+        "count": 5,
+        "models": [
+          "Sprinter",
+          "Vito",
+          "Citan",
+          "Atego",
+          "Actros"
+        ]
+      },
+      "Volkswagen": {
+        "file": "lib/category-tree.ts",
+        "line": 111,
+        "count": 4,
+        "models": [
+          "Transporter",
+          "Crafter",
+          "Caddy Cargo",
+          "Amarok"
+        ]
+      },
+      "Fiat": {
+        "file": "lib/category-tree.ts",
+        "line": 110,
+        "count": 4,
+        "models": [
+          "Ducato",
+          "Doblo Cargo",
+          "Fiorino",
+          "Scudo"
+        ]
+      },
+      "Renault": {
+        "file": "lib/category-tree.ts",
+        "line": 109,
+        "count": 4,
+        "models": [
+          "Master",
+          "Trafic",
+          "Kangoo",
+          "Express"
+        ]
+      },
+      "Peugeot": {
+        "file": "lib/category-tree.ts",
+        "line": 120,
+        "count": 4,
+        "models": [
+          "Boxer",
+          "Partner",
+          "Expert",
+          "Bipper"
+        ]
+      },
+      "Citroën": {
+        "file": "lib/category-tree.ts",
+        "line": 121,
+        "count": 3,
+        "models": [
+          "Jumper",
+          "Berlingo",
+          "Jumpy"
+        ]
+      },
+      "Iveco": {
+        "file": "lib/category-tree.ts",
+        "line": 294,
+        "count": 4,
+        "models": [
+          "Daily",
+          "Eurocargo",
+          "Stralis",
+          "S-Way"
+        ]
+      },
+      "Opel": {
+        "file": "lib/category-tree.ts",
+        "line": 119,
+        "count": 3,
+        "models": [
+          "Movano",
+          "Vivaro",
+          "Combo"
+        ]
+      },
+      "Hyundai": {
+        "file": "lib/category-tree.ts",
+        "line": 113,
+        "count": 3,
+        "models": [
+          "H-100",
+          "H-350",
+          "Staria Cargo"
+        ]
+      },
+      "Isuzu": {
+        "file": "lib/category-tree.ts",
+        "line": 164,
+        "count": 5,
+        "models": [
+          "D-Max",
+          "NPR",
+          "NLR",
+          "NQR",
+          "Novociti"
+        ]
+      }
+    }
+  },
+  "_summary": {
+    "totalMaps": 5,
+    "brandsWithModels": 148,
+    "totalModels": 1120
+  }
+}
