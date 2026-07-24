@@ -539,7 +539,7 @@ export default function HomeScreen() {
 
           <View
             onLayout={(event) => setGridWidth(event.nativeEvent.layout.width)}
-            style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: columnGap, width: "100%" }}
+            style={{ alignItems: "stretch", flexDirection: "row", flexWrap: "wrap", gap: columnGap, width: "100%" }}
           >
             {visibleListings.length === 0 && marketplaceInitialLoading ? (
               <SkeletonGrid count={6} cardWidth={cardWidth} gap={columnGap} />

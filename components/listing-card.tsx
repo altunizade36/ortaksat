@@ -108,8 +108,13 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
 
   return (
     <View dataSet={{ vcard: "1" }} style={{ width }}>
-      <Link href={cardHref as never} asChild>
-        <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1, width: "100%" })}>
+      {/* flex:1 zinciri (sarmalayıcı→Pressable→kart→içerik) + CTA'da marginTop:"auto":
+          kart, ızgara satırındaki EN UZUN kartın yüksekliğine kadar UZAR ve buton hep
+          ALTA sabitlenir → tüm kartlar TEK TİP boy, CTA'lar aynı hizada (Sahibinden gibi).
+          Germeyen (alignItems:flex-start) grid'lerde sarmalayıcı içerik-boyunda kalır →
+          flex:1 no-op, davranış AYNI kalır (regresyon yok). */}
+      <Link href={cardHref as never} asChild style={{ flexGrow: 1, alignSelf: "stretch", width: "100%" }}>
+        <Pressable style={({ pressed }) => ({ opacity: pressed ? 0.9 : 1, width: "100%", flex: 1, alignSelf: "stretch" })}>
           <View
             dataSet={{ card: "listing" }}
             style={{
@@ -117,6 +122,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
               borderColor: colors.line,
               borderRadius: 16,
               borderWidth: 1,
+              flex: 1,
               overflow: "hidden",
               shadowColor: "#101828",
               shadowOffset: { width: 0, height: 8 },
@@ -153,7 +159,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
               </View>
             </View>
 
-            <View style={{ gap: 8, padding: 12 }}>
+            <View style={{ gap: 8, padding: 12, flex: 1 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                 {/* Kategori bir ETİKET, başlık değil: eskiden turkuaz+kalın+uppercase olduğu için
                     başlıkla görsel olarak yarışıyordu. Sessizleştirildi (muted, ince, küçük) →
@@ -263,7 +269,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
                 ) : null}
               </View>
 
-              <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 10, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: 2, minHeight: 38, paddingHorizontal: 8 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 10, flexDirection: "row", gap: 6, justifyContent: "center", marginTop: "auto", minHeight: 38, paddingHorizontal: 8 }}>
                 <MaterialCommunityIcons name={partnerable ? "handshake-outline" : "eye-outline"} size={16} color="#FFFFFF" />
                 <Text adjustsFontSizeToFit minimumFontScale={0.8} numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: 13, fontWeight: "900" }}>
                   {translateCopy(!partnerable ? "Ürünü İncele" : listing.partnershipMode === "open" ? "Hemen ortak ol" : "Ortaklık iste", language)}
