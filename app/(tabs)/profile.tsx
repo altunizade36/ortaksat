@@ -4,6 +4,7 @@ import { Link, type Href } from "expo-router";
 import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { ProfileStrength } from "@/components/profile-strength";
 import { AuthRequired } from "@/components/auth-gate";
 import { Card, Metric, PrimaryButton, StatusPill } from "@/components/ui";
@@ -115,6 +116,9 @@ function ProfileScreenInner() {
           </View>
         </View>
 
+        {/* Onboarding kontrol listesi — hesap/profil bölümünde (ana sayfadan taşındı). */}
+        <OnboardingChecklist />
+
         {/* Stat cards */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
           {stats.map((s) => (
@@ -157,6 +161,7 @@ function ProfileScreenInner() {
                 <Shortcut href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} icon="store-search-outline" label="Mağazam" />
                 <Shortcut href="/(tabs)/seller" icon="storefront-outline" label="İlanlarım" />
                 <Shortcut href="/(tabs)/partner" icon="handshake-outline" label="Ortak Satış" />
+                <Shortcut href={"/davet" as Href} icon="account-heart-outline" label="Davet Et" />
                 <Shortcut href="/favorites" icon="heart-outline" label="Favoriler" />
                 <Shortcut href="/profile-edit" icon="cog-outline" label="Ayarlar" />
                 <Shortcut href="/trust" icon="shield-check-outline" label="Güven Merkezi" />
@@ -262,6 +267,9 @@ function ProfileScreenInner() {
         </View>
       </Card>
 
+      {/* Onboarding kontrol listesi — hesap/profil bölümünde (ana sayfadan taşındı). */}
+      <OnboardingChecklist />
+
       <Card>
         <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{t("accountSupport")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -342,6 +350,7 @@ function ProfileScreenInner() {
           <Shortcut href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} icon="store-search-outline" label={translateCopy("Mağazam", language)} />
           <Shortcut href="/(tabs)/seller" icon="storefront-outline" label={t("seller")} />
           <Shortcut href="/(tabs)/partner" icon="handshake-outline" label={t("partner")} />
+          <Shortcut href={"/davet" as Href} icon="account-heart-outline" label={translateCopy("Davet Et", language)} />
           <Shortcut href="/favorites" icon="heart-outline" label={t("favorite")} />
           <Shortcut href="/trust" icon="shield-check-outline" label={t("trust")} />
           <Shortcut href="/legal" icon="file-document-outline" label={t("legal")} />

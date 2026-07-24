@@ -8,7 +8,6 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
-import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { HomeDesktop } from "@/components/home-desktop";
 import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
@@ -289,8 +288,6 @@ export default function HomeScreen() {
             </View>
             <MobileHeroCluster />
           </LinearGradient>
-          {/* Y11: onboarding kontrol listesi — yalnız giriş yapmış + adımları eksik kullanıcıya görünür. */}
-          <OnboardingChecklist />
           <CategoryShowcase categoryTree={categoryTree} listings={activeListings} isWideWeb={false} />
 
           {/* En çok kazandıran fırsatlar (mobil şerit) */}
