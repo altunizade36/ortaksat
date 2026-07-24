@@ -151,6 +151,8 @@ function ProfileScreenInner() {
               <MenuRow icon="star-outline" label="Değerlendirmeler" detail={`${reviewsAboutMe.length} hakkımda · ${reviewsByMe.length} yazdığım`} value={`${reviewsAboutMe.length + reviewsByMe.length}`} />
               <MenuRow icon="handshake-outline" label="Tekliflerim" detail={liveOffers.length ? `${liveOffers.length} süren teklif` : "Verdiğin teklifler"} value={`${myOffers.length}`} href="/offers" />
               <MenuRow icon="heart-outline" label="Favoriler" detail="Kaydedilen ilanlar" value={`${myFavorites.length}`} href="/favorites" />
+              <MenuRow icon="storefront-check-outline" label="Takip Ettiklerin" detail="Takip ettiğin satıcıların yeni ilanları" value={`${followedSellerIds.length}`} href="/following" />
+              <MenuRow icon="account-heart-outline" label="Davet Ettiklerim" detail="Arkadaşını davet et, ağını büyüt" value="→" href={"/davet" as Href} />
               <MenuRow icon="chat-outline" label="Görüşmeler" detail="Alıcı, satıcı ve ortak mesajları" value={`${myConversations.length}`} href="/(tabs)/messages" />
               <MenuRow icon="account-cancel-outline" label="Engellenenler" detail="Engellediğin kullanıcılar sana mesaj gönderemez" value={`${blockedUserIds.length}`} href="/engellenenler" />
             </View>
@@ -338,6 +340,7 @@ function ProfileScreenInner() {
         <MenuRow icon="tag-outline" label={translateCopy("Tekliflerim", language)} detail={liveOffers.length ? `${liveOffers.length} ${translateCopy("süren teklif", language)}` : translateCopy("Verdiğin teklifler", language)} value={`${myOffers.length}`} href="/offers" />
         <MenuRow icon="heart-outline" label={translateCopy("Favoriler", language)} detail={translateCopy("Kaydedilen ilanlar", language)} value={`${myFavorites.length}`} href="/favorites" />
         <MenuRow icon="storefront-check-outline" label={translateCopy("Takip Ettiklerin", language)} detail={translateCopy("Takip ettiğin satıcıların yeni ilanları", language)} value={`${followedSellerIds.length}`} href="/following" />
+        <MenuRow icon="account-heart-outline" label={translateCopy("Davet Ettiklerim", language)} detail={translateCopy("Arkadaşını davet et, ağını büyüt", language)} value="→" href={"/davet" as Href} />
         <MenuRow icon="bell-outline" label={t("notification")} detail={t("unreadNotification")} value={`${unreadNotifications.length}`} href="/notifications" />
         <MenuRow icon="chat-outline" label={t("conversation")} detail={t("buyerSellerPartnerMessages")} value={`${myConversations.length}`} href="/(tabs)/messages" />
         <MenuRow icon="account-cancel-outline" label={translateCopy("Engellenenler", language)} detail={translateCopy("Engellediğin kullanıcılar sana mesaj gönderemez", language)} value={`${blockedUserIds.length}`} href="/engellenenler" />
