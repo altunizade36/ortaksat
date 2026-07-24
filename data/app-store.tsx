@@ -1602,7 +1602,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (liveUser) persistCritical(insertLead(lead), () => {
           setLeads((items) => items.filter((l) => l.id !== lead.id));
           setListings((items) => items.map((l) => (l.id === input.listingId ? { ...l, leadCount: Math.max(0, l.leadCount - 1) } : l)));
-        }, "Talep kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
+          // Sunucu-taraflı tekillik (leads_listing_phone_uniq): bu müşteri bu ilan için başka bir
+          // ortak tarafından ZATEN kaydedilmiş olabilir (RLS gereği istemci onu göremez).
+        }, "Bu müşteri bu ilan için zaten kaydedilmiş olabilir (ilk kaydeden ortağa atanır) ya da bağlantı sorunu var. Lütfen tekrar dene.");
         return lead;
       },
       createReview(listingId, rating, comment) {
