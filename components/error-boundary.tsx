@@ -83,32 +83,12 @@ export function RouteErrorBoundary({ error, retry }: { error: Error; retry: () =
   const isChunkError = /Loading chunk|ChunkLoadError|Failed to fetch dynamically|error loading dynamically imported|importing a module script failed/i.test(msg);
   const canReload = typeof window !== "undefined" && typeof window.location?.reload === "function";
 
-  // BAYAT CHUNK OTO-KURTARMA: her yeni deploy'da chunk dosya adları değişir; kullanıcının
-  // AÇIK sekmesi artık var olmayan bir chunk'ı isteyince route render'ı patlar ve site
-  // "rastgele yerlerde bozuluyor" gibi görünür. Kullanıcıdan "Tekrar dene"ye basmasını
-  // beklemek yerine BİR KEZ otomatik yeniden yükle (sessionStorage ile döngü koruması).
-  useEffect(() => {
-    if (!isChunkError || !canReload) return;
-    try {
-      const KEY = "chunk-reload-at";
-      const last = Number(sessionStorage.getItem(KEY) || 0);
-      // 30 sn içinde ikinci kez olduysa gerçek bir sorun var → ekranı göster, döngüye girme.
-      if (Date.now() - last < 30_000) return;
-      sessionStorage.setItem(KEY, String(Date.now()));
-      window.location.reload();
-    } catch {
-      /* sessionStorage kapalıysa sessizce ekranı göster */
-    }
-  }, [isChunkError, canReload]);
-
-  // Bayat yerel durumu (eski kategori kaydı / bozuk taslak / silinmiş referans) tek dokunuşta
-  // temizler ve yeniler. Hangi bileşenin `undefined` olduğunu bilmeye gerek yok — çökme yerel
-  // duruma bağlıysa bu KESİN çözer. (Oturum çerezine dokunmaz; yalnız uygulama önbellekleri.)
+  // Bayat yerel durumu (eski kategori kaydı / bozuk taslak / silinmiş referans) temizler ve
+  // yeniler. Hangi bileşenin `undefined` olduğunu bilmeye gerek yok — çökme yerel duruma
+  // bağlıysa KESİN çözer. Supabase oturum anahtarları (`sb-*`) KORUNUR → çıkış yapılmaz.
   const hardReset = canReload
     ? () => {
         try {
-          // Supabase oturum anahtarları (`sb-*`) KORUNUR → kullanıcı çıkış yapmaz; yalnız
-          // uygulama önbellekleri (recent/compare/saved/draft…) temizlenir.
           const keep: Array<[string, string]> = [];
           for (let i = 0; i < localStorage.length; i++) {
             const k = localStorage.key(i);
@@ -121,6 +101,37 @@ export function RouteErrorBoundary({ error, retry }: { error: Error; retry: () =
         window.location.href = "/";
       }
     : undefined;
+
+  // OTO-KURTARMA (deploy'lar sonrası "bir şeyler ters gitti" tekrarını kırar):
+  // • CHUNK hatası → her zaman bir kez reload (yeni chunk çekilir).
+  // • CHUNK-DIŞI render hatası (React #130 gibi) → KADEMELİ:
+  //   1. kez: sessiz reload (veri kaybı YOK; geçici/AdBlock/timing çökmesini yakalar).
+  //   2. kez (reload çözmedi): oto HARD-RESET (bayat yerel durum temizle) — draft kaybı
+  //      kabul, çünkü uygulama zaten kullanılamaz durumda.
+  //   3. kez: dur, ekranı göster (sonsuz döngü koruması). Pencere 30 sn.
+  useEffect(() => {
+    if (!canReload) return;
+    try {
+      const now = Date.now();
+      if (isChunkError) {
+        const last = Number(sessionStorage.getItem("chunk-reload-at") || 0);
+        if (now - last < 30_000) return;
+        sessionStorage.setItem("chunk-reload-at", String(now));
+        window.location.reload();
+        return;
+      }
+      const KEY = "render-error-recovery";
+      let st: { at: number; n: number } = { at: 0, n: 0 };
+      try { st = JSON.parse(sessionStorage.getItem(KEY) || "") ?? st; } catch { /* ilk kez */ }
+      if (now - st.at > 30_000) st = { at: now, n: 0 }; // pencere sıfırla
+      st.n += 1; st.at = now;
+      sessionStorage.setItem(KEY, JSON.stringify(st));
+      if (st.n === 1) { window.location.reload(); }          // sessiz reload
+      else if (st.n === 2 && hardReset) { hardReset(); }      // bayat durumu temizle
+      // st.n >= 3 → ekranı göster (aşağıdaki ErrorScreen)
+    } catch { /* sessionStorage kapalı → ekranı göster */ }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isChunkError, canReload]);
 
   return (
     <ErrorScreen
