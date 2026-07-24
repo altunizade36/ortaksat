@@ -2,7 +2,11 @@
 // Top → sub → detail nodes, each resolving to a category-specific form schema.
 // Designed so the listing form changes by category (a phone listing ≠ a flat listing).
 
-const TR_MAP: Record<string, string> = { "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u", "â": "a", "î": "i", "û": "u", "&": "ve" };
+// "+" → "-plus-": aksi halde "Galaxy S24+" ile "Galaxy S24" AYNI slug'a ("galaxy-s24")
+// düşüp KARDEŞ ÇAKIŞMASI yapıyordu (biri diğerini URL/path çözümünde eziyordu). Artık
+// "galaxy-s24-plus" ≠ "galaxy-s24". Oda sayıları da etkilenir ("1+1"→"1-plus-1") ama
+// içsel tutarlı (sabit-kodlu slug yok) ve gelecekteki tüm "+model"leri de korur.
+const TR_MAP: Record<string, string> = { "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u", "â": "a", "î": "i", "û": "u", "&": "ve", "+": "-plus-" };
 function sl(value: string) {
   return value
     .toLocaleLowerCase("tr-TR")
@@ -118,16 +122,16 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   Nissan: ["Qashqai", "Juke", "Micra", "X-Trail", "Note", "Navara", "Leaf", "Pulsar", "Primera"],
   Kia: ["Rio", "Ceed", "Sportage", "Stonic", "Picanto", "Cerato", "Sorento", "Niro", "Soul", "EV6", "Venga"],
   Dacia: ["Sandero", "Duster", "Logan", "Jogger", "Lodgy", "Dokker", "Spring"],
-  Tesla: ["Model 3", "Model Y", "Model S", "Model X", "Cybertruck"],
+  Tesla: ["Model 3", "Model Y", "Model S", "Model X", "Cybertruck", "Roadster"],
   Togg: ["T10X", "T10F"],
   BYD: ["Atto 3", "Seal", "Dolphin", "Han", "Tang", "Song Plus", "Seal U", "Yuan Plus", "Sealion 7"],
   // Yeni eklenen Çin/EV markaları — model listeleri (eskiden yalnız "Diğer Model" veriyordu).
-  Jaecoo: ["J7", "J8", "J5"],
-  Jetour: ["Dashing", "X70", "X90", "T2", "T1"],
-  "Lynk & Co": ["01", "02", "03", "05", "06", "09"],
-  XPeng: ["G6", "G9", "P7", "X9", "G3i"],
-  Zeekr: ["001", "X", "007", "009"],
-  Omoda: ["5", "E5", "7", "9"],
+  Jaecoo: ["J5", "J6", "J7", "J8"],
+  Jetour: ["Dashing", "X70", "X70 Plus", "X90", "X90 Plus", "T2", "T1"],
+  "Lynk & Co": ["01", "02", "03", "05", "06", "08", "09"],
+  XPeng: ["G6", "G9", "P7", "P5", "X9", "G3i"],
+  Zeekr: ["001", "X", "007", "009", "7X", "Mix"],
+  Omoda: ["5", "E5", "7", "9", "C5"],
   // Cep telefonu
   iPhone: ["iPhone 16 Pro Max", "iPhone 16 Pro", "iPhone 16", "iPhone 15 Pro Max", "iPhone 15", "iPhone 14", "iPhone 13", "iPhone 12", "iPhone 11", "iPhone SE"],
   Samsung: ["Galaxy S24 Ultra", "Galaxy S24+", "Galaxy S24", "Galaxy S23 Ultra", "Galaxy S23", "Galaxy S22", "Galaxy A55", "Galaxy A35", "Galaxy A25", "Galaxy A15", "Galaxy A05", "Galaxy M Serisi", "Galaxy Z Fold5", "Galaxy Z Flip5", "Galaxy Note 20", "Galaxy S21 FE"],
@@ -154,19 +158,19 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   Jaguar: ["XE", "XF", "XJ", "F-Pace", "E-Pace", "I-Pace", "F-Type"],
   Lexus: ["IS", "ES", "LS", "UX", "NX", "RX", "RZ", "LC", "CT"],
   Cupra: ["Formentor", "Leon", "Born", "Ateca", "Terramar", "Tavascan"],
-  "DS Automobiles": ["DS3", "DS4", "DS7", "DS9"],
-  SsangYong: ["Tivoli", "Korando", "Rexton", "Musso", "Actyon"],
-  Subaru: ["Impreza", "XV", "Forester", "Outback", "Legacy", "BRZ"],
-  Isuzu: ["D-Max", "NPR", "NLR", "Novociti"],
-  Infiniti: ["Q30", "Q50", "QX30", "QX50", "QX70"],
-  "Aston Martin": ["DB11", "DBX", "Vantage", "DBS"],
-  Bentley: ["Continental GT", "Bentayga", "Flying Spur"],
-  Ferrari: ["Roma", "Portofino", "296 GTB", "F8", "SF90", "Purosangue"],
-  Lamborghini: ["Huracán", "Urus", "Aventador", "Revuelto"],
-  Maserati: ["Ghibli", "Levante", "Quattroporte", "Grecale", "MC20"],
-  Lada: ["Vesta", "Granta", "Niva", "Largus"],
-  Smart: ["ForTwo", "ForFour", "#1", "#3"],
-  Daihatsu: ["Terios", "Sirion", "Materia", "Cuore"],
+  "DS Automobiles": ["DS3", "DS3 Crossback", "DS4", "DS7", "DS7 Crossback", "DS9"],
+  SsangYong: ["Tivoli", "Korando", "Rexton", "Musso", "Actyon", "Rodius", "Kyron", "Torres"],
+  Subaru: ["Impreza", "XV", "Forester", "Outback", "Legacy", "BRZ", "WRX", "Levorg"],
+  Isuzu: ["D-Max", "MU-X", "NPR", "NLR", "NKR", "NQR", "Novociti", "Trooper", "Rodeo"],
+  Infiniti: ["Q30", "Q50", "Q60", "Q70", "QX30", "QX50", "QX55", "QX60", "QX70", "QX80", "FX", "EX"],
+  "Aston Martin": ["DB11", "DB12", "DBS", "DBX", "Vantage", "Vanquish", "Rapide", "DB9", "Valhalla"],
+  Bentley: ["Continental GT", "Continental GTC", "Flying Spur", "Bentayga", "Mulsanne", "Batur", "Arnage", "Azure"],
+  Ferrari: ["Roma", "Portofino", "296 GTB", "F8", "SF90", "Purosangue", "812", "Daytona SP3", "Roma Spider"],
+  Lamborghini: ["Huracán", "Urus", "Aventador", "Revuelto", "Gallardo", "Murciélago", "Countach", "Temerario"],
+  Maserati: ["Ghibli", "Levante", "Quattroporte", "Grecale", "MC20", "GranTurismo", "GranCabrio"],
+  Lada: ["Vesta", "Granta", "Niva", "Niva Travel", "Largus", "Kalina", "Priora", "Samara", "XRAY", "4x4"],
+  Smart: ["ForTwo", "ForFour", "#1", "#3", "#5", "Roadster"],
+  Daihatsu: ["Terios", "Sirion", "Materia", "Cuore", "YRV", "Charade", "Feroza", "Gran Max", "Copen", "Move"],
   // Ek cep telefonu markaları
   Vivo: ["Y36", "Y22", "V29", "V27", "X90"],
   Tecno: ["Camon 20", "Spark 10", "Pova 5", "Phantom X2"],
@@ -177,26 +181,26 @@ export const MODELS_BY_BRAND: Record<string, string[]> = {
   // Yeni eklenen otomobil markalarının modelleri
   Cadillac: ["Escalade", "CT4", "CT5", "CT6", "XT4", "XT5", "XT6", "ATS", "CTS", "SRX", "BLS", "Lyriq"],
   Chrysler: ["300C", "Voyager", "Grand Voyager", "PT Cruiser", "Sebring", "Pacifica", "Crossfire"],
-  DFSK: ["Glory 580", "Glory 500", "K01", "Mini Truck", "Seres 3"],
+  DFSK: ["Glory 580", "Glory 500", "Glory 330", "K01", "K05", "C31", "C32", "Fengon 500", "Mini Truck", "Seres 3"],
   Dodge: ["Charger", "Challenger", "Durango", "Journey", "Nitro", "Ram", "Caliber", "Avenger"],
   Fisker: ["Ocean", "Karma"],
   Geely: ["Coolray", "Emgrand", "Tugella", "Okavango", "Atlas", "Monjaro", "Geometry C"],
   Genesis: ["G70", "G80", "G90", "GV60", "GV70", "GV80"],
   GMC: ["Sierra", "Yukon", "Acadia", "Terrain", "Canyon", "Hummer EV"],
-  Hongqi: ["H5", "H9", "E-HS9", "HS5", "HS7"],
+  Hongqi: ["H5", "H9", "E-HS9", "HS5", "HS7", "H7", "HS3", "E-QM5"],
   Lancia: ["Ypsilon", "Delta", "Musa", "Thema", "Kappa", "Lybra"],
-  Leapmotor: ["T03", "C10", "C11", "C01"],
-  Lotus: ["Emira", "Evora", "Elise", "Exige", "Eletre"],
+  Leapmotor: ["T03", "C10", "C11", "C01", "B10", "C16"],
+  Lotus: ["Emira", "Evora", "Elise", "Exige", "Eletre", "Emeya", "Evija"],
   Lucid: ["Air", "Gravity"],
   Mahindra: ["Scorpio", "XUV500", "XUV700", "Thar", "Pik-Up", "KUV100"],
-  Maybach: ["S580", "S680", "GLS 600", "57", "62"],
+  Maybach: ["S580", "S680", "GLS 600", "EQS 680 SUV", "57", "62"],
   McLaren: ["720S", "570S", "650S", "GT", "Artura", "750S", "765LT"],
   NIO: ["ET5", "ET7", "ES6", "ES8", "EL7", "EC6"],
-  Ora: ["Funky Cat", "03", "07", "Good Cat"],
+  Ora: ["Funky Cat", "03", "07", "Good Cat", "Ballet Cat", "Lightning Cat"],
   Proton: ["Saga", "Persona", "X50", "X70", "Gen-2", "Savvy"],
   "Rolls-Royce": ["Phantom", "Ghost", "Wraith", "Cullinan", "Dawn", "Spectre"],
-  Seres: ["3", "5", "SF5"],
-  Skywell: ["ET5"],
+  Seres: ["3", "5", "SF5", "Aito M5", "Aito M7", "Aito M9"],
+  Skywell: ["ET5", "BE11"],
   Tofaş: ["Şahin", "Doğan", "Kartal", "Serçe", "Murat 124", "Murat 131", "Tempra", "Tipo", "Uno"]
 };
 
@@ -239,8 +243,8 @@ export const MOTO_MODELS: Record<string, string[]> = {
   "MV Agusta": ["Brutale", "F3", "F4", "Dragster", "Turismo Veloce", "Rush"],
   Bimota: ["Tesi", "KB4", "DB"],
   "Can-Am": ["Ryker", "Spyder", "Maverick", "Outlander"],
-  Lifan: ["KP", "KPT", "KPR"],
-  "Segway Powersports": ["Snarler", "Villain", "Fugleman"]
+  Lifan: ["KP", "KPT", "KPR", "KPM", "KPS"],
+  "Segway Powersports": ["Snarler", "Villain", "Fugleman", "UT10", "AT6"]
 };
 
 // Dizüstü / masaüstü bilgisayar markaları -> seri.
