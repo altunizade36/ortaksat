@@ -99,6 +99,17 @@ function Inner() {
               </View>
             </View>
           </View>
+          {/* Uzmanlık kategorileri — satıcı, ortağın deneyimli olduğu alanları görür. */}
+          {(profile?.expertiseCategories?.length ?? 0) > 0 ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {profile!.expertiseCategories.map((cat) => (
+                <View key={cat} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 3 }}>
+                  <MaterialCommunityIcons name="star-check-outline" size={12} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>{translateCopy(cat, language)}</Text>
+                </View>
+              ))}
+            </View>
+          ) : null}
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, flexDirection: "row", gap: 8, padding: 12 }}>
             <MaterialCommunityIcons name="handshake-outline" size={18} color={colors.primaryDark} />
             <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "700", lineHeight: 18 }}>

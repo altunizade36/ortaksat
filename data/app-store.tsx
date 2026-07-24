@@ -278,7 +278,7 @@ type AppStore = {
   resendEmailCode: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   signOutAllDevices: () => Promise<boolean>;
-  updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio">) => Promise<boolean>;
+  updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio"> & { expertiseCategories?: string[] }) => Promise<boolean>;
   savePreferences: (preferences: Record<string, boolean | string | number>) => Promise<boolean>;
   setEmailNotifications: (enabled: boolean) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, details?: string) => Promise<boolean>;
@@ -1364,7 +1364,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           phone: nextPhone,
           avatar: input.avatar.trim() || currentUser.avatar,
           bio: input.bio.trim(),
-          verifiedPhone: phoneChanged ? false : currentUser.verifiedPhone
+          verifiedPhone: phoneChanged ? false : currentUser.verifiedPhone,
+          expertiseCategories: input.expertiseCategories ?? currentUser.expertiseCategories ?? []
         };
         const ok = liveUser ? await updateProfileLive(updatedUser) : true;
         if (!ok) {

@@ -8,6 +8,7 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, Tex
 import { Alert } from "@/lib/alert";
 
 import { colors } from "@/components/colors";
+import { categoryTree } from "@/lib/category-tree";
 import { AuthRequired } from "@/components/auth-gate";
 import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
@@ -36,6 +37,7 @@ function ProfileEditScreenInner() {
   const [phone, setPhone] = useState(currentUser.phone);
   const [avatar, setAvatar] = useState(currentUser.avatar);
   const [bio, setBio] = useState(currentUser.bio);
+  const [expertise, setExpertise] = useState<string[]>(currentUser.expertiseCategories ?? []);
   const [saving, setSaving] = useState(false);
   const isWideWeb = useIsWideWeb();
   const [section, setSection] = useState<SettingsSection>("personal");
@@ -108,7 +110,7 @@ function ProfileEditScreenInner() {
     // IBAN'ı ASLA preferences'a geri koyma.
     const ibanClean = iban.replace(/\s+/g, "").toLocaleUpperCase("tr-TR");
     await saveMyPayoutIban(ibanClean);
-    const ok = await updateProfile({ name: storeName.trim() || name, phone, avatar, bio });
+    const ok = await updateProfile({ name: storeName.trim() || name, phone, avatar, bio, expertiseCategories: expertise });
     setStoreSaving(false);
     Alert.alert(ok ? translateCopy("Kaydedildi", language) : translateCopy("Kaydedilemedi", language), ok ? translateCopy("Mağaza bilgilerin güncellendi.", language) : (authError ?? translateCopy("Bir sorun oluştu.", language)));
   }
@@ -207,7 +209,7 @@ function ProfileEditScreenInner() {
 
     setSaving(true);
     const uploadedAvatar = isLiveAccount ? await uploadProfileAvatar(avatar.trim(), currentUser.id) : avatar.trim();
-    const ok = await updateProfile({ name, phone, avatar: uploadedAvatar, bio });
+    const ok = await updateProfile({ name, phone, avatar: uploadedAvatar, bio, expertiseCategories: expertise });
     setSaving(false);
 
     if (!ok) {
@@ -314,6 +316,7 @@ function ProfileEditScreenInner() {
                   <View style={{ flex: 1 }}><DeskField label={translateCopy("Telefon", language)} value={phone} onChangeText={setPhone} icon="phone-outline" keyboardType="phone-pad" /></View>
                 </View>
                 <DeskField label={translateCopy("Bio", language)} value={bio} onChangeText={setBio} icon="text-account" multiline />
+                <ExpertisePicker value={expertise} onChange={setExpertise} />
                 <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Rol, puan, yanıt oranı ve doğrulama durumu güvenlik nedeniyle elle değiştirilemez.", language)}</Text>
                 <Pressable disabled={saving} onPress={() => void submit()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 22, paddingVertical: 12 }}>
                   <MaterialCommunityIcons name="content-save-outline" size={17} color="#FFFFFF" />
@@ -487,6 +490,7 @@ function ProfileEditScreenInner() {
           <Field label="Telefon" value={phone} onChangeText={setPhone} icon="phone-outline" keyboardType="phone-pad" />
           <Field label="Avatar kısa adı veya görsel adresi" value={avatar} onChangeText={setAvatar} icon="image-outline" />
           <Field label="Bio" value={bio} onChangeText={setBio} icon="text-account" multiline />
+          <ExpertisePicker value={expertise} onChange={setExpertise} />
           <Text selectable style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>
             {translateCopy("Rol, hesap durumu, telefon doğrulama, kimlik doğrulama, puan ve yanıt oranı güvenlik nedeniyle kullanıcı tarafından yükseltilemez.", language)}
           </Text>
@@ -588,6 +592,33 @@ function LoginHistoryCard({ history, loading, isLive, onRefresh, onSignOutAll, s
         <MaterialCommunityIcons name="logout-variant" size={16} color={colors.accent} />
         <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>{signingOutAll ? translateCopy("Çıkılıyor…", language) : translateCopy("Tüm cihazlardan çıkış yap", language)}</Text>
       </Pressable>
+    </View>
+  );
+}
+
+// Ortak uzmanlık kategorileri = ürün taksonomisinin üst düğümleri ("Diğer" hariç).
+const TOP_EXPERTISE: string[] = categoryTree.map((n) => n.label).filter((l) => l && l !== "Diğer");
+
+/** Ortağın uzman olduğu kategorileri seçtiği çoklu-seçim (chip'ler). Satıcı, deneyimli ortağı bu alanda tercih eder. */
+function ExpertisePicker({ value, onChange }: { value: string[]; onChange: (v: string[]) => void }) {
+  const { language } = useLanguage();
+  const t = (s: string) => translateCopy(s, language);
+  const toggle = (cat: string) => onChange(value.includes(cat) ? value.filter((c) => c !== cat) : [...value, cat]);
+  return (
+    <View style={{ gap: 8 }}>
+      <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{t("Uzmanlık kategorilerin")}</Text>
+      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{t("Ortak olarak deneyimli olduğun kategorileri seç — satıcılar seni bu alanlarda daha çok tercih eder.")}</Text>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+        {TOP_EXPERTISE.map((cat) => {
+          const on = value.includes(cat);
+          return (
+            <Pressable key={cat} onPress={() => toggle(cat)} accessibilityRole="button" accessibilityState={{ selected: on }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, opacity: pressed ? 0.8 : 1, paddingHorizontal: 11, paddingVertical: 7 })}>
+              {on ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" /> : null}
+              <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(cat, language)}</Text>
+            </Pressable>
+          );
+        })}
+      </View>
     </View>
   );
 }

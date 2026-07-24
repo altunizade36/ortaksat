@@ -403,7 +403,7 @@ export async function ensureProfile(user: User) {
   if (error) console.warn("Supabase profile upsert failed", error);
 }
 
-export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone" | "avatar" | "bio" | "verifiedPhone">) {
+export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone" | "avatar" | "bio" | "verifiedPhone" | "expertiseCategories">) {
   if (!supabase || !uuidPattern.test(user.id)) return false;
 
   const { error } = await supabase
@@ -413,7 +413,8 @@ export async function updateProfileLive(user: Pick<User, "id" | "name" | "phone"
       phone: user.phone || null,
       avatar_url: user.avatar.length > 3 ? user.avatar : null,
       bio: user.bio,
-      verified_phone: user.verifiedPhone
+      verified_phone: user.verifiedPhone,
+      expertise_categories: user.expertiseCategories ?? []
     })
     .eq("id", user.id);
 

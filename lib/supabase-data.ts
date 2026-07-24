@@ -64,6 +64,7 @@ type ProfileRow = {
   successful_sales?: number | null;
   follower_count?: number | null;
   invite_code?: string | null;
+  expertise_categories?: string[] | null;
 };
 
 // Herkese açık (anon dahil) profil okumalarında yalnızca gösterime uygun kolonlar
@@ -71,7 +72,7 @@ type ProfileRow = {
 // DB'de geri alınmıştır (bkz. migration 20260704120000_profiles_phone_privacy),
 // telefon yalnızca iletişim anında girişli kullanıcıya `fetchSellerPhone` ile verilir.
 const PUBLIC_PROFILE_COLUMNS =
-  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales, follower_count, invite_code" as const;
+  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales, follower_count, invite_code, expertise_categories" as const;
 
 export type MarketplaceSnapshot = {
   listings: Listing[];
@@ -132,6 +133,7 @@ function mapProfile(row: ProfileRow): User {
     successfulSales: toNumber(row.successful_sales),
     followerCount: toNumber(row.follower_count),
     inviteCode: row.invite_code ?? undefined,
+    expertiseCategories: row.expertise_categories ?? [],
     responseRate: row.response_rate ?? 0,
     role: row.role ?? "user",
     status: (row.status as User["status"]) ?? "active"
@@ -757,7 +759,7 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
 
 // Herkese açık ortak vitrini: bir ortağın aktif promosyon ilanları + her biri için ref_code.
 // partner_public_shop/profile SECURITY DEFINER fonksiyonları RLS'i güvenle aşar (yalnız public alan).
-export type PartnerShopProfile = { partnerId: string; fullName: string; verifiedIdentity: boolean; verifiedPhone: boolean; confirmedSales: number; activePartnerships: number };
+export type PartnerShopProfile = { partnerId: string; fullName: string; verifiedIdentity: boolean; verifiedPhone: boolean; confirmedSales: number; activePartnerships: number; expertiseCategories: string[] };
 export type PartnerShopItem = { listing: Listing; refCode: string; partnershipId: string; attributionWindowDays?: number };
 export async function loadPartnerShopLive(partnerId: string): Promise<{ profile: PartnerShopProfile | null; items: PartnerShopItem[] }> {
   if (!supabase || !partnerId) return { profile: null, items: [] };
@@ -788,7 +790,8 @@ export async function loadPartnerShopLive(partnerId: string): Promise<{ profile:
         verifiedIdentity: Boolean(p.verified_identity),
         verifiedPhone: Boolean(p.verified_phone),
         confirmedSales: Number(p.confirmed_sales ?? 0),
-        activePartnerships: Number(p.active_partnerships ?? 0)
+        activePartnerships: Number(p.active_partnerships ?? 0),
+        expertiseCategories: Array.isArray(p.expertise_categories) ? (p.expertise_categories as string[]) : []
       }
     : null;
   return { profile, items };

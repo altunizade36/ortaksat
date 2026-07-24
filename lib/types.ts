@@ -30,6 +30,8 @@ export type User = {
   followerCount: number;
   // Y8: kullanıcının kişisel davet kodu (davet linki). Yalnız kendi profilinde dolu okunur.
   inviteCode?: string;
+  // Ortağın uzman olduğu kategoriler (üst-kategori etiketleri) — satıcı deneyimli ortağı seçer.
+  expertiseCategories?: string[];
   responseRate: number;
   role?: UserRole;
   status?: "active" | "suspended" | "deleted";
