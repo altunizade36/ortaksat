@@ -6,14 +6,16 @@ import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { Sale } from "@/lib/types";
 
-// Satış-temelli ortak seviyeleri (motivasyon). "Başarılı satış" = en az onaylanan
-// (approved/seller_paid/paid) komisyon. Her seviye bir sonrakine ilerleme çubuğu gösterir.
-const TIERS: Array<{ key: string; label: string; min: number; icon: keyof typeof MaterialCommunityIcons.glyphMap; color: string; tint: string }> = [
-  { key: "start", label: "Başlangıç", min: 0, icon: "sprout-outline", color: colors.muted, tint: colors.surfaceAlt },
-  { key: "bronze", label: "Bronz Ortak", min: 1, icon: "medal-outline", color: "#A9631B", tint: "#F6E9DA" },
-  { key: "silver", label: "Gümüş Ortak", min: 5, icon: "medal", color: "#6B7280", tint: "#EEF1F5" },
-  { key: "gold", label: "Altın Ortak", min: 20, icon: "trophy-outline", color: "#B7791F", tint: colors.goldSoft },
-  { key: "diamond", label: "Elmas Ortak", min: 50, icon: "diamond-stone", color: "#2563C9", tint: "#E4EDFB" }
+// Satış-temelli ortak seviyeleri (motivasyon — başarılı ortakları ÖNE ÇIKARIR). "Başarılı
+// satış" = en az onaylanan (approved/seller_paid/paid) komisyon. Eşikler ürün spec'ine göre:
+// 🥉10 · 🥈50 · 🥇100 · 💎500 · 👑1000. Her seviye bir sonrakine ilerleme çubuğu gösterir.
+const TIERS: Array<{ key: string; label: string; min: number; emoji: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; color: string; tint: string }> = [
+  { key: "start", label: "Başlangıç", min: 0, emoji: "🌱", icon: "sprout-outline", color: colors.muted, tint: colors.surfaceAlt },
+  { key: "bronze", label: "Bronz Ortak", min: 10, emoji: "🥉", icon: "medal-outline", color: "#B45309", tint: "#FFEDD5" },
+  { key: "silver", label: "Gümüş Ortak", min: 50, emoji: "🥈", icon: "medal", color: "#64748B", tint: "#F1F5F9" },
+  { key: "gold", label: "Altın Ortak", min: 100, emoji: "🥇", icon: "trophy-outline", color: "#CA8A04", tint: colors.goldSoft },
+  { key: "diamond", label: "Elmas Ortak", min: 500, emoji: "💎", icon: "diamond-stone", color: "#0891B2", tint: "#CFFAFE" },
+  { key: "royal", label: "Efsane Ortak", min: 1000, emoji: "👑", icon: "crown-outline", color: "#7C3AED", tint: "#EDE9FE" }
 ];
 
 const CONFIRMED: Sale["status"][] = ["approved", "seller_paid", "paid"];
@@ -42,7 +44,7 @@ export function PartnerTier({ sales }: { sales: Sale[] }) {
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
         <View style={{ alignItems: "center", backgroundColor: tier.tint, borderRadius: 14, height: 52, justifyContent: "center", width: 52 }}>
-          <MaterialCommunityIcons name={tier.icon} size={28} color={tier.color} />
+          <Text style={{ fontSize: 26 }}>{tier.emoji}</Text>
         </View>
         <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
           <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy(tier.label, language)}</Text>

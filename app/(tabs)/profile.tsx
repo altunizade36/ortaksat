@@ -5,6 +5,7 @@ import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "rea
 
 import { colors } from "@/components/colors";
 import { OnboardingChecklist } from "@/components/onboarding-checklist";
+import { PartnerTier } from "@/components/partner-tier";
 import { ProfileStrength } from "@/components/profile-strength";
 import { AuthRequired } from "@/components/auth-gate";
 import { Card, Metric, PrimaryButton, StatusPill } from "@/components/ui";
@@ -198,6 +199,9 @@ function ProfileScreenInner() {
               <DeskTrustBar label={translateCopy("Yanıt oranı", language)} value={currentUser.responseRate} />
             </View>
 
+            {/* Ortak başarı rozeti/seviyesi — motivasyon (onaylı satışlardan). */}
+            <PartnerTier sales={partnerSales} />
+
             <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 16, borderWidth: 1, gap: 8, padding: 18 }}>
               <MaterialCommunityIcons name="store" size={24} color={colors.primaryDark} />
               <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Mağazanı paylaş", language)}</Text>
@@ -310,6 +314,9 @@ function ProfileScreenInner() {
 
       <TrustRoleCard icon="storefront-outline" title={t("sellerTrust")} score={trust.seller} />
       <TrustRoleCard icon="handshake-outline" title={t("partnerTrust")} score={trust.partner} />
+
+      {/* Ortak başarı rozeti/seviyesi — motivasyon (onaylı satışlardan). */}
+      <PartnerTier sales={partnerSales} />
 
       <View style={{ flexDirection: "row", gap: 8 }}>
         <Metric label={t("rating")} value={`${currentUser.rating}`} />

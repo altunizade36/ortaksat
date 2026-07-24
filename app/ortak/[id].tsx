@@ -92,7 +92,7 @@ function Inner() {
               </View>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                 <View style={{ alignItems: "center", backgroundColor: tier.tint, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 3 }}>
-                  <MaterialCommunityIcons name={tier.icon} size={13} color={tier.color} />
+                  <Text style={{ fontSize: 12 }}>{tier.emoji}</Text>
                   <Text style={{ color: tier.color, fontSize: 11.5, fontWeight: "900" }}>{translateCopy(tier.label, language)}</Text>
                 </View>
                 <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{profile?.confirmedSales ?? 0} {translateCopy("başarılı satış", language)}</Text>
