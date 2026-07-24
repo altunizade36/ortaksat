@@ -42,12 +42,19 @@ export async function updateUserVerificationLive(userId: string, field: "verifie
   return true;
 }
 
-/** Referans linki tiklamasini kaydeder (anonim; RLS public insert). */
-export async function logReferralClick(listingId: string | undefined, partnershipId: string | undefined, refCode: string | undefined, channel?: string) {
+/** Referans linki tiklamasini kaydeder. K1: artik SUNUCU-DOGRULAMALI RPC uzerinden
+ *  (record_referral_click) — dogrudan referral_clicks INSERT anon/authenticated'a KAPALI.
+ *  RPC ref_code<->aktif partnership eslesmesini dogrular; sahte partnership_id ile tik
+ *  enjekte EDILEMEZ ve listing_id sunucudan turetilir (istemci degeri gozardi). */
+export async function logReferralClick(_listingId: string | undefined, partnershipId: string | undefined, refCode: string | undefined, channel?: string) {
   if (!supabase || !partnershipId) return;
   // channel (whatsapp/instagram/tiktok/share): hangi kanal dönüşüm getiriyor ölçümü.
-  const ch = channel ? String(channel).slice(0, 24) : null;
-  const { error } = await supabase.from("referral_clicks").insert({ listing_id: listingId ?? null, partnership_id: partnershipId, ref_code: refCode ?? null, channel: ch });
+  const ch = channel ? String(channel).slice(0, 24) : "link";
+  const { error } = await supabase.rpc("record_referral_click", {
+    p_partnership_id: partnershipId,
+    p_ref_code: refCode ?? null,
+    p_channel: ch
+  });
   if (error) console.warn("Referral click log failed", error);
 }
 
