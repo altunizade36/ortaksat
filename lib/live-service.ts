@@ -608,9 +608,11 @@ export async function uploadListingImage(uri: string, userId: string) {
       let thumbBlob: Blob | null = null;
       if (Platform.OS === "web") {
         const t = await compressImageBlob(body, 512, 0.72, 120 * 1024);
-        // Canvas gerçekten küçülttüyse kullan; küçülmediyse thumb yükleme (yoksa tam boyut
-        // görseli "küçük" diye yüklemiş olurduk — hiç yoktan kötü).
-        if (t.blob.size < body.size) thumbBlob = t.blob;
+        // Kart HER ZAMAN <uuid>-t.jpg ister; yoksa 400/ORB hatası + tam-boyut yükleme (perf
+        // kaybı) olur. O yüzden canvas başarıyla küçülttüyse (blob>0, hep JPEG) thumb'ı HER
+        // ZAMAN yükle — "yalnız daha küçükse" koşulu yüzünden zaten-ufak/eski görsellerde
+        // thumb hiç oluşmuyordu → her kartta ORB hatası. Format tutarlı (canvas→JPEG).
+        if (t.blob.size > 0) thumbBlob = t.blob;
       } else {
         // NATIVE: compressImageBlob canvas'a dayanır ve burada blob'u AYNEN döndürür.
         // Gerçek küçültme için image-manipulator şart.
