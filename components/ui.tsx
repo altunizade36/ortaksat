@@ -4,7 +4,7 @@ import { PropsWithChildren, useState } from "react";
 import { Platform, Pressable, Text, View } from "react-native";
 
 import { Mascot } from "@/components/brand/Mascot";
-import { colors } from "@/components/colors";
+import { colors, shadow } from "@/components/colors";
 import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { MascotName } from "@/lib/mascots";
@@ -26,10 +26,7 @@ export function Card({ children }: PropsWithChildren) {
         borderWidth: 1,
         gap: 12,
         padding: 14,
-        shadowColor: "#101828",
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.06,
-        shadowRadius: 14
+        ...shadow.card
       }}
     >
       {children}

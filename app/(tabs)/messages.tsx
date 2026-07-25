@@ -165,9 +165,14 @@ function MessagesScreenInner() {
   const unreadMessages = messages.filter((item) => item.receiverId === currentUser.id && !item.read);
   const tokens = searchKey(query).split(" ").filter(Boolean);
 
+  // PERF: her konuşmanın context'i RENDER BAŞINA BİR KEZ hesaplanır (Map). Eskiden
+  // buildConversationContext filter + sort (O(n log n)) + iki render map'inde DEFALARCA
+  // yeniden kuruluyordu (her tuş vuruşunda ağır). Tek hesap → sort/filter/render Map'ten okur.
+  const ctxById = new Map(myConversations.map((conversation) => [conversation.id, buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t })]));
+
   const visibleConversations = myConversations.filter((conversation) => {
     if (archivedIds.includes(conversation.id) !== showArchived) return false;
-    const context = buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t });
+    const context = ctxById.get(conversation.id)!;
     const listing = findListing(conversation.listingId);
     const otherId = conversation.participantIds.find((id) => id !== currentUser.id);
     const otherUser = otherId ? findUser(otherId) : undefined;
@@ -194,8 +199,8 @@ function MessagesScreenInner() {
         .join(" ")
     );
     return tokens.every((token) => haystack.includes(token));
-  }).sort((a, b) => conversationPriority(b, currentUser.id, leads, messages, partnerships, sales, findUser, t) - conversationPriority(a, currentUser.id, leads, messages, partnerships, sales, findUser, t));
-  const actionCount = myConversations.filter((conversation) => buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t }).needsAction).length;
+  }).sort((a, b) => conversationPriority(b, currentUser.id, messages, ctxById.get(b.id)!) - conversationPriority(a, currentUser.id, messages, ctxById.get(a.id)!));
+  const actionCount = myConversations.reduce((n, conversation) => n + (ctxById.get(conversation.id)!.needsAction ? 1 : 0), 0);
 
   if (isWideWeb) {
     const activeConversation = visibleConversations.find((c) => c.id === activeId) ?? visibleConversations[0] ?? myConversations[0];
@@ -209,7 +214,7 @@ function MessagesScreenInner() {
       ? messages.filter((m) => m.conversationId === activeConversation.id).sort((a, b) => a.createdAt.localeCompare(b.createdAt) || ((msgIndex.get(b.id) ?? 0) - (msgIndex.get(a.id) ?? 0)))
       : [];
     const activeContext = activeConversation
-      ? buildConversationContext({ conversation: activeConversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t })
+      ? (ctxById.get(activeConversation.id) ?? buildConversationContext({ conversation: activeConversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t }))
       : undefined;
 
     const selectConversation = (id: string) => {
@@ -333,7 +338,7 @@ function MessagesScreenInner() {
                 const last = convMessages[0];
                 const unread = convMessages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
                 const on = activeConversation?.id === conversation.id;
-                const ctx = buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t });
+                const ctx = ctxById.get(conversation.id)!;
                 return (
                   <Pressable key={conversation.id} dataSet={{ vrow: "1" }} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 12 })}>
                     {listing ? (
@@ -604,7 +609,7 @@ function MessagesScreenInner() {
         const rowRisk = scanMessageRisk(conversationMessages.map((item) => item.body).join(" "));
 
         const isPartner = Boolean(conversation.partnerId);
-        const ctx = buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t });
+        const ctx = ctxById.get(conversation.id)!;
         return (
           <Link key={conversation.id} href={{ pathname: "/chat/[id]", params: { id: conversation.id } }} asChild>
             <Pressable dataSet={{ vrow: "1" }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 12 })}>
@@ -714,14 +719,9 @@ function buildConversationContext({
 function conversationPriority(
   conversation: Conversation,
   currentUserId: string,
-  leads: Lead[],
   messages: Message[],
-  partnerships: Partnership[],
-  sales: Array<{ partnershipId: string; status: string }>,
-  findUser: (id: string) => { name: string } | undefined,
-  t: (key: string) => string
+  context: ReturnType<typeof buildConversationContext>
 ) {
-  const context = buildConversationContext({ conversation, currentUserId, findUser, leads, messages, partnerships, sales, t });
   const unreadCount = messages.filter((item) => item.conversationId === conversation.id && item.receiverId === currentUserId && !item.read).length;
   const recency = new Date(conversation.lastMessageAt).getTime() || 0;
   return unreadCount * 10000000000000 + (context.needsAction ? 5000000000000 : 0) + recency;

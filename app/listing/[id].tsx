@@ -1,7 +1,7 @@
 ﻿import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
@@ -249,6 +249,39 @@ export default function ListingDetailScreen() {
     }
   }, [storeListing, remote?.listing?.id, refParam, partnerships]);
 
+  // PERF: benzer ilanlar TÜM katalog üzerinde tokenize+skorlama yapar; eskiden HER render'da
+  // (ör. mesaj/teklif kutusuna her harf) yeniden hesaplanıyordu. useMemo + erken-return ÖNCESİ
+  // (hook kuralı) + !listing guard → yalnız listing/listings değişince hesaplanır.
+  const similarFinal = useMemo(() => {
+    if (!listing) return [];
+    const meTerms = new Set(tokenize(`${listing.title} ${listing.tags.join(" ")}`));
+    const meAttr = listing.attributes ?? {};
+    const meM2 = Number(meAttr.grossM2 ?? meAttr.m2 ?? meAttr.netM2 ?? meAttr.totalGrossM2 ?? 0) || 0;
+    const scored = listings
+      .filter((item) => item.ownerId !== listing.ownerId && item.status === "active" && item.id !== listing.id)
+      .map((item) => {
+        const terms = tokenize(`${item.title} ${item.tags.join(" ")}`);
+        let overlap = 0;
+        for (const term of terms) if (meTerms.has(term)) overlap += 1;
+        const sameCat = item.category === listing.category ? 2.5 : 0;
+        const a = item.attributes ?? {};
+        let attrScore = 0;
+        if (listing.price > 0 && Math.abs(item.price - listing.price) / listing.price <= 0.25) attrScore += 2;
+        if (meAttr.listingType && a.listingType === meAttr.listingType) attrScore += 1.5;
+        if (meAttr.rooms && a.rooms === meAttr.rooms) attrScore += 1.5;
+        if (listing.provinceId && item.provinceId === listing.provinceId) attrScore += 1;
+        const itemM2 = Number(a.grossM2 ?? a.m2 ?? a.netM2 ?? a.totalGrossM2 ?? 0) || 0;
+        if (meM2 > 0 && itemM2 > 0 && Math.abs(itemM2 - meM2) / meM2 <= 0.3) attrScore += 1;
+        const pop = (item.leadCount + item.partnerCount) * 0.002;
+        return { item, s: overlap * 1.2 + sameCat + attrScore + pop };
+      })
+      .filter((x) => x.s > 0)
+      .sort((x, y) => y.s - x.s)
+      .slice(0, 8)
+      .map((x) => x.item);
+    return scored.length ? scored : listings.filter((item) => item.id !== listing.id && item.status === "active" && item.category === listing.category).slice(0, 8);
+  }, [listing, listings]);
+
   if (!listing) {
     if (fetching) {
       return (
@@ -324,39 +357,8 @@ export default function ListingDetailScreen() {
   // Satıcı güven sinyalleri (Sahibinden tarzı): aktif ilan sayısı + tamamlanan satış.
   const sellerActiveCount = owner ? listings.filter((item) => item.ownerId === owner.id && item.status === "active").length : 0;
   const sellerSales = owner?.successfulSales ?? 0;
-  // Benzerlik: aynı kategori + başlık/etiket örtüşmesi + YAPISAL ÖZELLİKLER
-  // (fiyat yakınlığı, ilan tipi, oda, m², konum) + popülerlik. Emlakta güçlü eşleşme.
-  const meTerms = new Set(tokenize(`${currentListing.title} ${currentListing.tags.join(" ")}`));
-  const meAttr = currentListing.attributes ?? {};
-  const meM2 = Number(meAttr.grossM2 ?? meAttr.m2 ?? meAttr.netM2 ?? meAttr.totalGrossM2 ?? 0) || 0;
-  const similarListings = listings
-    .filter((item) => item.ownerId !== currentListing.ownerId && item.status === "active" && item.id !== currentListing.id)
-    .map((item) => {
-      const terms = tokenize(`${item.title} ${item.tags.join(" ")}`);
-      let overlap = 0;
-      for (const term of terms) if (meTerms.has(term)) overlap += 1;
-      const sameCat = item.category === currentListing.category ? 2.5 : 0;
-      const a = item.attributes ?? {};
-      let attrScore = 0;
-      // Fiyat yakınlığı (±25%): güçlü sinyal.
-      if (currentListing.price > 0 && Math.abs(item.price - currentListing.price) / currentListing.price <= 0.25) attrScore += 2;
-      if (meAttr.listingType && a.listingType === meAttr.listingType) attrScore += 1.5;
-      if (meAttr.rooms && a.rooms === meAttr.rooms) attrScore += 1.5;
-      if (currentListing.provinceId && item.provinceId === currentListing.provinceId) attrScore += 1;
-      const itemM2 = Number(a.grossM2 ?? a.m2 ?? a.netM2 ?? a.totalGrossM2 ?? 0) || 0;
-      if (meM2 > 0 && itemM2 > 0 && Math.abs(itemM2 - meM2) / meM2 <= 0.3) attrScore += 1;
-      const pop = (item.leadCount + item.partnerCount) * 0.002;
-      return { item, s: overlap * 1.2 + sameCat + attrScore + pop };
-    })
-    .filter((x) => x.s > 0)
-    .sort((a, b) => b.s - a.s)
-    .slice(0, 8)
-    .map((x) => x.item);
-  // Yedek: farklı satıcıda benzer bulunamazsa (ör. tüm ilanlar tek satıcıda),
-  // aynı kategorideki diğer aktif ilanları göster (kendisi hariç).
-  const similarFinal = similarListings.length
-    ? similarListings
-    : listings.filter((item) => item.id !== currentListing.id && item.status === "active" && item.category === currentListing.category).slice(0, 8);
+  // (Benzer ilanlar `similarFinal` yukarıda useMemo'landı — erken-return öncesi, tokenize+skorlama
+  // artık her render değil.)
   // Son gezdiklerin (bu ilan hariç, aktif) — client-only localStorage.
   const recentViewed = recentIds
     .map((rid) => listings.find((l) => l.id === rid))

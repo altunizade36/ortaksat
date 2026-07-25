@@ -2,6 +2,7 @@ import { Image, type ImageProps } from "expo-image";
 import { useEffect, useState } from "react";
 import { View } from "react-native";
 
+import { colors } from "@/components/colors";
 import { cardImageUrl } from "@/lib/image-url";
 
 const fallbackImage = require("../assets/mascot.png");
@@ -35,7 +36,7 @@ export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, full, o
   }, [uri, fallbackUri]);
 
   return (
-    <View style={[{ backgroundColor: "#EDF0F2", overflow: "hidden" }, style]}>
+    <View style={[{ backgroundColor: colors.neutralSoft, overflow: "hidden" }, style]}>
       <Image
         {...props}
         style={{ height: "100%", width: "100%" }}
@@ -68,7 +69,7 @@ export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, full, o
         <View
           pointerEvents="none"
           style={{
-            backgroundColor: "#E7EBEF",
+            backgroundColor: colors.neutralSoft,
             bottom: 0,
             left: 0,
             opacity: 0.72,

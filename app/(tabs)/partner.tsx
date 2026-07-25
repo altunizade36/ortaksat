@@ -822,7 +822,7 @@ function PartnerScreenInner() {
             const joined = joinedIds.has(listing.id);
             return (
               <View key={listing.id} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingTop: 10 }}>
-                <SafeRemoteImage uri={listing.image} style={{ backgroundColor: colors.line, borderRadius: 8, height: 52, width: 52 }} contentFit="cover" />
+                <SafeRemoteImage uri={listing.image} accessibilityLabel={displayText(listing.title)} style={{ backgroundColor: colors.line, borderRadius: 8, height: 52, width: 52 }} contentFit="cover" />
                 <Pressable onPress={() => router.push(`/listing/${listing.id}`)} style={{ flex: 1, gap: 2, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{displayText(listing.title)}</Text>
                   <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{commissionText(listing)} · kazanç {moneyIn(commissionAmount(listing), listing.currency)}</Text>
@@ -1303,7 +1303,7 @@ function OppRow({ listing, owner, joined, onJoin, onDetail }: { listing: Listing
     <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingVertical: 12 }}>
       <View style={{ alignItems: "center", flex: 2.4, flexDirection: "row", gap: 10, minWidth: 0 }}>
         <View style={{ backgroundColor: colors.line, borderRadius: 10, height: 46, overflow: "hidden", width: 46 }}>
-          <SafeRemoteImage uri={listing.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
+          <SafeRemoteImage uri={listing.image} accessibilityLabel={displayText(listing.title)} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
         </View>
         <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
           <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(listing.title)}</Text>
@@ -1341,7 +1341,7 @@ function OppMiniRow({ title, image, right, sub }: { title: string; image?: strin
   return (
     <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 10 }}>
       <View style={{ backgroundColor: colors.line, borderRadius: 10, height: 44, overflow: "hidden", width: 44 }}>
-        {image ? <SafeRemoteImage uri={image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} /> : null}
+        {image ? <SafeRemoteImage uri={image} accessibilityLabel={displayText(title)} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} /> : null}
       </View>
       <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(title)}</Text>

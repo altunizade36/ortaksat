@@ -613,7 +613,7 @@ function HomeCardBase({ listing, favorited, onFav, onOpen }: { listing: Listing;
   // ortaklığa AÇIK ilanlarda gösterilir (partnershipMode !== "none").
   const partnerable = listing.partnershipMode !== "none";
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 176, flexGrow: 1, maxWidth: 240, minWidth: 0, overflow: "hidden", shadowColor: "#101828", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 14 }}>
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 176, flexGrow: 1, maxWidth: 240, minWidth: 0, overflow: "hidden", ...shadow.card }}>
       <Pressable onPress={onOpen}>
         <View style={{ backgroundColor: colors.surfaceAlt, height: 150, width: "100%" }}>
           <SafeRemoteImage uri={listing.image} alt={`${listing.title} — ${listing.category} · OrtakSat ilanı`} accessibilityLabel={listing.title} style={{ height: 150, width: "100%" }} contentFit="cover" />

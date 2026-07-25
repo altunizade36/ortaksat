@@ -125,10 +125,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
               borderWidth: 1,
               flex: 1,
               overflow: "hidden",
-              shadowColor: "#101828",
-              shadowOffset: { width: 0, height: 8 },
-              shadowOpacity: 0.07,
-              shadowRadius: 18
+              ...shadow.card
             }}
           >
             <View style={{ aspectRatio: 1, backgroundColor: colors.surfaceAlt, overflow: "hidden", width: "100%" }}>
