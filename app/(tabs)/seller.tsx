@@ -756,7 +756,7 @@ function SellerScreenInner() {
               >
                 <MaterialCommunityIcons name={selectedIds.has(listing.id) ? "checkbox-marked" : "checkbox-blank-outline"} size={22} color={selectedIds.has(listing.id) ? colors.primary : colors.muted} />
               </Pressable>
-              <Image source={{ uri: listing.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 88, width: 88 }} />
+              <Image source={{ uri: listing.image }} accessibilityLabel={displayText(listing.title)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 88, width: 88 }} />
               <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
                 <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 8 }}>
                   <Text selectable numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900", lineHeight: 20 }}>
