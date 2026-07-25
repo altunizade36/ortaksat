@@ -16,7 +16,7 @@ import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
-import { changePasswordLive, fetchMyPayoutIban, reauthenticateLive, saveMyPayoutIban, uploadProfileAvatar } from "@/lib/live-service";
+import { changePasswordLive, reauthenticateLive, uploadProfileAvatar } from "@/lib/live-service";
 import { actionLabel, fetchLoginHistory, type LoginEvent } from "@/lib/security-history";
 import { useStore } from "@/lib/use-store";
 import { passwordStrength } from "@/lib/validation";
@@ -42,8 +42,6 @@ function ProfileEditScreenInner() {
   const isWideWeb = useIsWideWeb();
   const [section, setSection] = useState<SettingsSection>("personal");
   const [storeName, setStoreName] = useState(currentUser.name);
-  // IBAN artık preferences'ta DEĞİL (P1 sızıntı); payout_info tablosundan (own-only RLS) gelir.
-  const [iban, setIban] = useState("");
   const [igHandle, setIgHandle] = useState((prefs0.instagram_handle as string) ?? "");
   // Şifre değiştir (mevcut şifre + yeni + tekrar). Güvenlik: Supabase mevcut
   // şifreyi ister; ayrıca web'de Alert no-op olduğu için satır-içi mesaj gösteririz.
@@ -94,22 +92,10 @@ function ProfileEditScreenInner() {
     Alert.alert(translateCopy("Şifre güncellendi", language), translateCopy("Yeni şifren kaydedildi. Bir sonraki girişte bunu kullan.", language));
   }
 
-  // IBAN'ı own-only payout_info tablosundan yükle (canlı hesapta; preview/mock'ta boş kalır).
-  useEffect(() => {
-    let alive = true;
-    if (backendMode !== "supabase") return;
-    void fetchMyPayoutIban().then((v) => { if (alive && v) setIban(v); });
-    return () => { alive = false; };
-  }, [backendMode, currentUser.id]);
-
   async function saveStore() {
     setStoreSaving(true);
-    // IBAN `payout_info` tablosunda, satır-bazlı RLS ile YALNIZ sahibine açık.
-    // ESKİDEN profiles.preferences JSONB'deydi → o kolon tüm girişli kullanıcılara
-    // okunabilir olduğu için IBAN'lar toplanabiliyordu (P1 finansal sızıntı).
-    // IBAN'ı ASLA preferences'a geri koyma.
-    const ibanClean = iban.replace(/\s+/g, "").toLocaleUpperCase("tr-TR");
-    await saveMyPayoutIban(ibanClean);
+    // OrtakSat PARA TUTMAZ: IBAN/ödeme bilgisi toplanmaz. Komisyon ödemesi ortak ile satıcı
+    // arasında Platform DIŞINDA, doğrudan yapılır. Burada yalnız mağaza adı güncellenir.
     const ok = await updateProfile({ name: storeName.trim() || name, phone, avatar, bio, expertiseCategories: expertise });
     setStoreSaving(false);
     Alert.alert(ok ? translateCopy("Kaydedildi", language) : translateCopy("Kaydedilemedi", language), ok ? translateCopy("Mağaza bilgilerin güncellendi.", language) : (authError ?? translateCopy("Bir sorun oluştu.", language)));
@@ -255,7 +241,7 @@ function ProfileEditScreenInner() {
       { key: "personal", icon: "account-outline", label: translateCopy("Kişisel Bilgiler", language), sub: translateCopy("Ad, telefon, foto, bio", language) },
       { key: "security", icon: "lock-outline", label: translateCopy("Hesap Güvenliği", language), sub: translateCopy("Şifre ve oturumlar", language) },
       { key: "notifications", icon: "bell-outline", label: translateCopy("Bildirim Tercihleri", language), sub: translateCopy("E-posta, SMS, anlık", language) },
-      { key: "store", icon: "storefront-outline", label: translateCopy("Mağaza Ayarları", language), sub: translateCopy("Ödeme ve ortaklık", language) },
+      { key: "store", icon: "storefront-outline", label: translateCopy("Mağaza Ayarları", language), sub: translateCopy("Mağaza adı ve bilgiler", language) },
       { key: "verification", icon: "shield-check-outline", label: translateCopy("Doğrulama Durumu", language), sub: translateCopy("Kimlik ve hesap", language) }
     ];
     const verifications = [
@@ -373,10 +359,9 @@ function ProfileEditScreenInner() {
                 <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Mağaza Bilgileri", language)}</Text>
                   <DeskField label={translateCopy("Mağaza adı", language)} value={storeName} onChangeText={setStoreName} icon="storefront-outline" />
-                  <DeskField label={translateCopy("IBAN / ödeme bilgisi (opsiyonel)", language)} value={iban} onChangeText={setIban} icon="bank-outline" placeholder="TR__ ____ ____ ____ ____ __" />
                   <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 12 }}>
-                    <MaterialCommunityIcons name="information-outline" size={17} color={colors.info} style={{ marginTop: 1 }} />
-                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Ortaksat ödeme almaz veya tutmaz. Bu bilgiyi yalnızca, ortakların komisyonlarını sana doğrudan öderken kullanabilmesi için isteğe bağlı paylaşırsın.", language)}</Text>
+                    <MaterialCommunityIcons name="shield-check-outline" size={17} color={colors.info} style={{ marginTop: 1 }} />
+                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("OrtakSat ödeme almaz veya tutmaz; IBAN/ödeme bilgisi istemez. Komisyon ödemesi ortak ile satıcı arasında doğrudan yapılır — detayları mesajlaşarak kendi aranızda belirlersiniz.", language)}</Text>
                   </View>
                   <Pressable disabled={storeSaving} onPress={() => void saveStore()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, opacity: storeSaving ? 0.6 : 1, paddingHorizontal: 22, paddingVertical: 12 }}>
                     <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{storeSaving ? translateCopy("Kaydediliyor…", language) : translateCopy("Mağaza ayarlarını kaydet", language)}</Text>
@@ -498,7 +483,7 @@ function ProfileEditScreenInner() {
 
         <PrimaryButton icon="content-save-outline" onPress={() => void submit()}>{saving ? translateCopy("Kaydediliyor", language) : translateCopy("Profili kaydet", language)}</PrimaryButton>
 
-        {/* Mobil paritesi: şifre/IBAN/bildirim/doğrulama/hesap web'de vardı, mobilde yoktu. */}
+        {/* Mobil paritesi: şifre/bildirim/mağaza/doğrulama/hesap web'de vardı, mobilde yoktu. */}
         {isLiveAccount ? (
           <>
             <Card>
@@ -521,10 +506,13 @@ function ProfileEditScreenInner() {
         </Card>
 
         <Card>
-          <SectionTitle title={translateCopy("Mağaza & ödeme", language)} />
+          <SectionTitle title={translateCopy("Mağaza", language)} />
           <Field label="Mağaza adı" value={storeName} onChangeText={setStoreName} icon="storefront-outline" />
-          <DeskField icon="bank-outline" label={translateCopy("IBAN (komisyon tahsilatı için)", language)} value={iban} onChangeText={setIban} placeholder="TR__ ____ ____ ____ ____ __" />
-          <PrimaryButton icon="content-save-outline" tone="secondary" onPress={() => void saveStore()}>{storeSaving ? translateCopy("Kaydediliyor", language) : translateCopy("Mağaza & IBAN'ı kaydet", language)}</PrimaryButton>
+          <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 11 }}>
+            <MaterialCommunityIcons name="shield-check-outline" size={16} color={colors.info} style={{ marginTop: 1 }} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("OrtakSat ödeme almaz veya tutmaz; IBAN/ödeme bilgisi istemez. Komisyon ödemesi ortak ile satıcı arasında doğrudan yapılır.", language)}</Text>
+          </View>
+          <PrimaryButton icon="content-save-outline" tone="secondary" onPress={() => void saveStore()}>{storeSaving ? translateCopy("Kaydediliyor", language) : translateCopy("Mağaza adını kaydet", language)}</PrimaryButton>
         </Card>
 
         <Card>

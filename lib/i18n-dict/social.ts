@@ -178,7 +178,7 @@ export const socialDict: Record<string, string> = {
   "Hakkında bekleyen inceleme bulunmuyor.": "There are no pending reviews about you.",
   "Güvenli süreç kullanımı": "Safe process usage",
   "Komisyon ve talepler platformda kayıt altında.": "Commissions and leads are recorded on the platform.",
-  "Doğrulama seviyesi (kimlik, telefon, e-posta, IBAN)": "Verification level (identity, phone, email, IBAN)",
+  "Doğrulama seviyesi (kimlik, telefon, e-posta)": "Verification level (identity, phone, email)",
   "Teslimat ve işlem başarı oranı": "Delivery and transaction success rate",
   "Mesajlara yanıt hızı ve iletişim kalitesi": "Message response speed and communication quality",
   "Şikayet sayısı ve çözüm geçmişi": "Number of complaints and resolution history",

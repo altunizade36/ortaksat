@@ -37,6 +37,7 @@ export const VERIFICATION_LEVELS: VerificationBadge[] = [
 // Henüz SUNULMAYAN seviyeler — kullanıcıya şeffaflık için "yol haritası" olarak gösterilebilir,
 // ama satıcıya rozet olarak ASLA atanmaz.
 export const VERIFICATION_ROADMAP: Array<{ label: string; desc: string; icon: string }> = [
-  { label: "Şirket doğrulaması", desc: "Kurumsal satıcılar için vergi/ticaret sicili doğrulaması — yakında.", icon: "office-building-outline" },
-  { label: "Banka hesabı doğrulaması", desc: "IBAN/hesap doğrulaması — yakında.", icon: "bank-outline" }
+  // NOT: "Banka hesabı/IBAN doğrulaması" KALDIRILDI — OrtakSat para tutmaz, ödeme akışına
+  // aracılık etmez; IBAN toplamaz/doğrulamaz. Ödeme taraflar arasında doğrudan yapılır.
+  { label: "Şirket doğrulaması", desc: "Kurumsal satıcılar için vergi/ticaret sicili doğrulaması — yakında.", icon: "office-building-outline" }
 ];

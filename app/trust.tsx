@@ -70,7 +70,7 @@ export default function TrustScreen() {
     if (openReports.length === 0) signals.push({ icon: "emoticon-happy-outline", title: translateCopy("Açık şikayet kaydın yok.", language), sub: translateCopy("Hakkında bekleyen inceleme bulunmuyor.", language) });
     signals.push({ icon: "handshake-outline", title: translateCopy("Güvenli süreç kullanımı", language), sub: translateCopy("Komisyon ve talepler platformda kayıt altında.", language) });
     const calcRules = [
-      translateCopy("Doğrulama seviyesi (kimlik, telefon, e-posta, IBAN)", language),
+      translateCopy("Doğrulama seviyesi (kimlik, telefon, e-posta)", language),
       translateCopy("Teslimat ve işlem başarı oranı", language),
       translateCopy("Mesajlara yanıt hızı ve iletişim kalitesi", language),
       translateCopy("Şikayet sayısı ve çözüm geçmişi", language),
