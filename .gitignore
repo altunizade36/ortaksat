@@ -51,3 +51,12 @@ test-results/
 playwright-report/
 e2e-artifacts/
 _smoke*
+
+# Scratch/audit artefaktları (repoya girmesin)
+_web-audit*.js
+scratch_q*.mjs
+audit/
+scripts/_q.js
+scripts/_web-audit-run.mjs
+scripts/db-introspect.mjs
+_*.mjs
