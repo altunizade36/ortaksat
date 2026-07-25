@@ -242,11 +242,7 @@ export function HomeDesktop() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {PRICE_PRESETS.map(([mn, mx, lbl]) => {
                 const on = priceMin === mn && priceMax === mx;
-                return (
-                  <Pressable key={lbl} onPress={() => { if (on) { setPriceMin(""); setPriceMax(""); } else { setPriceMin(mn); setPriceMax(mx); } }} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5 }}>
-                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 10.5, fontWeight: "800" }}>{lbl}</Text>
-                  </Pressable>
-                );
+                return <FilterPill key={lbl} label={lbl} on={on} onPress={() => { if (on) { setPriceMin(""); setPriceMax(""); } else { setPriceMin(mn); setPriceMax(mx); } }} />;
               })}
             </View>
           </View>
@@ -263,11 +259,7 @@ export function HomeDesktop() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {COMMISSION_PRESETS.map(([v, lbl]) => {
                 const on = minCommission === v;
-                return (
-                  <Pressable key={v} onPress={() => setMinCommission(on ? 0 : v)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 5 }}>
-                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "800" }}>{lbl}</Text>
-                  </Pressable>
-                );
+                return <FilterPill key={v} label={lbl} on={on} onPress={() => setMinCommission(on ? 0 : v)} />;
               })}
             </View>
           </View>
@@ -278,11 +270,7 @@ export function HomeDesktop() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {[10, 15, 20, 25].map((r) => {
                 const on = minRate === r;
-                return (
-                  <Pressable key={r} onPress={() => setMinRate(on ? 0 : r)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 5 }}>
-                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "800" }}>%{r}+</Text>
-                  </Pressable>
-                );
+                return <FilterPill key={r} label={`%${r}+`} on={on} onPress={() => setMinRate(on ? 0 : r)} />;
               })}
             </View>
           </View>
@@ -293,11 +281,7 @@ export function HomeDesktop() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {([["all", translateCopy("Tümü", language)], ["rate", translateCopy("Oran %", language)], ["fixed", translateCopy("Sabit ₺", language)]] as Array<["all" | "rate" | "fixed", string]>).map(([v, lbl]) => {
                 const on = commTypeFilter === v;
-                return (
-                  <Pressable key={v} onPress={() => setCommTypeFilter(v)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 5 }}>
-                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "800" }}>{lbl}</Text>
-                  </Pressable>
-                );
+                return <FilterPill key={v} label={lbl} on={on} onPress={() => setCommTypeFilter(v)} />;
               })}
             </View>
           </View>
@@ -308,12 +292,7 @@ export function HomeDesktop() {
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
               {[4, 4.5].map((r) => {
                 const on = minRating === r;
-                return (
-                  <Pressable key={r} onPress={() => setMinRating(on ? 0 : r)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 3, paddingHorizontal: 11, paddingVertical: 5 }}>
-                    <MaterialCommunityIcons name="star" size={12} color={on ? "#FFFFFF" : colors.gold} />
-                    <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "800" }}>{r}+</Text>
-                  </Pressable>
-                );
+                return <FilterPill key={r} label={`${r}+`} icon="star" on={on} onPress={() => setMinRating(on ? 0 : r)} />;
               })}
             </View>
           </View>
@@ -604,6 +583,24 @@ export function HomeDesktop() {
   );
 }
 
+// Filtre pili — eskiden 5 ayrı inline Pressable (a11y'siz). Tek kaynak + accessibilityRole/
+// State + hitSlop (küçük dokunma hedefi telafisi). İkon opsiyonel (satıcı puanı yıldızı).
+function FilterPill({ label, on, onPress, icon }: { label: string; on: boolean; onPress: () => void; icon?: keyof typeof MaterialCommunityIcons.glyphMap }) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: on }}
+      accessibilityLabel={label}
+      hitSlop={6}
+      onPress={onPress}
+      style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 3, justifyContent: "center", minHeight: 30, paddingHorizontal: 11, paddingVertical: 5 }}
+    >
+      {icon ? <MaterialCommunityIcons name={icon} size={12} color={on ? "#FFFFFF" : colors.gold} /> : null}
+      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "800" }}>{label}</Text>
+    </Pressable>
+  );
+}
+
 function HomeCardBase({ listing, favorited, onFav, onOpen }: { listing: Listing; favorited: boolean; onFav: () => void; onOpen: () => void }) {
   const { language } = useLanguage();
   const { has, toggle } = useCompare();
@@ -635,7 +632,7 @@ function HomeCardBase({ listing, favorited, onFav, onOpen }: { listing: Listing;
           <Pressable accessibilityRole="button" accessibilityState={{ selected: favorited }} accessibilityLabel={favorited ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)} onPress={onFav} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 10, width: 30 }}>
             <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={17} color={favorited ? colors.accent : colors.muted} />
           </Pressable>
-          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Karşılaştır", language)} onPress={() => toggle(listing.id)} style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 46, width: 30 }}>
+          <Pressable accessibilityRole="button" accessibilityState={{ selected: inCompare }} accessibilityLabel={translateCopy("Karşılaştır", language)} hitSlop={8} onPress={() => toggle(listing.id)} style={{ alignItems: "center", backgroundColor: inCompare ? colors.primary : "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 46, width: 30 }}>
             <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
           </Pressable>
           {isNew && !listing.demo ? (

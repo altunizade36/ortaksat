@@ -80,7 +80,7 @@ function ProfileScreenInner() {
         {/* Welcome banner */}
         <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, flexDirection: "row", gap: 16, overflow: "hidden", padding: 22 }}>
           <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 66, justifyContent: "center", overflow: "hidden", width: 66 }}>
-            {isImageAvatar(currentUser.avatar) ? <Image source={{ uri: currentUser.avatar }} contentFit="cover" style={{ height: 66, width: 66 }} /> : <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{currentUser.avatar}</Text>}
+            {isImageAvatar(currentUser.avatar) ? <Image source={{ uri: currentUser.avatar }} accessibilityLabel={currentUser.name} contentFit="cover" style={{ height: 66, width: 66 }} /> : <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{currentUser.avatar}</Text>}
           </View>
           <View style={{ flex: 1, gap: 6, justifyContent: "center", minWidth: 0 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 24, fontWeight: "900" }}>{translateCopy("Merhaba,", language)} {firstName} 👋</Text>
@@ -226,7 +226,7 @@ function ProfileScreenInner() {
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
           <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 62, justifyContent: "center", overflow: "hidden", width: 62 }}>
             {isImageAvatar(currentUser.avatar) ? (
-              <Image source={{ uri: currentUser.avatar }} contentFit="cover" style={{ height: 62, width: 62 }} />
+              <Image source={{ uri: currentUser.avatar }} accessibilityLabel={currentUser.name} contentFit="cover" style={{ height: 62, width: 62 }} />
             ) : (
               <Text adjustsFontSizeToFit numberOfLines={1} selectable style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900", paddingHorizontal: 4 }}>
                 {currentUser.avatar}

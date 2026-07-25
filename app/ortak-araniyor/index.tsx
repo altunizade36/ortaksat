@@ -357,6 +357,7 @@ function Field({ label, value, onChangeText, placeholder, multiline }: { label: 
     <View style={{ gap: 5 }}>
       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{label}</Text>
       <TextInput
+        accessibilityLabel={label}
         value={value}
         onChangeText={onChangeText}
         placeholder={placeholder}
