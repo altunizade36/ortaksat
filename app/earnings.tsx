@@ -168,7 +168,7 @@ function EarningsScreenInner() {
           <View style={{ flex: 1, gap: 8 }}>
             <View style={{ gap: 4 }}>
               <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy(isSeller ? "Satıcı Satışlarım" : "Kazançlarım", language)}</Text>
-              <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy(isSeller ? "İlanlarından yapılan satışların cirosu ve ortaklara ödenecek komisyonlar. Ortaksat para tutmaz." : "Ortak satışlarından kazandığın komisyonları takip et. Ödemeler satıcılarla aranızda yapılır; Ortaksat para tutmaz.", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy(isSeller ? "İlanlarından yapılan satışların cirosu ve ortaklara ödenecek komisyonlar. OrtakSat para tutmaz." : "Ortak satışlarından kazandığın komisyonları takip et. Ödemeler satıcılarla aranızda yapılır; OrtakSat para tutmaz.", language)}</Text>
             </View>
             {RoleToggle}
           </View>
@@ -314,7 +314,7 @@ function EarningsScreenInner() {
                 <MaterialCommunityIcons name="information-outline" size={20} color={colors.info} />
                 <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy(isSeller ? "Komisyon nasıl ödenir?" : "Komisyon nasıl alınır?", language)}</Text>
               </View>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 19 }}>{translateCopy(isSeller ? "Ortaksat para tutmaz veya transfer etmez. Ortağının komisyonunu, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sen ödersin. Ödedikten sonra satışı satıcı panelinden “Ödendi” işaretle." : "Ortaksat para tutmaz veya transfer etmez. Komisyonunu satıcı, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sana öder. Ödemeyi aldığında satışı “Ödendi” olarak işaretle.", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 19 }}>{translateCopy(isSeller ? "OrtakSat para tutmaz veya transfer etmez. Ortağının komisyonunu, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sen ödersin. Ödedikten sonra satışı satıcı panelinden “Ödendi” işaretle." : "OrtakSat para tutmaz veya transfer etmez. Komisyonunu satıcı, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sana öder. Ödemeyi aldığında satışı “Ödendi” olarak işaretle.", language)}</Text>
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
@@ -342,7 +342,7 @@ function EarningsScreenInner() {
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <View style={{ gap: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{translateCopy(isSeller ? "Satıcı Satışlarım" : "Kazançlarım", language)}</Text>
-        <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{translateCopy(isSeller ? "İlanlarından yapılan satışlar ve ortaklara ödenecek komisyonlar. Ortaksat para tutmaz." : "Ortak satış komisyonların. Ödeme satıcıyla aranızda yapılır; Ortaksat para tutmaz.", language)}</Text>
+        <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{translateCopy(isSeller ? "İlanlarından yapılan satışlar ve ortaklara ödenecek komisyonlar. OrtakSat para tutmaz." : "Ortak satış komisyonların. Ödeme satıcıyla aranızda yapılır; OrtakSat para tutmaz.", language)}</Text>
       </View>
       {RoleToggle ? <View style={{ alignSelf: "flex-start" }}>{RoleToggle}</View> : null}
       <View style={{ alignSelf: "flex-start" }}>{PeriodChips}</View>

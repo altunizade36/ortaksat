@@ -394,14 +394,14 @@ function initials(name: string) {
 }
 
 function userFromAuth(id: string, phone?: string | null, name?: string | null): User {
-  const displayName = name || phone || "Ortaksat kullanıcısı";
+  const displayName = name || phone || "OrtakSat kullanıcısı";
 
   return {
     id,
     name: displayName,
     phone: phone ?? "",
     avatar: initials(displayName) || "OS",
-    bio: "Ortaksat canlı kullanıcı profili.",
+    bio: "OrtakSat canlı kullanıcı profili.",
     verifiedPhone: Boolean(phone),
     verifiedIdentity: false,
     verifiedInstagram: false,
