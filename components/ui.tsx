@@ -1,7 +1,7 @@
 ﻿import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, type Href } from "expo-router";
 import { PropsWithChildren, useState } from "react";
-import { Platform, Pressable, Text, View } from "react-native";
+import { Platform, Pressable, Text, View, type ViewStyle } from "react-native";
 
 import { Mascot } from "@/components/brand/Mascot";
 import { colors, shadow } from "@/components/colors";
@@ -15,6 +15,46 @@ type ButtonProps = PropsWithChildren<{
   tone?: "primary" | "secondary" | "danger" | "soft";
   icon?: keyof typeof MaterialCommunityIcons.glyphMap;
 }>;
+
+// KRİTİK web tuzağı: <Link asChild> + fonksiyon-style Pressable (style={({pressed})=>({...})})
+// → react-native-web bunu anchor'a UYGULAMAZ; bg/border/width/height/flexDirection DÜŞER, buton
+// içerik boyutuna çöker (ör. header ikonu 40px yerine 20px). Doğru kalıp STATİK obje + useState.
+// PressLink bunu kapsüller (döngülerde de güvenli — her örnek kendi state'ini tutar).
+export function PressLink({
+  href,
+  style,
+  pressedOpacity = 0.85,
+  accessibilityLabel,
+  accessibilityRole = "link",
+  hitSlop,
+  onPress,
+  children
+}: PropsWithChildren<{
+  href: Href;
+  style: ViewStyle;
+  pressedOpacity?: number;
+  accessibilityLabel?: string;
+  accessibilityRole?: "link" | "button";
+  hitSlop?: number;
+  onPress?: () => void;
+}>) {
+  const [pressed, setPressed] = useState(false);
+  return (
+    <Link href={href} asChild>
+      <Pressable
+        accessibilityLabel={accessibilityLabel}
+        accessibilityRole={accessibilityRole}
+        hitSlop={hitSlop}
+        onPress={onPress}
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        style={{ ...style, opacity: pressed ? pressedOpacity : 1 }}
+      >
+        {children}
+      </Pressable>
+    </Link>
+  );
+}
 
 export function Card({ children }: PropsWithChildren) {
   return (

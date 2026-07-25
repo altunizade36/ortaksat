@@ -612,7 +612,7 @@ function MessagesScreenInner() {
         const ctx = ctxById.get(conversation.id)!;
         return (
           <Link key={conversation.id} href={{ pathname: "/chat/[id]", params: { id: conversation.id } }} asChild>
-            <Pressable dataSet={{ vrow: "1" }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 12 })}>
+            <Pressable dataSet={{ vrow: "1" }} style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 12 }}>
               <View>
                 {listing ? (
                   <SafeRemoteImage uri={listing.image} accessibilityLabel={displayText(listing.title)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 12, height: 56, width: 56 }} />

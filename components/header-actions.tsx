@@ -1,5 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link } from "expo-router";
+import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -34,30 +35,35 @@ function HeaderAction({
   label: string;
   primary?: boolean;
 }) {
+  // KRİTİK: <Link asChild> + fonksiyon-style ({pressed})=>({}) web anchor'a UYGULANMAZ
+  // → bg/border/width/height düşer, buton ikon boyutuna (20px) çöker. STATİK obje + useState şart.
+  const [pressed, setPressed] = useState(false);
   return (
     <Link href={href as never} asChild>
       <Pressable
         accessibilityLabel={label}
         accessibilityRole="button"
         hitSlop={8}
-        style={({ pressed }) => ({
+        onPressIn={() => setPressed(true)}
+        onPressOut={() => setPressed(false)}
+        style={{
           alignItems: "center",
           backgroundColor: colors.surface,
           borderColor: primary ? colors.primary : colors.line,
           borderRadius: 999,
           borderWidth: primary ? 2 : 1,
           elevation: 3,
-          height: 36,
+          height: 40,
           justifyContent: "center",
           opacity: pressed ? 0.72 : 1,
           shadowColor: "#101828",
           shadowOffset: { width: 0, height: 3 },
           shadowOpacity: 0.08,
           shadowRadius: 8,
-          width: 36
-        })}
+          width: 40
+        }}
       >
-        <MaterialCommunityIcons name={icon} size={primary ? 23 : 20} color={primary ? colors.primaryDark : colors.primaryDark} />
+        <MaterialCommunityIcons name={icon} size={primary ? 23 : 21} color={colors.primaryDark} />
         {badge ? (
           <View
             style={{

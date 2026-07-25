@@ -7,7 +7,7 @@ import { colors } from "@/components/colors";
 import { PartnerTier } from "@/components/partner-tier";
 import { ProfileStrength } from "@/components/profile-strength";
 import { AuthRequired } from "@/components/auth-gate";
-import { Card, Metric, PrimaryButton, StatusPill } from "@/components/ui";
+import { Card, Metric, PressLink, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -419,13 +419,11 @@ function ActionRow({ href, icon, label, tone, value }: { href: Href; icon: keyof
   const { language } = useLanguage();
   const active = tone === "warning";
   return (
-    <Link href={href} asChild>
-      <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.warningSoft : colors.surfaceAlt, borderColor: active ? colors.warningSoft : colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 48, opacity: pressed ? 0.75 : 1, padding: 10 })}>
+    <PressLink href={href} accessibilityLabel={translateCopy(label, language)} pressedOpacity={0.75} style={{ alignItems: "center", backgroundColor: active ? colors.warningSoft : colors.surfaceAlt, borderColor: active ? colors.warningSoft : colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 48, padding: 10 }}>
         <MaterialCommunityIcons name={icon} size={20} color={active ? colors.warning : colors.primary} />
         <Text numberOfLines={1} selectable style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "900" }}>{translateCopy(label, language)}</Text>
         <Text adjustsFontSizeToFit minimumFontScale={0.8} numberOfLines={1} selectable style={{ color: active ? colors.warning : colors.muted, fontSize: 15, fontVariant: ["tabular-nums"], fontWeight: "900", minWidth: 28, textAlign: "right" }}>{value}</Text>
-      </Pressable>
-    </Link>
+    </PressLink>
   );
 }
 
@@ -449,12 +447,10 @@ function MenuRow({ detail, icon, label, value, href }: { detail: string; icon: k
 function Shortcut({ href, icon, label }: { href: Href; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }) {
   const { language } = useLanguage();
   return (
-    <Link href={href} asChild>
-      <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexBasis: "31%", flexGrow: 1, gap: 6, justifyContent: "center", minHeight: 72, opacity: pressed ? 0.75 : 1, padding: 8 })}>
+    <PressLink href={href} accessibilityLabel={translateCopy(label, language)} pressedOpacity={0.75} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexBasis: "31%", flexGrow: 1, gap: 6, justifyContent: "center", minHeight: 72, padding: 8 }}>
         <MaterialCommunityIcons name={icon} size={21} color={colors.primary} />
         <Text adjustsFontSizeToFit minimumFontScale={0.82} numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "900" }}>{translateCopy(label, language)}</Text>
-      </Pressable>
-    </Link>
+    </PressLink>
   );
 }
 

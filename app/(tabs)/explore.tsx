@@ -8,6 +8,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { BrandFilter } from "@/components/brand-filter";
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
+import { PressLink } from "@/components/ui";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { listingCategories } from "@/lib/categories";
@@ -944,12 +945,10 @@ export default function ExploreScreen() {
                 ) : (
                   <>
                     <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", textAlign: "center" }}>{t("retrySearchFilter")}</Text>
-                    <Link href="/create" asChild>
-                      <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 11 })}>
+                    <PressLink href="/create" accessibilityRole="button" accessibilityLabel={translateCopy("İlan ver", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, marginTop: 4, paddingHorizontal: 18, paddingVertical: 11 }}>
                         <MaterialCommunityIcons name="store-plus-outline" size={16} color="#FFFFFF" />
                         <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("İlan ver", language)}</Text>
-                      </Pressable>
-                    </Link>
+                    </PressLink>
                   </>
                 )}
               </View>
@@ -1799,8 +1798,7 @@ function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner
   const { language } = useLanguage();
   const commission = commissionAmount(listing);
   return (
-    <Link href={`/listing/${listing.id}`} asChild>
-      <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 10, opacity: pressed ? 0.8 : 1 })}>
+    <PressLink href={`/listing/${listing.id}`} accessibilityLabel={displayText(listing.title)} pressedOpacity={0.8} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
         <View style={{ backgroundColor: colors.line, borderRadius: 10, height: 56, overflow: "hidden", width: 56 }}>
           <SafeRemoteImage uri={listing.image} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
         </View>
@@ -1816,8 +1814,7 @@ function SidebarListing({ listing, owner, showStock }: { listing: Listing; owner
             <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "700" }}>{displayText(listing.location)}</Text>
           )}
         </View>
-      </Pressable>
-    </Link>
+    </PressLink>
   );
 }
 

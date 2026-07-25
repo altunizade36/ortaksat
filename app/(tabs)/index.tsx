@@ -14,7 +14,7 @@ import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SkeletonGrid } from "@/components/skeleton";
 import { getRecent, subscribeRecent } from "@/lib/recent";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { EmptyState } from "@/components/ui";
+import { EmptyState, PressLink } from "@/components/ui";
 import type { CategoryNode } from "@/lib/category-tree";
 import { WebFooter } from "@/components/web-landing";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
@@ -527,12 +527,10 @@ export default function HomeScreen() {
                 </View>
                 <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900", textAlign: "center" }}>{translateCopy("İlk ilanı sen ver", language)}</Text>
                 <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 420, textAlign: "center" }}>{translateCopy("OrtakSat yeni büyüyor. Ürününü ekle, ortak satıcılarla eşleş ve ilk kazananlardan ol. Yayınlaman ücretsiz.", language)}</Text>
-                <Link href="/create" asChild>
-                  <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, opacity: pressed ? 0.85 : 1, paddingHorizontal: 22, paddingVertical: 13 })}>
-                    <MaterialCommunityIcons name="store-plus-outline" size={18} color="#FFFFFF" />
-                    <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy("Hemen ilan ver", language)}</Text>
-                  </Pressable>
-                </Link>
+                <PressLink href="/create" accessibilityRole="button" accessibilityLabel={translateCopy("Hemen ilan ver", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, paddingHorizontal: 22, paddingVertical: 13 }}>
+                  <MaterialCommunityIcons name="store-plus-outline" size={18} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy("Hemen ilan ver", language)}</Text>
+                </PressLink>
               </View>
             ) : (
               <EmptyState title={t("noResults")} body={t("noResultsBody")} mascot="thinking" />
@@ -681,31 +679,30 @@ function HomeQuickActions({ currentUserId }: { currentUserId: string }) {
   return (
     <View style={{ flexDirection: "row", gap: 8 }}>
       {actions.map((action) => (
-        <Link key={action.label} href={action.href} asChild>
-          <Pressable
-            accessibilityRole="link"
-            accessibilityLabel={translateCopy(action.label, language)}
-            style={({ pressed }) => ({
-              alignItems: "center",
-              backgroundColor: action.tone === "primary" ? colors.primary : action.tone === "soft" ? colors.primarySoft : colors.surface,
-              borderColor: action.tone === "plain" ? colors.line : action.tone === "soft" ? colors.primarySoft : colors.primary,
-              borderRadius: 10,
-              borderWidth: 1,
-              flex: 1,
-              flexDirection: "row",
-              gap: 7,
-              justifyContent: "center",
-              minHeight: 44,
-              opacity: pressed ? 0.76 : 1,
-              paddingHorizontal: 8
-            })}
-          >
-            <MaterialCommunityIcons name={action.icon} size={18} color={action.tone === "primary" ? "#FFFFFF" : colors.primaryDark} />
-            <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} style={{ color: action.tone === "primary" ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12, fontWeight: "900" }}>
-              {translateCopy(action.label, language)}
-            </Text>
-          </Pressable>
-        </Link>
+        <PressLink
+          key={action.label}
+          href={action.href}
+          accessibilityLabel={translateCopy(action.label, language)}
+          pressedOpacity={0.76}
+          style={{
+            alignItems: "center",
+            backgroundColor: action.tone === "primary" ? colors.primary : action.tone === "soft" ? colors.primarySoft : colors.surface,
+            borderColor: action.tone === "plain" ? colors.line : action.tone === "soft" ? colors.primarySoft : colors.primary,
+            borderRadius: 10,
+            borderWidth: 1,
+            flex: 1,
+            flexDirection: "row",
+            gap: 7,
+            justifyContent: "center",
+            minHeight: 44,
+            paddingHorizontal: 8
+          }}
+        >
+          <MaterialCommunityIcons name={action.icon} size={18} color={action.tone === "primary" ? "#FFFFFF" : colors.primaryDark} />
+          <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} style={{ color: action.tone === "primary" ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12, fontWeight: "900" }}>
+            {translateCopy(action.label, language)}
+          </Text>
+        </PressLink>
       ))}
     </View>
   );
@@ -767,7 +764,7 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
             {hot ? (
               <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: colors.surface, borderRadius: 999, borderWidth: 1.5, flexDirection: "row", gap: 2, paddingHorizontal: 5, paddingVertical: 1, position: "absolute", right: -4, top: -5 }}>
                 <MaterialCommunityIcons name="fire" size={9} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 8.5, fontWeight: "900" }}>{translateCopy("popüler", language)}</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{translateCopy("popüler", language)}</Text>
               </View>
             ) : null}
           </View>
@@ -793,12 +790,10 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
           <Text style={{ color: colors.ink, fontSize: isWideWeb ? 20 : 17, fontWeight: "900" }}>{translateCopy("Kategorilere göz at", language)}</Text>
           <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy("En çok ilan olan kategoriler önde", language)}</Text>
         </View>
-        <Link href="/kategoriler" asChild>
-          <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 3, opacity: pressed ? 0.75 : 1, paddingHorizontal: 12, paddingVertical: 6 })}>
-            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Tümü", language)}</Text>
-            <MaterialCommunityIcons name="arrow-right" size={15} color={colors.primaryDark} />
-          </Pressable>
-        </Link>
+        <PressLink href="/kategoriler" accessibilityLabel={translateCopy("Tümü", language)} pressedOpacity={0.75} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 12, paddingVertical: 6 }}>
+          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Tümü", language)}</Text>
+          <MaterialCommunityIcons name="arrow-right" size={15} color={colors.primaryDark} />
+        </PressLink>
       </View>
       {isWideWeb ? (
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
