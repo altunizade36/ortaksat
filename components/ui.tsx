@@ -1,7 +1,7 @@
 ﻿import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, type Href } from "expo-router";
-import { PropsWithChildren } from "react";
-import { Pressable, Text, View } from "react-native";
+import { PropsWithChildren, useState } from "react";
+import { Platform, Pressable, Text, View } from "react-native";
 
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
@@ -39,6 +39,7 @@ export function Card({ children }: PropsWithChildren) {
 
 export function PrimaryButton({ children, onPress, href, tone = "primary", icon }: ButtonProps) {
   const { language } = useLanguage();
+  const [pressed, setPressed] = useState(false);
   // WCAG AA: beyaz metin colors.primary (#0EA5B7) üstünde ~2.9:1 (AA'yı geçmez). primaryDark
   // (#0B7285 ~5:1) marka turkuazının koyu tonu → hue korunur, kontrast geçer. En sık buton.
   const backgroundColor =
@@ -46,30 +47,37 @@ export function PrimaryButton({ children, onPress, href, tone = "primary", icon 
   const color = tone === "secondary" ? colors.ink : tone === "soft" ? colors.primaryDark : "#FFFFFF";
   const borderColor = tone === "secondary" ? colors.line : backgroundColor;
 
+  // KRİTİK: style STATİK OBJE olmalı — fonksiyon-style (`({pressed})=>…`) `<Link asChild>`
+  // ile sarılınca web'de anchor'a UYGULANMIYOR (bg/kenar/flexDirection kayboluyor → görünmez/
+  // bozuk buton). Pressed durumu state ile → obje statik kalır, asChild korur. Anchor,
+  // ebeveyninin align:stretch'i ile genişliği zaten doldurur (teşhisle doğrulandı).
+  const style = {
+    alignItems: "center" as const,
+    backgroundColor,
+    borderColor,
+    borderRadius: 8,
+    borderWidth: 1,
+    flexDirection: "row" as const,
+    gap: 8,
+    justifyContent: "center" as const,
+    minHeight: 46,
+    opacity: pressed ? 0.76 : 1,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    shadowColor: tone === "primary" ? colors.primaryDark : "transparent",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: tone === "primary" ? 0.16 : 0,
+    shadowRadius: 14
+  };
+
   const button = (
     <Pressable
       accessibilityRole={href ? "link" : "button"}
       accessibilityLabel={typeof children === "string" ? translateCopy(children, language) : undefined}
       onPress={onPress ? () => { haptic.light(); onPress(); } : undefined}
-      style={({ pressed }) => ({
-        alignItems: "center",
-        backgroundColor,
-        borderColor,
-        borderRadius: 8,
-        borderWidth: 1,
-        flexShrink: 1,
-        flexDirection: "row",
-        gap: 8,
-        justifyContent: "center",
-        minHeight: 46,
-        opacity: pressed ? 0.76 : 1,
-        paddingHorizontal: 14,
-        paddingVertical: 12,
-        shadowColor: tone === "primary" ? colors.primaryDark : "transparent",
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: tone === "primary" ? 0.16 : 0,
-        shadowRadius: 14
-      })}
+      onPressIn={() => setPressed(true)}
+      onPressOut={() => setPressed(false)}
+      style={style}
     >
       {icon ? <MaterialCommunityIcons name={icon} size={18} color={color} /> : null}
       <Text ellipsizeMode="tail" numberOfLines={2} selectable style={{ color, flexShrink: 1, fontSize: 14, fontWeight: "800", lineHeight: 17, textAlign: "center" }}>

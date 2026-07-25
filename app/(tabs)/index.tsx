@@ -264,24 +264,26 @@ export default function HomeScreen() {
               <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900", lineHeight: 23 }}>{translateCopy("Ortak satış pazaryeri — ", language)}<Text style={{ color: colors.gold }}>{translateCopy("iki taraf da kazanır", language)}</Text></Text>
               {/* İki ayrı yol: satıcı / ortak (mesaj netliği) */}
               <View style={{ gap: 8 }}>
+                {/* STATİK style zorunlu: `<Link asChild>` fonksiyon-style'ı web'de düşürür →
+                    beyaz kart kaybolur, koyu metin turkuazda okunmaz. Statik obje korunur. */}
                 <Link href="/create" asChild>
-                  <Pressable style={({ pressed }) => ({ backgroundColor: "#FFFFFF", borderRadius: 11, gap: 2, opacity: pressed ? 0.92 : 1, paddingHorizontal: 12, paddingVertical: 9 })}>
+                  <Pressable style={{ backgroundColor: "#FFFFFF", borderRadius: 11, gap: 2, paddingHorizontal: 12, paddingVertical: 9 }}>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                       <MaterialCommunityIcons name="store-plus-outline" size={15} color={colors.primaryDark} />
                       <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Satıcıyım · İlan Ver", language)}</Text>
                       <MaterialCommunityIcons name="arrow-right" size={15} color={colors.primaryDark} />
                     </View>
-                    <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "600", lineHeight: 14 }}>{translateCopy("Sadece sonuç aldığında komisyon öde.", language)}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 10.5, fontWeight: "700", lineHeight: 14 }}>{translateCopy("Sadece sonuç aldığında komisyon öde.", language)}</Text>
                   </Pressable>
                 </Link>
                 <Link href="/partner" asChild>
-                  <Pressable style={({ pressed }) => ({ backgroundColor: "rgba(255,255,255,0.14)", borderColor: "rgba(255,255,255,0.45)", borderRadius: 11, borderWidth: 1, gap: 2, opacity: pressed ? 0.92 : 1, paddingHorizontal: 12, paddingVertical: 9 })}>
+                  <Pressable style={{ backgroundColor: "rgba(255,255,255,0.16)", borderColor: "rgba(255,255,255,0.55)", borderRadius: 11, borderWidth: 1, gap: 2, paddingHorizontal: 12, paddingVertical: 9 }}>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                       <MaterialCommunityIcons name="handshake-outline" size={15} color="#FFFFFF" />
                       <Text style={{ color: "#FFFFFF", flex: 1, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Ortağım · Kazanç Fırsatları", language)}</Text>
                       <MaterialCommunityIcons name="arrow-right" size={15} color="#FFFFFF" />
                     </View>
-                    <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 10.5, fontWeight: "600", lineHeight: 14 }}>{translateCopy("Paylaş, doğrulanan satıştan kazan.", language)}</Text>
+                    <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "600", lineHeight: 14 }}>{translateCopy("Paylaş, doğrulanan satıştan kazan.", language)}</Text>
                   </Pressable>
                 </Link>
               </View>
