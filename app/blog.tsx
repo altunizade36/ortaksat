@@ -6,6 +6,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
+import { PressLink } from "@/components/ui";
 import { subscribeNewsletterLive } from "@/lib/live-service";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter } from "@/components/web-landing";
@@ -143,31 +144,27 @@ export default function BlogPage() {
           <View style={{ gap: 16, width: 320 }}>
             <SideCard title="Popüler yazılar">
               {popular.map((post, i) => (
-                <Link key={post.slug} href={{ pathname: "/blog/[slug]", params: { slug: post.slug } }} asChild>
-                  <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 10, opacity: pressed ? 0.8 : 1 })}>
-                    <View style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 999, borderWidth: 1.5, height: 26, justifyContent: "center", width: 26 }}>
-                      <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{i + 1}</Text>
-                    </View>
-                    <View style={{ backgroundColor: colors.line, borderRadius: 8, height: 44, overflow: "hidden", width: 44 }}>
-                      <SafeRemoteImage uri={post.image} alt={post.title} accessibilityLabel={post.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
-                    </View>
-                    <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                      <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800", lineHeight: 16 }}>{post.title}</Text>
-                      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{post.readMin} dk okuma</Text>
-                    </View>
-                  </Pressable>
-                </Link>
+                <PressLink key={post.slug} href={{ pathname: "/blog/[slug]", params: { slug: post.slug } }} accessibilityLabel={post.title} pressedOpacity={0.8} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                  <View style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 999, borderWidth: 1.5, height: 26, justifyContent: "center", width: 26 }}>
+                    <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{i + 1}</Text>
+                  </View>
+                  <View style={{ backgroundColor: colors.line, borderRadius: 8, height: 44, overflow: "hidden", width: 44 }}>
+                    <SafeRemoteImage uri={post.image} alt={post.title} accessibilityLabel={post.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
+                  </View>
+                  <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                    <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800", lineHeight: 16 }}>{post.title}</Text>
+                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{post.readMin} dk okuma</Text>
+                  </View>
+                </PressLink>
               ))}
             </SideCard>
 
             <SideCard title="Son yazılar" footerLabel="Tüm yazıları gör" footerHref="/blog">
               {recent.map((post) => (
-                <Link key={post.slug} href={{ pathname: "/blog/[slug]", params: { slug: post.slug } }} asChild>
-                  <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 8, opacity: pressed ? 0.8 : 1 })}>
-                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{post.title}</Text>
-                    <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>{post.dateShort}</Text>
-                  </Pressable>
-                </Link>
+                <PressLink key={post.slug} href={{ pathname: "/blog/[slug]", params: { slug: post.slug } }} accessibilityLabel={post.title} pressedOpacity={0.8} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{post.title}</Text>
+                  <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>{post.dateShort}</Text>
+                </PressLink>
               ))}
             </SideCard>
 

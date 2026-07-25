@@ -1,11 +1,12 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Link, useLocalSearchParams } from "expo-router";
+import { useLocalSearchParams } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { Mascot } from "@/components/brand/Mascot";
+import { PressLink } from "@/components/ui";
 import { captureInvite } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
@@ -70,25 +71,19 @@ export default function InviteLanding() {
 
         <View style={{ gap: 10, width: "100%" }}>
           {currentUser?.id ? (
-            <Link href="/(tabs)/explore" asChild>
-              <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", opacity: pressed ? 0.9 : 1, paddingVertical: 14 })}>
-                <MaterialCommunityIcons name="compass-outline" size={18} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{t("İlanları Keşfet")}</Text>
-              </Pressable>
-            </Link>
+            <PressLink href="/(tabs)/explore" accessibilityRole="button" accessibilityLabel={t("İlanları Keşfet")} pressedOpacity={0.9} style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 14 }}>
+              <MaterialCommunityIcons name="compass-outline" size={18} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{t("İlanları Keşfet")}</Text>
+            </PressLink>
           ) : (
             <>
-              <Link href="/auth" asChild>
-                <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", opacity: pressed ? 0.9 : 1, paddingVertical: 14 })}>
-                  <MaterialCommunityIcons name="account-plus-outline" size={18} color="#FFFFFF" />
-                  <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{t("Ücretsiz Kayıt Ol")}</Text>
-                </Pressable>
-              </Link>
-              <Link href="/(tabs)/explore" asChild>
-                <Pressable style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, opacity: pressed ? 0.85 : 1, paddingVertical: 13 })}>
-                  <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{t("Önce göz at")}</Text>
-                </Pressable>
-              </Link>
+              <PressLink href="/auth" accessibilityRole="button" accessibilityLabel={t("Ücretsiz Kayıt Ol")} pressedOpacity={0.9} style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 14 }}>
+                <MaterialCommunityIcons name="account-plus-outline" size={18} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{t("Ücretsiz Kayıt Ol")}</Text>
+              </PressLink>
+              <PressLink href="/(tabs)/explore" accessibilityRole="button" accessibilityLabel={t("Önce göz at")} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 12, borderWidth: 1, paddingVertical: 13 }}>
+                <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{t("Önce göz at")}</Text>
+              </PressLink>
             </>
           )}
         </View>

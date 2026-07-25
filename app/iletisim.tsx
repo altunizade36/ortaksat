@@ -4,6 +4,7 @@ import Head from "expo-router/head";
 import { Platform, Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { PressLink } from "@/components/ui";
 import { openUrlSafe } from "@/lib/link";
 import { WebFooter } from "@/components/web-landing";
 import { SUPPORT_EMAIL, SUPPORT_EMAIL_MAILTO } from "@/lib/contact";
@@ -34,12 +35,10 @@ export default function ContactScreen() {
       <View style={{ alignSelf: "center", gap: 18, maxWidth: 820, paddingHorizontal: 20, width: "100%" }}>
         {/* Breadcrumb */}
         <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-          <Link href="/" asChild>
-            <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, opacity: pressed ? 0.7 : 1 })}>
-              <MaterialCommunityIcons name="home-outline" size={14} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
-            </Pressable>
-          </Link>
+          <PressLink href="/" accessibilityLabel={translateCopy("Ana sayfa", language)} pressedOpacity={0.7} style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+            <MaterialCommunityIcons name="home-outline" size={14} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
+          </PressLink>
           <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("İletişim", language)}</Text>
         </View>

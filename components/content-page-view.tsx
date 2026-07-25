@@ -5,6 +5,7 @@ import { Fragment, type ReactNode } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { PressLink } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useStore } from "@/lib/use-store";
@@ -33,12 +34,10 @@ export function ContentPageView({ slug, fallback }: { slug: string; fallback?: R
       <View style={{ alignSelf: "center", gap: 14, maxWidth: 1280, width: "100%" }}>
         {/* Breadcrumb — kullanıcı her zaman ana sayfaya dönebilir. */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
-          <Link href="/" asChild>
-            <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, opacity: pressed ? 0.7 : 1 })}>
-              <MaterialCommunityIcons name="home-outline" size={14} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
-            </Pressable>
-          </Link>
+          <PressLink href="/" accessibilityLabel={translateCopy("Ana sayfa", language)} pressedOpacity={0.7} style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+            <MaterialCommunityIcons name="home-outline" size={14} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ana sayfa", language)}</Text>
+          </PressLink>
           <MaterialCommunityIcons name="chevron-right" size={15} color={colors.subtle} />
           <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{page.title || slug}</Text>
         </View>

@@ -437,7 +437,7 @@ export default function StoreScreen() {
                     <EmptyState title={translateCopy("Ortaklık yok", language)} body={translateCopy("Bu satıcının ortaklığa açık ilanı bulunmuyor.", language)} />
                   ) : activeListings.filter((l) => l.partnershipMode !== "invite").map((l, idx) => (
                     <Link key={l.id} href={{ pathname: "/listing/[id]", params: { id: l.id } }} asChild>
-                      <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingVertical: 12 })}>
+                      <Pressable style={{ alignItems: "center", backgroundColor: "transparent", borderTopColor: colors.line, borderTopWidth: idx === 0 ? 0 : 1, flexDirection: "row", gap: 12, paddingVertical: 12 }}>
                         <Image source={{ uri: l.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 48, width: 48 }} />
                         <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
                           <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 14, fontWeight: "800" }}>{displayText(l.title)}</Text>

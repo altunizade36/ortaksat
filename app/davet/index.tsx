@@ -1,11 +1,11 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Link } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View } from "react-native";
+import { ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { ShareRow } from "@/components/share-row";
+import { PressLink } from "@/components/ui";
 import { loadMyInvites, type MyInvite } from "@/lib/live-service";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { shortDate } from "@/lib/locale";
@@ -38,11 +38,9 @@ export default function DavetEt() {
           <MaterialCommunityIcons name="account-heart-outline" size={44} color={colors.primary} />
           <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900", textAlign: "center" }}>{t("Arkadaşını davet et")}</Text>
           <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600", lineHeight: 20, textAlign: "center" }}>{t("Davet linkini almak için giriş yapman gerekiyor.")}</Text>
-          <Link href="/auth" asChild>
-            <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 12, opacity: pressed ? 0.9 : 1, paddingHorizontal: 24, paddingVertical: 13 })}>
-              <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{t("Giriş Yap / Kayıt Ol")}</Text>
-            </Pressable>
-          </Link>
+          <PressLink href="/auth" accessibilityRole="button" accessibilityLabel={t("Giriş Yap / Kayıt Ol")} pressedOpacity={0.9} style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 12, paddingHorizontal: 24, paddingVertical: 13 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{t("Giriş Yap / Kayıt Ol")}</Text>
+          </PressLink>
         </View>
       </ScrollView>
     );

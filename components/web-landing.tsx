@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { PressLink } from "@/components/ui";
 import { SUPPORT_EMAIL } from "@/lib/contact";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { subscribeNewsletterLive } from "@/lib/live-service";
@@ -140,12 +141,10 @@ export function WebFooter() {
           <Text style={{ color: light, fontSize: 13, fontWeight: "600", lineHeight: 19, maxWidth: 380 }}>
             {t("appSlogan")}. {translateCopy("İlanını aç, satış yapabilecek ortaklarla eşleş; komisyonu birlikte belirleyin.", language)}
           </Text>
-          <Link href="/iletisim" asChild>
-            <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 6, opacity: pressed ? 0.75 : 1 })}>
-              <MaterialCommunityIcons name="email-outline" size={14} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{SUPPORT_EMAIL}</Text>
-            </Pressable>
-          </Link>
+          <PressLink href="/iletisim" accessibilityLabel={SUPPORT_EMAIL} pressedOpacity={0.75} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+            <MaterialCommunityIcons name="email-outline" size={14} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{SUPPORT_EMAIL}</Text>
+          </PressLink>
           <View style={{ gap: 8, maxWidth: 380 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bültene abone ol", language)}</Text>
             {subscribed ? (

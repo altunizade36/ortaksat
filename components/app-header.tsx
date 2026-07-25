@@ -5,6 +5,7 @@ import { Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { colors } from "@/components/colors";
+import { PressLink } from "@/components/ui";
 import { GlobalSearchBar } from "@/components/global-search-bar";
 import { MobileNavMenu } from "@/components/mobile-nav-menu";
 import { HeaderActions } from "@/components/header-actions";
@@ -225,18 +226,14 @@ function DesktopActions() {
   if (!isAuthenticated) {
     return (
       <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-        <Link href="/auth" asChild>
-          <Pressable style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 8 })}>
-            <MaterialCommunityIcons name="login" size={17} color={colors.primaryDark} />
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Giriş yap", language)}</Text>
-          </Pressable>
-        </Link>
-        <Link href="/auth" asChild>
-          <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 9 })}>
-            <MaterialCommunityIcons name="account-plus-outline" size={17} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Kayıt ol", language)}</Text>
-          </Pressable>
-        </Link>
+        <PressLink href="/auth" accessibilityLabel={translateCopy("Giriş yap", language)} pressedOpacity={0.8} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
+          <MaterialCommunityIcons name="login" size={17} color={colors.primaryDark} />
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Giriş yap", language)}</Text>
+        </PressLink>
+        <PressLink href="/auth" accessibilityLabel={translateCopy("Kayıt ol", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
+          <MaterialCommunityIcons name="account-plus-outline" size={17} color="#FFFFFF" />
+          <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Kayıt ol", language)}</Text>
+        </PressLink>
       </View>
     );
   }
@@ -346,7 +343,7 @@ function AccountMenu() {
               <View key={gi} style={{ borderTopColor: colors.line, borderTopWidth: gi === 0 ? 0 : 1, paddingVertical: 5 }}>
                 {group.map((item) => (
                   <Link key={item.label} href={item.href} asChild>
-                    <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : "transparent", paddingHorizontal: 13, paddingVertical: 9 })}>
+                    <Pressable onPress={() => setOpen(false)} style={{ backgroundColor: "transparent", paddingHorizontal: 13, paddingVertical: 9 }}>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 11 }}>
                         <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 30, justifyContent: "center", width: 30 }}>
                           <MaterialCommunityIcons name={item.icon} size={16} color={colors.primaryDark} />
@@ -373,7 +370,7 @@ function AccountMenu() {
                 </Pressable>
               ) : (
                 <Link href="/auth" asChild>
-                  <Pressable onPress={() => setOpen(false)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primaryDark : colors.primary, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 })}>
+                  <Pressable onPress={() => setOpen(false)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 11 }}>
                     <MaterialCommunityIcons name="login" size={17} color="#FFFFFF" />
                     <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Giriş / Kayıt ol", language)}</Text>
                   </Pressable>

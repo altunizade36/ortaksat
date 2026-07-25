@@ -7,6 +7,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { BrandFilter } from "@/components/brand-filter";
 import { Mascot } from "@/components/brand/Mascot";
 import { colors, heroGradient, shadow } from "@/components/colors";
+import { PressLink } from "@/components/ui";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
@@ -543,12 +544,10 @@ export function HomeDesktop() {
             <MaterialCommunityIcons name="storefront-outline" size={34} color={colors.primary} />
             <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Henüz ilan yok", language)}</Text>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", textAlign: "center" }}>{translateCopy("İlk ilanı sen ver, ortaklarınla birlikte sat ve kazan.", language)}</Text>
-            <Link href="/create" asChild>
-              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("İlk ilanı ver", language)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 22, paddingVertical: 12 })}>
-                <MaterialCommunityIcons name="store-plus-outline" size={17} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("İlk İlanı Ver", language)}</Text>
-              </Pressable>
-            </Link>
+            <PressLink href="/create" accessibilityRole="button" accessibilityLabel={translateCopy("İlk ilanı ver", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, marginTop: 4, paddingHorizontal: 22, paddingVertical: 12 }}>
+              <MaterialCommunityIcons name="store-plus-outline" size={17} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("İlk İlanı Ver", language)}</Text>
+            </PressLink>
           </View>
         ) : grid.length === 0 ? (
           <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 40 }}>
