@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Link, router } from "expo-router";
+import { Link, router, type Href } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
@@ -90,6 +90,14 @@ function Inner() {
             {t("Ürününü hangi kategoride satacak deneyimli bir ortak mı arıyorsun? Uzmanlığına ve satış performansına göre ortak bul, favorine ekle.")}
           </Text>
         </View>
+
+        {/* Çapraz link: aradığını bulamazsan ilansız ortak talebi aç. */}
+        <Link href={"/ortak-araniyor" as Href} asChild>
+          <Pressable style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, flexDirection: "row", gap: 8, marginBottom: 12, padding: 11 }}>
+            <MaterialCommunityIcons name="bullhorn-variant" size={16} color={colors.primaryDark} />
+            <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{t("Aradığın ortağı bulamadın mı? İlansız \"Ortak Aranıyor\" talebi aç →")}</Text>
+          </Pressable>
+        </Link>
 
         {/* Mod + sıralama satırı */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>

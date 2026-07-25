@@ -742,8 +742,13 @@ function PartnerScreenInner() {
       <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
 
       {/* Liderlik yalnız top-N gösterir → aranabilir tam dizine köprü (kategori/performans filtresi). */}
-      <View style={{ marginTop: -4 }}>
-        <PrimaryButton href={"/ortaklar" as Href} tone="secondary" icon="account-star">{translateCopy("Tüm uzman ortakları gör", language)}</PrimaryButton>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: -4 }}>
+        <View style={{ flex: 1, minWidth: 200 }}>
+          <PrimaryButton href={"/ortaklar" as Href} tone="secondary" icon="account-star">{translateCopy("Tüm uzman ortakları gör", language)}</PrimaryButton>
+        </View>
+        <View style={{ flex: 1, minWidth: 200 }}>
+          <PrimaryButton href={"/ortak-araniyor" as Href} tone="secondary" icon="bullhorn-variant">{translateCopy("Ortak aranıyor ilanları", language)}</PrimaryButton>
+        </View>
       </View>
 
       {allOpportunities.length > 0 ? (

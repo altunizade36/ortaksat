@@ -861,3 +861,86 @@ export async function togglePartnerFavorite(partnerId: string, on: boolean): Pro
   return !error;
 }
 
+// ============================================================================
+// İLANSIZ "ORTAK ARANIYOR" TALEBİ — satıcı ilan olmadan ortak çağrısı açar
+// ============================================================================
+export type PartnerRequestFeedItem = { id: string; sellerId: string; sellerName: string; sellerAvatar?: string | null; sellerVerified: boolean; title: string; description?: string | null; category?: string | null; commissionHint?: string | null; location?: string | null; createdAt: string; applicationCount: number; mineApplied: boolean; isOwner: boolean };
+export type MyPartnerRequest = { id: string; title: string; description?: string | null; category?: string | null; commissionHint?: string | null; location?: string | null; status: string; createdAt: string; applicationCount: number; pendingCount: number };
+export type PartnerRequestApplicant = { applicationId: string; partnerId: string; partnerName: string; partnerAvatar?: string | null; partnerVerified: boolean; confirmedSales: number; expertiseCategories: string[]; message?: string | null; status: string; createdAt: string };
+
+export async function loadPartnerRequestFeed(opts?: { category?: string | null; limit?: number }): Promise<PartnerRequestFeedItem[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("partner_request_feed", { p_category: opts?.category ?? null, p_limit: opts?.limit ?? 60 });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Array<Record<string, unknown>>).map((r) => ({
+    id: String(r.id), sellerId: String(r.seller_id), sellerName: String(r.seller_name ?? ""), sellerAvatar: (r.seller_avatar as string) ?? null,
+    sellerVerified: Boolean(r.seller_verified), title: String(r.title ?? ""), description: (r.description as string) ?? null,
+    category: (r.category as string) ?? null, commissionHint: (r.commission_hint as string) ?? null, location: (r.location as string) ?? null,
+    createdAt: String(r.created_at ?? ""), applicationCount: Number(r.application_count ?? 0), mineApplied: Boolean(r.mine_applied), isOwner: Boolean(r.is_owner)
+  }));
+}
+
+export async function loadMyPartnerRequests(): Promise<MyPartnerRequest[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("my_partner_requests");
+  if (error || !Array.isArray(data)) return [];
+  return (data as Array<Record<string, unknown>>).map((r) => ({
+    id: String(r.id), title: String(r.title ?? ""), description: (r.description as string) ?? null, category: (r.category as string) ?? null,
+    commissionHint: (r.commission_hint as string) ?? null, location: (r.location as string) ?? null, status: String(r.status ?? "open"),
+    createdAt: String(r.created_at ?? ""), applicationCount: Number(r.application_count ?? 0), pendingCount: Number(r.pending_count ?? 0)
+  }));
+}
+
+export async function loadPartnerRequestApplicants(requestId: string): Promise<PartnerRequestApplicant[]> {
+  if (!supabase || !requestId) return [];
+  const { data, error } = await supabase.rpc("partner_request_applicants", { p_request_id: requestId });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Array<Record<string, unknown>>).map((r) => ({
+    applicationId: String(r.application_id), partnerId: String(r.partner_id), partnerName: String(r.partner_name ?? ""), partnerAvatar: (r.partner_avatar as string) ?? null,
+    partnerVerified: Boolean(r.partner_verified), confirmedSales: Number(r.confirmed_sales ?? 0),
+    expertiseCategories: Array.isArray(r.expertise_categories) ? (r.expertise_categories as string[]) : [], message: (r.message as string) ?? null,
+    status: String(r.status ?? "pending"), createdAt: String(r.created_at ?? "")
+  }));
+}
+
+/** Yeni ortak talebi oluştur. Başarılıysa yeni talebin id'sini döner. */
+export async function createPartnerRequest(input: { title: string; description?: string; category?: string | null; commissionHint?: string; location?: string }): Promise<string | null> {
+  if (!supabase) return null;
+  const { data: auth } = await supabase.auth.getUser();
+  const uid = auth?.user?.id;
+  if (!uid) return null;
+  const { data, error } = await supabase.from("partner_requests").insert({
+    seller_id: uid,
+    title: input.title.trim(),
+    description: input.description?.trim() || null,
+    category: input.category || null,
+    commission_hint: input.commissionHint?.trim() || null,
+    location: input.location?.trim() || null
+  }).select("id").single();
+  if (error || !data) return null;
+  return String((data as { id: string }).id);
+}
+
+/** Talebi kapat/tamamlandı işaretle (yalnız sahibi). */
+export async function updatePartnerRequestStatus(id: string, status: "open" | "closed" | "fulfilled"): Promise<boolean> {
+  if (!supabase || !id) return false;
+  const { error } = await supabase.from("partner_requests").update({ status, updated_at: new Date().toISOString() }).eq("id", id);
+  return !error;
+}
+
+/** Talebe başvur. Dönüş: applied | already | closed | own_request | not_found | auth_required. */
+export async function applyToPartnerRequest(requestId: string, message?: string): Promise<string> {
+  if (!supabase || !requestId) return "error";
+  const { data, error } = await supabase.rpc("apply_to_partner_request", { p_request_id: requestId, p_message: message ?? null });
+  if (error) return "error";
+  return String(data ?? "error");
+}
+
+/** Başvuruyu yanıtla (yalnız talep sahibi). action: accept | decline. */
+export async function respondToPartnerApplication(applicationId: string, action: "accept" | "decline"): Promise<string> {
+  if (!supabase || !applicationId) return "error";
+  const { data, error } = await supabase.rpc("respond_to_partner_application", { p_application_id: applicationId, p_action: action });
+  if (error) return "error";
+  return String(data ?? "error");
+}
+
