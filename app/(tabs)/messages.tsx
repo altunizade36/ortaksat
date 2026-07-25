@@ -342,7 +342,7 @@ function MessagesScreenInner() {
                 return (
                   <Pressable key={conversation.id} dataSet={{ vrow: "1" }} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 12 })}>
                     {listing ? (
-                      <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 48, width: 48 }} />
+                      <SafeRemoteImage uri={listing.image} accessibilityLabel={displayText(listing.title)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 48, width: 48 }} />
                     ) : (
                       <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 48, justifyContent: "center", width: 48 }}><MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} /></View>
                     )}
@@ -379,7 +379,7 @@ function MessagesScreenInner() {
             {activeConversation && activeContext ? (
               <>
                 <View style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 18, paddingVertical: 11 }}>
-                  {activeListing ? <SafeRemoteImage uri={activeListing.image} contentFit="cover" style={{ borderRadius: 10, height: 44, width: 44 }} /> : null}
+                  {activeListing ? <SafeRemoteImage uri={activeListing.image} accessibilityLabel={displayText(activeListing.title)} contentFit="cover" style={{ borderRadius: 10, height: 44, width: 44 }} /> : null}
                   <View style={{ flex: 1, minWidth: 0 }}>
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{activeListing ? displayText(activeListing.title) : t("listingConversation")}</Text>
                     {otherTyping ? (
@@ -490,7 +490,7 @@ function MessagesScreenInner() {
               {activeListing ? (
                 <>
                   <View style={{ borderRadius: 12, overflow: "hidden" }}>
-                    <SafeRemoteImage uri={activeListing.image} contentFit="cover" style={{ backgroundColor: colors.line, height: 150, width: "100%" }} />
+                    <SafeRemoteImage uri={activeListing.image} accessibilityLabel={displayText(activeListing.title)} contentFit="cover" style={{ backgroundColor: colors.line, height: 150, width: "100%" }} />
                     {activePhotoCount > 1 ? <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, bottom: 8, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", right: 8 }}><MaterialCommunityIcons name="camera" size={12} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "800" }}>{activePhotoCount}</Text></View> : null}
                   </View>
                   <View style={{ gap: 5 }}>
@@ -513,7 +513,7 @@ function MessagesScreenInner() {
                   <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
                       {activeOther?.avatar && isImageAvatar(activeOther.avatar) ? (
-                        <Image source={{ uri: activeOther.avatar }} contentFit="cover" style={{ borderRadius: 999, height: 40, width: 40 }} />
+                        <Image source={{ uri: activeOther.avatar }} accessibilityLabel={activeOther.name} contentFit="cover" style={{ borderRadius: 999, height: 40, width: 40 }} />
                       ) : (
                         <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}><MaterialCommunityIcons name="account" size={22} color={colors.primaryDark} /></View>
                       )}
@@ -615,7 +615,7 @@ function MessagesScreenInner() {
             <Pressable dataSet={{ vrow: "1" }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 12 })}>
               <View>
                 {listing ? (
-                  <SafeRemoteImage uri={listing.image} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 12, height: 56, width: 56 }} />
+                  <SafeRemoteImage uri={listing.image} accessibilityLabel={displayText(listing.title)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 12, height: 56, width: 56 }} />
                 ) : (
                   <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 56, justifyContent: "center", width: 56 }}>
                     <MaterialCommunityIcons name="account" size={26} color={colors.primaryDark} />
