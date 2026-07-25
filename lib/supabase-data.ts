@@ -117,7 +117,7 @@ function initials(name: string) {
 }
 
 function mapProfile(row: ProfileRow): User {
-  const name = displayText(row.full_name, "Ortaksat kullanıcısı");
+  const name = displayText(row.full_name, "OrtakSat kullanıcısı");
 
   return {
     id: row.id,

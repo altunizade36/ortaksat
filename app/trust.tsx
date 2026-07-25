@@ -77,7 +77,7 @@ export default function TrustScreen() {
       translateCopy("Hesabın yaşı ve aktiflik süresi", language)
     ];
     const safetyTips = [
-      translateCopy("Ortaksat dışına iletişim kurun.", language),
+      translateCopy("OrtakSat dışına iletişim kurun.", language),
       translateCopy("Şüpheli teklifleri ve kullanıcıları bildirin.", language),
       translateCopy("Kişisel bilgilerinizi paylaşmayın.", language)
     ];
@@ -98,7 +98,7 @@ export default function TrustScreen() {
           </View>
           <View style={{ flex: 1, gap: 3 }}>
             <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Güven Merkezi", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Ortaksat'ta güveni şeffaf verilerle yönetiyoruz. Doğrulama, şikayet yönetimi ve itibar takibi ile güvenli bir ortam sunuyoruz.", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("OrtakSat'ta güveni şeffaf verilerle yönetiyoruz. Doğrulama, şikayet yönetimi ve itibar takibi ile güvenli bir ortam sunuyoruz.", language)}</Text>
           </View>
         </View>
 
@@ -159,7 +159,7 @@ export default function TrustScreen() {
                   </View>
                 </View>
               ))}
-              <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("Skorlar 0-100 arasıdır. Ağırlıklandırma politikası Ortaksat tarafından belirlenir.", language)}</Text>
+              <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("Skorlar 0-100 arasıdır. Ağırlıklandırma politikası OrtakSat tarafından belirlenir.", language)}</Text>
             </View>
 
             {/* Complaints table */}

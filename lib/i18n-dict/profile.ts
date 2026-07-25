@@ -258,7 +258,7 @@ export const profileDict: Record<string, string> = {
   "Komisyon tamamlandı": "Commission completed",
   "“Köşe koltuk” satışının ₺945 komisyonunu satıcıdan aldığını onayladın. Kayıt kapatıldı.": "You confirmed receiving the ₺945 commission for the “Corner sofa” sale from the seller. The record has been closed.",
   "Hoş geldin 👋": "Welcome 👋",
-  "Ortaksat'a hoş geldin! İlk ilanını oluştur ya da ortak satıcı olarak kazanmaya başla.": "Welcome to Ortaksat! Create your first listing or start earning as a partner seller.",
+  "OrtakSat'a hoş geldin! İlk ilanını oluştur ya da ortak satıcı olarak kazanmaya başla.": "Welcome to OrtakSat! Create your first listing or start earning as a partner seller.",
 
   // app/favorites.tsx
   "Ortak satışa açık": "Open to partner sales",
@@ -309,7 +309,7 @@ export const profileDict: Record<string, string> = {
   "Tahsil edilecek": "To be collected",
   "Onaylı, henüz alınmadı": "Approved, not yet received",
   "Kazançlarım": "My earnings",
-  "Ortak satışlarından kazandığın komisyonları takip et. Ödemeler satıcılarla aranızda yapılır; Ortaksat para tutmaz.": "Track the commissions you earn from partner sales. Payments are made between you and the sellers; Ortaksat doesn't hold money.",
+  "Ortak satışlarından kazandığın komisyonları takip et. Ödemeler satıcılarla aranızda yapılır; OrtakSat para tutmaz.": "Track the commissions you earn from partner sales. Payments are made between you and the sellers; OrtakSat doesn't hold money.",
   "Kazanç grafiği": "Earnings chart",
   "Son 6 ay komisyon kazancın": "Your commission earnings over the last 6 months",
   "geçen aya göre": "vs. last month",
@@ -327,7 +327,7 @@ export const profileDict: Record<string, string> = {
   "Onaylanan satışların komisyonu. Tutarı satıcıdan doğrudan tahsil edersin.": "Commission from approved sales. You collect the amount directly from the seller.",
   "Satıcıya mesaj at": "Message the seller",
   "Komisyon nasıl alınır?": "How is commission collected?",
-  "Ortaksat para tutmaz veya transfer etmez. Komisyonunu satıcı, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sana öder. Ödemeyi aldığında satışı “Ödendi” olarak işaretle.": "Ortaksat doesn't hold or transfer money. The seller pays your commission directly through the channel you agreed on (bank transfer/EFT, cash, etc.). When you receive the payment, mark the sale as “Paid”.",
+  "OrtakSat para tutmaz veya transfer etmez. Komisyonunu satıcı, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sana öder. Ödemeyi aldığında satışı “Ödendi” olarak işaretle.": "OrtakSat doesn't hold or transfer money. The seller pays your commission directly through the channel you agreed on (bank transfer/EFT, cash, etc.). When you receive the payment, mark the sale as “Paid”.",
   "En çok kazandıran": "Top earners",
   "Ortak satış yaptıkça en çok kazandıran ilanların burada sıralanır.": "Your top-earning listings will be ranked here as you make partner sales.",
   "Henüz kazanç yok": "No earnings yet",

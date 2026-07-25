@@ -62,7 +62,7 @@ export const exploreDict: Record<string, string> = {
   "Tüm ilanları gör": "See all listings",
   "Yüksek komisyonlu ilanlar": "High-commission listings",
   "Tümünü gör": "See all",
-  "Neden Ortaksat?": "Why OrtakSat?",
+  "Neden OrtakSat?": "Why OrtakSat?",
   "Komisyonla": "On commission",
   "Sermayesiz": "No capital",
   "Güvenli": "Secure",

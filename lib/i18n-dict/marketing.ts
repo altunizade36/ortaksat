@@ -55,7 +55,7 @@ export const marketingDict: Record<string, string> = {
   "Deneyiminizi puanlayarak topluluğa katkı sağlayın.": "Contribute to the community by rating your experience.",
   "Doğrulanmış satıcılarla güvenli iletişim.": "Safe communication with verified sellers.",
   "Komisyon ne zaman ve nasıl ödenir?": "When and how is the commission paid?",
-  "Komisyon, satışı satıcı onayladığında ortak panelinde “onaylandı” olarak görünür. Ödemeyi satıcı, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sana yapar. Ortaksat para almaz veya tutmaz; yalnızca kaydı tutar.": "Once the seller approves the sale, the commission shows as “approved” in the partner panel. The seller pays you directly through the channel you agreed on (bank transfer, cash, etc.). Ortaksat does not collect or hold money; it only keeps the record.",
+  "Komisyon, satışı satıcı onayladığında ortak panelinde “onaylandı” olarak görünür. Ödemeyi satıcı, anlaştığınız kanaldan (havale/EFT, elden vb.) doğrudan sana yapar. OrtakSat para almaz veya tutmaz; yalnızca kaydı tutar.": "Once the seller approves the sale, the commission shows as “approved” in the partner panel. The seller pays you directly through the channel you agreed on (bank transfer, cash, etc.). OrtakSat does not collect or hold money; it only keeps the record.",
   "Komisyon oranı nasıl belirlenir?": "How is the commission rate set?",
   "İlanı açan satıcı, ürün başına yüzde (%) veya sabit (₺) komisyonu kendisi belirler. Ortak, paylaşmadan önce kazancını ilanda görür.": "The seller who creates the listing sets the commission per product as a percentage (%) or a fixed amount (₺). The partner sees their earnings on the listing before sharing.",
   "Ortak satıcı taleplerini nasıl yönetirim?": "How do I manage partner seller requests?",
@@ -298,7 +298,7 @@ export const marketingDict: Record<string, string> = {
 
   // --- iletisim.tsx ---
   "İletişim — OrtakSat destek, şikayet ve başvuru": "Contact — OrtakSat support, complaints, and applications",
-  "OrtakSat ile iletişim: şikayet, dolandırıcılık bildirimi, KVKK/yasal başvuru ve genel destek için destek@ortaksat.com. Ortaksat aracı platformdur; iletişim e-posta üzerinden yürür.": "Contact OrtakSat: for complaints, fraud reports, KVKK/legal applications, and general support, destek@ortaksat.com. Ortaksat is an intermediary platform; contact runs over email.",
+  "OrtakSat ile iletişim: şikayet, dolandırıcılık bildirimi, KVKK/yasal başvuru ve genel destek için destek@ortaksat.com. OrtakSat aracı platformdur; iletişim e-posta üzerinden yürür.": "Contact OrtakSat: for complaints, fraud reports, KVKK/legal applications, and general support, destek@ortaksat.com. OrtakSat is an intermediary platform; contact runs over email.",
   "İletişim — OrtakSat": "Contact — OrtakSat",
   "Şikayet, bilgi, yasal başvuru ve destek: destek@ortaksat.com": "Complaints, information, legal applications, and support: destek@ortaksat.com",
   "Ana sayfa": "Home",

@@ -718,7 +718,7 @@ export function DesktopCreateFlow() {
         returnWindowDays: 7,
         attributionWindowDays: Number(attributionWindow) || 30,
         partnerRules: [...boolLines, partnerNote.trim()].filter(Boolean).length ? [...boolLines, partnerNote.trim()].filter(Boolean) : ["Komisyon sadece onaylı satış kaydında oluşur."],
-        deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; Ortaksat para tutmaz.",
+        deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; OrtakSat para tutmaz.",
         contactMethod
       }, statusOverride);
 
@@ -1319,7 +1319,7 @@ export function DesktopCreateFlow() {
                   {translateCopy("Bonus dahil ilk", language)} {Number(bonusQuota)} {translateCopy("satışta HER ORTAK toplam", language)}: {moneyIn((perSaleCommission + bonusNum) * Number(bonusQuota), currency)}
                 </Text>
               ) : null}
-              <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("Ortaksat para tutmaz; ödeme satıcı ile ortak arasında yapılır. Rakamlar bilgilendirme amaçlıdır.", language)}</Text>
+              <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("OrtakSat para tutmaz; ödeme satıcı ile ortak arasında yapılır. Rakamlar bilgilendirme amaçlıdır.", language)}</Text>
             </View>
 
             {/* ÖNEMLİ kararlar önce: ortaklık kabul şekli + iletişim (opsiyonel bonus/kademe SONRA). */}
@@ -1404,7 +1404,7 @@ export function DesktopCreateFlow() {
 
             <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 11 }}>
               <MaterialCommunityIcons name="information-outline" size={16} color={colors.info} style={{ marginTop: 1 }} />
-              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Ortaksat para tutmaz; komisyon, satış sonrası satıcı ile ortak arasında doğrudan ödenir. Uygulama yalnızca kaydı tutar.", language)}</Text>
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("OrtakSat para tutmaz; komisyon, satış sonrası satıcı ile ortak arasında doğrudan ödenir. Uygulama yalnızca kaydı tutar.", language)}</Text>
             </View>
             </>) : (
               <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 11, flexDirection: "row", gap: 9, padding: 12 }}>

@@ -12,7 +12,7 @@ const SELLER: { steps: Step[]; ctaLabel: string; ctaHref: Href; ctaIcon: IconNam
   steps: [
     { icon: "store-plus-outline", title: "İlanını aç", body: "Ürününü ekle, ortağa vereceğin komisyonu (ve istersen başlangıç bonusunu) belirle." },
     { icon: "account-group-outline", title: "Ortaklar paylaşsın", body: "Ortaklar senin ürününü kendi kitlesine tanıtır, alıcı getirir. Sen sadece onaylarsın." },
-    { icon: "cash-multiple", title: "Sat, komisyonu öde", body: "Satış olunca komisyonu doğrudan ortağa ödersin. Ortaksat para tutmaz, yalnızca kaydı tutar." }
+    { icon: "cash-multiple", title: "Sat, komisyonu öde", body: "Satış olunca komisyonu doğrudan ortağa ödersin. OrtakSat para tutmaz, yalnızca kaydı tutar." }
   ],
   ctaLabel: "İlk ilanını aç",
   ctaHref: "/create",
@@ -73,7 +73,7 @@ export function QuickStart({ role }: { role: "seller" | "partner" }) {
 
       <View style={{ alignItems: "center", flexDirection: "row", gap: 6, justifyContent: "center" }}>
         <MaterialCommunityIcons name="shield-check-outline" size={14} color={colors.muted} />
-        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Ortaksat aracıdır; ödeme ve teslimat taraflar arasındadır.", language)}</Text>
+        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.", language)}</Text>
       </View>
     </View>
   );

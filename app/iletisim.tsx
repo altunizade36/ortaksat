@@ -27,7 +27,7 @@ export default function ContactScreen() {
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 0, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
       <Head>
         <title>{translateCopy("İletişim — OrtakSat destek, şikayet ve başvuru", language)}</title>
-        <meta name="description" content={translateCopy("OrtakSat ile iletişim: şikayet, dolandırıcılık bildirimi, KVKK/yasal başvuru ve genel destek için destek@ortaksat.com. Ortaksat aracı platformdur; iletişim e-posta üzerinden yürür.", language)} />
+        <meta name="description" content={translateCopy("OrtakSat ile iletişim: şikayet, dolandırıcılık bildirimi, KVKK/yasal başvuru ve genel destek için destek@ortaksat.com. OrtakSat aracı platformdur; iletişim e-posta üzerinden yürür.", language)} />
         <meta property="og:title" content={translateCopy("İletişim — OrtakSat", language)} />
         <meta property="og:description" content={translateCopy("Şikayet, bilgi, yasal başvuru ve destek: destek@ortaksat.com", language)} />
       </Head>

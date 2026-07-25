@@ -33,7 +33,7 @@ export default function LegalScreen() {
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const isWideWeb = useIsWideWeb();
   const [subject, setSubject] = useState("Destek talebi");
-  const [message, setMessage] = useState("Merhaba, Ortaksat hesabım veya ilan sürecim hakkında destek istiyorum.");
+  const [message, setMessage] = useState("Merhaba, OrtakSat hesabım veya ilan sürecim hakkında destek istiyorum.");
   const [deleteReason, setDeleteReason] = useState("Hesabımı ve kişisel verilerimi silmek istiyorum.");
   const [category, setCategory] = useState("Genel");
   const [priority, setPriority] = useState("Normal");
@@ -97,7 +97,7 @@ export default function LegalScreen() {
             </View>
           </View>
 
-          <LegalDisclaimer title="Ortaksat aracı bir platformdur — ödeme/komisyon/kargo işlemez" />
+          <LegalDisclaimer title="OrtakSat aracı bir platformdur — ödeme/komisyon/kargo işlemez" />
 
           {/* Gruplu hukuki belge kütüphanesi (tek kaynak: legal-content) */}
           <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>Sözleşmeler ve Politikalar</Text>
@@ -221,7 +221,7 @@ export default function LegalScreen() {
             {translateCopy("Yasal ve destek merkezi", language)}
           </Text>
           <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
-            {language === "en" ? "Ortaksat does not take payments and is not the seller of products. The app provides intermediary technology infrastructure for listings, partnership applications, messages, leads, and commission records. There is no mandatory referral link, referral code, or tracking system; commission is optional and rests on the mutual agreement between the seller and the partner." : "Ortaksat ödeme almaz ve ürünlerin satıcısı değildir. Uygulama; ilan, ortaklık başvurusu, mesaj, talep ve komisyon kayıtları için aracı teknoloji altyapısı sağlar. Zorunlu bir referans bağlantısı, referans kodu veya takip sistemi yoktur; komisyon isteğe bağlıdır ve satıcı ile ortak arasındaki karşılıklı anlaşmaya dayanır."}
+            {language === "en" ? "OrtakSat does not take payments and is not the seller of products. The app provides intermediary technology infrastructure for listings, partnership applications, messages, leads, and commission records. There is no mandatory referral link, referral code, or tracking system; commission is optional and rests on the mutual agreement between the seller and the partner." : "OrtakSat ödeme almaz ve ürünlerin satıcısı değildir. Uygulama; ilan, ortaklık başvurusu, mesaj, talep ve komisyon kayıtları için aracı teknoloji altyapısı sağlar. Zorunlu bir referans bağlantısı, referans kodu veya takip sistemi yoktur; komisyon isteğe bağlıdır ve satıcı ile ortak arasındaki karşılıklı anlaşmaya dayanır."}
           </Text>
           {authError ? (
             <Text selectable style={{ color: colors.accent, fontSize: 13, lineHeight: 19 }}>
@@ -233,7 +233,7 @@ export default function LegalScreen() {
         <Card>
           <SectionTitle title="Yasal metin özeti" />
           <LegalRow icon="shield-account" title="KVKK aydınlatma" body="E-posta, profil, ilan, ortaklık, talep, mesaj, bildirim, yorum ve komisyon kayıtları hizmeti çalıştırmak, güvenliği sağlamak ve destek vermek için işlenir." />
-          <LegalRow icon="file-document-check" title="Aracı platform şartı" body="Ortaksat aracı bir ilan/iletişim platformudur; ürün sahibi, satıcısı, ödeme kuruluşu veya teslimat tarafı değildir. Ödeme almaz, para tutmaz, komisyon kesmez, kargo/teslimat yapmaz; cüzdan, bakiye veya emanet (güvenli ödeme) sistemi yoktur. Ürün doğruluğu, fiyat, stok, teslimat, iade ve komisyon ödemesi tamamen ilgili kullanıcıların sorumluluğundadır." />
+          <LegalRow icon="file-document-check" title="Aracı platform şartı" body="OrtakSat aracı bir ilan/iletişim platformudur; ürün sahibi, satıcısı, ödeme kuruluşu veya teslimat tarafı değildir. Ödeme almaz, para tutmaz, komisyon kesmez, kargo/teslimat yapmaz; cüzdan, bakiye veya emanet (güvenli ödeme) sistemi yoktur. Ürün doğruluğu, fiyat, stok, teslimat, iade ve komisyon ödemesi tamamen ilgili kullanıcıların sorumluluğundadır." />
           <LegalRow icon="account-cash" title="Komisyon anlaşma modeli" body="Uygulama para tutmaz ve dağıtmaz; satıştan kesinti yapmaz. Komisyon isteğe bağlıdır; satıcı komisyonsuz normal ilan da verebilir. Platformda zorunlu referans bağlantısı/kodu veya takip sistemi yoktur; komisyon satıcı ile ortak arasındaki karşılıklı anlaşmaya dayanır. Ödeme satıcı ile ortak arasında, uygulama dışında yapılır; uygulama yalnızca tarafların oluşturduğu kaydı tutar." />
           <LegalRow icon="lock-check" title="Gizlilik ve güvenlik" body="Gizli sunucu anahtarları mobil uygulamada tutulmaz. Kullanıcı verileri oturum, yetki ve dosya erişim kurallarıyla korunur." />
           <LegalRow icon="store-check" title="İlan ve paylaşım kuralları" body="Yanıltıcı fiyat, sahte stok, sahte ürün, spam paylaşım, marka ihlali, yasaklı ürün ve dolandırıcılık şüphesi moderasyona taşınır; hesap ve ilan kısıtlanabilir." />

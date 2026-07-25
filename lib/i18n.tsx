@@ -977,7 +977,7 @@ const baseTrToEn: Record<string, string> = {
   "KVKK aydınlatma": "KVKK notice",
   "Metinleri Okudum ve Kabul Ediyorum": "I have read and accept the texts",
   "Moderasyon kuyruğu": "Moderation queue",
-  "Ortaksat ürün sahibi, satıcı, ödeme kuruluşu veya teslimat tarafı değildir. Ürün doğruluğu, fiyat, stok, teslimat, iade ve komisyon ödemesi ilgili kullanıcıların sorumluluğundadır.": "Ortaksat is not the product owner, seller, payment institution, or delivery party. Product accuracy, price, stock, delivery, returns, and commission payment are the responsibility of the relevant users.",
+  "OrtakSat ürün sahibi, satıcı, ödeme kuruluşu veya teslimat tarafı değildir. Ürün doğruluğu, fiyat, stok, teslimat, iade ve komisyon ödemesi ilgili kullanıcıların sorumluluğundadır.": "OrtakSat is not the product owner, seller, payment institution, or delivery party. Product accuracy, price, stock, delivery, returns, and commission payment are the responsibility of the relevant users.",
   "Puan mantığı": "Score logic",
   "Rıza kaydedildi": "Consent saved",
   "Rıza kaydı için e-posta ile giriş yapmalısın.": "You need to sign in with email to record consent.",

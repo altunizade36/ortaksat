@@ -202,7 +202,7 @@ function BulkUploadInner() {
           returnWindowDays: 7,
           attributionWindowDays: 30,
           partnerRules: ["Komisyon sadece onaylı satış kaydında oluşur."],
-          deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; Ortaksat para tutmaz.",
+          deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; OrtakSat para tutmaz.",
           contactMethod: "message",
           partnershipMode: "approval",
           attributes: { _root: rootLabel, _leaf: leaf.label, _formKey: formKey }

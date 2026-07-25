@@ -834,8 +834,9 @@ function SellerScreenInner() {
               </View>
             </View>
 
-            {/* Talep & ödeme yönetimi: katlanır (varsayılan kapalı) */}
-            {listingLeads.length > 0 || listingSales.length > 0 || activePartners > 0 ? (
+            {/* Talep & ödeme yönetimi: katlanır (varsayılan kapalı). pendingPartners de dahil —
+                aksi halde yalnız bekleyen başvurusu olan ilan oto-açılıp KAPATILAMIYORDU. */}
+            {listingLeads.length > 0 || listingSales.length > 0 || activePartners > 0 || pendingPartners > 0 ? (
               <Pressable
                 accessibilityRole="button"
                 onPress={() => {

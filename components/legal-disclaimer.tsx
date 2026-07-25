@@ -6,14 +6,14 @@ import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 
 /**
- * Tek merkezden yönetilen yasal koruma uyarısı. Ortaksat'ın aracı bir ilan/iletişim
+ * Tek merkezden yönetilen yasal koruma uyarısı. OrtakSat'ın aracı bir ilan/iletişim
  * platformu olduğunu; ödeme almadığını/tutmadığını, kargo/komisyon/emanet işlemediğini
  * ve tarafların kendi sorumluluğunu net biçimde belirtir. Para/işlem imalı her ekrana
  * konur ki uygulama e-ticaret/ödeme kuruluşu sorumluluğuna kaymasın.
  */
 
 export const DISCLAIMER_SHORT =
-  "Ortaksat aracı bir ilan ve iletişim platformudur; ödeme almaz, para tutmaz, komisyon kesmez, kargo yapmaz. Fiyat, ücret ve komisyon yalnızca taraflar arasında belirlenir; tüm alışveriş, ödeme ve teslimat uygulama dışında, kullanıcıların kendi sorumluluğunda yapılır.";
+  "OrtakSat aracı bir ilan ve iletişim platformudur; ödeme almaz, para tutmaz, komisyon kesmez, kargo yapmaz. Fiyat, ücret ve komisyon yalnızca taraflar arasında belirlenir; tüm alışveriş, ödeme ve teslimat uygulama dışında, kullanıcıların kendi sorumluluğunda yapılır.";
 
 const POINTS = [
   "Ödeme almaz, para tutmaz, transfer etmez.",
@@ -21,7 +21,7 @@ const POINTS = [
   "Kargo, teslimat veya iade süreçlerini yürütmez.",
   "Gösterilen fiyat, ücret ve komisyon yalnızca tarafların kendi belirlediği bilgilerdir.",
   "Alışveriş, ödeme, komisyon tahsilatı ve teslimat; alıcı, satıcı ve ortak arasında uygulama dışında yapılır.",
-  "Ortaksat bu işlemlerin tarafı değildir; ürün, ödeme, teslimat ve anlaşmazlıklardan sorumlu değildir."
+  "OrtakSat bu işlemlerin tarafı değildir; ürün, ödeme, teslimat ve anlaşmazlıklardan sorumlu değildir."
 ];
 
 /** Kompakt tek-satır uyarı (form altları, kartlar). */
@@ -46,7 +46,7 @@ export function LegalDisclaimerCollapsible() {
       <Pressable accessibilityRole="button" onPress={() => setOpen((v) => !v)} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <MaterialCommunityIcons name="shield-check-outline" size={17} color={colors.info} />
         <Text numberOfLines={open ? undefined : 1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "800" }}>
-          {translateCopy("Ortaksat aracı platformdur: ödeme almaz, para tutmaz, komisyon kesmez, kargo yapmaz.", language)}
+          {translateCopy("OrtakSat aracı platformdur: ödeme almaz, para tutmaz, komisyon kesmez, kargo yapmaz.", language)}
         </Text>
         <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} />
       </Pressable>
@@ -65,7 +65,7 @@ export function LegalDisclaimerCollapsible() {
 }
 
 /** Açık, maddeli koruma kutusu (ilan ver önizleme, ilan detay, yasal sayfa). */
-export function LegalDisclaimer({ title = "Önemli: Ortaksat ödeme/komisyon işlemez" }: { title?: string }) {
+export function LegalDisclaimer({ title = "Önemli: OrtakSat ödeme/komisyon işlemez" }: { title?: string }) {
   const { language } = useLanguage();
   return (
     <View style={{ backgroundColor: colors.infoSoft, borderColor: colors.info, borderRadius: 14, borderWidth: 1, gap: 8, padding: 16 }}>

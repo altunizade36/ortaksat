@@ -58,7 +58,7 @@ export function DisputeModal({
           </View>
 
           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>
-            {translateCopy("Ortaksat para tutmaz; anlaşmazlık kaydı taraflar arasındaki durumu belgeler ve karşı tarafa bildirilir. Nedeni seç:", language)}
+            {translateCopy("OrtakSat para tutmaz; anlaşmazlık kaydı taraflar arasındaki durumu belgeler ve karşı tarafa bildirilir. Nedeni seç:", language)}
           </Text>
 
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>

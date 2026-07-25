@@ -144,6 +144,18 @@ export default function ListingDetailScreen() {
   const joinAnchorRef = useRef<View>(null);
   const router = useRouter();
 
+  // KRİTİK GİZLİLİK: web'de aynı /listing/[id] bileşeni ilanlar arası YENİDEN KULLANILIR
+  // (benzer/son-gezilen/diğer-ilan tıklamasıyla, aynı instance). İlana-özel durumlar id
+  // değişince SIFIRLANMAZSA önceki ilanın AÇILAN TELEFON NUMARASI sonraki ilanda görünür
+  // (yanlış satıcı/gizlilik) + atıf-lead bir daha üretilmez. Her id değişiminde temizle.
+  useEffect(() => {
+    setRevealedPhone(null);
+    setRevealingPhone(false);
+    setActiveImage(0);
+    setMessage("");
+    contactLeadDone.current = false;
+  }, [id]);
+
   // apply=1 ile gelindiyse ortaklık aksiyonunu göze getir (web'de yumuşak kaydır) — "ortak ol'a
   // bastım ama tuş yok" karışıklığını giderir. NOT: hook, erken-return'lerden ÖNCE olmalı (kural).
   useEffect(() => {
@@ -693,7 +705,7 @@ export default function ListingDetailScreen() {
                 <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Doğrulanmış", language)}</Text>
               </View>
             ) : null}
-            <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{owner?.successfulSales ? ` · ${owner.successfulSales} ${translateCopy("satış", language)}` : ""} · {currentListing.location}</Text>
+            <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{owner?.successfulSales ? `${owner.successfulSales} ${translateCopy("satış", language)} · ` : ""}{currentListing.location}</Text>
           </View>
 
           {/* İlan tarihi + no (Sahibinden tarzı referans/tazelik bilgisi) */}
@@ -1133,7 +1145,7 @@ export default function ListingDetailScreen() {
           </Accordion>
           <Accordion title={translateCopy("Teslimat ve iade", language)} icon="truck-outline">
             <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>
-              {translateCopy("Teslimat ve ödeme, satıcı ile alıcı arasında", language)} {translateCopy(contactLabel(currentListing.contactMethod), language).toLocaleLowerCase("en-US")}{translateCopy(" üzerinden kararlaştırılır. İade ve değişim koşullarını satışı kapatmadan önce satıcıyla netleştir.", language)}
+              {translateCopy("Teslimat ve ödeme, satıcı ile alıcı arasında", language)} {translateCopy(contactLabel(currentListing.contactMethod), language)}{translateCopy(" üzerinden kararlaştırılır. İade ve değişim koşullarını satışı kapatmadan önce satıcıyla netleştir.", language)}
             </Text>
             <LegalNote style={{ marginTop: 8 }} />
           </Accordion>
@@ -1426,7 +1438,7 @@ function RelatedListingsSection({
 function IconButton({ active, icon, label, onPress }: { active?: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void }) {
   const { language } = useLanguage();
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderRadius: 8, flex: 1, flexDirection: "row", gap: 6, justifyContent: "center", minHeight: 42, opacity: pressed ? 0.72 : 1 })}>
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} accessibilityLabel={translateCopy(label, language)} onPress={onPress} style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderRadius: 8, flex: 1, flexDirection: "row", gap: 6, justifyContent: "center", minHeight: 42, opacity: pressed ? 0.72 : 1 })}>
       <MaterialCommunityIcons name={icon} size={18} color={active ? colors.primaryDark : colors.ink} />
       <Text ellipsizeMode="tail" numberOfLines={1} selectable style={{ color: active ? colors.primaryDark : colors.ink, flexShrink: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy(label, language)}</Text>
     </Pressable>

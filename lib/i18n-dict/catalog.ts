@@ -149,7 +149,7 @@ export const catalogDict: Record<string, string> = {
   "Telefon": "Phone",
   "Ortak satıcıya özel açıklama (opsiyonel)": "Note for partners (optional)",
   "Ortakların dikkat etmesi gerekenler…": "What partners should pay attention to…",
-  "Ortaksat para tutmaz; komisyon, satış sonrası satıcı ile ortak arasında doğrudan ödenir. Uygulama yalnızca kaydı tutar.": "Ortaksat does not hold money; commission is paid directly between the seller and partner after the sale. The app only keeps the record.",
+  "OrtakSat para tutmaz; komisyon, satış sonrası satıcı ile ortak arasında doğrudan ödenir. Uygulama yalnızca kaydı tutar.": "OrtakSat does not hold money; commission is paid directly between the seller and partner after the sale. The app only keeps the record.",
   "Ortak kazancı": "Partner earning",
   "Konum belirtilmedi": "No location specified",
   "Görsel": "Image",

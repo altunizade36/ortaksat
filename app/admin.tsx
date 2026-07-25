@@ -791,7 +791,7 @@ function AdminScreenInner() {
           const shownSales = commFilter === "all" ? sales : sales.filter((s) => s.status === commFilter);
           const totalShown = shownSales.reduce((a, s) => a + s.commissionAmount, 0);
           return (
-          <Panel title="Komisyon Kayıtları" sub={`${shownSales.length} kayıt · toplam ${money(totalShown)} — Ortaksat para tutmaz; bu kayıtlar taraflar arası komisyon takibidir.`}>
+          <Panel title="Komisyon Kayıtları" sub={`${shownSales.length} kayıt · toplam ${money(totalShown)} — OrtakSat para tutmaz; bu kayıtlar taraflar arası komisyon takibidir.`}>
             <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between", marginBottom: 4 }}>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                 {([["all", "Tümü"], ["pending", "Bekleyen"], ["approved", "Onaylı"], ["seller_paid", "Satıcı ödedi"], ["paid", "Ödendi"], ["disputed", "Anlaşmazlık"], ["cancelled", "İptal"]] as const).map(([k, lbl]) => {

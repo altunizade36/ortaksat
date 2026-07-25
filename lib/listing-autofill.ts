@@ -91,7 +91,7 @@ export function autoFillListing(input: AutoFillInput): AutoFillResult {
     `${title} — ${category}${subcat ? ` / ${subcat}` : ""} kategorisinde satışa sunulmuştur.`,
     `${priceLine} ${commLine}`,
     `Alıcı için önemli detaylar (${details.slice(0, 3).join(", ")}) satıcı tarafından güncellenecektir; lütfen yayınlamadan önce bu alanları kendi ürününe göre düzenle.`,
-    `Ortak satış: Bu ürünü tanıtan ortaklar, onaylı satış gerçekleştiğinde komisyon kazanır. Ortaksat yalnızca eşleştirme yapar; ödeme, teslimat ve iade satıcı ile alıcı arasındadır.`
+    `Ortak satış: Bu ürünü tanıtan ortaklar, onaylı satış gerçekleştiğinde komisyon kazanır. OrtakSat yalnızca eşleştirme yapar; ödeme, teslimat ve iade satıcı ile alıcı arasındadır.`
   ].join("\n\n");
 
   const salesPitch = [

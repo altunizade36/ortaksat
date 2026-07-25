@@ -112,7 +112,7 @@ export const components2Dict: Record<string, string> = {
   "Ürün iade edildi": "Product was returned",
   "Diğer": "Other",
   "Anlaşmazlık bildir": "Report dispute",
-  "Ortaksat para tutmaz; anlaşmazlık kaydı taraflar arasındaki durumu belgeler ve karşı tarafa bildirilir. Nedeni seç:": "Ortaksat holds no money; the dispute record documents the situation between the parties and is reported to the other side. Select the reason:",
+  "OrtakSat para tutmaz; anlaşmazlık kaydı taraflar arasındaki durumu belgeler ve karşı tarafa bildirilir. Nedeni seç:": "OrtakSat holds no money; the dispute record documents the situation between the parties and is reported to the other side. Select the reason:",
   "Detay (opsiyonel) — ne olduğunu kısaca açıkla": "Detail (optional) — briefly explain what happened",
   "Vazgeç": "Cancel",
   "Anlaşmazlık Aç": "Open dispute",
@@ -151,7 +151,7 @@ export const components2Dict: Record<string, string> = {
   "Ortaklar tanıtsın": "Let partners promote",
   "Ortaklar senin ürününü kendi kitlesine tanıtır, alıcı getirir. Sen sadece onaylarsın.": "Partners promote your product to their audience and bring buyers. You just approve.",
   "Sat, komisyonu öde": "Sell, pay the commission",
-  "Satış olunca komisyonu doğrudan ortağa ödersin. Ortaksat para tutmaz, yalnızca kaydı tutar.": "When a sale happens, you pay the commission directly to the partner. Ortaksat holds no money, only the record.",
+  "Satış olunca komisyonu doğrudan ortağa ödersin. OrtakSat para tutmaz, yalnızca kaydı tutar.": "When a sale happens, you pay the commission directly to the partner. OrtakSat holds no money, only the record.",
   "İlk ilanını aç": "Open your first listing",
   "Fırsat seç": "Pick an opportunity",
   "Komisyonu yüksek ürünlere göz at, kitlene uygun olanı seç.": "Browse high-commission products and pick the one that fits your audience.",
@@ -160,7 +160,7 @@ export const components2Dict: Record<string, string> = {
   "Kazan": "Earn",
   "Getirdiğin satıştan komisyonu satıcıdan alırsın. Üyelik ücretsiz, stok/ödeme derdi yok.": "You get the commission from the seller for the sale you bring. Membership is free, no stock/payment hassle.",
   "Fırsatları keşfet": "Explore opportunities",
-  "Ortaksat aracıdır; ödeme ve teslimat taraflar arasındadır.": "Ortaksat is an intermediary; payment and delivery are between the parties.",
+  "OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.": "OrtakSat is an intermediary; payment and delivery are between the parties.",
 
   // profile-strength.tsx
   "Profil fotoğrafı ekle": "Add a profile photo",
@@ -241,7 +241,7 @@ export const components2Dict: Record<string, string> = {
   "kural": "rules",
 
   // legal-disclaimer.tsx (only UI heading — legal body left as data)
-  "Önemli: Ortaksat ödeme/komisyon işlemez": "Important: Ortaksat does not process payments/commissions",
+  "Önemli: OrtakSat ödeme/komisyon işlemez": "Important: OrtakSat does not process payments/commissions",
 
   // legal-consent-modal.tsx (only UI chrome — legal document body left as data)
   "Güncelleme": "Updated",
