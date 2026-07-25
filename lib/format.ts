@@ -203,3 +203,24 @@ export function localToday(): string {
   const p = (n: number) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}`;
 }
+
+/**
+ * İLAN NUMARASI — her ilana özel, Sahibinden tarzı 10 haneli benzersiz kod (ör. 1229447664).
+ * İlanın UUID'sinden DETERMİNİSTİK türetilir: aynı ilan → hep aynı numara; DB'ye kolon eklemeye
+ * gerek yok, migration yok. Yalnız GÖSTERİM/aramada kullanılır (otoriter kimlik hâlâ UUID).
+ *
+ * 128-bit UUID → 32-bit FNV-1a hash → 9 haneye modlanır, başına "2" konur → sabit 10 hane,
+ * hep 2 ile başlar (marka imzası). Çakışma olasılığı gösterim için ihmal edilebilir.
+ */
+export function listingNo(id: string | undefined | null): string {
+  if (!id) return "";
+  const hex = String(id).replace(/[^0-9a-fA-F]/g, "").toLowerCase();
+  // FNV-1a 32-bit (deterministik, hızlı, iyi dağılım)
+  let h = 0x811c9dc5;
+  for (let i = 0; i < hex.length; i++) {
+    h ^= hex.charCodeAt(i);
+    h = Math.imul(h, 0x01000193) >>> 0;
+  }
+  const nine = h % 1_000_000_000; // 0..999_999_999
+  return "2" + String(nine).padStart(9, "0"); // hep 10 hane, "2" ile başlar
+}

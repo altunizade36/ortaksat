@@ -1,3 +1,4 @@
+import { listingNo } from "@/lib/format";
 import { searchKey } from "@/lib/locale";
 import type { Listing } from "@/lib/types";
 
@@ -85,6 +86,13 @@ export function searchAndRank(
   query: string,
   ownerNameOf?: (l: Listing) => string | undefined
 ): Listing[] {
+  // İlan numarası araması: kullanıcı 10 haneli kodu (ör. 2049381756) yapıştırırsa
+  // doğrudan o ilanı getir (fuzzy metin aramasına düşmeden — kesin kimlik eşleşmesi).
+  const numeric = query.replace(/[^0-9]/g, "");
+  if (numeric.length >= 6 && /^\s*[#0-9\s]+\s*$/.test(query)) {
+    const exact = listings.filter((l) => listingNo(l.id) === numeric);
+    if (exact.length > 0) return exact;
+  }
   const tokens = tokenize(query);
   if (tokens.length === 0) return listings;
   return listings

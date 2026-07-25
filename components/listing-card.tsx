@@ -4,6 +4,7 @@ import { memo } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { ImageWatermark } from "@/components/image-watermark";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { useCompare } from "@/lib/compare";
@@ -141,6 +142,8 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
                 alt={imageAlt}
                 accessibilityLabel={imageAlt}
               />
+              {/* Çapraz "ortaksat.com" filigranı — HER kart görselinde (marka + kaynak koruması). */}
+              <ImageWatermark size={11} opacity={0.16} />
               {/* Demo ilan: tam-genişlik sarı uyarı çubuğu yerine zarif köşe "ÖRNEK" pili
                   (dürüst — detay sayfasında tam açıklama banner'ı var; feed gerçek pazar gibi durur). */}
               {/* ÜST-SOL rozet YALNIZ. Görsel üstündeki kategori pili KALDIRILDI: (a) kategori

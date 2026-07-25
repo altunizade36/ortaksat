@@ -29,7 +29,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { SafetyNote } from "@/components/safety-note";
 import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { ErrorScreen } from "@/components/error-boundary";
-import { commissionAmount, commissionText, listingInviteCode, moneyIn, partnerInviteUrl, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
+import { commissionAmount, commissionText, listingInviteCode, listingNo, moneyIn, partnerInviteUrl, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
 import { categoryConversion } from "@/lib/conversion";
 import { VerificationBadges } from "@/components/verification-badges";
 import { haptic } from "@/lib/haptics";
@@ -632,7 +632,7 @@ export default function ListingDetailScreen() {
             >
               <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
               {/* Kaynak filigranı — dosyaya gömülmez, yalnız görüntüleme katmanı (ürün bozulmaz). */}
-              <ImageWatermark rows={isWideWeb ? 5 : 4} cols={3} size={isWideWeb ? 14 : 12} />
+              <ImageWatermark size={isWideWeb ? 20 : 15} />
               <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
                 <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Büyüt", language)}{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
@@ -702,7 +702,7 @@ export default function ListingDetailScreen() {
             const valid = !Number.isNaN(created.getTime());
             const days = valid ? Math.floor((Date.now() - created.getTime()) / 86400000) : -1;
             const dateLabel = !valid ? "" : days <= 0 ? translateCopy("Bugün", language) : days === 1 ? translateCopy("Dün", language) : days < 30 ? `${days} ${translateCopy("gün önce", language)}` : created.toLocaleDateString(language === "en" ? "en-GB" : "tr-TR");
-            const ilanNo = currentListing.id.replace(/[^a-zA-Z0-9]/g, "").slice(-8).toUpperCase();
+            const ilanNo = listingNo(currentListing.id); // Sahibinden tarzı 10 haneli numerik kod
             return (
               <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {dateLabel ? (
@@ -1350,7 +1350,7 @@ export default function ListingDetailScreen() {
               contentFit="contain"
             />
             {/* Tam ekranda da filigran — kopyalama/ekran görüntüsü buradan alınır. */}
-            <ImageWatermark rows={6} cols={3} size={15} />
+            <ImageWatermark size={22} />
           </Pressable>
           <View style={{ alignItems: "center", bottom: 74, left: 0, position: "absolute", right: 0 }}>
             <View style={{ backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}>

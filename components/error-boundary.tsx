@@ -87,8 +87,29 @@ export function RouteErrorBoundary({ error, retry }: { error: Error; retry: () =
   // ÖNBELLEKLER → retry() aynı hatayı tekrar fırlatır, kullanıcı döngüde kalır. Chunk
   // hatasında tek gerçek kurtuluş sayfayı yeniden yüklemek (chunk yeniden çekilir).
   const msg = String(error?.message || error || "");
-  const isChunkError = /Loading chunk|ChunkLoadError|Failed to fetch dynamically|error loading dynamically imported|importing a module script failed/i.test(msg);
+  // "Requiring unknown module N" = Metro çalışma-zamanı module-ID uyuşmazlığı (bayat SW/cache
+  // farklı build'lerin chunk'larını karıştırınca). Bu da bir chunk/bayat-bundle hatasıdır →
+  // cache+SW temizleyip yeniden yükle (aksi halde reload aynı bayat chunk'ı çeker, döngü olur).
+  const isChunkError = /Loading chunk|ChunkLoadError|Failed to fetch dynamically|error loading dynamically imported|importing a module script failed|Requiring unknown module|Requiring module/i.test(msg);
   const canReload = typeof window !== "undefined" && typeof window.location?.reload === "function";
+
+  // Bayat SW cache'i / kayıtlı eski SW, bayat JS chunk'ı servis ediyorsa DÜZ reload çözmez.
+  // Önce TÜM cache'leri sil + SW kayıtlarını kaldır, sonra yeniden yükle → taze bundle.
+  async function purgeCachesAndReload(to?: string) {
+    try {
+      if (typeof caches !== "undefined") {
+        const keys = await caches.keys();
+        await Promise.all(keys.map((k) => caches.delete(k)));
+      }
+    } catch { /* yok */ }
+    try {
+      if (typeof navigator !== "undefined" && navigator.serviceWorker) {
+        const regs = await navigator.serviceWorker.getRegistrations();
+        await Promise.all(regs.map((r) => r.unregister()));
+      }
+    } catch { /* yok */ }
+    if (to) window.location.href = to; else window.location.reload();
+  }
 
   // Bayat yerel durumu (eski kategori kaydı / bozuk taslak / silinmiş referans) temizler ve
   // yeniler. Hangi bileşenin `undefined` olduğunu bilmeye gerek yok — çökme yerel duruma
@@ -105,7 +126,7 @@ export function RouteErrorBoundary({ error, retry }: { error: Error; retry: () =
           sessionStorage.clear();
           for (const [k, v] of keep) localStorage.setItem(k, v);
         } catch { /* özel mod */ }
-        window.location.href = "/";
+        void purgeCachesAndReload("/"); // bayat yerel durum + cache + SW hepsi temizlenir
       }
     : undefined;
 
@@ -124,7 +145,7 @@ export function RouteErrorBoundary({ error, retry }: { error: Error; retry: () =
         const last = Number(sessionStorage.getItem("chunk-reload-at") || 0);
         if (now - last < 30_000) return;
         sessionStorage.setItem("chunk-reload-at", String(now));
-        window.location.reload();
+        void purgeCachesAndReload(); // cache+SW temizle → taze chunk (bayat mix döngüsünü kırar)
         return;
       }
       const KEY = "render-error-recovery";
