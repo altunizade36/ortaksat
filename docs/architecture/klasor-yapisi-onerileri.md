@@ -19,12 +19,16 @@ Repo **zaten temiz**. `git ls-files` ile doğrulandı:
 gitignore'lu artefakt; gerçek projeye/CI'a girmiyor. İstenirse yerel temizlik yapılabilir
 (dist yeniden üretilir; scratch dev-only).
 
-## Kullanılmayan dosyalar (silmeden — onay bekliyor)
-- `lib/audit.ts` — `activity_logs` best-effort logger; hiçbir yerde import edilmiyor.
-- `lib/auth-links.ts` — `subscribeToAuthUrls` deep-link auth handler; import edilmiyor.
-- (`lib/mascot-source.native.ts` false-positive — platform çifti, KULLANILIYOR.)
+## Kullanılmayan dosya taraması — SONUÇ: öksüz dosya YOK
+İlk tarama `app/ components/ lib/ scripts/` kapsamındaydı ve `data/` klasörünü atlamıştı;
+bu yüzden birkaç dosya yanlışlıkla "öksüz" göründü. `data/app-store.tsx` kontrolüyle düzeltildi:
+- `lib/audit.ts` — **KULLANILIYOR**: `logActivity` → sign_in/sign_up/sign_out/listing_create
+  (admin panelinin okuduğu `activity_logs`'a yazan aktif taraf).
+- `lib/auth-links.ts` — **KULLANILIYOR**: `subscribeToAuthUrls`/`getInitialAuthUrl`/
+  `handleSupabaseAuthUrl` → deep-link auth, app-store'da bağlı.
+- `lib/mascot-source.native.ts` — **KULLANILIYOR** (platform çifti).
 
-Bunlar ya bağlanmamış özellik ya ölü kod. Karar verilene kadar **korunuyor**.
+→ Silinecek ölü kod yok. (Ders: kullanım taramasında `data/` dahil TÜM kaynak klasörleri tara.)
 
 ## Önerilen hedef yapı (kademeli)
 Her taşıma = `git mv` + import yollarını güncelle + build + görsel regresyon. Barrel dosyası
@@ -50,8 +54,11 @@ docs/
 audit/         # (gitignore'dan çıkarılıp curate edilirse) accessibility/ ui/ ux/ performance/ regression/ releases/
 ```
 
-## Güvenli uygulama sırası (öneri)
-1. **En düşük risk:** `docs/` alt-klasörleri (kod import etmez) → sıfır regresyon.
+## Güvenli uygulama sırası
+1. ✅ **YAPILDI — `docs/` alt-klasörleri** (deployment/growth/release/product/database/architecture).
+   Root'tan `PRODUCT_LOGIC.md`, `STORE_RELEASE_CHECKLIST.md`, `SUPABASE-SETUP.md` docs'a taşındı
+   (root artık yalnız `README.md`). `scripts/check-encoding.mjs` güncellendi (`walk("docs")` kapsıyor).
+   Encoding kontrolü temiz, iç-linkler geçerli. Kod import etmez → sıfır regresyon.
 2. `components/` alt-klasörleri **barrel (`components/ui/index.ts`) ile** → import yolları
    `@/components/ui` olarak sabit kalır, dosyalar taşınır.
 3. `lib/` alt-klasörleri en son (en çok import edilen → en yüksek dikkat).

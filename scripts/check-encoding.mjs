@@ -2,7 +2,8 @@ import { readFileSync, readdirSync } from "node:fs";
 import path from "node:path";
 
 const roots = ["app", "components", "data", "lib", "docs", "store"];
-const extraFiles = ["README.md", "PRODUCT_LOGIC.md", "STORE_RELEASE_CHECKLIST.md", "app.json"];
+// PRODUCT_LOGIC.md ve STORE_RELEASE_CHECKLIST.md artık docs/ altında → walk("docs") kapsıyor.
+const extraFiles = ["README.md", "app.json"];
 const extensions = new Set([".ts", ".tsx", ".md", ".json"]);
 const mojibakePattern = /Ã|Ä|Å|Â|�|KeÅ|Ä°|ÅŸ|Åž|MenÃ|GiriÅ|SatÄ|GÃ¼|Å|Ä±|Ã¼|Ã¶|Ã§/;
 
