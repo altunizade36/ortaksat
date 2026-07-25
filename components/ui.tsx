@@ -102,7 +102,7 @@ export function StatusPill({ label, tone = "info" }: { label: string; tone?: "in
     success: [colors.success, colors.successSoft],
     warning: [colors.warning, colors.warningSoft],
     // pasif/nötr durumlar için gri; reddedildi/tükendi gibi olumsuzlar için kırmızı.
-    neutral: [colors.muted, "#F2F4F7"],
+    neutral: [colors.muted, colors.neutralSoft],
     danger: [colors.accent, colors.accentSoft]
   } as const;
   const [color, backgroundColor] = palette[tone];

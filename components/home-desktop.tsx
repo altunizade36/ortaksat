@@ -6,7 +6,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { BrandFilter } from "@/components/brand-filter";
 import { Mascot } from "@/components/brand/Mascot";
-import { colors } from "@/components/colors";
+import { colors, heroGradient, shadow } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useCompare } from "@/lib/compare";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
@@ -386,7 +386,7 @@ export function HomeDesktop() {
       <View style={{ flex: 1, gap: 18, minWidth: 0 }}>
         {/* Hero + istatistikler */}
         <View style={{ alignItems: "stretch", flexDirection: "row", gap: 16 }}>
-          <LinearGradient colors={["#14B8C4", "#0EA5B7", "#0891B2"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 18, flex: 1, flexDirection: "row", minWidth: 0, overflow: "hidden", paddingHorizontal: 22, paddingVertical: 18 }}>
+          <LinearGradient colors={heroGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ borderRadius: 18, flex: 1, flexDirection: "row", minWidth: 0, overflow: "hidden", paddingHorizontal: 22, paddingVertical: 18 }}>
             <View style={{ flex: 1.5, gap: 11, justifyContent: "center", minWidth: 0 }}>
               <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 21, fontWeight: "900", lineHeight: 26 }}>
                 {translateCopy("Ortak satış pazaryeri — ", language)}<Text style={{ color: colors.gold }}>{translateCopy("iki taraf da kazanır", language)}</Text>
@@ -417,7 +417,7 @@ export function HomeDesktop() {
             </View>
             {/* OrtakSat maskotu (başparmak yukarı) — açık daire arkalıkta, tam gövde önde. */}
             <View style={{ alignItems: "center", alignSelf: "center", flex: 0.9, justifyContent: "center", minHeight: 210, minWidth: 0, position: "relative", width: "100%" }}>
-              <Mascot name="success" size={228} priority panel panelColor="#F0FDFF" />
+              <Mascot name="success" size={228} priority panel panelColor={colors.background} />
             </View>
           </LinearGradient>
 
@@ -445,7 +445,7 @@ export function HomeDesktop() {
                   <View style={{ height: 92, width: "100%" }}>
                     <SafeRemoteImage uri={l.image} style={{ height: 92, width: "100%" }} contentFit="cover" />
                     <View style={{ backgroundColor: colors.gold, borderRadius: 6, left: 8, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 8 }}>
-                      <Text style={{ color: "#1A1400", fontSize: 9.5, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {moneyIn(commissionAmount(l), l.currency)}</Text>
+                      <Text style={{ color: colors.badgeInk, fontSize: 9.5, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {moneyIn(commissionAmount(l), l.currency)}</Text>
                     </View>
                   </View>
                   <View style={{ gap: 4, padding: 9 }}>
@@ -627,9 +627,9 @@ function HomeCardBase({ listing, favorited, onFav, onOpen }: { listing: Listing;
           </View>
           ) : null}
           {listing.demo ? (
-            <View style={{ alignItems: "center", backgroundColor: "rgba(245,197,24,0.96)", borderRadius: 999, bottom: 10, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", right: 10, shadowColor: "#000000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 3 }}>
-              <MaterialCommunityIcons name="eye-outline" size={10} color="#1A1A00" />
-              <Text style={{ color: "#1A1A00", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.4 }}>{translateCopy("ÖRNEK", language)}</Text>
+            <View style={{ alignItems: "center", backgroundColor: colors.badgeGold, borderRadius: 999, bottom: 10, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", right: 10, ...shadow.badge }}>
+              <MaterialCommunityIcons name="eye-outline" size={10} color={colors.badgeInk} />
+              <Text style={{ color: colors.badgeInk, fontSize: 9.5, fontWeight: "900", letterSpacing: 0.4 }}>{translateCopy("ÖRNEK", language)}</Text>
             </View>
           ) : null}
           <Pressable accessibilityRole="button" accessibilityState={{ selected: favorited }} accessibilityLabel={favorited ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favorilere ekle", language)} onPress={onFav} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.92)", borderRadius: 999, height: 30, justifyContent: "center", position: "absolute", right: 10, top: 10, width: 30 }}>

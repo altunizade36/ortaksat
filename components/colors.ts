@@ -23,8 +23,20 @@ export const colors = {
   violetSoft: "#EFE8FF",
   gold: "#F2A900",
   goldSoft: "#FFF3D1",
-  goldInk: "#7A5200"     // gold-soft zemin üstünde okunur koyu ton (rozet/etiket metni)
+  goldInk: "#7A5200",    // gold-soft zemin üstünde okunur koyu ton (rozet/etiket metni)
+  badgeGold: "#F5C518",  // parlak sarı rozet zemini (Kazanç/ÖRNEK) — gold'dan daha canlı
+  badgeInk: "#1A1400",   // parlak sarı rozet üstünde koyu metin (near-black, yüksek kontrast)
+  neutralSoft: "#F2F4F7" // nötr gri yer-tutucu (görsel yükleme arkaplanı vb.)
 };
+
+// Gölge token'ları — eskiden her kartta/rozette inline kopyalanıyordu (5 farklı renk). Tek kaynak.
+export const shadow = {
+  card: { shadowColor: "#101828", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.06, shadowRadius: 14 },
+  badge: { shadowColor: "#000000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 3 }
+} as const;
+
+// Hero gradyanı — index + home-desktop'ta birebir kopyalıydı. Ortası ana turkuaz (colors.primary).
+export const heroGradient = ["#14B8C4", colors.primary, "#0891B2"] as const;
 
 // ---- Tasarım ölçekleri (birörnek "bitmiş" görünüm için) --------------------
 // Köşe yarıçapı: 3 temel değer + hap. Yeni bileşenlerde ham sayı yerine bunları kullan.

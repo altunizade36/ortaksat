@@ -3,7 +3,7 @@ import { Link } from "expo-router";
 import { memo } from "react";
 import { Pressable, Text, View } from "react-native";
 
-import { colors } from "@/components/colors";
+import { colors, shadow } from "@/components/colors";
 import { ImageWatermark } from "@/components/image-watermark";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
@@ -152,9 +152,9 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
                   `right: 92` ile rozet de artık ikonların altına girmez. */}
               <View style={{ position: "absolute", top: 10, left: 10, right: 92, flexDirection: "row", alignItems: "flex-start" }}>
                 {listing.demo ? (
-                  <View style={{ alignItems: "center", backgroundColor: "rgba(245,197,24,0.96)", borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3, shadowColor: "#000000", shadowOffset: { width: 0, height: 1 }, shadowOpacity: 0.12, shadowRadius: 3 }}>
-                    <MaterialCommunityIcons name="eye-outline" size={10} color="#1A1A00" />
-                    <Text style={{ color: "#1A1A00", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.4 }}>{translateCopy("ÖRNEK", language)}</Text>
+                  <View style={{ alignItems: "center", backgroundColor: colors.badgeGold, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3, ...shadow.badge }}>
+                    <MaterialCommunityIcons name="eye-outline" size={10} color={colors.badgeInk} />
+                    <Text style={{ color: colors.badgeInk, fontSize: 9.5, fontWeight: "900", letterSpacing: 0.4 }}>{translateCopy("ÖRNEK", language)}</Text>
                   </View>
                 ) : (
                   <StatusBadge label={statusLabel} tone={statusTone} />

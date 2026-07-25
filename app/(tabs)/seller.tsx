@@ -1253,8 +1253,8 @@ function QuickInventoryEditor({ stock, price, currency, onSave }: { stock: numbe
       </View>
       {dirty ? (
         <Pressable onPress={commit} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 4, marginLeft: "auto", paddingHorizontal: 12, paddingVertical: 8 }}>
-          <MaterialCommunityIcons name="content-save" size={15} color="#fff" />
-          <Text style={{ color: "#fff", fontSize: 12, fontWeight: "900" }}>{translateCopy("Kaydet", language)}</Text>
+          <MaterialCommunityIcons name="content-save" size={15} color="#FFFFFF" />
+          <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy("Kaydet", language)}</Text>
         </Pressable>
       ) : null}
     </View>

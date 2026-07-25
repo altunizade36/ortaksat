@@ -1937,12 +1937,12 @@ const ExploreTile = memo(ExploreTileBase, (a, b) =>
 
 function getExploreStatus(item: ExploreMedia, listing: Listing, featured: boolean, conversionScore: number, t: (key: string) => string): { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone: "primary" | "dark" | "warning" } {
   if (item.type === "video") return { icon: "play-circle", label: t("videoContent"), tone: "dark" };
-  if (listing.partnershipMode === "open") return { icon: "flash", label: t("openForPartners"), tone: "primary" };
+  // Kartlarla TEK terminoloji: open→Anında ortak, approval→Onaylı ortak, invite→Davetli.
+  if (listing.partnershipMode === "open") return { icon: "flash", label: t("instantPartner"), tone: "primary" };
   if (conversionScore >= 18) return { icon: "trending-up", label: t("trendProduct"), tone: "warning" };
   if (featured) return { icon: "star-circle", label: t("showcaseProduct"), tone: "dark" };
-  // Son çare "Ürün görseli" ANLAMSIZ dolguydu (zaten ürün görseli). Komisyonlu ilanlar bunu
-  // alıyordu → anlamlı "Ortaklığa açık" (mevcut i18n anahtarı, EN/TR doğru). Komisyonsuz → nötr.
-  if (commissionAmount(listing) > 0) return { icon: "cash-multiple", label: t("openForPartners"), tone: "primary" };
+  // Komisyonlu (open-dışı) ilanlar: moda göre Onaylı/Davetli ortak (kart mod-etiketiyle aynı).
+  if (commissionAmount(listing) > 0) return { icon: listing.partnershipMode === "invite" ? "ticket-outline" : "shield-check-outline", label: t(listing.partnershipMode === "invite" ? "inviteOnly" : "approvedPartner"), tone: "primary" };
   return { icon: "tag-outline", label: t("productImage"), tone: "dark" };
 }
 

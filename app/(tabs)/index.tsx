@@ -7,7 +7,7 @@ import Head from "expo-router/head";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
-import { colors } from "@/components/colors";
+import { colors, heroGradient } from "@/components/colors";
 import { HomeDesktop } from "@/components/home-desktop";
 import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
@@ -259,7 +259,7 @@ export default function HomeScreen() {
       ) : (
         <>
           {/* Kompakt turkuaz hero (mobil) — web ile tutarlı: tokalaşma + ürün kümesi */}
-          <LinearGradient colors={["#14B8C4", "#0EA5B7", "#0891B2"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ alignItems: "center", borderRadius: 16, flexDirection: "row", gap: 10, overflow: "hidden", padding: 16 }}>
+          <LinearGradient colors={heroGradient} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ alignItems: "center", borderRadius: 16, flexDirection: "row", gap: 10, overflow: "hidden", padding: 16 }}>
             <View style={{ flex: 1, gap: 10, minWidth: 0 }}>
               <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900", lineHeight: 23 }}>{translateCopy("Ortak satış pazaryeri — ", language)}<Text style={{ color: colors.gold }}>{translateCopy("iki taraf da kazanır", language)}</Text></Text>
               {/* İki ayrı yol: satıcı / ortak (mesaj netliği) */}
@@ -302,7 +302,7 @@ export default function HomeScreen() {
                     <View style={{ height: 90, width: "100%" }}>
                       <SafeRemoteImage uri={l.image} alt={l.title} accessibilityLabel={l.title} style={{ height: 90, width: "100%" }} contentFit="cover" />
                       <View style={{ backgroundColor: colors.gold, borderRadius: 6, left: 7, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 7 }}>
-                        <Text style={{ color: "#1A1400", fontSize: 9, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {money(commissionAmount(l))}</Text>
+                        <Text style={{ color: colors.badgeInk, fontSize: 9, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {money(commissionAmount(l))}</Text>
                       </View>
                     </View>
                     <View style={{ gap: 3, padding: 8 }}>
@@ -894,7 +894,7 @@ function FilterChip({ active, icon, label, onPress }: { active?: boolean; icon: 
 function MobileHeroCluster() {
   return (
     <View style={{ alignItems: "center", height: 128, justifyContent: "center", width: 128 }}>
-      <Mascot name="success" size={124} priority panel panelColor="#F0FDFF" />
+      <Mascot name="success" size={124} priority panel panelColor={colors.background} />
     </View>
   );
 }
