@@ -1,7 +1,7 @@
 ﻿import { MaterialCommunityIcons } from "@/components/icons";
 import * as Clipboard from "expo-clipboard";
 import { Image } from "expo-image";
-import { Link, useLocalSearchParams, useRouter } from "expo-router";
+import { Link, useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 
@@ -740,6 +740,11 @@ function PartnerScreenInner() {
       ) : null}
 
       <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
+
+      {/* Liderlik yalnız top-N gösterir → aranabilir tam dizine köprü (kategori/performans filtresi). */}
+      <View style={{ marginTop: -4 }}>
+        <PrimaryButton href={"/ortaklar" as Href} tone="secondary" icon="account-star">{translateCopy("Tüm uzman ortakları gör", language)}</PrimaryButton>
+      </View>
 
       {allOpportunities.length > 0 ? (
         <Card>

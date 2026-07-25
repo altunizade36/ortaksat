@@ -759,7 +759,9 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
 
 // Herkese açık ortak vitrini: bir ortağın aktif promosyon ilanları + her biri için ref_code.
 // partner_public_shop/profile SECURITY DEFINER fonksiyonları RLS'i güvenle aşar (yalnız public alan).
-export type PartnerShopProfile = { partnerId: string; fullName: string; verifiedIdentity: boolean; verifiedPhone: boolean; confirmedSales: number; activePartnerships: number; expertiseCategories: string[] };
+export type PartnerShopProfile = { partnerId: string; fullName: string; avatarUrl?: string | null; verifiedIdentity: boolean; verifiedPhone: boolean; rating?: number; confirmedSales: number; activePartnerships: number; completedPartnerships: number; favoriteCount: number; expertiseCategories: string[] };
+/** Ortak dizini kartı — /ortaklar aranabilir listede. */
+export type PartnerDirectoryEntry = { partnerId: string; fullName: string; avatarUrl?: string | null; verifiedIdentity: boolean; verifiedPhone: boolean; rating?: number; confirmedSales: number; paidEarned: number; activePartnerships: number; completedPartnerships: number; favoriteCount: number; expertiseCategories: string[] };
 export type PartnerShopItem = { listing: Listing; refCode: string; partnershipId: string; attributionWindowDays?: number };
 export async function loadPartnerShopLive(partnerId: string): Promise<{ profile: PartnerShopProfile | null; items: PartnerShopItem[] }> {
   if (!supabase || !partnerId) return { profile: null, items: [] };
@@ -787,13 +789,75 @@ export async function loadPartnerShopLive(partnerId: string): Promise<{ profile:
     ? {
         partnerId: String(p.partner_id),
         fullName: String(p.full_name ?? ""),
+        avatarUrl: (p.avatar_url as string) ?? null,
         verifiedIdentity: Boolean(p.verified_identity),
         verifiedPhone: Boolean(p.verified_phone),
+        rating: p.rating != null ? Number(p.rating) : undefined,
         confirmedSales: Number(p.confirmed_sales ?? 0),
         activePartnerships: Number(p.active_partnerships ?? 0),
+        completedPartnerships: Number(p.completed_partnerships ?? 0),
+        favoriteCount: Number(p.favorite_count ?? 0),
         expertiseCategories: Array.isArray(p.expertise_categories) ? (p.expertise_categories as string[]) : []
       }
     : null;
   return { profile, items };
+}
+
+function mapDirectoryRow(r: Record<string, unknown>): PartnerDirectoryEntry {
+  return {
+    partnerId: String(r.partner_id),
+    fullName: String(r.full_name ?? ""),
+    avatarUrl: (r.avatar_url as string) ?? null,
+    verifiedIdentity: Boolean(r.verified_identity),
+    verifiedPhone: Boolean(r.verified_phone),
+    rating: r.rating != null ? Number(r.rating) : undefined,
+    confirmedSales: Number(r.confirmed_sales ?? 0),
+    paidEarned: Number(r.paid_earned ?? 0),
+    activePartnerships: Number(r.active_partnerships ?? 0),
+    completedPartnerships: Number(r.completed_partnerships ?? 0),
+    favoriteCount: Number(r.favorite_count ?? 0),
+    expertiseCategories: Array.isArray(r.expertise_categories) ? (r.expertise_categories as string[]) : []
+  };
+}
+
+/** Ortak dizini — kategori/performansa göre aranabilir uzman ortak listesi. */
+export async function loadPartnerDirectory(opts?: { category?: string | null; sort?: "performance" | "favorites"; limit?: number }): Promise<PartnerDirectoryEntry[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("partner_directory", {
+    p_category: opts?.category ?? null,
+    p_sort: opts?.sort ?? "performance",
+    p_limit: opts?.limit ?? 60
+  });
+  if (error || !Array.isArray(data)) return [];
+  return (data as Array<Record<string, unknown>>).map(mapDirectoryRow);
+}
+
+/** Çağıranın favorilediği ortaklar (Favori Ortaklarım). */
+export async function loadMyFavoritePartners(): Promise<PartnerDirectoryEntry[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("my_favorite_partners");
+  if (error || !Array.isArray(data)) return [];
+  return (data as Array<Record<string, unknown>>).map(mapDirectoryRow);
+}
+
+/** Çağıranın favorilediği ortak id'leri (kalp durumu için hızlı set). */
+export async function loadMyFavoritePartnerIds(): Promise<Set<string>> {
+  if (!supabase) return new Set();
+  const { data } = await supabase.from("partner_favorites").select("partner_id");
+  return new Set(((data ?? []) as Array<{ partner_id: string }>).map((r) => String(r.partner_id)));
+}
+
+/** Ortağı favorile / favoriden çıkar. on=true ekler, false siler. Giriş gerekli. */
+export async function togglePartnerFavorite(partnerId: string, on: boolean): Promise<boolean> {
+  if (!supabase || !partnerId) return false;
+  const { data: auth } = await supabase.auth.getUser();
+  const uid = auth?.user?.id;
+  if (!uid || uid === partnerId) return false;
+  if (on) {
+    const { error } = await supabase.from("partner_favorites").upsert({ favoriter_id: uid, partner_id: partnerId }, { onConflict: "favoriter_id,partner_id" });
+    return !error;
+  }
+  const { error } = await supabase.from("partner_favorites").delete().eq("favoriter_id", uid).eq("partner_id", partnerId);
+  return !error;
 }
 

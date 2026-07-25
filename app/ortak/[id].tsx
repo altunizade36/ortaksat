@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
-import { ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
@@ -15,7 +15,7 @@ import { PAGE_MAX_WIDTH } from "@/components/web-container";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb, useMounted } from "@/lib/layout";
 import { saveRefAttribution } from "@/lib/referral";
-import { loadPartnerShopLive, type PartnerShopItem, type PartnerShopProfile } from "@/lib/supabase-data";
+import { loadMyFavoritePartnerIds, loadPartnerShopLive, togglePartnerFavorite, type PartnerShopItem, type PartnerShopProfile } from "@/lib/supabase-data";
 import { useStore } from "@/lib/use-store";
 
 export default function PartnerShopScreen() {
@@ -28,11 +28,14 @@ function Inner() {
   const { language } = useLanguage();
   const { width } = useWindowDimensions();
   const isWideWeb = useIsWideWeb();
-  const { findUser } = useStore();
+  const { currentUser, findUser, isAuthenticated } = useStore();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<PartnerShopProfile | null>(null);
   const [items, setItems] = useState<PartnerShopItem[]>([]);
   const [copied, setCopied] = useState(false);
+  const [favorited, setFavorited] = useState(false);
+  const [favCount, setFavCount] = useState(0);
+  const isOwnShop = Boolean(currentUser?.id && currentUser.id === partnerId);
 
   useEffect(() => {
     let alive = true;
@@ -43,6 +46,7 @@ function Inner() {
         if (!alive) return;
         setProfile(res.profile);
         setItems(res.items);
+        setFavCount(res.profile?.favoriteCount ?? 0);
         // Vitrindeki her ilan için ref atfını sakla → normal kart tıklaması ortağa kredilenir.
         // ANLAŞILAN pencere (ortaklık snapshot'ı) > canlı ilanınki — satıcı sonradan kısaltamasın.
         res.items.forEach((it) => saveRefAttribution(it.listing.id, it.partnershipId, it.refCode, it.attributionWindowDays ?? it.listing.attributionWindowDays));
@@ -51,6 +55,23 @@ function Inner() {
       .catch(() => { if (alive) setLoading(false); });
     return () => { alive = false; };
   }, [partnerId]);
+
+  // Favori durumu (yalnız giriş yapılmış + kendi vitrini değilse anlamlı).
+  useEffect(() => {
+    let alive = true;
+    if (!partnerId || !isAuthenticated || isOwnShop) { setFavorited(false); return; }
+    loadMyFavoritePartnerIds().then((ids) => { if (alive) setFavorited(ids.has(partnerId)); }).catch(() => {});
+    return () => { alive = false; };
+  }, [partnerId, isAuthenticated, isOwnShop]);
+
+  const toggleFav = async () => {
+    if (!isAuthenticated) { void router.push("/auth"); return; }
+    const next = !favorited;
+    setFavorited(next); // iyimser
+    setFavCount((c) => Math.max(0, c + (next ? 1 : -1)));
+    const ok = await togglePartnerFavorite(partnerId!, next);
+    if (!ok) { setFavorited(!next); setFavCount((c) => Math.max(0, c + (next ? -1 : 1))); } // geri al
+  };
 
   const name = profile?.fullName || translateCopy("Ortak", language);
   const verified = Boolean(profile?.verifiedIdentity || profile?.verifiedPhone);
@@ -97,7 +118,34 @@ function Inner() {
                 </View>
                 <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{profile?.confirmedSales ?? 0} {translateCopy("başarılı satış", language)}</Text>
               </View>
+              {/* Güven sinyalleri: tamamlanan ortaklık + kaç kişi favoriledi (itibar). */}
+              <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 2 }}>
+                {(profile?.completedPartnerships ?? 0) > 0 ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+                    <MaterialCommunityIcons name="handshake" size={12} color={colors.subtle} />
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{profile!.completedPartnerships} {translateCopy("tamamlanan ortaklık", language)}</Text>
+                  </View>
+                ) : null}
+                {favCount > 0 ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+                    <MaterialCommunityIcons name="heart" size={12} color={colors.accent} />
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{favCount} {translateCopy("kişi favoriledi", language)}</Text>
+                  </View>
+                ) : null}
+              </View>
             </View>
+            {/* Favori: satıcı bu ortağı kaydeder → "Favori Ortaklarım"dan bulur (kendi vitrini hariç). */}
+            {!isOwnShop ? (
+              <Pressable
+                accessibilityRole="button"
+                accessibilityState={{ selected: favorited }}
+                accessibilityLabel={favorited ? translateCopy("Favorilerden çıkar", language) : translateCopy("Favori ortak yap", language)}
+                onPress={() => void toggleFav()}
+                style={({ pressed }) => ({ alignItems: "center", backgroundColor: favorited ? colors.accentSoft : colors.surfaceAlt, borderColor: favorited ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, height: 40, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 40 })}
+              >
+                <MaterialCommunityIcons name={favorited ? "heart" : "heart-outline"} size={20} color={favorited ? colors.accent : colors.muted} />
+              </Pressable>
+            ) : null}
           </View>
           {/* Uzmanlık kategorileri — satıcı, ortağın deneyimli olduğu alanları görür. */}
           {(profile?.expertiseCategories?.length ?? 0) > 0 ? (
