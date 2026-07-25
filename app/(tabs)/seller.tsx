@@ -143,7 +143,11 @@ function SellerScreenInner() {
     void loadClickCounts(ids).then((c) => { if (alive) setClickCounts(c); });
     return () => { alive = false; };
   }, [partnershipIdsKey]);
-  const myLeads = leads.filter((lead) => myListingIds.has(lead.listingId));
+  // useMemo: her render yeni referans, activitySeries chart'ını boşa tetikliyordu. Stable store-dep.
+  const myLeads = useMemo(() => {
+    const ids = new Set(listings.filter((l) => l.ownerId === currentUser.id && l.status !== "rejected" && l.status !== "archived").map((l) => l.id));
+    return leads.filter((lead) => ids.has(lead.listingId));
+  }, [leads, listings, currentUser.id]);
   // Yanıt bekleyen teklifler (en yenisi üstte) — satıcının en aksiyon-gerektiren işi.
   const [counterFor, setCounterFor] = useState<string | null>(null);
   const [counterAmount, setCounterAmount] = useState("");

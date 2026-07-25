@@ -112,8 +112,11 @@ function PartnerScreenInner() {
   const waiting = mySales.filter((sale) => sale.status === "pending" || sale.status === "return_pending" || sale.status === "disputed").reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const approved = mySales.filter((sale) => sale.status === "approved" || sale.status === "seller_paid").reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const paid = mySales.filter((sale) => sale.status === "paid").reduce((sum, sale) => sum + sale.commissionAmount, 0);
-  const myPartnershipIdSet = new Set(myPartnerships.map((p) => p.id));
-  const myBroughtLeads = leads.filter((l) => l.partnershipId && myPartnershipIdSet.has(l.partnershipId));
+  // useMemo: her render yeni referans, leadSeries + funnel'ı boşa tetikliyordu. Stable store-dep.
+  const myBroughtLeads = useMemo(() => {
+    const set = new Set(partnerships.filter((p) => p.partnerId === currentUser.id).map((p) => p.id));
+    return leads.filter((l) => l.partnershipId && set.has(l.partnershipId));
+  }, [leads, partnerships, currentUser.id]);
   const [mounted, setMounted] = useState(false);
   useEffect(() => setMounted(true), []);
   // Son 14 gün · getirdiğin talep (gerçek createdAt; istemci-only render).
@@ -179,7 +182,9 @@ function PartnerScreenInner() {
   // ÖRNEK/vitrin (demo) ilanlar ortaklığa KAPALI (joinListing engeller) → fırsat listesinden
   // de çıkarılır; aksi halde "Ortak ol" → çıkmaz ("örnek ilan, ortaklık kapalı"). Gerçek ürünler
   // eklendiğinde burada görünür ve çalışır.
-  const allOpportunities = listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id && l.partnershipMode !== "invite" && l.partnershipMode !== "none" && !l.demo);
+  // useMemo: her render yeni referans üretilirse aşağıdaki 4 useMemo (ranked/mobile/kategori/
+  // şehir) BOŞA çalışır (dep hep değişir). Stable store-dep'leriyle memoize → hepsi düzelir.
+  const allOpportunities = useMemo(() => listings.filter((l) => l.status === "active" && l.ownerId !== currentUser.id && l.partnershipMode !== "invite" && l.partnershipMode !== "none" && !l.demo), [listings, currentUser.id]);
   // Mobil liste (filtre paneli yok): en iyi fırsatlar önce — doğrulanmış/öne çıkan, sonra komisyon.
   const rankedOpportunities = useMemo(() => allOpportunities.slice().sort((a, b) => {
     const av = (a.featured ? 2 : 0) + ((findUser(a.ownerId)?.verifiedIdentity || findUser(a.ownerId)?.verifiedPhone) ? 1 : 0);
@@ -477,7 +482,7 @@ function PartnerScreenInner() {
           {tabs.map((tabItem) => {
             const on = tab === tabItem.key;
             return (
-              <Pressable key={tabItem.key} onPress={() => setTab(tabItem.key)} style={{ alignItems: "center", borderBottomColor: on ? colors.primary : "transparent", borderBottomWidth: 2, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 12 }}>
+              <Pressable key={tabItem.key} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={translateCopy(tabItem.label, language)} onPress={() => setTab(tabItem.key)} style={{ alignItems: "center", borderBottomColor: on ? colors.primary : "transparent", borderBottomWidth: 2, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 12 }}>
                 <Text style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 14, fontWeight: on ? "900" : "700" }}>{tabItem.label}</Text>
                 {tabItem.count ? (
                   <View style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 }}>

@@ -137,14 +137,14 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
         <KpiDeltaTile label="Şu an aktif" value={data.live_now} live icon="access-point" tint={colors.primary} accent={colors.primaryDark} sub="Son 5 dakikada" />
         <KpiDeltaTile label="Bugün aktif" value={data.active_today} icon="account-clock-outline" tint="#17B3B3" accent="#128F8F" sub="Günlük aktif kullanıcı" />
         <KpiDeltaTile label="Toplam kayıtlı" value={data.total_users} icon="account-group" tint="#2C82F6" accent="#1E63C8" sub={`${fmt(data.confirmed_users)} doğrulanmış`} />
-        <KpiDeltaTile label="Bu hafta yeni" value={data.new_7d} delta={data.new_today} icon="account-plus-outline" tint="#7C5CFC" accent="#5E3FE0" sub={`Bugün +${fmt(data.new_today)}`} />
+        <KpiDeltaTile label="Bu hafta yeni" value={data.new_7d} delta={data.new_today} icon="account-plus-outline" tint={colors.violet} accent="#5E3FE0" sub={`Bugün +${fmt(data.new_today)}`} />
       </View>
       {/* Renkli KPI kartları — site geneli (sunucu-gerçek) */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
         <KpiDeltaTile label="Aktif ilan" value={data.listings_active} icon="storefront-outline" tint={colors.primary} accent={colors.primaryDark} sub={`${fmt(data.listings_total)} toplam · +${fmt(data.listings_new_7d)} bu hafta`} />
         <KpiDeltaTile label="Toplam GMV" value={data.gmv} money icon="cash-multiple" tint="#E0A81E" accent="#B7791F" sub={`${fmt(data.orders_total)} sipariş — satış değeri`} />
         <KpiDeltaTile label="Komisyon (₺)" value={data.commission_amount} money icon="receipt-text-outline" tint="#2C82F6" accent="#1E63C8" sub={`${money(data.commission_paid_amount)} ödendi`} />
-        <KpiDeltaTile label="Aktif ortaklık" value={data.partnerships_active} icon="handshake-outline" tint="#7C5CFC" accent="#5E3FE0" sub={`${fmt(data.partnerships_total)} toplam · ${fmt(data.partnerships_pending)} bekliyor`} />
+        <KpiDeltaTile label="Aktif ortaklık" value={data.partnerships_active} icon="handshake-outline" tint={colors.violet} accent="#5E3FE0" sub={`${fmt(data.partnerships_total)} toplam · ${fmt(data.partnerships_pending)} bekliyor`} />
       </View>
 
       {/* Moderasyon kuyruğu (yalnız iş varsa) */}
