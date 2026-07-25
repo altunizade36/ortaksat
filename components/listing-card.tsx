@@ -212,7 +212,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
                   {/* Ortaklık kabul şekli — ortağın "nasıl ortak olurum" sinyali (ürün mantığı). */}
                   <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 3, paddingHorizontal: 7, paddingVertical: 3 }}>
                     <MaterialCommunityIcons name={listing.partnershipMode === "open" ? "flash" : listing.partnershipMode === "invite" ? "ticket-outline" : "shield-check-outline"} size={10} color={colors.muted} />
-                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{listing.partnershipMode === "open" ? translateCopy("Anında ortak", language) : listing.partnershipMode === "invite" ? translateCopy("Davetle", language) : translateCopy("Satıcı onaylı", language)}</Text>
+                    <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{listing.partnershipMode === "open" ? translateCopy("Anında ortak", language) : listing.partnershipMode === "invite" ? translateCopy("Davetli ortak", language) : translateCopy("Onaylı ortak", language)}</Text>
                   </View>
                   {listing.bonusAmount && listing.bonusAmount > 0 && listing.bonusQuota ? (
                     <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 3 }}>

@@ -666,8 +666,8 @@ function HomeCardBase({ listing, favorited, onFav, onOpen }: { listing: Listing;
         <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 5, marginTop: 4, paddingTop: 8 }}>
           <MaterialCommunityIcons name="map-marker-outline" size={12} color={colors.subtle} />
           <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 11, fontWeight: "700" }}>{displayText(listing.location)}</Text>
-          <MaterialCommunityIcons name={listing.partnershipMode === "open" ? "flash" : "handshake-outline"} size={12} color={colors.primary} />
-          <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{listing.partnershipMode === "open" ? translateCopy("Anında ortak", language) : translateCopy("Ortaklığa açık", language)}</Text>
+          <MaterialCommunityIcons name={listing.partnershipMode === "open" ? "flash" : listing.partnershipMode === "invite" ? "ticket-outline" : "shield-check-outline"} size={12} color={colors.primary} />
+          <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{listing.partnershipMode === "open" ? translateCopy("Anında ortak", language) : listing.partnershipMode === "invite" ? translateCopy("Davetli ortak", language) : translateCopy("Onaylı ortak", language)}</Text>
         </View>
       </Pressable>
     </View>

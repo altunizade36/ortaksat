@@ -1,0 +1,76 @@
+{
+  "module": "Ilan Sistemi",
+  "generatedAt": "2026-07-24",
+  "scope": "Olusturma (desktop-create-flow 6 adim), guncelleme/silme (delete-or-archive), foto/video yukleme, favoriler, mesajlasma (chat/rate-limit/izolasyon), komisyon (orders+commissions), ortaklik (partner_join/lead/attribution), arama+filtreleme (fuzzy)",
+  "liveChecks": {
+    "https://www.ortaksat.com/create": "200 — <title>Ücretsiz ilan ver — Komisyonunu belirle, ortakların sattırsın | OrtakSat</title>",
+    "https://www.ortaksat.com/explore": "200 — <title>İlanları keşfet — Emlak, vasıta, elektronik, moda | OrtakSat</title>"
+  },
+  "findings": [
+    {
+      "id": "LST-1",
+      "title": "Satici kendi ilanini 'featured' (one cikarma) yapabilir — admin-only sanilan alan RLS/grant ile korunmuyor",
+      "severity": "MEDIUM",
+      "category": "authorization/integrity",
+      "status": "unfixed",
+      "verdict": "CONFIRMED",
+      "evidence": "CANLI DOGRULAMA (information_schema.column_privileges): 'authenticated' VE 'anon' rollerinin listings.featured uzerinde UPDATE+INSERT yetkisi VAR. pg_policies: 'owners manage listings' (cmd=ALL, roles=public) qual/with_check = (owner_id = auth.uid()) — kolon kisiti YOK, yani sahip kendi ilanindaki HER kolonu (featured dahil) update edebilir. Tek moderasyon trigger'i trg_guard_listing_moderation BEFORE UPDATE; govde (pg_get_functiondef) yalniz old.status IN(pending_review,rejected)->active gecisini engeller, featured'i denetlemez. lib/live-service.ts:200 updateListingFeaturedLive yorumu 'admin' der ama hicbir sey featured'i admin'e kilitlemiyor. lib/supabase-data.ts search_listings ... 'order by c.featured desc' → self-feature aramada uste ciker.",
+      "impact": "Satici, kendi ilaninda dogrudan PostgREST ile `update listings set featured=true` cagirarak kendini ucretsiz 'sponsorlu'/one-cikan yapar; adil olmayan siralama + featured rozeti. Veri kaybi yok; guven/adalet ihlali.",
+      "fixSuggestion": "guard_listing_moderation()'a ekle: `if new.featured is distinct from old.featured and not is_admin() then raise exception 'featured yalniz admin'`; ayni sekilde INSERT'te NEW.featured=false zorla. Ayrica migration: `REVOKE UPDATE(featured), INSERT(featured) ON public.listings FROM authenticated, anon;` — one cikarma yalniz updateListingFeaturedLive'in admin RLS yolundan gecsin."
+    },
+    {
+      "id": "LST-2",
+      "title": "Yasakli icerik moderasyonu yalniz istemcide zorlaniyor — sunucu INSERT tetikleyicisi yok, dogrudan API ile yasakli ilan 'active' yayinlanabilir",
+      "severity": "MEDIUM",
+      "category": "content-safety/moderation-bypass",
+      "status": "unfixed",
+      "verdict": "CONFIRMED",
+      "evidence": "lib/moderation.ts block-list taramasi istemcide: components/desktop-create-flow.tsx:606-607 verdict block ise setError(MODERATION_MESSAGES.block)+return. CANLI: listings uzerindeki triggerlar (pg_trigger) — trg_guard_listing_moderation SADECE BEFORE UPDATE, INSERT icin moderasyon trigger'i YOK; guard govdesi yalniz status gecisine bakar. column_privileges: 'authenticated' rolunun listings.status uzerinde INSERT yetkisi VAR. RLS 'owners manage listings' INSERT with_check yalniz owner_id=auth.uid(). Yani girisli kullanici `insert into listings(...,status) values(...,'active')` ile istemci block-list'ini atlayarak yasakli metinli ilani dogrudan yayinlar. (scan_prohibited RPC mevcut ama INSERT'te ZORLANMIYOR.)",
+      "impact": "Platform 'aninda yayin/moderasyon kapali' duruşunda; block-list son yasal guvenlik agi (silah/uyusturucu/sahte belge). Istemci-only oldugu icin bot/dogrudan-PostgREST ile asilir → yasal maruziyet.",
+      "fixSuggestion": "listings'e BEFORE INSERT trigger: title||' '||description'i scan_prohibited ile tara → 'block' raise exception, 'review' NEW.status='pending_review'. Ve guard_listing_moderation'i INSERT'i de kapsayacak sekilde genislet (TG_OP kontrolu). Alternatif: ilan olusturmayi SECURITY DEFINER create_listing RPC'sine tasi, taramayi sunucuda calistir, listings dogrudan INSERT grant'ini kaldir."
+    },
+    {
+      "id": "LST-3",
+      "title": "Mesaj gonderiminde sunucu-tarafli hiz limiti YOK — yalniz istemci-ici bellek (rateLimitSync)",
+      "severity": "LOW",
+      "category": "abuse/rate-limit",
+      "status": "unfixed",
+      "verdict": "CONFIRMED",
+      "evidence": "data/app-store.tsx:973 ve :2134 mesaj gonderiminde SADECE rateLimitSync('message_send') (lib/rate-limit.ts:52, saf istemci-ici bellek dizisi) cagriliyor; sunucu-destekli async rateLimit()/check_rate_limit RPC message_send icin cagrilmiyor. CANLI: messages tablosunda tek trigger touch_conversation_last_message (AFTER INSERT) — hiz-limiti trigger'i YOK. check_rate_limit RPC var (pg_proc) ama mesaj yolunda kullanilmiyor; rateLimit() zaten 4sn timeout'ta fail-open. RLS mesaji katilimci+engellenmemis ile sinirlar ama gecerli konusmasi olan bot istemciyi atlayip (dogrudan PostgREST) sunucuda sinirsiz mesaj yagdirabilir.",
+      "impact": "Istemciyi atlayan spam/taciz; RLS taraf/engelleme disinda sunucuda debounce yok.",
+      "fixSuggestion": "messages'a BEFORE INSERT per-sender throttle trigger'i ekle (or. son 60sn'de N mesaj > limit ise raise). Alternatif: insertMessage oncesi await rateLimit('message_send') cagir (ama fail-open oldugu icin tek basina yetersiz — trigger tercih edilir)."
+    },
+    {
+      "id": "LST-4",
+      "title": "search_listings temizliginde LIKE metakarakteri '_' silinmiyor (kucuk alaka bozulmasi)",
+      "severity": "INFO",
+      "category": "search-correctness",
+      "status": "unfixed",
+      "verdict": "CONFIRMED",
+      "evidence": "lib/supabase-data.ts:476 safe = (q ?? '').replace(/[,*%()]/g,' ') — '_' kapsanmiyor. search_listings RPC f_unaccent + LIKE '%..%' kullaniyor; q parametreli (SQL injection YOK) ama PostgreSQL LIKE'da '_' tek-karakter joker → 'a_b' beklenenden genis eslesir.",
+      "impact": "Guvenlik riski degil (parametreli sorgu). Yalniz '_' iceren nadir aramalarda hafif yanlis eslesme.",
+      "fixSuggestion": "Istemcide regex'e '_' ekle (replace(/[,*%()_]/g,' ')) veya RPC'de LIKE metakarakterlerini ESCAPE et."
+    },
+    {
+      "id": "LST-5",
+      "title": "Video yukleme fiilen desteklenmiyor — secici sadece gorsel + storage bucket video MIME'ini reddediyor (kod/beklenti uyumsuzlugu)",
+      "severity": "INFO",
+      "category": "feature-mismatch/dead-code",
+      "status": "unfixed",
+      "verdict": "CONFIRMED",
+      "evidence": "components/desktop-create-flow.tsx:446 ve :462 ImagePicker mediaTypes: ['images'] — kullanici video SECEMEZ. lib/live-service.ts:422 ALLOWED_VIDEO_TYPES + MAX_MEDIA_BYTES(10MB) + video-boyut reddi kodu var ama UI'dan erisilemez (olu yol). CANLI (storage.buckets): 'listing-images' allowed_mime_types = ['image/jpeg','image/png','image/webp'] — video MIME LISTEDE YOK; bir sekilde video blob'u yuklense storage 400/mime-not-allowed dondururdu. Onceki denetimin 'video 10MB destek' ifadesi yaniltici.",
+      "impact": "Fonksiyonel kayip degil (kimse video ekleyemiyor) ama olu kod + yanlis beklenti. Ileride mediaTypes'a video eklenirse bucket sessizce reddedip yerel-uri birakir (baska kullaniciya gorunmez).",
+      "fixSuggestion": "Video gercekten istenmiyorsa live-service.ts'ten video yolunu/ALLOWED_VIDEO_TYPES'i kaldirip belgeyi duzelt. Isteniyorsa: picker mediaTypes'a video ekle VE bucket allowed_mime_types'a video/mp4 vb. ekle (storage.buckets update)."
+    }
+  ],
+  "strengths": [
+    "Teklif durum gecisleri offer_seller_respond/offer_buyer_action SECURITY DEFINER RPC'lerinden; CANLI pg_policies: offers'ta yalniz INSERT (buyer_id=auth.uid + buyer<>seller + ilan aktif&demo-degil) ve SELECT (taraflar) var, UPDATE politikasi YOK (default-deny) → alici kendi teklifini dogrudan kabul/tutar-degistirme edemez.",
+    "Satis/komisyon record_sale tek atomik SECURITY DEFINER RPC (order+commission+stok+lead tek transaction); auth.uid() zorunlu, sahiplik/stok/aktiflik sunucuda dogrulaniyor.",
+    "Ilan silme remove_listing RPC (delete-or-archive): sahip/admin kontrolu + gecmis (komisyon/order/partnership/lead) VARSA archived, YOKSA gercek delete; para/gecmis korunuyor (FK NO ACTION patlatmiyor).",
+    "Ortaklik katilimi yalniz partner_join RPC (dogrudan insert kaldirilmis); ortak-ayrilma leave_partnership + referral cozum resolve_referral_link hepsi SECURITY DEFINER (tablo enumerasyonu kapali).",
+    "RLS izolasyonu CANLI dogrulandi: favorites user_id=auth.uid() (ALL+SELECT); conversations/messages katilimci (auth.uid()=ANY(participant_ids)); messages INSERT'te 'blocked cannot send' engel kontrolu with_check'te.",
+    "Foto yukleme: web canvas + native expo-image-manipulator ile 1600px'e OTOMATIK sikistirma (6 deneme, kaliteden boyuta) → kullaniciya 'cok buyuk' hatasi cikmaz; kart thumb varyanti (-t.jpg 512px) uretiliyor; bucket 10MB + image-only MIME sinirlari.",
+    "Ilan olusturma huni-dostu: anonim form (kayit duvari yalniz Yayinla aninda), hidrasyon-gate (React #418'i onler), listing_create sunucu rate-limit (rateLimit RPC), il/ilce zorunlu + en az 1 foto validasyonu, parseTrPrice ile TR-sayi tuzagi kapali."
+  ],
+  "limitations": "Tum RLS/grant/trigger/bucket bulgulari Supabase Management API (service-role SQL) ile CANLI dogrulandi: information_schema.column_privileges (featured/status INSERT+UPDATE), pg_policies (listings/messages/favorites/offers/conversations), pg_trigger+pg_get_functiondef (guard_listing_moderation), storage.buckets (mime/size), pg_proc (check_rate_limit). Kod bulgulari dosya:satir ile Grep/Read'le dogrulandi. CANLI EXPLOIT (normal kullanici JWT'siyle featured=true / dogrudan active insert / bot mesaj flood) CALISTIRILMADI cunku test-kullanici oturum tokeni ortamda yok — ama politika+grant+trigger tanimlari sonucu KESIN kilar. /create ve /explore icin Playwright yerine HTTP 200 + <title> dogrulamasi (SSG statik export; ikisi de dogru SEO basligiyla aciliyor)."
+}

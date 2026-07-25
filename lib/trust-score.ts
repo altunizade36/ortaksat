@@ -117,8 +117,14 @@ export function calculateUserTrustScores(input: {
     rejectedApplications > 0 ? negative("Reddedilen başvuru", rejectedApplications * 4) : neutral("Başvuru sicili temiz", 0)
   ];
 
-  const sellerScore = clamp(sellerBreakdown.reduce((sum, item) => sum + item.value, 35));
-  const partnerScore = clamp(partnerBreakdown.reduce((sum, item) => sum + item.value, 35));
+  // TABAN PUAN = hesap floor + profil tamamlanması (avatar + tanıtım). ESKİDEN sabit 35'ti →
+  // yeni/boş hesap "güven %35" gösterip "profil gücü %0" ile ÇELİŞİYORDU. Artık taban da profil
+  // tamamlandıkça yükselir (doğrulama zaten breakdown'da; çift sayılmaz) → iki metrik AYNI mantıkta:
+  // boş hesap düşük, profil dolunca ikisi birlikte artar. (avatar 8 + tanıtım 7 + floor 5 = 5..20)
+  const hasAvatar = Boolean(user.avatar && (user.avatar.startsWith("http") || user.avatar.startsWith("file:")));
+  const profileBase = 5 + (hasAvatar ? 8 : 0) + (user.bio ? 7 : 0);
+  const sellerScore = clamp(sellerBreakdown.reduce((sum, item) => sum + item.value, profileBase));
+  const partnerScore = clamp(partnerBreakdown.reduce((sum, item) => sum + item.value, profileBase));
   const overall = clamp(Math.round((sellerScore + partnerScore) / 2));
 
   return {

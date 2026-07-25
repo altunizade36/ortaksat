@@ -1,0 +1,50 @@
+{
+  "module": "Odeme",
+  "scope": "OrtakSat PARA TUTMAZ; odeme saglayici (Stripe/iyzico) YOK. 'Odeme akisi' = komisyon TAKIBI (orders + commissions + trigger'lar). Denetim: komisyon hesabi, basarisiz senaryo (negatif/sifir/cift), iade/iptal, bonus/kota, IBAN sizintisi.",
+  "evidence_method": "Grep/Read kaynak + CANLI Management API sorgulari (pg_proc/pg_policies/pg_trigger/pg_constraint). Canli veri: 0 commissions, 0 orders, 0 payout_info (cold-start) -> bulgular sema/fonksiyon/RLS/trigger uzerinden dogrulandi.",
+  "findings": [
+    {
+      "id": "PAY-01",
+      "title": "Gercek odeme entegrasyonu YOK (urun modeli, eksiklik degil)",
+      "severity": "INFO",
+      "status": "wontfix",
+      "evidence": "Kod tabaninda Stripe/iyzico/payment provider cagrisi yok; grep 'payment/stripe/iyzico' bos. record_sale/record_payout yalnizca DB kayit tutar; dispute-modal.tsx:61 ve app-store.tsx:2390 'uygulama disinda odeme' metinleri. Para transferi taraflar arasi. Memory: ortaksat-money-model.",
+      "impact": "Yok. Bilincli urun karari: platform araci, para tutmaz. Komisyon = takip/mutabakat.",
+      "fixSuggestion": "Degisiklik gerekmez. Ileride escrow/odeme istenirse ayri saglayici entegrasyonu + KYC gerekir."
+    },
+    {
+      "id": "PAY-02",
+      "title": "Komisyon durum makinesi sunucuda tam zorlanmiyor: satici, borclu komisyonu tek tarafli 'cancelled' yapip borcu silebilir",
+      "severity": "MEDIUM",
+      "status": "unfixed",
+      "line": null,
+      "file": "supabase (guard_commission_paid) + RLS 'listing owner updates commissions'",
+      "evidence": "CANLI pg_trigger: commissions'ta yalniz trg_guard_commission_paid/trg_bump_seller_successful_sales/trg_audit_commission var. guard_commission_paid SADECE (a) amount/sale_amount DONDURUR ve (b) status='paid' gecisini (ortak-only + seller_paid/disputed on-kosul) kisitlar. cancelled/approved/seller_paid/disputed gecislerinde SUNUCU kisiti YOK. RLS 'listing owner updates commissions' (UPDATE, using owner_id=auth.uid()) saticiya kendi ilaninin komisyonunu istedigi statuye cekme izni verir. Istemci app-store.tsx:2347-2376 guard'lari VAR ama updateSaleStatusLive (live-service.ts:828) dogrudan .from('commissions').update -> istemci guard'i atlanabilir. Simetrik: 'partners update own commission confirmation' RLS ortaga status='seller_paid' set etme (satici odedi diye sahte iddia) izni verir; guard yalniz 'paid'i kisitlar.",
+      "failure_scenario": "Satici, ortagin hak ettigi approved/seller_paid komisyon satirini PostgREST ile status='cancelled' yapar -> borc kaydi 'iptal' olur, saleIsOwed=false, ortagin kazanci rapordan duser. amount degismedigi icin CHECK/guard tetiklenmez.",
+      "impact": "Komisyon-takip butunlugu (urunun cekirdek deger onerisi) zarar gorur. Platform para tutmadigi icin dogrudan finansal kayip yok; anlasmazlik/kayit meselesi. Hafifleticiler: trg_audit_commission her gecisi activity_logs'a yazar; ortak status='disputed' ile itiraz acabilir (guard engellemiyor); amount kayit aninda kilitli.",
+      "fixSuggestion": "commissions'a BEFORE UPDATE state-machine guard trigger ekle: izinli gecis grafi tanimla (or: approved/return_pending -> cancelled YALNIZ return penceresi icindeyken VEYA karsi taraf onayiyla; seller_paid'i yalniz record_payout SD fn'i yazsin, istemci UPDATE'i seller_paid'e gecisi reddetsin). Alternatif: cancel/dispute'u da SECURITY DEFINER RPC arkasina al (record_sale/record_payout gibi), istemcinin commissions UPDATE RLS'ini yalniz ortak-onay (partner_confirmed) alanlarina daralt."
+    },
+    {
+      "id": "PAY-03",
+      "title": "Istemci iyimser komisyon tutari (500-satir pencereli priorSales) sunucu-otoriter tutardan sapabilir",
+      "severity": "LOW",
+      "status": "unfixed",
+      "file": "lib/format.ts:107 effectiveCommissionAmount / lib/supabase-data.ts:587",
+      "evidence": "effectiveCommissionAmount (format.ts:107) priorSales'i istemci belleginden alir; commissions loadAccountSnapshot'ta limit(500) ile cekilir (supabase-data.ts:587). record_sale (CANLI) ise priorSales'i otoriter COUNT ile hesaplar ve p_commission_amount'i YOK SAYAR. >500 komisyon veya tier/bonus esiginde istemcinin GORUNTULEDIGI tutar ile DB'ye YAZILAN v_amount farkli olabilir.",
+      "impact": "Yalniz gorsel: sunucu tutari otoriter ve dogru. Ortak, sayfa yenilenene kadar iyimser (yanlis olabilir) rakami gorebilir. Para/defter dogru.",
+      "fixSuggestion": "Satis kaydindan sonra commissions satirini sunucudan geri okuyup istemci sale.commissionAmount'i v_amount ile guncelle (insertSaleFromLead donusunde). Alternatif: kayit sonrasi loadAccountSnapshot refresh."
+    }
+  ],
+  "verified_ok": [
+    "Komisyon tutari SUNUCU-OTORITER: record_sale (CANLI) p_commission_amount'i yok sayar, compute_agreed_commission + bonus ile v_amount=greatest(0, base+bonus) hesaplar (override YALNIZ daha iyiyse; agreed snapshot join'de kilitli).",
+    "Negatif/sifir korumasi: DB CHECK commissions_amount_check (amount>=0) + commissions_quantity_check (quantity>0); record_sale p_sale_amount<0 ve p_quantity<1 reddeder; v_amount greatest(0,...).",
+    "Cift-odeme/cift-bonus: prior = otoriter COUNT (cancelled/deleted haric) + listings FOR UPDATE kilidi ayni ortakligin es zamanli satislarini serilestirir; bonus yalniz prior<quota iken bir kez; lead 'converted' ise tekrar reddedilir.",
+    "Atif aklama kapali: record_sale ortakligin ilana ait oldugunu, lead'in hem ortakliga hem ilana ait oldugunu, blocked ortakligi ve pasif ortakta yalniz gecerli lead'i zorlar.",
+    "Fabrikadan-olustur/sil kapali: commissions'ta client INSERT/DELETE RLS YOK (yalniz SELECT + 2 UPDATE); orders'ta yalniz SELECT (client write policy'leri kaldirildi) -> orders/commissions'i yalniz record_sale (SECURITY DEFINER) yazar. record_sale kimlik zorunlu (auth.uid() null reddedilir) + yalniz ilan sahibi.",
+    "'paid' sahteciligi kapali: guard_commission_paid paid'i yalniz ortak (veya staff) + seller_paid/disputed on-kosulundan; amount/sale_amount UPDATE'te dondurulur; bump_seller_successful_sales yalniz paid'de artar (staff/ortak erisimli).",
+    "IBAN sizintisi kapali: IBAN payout_info tablosunda satir-bazli RLS (own-only, anon grant yok), preferences'tan cikarildi; istemci yalniz kendi payout_info.iban'ini okur/yazar (live-service.ts:118-129).",
+    "record_payout SECURITY DEFINER: yalniz ilan sahibinin (owner_id=auth.uid) approved/return_pending komisyonlarini toplu seller_paid yapar; payout kaydi tutarini SUNUCU toplar."
+  ],
+  "counts": { "total": 3, "CRITICAL": 0, "HIGH": 0, "MEDIUM": 1, "LOW": 1, "INFO": 1 },
+  "limitations": "Canli DB'de 0 commissions/0 orders/0 payout_info (cold-start) -> gercek satir uzerinde davranis calistirilamadi; bulgular fonksiyon govdeleri (pg_get_functiondef), RLS (pg_policies), trigger'lar (pg_trigger) ve CHECK constraint'ler uzerinden dogrulandi. PAY-02 istismari canli olarak PostgREST ile TETIKLENMEDI (uretim verisi kirletilmesin diye); sunucu tarafi guard/RLS eksikligi statik olarak kesin gosterildi."
+}

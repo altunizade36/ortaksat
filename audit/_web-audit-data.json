@@ -1,0 +1,502 @@
+{
+  "base": "https://www.ortaksat.com",
+  "ts": "2026-07-24T11:51:50.228Z",
+  "pageChecks": [
+    {
+      "name": "home",
+      "path": "/",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 5583,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    },
+    {
+      "name": "explore",
+      "path": "/explore",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 4323,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    },
+    {
+      "name": "create",
+      "path": "/create",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 833,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    },
+    {
+      "name": "partner",
+      "path": "/partner",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 2778,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    },
+    {
+      "name": "kategoriler",
+      "path": "/kategoriler",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 3477,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    },
+    {
+      "name": "auth",
+      "path": "/auth",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 2370,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    },
+    {
+      "name": "nasil-calisir",
+      "path": "/nasil-calisir",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 4522,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    },
+    {
+      "name": "blog",
+      "path": "/blog",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 7598,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    },
+    {
+      "name": "kategori-emlak",
+      "path": "/kategori/emlak",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 2958,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    },
+    {
+      "name": "kategori-vasita",
+      "path": "/kategori/vasita",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 3574,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    },
+    {
+      "name": "listing",
+      "path": "/listing/0bf41c94-9e37-499a-aa84-227da1d3ab5b",
+      "httpStatus": 200,
+      "crashDetected": false,
+      "bodyLen": 4652,
+      "consoleErrors": [],
+      "consoleErrorCount": 0,
+      "pageErrors": [],
+      "pageErrorCount": 0,
+      "networkErrors": [],
+      "networkErrorCount": 0,
+      "net4xx5xx": []
+    }
+  ],
+  "seo": [
+    {
+      "path": "/",
+      "label": "home",
+      "ua": "Mozilla/5.0 (compatible; Googlebot/2.1; ",
+      "status": 200,
+      "title": "OrtakSat — Komisyonla Ortak Satış Platformu | İlan Ver, Ortak Ol Kazan",
+      "description": "ortaksat: ilanını aç, ortaklar kendi yöntemiyle tanıtsın, satışta komisyon kazan. Emlak, telefon, bilgisayar, inşaat, bisiklet ve daha fazlası tek platformda.",
+      "canonical": "https://www.ortaksat.com/",
+      "ogTitle": "OrtakSat — Ortak satışla kazan: ilan ver, paylaş, komisyon al",
+      "ogDesc": "İlanını ücretsiz aç, ortaklar kendi yöntemiyle tanıtsın, satış gerçekleşince komisyon kazan. Emlak, vasıta, elektronik, moda ve daha fazlası tek platformda.",
+      "h1": "Ortak satış pazaryeri — iki taraf da kazanır",
+      "ldjsonCount": 1,
+      "robotsMeta": null
+    },
+    {
+      "path": "/listing/0bf41c94-9e37-499a-aa84-227da1d3ab5b",
+      "label": "listing",
+      "ua": "Mozilla/5.0 (compatible; Googlebot/2.1; ",
+      "status": 200,
+      "title": "Canon Pixma E414 Çok Fonksiyonlu Yazıcı — ₺4.000 | OrtakSat",
+      "description": "₺4.000. Ortak ol, ₺500 komisyon kazan. Ürün Detayları Canon Pixma E414 Çok Fonksiyonlu Yazıcı (Kolay Dolan Tıpalı Kartuşlu) dolum seti hediyeli Yüksek İşlevsellik ile Maksimum Performan",
+      "canonical": "https://www.ortaksat.com/listing/0bf41c94-9e37-499a-aa84-227da1d3ab5b",
+      "ogTitle": "Canon Pixma E414 Çok Fonksiyonlu Yazıcı — ₺4.000 | OrtakSat",
+      "ogDesc": "₺4.000. Ortak ol, ₺500 komisyon kazan. Ürün Detayları Canon Pixma E414 Çok Fonksiyonlu Yazıcı (Kolay Dolan Tıpalı Kartuşlu) dolum seti hediyeli Yüksek İşlevsellik ile Maksimum Performan",
+      "h1": "Canon Pixma E414 Çok Fonksiyonlu Yazıcı",
+      "ldjsonCount": 2,
+      "robotsMeta": null
+    },
+    {
+      "path": "/kategori/emlak",
+      "label": "kategori-emlak",
+      "ua": "Mozilla/5.0 (compatible; Googlebot/2.1; ",
+      "status": 200,
+      "title": "Emlak ilanları — Ortak satış | OrtakSat",
+      "description": "Emlak kategorisindeki ortak satış ilanlarını keşfet. Komisyonlu ürünleri incele, ürününü ortak satışla daha çok kişiye ulaştır, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.",
+      "canonical": "https://www.ortaksat.com/kategori/emlak",
+      "ogTitle": "Emlak ilanları — Ortak satış | OrtakSat",
+      "ogDesc": "Emlak kategorisindeki ortak satış ilanlarını keşfet. Komisyonlu ürünleri incele, ürününü ortak satışla daha çok kişiye ulaştır, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.",
+      "h1": "Emlak ilanları",
+      "ldjsonCount": 6,
+      "robotsMeta": "index, follow"
+    },
+    {
+      "path": "/kategori/vasita",
+      "label": "kategori-vasita",
+      "ua": "Mozilla/5.0 (compatible; Googlebot/2.1; ",
+      "status": 200,
+      "title": "Vasıta ilanları — Ortak satış | OrtakSat",
+      "description": "Vasıta kategorisindeki ortak satış ilanlarını keşfet. Komisyonlu ürünleri incele, ürününü ortak satışla daha çok kişiye ulaştır, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.",
+      "canonical": "https://www.ortaksat.com/kategori/vasita",
+      "ogTitle": "Vasıta ilanları — Ortak satış | OrtakSat",
+      "ogDesc": "Vasıta kategorisindeki ortak satış ilanlarını keşfet. Komisyonlu ürünleri incele, ürününü ortak satışla daha çok kişiye ulaştır, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.",
+      "h1": "Vasıta ilanları",
+      "ldjsonCount": 6,
+      "robotsMeta": "index, follow"
+    },
+    {
+      "path": "/explore",
+      "label": "explore",
+      "ua": "Mozilla/5.0 (compatible; Googlebot/2.1; ",
+      "status": 200,
+      "title": "İlanları Keşfet — OrtakSat",
+      "description": "ortaksat: ilanını aç, ortaklar kendi yöntemiyle tanıtsın, satışta komisyon kazan. Emlak, telefon, bilgisayar, inşaat, bisiklet ve daha fazlası tek platformda.",
+      "canonical": "https://www.ortaksat.com/explore",
+      "ogTitle": "İlanları keşfet — Emlak, vasıta, elektronik, moda | OrtakSat",
+      "ogDesc": "Binlerce ilan arasında ara ve filtrele; beğendiğin ürüne ortak ol, kendi yönteminle tanıt, satışta komisyon kazan. OrtakSat'ta keşfet.",
+      "h1": null,
+      "ldjsonCount": 1,
+      "robotsMeta": null
+    }
+  ],
+  "sitemap": {
+    "status": 200,
+    "contentType": "application/xml",
+    "urlCount": 98,
+    "wellFormed": true,
+    "sample": [
+      "https://www.ortaksat.com/",
+      "https://www.ortaksat.com/explore",
+      "https://www.ortaksat.com/kategoriler",
+      "https://www.ortaksat.com/kategori/emlak",
+      "https://www.ortaksat.com/kategori/vasita"
+    ]
+  },
+  "robots": {
+    "status": 200,
+    "contentType": "text/plain; charset=utf-8",
+    "hasSitemap": true,
+    "hasUserAgent": true,
+    "body": "User-agent: *\nAllow: /\n\n# Hesap/aksiyon gerektiren özel alanlar — arama motorlarına kapalı\nDisallow: /admin\nDisallow: /auth\nDisallow: /profile-edit\nDisallow: /earnings\nDisallow: /favorites\nDisallow: /notifications\nDisallow: /chat/\nDisallow: /listing-edit/\n\nSitemap: https://www.ortaksat.com/sitemap.xml\n"
+  },
+  "notFound": {
+    "httpStatus": 404,
+    "hasNotFoundContent": true,
+    "bodySnippet": "ortaksat\nOrtak satış platformu\n󰍉\n󰍉\nAra\n󰍂\nGiriş yap\n󰠁\nKayıt ol\nAna Sayfa\nKeşfet\nİlan Ver\nOrtak Satış\nKategoriler\n󰅀\nNasıl Çalışır?\nBlog\n󰮁\n404 — Sayfa bulunamadı\nAradığın sayfa taşınmış veya hiç va"
+  },
+  "brokenLinks": {
+    "totalHrefFound": 46,
+    "uniqueInternal": 35,
+    "sampled": 25,
+    "broken": [],
+    "allSampled": [
+      {
+        "url": "https://www.ortaksat.com/",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/auth",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategoriler",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/create",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/partner",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/emlak",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/vasita",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/yedek-parca-aksesuar-donanim-ve-tuning",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/ikinci-el-ve-sifir-alisveris",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/is-makineleri-ve-sanayi",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/ustalar-ve-hizmetler",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/ozel-ders-ve-egitim",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/is-ilanlari",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/yardimci-arayanlar",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/hayvanlar-alemi",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/arayanlar-talep-ilanlari",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/kategori/dijital-urunler-ve-hizmetler",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/explore",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/iletisim",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/satici-ol",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/influencer-kazanc",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/ortak-kazanc",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/nasil-calisir",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/sss",
+        "status": 200
+      },
+      {
+        "url": "https://www.ortaksat.com/guvenli-alisveris",
+        "status": 200
+      }
+    ]
+  },
+  "responsive": [
+    {
+      "viewport": "1366x768",
+      "path": "/",
+      "scrollWidth": 1366,
+      "innerWidth": 1366,
+      "docScrollWidth": 1366,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "1366x768",
+      "path": "/explore",
+      "scrollWidth": 1366,
+      "innerWidth": 1366,
+      "docScrollWidth": 1366,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "1366x768",
+      "path": "/kategori/emlak",
+      "scrollWidth": 1366,
+      "innerWidth": 1366,
+      "docScrollWidth": 1366,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "1366x768",
+      "path": "/listing/0bf41c94-9e37-499a-aa84-227da1d3ab5b",
+      "scrollWidth": 1366,
+      "innerWidth": 1366,
+      "docScrollWidth": 1366,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "768x1024",
+      "path": "/",
+      "scrollWidth": 768,
+      "innerWidth": 768,
+      "docScrollWidth": 768,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "768x1024",
+      "path": "/explore",
+      "scrollWidth": 768,
+      "innerWidth": 768,
+      "docScrollWidth": 768,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "768x1024",
+      "path": "/kategori/emlak",
+      "scrollWidth": 768,
+      "innerWidth": 768,
+      "docScrollWidth": 768,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "768x1024",
+      "path": "/listing/0bf41c94-9e37-499a-aa84-227da1d3ab5b",
+      "scrollWidth": 768,
+      "innerWidth": 768,
+      "docScrollWidth": 768,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "390x844",
+      "path": "/",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "docScrollWidth": 390,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "390x844",
+      "path": "/explore",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "docScrollWidth": 390,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "390x844",
+      "path": "/kategori/emlak",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "docScrollWidth": 390,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    },
+    {
+      "viewport": "390x844",
+      "path": "/listing/0bf41c94-9e37-499a-aa84-227da1d3ab5b",
+      "scrollWidth": 390,
+      "innerWidth": 390,
+      "docScrollWidth": 390,
+      "horizontalOverflow": false,
+      "overflowPx": 0
+    }
+  ],
+  "webVitals": [
+    {
+      "path": "/",
+      "lcp": 1064,
+      "cls": 0.0048,
+      "fcp": 228,
+      "domContentLoaded": 412.40000000037253,
+      "loadEvent": 518.3000000007451
+    },
+    {
+      "path": "/explore",
+      "lcp": 1588,
+      "cls": 0.0006,
+      "fcp": 208,
+      "domContentLoaded": 416,
+      "loadEvent": 518.9000000003725
+    },
+    {
+      "path": "/kategori/emlak",
+      "lcp": 1296,
+      "cls": 0.0007,
+      "fcp": 236,
+      "domContentLoaded": 422.59999999962747,
+      "loadEvent": 523.2000000011176
+    }
+  ],
+  "errors": []
+}

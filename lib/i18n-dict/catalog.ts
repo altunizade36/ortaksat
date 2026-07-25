@@ -42,6 +42,8 @@ export const catalogDict: Record<string, string> = {
   "Fiyat ↑": "Price ↑",
   "Fiyat ↓": "Price ↓",
   "Anında ortak": "Instant partner",
+  "Onaylı ortak": "Approval partner",
+  "Davetli ortak": "Invite-only partner",
   "En az": "Min",
   "En çok": "Max",
   "Filtreleri temizle": "Clear filters",

@@ -4,7 +4,6 @@ import { Link, type Href } from "expo-router";
 import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
-import { OnboardingChecklist } from "@/components/onboarding-checklist";
 import { PartnerTier } from "@/components/partner-tier";
 import { ProfileStrength } from "@/components/profile-strength";
 import { AuthRequired } from "@/components/auth-gate";
@@ -116,9 +115,6 @@ function ProfileScreenInner() {
             </Link>
           </View>
         </View>
-
-        {/* Onboarding kontrol listesi — hesap/profil bölümünde (ana sayfadan taşındı). */}
-        <OnboardingChecklist />
 
         {/* Stat cards */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
@@ -263,7 +259,7 @@ function ProfileScreenInner() {
           <Metric label={t("responseRate")} value={`%${currentUser.responseRate}`} />
         </View>
 
-        <ProfileStrength user={currentUser} hasListing={myListings.length > 0} />
+        <ProfileStrength user={currentUser} hasListing={myListings.length > 0} hasPartnership={myPartnerships.length > 0} />
 
         <View style={{ flexDirection: "row", gap: 8 }}>
           <View style={{ flex: 1 }}>
@@ -274,9 +270,6 @@ function ProfileScreenInner() {
           </View>
         </View>
       </Card>
-
-      {/* Onboarding kontrol listesi — hesap/profil bölümünde (ana sayfadan taşındı). */}
-      <OnboardingChecklist />
 
       <Card>
         <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{t("accountSupport")}</Text>

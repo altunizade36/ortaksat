@@ -22,7 +22,7 @@ async function runProfile(browser, name, viewport, isMobile) {
   const r = { profile: name, viewport, checks: {} };
 
   // 1) KEŞFET AÇILIYOR MU + kart sayısı
-  await p.goto(`${BASE}/explore`, { waitUntil: "networkidle", timeout: 45000 });
+  await p.goto(`${BASE}/explore`, { waitUntil: "domcontentloaded", timeout: 45000 });
   await p.waitForTimeout(4000);
   // Kart tespiti: hem ListingCard hem ExploreTile artık data-card="listing" taşır (birleşik).
   const cardSel = '[data-card="listing"]';
@@ -34,7 +34,7 @@ async function runProfile(browser, name, viewport, isMobile) {
   // 2) ARAMA ÇALIŞIYOR MU: sorgu gir → sonuç değişsin
   let searchPass = false, searchCount = -1;
   try {
-    await p.goto(`${BASE}/explore?q=iphone`, { waitUntil: "networkidle", timeout: 45000 });
+    await p.goto(`${BASE}/explore?q=iphone`, { waitUntil: "domcontentloaded", timeout: 45000 });
     await p.waitForTimeout(3500);
     searchCount = await p.locator(cardSel).count();
     const txt = await p.evaluate(() => document.body.innerText.toLowerCase());
@@ -46,7 +46,7 @@ async function runProfile(browser, name, viewport, isMobile) {
   // 3) FİLTRE ÇALIŞIYOR MU: komisyon filtresi URL'i → liste yanıt versin (crash yok, kart var/boş-durum)
   let filterPass = false, filterCount = -1;
   try {
-    await p.goto(`${BASE}/explore?comm=100000`, { waitUntil: "networkidle", timeout: 45000 });
+    await p.goto(`${BASE}/explore?comm=100000`, { waitUntil: "domcontentloaded", timeout: 45000 });
     await p.waitForTimeout(3500);
     filterCount = await p.locator(cardSel).count();
     const ftxt = await p.evaluate(() => document.body.innerText);
@@ -60,7 +60,7 @@ async function runProfile(browser, name, viewport, isMobile) {
   // 4) İLAN OLUŞTURMA AKIŞI: /create açılıyor + kategori seçimi/form alanları var (SUBMIT YOK)
   let createPass = false, hasCategoryPicker = false, hasSearchInput = false;
   try {
-    await p.goto(`${BASE}/create`, { waitUntil: "networkidle", timeout: 45000 });
+    await p.goto(`${BASE}/create`, { waitUntil: "domcontentloaded", timeout: 45000 });
     await p.waitForTimeout(4000);
     const ctext = await p.evaluate(() => document.body.innerText);
     const ccrash = /ters gitti|went wrong/i.test(ctext);
@@ -72,7 +72,7 @@ async function runProfile(browser, name, viewport, isMobile) {
   r.checks.createFlowWorks = { pass: createPass, hasCategoryPicker, hasInput: hasSearchInput };
 
   // 5) SIRALAMA + FİLTRE UI mevcut mu (web vs mobil parite için)
-  await p.goto(`${BASE}/explore`, { waitUntil: "networkidle", timeout: 45000 });
+  await p.goto(`${BASE}/explore`, { waitUntil: "domcontentloaded", timeout: 45000 });
   await p.waitForTimeout(3000);
   const uiText = await p.evaluate(() => document.body.innerText);
   // Sıralama: web'de metin ("Sırala:"), mobilde ikon-only buton (aria-label="Sırala: …").

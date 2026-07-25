@@ -17,18 +17,24 @@ function isImageAvatar(value: string) {
  * Güçlü profil = daha çok güven = daha çok ortak/satış. Sahte doğrulama yapmaz;
  * yalnız kullanıcının kendisinin tamamlayabileceği gerçek adımları teşvik eder.
  */
-export function ProfileStrength({ user, hasListing }: { user: User; hasListing: boolean }) {
+export function ProfileStrength({ user, hasListing, hasPartnership }: { user: User; hasListing: boolean; hasPartnership?: boolean }) {
   const { language } = useLanguage();
+  // TEK onboarding sistemi (eski ayrı OnboardingChecklist kaldırıldı): profil tamamlama +
+  // ilk ilan + ilk ortaklık tek listede. Platformun çekirdek eylemi "ilk ortaklık" da burada.
   const items: Array<{ label: string; done: boolean; icon: IconName; href: Href; cta: string }> = [
     { label: "Profil fotoğrafı ekle", done: isImageAvatar(user.avatar), icon: "camera-outline", href: "/profile-edit", cta: "Ekle" },
     { label: "Kısa tanıtım yaz", done: !!user.bio, icon: "text-account", href: "/profile-edit", cta: "Yaz" },
-    { label: "İlk ilanını aç", done: hasListing, icon: "store-plus-outline", href: "/create", cta: "Aç" },
     { label: "Telefonunu doğrula", done: user.verifiedPhone, icon: "phone-check-outline", href: "/trust", cta: "Doğrula" },
-    { label: "Kimliğini doğrula", done: user.verifiedIdentity, icon: "card-account-details-outline", href: "/trust", cta: "Doğrula" }
+    { label: "Kimliğini doğrula", done: user.verifiedIdentity, icon: "card-account-details-outline", href: "/trust", cta: "Doğrula" },
+    { label: "İlk ilanını aç", done: hasListing, icon: "store-plus-outline", href: "/create", cta: "Aç" },
+    { label: "İlk ortaklığını kur", done: Boolean(hasPartnership), icon: "handshake-outline", href: "/(tabs)/explore", cta: "Keşfet" }
   ];
   const doneCount = items.filter((i) => i.done).length;
   const pct = Math.round((doneCount / items.length) * 100);
   const tone = pct >= 80 ? colors.success : pct >= 40 ? colors.primary : colors.gold;
+
+  // Tümü tamamsa gizle (tamamlanmış profili gereksiz meşgul etme).
+  if (pct === 100) return null;
 
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 16 }}>
