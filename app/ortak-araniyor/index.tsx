@@ -6,7 +6,7 @@ import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } fro
 import { colors } from "@/components/colors";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { Seo } from "@/components/seo";
-import { EmptyState, PrimaryButton } from "@/components/ui";
+import { Chip, EmptyState, LoadingBlock, PrimaryButton, SegButton, StatChip } from "@/components/ui";
 import { PAGE_MAX_WIDTH } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
 import { categoryTree } from "@/lib/category-tree";
@@ -80,8 +80,8 @@ function Inner() {
 
         {/* Mod + oluştur */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 12 }}>
-          <Seg active={mode === "feed"} icon="bullhorn-variant-outline" label={t("Açık talepler")} onPress={() => setMode("feed")} />
-          {isAuthenticated ? <Seg active={mode === "mine"} icon="clipboard-list-outline" label={t("Taleplerim")} onPress={() => setMode("mine")} /> : null}
+          <SegButton active={mode === "feed"} icon="bullhorn-variant-outline" label={t("Açık talepler")} onPress={() => setMode("feed")} />
+          {isAuthenticated ? <SegButton active={mode === "mine"} icon="clipboard-list-outline" label={t("Taleplerim")} onPress={() => setMode("mine")} /> : null}
           <View style={{ marginLeft: "auto" }}>
             <PrimaryButton icon="plus" onPress={() => { if (!isAuthenticated) { void router.push("/auth"); return; } setShowCreate((s) => !s); }}>{t("Talep Oluştur")}</PrimaryButton>
           </View>
@@ -93,17 +93,14 @@ function Inner() {
         {/* Kategori filtresi (yalnız feed) */}
         {mode === "feed" ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }} style={{ marginBottom: 12 }}>
-            <Chip active={category === null} label={t("Tümü")} onPress={() => setCategory(null)} />
-            {TOP_CATEGORIES.map((c) => <Chip key={c} active={category === c} label={t(c)} onPress={() => setCategory(category === c ? null : c)} />)}
+            <Chip tone="primary" active={category === null} label={t("Tümü")} onPress={() => setCategory(null)} />
+            {TOP_CATEGORIES.map((c) => <Chip key={c} tone="primary" active={category === c} label={t(c)} onPress={() => setCategory(category === c ? null : c)} />)}
           </ScrollView>
         ) : null}
 
         {/* İçerik */}
         {loading ? (
-          <View style={{ alignItems: "center", paddingVertical: 44 }}>
-            <MaterialCommunityIcons name="loading" size={28} color={colors.muted} />
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginTop: 8 }}>{t("Yükleniyor…")}</Text>
-          </View>
+          <LoadingBlock />
         ) : mode === "feed" ? (
           feed.length === 0 ? (
             <EmptyState
@@ -162,7 +159,7 @@ function CreateForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => 
       <View>
         <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>{t("Kategori")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7 }}>
-          {TOP_CATEGORIES.map((c) => <Chip key={c} active={cat === c} label={t(c)} onPress={() => setCat(cat === c ? null : c)} />)}
+          {TOP_CATEGORIES.map((c) => <Chip key={c} tone="primary" active={cat === c} label={t(c)} onPress={() => setCat(cat === c ? null : c)} />)}
         </ScrollView>
       </View>
       <View style={{ flexDirection: "row", gap: 10 }}>
@@ -206,10 +203,10 @@ function FeedCard({ req, wide, onChanged }: { req: PartnerRequestFeedItem; wide:
           <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{req.title}</Text>
           {req.description ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }} numberOfLines={3}>{req.description}</Text> : null}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            {req.category ? <Badge icon="shape-outline" label={t(req.category)} /> : null}
-            {req.commissionHint ? <Badge icon="cash" label={req.commissionHint} tone="success" /> : null}
-            {req.location ? <Badge icon="map-marker-outline" label={req.location} /> : null}
-            <Badge icon="account-multiple" label={`${req.applicationCount} ${t("başvuru")}`} />
+            {req.category ? <StatChip icon="shape-outline" label={t(req.category)} /> : null}
+            {req.commissionHint ? <StatChip icon="cash" label={req.commissionHint} tone="success" /> : null}
+            {req.location ? <StatChip icon="map-marker-outline" label={req.location} /> : null}
+            <StatChip icon="account-multiple" label={`${req.applicationCount} ${t("başvuru")}`} />
           </View>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
             <MaterialCommunityIcons name="store-outline" size={13} color={colors.subtle} />
@@ -219,7 +216,7 @@ function FeedCard({ req, wide, onChanged }: { req: PartnerRequestFeedItem; wide:
         </View>
         <View style={{ justifyContent: "center", minWidth: wide ? 150 : undefined }}>
           {req.isOwner ? (
-            <Badge icon="account-check" label={t("Bu talep senin")} />
+            <StatChip icon="account-check" label={t("Bu talep senin")} />
           ) : applied ? (
             <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 999, flexDirection: "row", gap: 5, justifyContent: "center", paddingHorizontal: 12, paddingVertical: 8 }}>
               <MaterialCommunityIcons name="check" size={15} color={colors.success} />
@@ -277,9 +274,9 @@ function MineCard({ req, onChanged }: { req: MyPartnerRequest; onChanged: () => 
         </View>
       </View>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-        {req.category ? <Badge icon="shape-outline" label={t(req.category)} /> : null}
-        {req.commissionHint ? <Badge icon="cash" label={req.commissionHint} tone="success" /> : null}
-        {req.location ? <Badge icon="map-marker-outline" label={req.location} /> : null}
+        {req.category ? <StatChip icon="shape-outline" label={t(req.category)} /> : null}
+        {req.commissionHint ? <StatChip icon="cash" label={req.commissionHint} tone="success" /> : null}
+        {req.location ? <StatChip icon="map-marker-outline" label={req.location} /> : null}
       </View>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <Pressable onPress={() => void toggle()} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
@@ -371,31 +368,3 @@ function Field({ label, value, onChangeText, placeholder, multiline }: { label: 
   );
 }
 
-function Seg({ active, icon, label, onPress }: { active: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void }) {
-  return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: active }} onPress={onPress}
-      style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, opacity: pressed ? 0.8 : 1, paddingHorizontal: 12, paddingVertical: 8 })}>
-      <MaterialCommunityIcons name={icon} size={15} color={active ? "#FFFFFF" : colors.muted} />
-      <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function Chip({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
-  return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: active }} onPress={onPress}
-      style={({ pressed }) => ({ backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 12, paddingVertical: 7 })}>
-      <Text numberOfLines={1} style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function Badge({ icon, label, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone?: "success" }) {
-  const c = tone === "success" ? colors.success : colors.muted;
-  return (
-    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 4 }}>
-      <MaterialCommunityIcons name={icon} size={12} color={c} />
-      <Text style={{ color: tone === "success" ? colors.success : colors.ink, fontSize: 11, fontWeight: "800" }}>{label}</Text>
-    </View>
-  );
-}

@@ -136,11 +136,14 @@ export function Metric({ label, value }: { label: string; value: string }) {
 
 export function EmptyState({ title, body, action, mascot }: { title: string; body: string; action?: { label: string; href?: Href; onPress?: () => void; icon?: keyof typeof MaterialCommunityIcons.glyphMap }; mascot?: MascotName }) {
   const { language } = useLanguage();
+  // STATİK style: action.href → <Link asChild> ile sarılıyor; fonksiyon-style web'de anchor'a
+  // uygulanmaz (bg/flexDirection düşer → görünmez CTA). Statik obje asChild'da korunur.
   const cta = action ? (
     <Pressable
       accessibilityRole={action.href ? "link" : "button"}
+      accessibilityLabel={translateCopy(action.label, language)}
       onPress={action.onPress}
-      style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primaryDark, borderRadius: 10, flexDirection: "row", gap: 6, marginTop: 4, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 10 })}
+      style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primaryDark, borderRadius: 10, flexDirection: "row", gap: 6, marginTop: 4, minHeight: 44, paddingHorizontal: 16, paddingVertical: 10 }}
     >
       {action.icon ? <MaterialCommunityIcons name={action.icon} size={16} color="#FFFFFF" /> : null}
       <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy(action.label, language)}</Text>
@@ -180,36 +183,78 @@ export function SectionTitle({ title, action }: { title: string; action?: string
   );
 }
 
-export function Chip({ label, active, onPress }: { label: string; active?: boolean; onPress?: () => void }) {
+// Filtre/segment çipi. tone: "dark" (varsayılan, mevcut çağıranlar) | "primary" (turkuaz).
+// icon opsiyonel. a11y (role/state/label) + hitSlop dahil (küçük dokunma hedefi telafisi).
+export function Chip({ label, active, onPress, tone = "dark", icon }: { label: string; active?: boolean; onPress?: () => void; tone?: "dark" | "primary"; icon?: keyof typeof MaterialCommunityIcons.glyphMap }) {
   const { language } = useLanguage();
+  const activeBg = tone === "primary" ? colors.primary : colors.ink;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityState={{ selected: !!active }}
       accessibilityLabel={translateCopy(label, language)}
+      hitSlop={6}
       onPress={onPress}
       style={({ pressed }) => ({
         alignItems: "center",
-        backgroundColor: active ? colors.ink : colors.surface,
-        borderColor: active ? colors.ink : colors.line,
+        backgroundColor: active ? activeBg : colors.surface,
+        borderColor: active ? activeBg : colors.line,
         borderRadius: 999,
         borderWidth: 1,
+        flexDirection: "row",
+        gap: icon ? 5 : 0,
         justifyContent: "center",
+        maxWidth: 260,
         minHeight: 38,
         opacity: pressed ? 0.72 : 1,
-        maxWidth: 172,
         paddingHorizontal: 13,
         paddingVertical: 8
       })}
     >
-      <Text
-        ellipsizeMode="tail"
-        numberOfLines={1}
-        selectable
-        style={{ color: active ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 13, fontWeight: "900", lineHeight: 16 }}
-      >
+      {icon ? <MaterialCommunityIcons name={icon} size={14} color={active ? "#FFFFFF" : colors.muted} /> : null}
+      <Text ellipsizeMode="tail" numberOfLines={1} selectable style={{ color: active ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 13, fontWeight: "900", lineHeight: 16 }}>
         {translateCopy(label, language)}
       </Text>
     </Pressable>
+  );
+}
+
+// İkon+etiketli segment düğmesi (mod seçici). ortaklar/ortak-araniyor'da kopyalıydı → tek kaynak.
+export function SegButton({ active, icon, label, onPress, small }: { active: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void; small?: boolean }) {
+  const { language } = useLanguage();
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityState={{ selected: active }}
+      accessibilityLabel={translateCopy(label, language)}
+      hitSlop={6}
+      onPress={onPress}
+      style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: small ? 36 : 40, opacity: pressed ? 0.8 : 1, paddingHorizontal: small ? 10 : 12, paddingVertical: small ? 6 : 8 })}
+    >
+      <MaterialCommunityIcons name={icon} size={small ? 13 : 15} color={active ? "#FFFFFF" : colors.muted} />
+      <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: small ? 11.5 : 12.5, fontWeight: "800" }}>{translateCopy(label, language)}</Text>
+    </Pressable>
+  );
+}
+
+// İkon+etiketli küçük istatistik/rozet pili (salt-gösterim). Tek kaynak.
+export function StatChip({ icon, label, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone?: "success" }) {
+  const c = tone === "success" ? colors.success : colors.muted;
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 4 }}>
+      <MaterialCommunityIcons name={icon} size={12} color={c} />
+      <Text style={{ color: tone === "success" ? colors.success : colors.ink, fontSize: 11, fontWeight: "800" }}>{label}</Text>
+    </View>
+  );
+}
+
+// Yükleniyor bloğu (spinner + metin) — birden çok ekranda kopyalıydı.
+export function LoadingBlock({ label }: { label?: string }) {
+  const { language } = useLanguage();
+  return (
+    <View style={{ alignItems: "center", paddingVertical: 44 }}>
+      <MaterialCommunityIcons name="loading" size={28} color={colors.muted} />
+      <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginTop: 8 }}>{translateCopy(label ?? "Yükleniyor…", language)}</Text>
+    </View>
   );
 }

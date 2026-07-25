@@ -7,7 +7,7 @@ import { colors } from "@/components/colors";
 import { tierFromCount } from "@/components/partner-tier";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { Seo } from "@/components/seo";
-import { EmptyState, PrimaryButton } from "@/components/ui";
+import { Chip, EmptyState, LoadingBlock, PrimaryButton, SegButton, StatChip } from "@/components/ui";
 import { PAGE_MAX_WIDTH } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
 import { categoryTree } from "@/lib/category-tree";
@@ -101,12 +101,12 @@ function Inner() {
 
         {/* Mod + sıralama satırı */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
-          <SegBtn active={!mine} icon="account-group" label={t("Tüm ortaklar")} onPress={() => setMine(false)} />
-          {isAuthenticated ? <SegBtn active={mine} icon="heart" label={t("Favori Ortaklarım")} onPress={() => setMine(true)} /> : null}
+          <SegButton active={!mine} icon="account-group" label="Tüm ortaklar" onPress={() => setMine(false)} />
+          {isAuthenticated ? <SegButton active={mine} icon="heart" label="Favori Ortaklarım" onPress={() => setMine(true)} /> : null}
           {!mine ? (
             <View style={{ flexDirection: "row", gap: 6, marginLeft: "auto" }}>
-              <SegBtn small active={sort === "performance"} icon="trophy-variant" label={t("En başarılı")} onPress={() => setSort("performance")} />
-              <SegBtn small active={sort === "favorites"} icon="heart-multiple" label={t("En çok favori")} onPress={() => setSort("favorites")} />
+              <SegButton small active={sort === "performance"} icon="trophy-variant" label="En başarılı" onPress={() => setSort("performance")} />
+              <SegButton small active={sort === "favorites"} icon="heart-multiple" label="En çok favori" onPress={() => setSort("favorites")} />
             </View>
           ) : null}
         </View>
@@ -114,19 +114,16 @@ function Inner() {
         {/* Kategori çipleri (yalnız tüm-ortaklar modunda) */}
         {!mine ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }} style={{ marginBottom: 14 }}>
-            <Chip active={category === null} label={t("Tümü")} onPress={() => setCategory(null)} />
+            <Chip tone="primary" active={category === null} label="Tümü" onPress={() => setCategory(null)} />
             {TOP_CATEGORIES.map((c) => (
-              <Chip key={c} active={category === c} label={t(c)} onPress={() => setCategory(category === c ? null : c)} />
+              <Chip key={c} tone="primary" active={category === c} label={c} onPress={() => setCategory(category === c ? null : c)} />
             ))}
           </ScrollView>
         ) : null}
 
         {/* Liste */}
         {loading ? (
-          <View style={{ alignItems: "center", paddingVertical: 44 }}>
-            <MaterialCommunityIcons name="loading" size={28} color={colors.muted} />
-            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", marginTop: 8 }}>{t("Ortaklar yükleniyor…")}</Text>
-          </View>
+          <LoadingBlock label="Ortaklar yükleniyor…" />
         ) : entries.length === 0 ? (
           mine ? (
             <EmptyState
@@ -157,33 +154,6 @@ function Inner() {
       </View>
       <WebFooter />
     </ScrollView>
-  );
-}
-
-function SegBtn({ active, icon, label, onPress, small }: { active: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void; small?: boolean }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      onPress={onPress}
-      style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, opacity: pressed ? 0.8 : 1, paddingHorizontal: small ? 10 : 12, paddingVertical: small ? 6 : 8 })}
-    >
-      <MaterialCommunityIcons name={icon} size={small ? 13 : 15} color={active ? "#FFFFFF" : colors.muted} />
-      <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: small ? 11.5 : 12.5, fontWeight: "800" }}>{label}</Text>
-    </Pressable>
-  );
-}
-
-function Chip({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
-      onPress={onPress}
-      style={({ pressed }) => ({ backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 12, paddingVertical: 7 })}
-    >
-      <Text numberOfLines={1} style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{label}</Text>
-    </Pressable>
   );
 }
 
@@ -223,9 +193,9 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
 
           {/* Performans satırı: onaylı satış + tamamlanan ortaklık + kazanç */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <Stat icon="check-circle" label={`${entry.confirmedSales} ${t("satış")}`} />
-            {entry.completedPartnerships > 0 ? <Stat icon="handshake" label={`${entry.completedPartnerships} ${t("ortaklık")}`} /> : null}
-            {entry.paidEarned > 0 ? <Stat icon="cash" label={moneyIn(entry.paidEarned, "TRY")} tone="success" /> : null}
+            <StatChip icon="check-circle" label={`${entry.confirmedSales} ${t("satış")}`} />
+            {entry.completedPartnerships > 0 ? <StatChip icon="handshake" label={`${entry.completedPartnerships} ${t("ortaklık")}`} /> : null}
+            {entry.paidEarned > 0 ? <StatChip icon="cash" label={moneyIn(entry.paidEarned, "TRY")} tone="success" /> : null}
           </View>
 
           {/* Uzmanlık */}
@@ -270,12 +240,3 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
   );
 }
 
-function Stat({ icon, label, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone?: "success" }) {
-  const c = tone === "success" ? colors.success : colors.muted;
-  return (
-    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 4 }}>
-      <MaterialCommunityIcons name={icon} size={12} color={c} />
-      <Text style={{ color: tone === "success" ? colors.success : colors.ink, fontSize: 11, fontWeight: "800" }}>{label}</Text>
-    </View>
-  );
-}
