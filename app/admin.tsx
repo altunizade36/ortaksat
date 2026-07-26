@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useRouter } from "expo-router";
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
@@ -1483,17 +1483,40 @@ function Panel({ title, sub, children }: { title: string; sub?: string; children
   );
 }
 
+// Responsive tablo: masaüstünde sütunlu tablo; mobilde her satır dikey KART olur
+// (her hücre "ETİKET: değer" satırı) → 5 sütun 390px'e sıkışıp üst üste binmez.
+const TableCtx = createContext<{ head: string[]; wide: boolean }>({ head: [], wide: true });
+
 function Table({ head, cols, children }: { head: string[]; cols: number[]; children: ReactNode }) {
+  const wide = useIsWideWeb();
   return (
-    <View>
-      <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1.5, flexDirection: "row", paddingBottom: 9 }}>
-        {head.map((h, i) => <Text key={h} style={{ color: colors.subtle, flex: cols[i], fontSize: 10, fontWeight: "900", letterSpacing: 0.6, textAlign: i === head.length - 1 ? "right" : "left", textTransform: "uppercase" }}>{h}</Text>)}
+    <TableCtx.Provider value={{ head, wide }}>
+      <View>
+        {wide ? (
+          <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1.5, flexDirection: "row", paddingBottom: 9 }}>
+            {head.map((h, i) => <Text key={h} style={{ color: colors.subtle, flex: cols[i], fontSize: 10, fontWeight: "900", letterSpacing: 0.6, textAlign: i === head.length - 1 ? "right" : "left", textTransform: "uppercase" }}>{h}</Text>)}
+          </View>
+        ) : null}
+        {children}
       </View>
-      {children}
-    </View>
+    </TableCtx.Provider>
   );
 }
 function Row({ cols, cells }: { cols: number[]; cells: ReactNode[] }) {
+  const { head, wide } = useContext(TableCtx);
+  if (!wide) {
+    // Mobil kart: her hücre kendi etiketiyle tam-genişlik → sıkışma/binme yok
+    return (
+      <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 9, paddingVertical: 13 }}>
+        {cells.map((c, i) => (
+          <View key={i} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
+            <Text style={{ color: colors.subtle, fontSize: 10, fontWeight: "900", letterSpacing: 0.5, marginTop: 2, textTransform: "uppercase", width: 74 }}>{head[i] ?? ""}</Text>
+            <View style={{ flex: 1, minWidth: 0 }}>{c}</View>
+          </View>
+        ))}
+      </View>
+    );
+  }
   return (
     <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingVertical: 10 }}>
       {cells.map((c, i) => <View key={i} style={{ alignItems: i === cells.length - 1 ? "flex-end" : "flex-start", flex: cols[i] }}>{c}</View>)}
