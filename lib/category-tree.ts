@@ -2586,7 +2586,11 @@ const HINTS: Array<{ words: string[]; path: string[] }> = [
   { words: ["laptop", "bilgisayar", "notebook"], path: ["İkinci El & Sıfır Alışveriş", "Bilgisayar & Oyun", "Dizüstü Bilgisayar"] },
   { words: ["buzdolabi", "camasir makinesi", "beyaz esya"], path: ["İkinci El & Sıfır Alışveriş", "Beyaz Eşya"] },
   { words: ["ayakkabi", "spor ayakkabi", "sneaker"], path: ["İkinci El & Sıfır Alışveriş", "Moda", "Ayakkabı"] },
-  { words: ["kopek", "kedi", "yavru", "sahiplen"], path: ["Hayvanlar Alemi", "Sahiplendirme"] }
+  { words: ["kopek", "kedi", "yavru", "sahiplen"], path: ["Hayvanlar Alemi", "Sahiplendirme"] },
+  // Yeni hizmet kategorileri (etiketle birebir eşleşmeyen yüksek-frekans arama terimleri).
+  { words: ["guzellik", "estetik", "guzellik salonu", "guzellik merkezi", "kuafor", "berber", "epilasyon"], path: ["Ustalar & Hizmetler", "Güzellik & Kişisel Bakım"] },
+  { words: ["veri girisi", "sanal asistan", "data entry", "evden is", "evden calisma", "home office"], path: ["Dijital Ürünler & Hizmetler", "Veri Girişi & Sanal Asistanlık"] },
+  { words: ["merdiven", "iskele", "seyyar merdiven"], path: ["Yapı Market & Bahçe", "Merdiven & Sehpa"] }
 ];
 
 function pathByLabels(labels: string[]): CategoryNode[] {
