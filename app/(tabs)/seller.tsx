@@ -690,16 +690,19 @@ function SellerScreenInner() {
                 ) : null}
                 {/* Form kaldırıldı → satıcı, başvuranın PROFİLİNE bakıp karar verir.
                     Başarılı satış = en güçlü sinyal; doğrulama rozetleri güven verir. */}
+                {/* Metric flex:1 → mobilde 4 kutu tek satıra sıkışıyordu. 3 ASIL sinyal
+                    (puan/başarılı satış/güven) rahat sığar; "Min. puan" (satıcının kendi
+                    ayarı, çoğu zaman 0) yalnız >0 iken rozet olarak gösterilir. */}
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                   <Metric label="Ortak puanı" value={`${partner?.rating ?? 0}`} />
                   <Metric label="Başarılı satış" value={`${partner?.successfulSales ?? 0}`} />
                   <Metric label="Ortak güveni" value={partnerTrust ? `%${partnerTrust.score}` : "-"} />
-                  <Metric label="Min. puan" value={`${listing?.minPartnerRating ?? 0}`} />
                 </View>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
                   {partnerTrust ? <StatusPill label={partnerTrust.label} tone={partnerTrust.score >= 70 ? "success" : "warning"} /> : null}
                   {partner?.verifiedPhone ? <StatusPill label="Telefon doğrulandı" tone="success" /> : null}
                   {partner?.verifiedIdentity ? <StatusPill label="Kimlik doğrulandı" tone="success" /> : null}
+                  {listing?.minPartnerRating ? <StatusPill label={`Min. puan: ${listing.minPartnerRating}`} tone="warning" /> : null}
                 </View>
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   <View style={{ flex: 1 }}>
