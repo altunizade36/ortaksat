@@ -21,6 +21,7 @@ import { getInitialAuthUrl, handleSupabaseAuthUrl, subscribeToAuthUrls } from "@
 import { promptLogin } from "@/lib/auth-prompt";
 import { registerFavoriteToggle, syncFavorites } from "@/lib/favorites-cache";
 import { haptic } from "@/lib/haptics";
+import { metaTrack } from "@/lib/meta-pixel";
 import { syncSavedForUser } from "@/lib/saved-searches";
 import { effectiveCommissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
 import { scanTextLocal } from "@/lib/moderation";
@@ -1588,6 +1589,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const lead: Lead = { ...input, id: newId("lead", liveUser), status: "new", createdAt: today() };
         setAuthError(undefined);
         setLeads((items) => [lead, ...items]);
+        // Meta Pixel: satıcı iletişimi / ortak talebi = yüksek-niyet dönüşümü (Lead). fbq yoksa no-op.
+        metaTrack("Lead", { content_name: listing.title, content_category: listing.category, value: listing.price || 0, currency: "TRY" });
         setListings((items) =>
           items.map((listing) =>
             listing.id === input.listingId ? { ...listing, leadCount: listing.leadCount + 1 } : listing
@@ -2055,8 +2058,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
           return;
         }
         const favoriteId = newId("f", liveUser);
-        const savedPrice = listings.find((l) => l.id === listingId)?.price;
+        const favListing = listings.find((l) => l.id === listingId);
+        const savedPrice = favListing?.price;
         setFavorites((items) => [{ id: favoriteId, listingId, userId: currentUser.id, savedPrice }, ...items]);
+        // Meta Pixel: favoriye ekleme = ilgi sinyali (AddToWishlist). fbq yoksa no-op.
+        metaTrack("AddToWishlist", { content_name: favListing?.title, content_category: favListing?.category, value: favListing?.price || 0, currency: "TRY" });
         setListings((items) =>
           items.map((listing) =>
             listing.id === listingId ? { ...listing, favoriteCount: listing.favoriteCount + 1 } : listing

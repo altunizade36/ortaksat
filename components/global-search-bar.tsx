@@ -9,6 +9,7 @@ import { suggestCategories } from "@/lib/category-tree";
 import { moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { searchAndRank } from "@/lib/search";
+import { metaTrack } from "@/lib/meta-pixel";
 import { clearRecentSearches, getRecentSearches, pushRecentSearch, removeRecentSearch } from "@/lib/recent-searches";
 import { displayText } from "@/lib/text";
 import { useStore } from "@/lib/use-store";
@@ -41,7 +42,11 @@ export function GlobalSearchBar() {
 
   function submitSearch(query?: string) {
     const finalQ = (query ?? value).trim();
-    if (finalQ.length >= 2) pushRecentSearch(finalQ);
+    if (finalQ.length >= 2) {
+      pushRecentSearch(finalQ);
+      // Meta Pixel: arama = niyet sinyali (Search). fbq yoksa no-op.
+      metaTrack("Search", { search_string: finalQ });
+    }
     inputRef.current?.blur();
     setFocused(false);
     router.push({ pathname: "/(tabs)/explore", params: finalQ ? { q: finalQ } : undefined });
