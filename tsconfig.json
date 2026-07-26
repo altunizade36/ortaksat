@@ -15,7 +15,19 @@
     ".expo/types/**/*.ts",
     "expo-env.d.ts"
   ],
+  // NOT: child "exclude" parent'ı (expo/tsconfig.base) BİRLEŞTİRMEZ, DEĞİŞTİRİR.
+  // Bu yüzden base'in koruyucu exclude'larını (node_modules/android/ios/config'ler)
+  // burada TEKRAR yazmak gerekir; yoksa açgözlü "**/*.ts" include'u prebuild native
+  // klasörlerini veya build çıktısını (dist-web/dist-check-android) tip-kontrolüne
+  // sürükler → IDE'de hayalet hatalar. (Yalnız tip-kontrolünü etkiler; build ayrı.)
   "exclude": [
+    "node_modules",
+    "dist-web",
+    "dist-check-android",
+    "android",
+    "ios",
+    "babel.config.js",
+    "metro.config.js",
     "e2e/**",
     "playwright.config.ts"
   ]
