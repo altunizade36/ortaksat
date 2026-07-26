@@ -16,6 +16,7 @@ import { LegalConsentModal } from "@/components/legal-consent-modal";
 import { LEGAL_DOCS } from "@/lib/legal-content";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { metaTrack } from "@/lib/meta-pixel";
 import { useIsWideWeb } from "@/lib/layout";
 import { hasSeenWelcome, markWelcomeSeen } from "@/lib/onboarding";
 import { setRememberSession } from "@/lib/supabase";
@@ -240,6 +241,9 @@ export default function AuthScreen() {
       if (!ok) {
         const m = authError ?? (language === "en" ? "Registration failed. Please try again." : "Kayıt yapılamadı. Lütfen tekrar dene.");
         setFormError(m); Alert.alert(language === "en" ? "Registration failed" : "Kayıt yapılamadı", translateCopy(m, language));
+      } else {
+        // Meta Pixel: kayıt tamamlandı (reklam dönüşümü). fbq yoksa sessiz no-op.
+        metaTrack("CompleteRegistration", { content_name: "email_signup", status: true });
       }
     } catch {
       const m = language === "en" ? "Connection error. Please try again." : "Bağlantı hatası. Lütfen tekrar dene.";

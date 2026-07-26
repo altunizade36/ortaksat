@@ -39,6 +39,7 @@ import { WebContainer } from "@/components/web-container";
 import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
 import { insertReferralLead, logReferralClick, recordListingView, resolveReferralLink } from "@/lib/live-service";
 import { getRefAttribution, saveRefAttribution } from "@/lib/referral";
+import { metaTrack } from "@/lib/meta-pixel";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { getRecent, pushRecent, subscribeRecent } from "@/lib/recent";
 import { calculateUserTrustScores } from "@/lib/trust-score";
@@ -210,6 +211,15 @@ export default function ListingDetailScreen() {
       pushRecent(listing.id);
       // Y6: görüntülenme kaydı — owner-hariç, sunucuda günlük-dedup (şişirme-dirençli).
       void recordListingView(listing.id);
+      // Meta Pixel: ürün görüntüleme (reklam retargeting + ilgi sinyali). fbq yoksa no-op.
+      metaTrack("ViewContent", {
+        content_ids: [listing.id],
+        content_type: "product",
+        content_name: listing.title,
+        content_category: listing.category,
+        value: listing.price || 0,
+        currency: "TRY"
+      });
     }
   }, [listing?.id]);
 

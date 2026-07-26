@@ -70,6 +70,20 @@ export default function Root({ children }: PropsWithChildren) {
         <script defer src="/_vercel/insights/script.js" />
         <script defer src="/_vercel/speed-insights/script.js" />
 
+        {/* Meta (Facebook) Pixel — reklam dönüşüm takibi. ENV-KORUMALI: EXPO_PUBLIC_META_PIXEL_ID
+            set DEĞİLSE metaPixelScript "" olur → HİÇBİR ŞEY enjekte edilmez (site etkisiz).
+            ID Vercel env var'ına eklenip yeniden deploy edilince otomatik canlı olur. Base kod
+            init + ilk PageView'ı gönderir; SPA gezinme PageView'ı <MetaPixelRouter/> ile,
+            dönüşüm olayları lib/meta-pixel.ts ile. noscript img = JS kapalı tarayıcı fallback'i. */}
+        {metaPixelScript ? <script dangerouslySetInnerHTML={{ __html: metaPixelScript }} /> : null}
+        {metaPixelScript ? (
+          <noscript
+            dangerouslySetInnerHTML={{
+              __html: `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1" alt="" />`
+            }}
+          />
+        ) : null}
+
         {/* İlk veri çağrısı gecikmesin: Supabase kaynağına erken bağlan. */}
         <link rel="preconnect" href="https://akyzzdwbzgsnhdircuce.supabase.co" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://akyzzdwbzgsnhdircuce.supabase.co" />
@@ -134,6 +148,19 @@ export default function Root({ children }: PropsWithChildren) {
 // SSG taslagi (yanlis duzen/ikonsuz/kartsiz) kullaniciya HIC gorunmez. 8sn guvenlik agi.
 const SB_URL = process.env.EXPO_PUBLIC_SUPABASE_URL ?? "";
 const SB_KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY ?? process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? "";
+
+// Meta Pixel base kodu — YALNIZCA env var set olduğunda üretilir (aksi halde "" → head'e
+// hiçbir script düşmez). Pixel ID herkese açık bir tanımlayıcıdır (istemci kodunda görünür,
+// gizli değil). Standart Meta snippet'i: fbevents.js'i async yükler, init eder, PageView sayar.
+const META_PIXEL_ID = (process.env.EXPO_PUBLIC_META_PIXEL_ID ?? "").trim();
+const metaPixelScript = /^\d{5,20}$/.test(META_PIXEL_ID)
+  ? "!function(f,b,e,v,n,t,s){if(f.fbq)return;n=f.fbq=function(){n.callMethod?" +
+    "n.callMethod.apply(n,arguments):n.queue.push(arguments)};if(!f._fbq)f._fbq=n;" +
+    "n.push=n;n.loaded=!0;n.version='2.0';n.queue=[];t=b.createElement(e);t.async=!0;" +
+    "t.src=v;s=b.getElementsByTagName(e)[0];s.parentNode.insertBefore(t,s)}" +
+    "(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');" +
+    "fbq('init'," + JSON.stringify(META_PIXEL_ID) + ");fbq('track','PageView');"
+  : "";
 const PROFILE_COLS = "id,full_name,avatar_url,bio,verified_phone,verified_identity,verified_instagram,rating,response_rate,role,status,successful_sales,follower_count";
 
 // Sorgular loadMarketplaceSnapshot ile AYNI olmalı; ayrışırsa ön-çekim sessizce atlanır

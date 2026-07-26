@@ -14,6 +14,7 @@ import { CompareBar } from "@/components/compare-bar";
 import { PresenceHeartbeat } from "@/components/presence-heartbeat";
 import { PushRegistrar } from "@/components/push-registrar";
 import { InviteCapture } from "@/components/invite-capture";
+import { MetaPixelRouter } from "@/components/meta-pixel-router";
 import { ErrorToast } from "@/components/error-toast";
 import { AlertHost } from "@/components/alert-host";
 import { GlobalSeo } from "@/components/global-seo";
@@ -114,6 +115,7 @@ function RootStack() {
       <PresenceHeartbeat />
       <PushRegistrar />
       <InviteCapture />{/* Y8: giriş sonrası saklanan davet kodunu yakalar */}
+      <MetaPixelRouter />{/* SPA gezinmesinde Meta Pixel PageView (web + ID varsa) */}
       <ErrorToast />
       <AlertHost />
     </View>

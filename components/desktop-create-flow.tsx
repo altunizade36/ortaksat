@@ -17,6 +17,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { modelsForSchema, deriveFieldsFromPath, describeAttributes, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { CURRENCIES, moneyIn, partnerInviteUrl, productUrl, listingShareTemplates, type CurrencyCode } from "@/lib/format";
 import { categoryConversion } from "@/lib/conversion";
+import { metaTrack } from "@/lib/meta-pixel";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { formatLocation, getProvince } from "@/lib/locations";
 import { uploadListingImage } from "@/lib/live-service";
@@ -729,6 +730,13 @@ export function DesktopCreateFlow() {
       // kalmıyordu. Paylaşım metinleri yayından ÖNCE gösteriliyordu — yani içlerinde gerçek
       // ilan linki OLAMIYORDU (ilan henüz yoktu). Oysa platformun trafiği tam da satıcının
       // bu linki paylaşmasından geliyor. Artık gerçek link + paylaş + ortak daveti veriyoruz.
+      // Meta Pixel: ilan yayınlandı (arz-tarafı dönüşümü). fbq yoksa sessiz no-op.
+      metaTrack("SubmitApplication", {
+        content_name: title || leafLabel,
+        content_category: leafLabel || path[0]?.label || "Genel",
+        value: priceNum || 0,
+        currency
+      });
       setPublished({ listing: created, review: verdict === "review" });
       setPublishing(false);
       return;
