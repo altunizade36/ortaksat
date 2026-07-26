@@ -717,48 +717,8 @@ function PartnerScreenInner() {
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <WebContainer max={1280} padding={0} style={{ gap: 14 }}>
-      <Card>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
-          <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 8, height: 48, justifyContent: "center", width: 48 }}>
-            <MaterialCommunityIcons name="handshake" size={26} color={colors.info} />
-          </View>
-          <View style={{ flex: 1, gap: 6 }}>
-            <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Kazançlarım", language)}</Text>
-            <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
-              {t("partnerEarningsBody")}
-            </Text>
-          </View>
-        </View>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
-          <Metric label="Bekleyen" value={money(waiting)} />
-          <Metric label="Onaylanan" value={money(approved)} />
-        </View>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <Metric label="Ödenen" value={money(paid)} />
-          <Metric label="Satış" value={`${mySales.length}`} />
-        </View>
-        <View style={{ flexDirection: "row", gap: 10 }}>
-          <Metric label="Aktif ortaklık" value={`${activePartnerships.length}`} />
-          <Metric label="Başvuru" value={`${pendingPartnerships.length}`} />
-        </View>
-      </Card>
-
-      {mounted && myBroughtLeads.length > 0 ? (
-        <MiniBarChart data={leadSeries} title={translateCopy("Son 14 gün · getirdiğin talep", language)} totalLabel={`${myBroughtLeads.length} ${translateCopy("talep", language)}`} />
-      ) : null}
-
-      <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
-
-      {/* Liderlik yalnız top-N gösterir → aranabilir tam dizine köprü (kategori/performans filtresi). */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: -4 }}>
-        <View style={{ flex: 1, minWidth: 200 }}>
-          <PrimaryButton href={"/ortaklar" as Href} tone="secondary" icon="account-star">{translateCopy("Tüm uzman ortakları gör", language)}</PrimaryButton>
-        </View>
-        <View style={{ flex: 1, minWidth: 200 }}>
-          <PrimaryButton href={"/ortak-araniyor" as Href} tone="secondary" icon="bullhorn-variant">{translateCopy("Ortak aranıyor ilanları", language)}</PrimaryButton>
-        </View>
-      </View>
-
+      {/* Çekirdek = ortak satış fırsatları: mobilde de EN ÜSTTE (eskiden Kazançlarım/liderlik/
+          butonlar önce geliyordu → yeni kullanıcı boş panelle karşılaşıp fırsatları geç görüyordu). */}
       {allOpportunities.length > 0 ? (
         <Card>
           <SectionTitle title="Ortak satış fırsatları" action={`${mobileOpportunities.length}`} />
@@ -857,6 +817,49 @@ function PartnerScreenInner() {
           ) : null}
         </Card>
       ) : null}
+
+      {/* Kazançlarım (özet panosu) + liderlik + dizin köprüleri — fırsatlardan SONRA (ikincil). */}
+      <Card>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
+          <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 8, height: 48, justifyContent: "center", width: 48 }}>
+            <MaterialCommunityIcons name="handshake" size={26} color={colors.info} />
+          </View>
+          <View style={{ flex: 1, gap: 6 }}>
+            <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Kazançlarım", language)}</Text>
+            <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
+              {t("partnerEarningsBody")}
+            </Text>
+          </View>
+        </View>
+        <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+          <Metric label="Bekleyen" value={money(waiting)} />
+          <Metric label="Onaylanan" value={money(approved)} />
+        </View>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <Metric label="Ödenen" value={money(paid)} />
+          <Metric label="Satış" value={`${mySales.length}`} />
+        </View>
+        <View style={{ flexDirection: "row", gap: 10 }}>
+          <Metric label="Aktif ortaklık" value={`${activePartnerships.length}`} />
+          <Metric label="Başvuru" value={`${pendingPartnerships.length}`} />
+        </View>
+      </Card>
+
+      {mounted && myBroughtLeads.length > 0 ? (
+        <MiniBarChart data={leadSeries} title={translateCopy("Son 14 gün · getirdiğin talep", language)} totalLabel={`${myBroughtLeads.length} ${translateCopy("talep", language)}`} />
+      ) : null}
+
+      <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
+
+      {/* Liderlik yalnız top-N gösterir → aranabilir tam dizine köprü (kategori/performans filtresi). */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: -4 }}>
+        <View style={{ flex: 1, minWidth: 200 }}>
+          <PrimaryButton href={"/ortaklar" as Href} tone="secondary" icon="account-star">{translateCopy("Tüm uzman ortakları gör", language)}</PrimaryButton>
+        </View>
+        <View style={{ flex: 1, minWidth: 200 }}>
+          <PrimaryButton href={"/ortak-araniyor" as Href} tone="secondary" icon="bullhorn-variant">{translateCopy("Ortak aranıyor ilanları", language)}</PrimaryButton>
+        </View>
+      </View>
 
       {funnelCard}
 
