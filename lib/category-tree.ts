@@ -1791,7 +1791,6 @@ export const categoryTree: CategoryNode[] = [
 
   node("İkinci El & Sıfır Alışveriş", [
     node("Elektronik", [
-      node("Cep Telefonu", brandModelNodes(PHONE_BRANDS, MODELS_BY_BRAND, "telefon"), "telefon"),
       node("Televizyon", brandModelNodes(TV_BRANDS, TV_MODELS, "televizyon"), "televizyon"),
       node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "Diğer Tablet"], "elektronik"), "elektronik"),
       node("Ses & Kulaklık", leaves(["Kablosuz Kulaklık", "Kulak İçi Kulaklık", "Kulak Üstü Kulaklık", "Bluetooth Hoparlör", "Soundbar", "Ev Sinema Sistemi", "Mikrofon"], "elektronik"), "elektronik"),
@@ -1944,7 +1943,7 @@ export const categoryTree: CategoryNode[] = [
     node("Teknik Servis & Tamir", leaves(["Bilgisayar Teknik Servis", "Telefon Tamiri", "TV & Elektronik Tamiri", "Oto Servis", "Mobilya Montaj & Tamir", "Saat Tamiri", "Ayakkabı & Çanta Tamiri", "Anahtarcı & Çilingir"], "hizmet"), "hizmet"),
     node("Nakliye & Lojistik", leaves(["Evden Eve Nakliyat", "Şehirler Arası Nakliyat", "Ofis Taşıma", "Parça Eşya Taşıma", "Asansörlü Taşıma", "Depolama & Ambar", "Kurye & Kargo", "Uluslararası Taşıma"], "hizmet"), "hizmet"),
     node("Temizlik & Bakım", leaves(["Ev Temizliği", "Ofis Temizliği", "İnşaat Sonrası Temizlik", "Cam Temizliği", "Halı & Koltuk Yıkama", "Dezenfeksiyon", "İlaçlama & Haşere", "Bahçe Bakımı"], "hizmet"), "hizmet"),
-    node("Dijital & Tasarım", leaves(["Web Tasarım", "Grafik Tasarım", "Logo & Kurumsal Kimlik", "Sosyal Medya Yönetimi", "SEO & Reklam", "Yazılım & Uygulama", "Video Kurgu & Animasyon", "İçerik & Metin Yazarlığı"], "hizmet"), "hizmet"),
+    node("Güzellik & Kişisel Bakım", leaves(["Kuaför & Berber", "Saç Boyama & Bakım", "Cilt Bakımı", "Ağda & Epilasyon", "Lazer Epilasyon", "Manikür & Pedikür", "Kalıcı Makyaj", "Makyaj (Gelin & Özel Gün)", "Masaj & Spa", "Dövme & Piercing", "Solaryum", "Evde Güzellik Hizmeti"], "hizmet"), "hizmet"),
     node("Organizasyon & Etkinlik", leaves(["Düğün Organizasyon", "Nişan & Kına", "Doğum Günü", "Catering & İkram", "Fotoğraf & Video Çekimi", "Müzik & DJ", "Süsleme & Balon", "Davetiye & Matbaa", "Sahne & Ses Sistemi"], "hizmet"), "hizmet"),
     node("Profesyonel Hizmetler", leaves(["Danışmanlık", "Muhasebe & Mali Müşavir", "Hukuki Danışmanlık", "Sigorta", "Tercüme & Çeviri", "Emlak Danışmanlığı", "İş Kurma Danışmanlığı", "Vergi Danışmanlığı"], "hizmet"), "hizmet"),
     node("Güvenlik & Sağlık", leaves(["Özel Güvenlik", "Kamera & Alarm Sistemi", "Sağlık & Hasta Bakımı", "Yaşlı Bakımı", "Fizyoterapi", "Diyetisyen", "Psikolog & Danışman", "Evde Sağlık"], "hizmet"), "hizmet")
@@ -1968,6 +1967,7 @@ export const categoryTree: CategoryNode[] = [
     node("Ofis & Yönetim", leaves(["Muhasebe & Finans", "İnsan Kaynakları", "Sekreter & Asistan", "Yönetici & Müdür", "Satın Alma", "Halkla İlişkiler", "Hukuk & Avukatlık", "Ofis Elemanı"], "isIlani"), "isIlani"),
     node("Üretim, Lojistik & Sanayi", leaves(["Üretim İşçisi", "Kalite Kontrol", "Depo & Sevkiyat", "Forklift Operatörü", "Şoför", "Kurye & Motokurye", "Vinç/İş Makinesi Operatörü", "Teknik Bakım"], "isIlani"), "isIlani"),
     node("Hizmet & Turizm", leaves(["Garson & Komi", "Aşçı & Mutfak", "Barista", "Resepsiyon", "Kat Görevlisi", "Animasyon", "Temizlik Personeli", "Güvenlik Görevlisi", "Çağrı Merkezi"], "isIlani"), "isIlani"),
+    node("Güzellik & Bakım", leaves(["Kuaför & Berber", "Estetisyen", "Cilt Bakım Uzmanı", "Manikürist & Pedikürist", "Masör & Masöz", "Makyaj Artisti", "Kalıcı Makyaj Uzmanı", "Epilasyon Uzmanı", "Güzellik Merkezi Danışmanı", "Spa Terapisti"], "isIlani"), "isIlani"),
     node("Sağlık & Eğitim", leaves(["Doktor", "Hemşire", "Sağlık Teknikeri", "Fizyoterapist", "Öğretmen", "Öğretim Görevlisi", "Bakıcı & Refakatçi", "Eczane Personeli"], "isIlani"), "isIlani"),
     node("İnşaat & Mühendislik", leaves(["İnşaat Mühendisi", "Mimar", "Makine Mühendisi", "Elektrik Mühendisi", "Usta & Kalfa", "Şantiye Şefi", "Teknik Ressam", "İş Güvenliği Uzmanı"], "isIlani"), "isIlani")
   ], "isIlani", IMG("1521737604893-d14cc237f11d")),
@@ -2143,6 +2143,11 @@ export const categoryTree: CategoryNode[] = [
     node("Danışmanlık & Destek", leaves([
       "Teknik Destek", "Sistem Kurulumu", "Siber Güvenlik Danışmanlığı", "Veri Analizi",
       "Yapay Zekâ Danışmanlığı", "E-ticaret Danışmanlığı"
+    ], "dijitalHizmet"), "dijitalHizmet"),
+    node("Veri Girişi & Sanal Asistanlık", leaves([
+      "Veri Girişi", "Sanal Asistan", "Web Araştırma", "İnternetten Veri Toplama",
+      "Transkripsiyon (Deşifre)", "E-posta & Takvim Yönetimi", "CRM & Liste Yönetimi",
+      "Müşteri Destek (Online)", "PDF & Doküman Düzenleme", "Excel & Veri Düzenleme"
     ], "dijitalHizmet"), "dijitalHizmet")
   ], "dijitalHizmet", IMG("1461749280684-dccba630e2f6")),
 
@@ -2157,6 +2162,11 @@ export const categoryTree: CategoryNode[] = [
       "Tornavida Seti", "Anahtar Takımı", "Lokma Takımı", "Pense & Kerpeten", "Çekiç & Balyoz",
       "El Testeresi", "Mengene", "İşkence", "Şerit Metre", "Su Terazisi", "Lazer Metre",
       "Lazer Hizalama", "Alet Çantası", "Takım Dolabı", "El Aleti Seti"
+    ], "yapiMarket"), "yapiMarket"),
+    node("Merdiven & Sehpa", leaves([
+      "Katlanır Merdiven", "Teleskopik Merdiven", "A Tipi Merdiven", "Çatı Merdiveni",
+      "Platform Merdiven", "İskele", "Çalışma Sehpası", "Kesim Sehpası (Tezgâh)",
+      "Seyyar Platform", "Merdiven Aksesuarı"
     ], "yapiMarket"), "yapiMarket"),
     node("Hırdavat", leaves([
       "Vida & Cıvata", "Dübel", "Somun & Pul", "Menteşe", "Kilit", "Kapı Kolu", "Çilingir Malzemesi",
