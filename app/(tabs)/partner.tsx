@@ -83,6 +83,7 @@ function PartnerScreenInner() {
   const [oppGuven, setOppGuven] = useState("");
   const [oppSort, setOppSort] = useState<"recommended" | "commission" | "stock" | "rating" | "new">("recommended");
   const [oppVisible, setOppVisible] = useState(8);
+  const [showHow, setShowHow] = useState(false); // "Nasıl çalışır" onboarding açık/kapalı — varsayılan KAPALI (sade, fırsatlar öne çıksın)
   // Bildirim derin-linki (?focus=<listingId>): ilgili ortaklığı "Aktif" sekmesinde öne al.
   // Menü derin-linki (?tab=pending|active|earning|links): ilgili sekmeyi aç.
   const params = useLocalSearchParams<{ focus?: string; tab?: string }>();
@@ -442,14 +443,16 @@ function PartnerScreenInner() {
 
         {/* Yeni ortak (hiç ortaklığı/satışı yok): sıfır-değerli panel yerine 5 adımlı onboarding. */}
         {myPartnerships.length === 0 && mySales.length === 0 ? (
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 18, borderWidth: 1, gap: 14, padding: 20 }}>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-              <Mascot name="idea" size={46} />
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 18, borderWidth: 1, gap: showHow ? 14 : 0, padding: showHow ? 20 : 15 }}>
+            <Pressable onPress={() => setShowHow((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: showHow }} accessibilityLabel={translateCopy("Nasıl çalışır — 5 adımda ortak kazancı", language)} style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+              <Mascot name="idea" size={showHow ? 46 : 38} />
               <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("5 adımda ortak kazancı", language)}</Text>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Sermaye ve stok gerekmez. Komisyon yalnızca doğrulanan sonuçta hak edilir.", language)}</Text>
+                <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{translateCopy("Nasıl çalışır? — 5 adımda ortak kazancı", language)}</Text>
+                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy("Sıfır sermaye · komisyon yalnız doğrulanan sonuçta hak edilir.", language)}</Text>
               </View>
-            </View>
+              <MaterialCommunityIcons name={showHow ? "chevron-up" : "chevron-down"} size={22} color={colors.primaryDark} />
+            </Pressable>
+            {showHow ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
               {[
                 { n: 1, i: "compass-outline" as const, t: "Sana uygun fırsatı bul", d: "Kategorine ve kitlene uygun ilanları filtrele." },
@@ -470,6 +473,7 @@ function PartnerScreenInner() {
                 </View>
               ))}
             </View>
+            ) : null}
           </View>
         ) : null}
 
@@ -517,7 +521,6 @@ function PartnerScreenInner() {
                     </Pressable>
                   ) : null}
                 </View>
-                <HowPartnerWorks language={language} />
                 {opportunities.length === 0 ? (
                   <NoOpportunities language={language} />
                 ) : (
@@ -811,7 +814,6 @@ function PartnerScreenInner() {
               <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Filtreleri temizle", language)}</Text>
             </Pressable>
           ) : null}
-          <HowPartnerWorks language={language} />
           {allOpportunities.length === 0 ? (
             <NoOpportunities language={language} />
           ) : mobileOpportunities.length === 0 ? (
@@ -1251,36 +1253,6 @@ function GuvenBadge({ rating }: { rating: number }) {
   );
 }
 
-// "3 adımda ortak ol" — akışı net anlatır (kullanıcı "mantığı çözemedik" dedi).
-function HowPartnerWorks({ language }: { language: "tr" | "en" }) {
-  const steps: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; n: string; title: string; body: string }> = [
-    { icon: "cursor-default-click-outline", n: "1", title: "Ürüne ortak ol", body: "Beğendiğin ürünün yanındaki “Ortak ol”a bas — anında ortaklık (açık modda) ya da satıcı onayı." },
-    { icon: "bullhorn-outline", n: "2", title: "Kendi yönteminle tanıt", body: "Ortak olunca ürünü sosyal medyanda, çevrende veya müşterilerine istediğin gibi tanıtırsın; zorunlu link/takip yok." },
-    { icon: "cash-multiple", n: "3", title: "Paylaş & komisyon kazan", body: "Linki paylaş; satış olursa komisyonun panelinde kayda geçer, satıcı sana öder." }
-  ];
-  return (
-    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, marginBottom: 14, padding: 14 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-        <MaterialCommunityIcons name="handshake-outline" size={17} color={colors.primaryDark} />
-        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("3 adımda nasıl ortak olunur?", language)}</Text>
-      </View>
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-        {steps.map((s) => (
-          <View key={s.n} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexBasis: 200, flexGrow: 1, gap: 6, minWidth: 160, padding: 12 }}>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 9, height: 32, justifyContent: "center", width: 32 }}>
-                <MaterialCommunityIcons name={s.icon} size={17} color={colors.primaryDark} />
-              </View>
-              <Text style={{ color: colors.subtle, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{s.n}</Text>
-            </View>
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy(s.title, language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy(s.body, language)}</Text>
-          </View>
-        ))}
-      </View>
-    </View>
-  );
-}
 
 // Gerçek (ortaklığa açık) ürün yokken dürüst boş-durum — çıkmaz veren örnek ilanlar yerine.
 function NoOpportunities({ language }: { language: "tr" | "en" }) {
