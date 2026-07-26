@@ -18,7 +18,7 @@ import { getCategoryIcon } from "@/lib/categories";
 import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, findProvince } from "@/lib/cities";
 import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
+import { useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince, matchesLocationFilter } from "@/lib/locations";
 import { fetchListingsByCategory } from "@/lib/supabase-data";
 import type { Listing, User } from "@/lib/types";
@@ -225,7 +225,6 @@ export default function CategoryLandingScreen() {
   useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, numRange, loc.provinceId, loc.districtId]);
   useEffect(() => { setAttrFilters({}); setNumRange({}); }, [slug]);
 
-  const cardWidth = responsiveGrid({ available: Math.min(layoutWidth, 1240) - 24, gap: 12, minCardWidth: 176 }).cardWidth;
   const title = node ? `${node.label} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
   // SEO açıklaması: SABİT/evergreen — ilan SAYISI YAZMA. SSG bake'te sayı 0'dır ve
   // "0 ortak satış ilanı" arama sonucunda sayfayı boş/değersiz gösterirdi.
@@ -432,9 +431,9 @@ export default function CategoryLandingScreen() {
           )
         ) : (
           <>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+            <View dataSet={{ cardGrid: "1" }} style={{ gap: 12 }}>
               {items.slice(0, visible).map((l) => (
-                <ListingCard key={l.id} listing={l} owner={resolveOwner(l.ownerId)} width={cardWidth} />
+                <ListingCard key={l.id} listing={l} owner={resolveOwner(l.ownerId)} />
               ))}
             </View>
             {visible < items.length ? (

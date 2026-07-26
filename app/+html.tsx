@@ -336,6 +336,22 @@ body {
   [data-blog-featimg] { width: auto !important; min-width: 0 !important; }
 }
 
+/* CLS FIX — İlan kart grid'i CSS-grid ile (JS responsiveGrid yerine). Kart genişliği
+   JS'le hesaplanınca SSG(sunucu-genişlik) ↔ istemci(gerçek-genişlik) farkı → mount'ta
+   grid reflow → alttaki bölümler zıplar (CLS). CSS auto-fill sütun sayısını KONTEYNER
+   genişliğinden hesaplar → SSG'de doğru, reflow YOK. Kartlar hücreyi doldurur (width:auto). */
+[data-card-grid] {
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr); /* telefon: her zaman 2 sütun (responsiveGrid minColumns:2 ile aynı) */
+  gap: 12px;
+  align-items: start;
+}
+@media (min-width: 500px) {
+  /* tablet+: konteyner genişliğine göre otomatik sütun (minCardWidth 176 ile aynı) */
+  [data-card-grid] { grid-template-columns: repeat(auto-fill, minmax(176px, 1fr)); }
+}
+[data-card-grid] > * { width: auto !important; min-width: 0 !important; }
+
 /* Doğal odak: tarayıcının çirkin kare focus çerçevesini kaldır.
    Arama kutusuna içine tıklanınca yumuşak yeşil bir kenarlık ver. */
 input, textarea, [role="search"] { outline: none !important; }
