@@ -161,6 +161,7 @@ export const exploreDict: Record<string, string> = {
   "Örnek ilan — ortaklık ve iletişim kapalıdır.": "Sample listing — partnership and contact are disabled.",
   "Ortaksın · ürünü tanıtmaya başla": "You're a partner · start promoting the product",
   "Başvurun satıcı onayında.": "Your application is awaiting seller approval.",
+  "Başvurunu gönder; satıcı kabul ederse anında ortak olur, ürünü kendi yönteminle tanıtmaya başlarsın. Ekstra bilgi doldurmana gerek yok.": "Just send your request; if the seller approves, you instantly become a partner and can start promoting the product your own way. No extra details needed.",
   "Başvuru bilgilerin": "Your application details",
   "Satıcı görecek": "Seller will see",
   "Neden bu ürünü satmak istiyorsun? *": "Why do you want to sell this product? *",

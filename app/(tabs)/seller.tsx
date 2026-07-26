@@ -675,14 +675,14 @@ function SellerScreenInner() {
                 <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>
                   {displayText(partner?.name, translateCopy("Kullanıcı", language))} · {displayText(listing?.title)}
                 </Text>
-                <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
-                  {application.note}
-                </Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                  <StatusPill label={application.shareChannel || t("channelMissingShort")} />
-                  <StatusPill label={application.platformHandle || t("accountMissing")} tone="info" />
-                  <StatusPill label={`${application.reachEstimate ?? 0} ${t("reach")}`} tone="info" />
-                </View>
+                {/* Başvuru formu KALDIRILDI → not/kanal/erişim artık toplanmıyor. Satıcı,
+                    başvuranın PROFİLİNE (puan/güven/başarılı satış) bakıp karar verir. Eski
+                    başvurularda not/kitle varsa yine gösterilir (geriye-dönük uyumlu). */}
+                {application.note ? (
+                  <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
+                    “{application.note}”
+                  </Text>
+                ) : null}
                 {application.audience ? (
                   <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
                     {t("targetAudience")}: {application.audience}

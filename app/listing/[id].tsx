@@ -106,11 +106,6 @@ export default function ListingDetailScreen() {
   const [fetchError, setFetchError] = useState(false); // ağ hatası (bulunamadı DEĞİL) → retry
   const [retryTick, setRetryTick] = useState(0);
   // Başvuru formu — gerçek kullanıcı girdisi (eski sabit/tohum metinler kaldırıldı).
-  const [applicationNote, setApplicationNote] = useState("");
-  const [applicationChannel, setApplicationChannel] = useState("WhatsApp");
-  const [applicationAudience, setApplicationAudience] = useState("");
-  const [applicationHandle, setApplicationHandle] = useState("");
-  const [applicationReach, setApplicationReach] = useState("");
   const [recentIds, setRecentIds] = useState<string[]>([]);
   useEffect(() => { setRecentIds(getRecent()); return subscribeRecent(setRecentIds); }, [id]);
   const [revealedPhone, setRevealedPhone] = useState<string | null>(null);
@@ -379,18 +374,9 @@ export default function ListingDetailScreen() {
     if (isDemo) return demoBlocked();
     // Anonim kullanıcı: alert'te tıkanmak yerine girişe yönlendir (dönüşte bu ilana gelir).
     if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; }
-    // Davetli katılım ön-onaylıdır → başvuru notu istenmez. Onaylı (başvuru) ilanlarda
-    // not zorunlu — satıcı gerçek gerekçeyi görsün.
-    if (currentListing.partnershipMode !== "open" && !validInvite && !applicationNote.trim()) {
-      Alert.alert(translateCopy("Eksik başvuru", language), translateCopy("Lütfen neden bu ürünü satmak istediğini kısaca yaz.", language));
-      return;
-    }
+    // FORM YOK: ortak ol'a basınca doğrudan başvuru gider (davetli/açık → anında aktif,
+    // onaylı → pending). Satıcı, satıcı panelinden kabul/ret eder. Ekstra bilgi istenmez.
     const result = joinListing(currentListing.id, {
-      note: applicationNote.trim(),
-      shareChannel: applicationChannel.trim(),
-      audience: applicationAudience.trim(),
-      platformHandle: applicationHandle.trim(),
-      reachEstimate: Number((applicationReach || "").replace(/[^0-9]/g, "")) || 0,
       inviteCode: validInvite ? (inviteParam ?? "") : ""
     });
     if (!result) {
@@ -912,77 +898,12 @@ export default function ListingDetailScreen() {
                   <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Satıcı seni davet etti — anında ortak olabilirsin.", language)}</Text>
                 </View>
               ) : null}
-              {/* Onaylı ilanlarda küçük başvuru formu (açık modda ve davetli katılımda gösterilmez). */}
+              {/* Onaylı ilanda başvuru: FORM YOK — tek tık, satıcı onaylar/reddeder.
+                  (Eskiden neden/kanal/erişim/handle/kitle formu vardı; kaldırıldı.) */}
               {currentListing.partnershipMode !== "open" && !validInvite ? (
-                <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 11, padding: 12 }}>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                    <MaterialCommunityIcons name="account-edit-outline" size={16} color={colors.primaryDark} />
-                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Başvuru bilgilerin", language)}</Text>
-                    <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{translateCopy("Satıcı görecek", language)}</Text>
-                  </View>
-                  {/* Neden satmak istiyor (zorunlu) */}
-                  <View style={{ gap: 5 }}>
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Neden bu ürünü satmak istiyorsun? *", language)}</Text>
-                    <TextInput
-                      value={applicationNote}
-                      onChangeText={setApplicationNote}
-                      placeholder={translateCopy("Kısaca anlat: kime, nerede ve nasıl ulaştıracaksın?", language)}
-                      placeholderTextColor={colors.subtle}
-                      multiline
-                      autoFocus={wantsApply}
-                      style={{ backgroundColor: colors.surface, borderColor: applicationNote.trim() ? colors.line : colors.warning, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 64, padding: 10, textAlignVertical: "top" }}
-                    />
-                  </View>
-                  {/* Kanal seçimi */}
-                  <View style={{ gap: 5 }}>
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Hangi kanalda paylaşacaksın?", language)}</Text>
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                      {["WhatsApp", "Instagram", "TikTok", "Diğer"].map((ch) => {
-                        const on = applicationChannel === ch;
-                        return (
-                          <Pressable key={ch} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={`${translateCopy("Kanal:", language)} ${ch}`} onPress={() => setApplicationChannel(ch)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 7 }}>
-                            <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(ch, language)}</Text>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  </View>
-                  {/* Erişim + kullanıcı adı (yan yana) */}
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <View style={{ flex: 1, gap: 5 }}>
-                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tahmini erişim (kişi)", language)}</Text>
-                      <TextInput
-                        value={applicationReach}
-                        onChangeText={(txt) => setApplicationReach(txt.replace(/[^0-9]/g, ""))}
-                        keyboardType="number-pad"
-                        placeholder={translateCopy("ör. 500", language)}
-                        placeholderTextColor={colors.subtle}
-                        style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
-                      />
-                    </View>
-                    <View style={{ flex: 1.35, gap: 5 }}>
-                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Sosyal medya adın (ops.)", language)}</Text>
-                      <TextInput
-                        value={applicationHandle}
-                        onChangeText={setApplicationHandle}
-                        autoCapitalize="none"
-                        placeholder={translateCopy("@kullaniciadi", language)}
-                        placeholderTextColor={colors.subtle}
-                        style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
-                      />
-                    </View>
-                  </View>
-                  {/* Kitle tanımı (opsiyonel) */}
-                  <View style={{ gap: 5 }}>
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tahmini kitle (opsiyonel)", language)}</Text>
-                    <TextInput
-                      value={applicationAudience}
-                      onChangeText={setApplicationAudience}
-                      placeholder={translateCopy("ör. genç anneler, üniversite çevresi…", language)}
-                      placeholderTextColor={colors.subtle}
-                      style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 42, paddingHorizontal: 10, paddingVertical: 8 }}
-                    />
-                  </View>
+                <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, padding: 12 }}>
+                  <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} style={{ marginTop: 1 }} />
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Başvurunu gönder; satıcı kabul ederse anında ortak olur, ürünü kendi yönteminle tanıtmaya başlarsın. Ekstra bilgi doldurmana gerek yok.", language)}</Text>
                 </View>
               ) : null}
               <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{translateCopy(currentListing.partnershipMode === "open" || validInvite ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder", language)}</PrimaryButton>

@@ -945,7 +945,8 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
         <View style={{ flex: 1, gap: 6 }}>
           <Text selectable numberOfLines={2} style={{ color: colors.ink, fontSize: 18, fontWeight: "900", lineHeight: 22 }}>{listing.title}</Text>
           <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 12, lineHeight: 17 }}>
-            {partnership.shareChannel || t("channelMissing")} · {partnership.reachEstimate ?? 0} {t("reach")}
+            {/* Başvuru formu kaldırıldı → kanal/erişim yok. Kategori (+varsa eski kanal bilgisi) göster. */}
+            {[listing.category, partnership.shareChannel].filter(Boolean).join(" · ")}
           </Text>
         </View>
         <StatusPill
@@ -1005,7 +1006,7 @@ function PartnershipCard({ listing, partnership, listingLeads, listingSales, cli
         </View>
       ) : partnership.status === "pending" ? (
         <View style={{ gap: 8 }}>
-          <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>{t("partnerApprovalPendingNote")} {partnership.note}</Text>
+          <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>{t("partnerApprovalPendingNote")}{partnership.note ? ` “${partnership.note}”` : ""}</Text>
           <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => actions.messageSeller(listing.id, listing.ownerId, listing.title)}>Satıcıya mesaj yaz</PrimaryButton>
         </View>
       ) : (
