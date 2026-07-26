@@ -4,7 +4,7 @@ import { msgStamp } from "@/lib/format";
 import { displayText, repairTurkishText } from "@/lib/text";
 import type { CategorySuggestion, Conversation, Favorite, Lead, Listing, LocationSuggestion, Message, Notification, NotificationMeta, Order, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
 
-type PublicListingCardRow = {
+export type PublicListingCardRow = {
   id: string;
   owner_id: string;
   title: string;
@@ -140,7 +140,7 @@ function mapProfile(row: ProfileRow): User {
   };
 }
 
-function mapListing(row: PublicListingCardRow): Listing {
+export function mapListing(row: PublicListingCardRow): Listing {
   const baseImage = row.image_url ?? "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=1200";
   const title = displayText(row.title);
   const category = displayText(row.category);

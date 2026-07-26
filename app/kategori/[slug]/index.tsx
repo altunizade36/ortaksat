@@ -20,7 +20,8 @@ import { commissionAmount } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince, matchesLocationFilter } from "@/lib/locations";
-import { fetchListingsByCategory } from "@/lib/supabase-data";
+import { fetchListingsByCategory, mapListing, type PublicListingCardRow } from "@/lib/supabase-data";
+import LISTING_SEED_ROWS from "@/lib/listing-seed.json";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
@@ -115,6 +116,11 @@ export default function CategoryLandingScreen() {
   const serverUserById = useMemo(() => { const m = new Map<string, User>(); for (const u of serverCat.users) m.set(u.id, u); return m; }, [serverCat.users]);
   const resolveOwner = (ownerId: string) => findUser(ownerId) ?? serverUserById.get(ownerId);
 
+  // SSG + client-İLK-render: store BOŞ iken build-zamanı seed'i kullan → kategori ilanları
+  // SSG'de BASILIR (masaüstü CLS'i giderir + crawler ilanları statik HTML'de görür = SEO).
+  // Store yüklenince canlı veriye geçilir. Hydration-safe: SSG=seed, client-ilk=seed → eşleşir.
+  const seedListings = useMemo(() => (LISTING_SEED_ROWS as unknown as PublicListingCardRow[]).map(mapListing), []);
+
   const trail = useMemo(() => (slug ? findTrail(categoryTree, slug) : undefined), [categoryTree, slug]);
   const node = trail ? trail[trail.length - 1] : undefined;
   const ancestors = trail ? trail.slice(0, -1) : [];
@@ -181,7 +187,9 @@ export default function CategoryLandingScreen() {
     // Bellek + sunucu-kategori ilanları (append-only, id ile tekilleştir). Bellek önce (öncelik).
     const seen = new Set<string>();
     const source: Listing[] = [];
-    for (const l of listings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
+    // Store yüklenene kadar (SSG + client-ilk) seed'ten bas → SSG'de ilan var, grid 0'dan büyümez.
+    const memListings = listings.length ? listings : seedListings;
+    for (const l of memListings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
     for (const l of serverCat.listings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
     const out = source.filter((l) => {
       if (l.status !== "active" || !matchCat(l.category)) return false;
@@ -220,7 +228,7 @@ export default function CategoryLandingScreen() {
       return Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || commissionAmount(b) - commissionAmount(a);
     });
     return out;
-  }, [listings, serverCat.listings, node, band, onlyOpen, sortMode, attrFilters, numRange, numFields, loc.provinceId, loc.districtId]);
+  }, [listings, seedListings, serverCat.listings, node, band, onlyOpen, sortMode, attrFilters, numRange, numFields, loc.provinceId, loc.districtId]);
 
   useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, numRange, loc.provinceId, loc.districtId]);
   useEffect(() => { setAttrFilters({}); setNumRange({}); }, [slug]);
@@ -263,6 +271,20 @@ export default function CategoryLandingScreen() {
       { "@type": "ListItem", position: 3, name: node.label, item: url }
     ]
   });
+  // ItemList — kategorideki ilanlar (Google ürün-listesi zengin sonucu + crawler keşfi).
+  // Artık SSG'de gerçek ilanlar (seed) basıldığı için items SSG'de doludur → structured-data da dolu.
+  const itemListLd = items.length ? JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    numberOfItems: items.length,
+    itemListElement: items.slice(0, 24).map((l, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `https://www.ortaksat.com/listing/${l.id}`,
+      name: l.title,
+      image: l.image
+    }))
+  }) : null;
 
   return (
     // MOBİL: WebContainer dar ekranda ŞEFFAF geçiş yapar (padding uygulamaz), ama kart
@@ -282,6 +304,7 @@ export default function CategoryLandingScreen() {
       </Head>
       <JsonLd id="faq" json={faqLd} />
       <JsonLd id="breadcrumb" json={breadcrumbLd} />
+      {itemListLd ? <JsonLd id="itemlist" json={itemListLd} /> : null}
 
       <WebContainer max={1280} padding={12} style={{ gap: 14 }}>
         {/* Breadcrumb — tam ata zinciri (her üst kategori tıklanabilir) */}
