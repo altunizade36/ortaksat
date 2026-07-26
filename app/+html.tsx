@@ -323,6 +323,19 @@ body {
   contain-intrinsic-size: auto 88px;
 }
 
+/* CLS FIX — Blog düzeni artık JS (isWideWeb) yerine CSS media-query ile responsive.
+   Neden: useIsWideWeb() #418'i önlemek için mount'a kadar false döner → SSG masaüstü
+   ziyaretçiye MOBİL düzeni bake eder, ~1sn sonra masaüstüne reflow → CLS 0.72 (kötü).
+   CSS media ile SSG HTML her genişlikte doğru → reflow YOK (CLS ~0), #418 de yok
+   (DOM aynı; yalnız CSS viewport'a göre değişir). Taban (mobil) = dikey/tam-genişlik. */
+[data-blog-featimg] { width: 100%; }
+@media (min-width: 760px) {
+  [data-blog-wrap]    { flex-direction: row !important; }
+  [data-blog-feat]    { flex-direction: row !important; }
+  [data-blog-side]    { width: 320px !important; flex: 0 0 320px !important; }
+  [data-blog-featimg] { width: auto !important; min-width: 0 !important; }
+}
+
 /* Doğal odak: tarayıcının çirkin kare focus çerçevesini kaldır.
    Arama kutusuna içine tıklanınca yumuşak yeşil bir kenarlık ver. */
 input, textarea, [role="search"] { outline: none !important; }

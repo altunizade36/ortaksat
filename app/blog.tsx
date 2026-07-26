@@ -11,7 +11,6 @@ import { subscribeNewsletterLive } from "@/lib/live-service";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter } from "@/components/web-landing";
 import { BLOG_CATEGORIES, BLOG_POSTS, POPULAR_TAGS, type BlogCategory, type BlogPost } from "@/lib/blog";
-import { useIsWideWeb } from "@/lib/layout";
 import { useStore } from "@/lib/use-store";
 
 const CAT_COLOR: Record<BlogCategory, [string, string]> = {
@@ -24,7 +23,6 @@ const CAT_COLOR: Record<BlogCategory, [string, string]> = {
 };
 
 export default function BlogPage() {
-  const isWideWeb = useIsWideWeb();
   const [active, setActive] = useState<BlogCategory | "Tümü">("Tümü");
   const [email, setEmail] = useState("");
   const [subState, setSubState] = useState<"idle" | "saving" | "done" | "error">("idle");
@@ -77,11 +75,11 @@ export default function BlogPage() {
         </View>
       </View>
 
-      <View style={{ alignItems: "flex-start", flexDirection: isWideWeb ? "row" : "column", gap: 20 }}>
+      <View dataSet={{ blogWrap: "1" }} style={{ alignItems: "flex-start", gap: 20 }}>
         {/* Main */}
         <View style={{ flex: 1, gap: 16, minWidth: 0 }}>
           {/* Featured */}
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexDirection: isWideWeb ? "row" : "column", gap: 20, overflow: "hidden", padding: 20 }}>
+          <View dataSet={{ blogFeat: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 20, overflow: "hidden", padding: 20 }}>
             <View style={{ flex: 1.1, gap: 12, justifyContent: "center", minWidth: 0 }}>
               <View style={{ alignSelf: "flex-start", backgroundColor: colors.goldSoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <Text style={{ color: colors.gold, fontSize: 11, fontWeight: "900" }}>Öne Çıkan Yazı</Text>
@@ -107,7 +105,7 @@ export default function BlogPage() {
                 </Link>
               </View>
             </View>
-            <View style={{ backgroundColor: colors.line, borderRadius: 14, flex: 1, height: 220, minWidth: isWideWeb ? 0 : undefined, overflow: "hidden", width: isWideWeb ? undefined : "100%" }}>
+            <View dataSet={{ blogFeatimg: "1" }} style={{ backgroundColor: colors.line, borderRadius: 14, flex: 1, height: 220, overflow: "hidden" }}>
               <SafeRemoteImage uri={featured.image} alt={featured.title} accessibilityLabel={featured.title} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={160} />
             </View>
           </View>
@@ -141,7 +139,7 @@ export default function BlogPage() {
 
         {/* Sidebar — mobilde de görünür (altta, tam genişlik): popüler yazılar, e-bülten
             kaydı ve etiketler mobil kullanıcıya da ulaşsın. Koşulsuz render → hydration-safe. */}
-        <View style={{ gap: 16, width: isWideWeb ? 320 : "100%" }}>
+        <View dataSet={{ blogSide: "1" }} style={{ gap: 16, width: "100%" }}>
             <SideCard title="Popüler yazılar">
               {popular.map((post, i) => (
                 <PressLink key={post.slug} href={{ pathname: "/blog/[slug]", params: { slug: post.slug } }} accessibilityLabel={post.title} pressedOpacity={0.8} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
