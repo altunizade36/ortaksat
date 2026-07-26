@@ -2,7 +2,9 @@
   "extends": "expo/tsconfig.base",
   "compilerOptions": {
     "strict": true,
-    "baseUrl": ".",
+    // baseUrl KALDIRILDI: TS 7.0'da işlevini yitiriyor (deprecated). moduleResolution
+    // "bundler" (expo base) altında göreli "paths" ("./*") baseUrl'süz çalışır — alias
+    // tsconfig'in bulunduğu klasöre göre çözülür. Expo SDK 54 şablonu da böyle.
     "paths": {
       "@/*": [
         "./*"
