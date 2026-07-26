@@ -1432,6 +1432,46 @@ export function DesktopCreateFlow() {
                 <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Her şey hazır! Son bir kez göz at ve yayınla.", language)}</Text>
               </View>
             </View>
+
+            {/* İLAN GÜCÜ — yayın öncesi kalite özeti. Dağınık sinyalleri (foto/açıklama/fiyat/
+                komisyon) tek eyleme-dönük karta toplar: seller güçlü ilan yayınlar, güven kazanır.
+                Tamamen additif; mevcut state'i okur (yeni state/efekt yok). Zayıf maddeler ipucu,
+                güçlüler yeşil onay gösterir. */}
+            {(() => {
+              const descStr = String(values.description ?? "").trim();
+              const checks: Array<{ ok: boolean; good: string; tip: string }> = [
+                { ok: images.length >= RECOMMENDED_PHOTOS, good: `${images.length} fotoğraf — güçlü görsel`, tip: `${RECOMMENDED_PHOTOS}+ fotoğraflı ilanlar belirgin şekilde daha çok ilgi görüyor` },
+                { ok: descStr.length >= 40, good: "Açıklama dolu", tip: descStr ? "Açıklamayı biraz uzat — alıcı sorularını azaltır, daha hızlı satar" : "Açıklama ekle — ilanların daha hızlı satar" }
+              ];
+              if (priceHint) checks.push({ ok: !priceHint.tooLow, good: "Fiyat piyasayla uyumlu", tip: `Fiyatın piyasa medyanının (${moneyIn(priceHint.median, currency)}) çok altında — doğru mu?` });
+              if (partnershipMode !== "none" && commissionType === "rate" && commissionNum > 0) checks.push({ ok: commissionNum >= suggestedRange[0], good: "Cazip komisyon", tip: `Komisyon önerilen %${suggestedRange[0]}–%${suggestedRange[1]} aralığının altında — ortaklar daha az ilgilenebilir` });
+              const strong = checks.filter((c) => c.ok).length;
+              const ratio = strong / checks.length;
+              const lvl = ratio >= 1 ? { lbl: "Güçlü", col: colors.success, soft: colors.successSoft } : ratio >= 0.5 ? { lbl: "İyi", col: colors.primaryDark, soft: colors.primarySoft } : { lbl: "İyileştirilebilir", col: colors.goldInk, soft: colors.goldSoft };
+              return (
+                <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, padding: 14 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                    <MaterialCommunityIcons name="gauge" size={16} color={lvl.col} />
+                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("İlan gücü", language)}</Text>
+                    <View style={{ backgroundColor: lvl.soft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 3 }}>
+                      <Text style={{ color: lvl.col, fontSize: 11.5, fontWeight: "900" }}>{translateCopy(lvl.lbl, language)}</Text>
+                    </View>
+                  </View>
+                  <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 6, overflow: "hidden" }}>
+                    <View style={{ backgroundColor: lvl.col, borderRadius: 999, height: "100%", width: `${Math.round(ratio * 100)}%` }} />
+                  </View>
+                  <View style={{ gap: 7 }}>
+                    {checks.map((c, i) => (
+                      <View key={i} style={{ alignItems: "flex-start", flexDirection: "row", gap: 7 }}>
+                        <MaterialCommunityIcons name={c.ok ? "check-circle" : "lightbulb-on-outline"} size={15} color={c.ok ? colors.success : colors.goldInk} style={{ marginTop: 1 }} />
+                        <Text style={{ color: c.ok ? colors.muted : colors.ink, flex: 1, fontSize: 12, fontWeight: c.ok ? "600" : "700", lineHeight: 16 }}>{translateCopy(c.ok ? c.good : c.tip, language)}</Text>
+                      </View>
+                    ))}
+                  </View>
+                </View>
+              );
+            })()}
+
             <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
               <View style={{ borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden", flexBasis: 280, maxWidth: 280, minWidth: 0, flexShrink: 1 }}>
                 <View style={{ backgroundColor: colors.line, height: 170, width: "100%" }}><SafeRemoteImage uri={coverImage} style={{ height: "100%", width: "100%" }} contentFit="cover" /></View>
