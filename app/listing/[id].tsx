@@ -1014,7 +1014,15 @@ export default function ListingDetailScreen() {
 
       <View style={{ gap: 12, paddingHorizontal: isWideWeb ? 0 : 12 }}>
         {/* Etkileşimli kazanç hesaplayıcı */}
-        {!isOwner && !isDemo && partnerable ? <EarningsCalculator listing={currentListing} isDemo={isDemo} onJoin={handleJoin} /> : null}
+        {!isOwner && !isDemo && partnerable ? (
+          <EarningsCalculator
+            listing={currentListing}
+            isDemo={isDemo}
+            onJoin={handleJoin}
+            /* Zaten ortak/pending/engelli veya davetsiz-invite → apply butonu gizli (kazanç bilgisi kalır) */
+            canApply={partnership?.status !== "active" && partnership?.status !== "pending" && partnership?.status !== "blocked" && !(isInviteMode && !validInvite)}
+          />
+        ) : null}
 
         <AgreementCard listing={currentListing} partnership={partnership} />
 

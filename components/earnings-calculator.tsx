@@ -7,8 +7,10 @@ import { commissionAmount, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { Listing } from "@/lib/types";
 
-/** Ortak kazanç hesaplayıcı: "Bu üründen kaç satarsan ne kazanırsın." */
-export function EarningsCalculator({ listing, isDemo, onJoin }: { listing: Listing; isDemo: boolean; onJoin: () => void }) {
+/** Ortak kazanç hesaplayıcı: "Bu üründen kaç satarsan ne kazanırsın."
+ *  canApply=false iken (zaten aktif/pending ortak, engelli, davetsiz) apply butonu GİZLENİR
+ *  — kazanç bilgisi kalır ama "Ortak Ol" tekrar gösterilmez (tutarsızlık önlenir). */
+export function EarningsCalculator({ listing, isDemo, onJoin, canApply = true }: { listing: Listing; isDemo: boolean; onJoin: () => void; canApply?: boolean }) {
   const { language } = useLanguage();
   const per = commissionAmount(listing);
   const [qty, setQty] = useState(5);
@@ -69,10 +71,12 @@ export function EarningsCalculator({ listing, isDemo, onJoin }: { listing: Listi
         <MaterialCommunityIcons name="cash-multiple" size={30} color={colors.gold} />
       </View>
 
-      <Pressable disabled={isDemo} onPress={onJoin} style={{ alignItems: "center", backgroundColor: isDemo ? colors.line : colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 12 }}>
-        <MaterialCommunityIcons name="handshake-outline" size={17} color="#FFFFFF" />
-        <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{listing.partnershipMode === "open" ? translateCopy("Hemen Ortak Ol ve Kazan", language) : translateCopy("Ortaklık Başvurusu Gönder", language)}</Text>
-      </Pressable>
+      {canApply ? (
+        <Pressable disabled={isDemo} onPress={onJoin} style={{ alignItems: "center", backgroundColor: isDemo ? colors.line : colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 12 }}>
+          <MaterialCommunityIcons name="handshake-outline" size={17} color="#FFFFFF" />
+          <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{listing.partnershipMode === "open" ? translateCopy("Hemen Ortak Ol ve Kazan", language) : translateCopy("Ortaklık Başvurusu Gönder", language)}</Text>
+        </Pressable>
+      ) : null}
     </View>
   );
 }

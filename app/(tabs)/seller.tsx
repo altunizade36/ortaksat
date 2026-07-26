@@ -688,12 +688,19 @@ function SellerScreenInner() {
                     {t("targetAudience")}: {application.audience}
                   </Text>
                 ) : null}
-                <View style={{ flexDirection: "row", gap: 10 }}>
+                {/* Form kaldırıldı → satıcı, başvuranın PROFİLİNE bakıp karar verir.
+                    Başarılı satış = en güçlü sinyal; doğrulama rozetleri güven verir. */}
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                   <Metric label="Ortak puanı" value={`${partner?.rating ?? 0}`} />
+                  <Metric label="Başarılı satış" value={`${partner?.successfulSales ?? 0}`} />
                   <Metric label="Ortak güveni" value={partnerTrust ? `%${partnerTrust.score}` : "-"} />
                   <Metric label="Min. puan" value={`${listing?.minPartnerRating ?? 0}`} />
                 </View>
-                {partnerTrust ? <StatusPill label={partnerTrust.label} tone={partnerTrust.score >= 70 ? "success" : "warning"} /> : null}
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                  {partnerTrust ? <StatusPill label={partnerTrust.label} tone={partnerTrust.score >= 70 ? "success" : "warning"} /> : null}
+                  {partner?.verifiedPhone ? <StatusPill label="Telefon doğrulandı" tone="success" /> : null}
+                  {partner?.verifiedIdentity ? <StatusPill label="Kimlik doğrulandı" tone="success" /> : null}
+                </View>
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   <View style={{ flex: 1 }}>
                     <PrimaryButton tone="soft" onPress={() => { haptic.success(); approvePartnership(application.id); }}>Kabul Et</PrimaryButton>
