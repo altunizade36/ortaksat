@@ -1599,4 +1599,21 @@ export const categoriesDict: Record<string, string> = {
   "Kesim Sehpası (Tezgâh)": "Cutting Bench (Workbench)",
   "Seyyar Platform": "Mobile Platform",
   "Merdiven Aksesuarı": "Ladder Accessories",
+
+  // 2026-07-27 Moda tamamlama — giyim + aksesuar boşlukları
+  "Şort": "Shorts",
+  "Tulum": "Jumpsuit",
+  "Gelinlik": "Wedding Dress",
+  "Pijama & Gecelik": "Pajamas & Nightgown",
+  "Yelek": "Vest",
+  "Pijama": "Pajamas",
+  "Şapka, Kemer & Aksesuar": "Hats, Belts & Accessories",
+  "Şapka & Bere": "Hat & Beanie",
+  "Kemer": "Belt",
+  "Atkı, Şal & Fular": "Scarf, Shawl & Wrap",
+  "Eldiven": "Gloves",
+  "Kravat & Papyon": "Tie & Bow Tie",
+  "Çorap": "Socks",
+  "Saç Aksesuarı": "Hair Accessory",
+  "Şemsiye": "Umbrella",
 };

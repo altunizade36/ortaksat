@@ -1833,14 +1833,15 @@ export const categoryTree: CategoryNode[] = [
     node("Mutfak", leaves(["Tencere & Tava", "Düdüklü Tencere", "Çaydanlık & Cezve", "Bıçak & Kesim Aletleri", "Sofra Takımı", "Bardak & Kupa", "Saklama Kabı", "Pişirme Kabı", "Fırın & Pasta Malzemesi", "Kahve & Çay Ekipmanı", "Mutfak Gereçleri", "Mutfak Düzenleme"], "alisverisGenel"), "alisverisGenel"),
     node("Küçük Ev Aletleri", leaves(["Elektrikli Süpürge", "Robot Süpürge", "Dikey Süpürge", "Ütü & Ütü Sistemi", "Blender & Rondo", "El Blenderi", "Su Isıtıcı (Kettle)", "Airfryer & Fritöz", "Kahve Makinesi", "Çay Makinesi", "Tost & Izgara Makinesi", "Mikser & Çırpıcı", "Meyve/Sebze Sıkacağı", "Doğrayıcı", "Ekmek & Yoğurt Makinesi", "Semaver", "Nem Alma & Hava Temizleyici", "Saç Kurutma & Şekillendirme"], "beyazEsya"), "beyazEsya"),
     node("Moda", [
-      node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "İç Giyim"], "moda"), "moda"),
-      node("Erkek Giyim", leaves(["Tişört", "Gömlek", "Pantolon", "Ceket", "Mont", "Takım Elbise", "Sweatshirt", "Kazak", "Spor Giyim", "İç Giyim"], "moda"), "moda"),
+      node("Kadın Giyim", leaves(["Elbise", "Bluz", "Gömlek", "Pantolon", "Etek", "Şort", "Tulum", "Ceket", "Mont", "Kazak", "Sweatshirt", "Takım", "Abiye", "Gelinlik", "Pijama & Gecelik", "İç Giyim"], "moda"), "moda"),
+      node("Erkek Giyim", leaves(["Tişört", "Gömlek", "Pantolon", "Şort", "Ceket", "Mont", "Takım Elbise", "Sweatshirt", "Kazak", "Yelek", "Spor Giyim", "Pijama", "İç Giyim"], "moda"), "moda"),
       node("Çocuk Giyim", leaves(["Kız Çocuk", "Erkek Çocuk", "Bebek Giyim", "Okul Kıyafeti"], "moda"), "moda"),
       node("Ayakkabı", leaves(["Kadın Ayakkabı", "Erkek Ayakkabı", "Spor Ayakkabı", "Bot & Çizme", "Sandalet & Terlik", "Çocuk Ayakkabı"], "ayakkabi"), "ayakkabi"),
       node("Çanta", leaves(["Kadın Çanta", "Sırt Çantası", "Cüzdan", "Valiz & Bavul", "Laptop Çantası", "El Çantası"], "ayakkabi"), "ayakkabi"),
       node("Saat", brandModelNodes(WATCH_BRANDS, {}, "aksesuar"), "aksesuar"),
       node("Gözlük", brandModelNodes(EYEWEAR_BRANDS, {}, "aksesuar"), "aksesuar"),
       node("Takı & Mücevher", leaves(["Yüzük", "Kolye", "Bilezik", "Küpe", "Altın", "Pırlanta", "Gümüş", "Saat Kordonu"], "aksesuar"), "aksesuar"),
+      node("Şapka, Kemer & Aksesuar", leaves(["Şapka & Bere", "Kemer", "Atkı, Şal & Fular", "Eldiven", "Kravat & Papyon", "Çorap", "Saç Aksesuarı", "Şemsiye"], "aksesuar"), "aksesuar"),
       ...leaves(["Tesettür Giyim", "Spor Giyim"], "moda")
     ], "moda"),
     node("Anne & Bebek", [
