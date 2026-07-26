@@ -139,9 +139,9 @@ export default function BlogPage() {
           )}
         </View>
 
-        {/* Sidebar */}
-        {isWideWeb ? (
-          <View style={{ gap: 16, width: 320 }}>
+        {/* Sidebar — mobilde de görünür (altta, tam genişlik): popüler yazılar, e-bülten
+            kaydı ve etiketler mobil kullanıcıya da ulaşsın. Koşulsuz render → hydration-safe. */}
+        <View style={{ gap: 16, width: isWideWeb ? 320 : "100%" }}>
             <SideCard title="Popüler yazılar">
               {popular.map((post, i) => (
                 <PressLink key={post.slug} href={{ pathname: "/blog/[slug]", params: { slug: post.slug } }} accessibilityLabel={post.title} pressedOpacity={0.8} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
@@ -198,7 +198,6 @@ export default function BlogPage() {
               </View>
             </SideCard>
           </View>
-        ) : null}
       </View>
       </View>
 
