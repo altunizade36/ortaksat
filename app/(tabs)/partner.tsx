@@ -380,8 +380,6 @@ function PartnerScreenInner() {
     const totalEarn = waiting + approved + paid;
     // Ortalama komisyon oranı: sabit-₺ ilanlar da efektif oranla (komisyon/fiyat×100) dahil
     // edilir; yoksa tüm fırsatlar sabit-₺ olduğunda KPI yanlışlıkla %0 görünüyordu.
-    const effRates = opportunities.map((l) => (l.commissionType === "rate" ? l.commissionValue : (l.price > 0 ? (l.commissionValue / l.price) * 100 : 0))).filter((r) => r > 0);
-    const avgCommissionPct = effRates.length ? Math.round((effRates.reduce((s, r) => s + r, 0) / effRates.length) * 10) / 10 : 0;
     const myLeadCount = leads.filter((lead) => myPartnerships.some((p) => p.id === lead.partnershipId)).length;
     // Gerçek tahsil oranı: kayıtlı toplam komisyonun ne kadarı ödendi (sahte hedef yok).
     const collectRate = totalEarn > 0 ? Math.min(100, Math.round((paid / totalEarn) * 100)) : 0;
@@ -394,23 +392,16 @@ function PartnerScreenInner() {
       { key: "earning", label: translateCopy("Kazançlarım", language) },
       { key: "links", label: translateCopy("Ortak ürünlerim", language) }
     ];
-    const stats = [
-      { icon: "handshake" as const, value: `${activePartnerships.length}`, label: translateCopy("Aktif ortaklıklar", language), tint: [colors.primarySoft, colors.primaryDark] as [string, string] },
-      { icon: "cash-multiple" as const, value: money(totalEarn), label: translateCopy("Kayıtlı komisyon", language), tint: [colors.goldSoft, colors.gold] as [string, string] },
-      { icon: "percent" as const, value: `%${avgCommissionPct}`.replace(".", ","), label: translateCopy("Ortalama komisyon teklifi", language), tint: [colors.infoSoft, colors.info] as [string, string] },
-      { icon: "account-clock-outline" as const, value: `${pendingPartnerships.length}`, label: translateCopy("Bekleyen başvurular", language), tint: [colors.violetSoft, colors.violet] as [string, string] }
-    ];
-
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 16, paddingBottom: 40, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
         <Seo title={translateCopy("Ortak Satış — Ürün paylaş, satışta komisyon kazan | OrtakSat", language)} description={translateCopy("Beğendiğin ürünlere ortak ol, kendi yönteminle tanıt; satış gerçekleşince komisyonu kazan. Sıfır sermaye, ücretsiz başvuru. Zorunlu link veya takip yok. OrtakSat ortak satış platformu.", language)} path="/partner" />
         {/* Hero */}
-        <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: "row", gap: 24, overflow: "hidden", paddingHorizontal: 28, paddingVertical: 24 }}>
-          <View style={{ flex: 1.5, gap: 12, justifyContent: "center", minWidth: 0 }}>
+        <View style={{ backgroundColor: colors.primarySoft, borderRadius: 18, overflow: "hidden", paddingHorizontal: 22, paddingVertical: 16 }}>
+          <View style={{ gap: 10, minWidth: 0 }}>
             <View style={{ alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
               <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Ortak Satış", language)}</Text>
             </View>
-            <Text style={{ color: colors.ink, fontSize: 28, fontWeight: "900", lineHeight: 34 }}>{translateCopy("Ortak satış fırsatları", language)}</Text>
+            <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900", lineHeight: 27 }}>{translateCopy("Ortak satış fırsatları", language)}</Text>
             <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 520 }}>{translateCopy("Güvenilir satıcılarla eşleşin, ürünleri paylaşın; komisyonu satıcıyla belirleyin. Ödeme ve teslimat taraflar arasında yapılır.", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, marginTop: 2 }}>
               {[
@@ -425,19 +416,6 @@ function PartnerScreenInner() {
                 </View>
               ))}
             </View>
-          </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "flex-end", maxWidth: 460 }}>
-            {stats.map((stat) => (
-              <View key={stat.label} style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 14, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14, width: 222 }}>
-                <View style={{ alignItems: "center", backgroundColor: stat.tint[0], borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
-                  <MaterialCommunityIcons name={stat.icon} size={20} color={stat.tint[1]} />
-                </View>
-                <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{stat.value}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{stat.label}</Text>
-                </View>
-              </View>
-            ))}
           </View>
         </View>
 
