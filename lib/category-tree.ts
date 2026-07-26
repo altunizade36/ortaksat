@@ -2574,7 +2574,7 @@ function key(value: string) {
 // Manual hints so common product words land on the right path even if the word
 // isn't a category label (e.g. "araba" → Vasıta > Otomobil).
 const HINTS: Array<{ words: string[]; path: string[] }> = [
-  { words: ["iphone", "telefon", "samsung", "xiaomi", "cep telefonu"], path: ["İkinci El & Sıfır Alışveriş", "Elektronik", "Cep Telefonu"] },
+  { words: ["iphone", "telefon", "samsung", "xiaomi", "cep telefonu"], path: ["İkinci El & Sıfır Alışveriş", "Telefon & Aksesuar", "Cep Telefonu"] },
   { words: ["arac ici kamera", "arac kamerasi", "dashcam"], path: ["Yedek Parça, Aksesuar, Donanım & Tuning", "Otomotiv Ekipmanları", "Ses & Görüntü Sistemleri", "Kamera & Park Sensörü"] },
   { words: ["araba", "otomobil", "araç", "arac"], path: ["Vasıta", "Otomobil"] },
   { words: ["kose koltuk", "koltuk", "kanepe"], path: ["İkinci El & Sıfır Alışveriş", "Ev & Yaşam", "Mobilya"] },
