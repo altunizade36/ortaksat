@@ -14,13 +14,20 @@ import { fileURLToPath } from "node:url";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "..", "lib", "listing-seed.json");
 
-function env(key) {
-  const line = readFileSync(join(__dirname, "..", ".env"), "utf8").split("\n").find((l) => l.startsWith(key + "="));
-  return line ? line.slice(key.length + 1).trim() : "";
-}
+// .env dosyasını (VARSA) process.env'e yükle — yerel kolaylık. Vercel'de .env DOSYASI YOK
+// (env var'lar zaten process.env'de) → koşulsuz readFileSync build'i çökertirdi. existsSync şart.
+try {
+  const p = join(__dirname, "..", ".env");
+  if (existsSync(p)) {
+    for (const line of readFileSync(p, "utf8").split(/\r?\n/)) {
+      const m = line.match(/^([A-Z0-9_]+)=(.*)$/);
+      if (m && !process.env[m[1]]) process.env[m[1]] = m[2].replace(/^["']|["']$/g, "").trim();
+    }
+  }
+} catch { /* yoksa process.env kullanılır */ }
 
-const URL = env("EXPO_PUBLIC_SUPABASE_URL");
-const KEY = env("EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY") || env("EXPO_PUBLIC_SUPABASE_ANON_KEY");
+const URL = process.env.EXPO_PUBLIC_SUPABASE_URL;
+const KEY = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
 const HEAVY_STR = ["description", "delivery_note"];
 const HEAVY_ARR = ["sales_pitch", "partner_rules", "ad_assets", "tags"];
