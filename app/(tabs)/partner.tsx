@@ -60,6 +60,11 @@ const intentLabels: Record<PurchaseIntent, string> = {
 
 type PartnerFilter = "all" | "active" | "pending" | "earning";
 
+// İlan konumundan il adını çıkarır: "İstanbul / Bayrampaşa" → "İstanbul" (bölgesel eşleşme için).
+function provinceOf(location: string): string {
+  return (location || "").split("/")[0].trim();
+}
+
 export default function PartnerScreen() {
   // Hidrasyon-gate: SSG (verisiz) ↔ istemci (girişli, veri dolu) render'ı arasındaki
   // React #418 metin uyuşmazlığını gider; mount'a kadar iskelet.
@@ -79,6 +84,7 @@ function PartnerScreenInner() {
   const [oppCategory, setOppCategory] = useState("");
   const [oppCommission, setOppCommission] = useState(0);
   const [oppCity, setOppCity] = useState("");
+  const [oppNearMe, setOppNearMe] = useState(false); // "Şehrindeki fırsatlar" — il-seviye eşleşme (user.city)
   const [oppStock, setOppStock] = useState("");
   const [oppGuven, setOppGuven] = useState("");
   const [oppSort, setOppSort] = useState<"recommended" | "commission" | "stock" | "rating" | "new">("recommended");
@@ -95,6 +101,7 @@ function PartnerScreenInner() {
   }, [tabParam]);
   const focusFirst = (a: { listingId: string }, b: { listingId: string }) => (focusId ? (a.listingId === focusId ? -1 : b.listingId === focusId ? 1 : 0) : 0);
   const myPartnerships = partnerships.filter((partnership) => partnership.partnerId === currentUser.id);
+  const myCity = currentUser.city ?? ""; // bölgesel "Şehrindeki fırsatlar" filtresi için
   // Y12: tıklama (referral_clicks) verisi GERİ AÇILDI. K1, tıklamayı KURCALANAMAZ + partner-özel
   // okunur yaptı (record_referral_click RPC + "rc partner reads own clicks" RLS) → huni artık
   // GÜVENİLİR: Tıklama → Talep → Satış → Kazanç. loadClickCounts yalnız KENDİ partnership'lerini okur.
@@ -204,6 +211,7 @@ function PartnerScreenInner() {
         if (effRate < oppCommission) return false;
       }
       if (oppCity && l.location !== oppCity) return false;
+      if (oppNearMe && myCity && provinceOf(l.location) !== myCity) return false;
       if (oppStock === "in" && l.stockCount <= 0) return false;
       if (oppStock === "low" && (l.stockCount > 5 || l.stockCount <= 0)) return false;
       if (oppGuven) {
@@ -221,7 +229,7 @@ function PartnerScreenInner() {
       const bv = (b.featured ? 2 : 0) + ((findUser(b.ownerId)?.verifiedIdentity || findUser(b.ownerId)?.verifiedPhone) ? 1 : 0);
       return bv - av || commissionAmount(b) - commissionAmount(a);
     });
-  }, [allOpportunities, oppCategory, oppCommission, oppCity, oppStock, oppGuven, oppSort, findUser]);
+  }, [allOpportunities, oppCategory, oppCommission, oppCity, oppNearMe, myCity, oppStock, oppGuven, oppSort, findUser]);
 
   // Kategori/şehir seçenekleri artık BİLEŞEN düzeyinde (mobil dropdown'lar da kullansın;
   // eskiden yalnız isWideWeb dalında tanımlıydı).
@@ -359,6 +367,7 @@ function PartnerScreenInner() {
         if (effRate < oppCommission) return false;
       }
       if (oppCity && l.location !== oppCity) return false;
+      if (oppNearMe && myCity && provinceOf(l.location) !== myCity) return false;
       if (oppStock === "in" && l.stockCount <= 0) return false;
       if (oppStock === "low" && (l.stockCount > 5 || l.stockCount <= 0)) return false;
       if (oppGuven) {
@@ -485,6 +494,19 @@ function PartnerScreenInner() {
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ortak satış fırsatları", language)}</Text>
                   <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>{opportunities.length} {translateCopy("ilan bulundu", language)}</Text>
                 </View>
+                {myCity ? (
+                  <Pressable onPress={() => setOppNearMe((v) => !v)} accessibilityRole="button" accessibilityState={{ selected: oppNearMe }} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: oppNearMe ? colors.primary : colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 6, marginBottom: 12, paddingHorizontal: 14, paddingVertical: 8 }}>
+                    <MaterialCommunityIcons name="map-marker-account" size={15} color={oppNearMe ? "#FFFFFF" : colors.primaryDark} />
+                    <Text style={{ color: oppNearMe ? "#FFFFFF" : colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şehrindeki fırsatlar", language)}: {myCity}</Text>
+                    {oppNearMe ? <MaterialCommunityIcons name="check-circle" size={15} color="#FFFFFF" /> : null}
+                  </Pressable>
+                ) : (
+                  <Pressable onPress={() => router.push("/profile-edit")} accessibilityRole="button" style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, marginBottom: 12, paddingHorizontal: 13, paddingVertical: 8 }}>
+                    <MaterialCommunityIcons name="map-marker-plus-outline" size={15} color={colors.primary} />
+                    <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şehrini ekle → bölgendeki fırsatları filtrele", language)}</Text>
+                    <MaterialCommunityIcons name="arrow-right" size={14} color={colors.muted} />
+                  </Pressable>
+                )}
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 14, position: "relative", zIndex: 50 }}>
                   <PanelDropdown label="Kategoriler" value={oppCategory} onSelect={(v) => setOppCategory(String(v))} options={[{ label: "Tümü", value: "" }, ...oppCategoryOptions.map((c) => ({ label: c, value: c }))]} />
                   <PanelDropdown label="Komisyon Oranı" value={oppCommission} onSelect={(v) => setOppCommission(Number(v))} options={[{ label: "Tümü", value: 0 }, { label: "%10+", value: 10 }, { label: "%12+", value: 12 }, { label: "%15+", value: 15 }]} />
@@ -492,8 +514,8 @@ function PartnerScreenInner() {
                   <PanelDropdown label="Stok Durumu" value={oppStock} onSelect={(v) => setOppStock(String(v))} options={[{ label: "Tümü", value: "" }, { label: "Stokta var", value: "in" }, { label: "Az stok", value: "low" }]} />
                   <PanelDropdown label="Güven Seviyesi" value={oppGuven} onSelect={(v) => setOppGuven(String(v))} options={[{ label: "Tümü", value: "" }, { label: "Yüksek", value: "high" }, { label: "Orta", value: "mid" }]} />
                   <PanelDropdown label="Sırala" value={oppSort} onSelect={(v) => setOppSort(String(v) as typeof oppSort)} options={[{ label: "Önerilen", value: "recommended" }, { label: "En yüksek komisyon", value: "commission" }, { label: "En çok stok", value: "stock" }, { label: "Satıcı puanı", value: "rating" }, { label: "Yeni eklenen", value: "new" }]} />
-                  {(oppCategory || oppCommission || oppCity || oppStock || oppGuven || oppSort !== "recommended") ? (
-                    <Pressable onPress={() => { setOppCategory(""); setOppCommission(0); setOppCity(""); setOppStock(""); setOppGuven(""); setOppSort("recommended"); }} style={{ alignItems: "center", flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 7 }}>
+                  {(oppCategory || oppCommission || oppCity || oppNearMe || oppStock || oppGuven || oppSort !== "recommended") ? (
+                    <Pressable onPress={() => { setOppCategory(""); setOppCommission(0); setOppCity(""); setOppNearMe(false); setOppStock(""); setOppGuven(""); setOppSort("recommended"); }} style={{ alignItems: "center", flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 7 }}>
                       <MaterialCommunityIcons name="close" size={14} color={colors.accent} />
                       <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>{translateCopy("Temizle", language)}</Text>
                     </Pressable>
@@ -701,6 +723,19 @@ function PartnerScreenInner() {
         <Card>
           <SectionTitle title="Ortak satış fırsatları" action={`${mobileOpportunities.length}`} />
           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Beğendiğin ürüne ortak ol, kendi kitlene sat, satış olunca komisyon kazan.", language)}</Text>
+          {myCity ? (
+            <Pressable onPress={() => setOppNearMe((v) => !v)} accessibilityRole="button" accessibilityState={{ selected: oppNearMe }} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: oppNearMe ? colors.primary : colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}>
+              <MaterialCommunityIcons name="map-marker-account" size={15} color={oppNearMe ? "#FFFFFF" : colors.primaryDark} />
+              <Text style={{ color: oppNearMe ? "#FFFFFF" : colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şehrindeki fırsatlar", language)}: {myCity}</Text>
+              {oppNearMe ? <MaterialCommunityIcons name="check-circle" size={15} color="#FFFFFF" /> : null}
+            </Pressable>
+          ) : (
+            <Pressable onPress={() => router.push("/profile-edit")} accessibilityRole="button" style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}>
+              <MaterialCommunityIcons name="map-marker-plus-outline" size={15} color={colors.primary} />
+              <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şehrini ekle → bölgendeki fırsatları filtrele", language)}</Text>
+              <MaterialCommunityIcons name="arrow-right" size={14} color={colors.muted} />
+            </Pressable>
+          )}
           {/* Mobil fırsat filtre/sıralama (masaüstü toolbar'ın TAM karşılığı: kategori/komisyon/
               şehir/stok/güven + sıralama). Eskiden mobilde yalnız komisyon+sıralama vardı. */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, zIndex: 30 }}>
