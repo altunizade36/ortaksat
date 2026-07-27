@@ -44,6 +44,21 @@ export default function TrustScreen() {
     Alert.alert(translateCopy(ok ? "Güncellendi" : "Yetki gerekli", language), translateCopy(ok ? "Moderasyon kaydı güncellendi." : "Bu işlem için moderatör yetkisi gerekir.", language));
   }
 
+  // Güven dağılımı + sinyaller — İKİ düzende de kullanılır → split ÖNCESİ hesaplanır (mobil parite).
+  const complaintScore = openReports.length === 0 ? 100 : Math.max(40, 100 - openReports.length * 15);
+  const distribution: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: number; weight: number }> = [
+    { icon: "phone-check", label: translateCopy("Telefon Doğrulama", language), value: currentUser.verifiedPhone ? 100 : 0, weight: 25 },
+    { icon: "card-account-details-outline", label: translateCopy("Kimlik Doğrulama", language), value: currentUser.verifiedIdentity ? 100 : 0, weight: 30 },
+    { icon: "lightning-bolt-outline", label: translateCopy("Yanıt Hızı", language), value: currentUser.responseRate, weight: 25 },
+    { icon: "emoticon-happy-outline", label: translateCopy("Şikayet Kaydı Durumu", language), value: complaintScore, weight: 20 }
+  ];
+  const signals: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string }> = [];
+  if (currentUser.verifiedPhone) signals.push({ icon: "phone-check", title: translateCopy("Telefonun doğrulanmış.", language), sub: translateCopy("Alıcılar seninle daha güvenle iletişim kurar.", language) });
+  if (currentUser.verifiedIdentity) signals.push({ icon: "card-account-details-outline", title: translateCopy("Kimliğin doğrulanmış.", language), sub: translateCopy("Doğrulanmış kimlik güven skorunu yükseltir.", language) });
+  if (typeof currentUser.responseRate === "number" && currentUser.responseRate > 0) signals.push({ icon: "lightning-bolt", title: translateCopy("Mesaj yanıt oranın", language), sub: `Yanıt oranın %${currentUser.responseRate}.` });
+  if (openReports.length === 0) signals.push({ icon: "emoticon-happy-outline", title: translateCopy("Açık şikayet kaydın yok.", language), sub: translateCopy("Hakkında bekleyen inceleme bulunmuyor.", language) });
+  signals.push({ icon: "handshake-outline", title: translateCopy("Güvenli süreç kullanımı", language), sub: translateCopy("Komisyon ve talepler platformda kayıt altında.", language) });
+
   if (isWideWeb) {
     const resolvedCount = ownReports.filter((r) => r.status === "resolved" || r.status === "rejected").length;
     const scoreLabel = trust.overall >= 85 ? translateCopy("Mükemmel", language) : trust.overall >= 70 ? translateCopy("Yüksek", language) : trust.overall >= 50 ? translateCopy("Orta", language) : translateCopy("Geliştirilmeli", language);
@@ -54,21 +69,6 @@ export default function TrustScreen() {
       { icon: "card-account-details-outline", label: translateCopy("Kimlik", language), on: currentUser.verifiedIdentity },
       { icon: "instagram", label: "Instagram", on: Boolean(currentUser.verifiedInstagram) }
     ];
-    // Gerçek verilerden türetilen dağılım (sabit/sahte değer YOK — eski %100 sabit "E-posta" satırı kaldırıldı).
-    const complaintScore = openReports.length === 0 ? 100 : Math.max(40, 100 - openReports.length * 15);
-    const distribution: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; value: number; weight: number }> = [
-      { icon: "phone-check", label: translateCopy("Telefon Doğrulama", language), value: currentUser.verifiedPhone ? 100 : 0, weight: 25 },
-      { icon: "card-account-details-outline", label: translateCopy("Kimlik Doğrulama", language), value: currentUser.verifiedIdentity ? 100 : 0, weight: 30 },
-      { icon: "lightning-bolt-outline", label: translateCopy("Yanıt Hızı", language), value: currentUser.responseRate, weight: 25 },
-      { icon: "emoticon-happy-outline", label: translateCopy("Şikayet Kaydı Durumu", language), value: complaintScore, weight: 20 }
-    ];
-    // Gerçek durumdan üretilen güven sinyalleri.
-    const signals: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string }> = [];
-    if (currentUser.verifiedPhone) signals.push({ icon: "phone-check", title: translateCopy("Telefonun doğrulanmış.", language), sub: translateCopy("Alıcılar seninle daha güvenle iletişim kurar.", language) });
-    if (currentUser.verifiedIdentity) signals.push({ icon: "card-account-details-outline", title: translateCopy("Kimliğin doğrulanmış.", language), sub: translateCopy("Doğrulanmış kimlik güven skorunu yükseltir.", language) });
-    if (typeof currentUser.responseRate === "number" && currentUser.responseRate > 0) signals.push({ icon: "lightning-bolt", title: translateCopy("Mesaj yanıt oranın", language), sub: `Yanıt oranın %${currentUser.responseRate}.` });
-    if (openReports.length === 0) signals.push({ icon: "emoticon-happy-outline", title: translateCopy("Açık şikayet kaydın yok.", language), sub: translateCopy("Hakkında bekleyen inceleme bulunmuyor.", language) });
-    signals.push({ icon: "handshake-outline", title: translateCopy("Güvenli süreç kullanımı", language), sub: translateCopy("Komisyon ve talepler platformda kayıt altında.", language) });
     const calcRules = [
       translateCopy("Doğrulama seviyesi (kimlik, telefon, e-posta)", language),
       translateCopy("Teslimat ve işlem başarı oranı", language),
@@ -304,6 +304,40 @@ export default function TrustScreen() {
         <TrustRoleCard description="Komisyon ödüyor mu, ürün doğru mu, müşteri memnun mu?" icon="store-check" title="Satıcı güveni" score={trust.seller} />
         <TrustRoleCard description="Gerçek müşteri getiriyor mu, spam yapıyor mu, ürünü doğru temsil ediyor mu?" icon="account-check" title="Ortak güveni" score={trust.partner} />
       </View>
+
+      {/* Güven Skoru Dağılımı (mobil — masaüstü paritesi: ağırlıklı faktör barları). */}
+      <Card>
+        <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Güven Skoru Dağılımı", language)}</Text>
+        {distribution.map((d) => (
+          <View key={d.label} style={{ gap: 6, marginTop: 4 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <MaterialCommunityIcons name={d.icon} size={16} color={colors.primary} />
+              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", minWidth: 0 }}>{d.label}</Text>
+              <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>%{d.value}</Text>
+              <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 2 }}><Text style={{ color: colors.muted, fontSize: 9.5, fontWeight: "800" }}>×{d.weight}</Text></View>
+            </View>
+            <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 7, overflow: "hidden" }}>
+              <View style={{ backgroundColor: d.value >= 90 ? colors.success : d.value >= 60 ? colors.primary : colors.warning, borderRadius: 999, height: "100%", width: `${d.value}%` }} />
+            </View>
+          </View>
+        ))}
+      </Card>
+
+      {/* Güven Sinyalleri (mobil — yeşil ikon-çipli). */}
+      <Card>
+        <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Güven Sinyalleri", language)}</Text>
+        {signals.map((s) => (
+          <View key={s.title} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10, marginTop: 4 }}>
+            <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 9, height: 32, justifyContent: "center", width: 32 }}>
+              <MaterialCommunityIcons name={s.icon} size={17} color={colors.success} />
+            </View>
+            <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+              <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{s.title}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{s.sub}</Text>
+            </View>
+          </View>
+        ))}
+      </Card>
 
       <Card>
         <SectionTitle title={translateCopy("Puan mantığı", language)} />

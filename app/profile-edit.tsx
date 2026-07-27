@@ -519,11 +519,22 @@ function ProfileEditScreenInner() {
 
         <Card>
           <SectionTitle title={translateCopy("Doğrulama durumu", language)} />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatusPill label={currentUser.verifiedPhone ? translateCopy("Telefon ✓", language) : translateCopy("Telefon —", language)} tone={currentUser.verifiedPhone ? "success" : "warning"} />
-            <StatusPill label={currentUser.verifiedIdentity ? translateCopy("Kimlik ✓", language) : translateCopy("Kimlik —", language)} tone={currentUser.verifiedIdentity ? "success" : "warning"} />
-            <StatusPill label={currentUser.verifiedInstagram ? translateCopy("Instagram ✓", language) : translateCopy("Instagram —", language)} tone={currentUser.verifiedInstagram ? "success" : "warning"} />
-          </View>
+          {/* Zengin ikon-çipli satırlar (masaüstü paritesi — eskiden düz 3 pill'di). */}
+          {[
+            { label: translateCopy("Telefon", language), done: currentUser.verifiedPhone },
+            { label: translateCopy("Kimlik", language), done: currentUser.verifiedIdentity },
+            { label: "Instagram", done: Boolean(currentUser.verifiedInstagram) }
+          ].map((v, i) => (
+            <View key={v.label} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, flexDirection: "row", gap: 11, paddingVertical: 10 }}>
+              <View style={{ alignItems: "center", backgroundColor: v.done ? colors.successSoft : colors.surfaceAlt, borderRadius: 9, height: 34, justifyContent: "center", width: 34 }}>
+                <MaterialCommunityIcons name={v.done ? "check-decagram" : "alert-circle-outline"} size={18} color={v.done ? colors.success : colors.warning} />
+              </View>
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "800", minWidth: 0 }}>{v.label}</Text>
+              <View style={{ backgroundColor: v.done ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <Text style={{ color: v.done ? colors.success : colors.muted, fontSize: 11, fontWeight: "800" }}>{v.done ? translateCopy("Onaylı", language) : translateCopy("Bekliyor", language)}</Text>
+              </View>
+            </View>
+          ))}
           <Text style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>{translateCopy("Doğrulamalar güvenlik gereği ekibimizce, belge/bilgi kontrolüyle yapılır.", language)}</Text>
           {!currentUser.verifiedInstagram ? (
             <DeskField label={translateCopy("Instagram kullanıcı adı (doğrulama için)", language)} value={igHandle} onChangeText={setIgHandle} icon="instagram" placeholder="@kullaniciadi" />
