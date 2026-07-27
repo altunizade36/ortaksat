@@ -1,7 +1,7 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, router, type Href } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+import { Modal, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
 import { tierFromCount } from "@/components/partner-tier";
@@ -11,6 +11,7 @@ import { Chip, EmptyState, LoadingBlock, PrimaryButton, SegButton, StatChip } fr
 import { PAGE_MAX_WIDTH } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
 import { categoryTree } from "@/lib/category-tree";
+import { TR_PROVINCES, citySlug } from "@/lib/cities";
 import { moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb, useMounted } from "@/lib/layout";
@@ -38,12 +39,15 @@ function Inner() {
   const [sort, setSort] = useState<"performance" | "favorites">("performance");
   const [mine, setMine] = useState(false); // "Favori Ortaklarım" modu
   const [favIds, setFavIds] = useState<Set<string>>(new Set());
+  const [cityFilter, setCityFilter] = useState<string | null>(null); // bölgesel filtre (il)
+  const [cityOpen, setCityOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState("");
 
   const load = useCallback(() => {
     setLoading(true);
-    const p = mine ? loadMyFavoritePartners() : loadPartnerDirectory({ category, sort });
+    const p = mine ? loadMyFavoritePartners() : loadPartnerDirectory({ category, sort, city: cityFilter });
     p.then(setEntries).catch(() => setEntries([])).finally(() => setLoading(false));
-  }, [mine, category, sort]);
+  }, [mine, category, sort, cityFilter]);
 
   useEffect(() => { load(); }, [load]);
   useEffect(() => {
@@ -71,6 +75,8 @@ function Inner() {
   const inner = Math.min(width, PAGE_MAX_WIDTH) - pad * 2;
   const gap = 10;
   const cardWidth = responsiveGrid({ available: inner, gap, minCardWidth: isWideWeb ? 240 : 168, minColumns: isWideWeb ? 3 : 2 }).cardWidth;
+  const cityQuery = citySearch.trim();
+  const filteredProvinces = cityQuery ? TR_PROVINCES.filter((p) => citySlug(p).includes(citySlug(cityQuery))) : TR_PROVINCES;
 
   return (
     <ScrollView style={{ backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }}>
@@ -79,6 +85,45 @@ function Inner() {
         description={t("OrtakSat uzman ortak dizini: ürününü hangi kategoride satacak deneyimli ortağı bul, performansına ve uzmanlığına göre seç, favorine ekle.")}
         path="/ortaklar"
       />
+      <Modal visible={cityOpen} transparent animationType="fade" onRequestClose={() => setCityOpen(false)}>
+        <Pressable onPress={() => setCityOpen(false)} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", flex: 1, justifyContent: "center", padding: 20 }}>
+          <Pressable onPress={() => undefined} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 12, maxHeight: 560, maxWidth: 440, padding: 18, width: "100%" }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
+                <MaterialCommunityIcons name="map-marker-radius-outline" size={22} color={colors.primaryDark} />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{t("Şehre göre ortak bul")}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{t("Bölgendeki uzman ortakları öne çıkar")}</Text>
+              </View>
+              <Pressable onPress={() => setCityOpen(false)} hitSlop={8} accessibilityLabel={t("Kapat")}><MaterialCommunityIcons name="close" size={22} color={colors.muted} /></Pressable>
+            </View>
+            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
+              <MaterialCommunityIcons name="magnify" size={18} color={colors.muted} />
+              <TextInput value={citySearch} onChangeText={setCitySearch} placeholder={t("İl ara…")} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 14, paddingVertical: 11 }} />
+              {citySearch ? <Pressable onPress={() => setCitySearch("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.subtle} /></Pressable> : null}
+            </View>
+            <ScrollView style={{ maxHeight: 372 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+              <Pressable onPress={() => { setCityFilter(null); setCityOpen(false); setCitySearch(""); }} style={{ alignItems: "center", backgroundColor: !cityFilter ? colors.primarySoft : "transparent", borderRadius: 10, flexDirection: "row", gap: 10, paddingHorizontal: 10, paddingVertical: 12 }}>
+                <MaterialCommunityIcons name="earth" size={18} color={!cityFilter ? colors.primaryDark : colors.muted} />
+                <Text style={{ color: !cityFilter ? colors.primaryDark : colors.ink, flex: 1, fontSize: 14.5, fontWeight: !cityFilter ? "900" : "600" }}>{t("Tüm şehirler")}</Text>
+                {!cityFilter ? <MaterialCommunityIcons name="check" size={18} color={colors.primaryDark} /> : null}
+              </Pressable>
+              {filteredProvinces.map((p) => {
+                const on = p === cityFilter;
+                return (
+                  <Pressable key={p} onPress={() => { setCityFilter(p); setCityOpen(false); setCitySearch(""); }} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", borderRadius: 10, flexDirection: "row", gap: 10, paddingHorizontal: 10, paddingVertical: 12 }}>
+                    <MaterialCommunityIcons name={on ? "map-marker-check" : "map-marker-outline"} size={18} color={on ? colors.primaryDark : colors.muted} />
+                    <Text style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 14.5, fontWeight: on ? "900" : "600" }}>{p}</Text>
+                    {on ? <MaterialCommunityIcons name="check" size={18} color={colors.primaryDark} /> : null}
+                  </Pressable>
+                );
+              })}
+              {filteredProvinces.length === 0 ? <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", paddingVertical: 16, textAlign: "center" }}>{t("İl bulunamadı")}</Text> : null}
+            </ScrollView>
+          </Pressable>
+        </Pressable>
+      </Modal>
       <View style={{ alignSelf: "center", maxWidth: PAGE_MAX_WIDTH, paddingHorizontal: pad, paddingTop: 14, width: "100%" }}>
         {/* Başlık */}
         <View style={{ gap: 6, marginBottom: 14 }}>
@@ -121,6 +166,34 @@ function Inner() {
           </ScrollView>
         ) : null}
 
+        {/* Bölgesel filtre: "Şehrim" hızlı çipi + il seçici → şehir-bazlı ortak sıralaması */}
+        {!mine ? (
+          <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 14 }}>
+            <MaterialCommunityIcons name="map-marker-radius-outline" size={16} color={colors.muted} />
+            {currentUser?.city ? (
+              <Pressable onPress={() => setCityFilter(cityFilter === currentUser.city ? null : currentUser.city ?? null)} style={{ alignItems: "center", backgroundColor: cityFilter === currentUser.city ? colors.primary : colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <MaterialCommunityIcons name="map-marker-account" size={14} color={cityFilter === currentUser.city ? "#FFFFFF" : colors.primaryDark} />
+                <Text style={{ color: cityFilter === currentUser.city ? "#FFFFFF" : colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{t("Şehrim")}: {currentUser.city}</Text>
+              </Pressable>
+            ) : null}
+            {(() => {
+              const otherCity = cityFilter && cityFilter !== currentUser?.city;
+              return (
+                <Pressable onPress={() => { setCitySearch(""); setCityOpen(true); }} style={{ alignItems: "center", backgroundColor: otherCity ? colors.primary : colors.surfaceAlt, borderColor: otherCity ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <MaterialCommunityIcons name="map-marker-outline" size={14} color={otherCity ? "#FFFFFF" : colors.muted} />
+                  <Text style={{ color: otherCity ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{cityFilter ?? t("Tüm şehirler")}</Text>
+                  <MaterialCommunityIcons name="chevron-down" size={14} color={otherCity ? "#FFFFFF" : colors.muted} />
+                </Pressable>
+              );
+            })()}
+            {cityFilter ? (
+              <Pressable onPress={() => setCityFilter(null)} hitSlop={6} accessibilityLabel={t("Şehir filtresini temizle")}>
+                <MaterialCommunityIcons name="close-circle" size={17} color={colors.subtle} />
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
         {/* Liste */}
         {loading ? (
           <LoadingBlock label="Ortaklar yükleniyor…" />
@@ -134,8 +207,14 @@ function Inner() {
             <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 24 }}>
               <MaterialCommunityIcons name="account-star-outline" size={40} color={colors.primary} />
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900", textAlign: "center" }}>
-                {category ? `${t(category)} ${t("kategorisinde henüz uzman ortak yok")}` : t("Bu dizinde henüz uzman ortak yok")}
+                {cityFilter ? `${cityFilter} ${t("için uzman ortak bulunamadı")}` : category ? `${t(category)} ${t("kategorisinde henüz uzman ortak yok")}` : t("Bu dizinde henüz uzman ortak yok")}
               </Text>
+              {cityFilter ? (
+                <Pressable onPress={() => setCityFilter(null)} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 14, paddingVertical: 8 }}>
+                  <MaterialCommunityIcons name="earth" size={15} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{t("Tüm şehirlerde ara")}</Text>
+                </Pressable>
+              ) : null}
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19, maxWidth: 420, textAlign: "center" }}>
                 {t("Sen bir ortak mısın? Profilinde uzmanlık kategorilerini seç — satıcılar seni burada bulup ürünlerini sana emanet etsin. İlk uzman ortaklardan biri ol.")}
               </Text>
@@ -185,6 +264,12 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
                   <>
                     <MaterialCommunityIcons name="star" size={11} color={colors.gold} />
                     <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{entry.rating.toFixed(1)}</Text>
+                  </>
+                ) : null}
+                {entry.city ? (
+                  <>
+                    <MaterialCommunityIcons name="map-marker" size={11} color={colors.muted} />
+                    <Text numberOfLines={1} style={{ color: colors.muted, flexShrink: 1, fontSize: 11, fontWeight: "800" }}>{entry.city}</Text>
                   </>
                 ) : null}
               </View>

@@ -65,6 +65,7 @@ type ProfileRow = {
   follower_count?: number | null;
   invite_code?: string | null;
   expertise_categories?: string[] | null;
+  city?: string | null;
 };
 
 // Herkese açık (anon dahil) profil okumalarında yalnızca gösterime uygun kolonlar
@@ -72,7 +73,7 @@ type ProfileRow = {
 // DB'de geri alınmıştır (bkz. migration 20260704120000_profiles_phone_privacy),
 // telefon yalnızca iletişim anında girişli kullanıcıya `fetchSellerPhone` ile verilir.
 const PUBLIC_PROFILE_COLUMNS =
-  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales, follower_count, invite_code, expertise_categories" as const;
+  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales, follower_count, invite_code, expertise_categories, city" as const;
 
 export type MarketplaceSnapshot = {
   listings: Listing[];
@@ -134,6 +135,7 @@ function mapProfile(row: ProfileRow): User {
     followerCount: toNumber(row.follower_count),
     inviteCode: row.invite_code ?? undefined,
     expertiseCategories: row.expertise_categories ?? [],
+    city: typeof row.city === "string" && row.city.trim() ? row.city : undefined,
     responseRate: row.response_rate ?? 0,
     role: row.role ?? "user",
     status: (row.status as User["status"]) ?? "active"
@@ -760,9 +762,9 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
 
 // Herkese açık ortak vitrini: bir ortağın aktif promosyon ilanları + her biri için ref_code.
 // partner_public_shop/profile SECURITY DEFINER fonksiyonları RLS'i güvenle aşar (yalnız public alan).
-export type PartnerShopProfile = { partnerId: string; fullName: string; avatarUrl?: string | null; verifiedIdentity: boolean; verifiedPhone: boolean; rating?: number; confirmedSales: number; activePartnerships: number; completedPartnerships: number; favoriteCount: number; expertiseCategories: string[] };
+export type PartnerShopProfile = { partnerId: string; fullName: string; avatarUrl?: string | null; verifiedIdentity: boolean; verifiedPhone: boolean; rating?: number; confirmedSales: number; activePartnerships: number; completedPartnerships: number; favoriteCount: number; expertiseCategories: string[]; city?: string };
 /** Ortak dizini kartı — /ortaklar aranabilir listede. */
-export type PartnerDirectoryEntry = { partnerId: string; fullName: string; avatarUrl?: string | null; verifiedIdentity: boolean; verifiedPhone: boolean; rating?: number; confirmedSales: number; paidEarned: number; activePartnerships: number; completedPartnerships: number; favoriteCount: number; expertiseCategories: string[] };
+export type PartnerDirectoryEntry = { partnerId: string; fullName: string; avatarUrl?: string | null; verifiedIdentity: boolean; verifiedPhone: boolean; rating?: number; confirmedSales: number; paidEarned: number; activePartnerships: number; completedPartnerships: number; favoriteCount: number; expertiseCategories: string[]; city?: string };
 export type PartnerShopItem = { listing: Listing; refCode: string; partnershipId: string; attributionWindowDays?: number };
 export async function loadPartnerShopLive(partnerId: string): Promise<{ profile: PartnerShopProfile | null; items: PartnerShopItem[] }> {
   if (!supabase || !partnerId) return { profile: null, items: [] };
@@ -798,7 +800,8 @@ export async function loadPartnerShopLive(partnerId: string): Promise<{ profile:
         activePartnerships: Number(p.active_partnerships ?? 0),
         completedPartnerships: Number(p.completed_partnerships ?? 0),
         favoriteCount: Number(p.favorite_count ?? 0),
-        expertiseCategories: Array.isArray(p.expertise_categories) ? (p.expertise_categories as string[]) : []
+        expertiseCategories: Array.isArray(p.expertise_categories) ? (p.expertise_categories as string[]) : [],
+        city: typeof p.city === "string" && p.city.trim() ? p.city : undefined
       }
     : null;
   return { profile, items };
@@ -817,17 +820,19 @@ function mapDirectoryRow(r: Record<string, unknown>): PartnerDirectoryEntry {
     activePartnerships: Number(r.active_partnerships ?? 0),
     completedPartnerships: Number(r.completed_partnerships ?? 0),
     favoriteCount: Number(r.favorite_count ?? 0),
-    expertiseCategories: Array.isArray(r.expertise_categories) ? (r.expertise_categories as string[]) : []
+    expertiseCategories: Array.isArray(r.expertise_categories) ? (r.expertise_categories as string[]) : [],
+    city: typeof r.city === "string" && r.city.trim() ? r.city : undefined
   };
 }
 
 /** Ortak dizini — kategori/performansa göre aranabilir uzman ortak listesi. */
-export async function loadPartnerDirectory(opts?: { category?: string | null; sort?: "performance" | "favorites"; limit?: number }): Promise<PartnerDirectoryEntry[]> {
+export async function loadPartnerDirectory(opts?: { category?: string | null; sort?: "performance" | "favorites"; limit?: number; city?: string | null }): Promise<PartnerDirectoryEntry[]> {
   if (!supabase) return [];
   const { data, error } = await supabase.rpc("partner_directory", {
     p_category: opts?.category ?? null,
     p_sort: opts?.sort ?? "performance",
-    p_limit: opts?.limit ?? 60
+    p_limit: opts?.limit ?? 60,
+    p_city: opts?.city ?? null
   });
   if (error || !Array.isArray(data)) return [];
   return (data as Array<Record<string, unknown>>).map(mapDirectoryRow);

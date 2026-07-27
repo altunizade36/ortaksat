@@ -9,6 +9,7 @@ import { Alert } from "@/lib/alert";
 
 import { colors } from "@/components/colors";
 import { categoryTree } from "@/lib/category-tree";
+import { TR_PROVINCES, citySlug } from "@/lib/cities";
 import { AuthRequired } from "@/components/auth-gate";
 import { PasswordStrengthMeter } from "@/components/password-strength-meter";
 import { Card, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
@@ -38,6 +39,9 @@ function ProfileEditScreenInner() {
   const [avatar, setAvatar] = useState(currentUser.avatar);
   const [bio, setBio] = useState(currentUser.bio);
   const [expertise, setExpertise] = useState<string[]>(currentUser.expertiseCategories ?? []);
+  const [city, setCity] = useState(currentUser.city ?? "");
+  const [cityOpen, setCityOpen] = useState(false);
+  const [citySearch, setCitySearch] = useState("");
   const [saving, setSaving] = useState(false);
   const isWideWeb = useIsWideWeb();
   const [section, setSection] = useState<SettingsSection>("personal");
@@ -195,7 +199,7 @@ function ProfileEditScreenInner() {
 
     setSaving(true);
     const uploadedAvatar = isLiveAccount ? await uploadProfileAvatar(avatar.trim(), currentUser.id) : avatar.trim();
-    const ok = await updateProfile({ name, phone, avatar: uploadedAvatar, bio, expertiseCategories: expertise });
+    const ok = await updateProfile({ name, phone, avatar: uploadedAvatar, bio, expertiseCategories: expertise, city });
     setSaving(false);
 
     if (!ok) {
@@ -208,6 +212,50 @@ function ProfileEditScreenInner() {
   }
 
   // Hesap silme onay modalı (şifre doğrulaması + 30 gün geri alma) — her iki düzende ortak.
+  const cityQuery = citySearch.trim();
+  const filteredProvinces = cityQuery ? TR_PROVINCES.filter((p) => citySlug(p).includes(citySlug(cityQuery))) : TR_PROVINCES;
+  const cityModal = (
+    <Modal visible={cityOpen} transparent animationType="fade" onRequestClose={() => setCityOpen(false)}>
+      <Pressable onPress={() => setCityOpen(false)} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", flex: 1, justifyContent: "center", padding: 20 }}>
+        <Pressable onPress={() => undefined} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 12, maxHeight: 560, maxWidth: 440, padding: 18, width: "100%" }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+            <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
+              <MaterialCommunityIcons name="map-marker-radius-outline" size={22} color={colors.primaryDark} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Şehrini seç", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy("Bölgesel ortaklık ve şehir sıralaması için", language)}</Text>
+            </View>
+            <Pressable onPress={() => setCityOpen(false)} hitSlop={8} accessibilityLabel={translateCopy("Kapat", language)}><MaterialCommunityIcons name="close" size={22} color={colors.muted} /></Pressable>
+          </View>
+          <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
+            <MaterialCommunityIcons name="magnify" size={18} color={colors.muted} />
+            <TextInput value={citySearch} onChangeText={setCitySearch} placeholder={translateCopy("İl ara…", language)} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 14, paddingVertical: 11 }} />
+            {citySearch ? <Pressable onPress={() => setCitySearch("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.subtle} /></Pressable> : null}
+          </View>
+          <ScrollView style={{ maxHeight: 372 }} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
+            {city ? (
+              <Pressable onPress={() => { setCity(""); setCityOpen(false); setCitySearch(""); }} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingHorizontal: 10, paddingVertical: 12 }}>
+                <MaterialCommunityIcons name="map-marker-off-outline" size={18} color={colors.accent} />
+                <Text style={{ color: colors.accent, fontSize: 14, fontWeight: "800" }}>{translateCopy("Şehri temizle", language)}</Text>
+              </Pressable>
+            ) : null}
+            {filteredProvinces.map((p) => {
+              const on = p === city;
+              return (
+                <Pressable key={p} onPress={() => { setCity(p); setCityOpen(false); setCitySearch(""); }} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", borderRadius: 10, flexDirection: "row", gap: 10, paddingHorizontal: 10, paddingVertical: 12 }}>
+                  <MaterialCommunityIcons name={on ? "map-marker-check" : "map-marker-outline"} size={18} color={on ? colors.primaryDark : colors.muted} />
+                  <Text style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 14.5, fontWeight: on ? "900" : "600" }}>{p}</Text>
+                  {on ? <MaterialCommunityIcons name="check" size={18} color={colors.primaryDark} /> : null}
+                </Pressable>
+              );
+            })}
+            {filteredProvinces.length === 0 ? <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", paddingVertical: 16, textAlign: "center" }}>{translateCopy("İl bulunamadı", language)}</Text> : null}
+          </ScrollView>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
   const deleteModal = (
     <Modal visible={deleteOpen} transparent animationType="fade" onRequestClose={() => setDeleteOpen(false)}>
       <View style={{ backgroundColor: "rgba(0,0,0,0.55)", flex: 1, justifyContent: "center", padding: 20 }}>
@@ -256,6 +304,7 @@ function ProfileEditScreenInner() {
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
         {deleteModal}
+        {cityModal}
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ gap: 4 }}>
           <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Ayarlar", language)}</Text>
@@ -302,6 +351,7 @@ function ProfileEditScreenInner() {
                   <View style={{ flex: 1 }}><DeskField label={translateCopy("Telefon", language)} value={phone} onChangeText={setPhone} icon="phone-outline" keyboardType="phone-pad" /></View>
                 </View>
                 <DeskField label={translateCopy("Bio", language)} value={bio} onChangeText={setBio} icon="text-account" multiline />
+                <CityField value={city} onPress={() => { setCitySearch(""); setCityOpen(true); }} />
                 <ExpertisePicker value={expertise} onChange={setExpertise} />
                 <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Rol, puan, yanıt oranı ve doğrulama durumu güvenlik nedeniyle elle değiştirilemez.", language)}</Text>
                 <Pressable disabled={saving} onPress={() => void submit()} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 22, paddingVertical: 12 }}>
@@ -452,6 +502,7 @@ function ProfileEditScreenInner() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       {deleteModal}
+      {cityModal}
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16, paddingBottom: 110 }}>
         <Card>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
@@ -505,6 +556,7 @@ function ProfileEditScreenInner() {
           <Field label="Telefon" value={phone} onChangeText={setPhone} icon="phone-outline" keyboardType="phone-pad" />
           <Field label="Avatar kısa adı veya görsel adresi" value={avatar} onChangeText={setAvatar} icon="image-outline" />
           <Field label="Bio" value={bio} onChangeText={setBio} icon="text-account" multiline />
+          <CityField value={city} onPress={() => { setCitySearch(""); setCityOpen(true); }} />
           <ExpertisePicker value={expertise} onChange={setExpertise} />
           <Text selectable style={{ color: colors.muted, fontSize: 12, lineHeight: 18 }}>
             {translateCopy("Rol, hesap durumu, telefon doğrulama, kimlik doğrulama, puan ve yanıt oranı güvenlik nedeniyle kullanıcı tarafından yükseltilemez.", language)}
@@ -712,6 +764,22 @@ function Field({
           style={{ color: colors.ink, flex: 1, fontSize: 14, minHeight: multiline ? 90 : 46, paddingVertical: 10, textAlignVertical: multiline ? "top" : "center" }}
         />
       </View>
+    </View>
+  );
+}
+
+/** Şehir (il) seçici alanı — DeskField/Field görünümüyle uyumlu; basınca aranabilir il modalını açar. */
+function CityField({ value, onPress }: { value: string; onPress: () => void }) {
+  const { language } = useLanguage();
+  return (
+    <View style={{ gap: 6 }}>
+      <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şehir (il)", language)}</Text>
+      <Pressable onPress={onPress} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: value ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 9, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, paddingVertical: 12 })}>
+        <MaterialCommunityIcons name="map-marker-outline" size={18} color={colors.primary} />
+        <Text style={{ color: value ? colors.ink : colors.muted, flex: 1, fontSize: 14, fontWeight: value ? "800" : "500" }}>{value || translateCopy("Şehir seç (ör. İstanbul)", language)}</Text>
+        <MaterialCommunityIcons name="chevron-down" size={18} color={colors.muted} />
+      </Pressable>
+      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Şehrin, seni bölgendeki satıcılara ve şehir sıralamasına taşır.", language)}</Text>
     </View>
   );
 }

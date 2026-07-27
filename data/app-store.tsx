@@ -280,7 +280,7 @@ type AppStore = {
   resendEmailCode: (email: string) => Promise<boolean>;
   signOut: () => Promise<void>;
   signOutAllDevices: () => Promise<boolean>;
-  updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio"> & { expertiseCategories?: string[] }) => Promise<boolean>;
+  updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio"> & { expertiseCategories?: string[]; city?: string }) => Promise<boolean>;
   savePreferences: (preferences: Record<string, boolean | string | number>) => Promise<boolean>;
   setEmailNotifications: (enabled: boolean) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, details?: string) => Promise<boolean>;
@@ -654,6 +654,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
               role: data.role ?? "user",
               status: (data.status as User["status"]) ?? "active",
               emailNotifications: data.email_notifications ?? true,
+              city: typeof data.city === "string" && data.city.trim() ? data.city : undefined,
               preferences: (data.preferences ?? {}) as Record<string, boolean>
             }
           : fallback;
@@ -1368,7 +1369,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
           avatar: input.avatar.trim() || currentUser.avatar,
           bio: input.bio.trim(),
           verifiedPhone: phoneChanged ? false : currentUser.verifiedPhone,
-          expertiseCategories: input.expertiseCategories ?? currentUser.expertiseCategories ?? []
+          expertiseCategories: input.expertiseCategories ?? currentUser.expertiseCategories ?? [],
+          city: input.city !== undefined ? (input.city.trim() || undefined) : currentUser.city
         };
         const ok = liveUser ? await updateProfileLive(updatedUser) : true;
         if (!ok) {

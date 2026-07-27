@@ -132,6 +132,12 @@ function Inner() {
                     <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{favCount} {translateCopy("kişi favoriledi", language)}</Text>
                   </View>
                 ) : null}
+                {profile?.city ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+                    <MaterialCommunityIcons name="map-marker" size={12} color={colors.subtle} />
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{profile.city}</Text>
+                  </View>
+                ) : null}
               </View>
             </View>
             {/* Favori: satıcı bu ortağı kaydeder → "Favori Ortaklarım"dan bulur (kendi vitrini hariç). */}

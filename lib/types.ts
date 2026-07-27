@@ -32,6 +32,8 @@ export type User = {
   inviteCode?: string;
   // Ortağın uzman olduğu kategoriler (üst-kategori etiketleri) — satıcı deneyimli ortağı seçer.
   expertiseCategories?: string[];
+  // Bölgesel ortaklık: kullanıcının ili (TR_PROVINCES adı). Şehir-bazlı ortak eşleştirme/sıralama.
+  city?: string;
   responseRate: number;
   role?: UserRole;
   status?: "active" | "suspended" | "deleted";
