@@ -11,7 +11,7 @@ import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { OptionSheet } from "@/components/option-sheet";
-import { LegalDisclaimer, LegalDisclaimerCollapsible } from "@/components/legal-disclaimer";
+import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { modelsForSchema, deriveFieldsFromPath, describeAttributes, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
@@ -34,7 +34,7 @@ import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon & Ortak Satış", "Önizleme & Yayınla"];
 // 5 idi: emlak/vasıta gibi kategorilerde ürünü anlatmaya yetmiyordu (Sahibinden 15-30 verir).
 // Yükleme otomatik 1600px'e ölçekler + sıkıştırır, ayrıca 512px kart varyantı üretir.
-const MAX_PHOTOS = 15;
+const MAX_PHOTOS = 5;
 const RECOMMENDED_PHOTOS = 3;
 const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
 
@@ -403,7 +403,8 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   // tek yolu dosya seçiciydi. Yalnız fotoğraf adımında (step 3) ve yalnız web'de dinlenir.
   const [dragOver, setDragOver] = useState(false);
   useEffect(() => {
-    if (Platform.OS !== "web" || step !== 3 || typeof window === "undefined") return;
+    // Tek sayfa düzen: fotoğraf paneli her zaman görünür → web'de sürükle-bırak/yapıştır hep aktif.
+    if (Platform.OS !== "web" || typeof window === "undefined") return;
     const takeFiles = (files: FileList | null | undefined) => {
       const imgs = Array.from(files ?? ([] as unknown as FileList)).filter((f) => f.type.startsWith("image/"));
       if (!imgs.length) return;
@@ -428,7 +429,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       window.removeEventListener("paste", onPaste);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, images.length]);
+  }, [images.length]);
 
   function addAssets(assets: Array<{ uri: string; fileSize?: number }>) {
     const tooBig = assets.some((a) => typeof a.fileSize === "number" && a.fileSize > MAX_BYTES);
@@ -544,7 +545,6 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     if (!schema) {
       // Eskiden sessizce return ediyordu: "Yayınla" tıklanıyor, hiçbir şey olmuyordu.
       setError(translateCopy("Kategori formu yüklenemedi. Kategoriyi tekrar seç.", language));
-      setStep(0);
       return;
     }
     setError(null);
@@ -580,15 +580,14 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     });
     if (errs.length) {
       setError(errs[0].message);
-      setStep(1);
       return;
     }
     // Savunmacı yayın-anı kontrolü: adım-navigasyonu atlansa/draft bozulsa bile
     // eksik foto/konum/komisyonlu ilan yayınlanmasın (canNext'e ek güvenlik).
-    if (images.length === 0) { setError(translateCopy("En az bir fotoğraf ekle.", language)); setStep(3); return; }
-    if (!loc.provinceId) { setError(translateCopy("İl seçmelisin.", language)); setStep(2); return; }
-    if (!loc.districtId) { setError(translateCopy("İlçe seçmelisin.", language)); setStep(2); return; }
-    if (partnershipMode !== "none" && !(commissionNum > 0)) { setError(translateCopy("Komisyon değeri sıfırdan büyük olmalı.", language)); setStep(4); return; }
+    if (images.length === 0) { setError(translateCopy("En az bir fotoğraf ekle.", language)); return; }
+    if (!loc.provinceId) { setError(translateCopy("İl seçmelisin.", language)); return; }
+    if (!loc.districtId) { setError(translateCopy("İlçe seçmelisin.", language)); return; }
+    if (partnershipMode !== "none" && !(commissionNum > 0)) { setError(translateCopy("Komisyon değeri sıfırdan büyük olmalı.", language)); return; }
 
     // ANONİM YAYIN: form GEÇERLİ ama giriş yok → taslağı anon-pending'e kaydet + Kayıt'a
     // yönlendir (dönüşte /create'e döner, taslak migrasyonla korunur). Emeğini harcamış
@@ -613,7 +612,6 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       const kwVerdict = await moderateListingText(title, description);
       if (kwVerdict === "block") {
         setError(MODERATION_MESSAGES.block);
-        setStep(1);
         return;
       }
       const catVerdict = categoryRisk(path.map((p) => p.label).concat(leafLabel));
@@ -767,7 +765,6 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           ? translateCopy("Bağlantı koptu. İlanın taslakta duruyor — internetin gelince tekrar dene.", language)
           : translateCopy("İlan yayınlanamadı. Taslağın korundu, tekrar deneyebilirsin.", language)
       );
-      setStep(5);
     } finally {
       setPublishing(false);
     }
@@ -857,11 +854,15 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     );
   }
 
-  // Geri: adım 0'da önceki sayfaya (yoksa ana sayfa), adım >0'da önceki adıma.
+  // Tek sayfa akış: üstteki "Geri" her zaman önceki sayfaya döner (adım navigasyonu yok).
   const goBack = () => {
-    if (step === 0) { if (router.canGoBack()) router.back(); else router.replace("/(tabs)"); return; }
-    setStep((s) => Math.max(0, s - 1));
+    if (router.canGoBack()) router.back(); else router.replace("/(tabs)");
   };
+
+  // Tek sayfa düzende ayrı "Önizleme" adımı yok: blok kod korunur ama render edilmez.
+  // (boolean tipli bayrak — literal `false` gate'i TS'te dallanmayı "erişilemez" sayıp
+  //  içerideki priceHint daraltmasını bozuyordu.)
+  const showPreviewBlock: boolean = false;
 
   return (
     <View style={{ gap: 18 }}>
@@ -869,15 +870,15 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       <Pressable
         onPress={goBack}
         accessibilityRole="button"
-        accessibilityLabel={translateCopy(step === 0 ? "Önceki sayfaya dön" : "Önceki adıma dön", language)}
+        accessibilityLabel={translateCopy("Önceki sayfaya dön", language)}
         style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingHorizontal: 14, paddingVertical: 8 })}
       >
         <MaterialCommunityIcons name="arrow-left" size={17} color={colors.primaryDark} />
-        <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{step === 0 ? translateCopy("Geri", language) : `${translateCopy("Geri", language)}: ${translateCopy(STEPS[step - 1], language)}`}</Text>
+        <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Geri", language)}</Text>
       </Pressable>
       <View style={{ gap: 4 }}>
         <Text style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 21, fontWeight: "900" }}>{translateCopy("Yeni ilan oluştur", language)}</Text>
-        {isWideWeb ? <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{translateCopy("Kategorini seç, sana özel form açılsın.", language)}</Text> : null}
+        {isWideWeb ? <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{translateCopy("Fotoğraf ekle, detayları gir, yayınla.", language)}</Text> : null}
       </View>
 
       {/* Yarım kalan taslak — "kaldığın yerden devam et" */}
@@ -897,41 +898,116 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
         </View>
       ) : null}
 
-      {/* Adım göstergesi. Eskiden 6 kocaman çip mobilde 3 satıra yayılıp kategoriyi
-          ekranın çok altına itiyordu. Mobilde artık tek satır: ilerleme çubuğu + "Adım n/6".
-          Masaüstünde kompakt tıklanabilir çipler kalır. */}
-      {isWideWeb ? (
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-          {STEPS.map((s, i) => {
-            const done = i < step;
-            const on = i === step;
-            const reachable = i <= step || (i === step + 1 && canNext());
-            return (
-              <Pressable key={s} onPress={() => { if (i < step || reachable) setStep(i); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : "transparent", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
-                <View style={{ alignItems: "center", backgroundColor: on ? "#FFFFFF" : done ? colors.primary : colors.surfaceAlt, borderRadius: 999, height: 18, justifyContent: "center", width: 18 }}>
-                  {done ? <MaterialCommunityIcons name="check" size={11} color="#FFFFFF" /> : <Text style={{ color: on ? colors.primary : colors.muted, fontSize: 10.5, fontWeight: "900" }}>{i + 1}</Text>}
-                </View>
-                <Text style={{ color: on ? "#FFFFFF" : done ? colors.primaryDark : colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy(s, language)}</Text>
-              </Pressable>
-            );
-          })}
-        </View>
-      ) : (
-        <View style={{ gap: 7 }}>
-          <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy(STEPS[step], language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Adım", language)} {step + 1}/{STEPS.length}</Text>
-          </View>
-          <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 6, overflow: "hidden" }}>
-            <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: "100%", width: `${((step + 1) / STEPS.length) * 100}%` }} />
-          </View>
-        </View>
-      )}
+      {/* İki kolon: SOL ürün fotoğrafları, SAĞ ilan detayları (tek sayfa). Mobilde dikey yığılır (önce foto). */}
+      <View style={{ alignItems: "flex-start", flexDirection: isWideWeb ? "row" : "column", gap: 18 }}>
 
-      {/* Body */}
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, padding: isWideWeb ? 22 : 14 }}>
-        {step === 0 ? (
-          <View style={{ gap: 14 }}>
+        {/* ── SOL KOLON: Ürün Fotoğrafları ── */}
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexShrink: 0, gap: 14, padding: isWideWeb ? 18 : 14, width: isWideWeb ? 384 : "100%" }}>
+          <View style={{ gap: 3 }}>
+            <Text style={{ color: colors.ink, fontSize: isWideWeb ? 17 : 15.5, fontWeight: "900" }}>{translateCopy("Ürün Fotoğrafları", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy(`En az 1, en fazla ${MAX_PHOTOS} fotoğraf. İlk fotoğraf kapak olur; fotoğraflar otomatik ölçeklenir.`, language)}</Text>
+          </View>
+
+          {/* Büyük kapak önizlemesi (kapak = ilk foto) */}
+          <View style={{ backgroundColor: colors.surfaceAlt, borderColor: images.length ? colors.primary : colors.line, borderRadius: 14, borderStyle: images.length ? "solid" : "dashed", borderWidth: images.length ? 2 : 1, height: 240, overflow: "hidden", width: "100%" }}>
+            {images.length ? (
+              <>
+                <SafeRemoteImage uri={images[0]} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+                <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 8, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", top: 8 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Kapak", language)}</Text>
+                </View>
+              </>
+            ) : (
+              <View style={{ alignItems: "center", flex: 1, gap: 8, justifyContent: "center", padding: 18 }}>
+                <MaterialCommunityIcons name="image-plus" size={34} color={colors.subtle} />
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy("En az 1 fotoğraf ekle", language)}</Text>
+                <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", textAlign: "center" }}>{translateCopy("İlk eklediğin fotoğraf kapak olur.", language)}</Text>
+              </View>
+            )}
+          </View>
+
+          {/* Ekle butonları — kamera (yalnız native) + galeri/cihaz */}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {Platform.OS !== "web" ? (
+              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Fotoğraf çek", language)} onPress={() => void captureFromCamera()} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 7, minHeight: 48, paddingHorizontal: 16 }}>
+                <MaterialCommunityIcons name="camera-outline" size={18} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Fotoğraf çek", language)}</Text>
+              </Pressable>
+            ) : null}
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Fotoğraf ekle — galeriden / cihazdan seç", language)} onPress={() => void pickFromGallery()} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flex: 1, flexDirection: "row", gap: 7, justifyContent: "center", minHeight: 48, minWidth: 150, paddingHorizontal: 16 }}>
+              <MaterialCommunityIcons name="image-plus" size={17} color="#FFFFFF" />
+              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{translateCopy("Fotoğraf Ekle", language)}</Text>
+            </Pressable>
+          </View>
+
+          {/* Sürükle-bırak / Ctrl+V — yalnız geniş web */}
+          {Platform.OS === "web" && isWideWeb ? (
+            <View style={{ alignItems: "center", backgroundColor: dragOver ? colors.primarySoft : colors.surfaceAlt, borderColor: dragOver ? colors.primary : colors.line, borderRadius: 12, borderStyle: "dashed", borderWidth: 2, gap: 4, paddingVertical: 14 }}>
+              <MaterialCommunityIcons name={dragOver ? "tray-arrow-down" : "image-plus"} size={22} color={dragOver ? colors.primaryDark : colors.subtle} />
+              <Text style={{ color: dragOver ? colors.primaryDark : colors.muted, fontSize: 12, fontWeight: "800", textAlign: "center" }}>{dragOver ? translateCopy("Bırak, ekleyelim", language) : translateCopy("Fotoğrafları buraya sürükle — ya da Ctrl+V ile yapıştır", language)}</Text>
+            </View>
+          ) : null}
+
+          {/* Sayaç + öneri */}
+          <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 4 }}>
+              <Text style={{ color: colors.ink, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{images.length}/{MAX_PHOTOS} {translateCopy("fotoğraf eklendi", language)}</Text>
+            </View>
+            {images.length > 0 && images.length < RECOMMENDED_PHOTOS ? (
+              <Text style={{ color: colors.goldInk, flex: 1, fontSize: 11.5, fontWeight: "700", minWidth: 0 }}>· {translateCopy("En az 3 fotoğraflı ilanlar belirgin şekilde daha çok ilgi görüyor.", language)}</Text>
+            ) : null}
+          </View>
+
+          {/* Küçük görseller (thumbnail) — kapak yap / sil / sırala */}
+          {images.length ? (
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+              {images.map((img, i) => (
+                <View key={img + i} style={{ borderColor: i === 0 ? colors.primary : colors.line, borderRadius: 12, borderWidth: i === 0 ? 2 : 1, height: 92, overflow: "hidden", width: 120 }}>
+                  <SafeRemoteImage uri={img} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+                  <Pressable accessibilityLabel={translateCopy("Kaldır", language)} onPress={() => setImages((s) => s.filter((_, idx) => idx !== i))} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, height: 22, justifyContent: "center", position: "absolute", right: 5, top: 5, width: 22 }}>
+                    <MaterialCommunityIcons name="close" size={14} color="#FFFFFF" />
+                  </Pressable>
+                  {i === 0 ? (
+                    <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 5, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 9.5, fontWeight: "900" }}>{translateCopy("Kapak", language)}</Text></View>
+                  ) : (
+                    <Pressable accessibilityLabel={translateCopy("Kapak yap", language)} onPress={() => setImages((s) => [s[i], ...s.filter((_, idx) => idx !== i)])} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 6, bottom: 5, flexDirection: "row", gap: 4, left: 5, paddingHorizontal: 6, paddingVertical: 3, position: "absolute" }}>
+                      <MaterialCommunityIcons name="star-outline" size={10} color="#FFFFFF" />
+                      <Text style={{ color: "#FFFFFF", fontSize: 9.5, fontWeight: "900" }}>{translateCopy("Kapak yap", language)}</Text>
+                    </Pressable>
+                  )}
+                  <View style={{ bottom: 5, flexDirection: "row", gap: 4, position: "absolute", right: 5 }}>
+                    {i > 0 ? (
+                      <Pressable accessibilityLabel={translateCopy("Sola taşı", language)} onPress={() => setImages((s) => { const n = [...s]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; return n; })} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, height: 22, justifyContent: "center", width: 22 }}>
+                        <MaterialCommunityIcons name="chevron-left" size={15} color="#FFFFFF" />
+                      </Pressable>
+                    ) : null}
+                    {i < images.length - 1 ? (
+                      <Pressable accessibilityLabel={translateCopy("Sağa taşı", language)} onPress={() => setImages((s) => { const n = [...s]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; return n; })} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, height: 22, justifyContent: "center", width: 22 }}>
+                        <MaterialCommunityIcons name="chevron-right" size={15} color="#FFFFFF" />
+                      </Pressable>
+                    ) : null}
+                  </View>
+                </View>
+              ))}
+            </View>
+          ) : null}
+
+          {/* Görsel adresi ile ekle (opsiyonel) */}
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("veya görsel adresi yapıştır:", language)}</Text>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <TextInput value={imageDraft} onChangeText={setImageDraft} placeholder="https://…/foto.jpg" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 46, minWidth: 0, paddingHorizontal: 12 }} />
+              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Ekle", language)} onPress={() => addImageUrl()} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 12 }}>
+                <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" />
+              </Pressable>
+            </View>
+          </View>
+        </View>
+
+        {/* ── SAĞ KOLON: İlan Detayları (kategori → form → konum → komisyon) ── */}
+        <View style={[{ gap: 16, minWidth: 0 }, isWideWeb ? { flex: 1 } : { width: "100%" }]}>
+        {/* Kart: Ne yapmak istersin + Kategori */}
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, padding: isWideWeb ? 22 : 14 }}>
             {!path.length ? (
               <View style={{ gap: 9 }}>
                 <Text style={{ color: colors.ink, fontSize: isWideWeb ? 17 : 15.5, fontWeight: "900" }}>{translateCopy("Ne yapmak istersin?", language)}</Text>
@@ -959,9 +1035,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             ) : null}
             <CategoryPicker key={intent} value={path} presetRootFormKey={intent === "seek" ? "arayan" : undefined} onChange={(p) => { setPath(p); if (p.length) setStep(1); }} />
           </View>
-        ) : null}
 
-        {step === 1 && schema ? (() => {
+        {/* Kart: İlan detayları (dinamik şema formu) */}
+        {schema ? (() => {
           // Sahibinden tarzı gruplama: alanları rolüne göre bölümlere ayır (şema
           // değişmeden). Başlık → Özellikler → Donanım (multiselect) → Fiyat → Açıklama.
           const titleFieldRaw = schema.fields.find((f) => f.key === "title");
@@ -983,13 +1059,13 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             return <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} invalid={showErrors && missingKeys.has(f.key)} />;
           };
           return (
-            <View style={{ gap: 22 }}>
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 22, padding: isWideWeb ? 22 : 14 }}>
               {/* Seçilen kategori yolu — kullanıcı ne seçtiğini görür + tek tıkla değiştirir. */}
               {path.length ? (
                 <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, paddingHorizontal: 12, paddingVertical: 9 }}>
                   <MaterialCommunityIcons name="tag-multiple-outline" size={15} color={colors.primaryDark} />
                   <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{path.map((p) => translateCopy(p.label, language)).join(" › ")}</Text>
-                  <Pressable onPress={() => setStep(0)} accessibilityRole="button" accessibilityLabel={translateCopy("Kategoriyi değiştir", language)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 4 }}>
+                  <Pressable onPress={() => setPath([])} accessibilityRole="button" accessibilityLabel={translateCopy("Kategoriyi değiştir", language)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 4 }}>
                     <MaterialCommunityIcons name="pencil-outline" size={13} color={colors.primaryDark} />
                     <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
                   </Pressable>
@@ -1177,8 +1253,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           );
         })() : null}
 
-        {step === 2 ? (
-          <View style={{ gap: 16 }}>
+        {/* Kart: Konum */}
+        {schema ? (
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 16, padding: isWideWeb ? 22 : 14 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Konum", language)}</Text>
             <LocationSelector value={loc} onChange={setLoc} required neighborhoodRequired={false} showNeighborhood showAddressLine mode="listing" />
             <View style={{ gap: 8 }}>
@@ -1197,96 +1274,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           </View>
         ) : null}
 
-        {step === 3 ? (
-          <View style={{ gap: 14 }}>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Fotoğraflar", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy(`En az 1, en fazla ${MAX_PHOTOS} görsel ekle. İlk görsel kapak olur. Fotoğraflar otomatik ölçeklenir — format/boyutla uğraşmana gerek yok.`, language)}</Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              {/* MOBİL: ürünü O AN çek (eskiden yalnız galeri vardı — telefonla ilan verenin en doğal yolu). */}
-              {Platform.OS !== "web" ? (
-                <Pressable
-                  accessibilityRole="button"
-                  accessibilityLabel={translateCopy("Fotoğraf çek", language)}
-                  onPress={() => void captureFromCamera()}
-                  style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, minHeight: 48, paddingHorizontal: 16 }}
-                >
-                  <MaterialCommunityIcons name="camera-outline" size={18} color="#FFFFFF" />
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{translateCopy("Fotoğraf çek", language)}</Text>
-                </Pressable>
-              ) : null}
-              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Galeriden / cihazdan seç", language)} onPress={() => void pickFromGallery()} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 7, minHeight: 48, paddingHorizontal: 16 }}>
-                <MaterialCommunityIcons name="image-multiple-outline" size={17} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Galeriden / cihazdan seç", language)}</Text>
-              </Pressable>
-            </View>
-            {/* SÜRÜKLE-BIRAK alanı + sayaç + öneri. Eskiden: sayaç yoktu (kaç fotoğraf
-                kaldığını bilmiyordun), sürükle-bırak/yapıştır hiç yoktu, ve "3+ fotoğraflı
-                ilan daha hızlı satılır" bilgisi yalnız gizli risk motorunda duruyordu. */}
-            {/* Sürükle-bırak/Ctrl+V yalnız GENİŞ web'de var. Telefon tarayıcısında bu jestler
-                yok → mobilde çalışmayan kesikli kutu + "Ctrl+V ile yapıştır" yönergesi
-                gösteriliyordu (kafa karıştıran ölü UI). isWideWeb'e kapatıldı. */}
-            {Platform.OS === "web" && isWideWeb ? (
-              <View style={{ alignItems: "center", backgroundColor: dragOver ? colors.primarySoft : colors.surfaceAlt, borderColor: dragOver ? colors.primary : colors.line, borderRadius: 12, borderStyle: "dashed", borderWidth: 2, gap: 4, paddingVertical: 16 }}>
-                <MaterialCommunityIcons name={dragOver ? "tray-arrow-down" : "image-plus"} size={22} color={dragOver ? colors.primaryDark : colors.subtle} />
-                <Text style={{ color: dragOver ? colors.primaryDark : colors.muted, fontSize: 12.5, fontWeight: "800" }}>
-                  {dragOver ? translateCopy("Bırak, ekleyelim", language) : translateCopy("Fotoğrafları buraya sürükle — ya da Ctrl+V ile yapıştır", language)}
-                </Text>
-              </View>
-            ) : null}
-            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
-                {images.length}/{MAX_PHOTOS} {translateCopy("fotoğraf", language)}
-              </Text>
-              {images.length > 0 && images.length < RECOMMENDED_PHOTOS ? (
-                <Text style={{ color: colors.goldInk, flex: 1, minWidth: 0, fontSize: 11.5, fontWeight: "700" }}>
-                  · {translateCopy("En az 3 fotoğraflı ilanlar belirgin şekilde daha çok ilgi görüyor.", language)}
-                </Text>
-              ) : null}
-            </View>
-            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("veya görsel adresi yapıştır:", language)}</Text>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-              <TextInput value={imageDraft} onChangeText={setImageDraft} placeholder="https://…/foto.jpg" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 46, paddingHorizontal: 12 }} />
-              <Pressable onPress={() => addImageUrl()} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 12 }}>
-                <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ekle", language)}</Text>
-              </Pressable>
-            </View>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-              {images.length === 0 ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Devam etmek için en az 1 görsel ekle.", language)}</Text> : null}
-              {images.map((img, i) => (
-                <View key={img + i} style={{ borderColor: i === 0 ? colors.primary : colors.line, borderRadius: 12, borderWidth: i === 0 ? 2 : 1, height: 110, overflow: "hidden", width: 150 }}>
-                  <SafeRemoteImage uri={img} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-                  <Pressable onPress={() => setImages((s) => s.filter((_, idx) => idx !== i))} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.55)", borderRadius: 999, height: 24, justifyContent: "center", position: "absolute", right: 6, top: 6, width: 24 }}>
-                    <MaterialCommunityIcons name="close" size={15} color="#FFFFFF" />
-                  </Pressable>
-                  {i === 0 ? (
-                    <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 6, paddingHorizontal: 7, paddingVertical: 2, position: "absolute", top: 6 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{translateCopy("Kapak", language)}</Text></View>
-                  ) : (
-                    <Pressable onPress={() => setImages((s) => [s[i], ...s.filter((_, idx) => idx !== i)])} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 6, bottom: 6, flexDirection: "row", gap: 4, left: 6, paddingHorizontal: 7, paddingVertical: 3, position: "absolute" }}>
-                      <MaterialCommunityIcons name="star-outline" size={11} color="#FFFFFF" />
-                      <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{translateCopy("Kapak yap", language)}</Text>
-                    </Pressable>
-                  )}
-                  {/* Sıralama: sola/sağa taşı (görsel sırası ilan detay galerisinde korunur). */}
-                  <View style={{ bottom: 6, flexDirection: "row", gap: 4, position: "absolute", right: 6 }}>
-                    {i > 0 ? (
-                      <Pressable accessibilityLabel={translateCopy("Sola taşı", language)} onPress={() => setImages((s) => { const n = [...s]; [n[i - 1], n[i]] = [n[i], n[i - 1]]; return n; })} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, height: 24, justifyContent: "center", width: 24 }}>
-                        <MaterialCommunityIcons name="chevron-left" size={16} color="#FFFFFF" />
-                      </Pressable>
-                    ) : null}
-                    {i < images.length - 1 ? (
-                      <Pressable accessibilityLabel={translateCopy("Sağa taşı", language)} onPress={() => setImages((s) => { const n = [...s]; [n[i + 1], n[i]] = [n[i], n[i + 1]]; return n; })} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.6)", borderRadius: 999, height: 24, justifyContent: "center", width: 24 }}>
-                        <MaterialCommunityIcons name="chevron-right" size={16} color="#FFFFFF" />
-                      </Pressable>
-                    ) : null}
-                  </View>
-                </View>
-              ))}
-            </View>
-          </View>
-        ) : null}
-
-        {step === 4 ? (
-          <View style={{ gap: 16 }}>
+        {/* Kart: Komisyon & Ortak Satış */}
+        {schema ? (
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 16, padding: isWideWeb ? 22 : 14 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy(formKey === "arayan" ? "Buluş Komisyonu" : "Komisyon & Ortak Satış", language)}</Text>
 
             {/* TALEP (aranıyor) ilanı: komisyon = aradığını BULANA verilecek buluş ödülü. */}
@@ -1492,7 +1482,8 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           </View>
         ) : null}
 
-        {step === 5 ? (
+        {/* Önizleme bloğu tek-sayfa düzende gizli (kod korunur); yayınla mantığı + paylaşım metni state'i aynen durur. */}
+        {showPreviewBlock ? (
           <View style={{ gap: 14 }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
               <Mascot name="approved" size={56} />
@@ -1637,78 +1628,61 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             </View>
           </View>
         ) : null}
-      </View>
+        {/* Yasal uyarı — bu tek sayfada yayınlanıyor: tam kutu göster. */}
+        <LegalDisclaimer />
 
-      {/* Son adımda (yayından hemen önce) tam yasal kutu; ara adımlarda kompakt açılır-kapanır
-          (içerik korunur, her adımda 6 satırla ekranı doldurmaz). */}
-      {step === 5 ? <LegalDisclaimer /> : <LegalDisclaimerCollapsible />}
+        {/* Honeypot (botlar için gizli tuzak; ekranda görünmez, gerçek kullanıcı dokunmaz) */}
+        <TextInput
+          value={honeypot}
+          onChangeText={setHoneypot}
+          accessibilityElementsHidden
+          importantForAccessibility="no-hide-descendants"
+          autoCorrect={false}
+          autoCapitalize="none"
+          style={{ height: 0, opacity: 0, position: "absolute", width: 0 }}
+          placeholder={translateCopy("Bu alanı boş bırakın", language)}
+        />
 
-      {/* Honeypot (botlar için gizli tuzak; ekranda görünmez, gerçek kullanıcı dokunmaz) */}
-      <TextInput
-        value={honeypot}
-        onChangeText={setHoneypot}
-        accessibilityElementsHidden
-        importantForAccessibility="no-hide-descendants"
-        autoCorrect={false}
-        autoCapitalize="none"
-        style={{ height: 0, opacity: 0, position: "absolute", width: 0 }}
-        placeholder={translateCopy("Bu alanı boş bırakın", language)}
-      />
+        {/* Anlık moderasyon uyarısı (kategori/kelime riski) */}
+        {liveModeration ? (
+          <View style={{ alignItems: "center", backgroundColor: liveModeration.level === "block" ? colors.accentSoft : colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
+            <MaterialCommunityIcons name={liveModeration.level === "block" ? "cancel" : "shield-alert-outline"} size={18} color={liveModeration.level === "block" ? colors.accent : colors.warning} />
+            <Text style={{ color: liveModeration.level === "block" ? colors.accent : colors.warning, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{liveModeration.msg}</Text>
+          </View>
+        ) : null}
 
-      {/* Anlık moderasyon uyarısı (kategori/kelime riski) */}
-      {liveModeration ? (
-        <View style={{ alignItems: "center", backgroundColor: liveModeration.level === "block" ? colors.accentSoft : colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
-          <MaterialCommunityIcons name={liveModeration.level === "block" ? "cancel" : "shield-alert-outline"} size={18} color={liveModeration.level === "block" ? colors.accent : colors.warning} />
-          <Text style={{ color: liveModeration.level === "block" ? colors.accent : colors.warning, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{liveModeration.msg}</Text>
-        </View>
-      ) : null}
+        {/* Hata / bilgi banner'ı */}
+        {error ? (
+          <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={18} color={colors.accent} />
+            <Text style={{ color: colors.accent, flex: 1, fontSize: 13, fontWeight: "700" }}>{error}</Text>
+          </View>
+        ) : null}
+        {notice ? (
+          <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
+            <MaterialCommunityIcons name="clock-check-outline" size={18} color={colors.warning} />
+            <Text style={{ color: colors.warning, flex: 1, fontSize: 13, fontWeight: "700" }}>{notice}</Text>
+          </View>
+        ) : null}
 
-      {/* Hata / bilgi banner'ı */}
-      {error ? (
-        <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
-          <MaterialCommunityIcons name="alert-circle-outline" size={18} color={colors.accent} />
-          <Text style={{ color: colors.accent, flex: 1, fontSize: 13, fontWeight: "700" }}>{error}</Text>
-        </View>
-      ) : null}
-      {notice ? (
-        <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 9, padding: 13 }}>
-          <MaterialCommunityIcons name="clock-check-outline" size={18} color={colors.warning} />
-          <Text style={{ color: colors.warning, flex: 1, fontSize: 13, fontWeight: "700" }}>{notice}</Text>
-        </View>
-      ) : null}
+        {/* Eksik zorunlu alanları açıkça göster (sessiz kilitli "Yayınla" yerine). */}
+        {schema && missingFields.length ? (
+          <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Eksik zorunlu alan", language)}: {missingFields.map((f) => translateCopy(f.label, language)).join(", ")}</Text>
+        ) : null}
 
-      {/* Adımın neden ilerleyemediğini açıkça göster (sessiz kilitli buton yerine). */}
-      {step < STEPS.length - 1 && nextBlockReason() ? (
-        <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700", marginBottom: 8 }}>{nextBlockReason()}</Text>
-      ) : null}
-
-      {/* TASLAK OLARAK KAYDET — son adımda; yayınlamadan draft olarak saklar (Satıcı panelinden
-          "Aktifleştir" ile sonra yayınlanır). Mevcut publish() akışı + draft status kullanılır. */}
-      {step === STEPS.length - 1 ? (
-        <Pressable accessibilityRole="button" disabled={publishing} onPress={() => void publish(true)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingVertical: 6 })}>
-          <MaterialCommunityIcons name="content-save-outline" size={16} color={colors.muted} />
-          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Taslak olarak kaydet (sonra yayınla)", language)}</Text>
-        </Pressable>
-      ) : null}
-
-      {/* Nav */}
-      <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
-        <Pressable
-          onPress={goBack}
-          style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}
-        >
-          <MaterialCommunityIcons name="arrow-left" size={16} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{step === 0 ? translateCopy("Vazgeç", language) : translateCopy("Geri", language)}</Text>
-        </Pressable>
-        {step < STEPS.length - 1 ? (
-          <Pressable accessibilityRole="button" onPress={tryNext} style={{ alignItems: "center", backgroundColor: canNext() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 22, paddingVertical: 12 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Devam", language)}</Text><MaterialCommunityIcons name="arrow-right" size={16} color="#FFFFFF" />
+        {/* Footer — her zaman görünür: Taslak Olarak Kaydet (sol) + İlanı Yayınla (sağ) */}
+        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between" }}>
+          <Pressable accessibilityRole="button" disabled={publishing} onPress={() => void publish(true)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 12 })}>
+            <MaterialCommunityIcons name="content-save-outline" size={16} color={colors.muted} />
+            <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Taslak Olarak Kaydet", language)}</Text>
           </Pressable>
-        ) : (
-          <Pressable disabled={publishing || missingFields.length > 0 || liveModeration?.level === "block"} onPress={() => void publish()} style={{ alignItems: "center", backgroundColor: missingFields.length || liveModeration?.level === "block" ? colors.line : colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
+          <Pressable accessibilityRole="button" disabled={publishing || missingFields.length > 0 || liveModeration?.level === "block"} onPress={() => void publish()} style={{ alignItems: "center", backgroundColor: missingFields.length || liveModeration?.level === "block" ? colors.line : colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
             <MaterialCommunityIcons name="check-decagram" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{publishing ? translateCopy("Yayınlanıyor…", language) : translateCopy("İlanı Yayınla", language)}</Text>
           </Pressable>
-        )}
-      </View>
+        </View>
+
+        </View>{/* /SAĞ KOLON */}
+      </View>{/* /iki kolon */}
     </View>
   );
 }
