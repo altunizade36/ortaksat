@@ -20,6 +20,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { Skeleton } from "@/components/skeleton";
 import { getRecent } from "@/lib/recent";
+import { loadPartnerDirectory, type PartnerDirectoryEntry } from "@/lib/supabase-data";
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -62,6 +63,14 @@ export function HomeDesktop() {
   const [visibleCount, setVisibleCount] = useState(18);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   useEffect(() => { setRecentIds(getRecent()); }, []);
+  // ÖNE ÇIKAN ORTAKLAR — mevcut /ortaklar dizini kaynağı (loadPartnerDirectory). Ana sayfada
+  // performansa göre; ortakları platforma çeker. Yalnız gerçek aktiviteli ortaklar (boş profil yok).
+  const [featuredPartners, setFeaturedPartners] = useState<PartnerDirectoryEntry[]>([]);
+  useEffect(() => {
+    void loadPartnerDirectory({ sort: "performance", limit: 12 })
+      .then((ps) => setFeaturedPartners(ps.filter((p) => p.confirmedSales > 0 || p.completedPartnerships > 0 || p.activePartnerships > 0).slice(0, 8)))
+      .catch(() => {});
+  }, []);
   const recentListings = useMemo(() => recentIds.map((id) => listings.find((l) => l.id === id)).filter((l): l is Listing => !!l && l.status === "active").slice(0, 8), [recentIds, listings]);
 
   const pMin = Number(priceMin.replace(/[^\d]/g, "")) || 0;
@@ -434,6 +443,38 @@ export function HomeDesktop() {
                     <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, paddingVertical: 6 }}>
                       <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Ortak Ol", language)}</Text>
                     </View>
+                  </View>
+                </Pressable>
+              ))}
+            </ScrollView>
+          </View>
+        ) : null}
+
+        {/* ÖNE ÇIKAN ORTAKLAR — mevcut /ortaklar dizini verisi; ana sayfada ortakları çeker. */}
+        {featuredPartners.length > 0 ? (
+          <View style={{ gap: 10 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 17, fontWeight: "900" }}>{translateCopy("Öne Çıkan Ortaklar", language)}</Text>
+              <Link href={"/ortaklar" as Href} asChild>
+                <Pressable style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                  <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Tümü", language)}</Text>
+                  <MaterialCommunityIcons name="arrow-right" size={14} color={colors.primaryDark} />
+                </Pressable>
+              </Link>
+            </View>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 12, paddingRight: 12 }}>
+              {featuredPartners.map((p) => (
+                <Pressable key={p.partnerId} onPress={() => router.push(`/ortak/${p.partnerId}`)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 14, width: 150 }}>
+                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 56, justifyContent: "center", overflow: "hidden", width: 56 }}>
+                    {p.avatarUrl && p.avatarUrl.startsWith("http") ? <SafeRemoteImage uri={p.avatarUrl} style={{ height: 56, width: 56 }} contentFit="cover" /> : <MaterialCommunityIcons name="account" size={28} color={colors.primaryDark} />}
+                  </View>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "900", maxWidth: 128 }}>{p.fullName}</Text>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                    {p.rating ? <><MaterialCommunityIcons name="star" size={12} color={colors.gold} /><Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{p.rating}</Text></> : null}
+                    {p.verifiedIdentity || p.verifiedPhone ? <MaterialCommunityIcons name="check-decagram" size={12} color={colors.primaryDark} /> : null}
+                  </View>
+                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+                    <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{p.confirmedSales} {translateCopy("satış", language)}</Text>
                   </View>
                 </Pressable>
               ))}

@@ -13,6 +13,7 @@ import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SkeletonGrid } from "@/components/skeleton";
 import { getRecent, subscribeRecent } from "@/lib/recent";
+import { loadPartnerDirectory, type PartnerDirectoryEntry } from "@/lib/supabase-data";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState, PressLink } from "@/components/ui";
 import type { CategoryNode } from "@/lib/category-tree";
@@ -74,6 +75,13 @@ export default function HomeScreen() {
   // Son gezilen ilanlar (localStorage, istemci-only — SSG hydration güvenli).
   const [recentIds, setRecentIds] = useState<string[]>([]);
   useEffect(() => { setRecentIds(getRecent()); return subscribeRecent(setRecentIds); }, []);
+  // ÖNE ÇIKAN ORTAKLAR (mobil parite) — mevcut /ortaklar dizini verisi, performansa göre.
+  const [featuredPartners, setFeaturedPartners] = useState<PartnerDirectoryEntry[]>([]);
+  useEffect(() => {
+    void loadPartnerDirectory({ sort: "performance", limit: 12 })
+      .then((ps) => setFeaturedPartners(ps.filter((p) => p.confirmedSales > 0 || p.completedPartnerships > 0 || p.activePartnerships > 0).slice(0, 8)))
+      .catch(() => {});
+  }, []);
   const quickFilters: Array<{ key: FilterKey; label: string; icon: IconName }> = useMemo(() => [
     { key: "all", label: t("all"), icon: "view-grid" },
     { key: "trending", label: t("trend"), icon: "fire" },
@@ -308,6 +316,32 @@ export default function HomeScreen() {
                     <View style={{ gap: 3, padding: 8 }}>
                       <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{l.title}</Text>
                       <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{money(l.price)}</Text>
+                    </View>
+                  </Pressable>
+                ))}
+              </ScrollView>
+            </View>
+          ) : null}
+
+          {/* ÖNE ÇIKAN ORTAKLAR (mobil) — ortakları platforma çeker; /ortak vitrinine gider. */}
+          {featuredPartners.length > 0 ? (
+            <View style={{ gap: 8 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{translateCopy("Öne Çıkan Ortaklar", language)}</Text>
+                <Pressable accessibilityRole="button" onPress={() => router.push("/ortaklar" as Href)} style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tümü", language)}</Text>
+                  <MaterialCommunityIcons name="arrow-right" size={13} color={colors.primaryDark} />
+                </Pressable>
+              </View>
+              <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 12 }}>
+                {featuredPartners.map((p) => (
+                  <Pressable key={p.partnerId} accessibilityRole="button" accessibilityLabel={p.fullName} onPress={() => router.push(`/ortak/${p.partnerId}`)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 5, padding: 12, width: 132 }}>
+                    <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 50, justifyContent: "center", overflow: "hidden", width: 50 }}>
+                      {p.avatarUrl && p.avatarUrl.startsWith("http") ? <SafeRemoteImage uri={p.avatarUrl} style={{ height: 50, width: 50 }} contentFit="cover" /> : <MaterialCommunityIcons name="account" size={26} color={colors.primaryDark} />}
+                    </View>
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900", maxWidth: 112 }}>{p.fullName}</Text>
+                    <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+                      <Text style={{ color: colors.primaryDark, fontSize: 10, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{p.confirmedSales} {translateCopy("satış", language)}</Text>
                     </View>
                   </Pressable>
                 ))}
