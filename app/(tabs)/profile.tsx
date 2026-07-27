@@ -222,31 +222,49 @@ function ProfileScreenInner() {
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: Platform.OS === "web" ? 28 : 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <WebContainer max={1280} padding={0} style={{ gap: 12 }}>
-      <Card>
+      {/* Marka hero (mobil) — masaüstü welcome-banner paritesi: yuvarlak avatar + isim
+          + puan/güven/satış çipleri. Eskiden düz kare-avatar kartıydı. */}
+      <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, gap: 13, overflow: "hidden", padding: 16 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-          <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 62, justifyContent: "center", overflow: "hidden", width: 62 }}>
+          <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 60, justifyContent: "center", overflow: "hidden", width: 60 }}>
             {isImageAvatar(currentUser.avatar) ? (
-              <Image source={{ uri: currentUser.avatar }} accessibilityLabel={currentUser.name} contentFit="cover" style={{ height: 62, width: 62 }} />
+              <Image source={{ uri: currentUser.avatar }} accessibilityLabel={currentUser.name} contentFit="cover" style={{ height: 60, width: 60 }} />
             ) : (
-              <Text adjustsFontSizeToFit numberOfLines={1} selectable style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900", paddingHorizontal: 4 }}>
-                {currentUser.avatar}
-              </Text>
+              <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 22, fontWeight: "900", paddingHorizontal: 4 }}>{currentUser.avatar}</Text>
             )}
           </View>
-          <View style={{ flex: 1, gap: 6 }}>
-            <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>
-              {currentUser.name}
-            </Text>
-            <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 13 }}>
-              {currentUser.phone || t("profilePhoneMissing")}
-            </Text>
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              <StatusPill label={isLiveAccount ? t("liveAccount") : t("preview")} tone={isLiveAccount ? "success" : "warning"} />
-              {currentUser.verifiedPhone ? <StatusPill label={t("phoneVerified")} tone="success" /> : <StatusPill label={t("phonePending")} tone="warning" />}
-              {currentUser.verifiedIdentity ? <StatusPill label={t("identityVerified")} tone="success" /> : <StatusPill label={t("identityPending")} tone="warning" />}
-              {currentUser.verifiedInstagram ? <StatusPill label={t("instagramVerified")} tone="success" /> : <StatusPill label={t("instagramPending")} tone="warning" />}
-            </View>
+          <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+            <Text selectable numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900" }}>{currentUser.name}</Text>
+            <Text selectable numberOfLines={1} style={{ color: "rgba(255,255,255,0.82)", fontSize: 12.5, fontWeight: "600" }}>{currentUser.phone || t("profilePhoneMissing")}</Text>
           </View>
+          <Link href="/profile-edit" asChild>
+            <Pressable accessibilityRole="button" accessibilityLabel={t("editProfile")} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.16)", borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}>
+              <MaterialCommunityIcons name="account-edit-outline" size={20} color="#FFFFFF" />
+            </Pressable>
+          </Link>
+        </View>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
+            <MaterialCommunityIcons name="star" size={13} color={colors.gold} />
+            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{currentUser.rating} {translateCopy("puan", language)}</Text>
+          </View>
+          <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
+            <MaterialCommunityIcons name="shield-check" size={13} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>%{trust.overall} {translateCopy("güven", language)}</Text>
+          </View>
+          <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
+            <MaterialCommunityIcons name="cart-check" size={13} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>{compactNumber(currentUser.successfulSales)} {translateCopy("satış", language)}</Text>
+          </View>
+        </View>
+      </View>
+
+      <Card>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+          <StatusPill label={isLiveAccount ? t("liveAccount") : t("preview")} tone={isLiveAccount ? "success" : "warning"} />
+          {currentUser.verifiedPhone ? <StatusPill label={t("phoneVerified")} tone="success" /> : <StatusPill label={t("phonePending")} tone="warning" />}
+          {currentUser.verifiedIdentity ? <StatusPill label={t("identityVerified")} tone="success" /> : <StatusPill label={t("identityPending")} tone="warning" />}
+          {currentUser.verifiedInstagram ? <StatusPill label={t("instagramVerified")} tone="success" /> : <StatusPill label={t("instagramPending")} tone="warning" />}
         </View>
         {currentUser.bio ? (
           <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>

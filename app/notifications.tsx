@@ -6,7 +6,7 @@ import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "rea
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { shortDate } from "@/lib/locale";
-import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
+import { Card, EmptyState, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useNativeRefresh } from "@/lib/use-native-refresh";
@@ -411,48 +411,49 @@ function NotificationsScreenInner() {
 
       {visibleNotifications.map((notification) => {
         const href = hrefForMeta(notification.metadata, notification.type);
+        const meta = typeMeta[notification.type] ?? { label: translateCopy("Bildirim", language), tint: colors.infoSoft, color: colors.info };
+        const hasLink = Boolean(notification.metadata?.listingId) || notification.type === "message";
+        const read = notification.read;
         const openMobile = () => {
           if (!notification.read) markNotificationRead(notification.id);
           if (href) router.push(href);
         };
         return (
-        <Pressable key={notification.id} accessibilityRole="button" accessibilityLabel={href ? `${notification.title} — ${translateCopy("aç", language)}` : notification.title} onPress={openMobile}>
-        <Card>
-          <View style={{ flexDirection: "row", gap: 11 }}>
-            <View
-              style={{
-                alignItems: "center",
-                backgroundColor: notification.read ? colors.surfaceAlt : colors.primarySoft,
-                borderRadius: 8,
-                height: 42,
-                justifyContent: "center",
-                width: 42
-              }}
-            >
-              <MaterialCommunityIcons name={typeIcons[notification.type]} size={22} color={notification.read ? colors.muted : colors.primary} />
+          <Pressable
+            key={notification.id}
+            accessibilityRole="button"
+            accessibilityLabel={href ? `${notification.title} — ${translateCopy("aç", language)}` : notification.title}
+            onPress={openMobile}
+            style={({ pressed }) => ({
+              backgroundColor: pressed ? colors.surfaceAlt : read ? colors.surface : colors.primarySoft + "44",
+              borderColor: read ? colors.line : colors.primary,
+              borderRadius: 14,
+              borderWidth: 1,
+              flexDirection: "row",
+              gap: 11,
+              padding: 13
+            })}
+          >
+            {/* Renkli tür ikon çipi (masaüstü paritesi) */}
+            <View style={{ alignItems: "center", backgroundColor: meta.tint, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
+              <MaterialCommunityIcons name={typeIcons[notification.type] ?? "bell-outline"} size={22} color={meta.color} />
             </View>
-            <View style={{ flex: 1, gap: 5 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900", lineHeight: 20 }}>
-                  {translateCopy(notification.title, language)}
-                </Text>
-                {!notification.read ? <StatusPill label={translateCopy("Yeni", language)} tone="warning" /> : null}
+            <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                <View style={{ backgroundColor: meta.tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
+                  <Text style={{ color: meta.color, fontSize: 10, fontWeight: "900" }}>{translateCopy(meta.label, language)}</Text>
+                </View>
+                {!read ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, height: 8, width: 8 }} /> : null}
+                <View style={{ flex: 1 }} />
+                <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{shortDate(notification.createdAt)}</Text>
               </View>
-              <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>
-                {translateCopy(notification.body, language)}
-              </Text>
-              <Text selectable style={{ color: colors.subtle, fontSize: 12 }}>
-                {shortDate(notification.createdAt)}
-              </Text>
+              <Text selectable style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900", lineHeight: 19 }}>{translateCopy(notification.title, language)}</Text>
+              <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "500", lineHeight: 18 }}>{translateCopy(notification.body, language)}</Text>
+              {hasLink ? (
+                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800", marginTop: 1 }}>{translateCopy(notification.type === "message" ? "Mesaja git →" : "İlana git →", language)}</Text>
+              ) : null}
             </View>
-          </View>
-          {!notification.read ? (
-            <PrimaryButton tone="secondary" icon="check-circle-outline" onPress={() => markNotificationRead(notification.id)}>
-              {translateCopy("Okundu İşaretle", language)}
-            </PrimaryButton>
-          ) : null}
-        </Card>
-        </Pressable>
+          </Pressable>
         );
       })}
     </ScrollView>
