@@ -20,9 +20,9 @@ test("ADMIN: canlı kullanıcı aktivitesi (heartbeat + grafik)", async ({ page 
   await page.goto("/admin", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(6000);
   const body = await page.locator("body").innerText();
-  expect(body).toContain("Canlı Kullanıcı Aktivitesi");
+  expect(body).toContain("Canlı Panel");
   expect(body).toContain("Şu an aktif");
-  expect(body).toContain("Son 7 gün");
+  expect(body).toContain("Bu hafta yeni");
 
   const live = await runSql<Array<{ n: number }>>(`select count(*) as n from profiles where last_seen_at > now() - interval '5 minutes';`);
   expect(Number(live[0].n), "presence heartbeat çalışmalı").toBeGreaterThan(0);
