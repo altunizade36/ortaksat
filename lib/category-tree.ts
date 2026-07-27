@@ -107,6 +107,8 @@ export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vest
 // Kombi/klima markaları (beyaz eşyadan farklı).
 export const HEATING_BRANDS = ["Baymak", "DemirDöküm", "Vaillant", "Buderus", "Bosch", "ECA", "Airfel", "Viessmann", "Warmhaus", "Diğer"];
 export const AC_BRANDS = ["Arçelik", "Vestel", "Samsung", "LG", "Bosch", "Daikin", "Mitsubishi", "Toshiba", "Baymak", "Gree", "Midea", "Beko", "Diğer"];
+// İş makinesi markaları (ekskavatör/loder/vinç/forklift; Türkiye pazarı + yerli Hidromek/Çukurova/MST).
+export const CONSTRUCTION_BRANDS = ["Caterpillar", "Komatsu", "Hidromek", "JCB", "Volvo", "Hitachi", "Case", "Doosan", "Liebherr", "Hyundai", "Kobelco", "New Holland", "Çukurova", "MST", "Sanko", "Çesan", "Terex", "Bobcat", "Kubota", "Takeuchi", "Yanmar", "Wacker Neuson", "XCMG", "SANY", "LiuGong", "Sumitomo", "JLG", "Manitou", "Merlo", "Atlas Copco", "Wirtgen", "Bomag", "Dynapac", "Ammann", "Putzmeister", "Schwing", "Linde", "Still", "Hyster", "Yale", "Jungheinrich", "Toyota", "Cummins", "Diğer"];
 const CAR_COLORS = ["Beyaz", "Siyah", "Gri", "Gümüş", "Kırmızı", "Mavi", "Lacivert", "Yeşil", "Kahverengi", "Bej", "Turuncu", "Diğer"];
 // VASITA ortak alanları — "Araç durumu" ve "Muayene" hiçbir vasıta şemasında YOKTU.
 // (Araç durumu, ikinci el araç aramasında en belirleyici filtredir; F.durum jenerik "Ürün durumu"
@@ -1422,7 +1424,7 @@ export const formSchemas: Record<string, FormSchema> = {
     fields: [
       { key: "title", label: "Makine / ürün adı", type: "text", required: true },
       { key: "machineType", label: "Makine türü", type: "select", options: ["Ekskavatör", "Kazıcı Yükleyici (Beko Loder)", "Lastikli Yükleyici (Loder)", "Mini Yükleyici", "Dozer", "Greyder", "Silindir", "Forklift", "Telehandler", "Mobil Vinç", "Kule Vinç", "Delici / Sondaj", "Asfalt Makinesi", "Beton Pompası", "Beton Santrali", "Transmikser", "Kırıcı / Konkasör", "Jeneratör", "Kompresör", "Kaynak Makinesi", "Su Pompası", "Çim / Bahçe Makinesi", "Diğer"], group: "Temel Bilgiler" },
-      { ...F.marka, group: "Temel Bilgiler" }, { ...F.model, group: "Temel Bilgiler" },
+      { key: "brand", label: "Marka", type: "select", required: true, options: CONSTRUCTION_BRANDS, group: "Temel Bilgiler" }, { ...F.model, group: "Temel Bilgiler" },
       { key: "year", label: "Üretim yılı", type: "number", group: "Temel Bilgiler" },
       { ...F.durum, group: "Temel Bilgiler" },
       { key: "power", label: "Motor gücü", type: "number", suffix: "HP", group: "Teknik Özellikler" },
