@@ -37,8 +37,11 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
   // rozeti (DB kolonu değil; JSONB attributes zaten public feed'de → ekstra grant/migrasyon yok).
   const urgentUntil = listing.attributes?._urgentUntil ? String(listing.attributes._urgentUntil) : "";
   const urgent = urgentUntil ? Date.parse(urgentUntil) > Date.now() : false;
-  const statusLabel = urgent ? translateCopy("🔥 Acil", language) : featured ? translateCopy("★ Öne Çıkan", language) : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? translateCopy("Yeni", language) : listing.partnerCount > 0 ? `${compactNumber(listing.partnerCount)} ${t("partners")}` : translateCopy("Yeni", language);
-  const statusTone: StatusTone = urgent ? "accent" : featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
+  // TALEP İLANI (alıcı arıyor, buluş komisyonu): publish attributes._formKey="arayan" yazar.
+  // EN ÜST öncelikli "🔎 ARANIYOR" rozeti — bu ilan tipi diğer her şeyin önünde okunmalı.
+  const isDemand = listing.attributes?._formKey === "arayan";
+  const statusLabel = isDemand ? translateCopy("🔎 ARANIYOR", language) : urgent ? translateCopy("🔥 Acil", language) : featured ? translateCopy("★ Öne Çıkan", language) : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? translateCopy("Yeni", language) : listing.partnerCount > 0 ? `${compactNumber(listing.partnerCount)} ${t("partners")}` : translateCopy("Yeni", language);
+  const statusTone: StatusTone = isDemand ? "info" : urgent ? "accent" : featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
   // Kartın kategori etiketleri ilanın GERÇEK ağaç kategorisinden gelir. Eski sezgisel
   // inferListingSubcategory tree-ilanlarda yanlış eşliyordu (kamera → "Araç elektroniği").
   const rootCat = String(listing.attributes?._root || "").trim();
@@ -207,7 +210,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
                   <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 3 }}>
                     <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-                      {t("earning")} {moneyIn(commission, listing.currency)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}
+                      {isDemand ? translateCopy("Bulana", language) : t("earning")} {moneyIn(commission, listing.currency)}{listing.commissionType === "rate" ? ` · %${listing.commissionValue}` : ""}
                     </Text>
                   </View>
                   {/* Ortaklık kabul şekli — ortağın "nasıl ortak olurum" sinyali (ürün mantığı). */}

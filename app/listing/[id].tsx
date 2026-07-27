@@ -332,6 +332,9 @@ export default function ListingDetailScreen() {
   // NORMAL İLAN (ortak satışa kapalı): ortak-UI'sı (komisyon/Ortak Ol/kazanç) gösterilmez;
   // yalnız normal alıcı akışı (mesaj/iletişim/satın al) kalır.
   const partnerable = currentListing.partnershipMode !== "none";
+  // TALEP İLANI: alıcı/yatırımcı "şunu arıyorum, bulana komisyon" der. publish _formKey="arayan".
+  // Komisyon = BULUŞ ödülü (satan değil, bulan kazanır). Çerçeve buna göre değişir.
+  const isDemand = currentListing.attributes?._formKey === "arayan";
   const validInvite = isInviteMode && !!inviteParam && inviteParam === listingInviteCode(currentListing);
   const gallery = [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean);
   const galleryIdx = Math.min(activeImage, Math.max(0, gallery.length - 1));
@@ -768,11 +771,11 @@ export default function ListingDetailScreen() {
           {partnerable ? (
           <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 4, padding: 12 }}>
             <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-              <MaterialCommunityIcons name="cash-multiple" size={16} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.3 }}>{translateCopy("ORTAK KAZANCI", language)}</Text>
+              <MaterialCommunityIcons name={isDemand ? "magnify" : "cash-multiple"} size={16} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.3 }}>{translateCopy(isDemand ? "BULUŞ KOMİSYONU" : "ORTAK KAZANCI", language)}</Text>
               <Text style={{ color: colors.primaryDark, fontSize: 17, fontWeight: "900" }}>{moneyIn(commission, currentListing.currency)}</Text>
             </View>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy("Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy(isDemand ? "Bu talebi karşılayan ürünü/satıcıyı bul ve getir; bulan komisyonu kazanır. Komisyonu ilan sahibi öder." : "Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.", language)}</Text>
             {/* Y5: Sosyal kanıt (kaç ortak tanıtıyor) + atıf penceresi şeffaflığı (K1 ile anlamlı:
                 referansın kaç gün boyunca sana kredi olduğu). Ortak, isteğinden ÖNCE değeri görür. */}
             <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 5, marginTop: 2 }}>

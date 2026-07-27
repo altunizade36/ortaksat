@@ -1247,7 +1247,15 @@ export function DesktopCreateFlow() {
 
         {step === 4 ? (
           <View style={{ gap: 16 }}>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Komisyon & Ortak Satış", language)}</Text>
+            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy(formKey === "arayan" ? "Buluş Komisyonu" : "Komisyon & Ortak Satış", language)}</Text>
+
+            {/* TALEP (aranıyor) ilanı: komisyon = aradığını BULANA verilecek buluş ödülü. */}
+            {formKey === "arayan" ? (
+              <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderColor: colors.info, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, padding: 11 }}>
+                <MaterialCommunityIcons name="magnify" size={17} color={colors.info} style={{ marginTop: 1 }} />
+                <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Bu bir TALEP (aranıyor) ilanı. Belirlediğin komisyon, aradığın ürünü/satıcıyı BULANA ödenecek buluş ödülüdür — sen (ilan sahibi) ödersin.", language)}</Text>
+              </View>
+            ) : null}
 
             {/* ACİL SATIŞ ROZETİ — ilanı öne çıkar (🔥 rozet + listede üstte). Ortak/normal fark etmez. */}
             <View style={{ backgroundColor: urgentDays > 0 ? colors.accentSoft : colors.surfaceAlt, borderColor: urgentDays > 0 ? colors.accent : colors.line, borderRadius: 12, borderWidth: 1, gap: 9, padding: 12 }}>
