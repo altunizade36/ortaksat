@@ -109,14 +109,19 @@ export function MobileNavMenu() {
 function Row({ item, onPress, danger, accent }: { item: NavItem; onPress: () => void; danger?: boolean; accent?: boolean }) {
   const { language } = useLanguage();
   const color = danger ? colors.accent : accent ? colors.primaryDark : colors.ink;
+  // İkon çipi — masaüstü Hesabım menüsüyle görsel tutarlılık (tek sistem hissi).
+  const chipBg = danger ? colors.accentSoft : colors.primarySoft;
+  const iconColor = danger ? colors.accent : colors.primaryDark;
   return (
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={translateCopy(item.label, language)}
       onPress={onPress}
-      style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 13, paddingHorizontal: 16, paddingVertical: 13 })}
+      style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", flexDirection: "row", gap: 12, paddingHorizontal: 14, paddingVertical: 11 })}
     >
-      <MaterialCommunityIcons name={item.icon} size={21} color={danger ? colors.accent : colors.primary} />
+      <View style={{ alignItems: "center", backgroundColor: chipBg, borderRadius: 9, height: 34, justifyContent: "center", width: 34 }}>
+        <MaterialCommunityIcons name={item.icon} size={19} color={iconColor} />
+      </View>
       <Text style={{ color, flex: 1, fontSize: 14.5, fontWeight: "800" }}>{translateCopy(item.label, language)}</Text>
       {item.badge && item.badge > 0 ? (
         <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, minWidth: 20, paddingHorizontal: 6, paddingVertical: 1 }}>
