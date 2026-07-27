@@ -551,8 +551,27 @@ export default function ListingDetailScreen() {
       price: currentListing.price,
       priceCurrency: currentListing.currency ?? "TRY",
       availability: currentListing.stockCount > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      // Google "Satıcı girişleri" (merchant listing) uygunluğu: fiyat geçerlilik + iade politikası.
+      priceValidUntil: new Date(Date.now() + 31536000000).toISOString().slice(0, 10),
       url: metaUrl,
-      ...(owner ? { seller: { "@type": "Person", name: owner.name } } : {})
+      ...(owner ? { seller: { "@type": "Person", name: owner.name } } : {}),
+      // hasMerchantReturnPolicy: ilanın GERÇEK iade süresinden (returnWindowDays, alıcıya "İade: N gün"
+      // olarak zaten gösterilir). İade masrafı legal'e göre alıcı sorumluluğunda; platform kargo yapmaz.
+      hasMerchantReturnPolicy:
+        (currentListing.returnWindowDays ?? 0) > 0
+          ? {
+              "@type": "MerchantReturnPolicy",
+              applicableCountry: "TR",
+              returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+              merchantReturnDays: currentListing.returnWindowDays,
+              returnMethod: "https://schema.org/ReturnByMail",
+              returnFees: "https://schema.org/ReturnFeesCustomerResponsibility"
+            }
+          : {
+              "@type": "MerchantReturnPolicy",
+              applicableCountry: "TR",
+              returnPolicyCategory: "https://schema.org/MerchantReturnNotPermitted"
+            }
     }
   });
 
