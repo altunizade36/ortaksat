@@ -72,6 +72,11 @@ function ChatScreenInner() {
   const [attaching, setAttaching] = useState(false);
   const [inputFocused, setInputFocused] = useState(false);
   const [lightboxUri, setLightboxUri] = useState<string | null>(null);
+  // "Aşağı in" FAB: kullanıcı geçmişi okumak için yukarı kaydırınca görünür; yukarıdayken
+  // yeni mesaj gelirse üstünde nokta belirir (kaçırmasın). nearBottomRef auto-scroll
+  // mantığını sürdürür; bunlar YALNIZ FAB görünürlüğü/rozeti için (state → yeniden çizim).
+  const [showJump, setShowJump] = useState(false);
+  const [unreadWhileUp, setUnreadWhileUp] = useState(false);
   // Sohbet gövde-kaydırması OLMAYAN sabit bir düzen; mobil web'de klavye composer'ı
   // örtmesin diye SADECE bu ekrana klavye inset'i uygulanır (genel kök değil → başka
   // sayfalarda "ekran komple kayıyor" olmaz).
@@ -295,15 +300,23 @@ function ChatScreenInner() {
         ) : null}
       </View>
 
+      <View style={{ flex: 1 }}>
       <ScrollView
         ref={scrollRef}
         scrollEventThrottle={16}
         keyboardShouldPersistTaps="handled"
         onScroll={(e) => {
           const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
-          nearBottomRef.current = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120;
+          const nb = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120;
+          nearBottomRef.current = nb;
+          // yalnız değişince set et (kaydırmada yeniden-çizim fırtınası olmasın)
+          setShowJump((prev) => (prev === !nb ? prev : !nb));
+          if (nb) setUnreadWhileUp(false);
         }}
-        onContentSizeChange={() => { if (nearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false }); }}
+        onContentSizeChange={() => {
+          if (nearBottomRef.current) scrollRef.current?.scrollToEnd({ animated: false });
+          else setUnreadWhileUp(true); // yukarıdayken içerik büyüdü = yeni mesaj geldi
+        }}
         style={{ flex: 1 }}
         contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, justifyContent: conversationMessages.length === 0 ? "center" : "flex-start", padding: 12, paddingBottom: 16 }}
       >
@@ -366,6 +379,22 @@ function ChatScreenInner() {
           );
         })}
       </ScrollView>
+        {/* "En alta in" FAB — yalnız yukarı kaydırıldığında; yukarıdayken yeni mesaj
+            gelirse üstünde turkuaz nokta belirir. */}
+        {showJump ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={translateCopy("En alta in", language)}
+            onPress={() => { scrollRef.current?.scrollToEnd({ animated: true }); setShowJump(false); setUnreadWhileUp(false); }}
+            style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, bottom: 12, elevation: 4, height: 42, justifyContent: "center", opacity: pressed ? 0.8 : 1, position: "absolute", right: 12, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.18, shadowRadius: 6, width: 42 })}
+          >
+            <MaterialCommunityIcons name="chevron-down" size={26} color={colors.primaryDark} />
+            {unreadWhileUp ? (
+              <View style={{ backgroundColor: colors.primary, borderColor: colors.surface, borderRadius: 999, borderWidth: 2, height: 14, position: "absolute", right: -1, top: -1, width: 14 }} />
+            ) : null}
+          </Pressable>
+        ) : null}
+      </View>
 
 
       {draftRisk.hasRisk ? (
