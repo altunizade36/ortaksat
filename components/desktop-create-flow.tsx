@@ -14,8 +14,8 @@ import { LegalDisclaimer } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { modelsForSchema, deriveFieldsFromPath, describeAttributes, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
-import { CURRENCIES, moneyIn, partnerInviteUrl, productUrl, listingShareTemplates, type CurrencyCode } from "@/lib/format";
-import { categoryConversion } from "@/lib/conversion";
+import { moneyIn, partnerInviteUrl, productUrl, listingShareTemplates, type CurrencyCode } from "@/lib/format";
+import { TR_PROVINCES } from "@/lib/cities";
 import { metaTrack } from "@/lib/meta-pixel";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { formatLocation, getProvince } from "@/lib/locations";
@@ -87,6 +87,11 @@ const descTemplateFor = (topLabel?: string) =>
   "• Ürün / hizmet: \n• Durumu: \n• Öne çıkan özellikler: \n• Neden satıyorsun: \n• Teslim / iletişim: ";
 const DEFAULT_COMMISSION_RANGE: [number, number] = [8, 20];
 
+// Ortaklık: komisyonun HANGİ koşulda hak edildiği (mockup dropdown). attributes._commissionCondition.
+const COMMISSION_CONDITIONS = ["İlk müşteriyi getiren kazanır", "Satış tamamlanınca", "Nitelikli talep/randevu getiren"];
+// Bölge sınırlaması dropdown seçenekleri: "Tüm Türkiye" (varsayılan, yazılmaz) + 81 il.
+const PARTNER_REGIONS = ["Tüm Türkiye", ...TR_PROVINCES];
+
 // Yarım kalan ilan taslağı — cihazda saklanır, kullanıcı geri döndüğünde devam eder.
 // TASLAK ANAHTARI KULLANICIYA ÖZEL olmalı: eskiden sabit anahtardı ve çıkışta
 // silinmiyordu → A kullanıcısının yarım ilanı (başlık/fiyat/fotoğraf/konum) aynı
@@ -121,6 +126,10 @@ type DraftShape = {
   tiers?: Array<{ minSales: string; rate: string }>;
   customCategory?: string;
   urgentDays?: number;
+  // Ortaklık (mockup) yeni alanları — attributes JSONB'ye yazılır.
+  commissionCondition?: string;
+  partnerRegion?: string;
+  maxPartners?: string;
 };
 
 export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | "seek" } = {}) {
@@ -158,6 +167,10 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   const [attributionWindow, setAttributionWindow] = useState("30");
   const [partnerNote, setPartnerNote] = useState("");
   const [contactMethod, setContactMethod] = useState<"message" | "whatsapp" | "phone">("message");
+  // Ortaklık (mockup) yeni alanları: komisyon koşulu · bölge sınırı · maks. ortak (""=sınırsız).
+  const [commissionCondition, setCommissionCondition] = useState("İlk müşteriyi getiren kazanır");
+  const [partnerRegion, setPartnerRegion] = useState("Tüm Türkiye");
+  const [maxPartners, setMaxPartners] = useState("");
   // ACİL SATIŞ: 0 = kapalı; 3/7/14 = N gün içinde acil (attributes._urgentUntil ISO'ya yazılır).
   const [urgentDays, setUrgentDays] = useState(0);
   const [publishing, setPublishing] = useState(false);
@@ -346,7 +359,8 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow,
     // Eskiden kaydedilmiyorlardı: kademeli komisyon kurup ya da eksik kategori adı yazıp
     // sayfadan çıkan kullanıcı, taslağı geri yüklediğinde ikisini de sessizce kaybediyordu.
-    tiers, customCategory, urgentDays
+    tiers, customCategory, urgentDays,
+    commissionCondition, partnerRegion, maxPartners
   });
 
   useEffect(() => {
@@ -354,7 +368,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     const draft = buildDraft();
     const h = setTimeout(() => { void AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); }, 700);
     return () => clearTimeout(h);
-  }, [DRAFT_KEY, draftReady, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow, tiers, customCategory, step, publishing]);
+  }, [DRAFT_KEY, draftReady, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow, tiers, customCategory, step, publishing, commissionCondition, partnerRegion, maxPartners]);
 
   const clearDraft = () => { setPendingDraft(null); void AsyncStorage.removeItem(DRAFT_KEY); };
 
@@ -379,6 +393,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     if (Array.isArray(d.tiers)) setTiers(d.tiers);
     if (typeof d.customCategory === "string") setCustomCategory(d.customCategory);
     if (typeof d.urgentDays === "number") setUrgentDays(d.urgentDays);
+    if (typeof d.commissionCondition === "string") setCommissionCondition(d.commissionCondition);
+    if (typeof d.partnerRegion === "string") setPartnerRegion(d.partnerRegion);
+    if (typeof d.maxPartners === "string") setMaxPartners(d.maxPartners);
     setStep(typeof d.step === "number" ? d.step : 1);
     setPendingDraft(null);
   };
@@ -667,6 +684,13 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       attributes._formKey = schema.key;
       // ACİL SATIŞ: seçili gün kadar ileri ISO damgası — kart/detay bunu okuyup "🔥 Acil" gösterir.
       if (urgentDays > 0) attributes._urgentUntil = new Date(Date.now() + urgentDays * 86400000).toISOString();
+      // ORTAKLIK (mockup) ek alanları — yalnız ortaklık açıkken yaz (DB migrasyonsuz; attributes zaten public feed'de).
+      if (partnershipMode !== "none") {
+        if (commissionCondition) attributes._commissionCondition = commissionCondition;
+        if (partnerRegion && partnerRegion !== "Tüm Türkiye") attributes._partnerRegion = partnerRegion;
+        const mp = Math.floor(Number(maxPartners) || 0);
+        if (mp > 0) attributes._maxPartners = mp;
+      }
 
       // Görselleri Supabase storage'a yükle (web'de otomatik ölçekleme+sıkıştırma).
       // Yerel URI'ler public URL'e döner, böylece herkes görebilir.
@@ -1012,6 +1036,8 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
         {/* ── SAĞ KOLON: İlan Detayları (kategori → form → konum → komisyon) ── */}
         <View style={[{ gap: 16, minWidth: 0 }, isWideWeb ? { flex: 1 } : { width: "100%" }]}>
+          {/* Sol "Ürün Fotoğrafları" başlığıyla simetrik sağ kolon başlığı */}
+          <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("İlan Detayları", language)}</Text>
         {/* Kart: Ne yapmak istersin + Kategori */}
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, padding: isWideWeb ? 22 : 14 }}>
             {!path.length ? (
@@ -1106,9 +1132,11 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{specFields.map(renderField)}</View>
               ) : null}
 
+              {/* Fiyat + Açıklama YAN YANA (mockup): tek satır; dar ekranda flexWrap alt alta sarar. */}
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
               {/* Fiyat — düz alan + piyasa ipucu (küçük yardımcı). Para birimi seçici kaldırıldı (TRY sabit). */}
               {priceField ? (
-                <View style={{ gap: 8 }}>
+                <View style={{ flexBasis: 200, flexGrow: 1, flexShrink: 1, gap: 8, minWidth: 0 }}>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(priceField)}</View>
                   {/* PİYASA İPUCU — risk motoru medyanı zaten hesaplıyordu ama kullanıcı görmüyordu. */}
                   {priceHint ? (
@@ -1129,7 +1157,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
               {/* Açıklama — düz alan + tek-dokunuş şablon (küçük yardımcı). */}
               {descField ? (
-                <View style={{ gap: 8 }}>
+                <View style={{ flexBasis: 300, flexGrow: 2, flexShrink: 1, gap: 8, minWidth: 0 }}>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(descField)}</View>
                   {/* Sahibinden tarzı tek-dokunuş şablon: boş açıklamayı, alıcının en çok
                       sorduğu maddelerle doldurur. Doluysa üzerine yazmamak için sadece
@@ -1147,6 +1175,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                   ) : null}
                 </View>
               ) : null}
+              </View>{/* /Fiyat + Açıklama satırı */}
             </View>
           );
         })() : null}
@@ -1160,10 +1189,22 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           </View>
         ) : null}
 
-        {/* Kart: Komisyon & Ortak Satış */}
+        {/* Kart: Ortaklık (İsteğe Bağlı) — komisyon + koşullar + bölge + maks. ortak (mockup) */}
         {schema ? (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 16, padding: isWideWeb ? 22 : 14 }}>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy(formKey === "arayan" ? "Buluş Komisyonu" : "Komisyon & Ortak Satış", language)}</Text>
+            {/* Başlık + AÇ/KAPA switch (mockup): ortaklık İSTEĞE BAĞLI. AÇIK=approval, KAPALI=none. */}
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
+              <Text style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900", minWidth: 0 }}>{translateCopy(formKey === "arayan" ? "Buluş Komisyonu" : "Ortaklık (İsteğe Bağlı)", language)}</Text>
+              <Pressable
+                accessibilityRole="switch"
+                accessibilityState={{ checked: partnershipMode !== "none" }}
+                accessibilityLabel={translateCopy("Ortaklığı aç/kapat", language)}
+                onPress={() => setPartnershipMode(partnershipMode === "none" ? "approval" : "none")}
+                style={{ alignItems: partnershipMode !== "none" ? "flex-end" : "flex-start", backgroundColor: partnershipMode !== "none" ? colors.primary : colors.line, borderRadius: 999, height: 28, justifyContent: "center", paddingHorizontal: 3, width: 52 }}
+              >
+                <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 22, width: 22 }} />
+              </Pressable>
+            </View>
 
             {/* TALEP (aranıyor) ilanı: komisyon = aradığını BULANA verilecek buluş ödülü. */}
             {formKey === "arayan" ? (
@@ -1173,45 +1214,11 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
               </View>
             ) : null}
 
-            {/* ACİL SATIŞ ROZETİ — ilanı öne çıkar (🔥 rozet + listede üstte). Ortak/normal fark etmez. */}
-            <View style={{ backgroundColor: urgentDays > 0 ? colors.accentSoft : colors.surfaceAlt, borderColor: urgentDays > 0 ? colors.accent : colors.line, borderRadius: 12, borderWidth: 1, gap: 9, padding: 12 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <MaterialCommunityIcons name="fire" size={18} color={colors.accent} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Acil satış rozeti", language)}</Text>
-              </View>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("İlanın “🔥 Acil” rozetiyle listelerde üstte ve dikkat çekici görünür; ortaklar hızlı satış fırsatını fark eder. Süre bitince rozet kendiliğinden kalkar.", language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {([[0, "Kapalı"], [3, "3 gün"], [7, "7 gün"], [14, "14 gün"]] as const).map(([d, lbl]) => {
-                  const on = urgentDays === d;
-                  return <Pressable key={d} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setUrgentDays(d)} style={{ backgroundColor: on ? (d === 0 ? colors.muted : colors.accent) : colors.surface, borderColor: on ? (d === 0 ? colors.muted : colors.accent) : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 7 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
-                })}
-              </View>
-            </View>
-            {/* MODEL: ortak satış İSTEĞE BAĞLI — satıcı isterse komisyonsuz NORMAL ilan verir.
-                "Normal ilan"da ortaklık talebi alınmaz, komisyon gerekmez (partnershipMode="none"). */}
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              {([["approval", "Ortak satışa aç"], ["none", "Normal ilan"]] as const).map(([mode, lbl]) => {
-                const on = mode === "none" ? partnershipMode === "none" : partnershipMode !== "none";
-                return <Pressable key={mode} onPress={() => setPartnershipMode(mode === "none" ? "none" : (partnershipMode === "none" ? "approval" : partnershipMode))} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 12 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy(lbl, language)}</Text></Pressable>;
-              })}
-            </View>
             {partnershipMode !== "none" ? (<>
-            {/* Faz 4: bu kategoride komisyon HANGİ olayda hak edilir. */}
-            {(() => {
-              const conv = categoryConversion(leafLabel);
-              return (
-                <View style={{ alignItems: "flex-start", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 9, padding: 12 }}>
-                  <MaterialCommunityIcons name={conv.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={17} color={colors.primaryDark} style={{ marginTop: 1 }} />
-                  <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Komisyon şu olayda hak edilir", language)}: {translateCopy(conv.event, language)}</Text>
-                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{translateCopy(conv.hint, language)}</Text>
-                  </View>
-                </View>
-              );
-            })()}
+            {/* Komisyon Tipi (Sabit Tutar / Yüzde) + Komisyon Tutarı/Oranı — mevcut çipler korundu. */}
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
               <View style={{ flex: 1, gap: 6, minWidth: 200 }}>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Komisyon tipi", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Komisyon Tipi", language)}</Text>
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   {(["rate", "fixed"] as const).map((tp) => {
                     const on = commissionType === tp;
@@ -1227,134 +1234,33 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
               </View>
             </View>
 
-            {/* Kategoriye göre önerilen komisyon aralığı — bilgi amaçlı, tek tıkla uygula. */}
-            {commissionType === "rate" ? (
-              <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingVertical: 10 }}>
-                <MaterialCommunityIcons name="lightbulb-on-outline" size={15} color={colors.primaryDark} />
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
-                  {translateCopy(path[0]?.label ? `${path[0].label} için önerilen komisyon` : "Önerilen komisyon", language)}: <Text style={{ color: colors.ink, fontWeight: "900" }}>%{suggestedRange[0]}–%{suggestedRange[1]}</Text>
-                </Text>
-                <View style={{ flex: 1 }} />
-                {[suggestedRange[0], Math.round((suggestedRange[0] + suggestedRange[1]) / 2), suggestedRange[1]].map((v) => (
-                  <Pressable key={v} onPress={() => setCommissionValue(String(v))} style={{ backgroundColor: commissionNum === v ? colors.primary : colors.surface, borderColor: commissionNum === v ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 5 }}>
-                    <Text style={{ color: commissionNum === v ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "900" }}>%{v}</Text>
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
+            {/* Komisyon Koşulları (YENİ dropdown) — attributes._commissionCondition */}
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Komisyon Koşulları", language)}</Text>
+              <DSelect label="" value={commissionCondition} options={COMMISSION_CONDITIONS} onChange={setCommissionCondition} placeholder={translateCopy("Komisyon koşulu seç", language)} />
+            </View>
 
-            {/* Canlı kazanç hesaplayıcı: fiyattan ortak kazancını ve satıcıya kalanı göster. */}
-            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, padding: 14 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                <MaterialCommunityIcons name="calculator-variant-outline" size={16} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Kazanç hesabı", language)}</Text>
+            {/* Bölge Sınırlaması (YENİ dropdown) — attributes._partnerRegion ("Tüm Türkiye" ise yazılmaz) */}
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Bölge Sınırlaması", language)}</Text>
+              <DSelect label="" value={partnerRegion} options={PARTNER_REGIONS} onChange={setPartnerRegion} placeholder={translateCopy("İl seç", language)} />
+            </View>
+
+            {/* Maksimum Ortak Sayısı (YENİ) — Sınırsız / Belirle; Belirle secilince sayı inputu. attributes._maxPartners */}
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Maksimum Ortak Sayısı", language)}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {([["unlimited", "Sınırsız"], ["limited", "Belirle"]] as const).map(([k, lbl]) => {
+                  const on = k === "unlimited" ? maxPartners.trim() === "" : maxPartners.trim() !== "";
+                  return <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setMaxPartners(k === "unlimited" ? "" : (maxPartners.trim() === "" ? "5" : maxPartners))} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 8 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
+                })}
               </View>
-              {priceNum > 0 ? (
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                  <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 10, flex: 1, gap: 3, minWidth: 130, padding: 11 }}>
-                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Satış fiyatı", language)}</Text>
-                    <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{moneyIn(priceNum, currency)}</Text>
-                  </View>
-                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, flex: 1, gap: 3, minWidth: 130, padding: 11 }}>
-                    <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>{translateCopy("Ortak kazancı (satış başına)", language)}</Text>
-                    <Text style={{ color: colors.primaryDark, fontSize: 16, fontWeight: "900" }}>{moneyIn(perSaleCommission, currency)}</Text>
-                  </View>
-                  <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 10, flex: 1, gap: 3, minWidth: 130, padding: 11 }}>
-                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Sana kalan", language)}</Text>
-                    <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{moneyIn(Math.max(0, priceNum - perSaleCommission), currency)}</Text>
-                  </View>
-                </View>
-              ) : (
-                <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{translateCopy("Kazanç hesabını görmek için 2. adımda fiyat gir.", language)}</Text>
-              )}
-              {bonusNum > 0 && Number(bonusQuota) > 0 && priceNum > 0 ? (
-                <Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "800" }}>
-                  {translateCopy("Bonus dahil ilk", language)} {Number(bonusQuota)} {translateCopy("satışta HER ORTAK toplam", language)}: {moneyIn((perSaleCommission + bonusNum) * Number(bonusQuota), currency)}
-                </Text>
+              {maxPartners.trim() !== "" ? (
+                <TextInput accessibilityLabel={translateCopy("Maksimum ortak sayısı", language)} value={maxPartners} onChangeText={setMaxPartners} keyboardType="numeric" placeholder={translateCopy("Örn. 5", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
               ) : null}
-              <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("OrtakSat para tutmaz; ödeme satıcı ile ortak arasında yapılır. Rakamlar bilgilendirme amaçlıdır.", language)}</Text>
             </View>
 
-            {/* ÖNEMLİ kararlar önce: ortaklık kabul şekli + iletişim (opsiyonel bonus/kademe SONRA). */}
-            <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortaklık kabul şekli", language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {([["open", "Herkese açık (anında ortak)"], ["approval", "Başvuru onayı gerekir"], ["invite", "Sadece davetle"]] as const).map(([k, lbl]) => {
-                  const on = partnershipMode === k;
-                  return <Pressable key={k} onPress={() => setPartnershipMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
-                })}
-              </View>
-            </View>
-
-            {/* Atıf/referans-süresi kontrolü KALDIRILDI: model'de zorunlu referans linki/tıklama takibi
-                YOK. Satış, satıcının manuel kaydıyla ortağa bağlanır (attributionWindow içeride varsayılan). */}
-
-            <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("İletişim tercihi", language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {([["message", "Mesaj"], ["whatsapp", "WhatsApp"], ["phone", "Telefon"]] as const).map(([k, lbl]) => {
-                  const on = contactMethod === k;
-                  return <Pressable key={k} onPress={() => setContactMethod(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}><MaterialCommunityIcons name={k === "whatsapp" ? "whatsapp" : k === "phone" ? "phone" : "message-text-outline"} size={15} color={on ? "#FFFFFF" : colors.primary} /><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
-                })}
-              </View>
-            </View>
-
-            {/* Teşvik bonusu (opsiyonel): ilk N satışa komisyon üstüne ek ödül. */}
-            <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                <MaterialCommunityIcons name="rocket-launch-outline" size={16} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Hızlı başlangıç bonusu (opsiyonel)", language)}</Text>
-              </View>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Her ortağın ilk satışlarına komisyonun üstüne ek ödül taahhüt et — ilanın öne çıkar, ortaklar daha hızlı harekete geçer. Bonus her ortak için ayrı geçerlidir.", language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                <View style={{ flex: 1, minWidth: 150 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>{translateCopy("Bonus tutarı", language)} ({CURRENCIES.find((c) => c.code === currency)?.symbol ?? "₺"})</Text>
-                  <TextInput accessibilityLabel={translateCopy("Bonus tutarı", language)} value={bonusAmount} onChangeText={setBonusAmount} keyboardType="numeric" placeholder={translateCopy("Örn. 500", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
-                </View>
-                <View style={{ flex: 1, minWidth: 150 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", marginBottom: 6 }}>{translateCopy("İlk kaç satış için?", language)}</Text>
-                  <TextInput accessibilityLabel={translateCopy("Bonus kotası", language)} value={bonusQuota} onChangeText={setBonusQuota} keyboardType="numeric" placeholder={translateCopy("Örn. 5", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
-                </View>
-              </View>
-            </View>
-
-            {/* Kademeli komisyon (yalnız yüzde): hacimle artan oran — ortakları çok satmaya teşvik. */}
-            {commissionType === "rate" ? (
-              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                  <MaterialCommunityIcons name="stairs-up" size={16} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Kademeli komisyon (opsiyonel)", language)}</Text>
-                </View>
-                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Ortağın bu ilandaki kümülatif satışı arttıkça oran yükselsin. Örn: 5. satıştan sonra %12, 20. satıştan sonra %15. Boş bırakırsan tek oran geçerli.", language)}</Text>
-                {tiers.map((tr, i) => (
-                  <View key={i} style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
-                    <View style={{ flex: 1, gap: 4 }}>
-                      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Satıştan sonra", language)}</Text>
-                      <TextInput value={tr.minSales} onChangeText={(v) => setTiers((s) => s.map((x, j) => (j === i ? { ...x, minSales: v } : x)))} keyboardType="numeric" placeholder="5" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 44, paddingHorizontal: 12 }} />
-                    </View>
-                    <View style={{ flex: 1, gap: 4 }}>
-                      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Oran (%)", language)}</Text>
-                      <TextInput value={tr.rate} onChangeText={(v) => setTiers((s) => s.map((x, j) => (j === i ? { ...x, rate: v } : x)))} keyboardType="numeric" placeholder="12" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 44, paddingHorizontal: 12 }} />
-                    </View>
-                    <Pressable onPress={() => setTiers((s) => s.filter((_, j) => j !== i))} hitSlop={8} accessibilityRole="button" style={{ paddingBottom: 11 }}>
-                      <MaterialCommunityIcons name="close-circle" size={22} color={colors.muted} />
-                    </Pressable>
-                  </View>
-                ))}
-                {tiers.length < 4 ? (
-                  <Pressable onPress={() => setTiers((s) => [...s, { minSales: "", rate: "" }])} accessibilityRole="button" style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 9 }}>
-                    <MaterialCommunityIcons name="plus" size={15} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Kademe ekle", language)}</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            ) : null}
-
-            <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Ortak satıcıya özel açıklama (opsiyonel)", language)}</Text>
-              <TextInput value={partnerNote} onChangeText={setPartnerNote} multiline placeholder={translateCopy("Ortakların dikkat etmesi gerekenler…", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 70, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: "top" }} />
-            </View>
-
+            {/* OrtakSat para tutmaz — komisyon satıcı ile ortak arasında doğrudan ödenir. */}
             <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 11 }}>
               <MaterialCommunityIcons name="information-outline" size={16} color={colors.info} style={{ marginTop: 1 }} />
               <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("OrtakSat para tutmaz; komisyon, satış sonrası satıcı ile ortak arasında doğrudan ödenir. Uygulama yalnızca kaydı tutar.", language)}</Text>
