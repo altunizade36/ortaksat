@@ -535,7 +535,7 @@ function PartnerScreenInner() {
                       <View style={{ width: 150 }} />
                     </View>
                     {opportunities.slice(0, oppVisible).map((listing) => (
-                      <OppRow key={listing.id} listing={listing} owner={findUser(listing.ownerId)} joined={joinedIds.has(listing.id)} onJoin={() => onJoin(listing.id)} onDetail={() => router.push(`/listing/${listing.id}`)} />
+                      <OppRow key={listing.id} listing={listing} owner={findUser(listing.ownerId)} joined={joinedIds.has(listing.id)} nearMe={Boolean(myCity && provinceOf(listing.location) === myCity)} onJoin={() => onJoin(listing.id)} onDetail={() => router.push(`/listing/${listing.id}`)} />
                     ))}
                   </>
                 )}
@@ -795,13 +795,17 @@ function PartnerScreenInner() {
           {mobileOpportunities.slice(0, oppVisible).map((listing) => {
             const owner = findUser(listing.ownerId);
             const joined = joinedIds.has(listing.id);
+            const nearMe = Boolean(myCity && provinceOf(listing.location) === myCity);
             return (
               <View key={listing.id} style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingTop: 10 }}>
                 <SafeRemoteImage uri={listing.image} accessibilityLabel={displayText(listing.title)} style={{ backgroundColor: colors.line, borderRadius: 8, height: 52, width: 52 }} contentFit="cover" />
                 <Pressable onPress={() => router.push(`/listing/${listing.id}`)} style={{ flex: 1, gap: 2, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{displayText(listing.title)}</Text>
                   <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{commissionText(listing)} · kazanç {moneyIn(commissionAmount(listing), listing.currency)}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{displayText(listing.location)}{owner ? ` · ${displayText(owner.name)}` : ""}</Text>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 3, minWidth: 0 }}>
+                    {nearMe ? <MaterialCommunityIcons name="map-marker" size={11} color={colors.primary} /> : null}
+                    <Text numberOfLines={1} style={{ color: nearMe ? colors.primaryDark : colors.subtle, flexShrink: 1, fontSize: 11, fontWeight: nearMe ? "800" : "600" }}>{displayText(listing.location)}{owner ? ` · ${displayText(owner.name)}` : ""}</Text>
+                  </View>
                   {/* Satıcı puanı + doğrulama + stok: ortağın ürünü DEĞERLENDİRMESİ için şart
                       (eskiden mobil satırda yoktu; filtreleyebiliyor ama göremiyordu). */}
                   <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6, marginTop: 1 }}>
@@ -1286,7 +1290,7 @@ function NoOpportunities({ language }: { language: "tr" | "en" }) {
   );
 }
 
-function OppRow({ listing, owner, joined, onJoin, onDetail }: { listing: Listing; owner?: User; joined: boolean; onJoin: () => void; onDetail: () => void }) {
+function OppRow({ listing, owner, joined, nearMe, onJoin, onDetail }: { listing: Listing; owner?: User; joined: boolean; nearMe?: boolean; onJoin: () => void; onDetail: () => void }) {
   const { language } = useLanguage();
   return (
     <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingVertical: 12 }}>
@@ -1310,7 +1314,10 @@ function OppRow({ listing, owner, joined, onJoin, onDetail }: { listing: Listing
         <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{listing.commissionType === "rate" ? `%${listing.commissionValue}` : money(commissionAmount(listing))}</Text>
         <Text style={{ color: colors.subtle, fontSize: 10, fontWeight: "700" }}>{translateCopy("Kazanç", language)} {money(commissionAmount(listing))}</Text>
       </View>
-      <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700" }}>{displayText(listing.location)}</Text>
+      <View style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 3, minWidth: 0 }}>
+        {nearMe ? <MaterialCommunityIcons name="map-marker" size={13} color={colors.primary} /> : null}
+        <Text numberOfLines={1} style={{ color: nearMe ? colors.primaryDark : colors.ink, flexShrink: 1, fontSize: 12, fontWeight: nearMe ? "900" : "700" }}>{displayText(listing.location)}</Text>
+      </View>
       <Text style={{ color: colors.ink, flex: 0.9, fontSize: 12, fontWeight: "700" }}>{listing.stockCount} {translateCopy("adet", language)}</Text>
       <View style={{ flex: 0.8 }}><GuvenBadge rating={owner?.rating ?? 0} /></View>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 6, width: 150 }}>
