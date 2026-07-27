@@ -441,13 +441,21 @@ function ProfileEditScreenInner() {
     );
   }
 
+  // Mobil paritesi: web sağ panelindeki "Hesap gücü" ölçeri mobilde yoktu.
+  const mobileVerifs = [
+    { label: translateCopy(currentUser.verifiedPhone ? "Telefon doğrulandı" : "Telefonunu doğrula", language), done: currentUser.verifiedPhone },
+    { label: translateCopy(currentUser.verifiedIdentity ? "Kimlik doğrulandı" : "Kimliğini doğrula", language), done: currentUser.verifiedIdentity },
+    { label: translateCopy(currentUser.verifiedInstagram ? "Instagram bağlandı" : "Instagram hesabını bağla", language), done: !!currentUser.verifiedInstagram }
+  ];
+  const mobileCompletion = Math.round(((mobileVerifs.filter((v) => v.done).length + (bio ? 1 : 0) + (avatar ? 1 : 0)) / 5) * 100);
+
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
       {deleteModal}
       <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16, paddingBottom: 110 }}>
         <Card>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-            <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, height: 64, justifyContent: "center", overflow: "hidden", width: 64 }}>
+            <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 14, height: 64, justifyContent: "center", overflow: "hidden", width: 64 }}>
               {isImageAvatar(avatar.trim()) ? (
                 <Image source={{ uri: avatar.trim() }} contentFit="cover" style={{ height: 64, width: 64 }} />
               ) : (
@@ -467,6 +475,28 @@ function ProfileEditScreenInner() {
             </View>
           </View>
           <PrimaryButton icon="image-plus" tone="secondary" onPress={() => void pickAvatar()}>{translateCopy("Galeriden fotoğraf seç", language)}</PrimaryButton>
+          <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 10, padding: 12 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 48, justifyContent: "center", width: 48 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>%{mobileCompletion}</Text>
+              </View>
+              <View style={{ flex: 1, gap: 3 }}>
+                <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Hesap gücü", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Eksik adımları tamamlayarak hesabını güçlendir.", language)}</Text>
+              </View>
+            </View>
+            <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 8, overflow: "hidden" }}>
+              <View style={{ backgroundColor: mobileCompletion >= 75 ? colors.success : colors.warning, borderRadius: 999, height: "100%", width: `${mobileCompletion}%` }} />
+            </View>
+            <View style={{ gap: 7 }}>
+              {mobileVerifs.map((v) => (
+                <View key={v.label} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                  <MaterialCommunityIcons name={v.done ? "check-circle" : "circle-outline"} size={15} color={v.done ? colors.success : colors.subtle} />
+                  <Text style={{ color: v.done ? colors.ink : colors.muted, fontSize: 12.5, fontWeight: "700" }}>{v.label}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
         </Card>
 
         <Card>
@@ -495,7 +525,7 @@ function ProfileEditScreenInner() {
               {pwMsg ? <Text style={{ color: pwMsg.tone === "ok" ? colors.success : colors.accent, fontSize: 12.5, fontWeight: "800" }}>{pwMsg.text}</Text> : null}
               <PrimaryButton icon="key-outline" tone="secondary" onPress={() => void changePassword()}>{pwSaving ? translateCopy("Güncelleniyor", language) : translateCopy("Şifreyi güncelle", language)}</PrimaryButton>
             </Card>
-            <LoginHistoryCard history={loginHistory} loading={historyLoading} isLive={isLiveAccount} onRefresh={() => void loadHistory()} onSignOutAll={() => void signOutEverywhere()} signingOutAll={signingOutAll} />
+            <LoginHistoryCard compact history={loginHistory} loading={historyLoading} isLive={isLiveAccount} onRefresh={() => void loadHistory()} onSignOutAll={() => void signOutEverywhere()} signingOutAll={signingOutAll} />
           </>
         ) : null}
 
@@ -565,10 +595,10 @@ function formatWhen(iso: string): string {
 }
 
 /** Giriş/oturum geçmişi + tüm cihazlardan çıkış kartı (masaüstü ve mobil ortak). */
-function LoginHistoryCard({ history, loading, isLive, onRefresh, onSignOutAll, signingOutAll }: { history: LoginEvent[]; loading: boolean; isLive: boolean; onRefresh: () => void; onSignOutAll: () => void; signingOutAll: boolean }) {
+function LoginHistoryCard({ compact, history, loading, isLive, onRefresh, onSignOutAll, signingOutAll }: { compact?: boolean; history: LoginEvent[]; loading: boolean; isLive: boolean; onRefresh: () => void; onSignOutAll: () => void; signingOutAll: boolean }) {
   const { language } = useLanguage();
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: compact ? 8 : 16, borderWidth: 1, gap: 12, padding: compact ? 14 : 22 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <MaterialCommunityIcons name="history" size={20} color={colors.primary} />
         <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>{translateCopy("Son giriş etkinliği", language)}</Text>
@@ -668,18 +698,18 @@ function Field({
   const { language } = useLanguage();
   return (
     <View style={{ gap: 6 }}>
-      <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>
+      <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>
         {translateCopy(label, language)}
       </Text>
-      <View style={{ alignItems: multiline ? "flex-start" : "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 9, paddingHorizontal: 12 }}>
-        <MaterialCommunityIcons name={icon} size={19} color={colors.primary} style={{ marginTop: multiline ? 14 : 0 }} />
+      <View style={{ alignItems: multiline ? "flex-start" : "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 9, paddingHorizontal: 12 }}>
+        <MaterialCommunityIcons name={icon} size={18} color={colors.primary} style={{ marginTop: multiline ? 14 : 0 }} />
         <TextInput
           value={value}
           onChangeText={onChangeText}
           keyboardType={keyboardType}
           multiline={multiline}
           placeholderTextColor={colors.muted}
-          style={{ color: colors.ink, flex: 1, fontSize: 15, minHeight: multiline ? 96 : 48, paddingVertical: 10, textAlignVertical: multiline ? "top" : "center" }}
+          style={{ color: colors.ink, flex: 1, fontSize: 14, minHeight: multiline ? 90 : 46, paddingVertical: 10, textAlignVertical: multiline ? "top" : "center" }}
         />
       </View>
     </View>
