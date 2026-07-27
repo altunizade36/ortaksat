@@ -225,15 +225,21 @@ function DesktopActions() {
   // Girişsizken belirgin "Giriş / Kayıt ol" butonu göster (kullanıcı giriş
   // noktasını kolayca bulsun). Girişliyken hesap ikonları + Hesabım menüsü.
   if (!isAuthenticated) {
+    // Sahibinden mantığı: sade "Giriş yap | Kayıt ol" metin linkleri + EN BELİRGİN
+    // "Ücretsiz İlan Ver" butonu (arz tarafının #1 CTA'sı). Butona basınca /create'e
+    // gider; anonim form doldurulur, kapı yalnız Yayınla anında (kayıt/giriş) çıkar.
     return (
       <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-        <PressLink href="/auth" accessibilityLabel={translateCopy("Giriş yap", language)} pressedOpacity={0.8} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
-          <MaterialCommunityIcons name="login" size={17} color={colors.primaryDark} />
+        <PressLink href="/auth" accessibilityLabel={translateCopy("Giriş yap", language)} pressedOpacity={0.7} style={{ paddingHorizontal: 4, paddingVertical: 8 }}>
           <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Giriş yap", language)}</Text>
         </PressLink>
-        <PressLink href="/auth" accessibilityLabel={translateCopy("Kayıt ol", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 9 }}>
-          <MaterialCommunityIcons name="account-plus-outline" size={17} color="#FFFFFF" />
-          <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Kayıt ol", language)}</Text>
+        <View style={{ backgroundColor: colors.line, height: 16, width: 1 }} />
+        <PressLink href="/auth" accessibilityLabel={translateCopy("Kayıt ol", language)} pressedOpacity={0.7} style={{ paddingHorizontal: 4, paddingVertical: 8 }}>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Kayıt ol", language)}</Text>
+        </PressLink>
+        <PressLink href="/create" accessibilityLabel={translateCopy("Ücretsiz İlan Ver", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 10 }}>
+          <MaterialCommunityIcons name="plus-box" size={18} color="#FFFFFF" />
+          <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ücretsiz İlan Ver", language)}</Text>
         </PressLink>
       </View>
     );
