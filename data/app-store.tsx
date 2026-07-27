@@ -42,6 +42,7 @@ import {
   offerBuyerActionLive,
   loadMyFollowsLive,
   insertFavorite,
+  updateFavoriteCollection,
   insertLead,
   insertListing,
   insertConversation,
@@ -309,6 +310,7 @@ type AppStore = {
   leavePartnership: (partnershipId: string) => void;
   setPartnershipCommission: (partnershipId: string, type?: "rate" | "fixed", value?: number) => void;
   toggleFavorite: (listingId: string) => void;
+  setFavoriteCollection: (listingId: string, collection: string | null) => void;
   followedSellerIds: string[];
   isFollowing: (sellerId: string) => boolean;
   toggleFollow: (sellerId: string) => void;
@@ -2041,6 +2043,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (liveUser) persistCritical(setPartnershipCommissionLive(partnershipId, nextType ?? null, nextValue ?? null), () => {
           setPartnerships((items) => items.map((p) => (p.id === partnershipId ? { ...p, ...prev } : p)));
         }, "Komisyon güncellenemedi. Bağlantını kontrol edip tekrar dene.");
+      },
+      // Koleksiyon (favori-klasör) ata/kaldır — favori zaten ekliyse. null → "Tümü"ne düşer.
+      setFavoriteCollection(listingId, collection) {
+        if (!isAuthenticated) { promptLogin(); return; }
+        const existing = favorites.find((item) => item.listingId === listingId && item.userId === currentUser.id);
+        if (!existing) return;
+        const col = collection && collection.trim() ? collection.trim() : undefined;
+        setFavorites((items) => items.map((item) => (item.id === existing.id ? { ...item, collection: col } : item)));
+        if (liveUser) void updateFavoriteCollection(listingId, currentUser.id, col ?? null);
       },
       toggleFavorite(listingId) {
         // Anon: sessiz no-op yerine /auth'a yönlendir (iletişim/ortak akışlarıyla parite).

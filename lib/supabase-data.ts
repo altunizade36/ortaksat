@@ -706,7 +706,8 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       id: row.id,
       listingId: row.listing_id,
       userId: row.user_id,
-      savedPrice: row.saved_price != null ? toNumber(row.saved_price) : undefined
+      savedPrice: row.saved_price != null ? toNumber(row.saved_price) : undefined,
+      collection: typeof row.collection === "string" && row.collection.trim() ? row.collection : undefined
     })),
     conversations: (conversationsResult.data ?? []).map((row) => ({
       id: row.id,

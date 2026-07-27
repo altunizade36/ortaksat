@@ -200,6 +200,8 @@ export type Favorite = {
   userId: string;
   // Favoriye eklendiği andaki ilan fiyatı (fiyat düşüşü/artışı göstergesi için).
   savedPrice?: number;
+  // Koleksiyon (favori-klasör) adı, emoji dahil (ör. "🚗 Satılacak Araçlar"). Boşsa "Tümü"nde.
+  collection?: string;
 };
 
 export type Conversation = {

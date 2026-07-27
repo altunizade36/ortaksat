@@ -993,6 +993,13 @@ export async function deleteFavorite(listingId: string, userId: string) {
   if (error) console.warn("Supabase favorite delete failed", error);
 }
 
+// Koleksiyon (favori-klasör) ata/kaldır. null → koleksiyondan çıkar ("Tümü"ne düşer).
+export async function updateFavoriteCollection(listingId: string, userId: string, collection: string | null) {
+  if (!supabase) return;
+  const { error } = await supabase.from("favorites").update({ collection: collection && collection.trim() ? collection.trim() : null }).eq("listing_id", listingId).eq("user_id", userId);
+  if (error) console.warn("Supabase favorite collection update failed", error);
+}
+
 export async function insertReview(review: Review): Promise<boolean> {
   if (!supabase) return true;
   const { error } = await supabase.from("reviews").insert({

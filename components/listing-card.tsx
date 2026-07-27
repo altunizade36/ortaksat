@@ -17,7 +17,7 @@ import type { Listing, User } from "@/lib/types";
 
 type StatusTone = "success" | "accent" | "info" | "dark" | "gold";
 
-function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listing: Listing; owner?: User; width?: number; priceNote?: { text: string; down: boolean }; refCode?: string }) {
+function ListingCardBase({ listing, owner, width, priceNote, refCode, onCollection, collectionOn }: { listing: Listing; owner?: User; width?: number; priceNote?: { text: string; down: boolean }; refCode?: string; onCollection?: () => void; collectionOn?: boolean }) {
   // Ortak vitrininden gelen kartlar ref TAŞIR → ilan detay URL'den atfı yakalar (URL-garantili
   // first-touch; localStorage silinse/engellense bile ortak kredisi kaybolmaz). c=shop kanal ölçümü.
   const cardHref = refCode ? `/listing/${listing.id}?ref=${encodeURIComponent(refCode)}&c=shop` : `/listing/${listing.id}`;
@@ -308,6 +308,18 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
           >
             <MaterialCommunityIcons name="compare-horizontal" size={16} color={inCompare ? "#FFFFFF" : colors.muted} />
           </Pressable>
+          {/* Koleksiyon (favori-klasör) — YALNIZ favoriler ekranı onCollection geçer (opt-in). */}
+          {onCollection ? (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel={translateCopy("Koleksiyona ekle", language)}
+              onPress={onCollection}
+              hitSlop={8}
+              style={{ alignItems: "center", backgroundColor: collectionOn ? colors.primary : "rgba(255,255,255,0.92)", borderColor: collectionOn ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", position: "absolute", right: 92, top: 8, width: 34, zIndex: 4 }}
+            >
+              <MaterialCommunityIcons name={collectionOn ? "folder" : "folder-outline"} size={16} color={collectionOn ? "#FFFFFF" : colors.muted} />
+            </Pressable>
+          ) : null}
         </>
       ) : null}
     </View>

@@ -1,6 +1,6 @@
 ﻿import { MaterialCommunityIcons } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
-import { Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
+import { Modal, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
 import { AuthRequired } from "@/components/auth-gate";
@@ -23,22 +23,31 @@ function FavoritesScreenInner() {
   const { language } = useLanguage();
   const { width } = useWindowDimensions();
   const isWideWeb = useIsWideWeb();
-  const { currentUser, favorites, findUser, listings, refreshUserData } = useStore();
+  const { currentUser, favorites, findUser, listings, refreshUserData, setFavoriteCollection } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   const [query, setQuery] = useState("");
   const [favTab, setFavTab] = useState<"all" | "open" | "highcomm" | "near" | "recent">("all");
   const [sortMode, setSortMode] = useState<"new" | "priceAsc" | "priceDesc" | "commission">("new");
   const [catFilter, setCatFilter] = useState<string | null>(null); // kenar çubuğundaki kategori listesinden
+  // KOLEKSİYONLAR (favori-klasör): filtre + atama modalı.
+  const [colFilter, setColFilter] = useState<string | null>(null);
+  const [assignFor, setAssignFor] = useState<Listing | null>(null);
+  const [newCol, setNewCol] = useState("");
   // Sanallaştırma penceresi: uzun favori listelerinde ilk PAGE kadar render edilir; native'de
   // tüm kartların birden basılmasını önler (web'de data-vcard zaten off-screen paint'i atlar).
   const PAGE = 24;
   const [visibleCount, setVisibleCount] = useState(PAGE);
-  useEffect(() => { setVisibleCount(PAGE); }, [favTab, catFilter, sortMode, query]);
+  useEffect(() => { setVisibleCount(PAGE); }, [favTab, catFilter, colFilter, sortMode, query]);
   const horizontalPadding = 12;
   const gap = 8;
   const cardWidth = responsiveGrid({ available: width - horizontalPadding * 2, gap, minCardWidth: 168, minColumns: 2 /* mobilde 2 sütun: 3 zorlarken 106px kartta fiyat kırpılıyordu */ }).cardWidth;
   const tokens = searchKey(query).split(" ").filter(Boolean);
   const myFavs = favorites.filter((favorite) => favorite.userId === currentUser.id);
+  // listingId → koleksiyon eşlemesi + kullanıcının koleksiyon adları (distinct, boş hariç).
+  const favColMap = new Map(myFavs.map((f) => [f.listingId, f.collection]));
+  const collections = Array.from(new Set(myFavs.map((f) => f.collection).filter((c): c is string => Boolean(c))));
+  // Öneri emojili koleksiyon şablonları (yeni koleksiyon oluştururken tek-dokunuş).
+  const COLLECTION_SUGGESTIONS = ["🚗 Araçlar", "🏠 Emlak", "📱 Elektronik", "🐎 Hayvanlar", "🛋️ Ev & Yaşam", "🎯 Fırsatlar"];
 
   // Bellek penceresi (MP_MAX=600) dışında kalan favori ilanları sunucudan getir → favori
   // sessizce kaybolmaz. Yüklü listelerde bulunanlar için sunucuya gidilmez.
@@ -85,6 +94,7 @@ function FavoritesScreenInner() {
     if (favTab === "open") base = base.filter((l) => l.partnershipMode === "open");
     else if (favTab === "highcomm") base = base.filter((l) => l.commissionType === "rate" && l.commissionValue >= 15);
     if (catFilter) base = base.filter((l) => l.category === catFilter);
+    if (colFilter) base = base.filter((l) => favColMap.get(l.id) === colFilter);
     return base.slice().sort((a, b) =>
       sortMode === "priceAsc" ? a.price - b.price
         : sortMode === "priceDesc" ? b.price - a.price
@@ -92,6 +102,61 @@ function FavoritesScreenInner() {
             : b.createdAt.localeCompare(a.createdAt)
     );
   })();
+
+  // KOLEKSİYONA EKLE modalı (iki düzende de aynı) — kart 📁 butonundan açılır.
+  const collectionModal = (
+    <Modal visible={assignFor !== null} transparent animationType="fade" onRequestClose={() => setAssignFor(null)}>
+      <Pressable onPress={() => setAssignFor(null)} style={{ alignItems: "center", backgroundColor: "rgba(16,24,40,0.5)", flex: 1, justifyContent: "center", padding: 20 }}>
+        <Pressable onPress={() => { /* iç dokunuş backdrop'u kapatmasın */ }} style={{ backgroundColor: colors.surface, borderRadius: 18, gap: 12, maxWidth: 380, padding: 18, width: "100%" }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+            <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 36, justifyContent: "center", width: 36 }}>
+              <MaterialCommunityIcons name="folder-plus-outline" size={19} color={colors.primaryDark} />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{translateCopy("Koleksiyona ekle", language)}</Text>
+              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{assignFor ? assignFor.title : ""}</Text>
+            </View>
+          </View>
+          {collections.length > 0 ? (
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Mevcut koleksiyonlar", language)}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+                {collections.map((c) => {
+                  const on = assignFor ? favColMap.get(assignFor.id) === c : false;
+                  return (
+                    <Pressable key={c} onPress={() => { if (assignFor) setFavoriteCollection(assignFor.id, c); setAssignFor(null); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
+                      {on ? <MaterialCommunityIcons name="check" size={13} color="#FFFFFF" /> : null}
+                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{c}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          ) : null}
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Yeni koleksiyon", language)}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
+              {COLLECTION_SUGGESTIONS.map((s) => (
+                <Pressable key={s} onPress={() => setNewCol(s)} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 }}>
+                  <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{s}</Text>
+                </Pressable>
+              ))}
+            </View>
+            <TextInput value={newCol} onChangeText={setNewCol} placeholder={translateCopy("ör. 🚗 Satılacak Araçlar", language)} placeholderTextColor={colors.subtle} maxLength={40} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 15, minHeight: 46, paddingHorizontal: 12 }} />
+          </View>
+          <Pressable disabled={!newCol.trim()} onPress={() => { if (assignFor && newCol.trim()) setFavoriteCollection(assignFor.id, newCol.trim()); setAssignFor(null); }} style={{ alignItems: "center", backgroundColor: newCol.trim() ? colors.primary : colors.line, borderRadius: 11, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 12 }}>
+            <MaterialCommunityIcons name="folder-plus" size={17} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Oluştur ve ekle", language)}</Text>
+          </Pressable>
+          {assignFor && favColMap.get(assignFor.id) ? (
+            <Pressable onPress={() => { if (assignFor) setFavoriteCollection(assignFor.id, null); setAssignFor(null); }} style={{ alignItems: "center", paddingVertical: 4 }}>
+              <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Koleksiyondan çıkar", language)}</Text>
+            </Pressable>
+          ) : null}
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
 
   if (isWideWeb) {
     const myFavs = favoriteListings.filter(Boolean) as Listing[];
@@ -105,6 +170,7 @@ function FavoritesScreenInner() {
       : favTab === "recent" ? recent
       : base;
     if (catFilter) filtered = filtered.filter((l) => l.category === catFilter);
+    if (colFilter) filtered = filtered.filter((l) => favColMap.get(l.id) === colFilter);
     // Sıralama (çalışır — eskiden statik etiketti).
     filtered = filtered.slice().sort((a, b) =>
       sortMode === "priceAsc" ? a.price - b.price
@@ -165,12 +231,25 @@ function FavoritesScreenInner() {
               </Pressable>
             </View>
 
+            {collections.length > 0 ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+                <Pressable onPress={() => setColFilter(null)} style={{ alignItems: "center", backgroundColor: !colFilter ? colors.primary : colors.surface, borderColor: !colFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <MaterialCommunityIcons name="folder-multiple-outline" size={13} color={!colFilter ? "#FFFFFF" : colors.muted} />
+                  <Text style={{ color: !colFilter ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm koleksiyonlar", language)}</Text>
+                </Pressable>
+                {collections.map((c) => {
+                  const on = colFilter === c;
+                  return <Pressable key={c} onPress={() => setColFilter(on ? null : c)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{c}</Text></Pressable>;
+                })}
+              </View>
+            ) : null}
+
             {filtered.length === 0 ? (
               <EmptyState title={translateCopy("Favori yok", language)} body={translateCopy("Ürün detayında kalp simgesine basarak favorilerine ekleyebilirsin.", language)} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="heart" />
             ) : (
               <>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-                  {filtered.slice(0, visibleCount).map((listing) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} />)}
+                  {filtered.slice(0, visibleCount).map((listing) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} onCollection={() => { setNewCol(""); setAssignFor(listing); }} collectionOn={Boolean(favColMap.get(listing.id))} />)}
                 </View>
                 {filtered.length > visibleCount ? (
                   <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Daha fazla göster", language)} onPress={() => setVisibleCount((c) => c + PAGE * 2)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingHorizontal: 18, paddingVertical: 10 })}>
@@ -201,6 +280,7 @@ function FavoritesScreenInner() {
         </View>
         </View>
 
+        {collectionModal}
         <WebFooter />
       </ScrollView>
     );
@@ -268,8 +348,26 @@ function FavoritesScreenInner() {
         </Pressable>
       </ScrollView>
 
+      {/* KOLEKSİYON çipleri (favori-klasörler) — kart üstündeki 📁 ile atanır. */}
+      {collections.length > 0 ? (
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
+          <Pressable onPress={() => setColFilter(null)} style={{ alignItems: "center", backgroundColor: !colFilter ? colors.primary : colors.surface, borderColor: !colFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+            <MaterialCommunityIcons name="folder-multiple-outline" size={13} color={!colFilter ? "#FFFFFF" : colors.muted} />
+            <Text style={{ color: !colFilter ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm koleksiyonlar", language)}</Text>
+          </Pressable>
+          {collections.map((c) => {
+            const on = colFilter === c;
+            return (
+              <Pressable key={c} onPress={() => setColFilter(on ? null : c)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{c}</Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      ) : null}
+
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ürünler", language)}</Text>
+        <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>{translateCopy(colFilter ?? "Ürünler", language)}</Text>
         <Text selectable style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{visibleListings.length} {language === "en" ? "results" : "sonuç"}</Text>
       </View>
 
@@ -285,7 +383,7 @@ function FavoritesScreenInner() {
 
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap }}>
         {visibleListings.slice(0, visibleCount).map((listing) =>
-          listing ? <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} /> : null
+          listing ? <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} onCollection={() => { setNewCol(""); setAssignFor(listing); }} collectionOn={Boolean(favColMap.get(listing.id))} /> : null
         )}
       </View>
       {visibleListings.length > visibleCount ? (
@@ -296,6 +394,8 @@ function FavoritesScreenInner() {
       ) : null}
       {/* Boşken üstteki EmptyState CTA'sı zaten var; çift buton olmasın. */}
       {favoriteListings.length > 0 ? <PrimaryButton href="/(tabs)/explore" tone="secondary">{translateCopy("Keşfete dön", language)}</PrimaryButton> : null}
+
+      {collectionModal}
     </ScrollView>
   );
 }
