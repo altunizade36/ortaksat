@@ -116,6 +116,7 @@ type DraftShape = {
   attributionWindow?: string;
   tiers?: Array<{ minSales: string; rate: string }>;
   customCategory?: string;
+  urgentDays?: number;
 };
 
 export function DesktopCreateFlow() {
@@ -150,6 +151,8 @@ export function DesktopCreateFlow() {
   const [attributionWindow, setAttributionWindow] = useState("30");
   const [partnerNote, setPartnerNote] = useState("");
   const [contactMethod, setContactMethod] = useState<"message" | "whatsapp" | "phone">("message");
+  // ACİL SATIŞ: 0 = kapalı; 3/7/14 = N gün içinde acil (attributes._urgentUntil ISO'ya yazılır).
+  const [urgentDays, setUrgentDays] = useState(0);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
@@ -334,7 +337,7 @@ export function DesktopCreateFlow() {
     bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow,
     // Eskiden kaydedilmiyorlardı: kademeli komisyon kurup ya da eksik kategori adı yazıp
     // sayfadan çıkan kullanıcı, taslağı geri yüklediğinde ikisini de sessizce kaybediyordu.
-    tiers, customCategory
+    tiers, customCategory, urgentDays
   });
 
   useEffect(() => {
@@ -366,6 +369,7 @@ export function DesktopCreateFlow() {
     if (d.contactMethod) setContactMethod(d.contactMethod);
     if (Array.isArray(d.tiers)) setTiers(d.tiers);
     if (typeof d.customCategory === "string") setCustomCategory(d.customCategory);
+    if (typeof d.urgentDays === "number") setUrgentDays(d.urgentDays);
     setStep(typeof d.step === "number" ? d.step : 1);
     setPendingDraft(null);
   };
@@ -652,6 +656,8 @@ export function DesktopCreateFlow() {
       if (leafLabel) attributes._leaf = leafLabel;
       if (path[0]?.label) attributes._root = path[0].label;
       attributes._formKey = schema.key;
+      // ACİL SATIŞ: seçili gün kadar ileri ISO damgası — kart/detay bunu okuyup "🔥 Acil" gösterir.
+      if (urgentDays > 0) attributes._urgentUntil = new Date(Date.now() + urgentDays * 86400000).toISOString();
 
       // Görselleri Supabase storage'a yükle (web'de otomatik ölçekleme+sıkıştırma).
       // Yerel URI'ler public URL'e döner, böylece herkes görebilir.
@@ -1242,6 +1248,21 @@ export function DesktopCreateFlow() {
         {step === 4 ? (
           <View style={{ gap: 16 }}>
             <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Komisyon & Ortak Satış", language)}</Text>
+
+            {/* ACİL SATIŞ ROZETİ — ilanı öne çıkar (🔥 rozet + listede üstte). Ortak/normal fark etmez. */}
+            <View style={{ backgroundColor: urgentDays > 0 ? colors.accentSoft : colors.surfaceAlt, borderColor: urgentDays > 0 ? colors.accent : colors.line, borderRadius: 12, borderWidth: 1, gap: 9, padding: 12 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                <MaterialCommunityIcons name="fire" size={18} color={colors.accent} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Acil satış rozeti", language)}</Text>
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("İlanın “🔥 Acil” rozetiyle listelerde üstte ve dikkat çekici görünür; ortaklar hızlı satış fırsatını fark eder. Süre bitince rozet kendiliğinden kalkar.", language)}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {([[0, "Kapalı"], [3, "3 gün"], [7, "7 gün"], [14, "14 gün"]] as const).map(([d, lbl]) => {
+                  const on = urgentDays === d;
+                  return <Pressable key={d} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setUrgentDays(d)} style={{ backgroundColor: on ? (d === 0 ? colors.muted : colors.accent) : colors.surface, borderColor: on ? (d === 0 ? colors.muted : colors.accent) : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 14, paddingVertical: 7 }}><Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text></Pressable>;
+                })}
+              </View>
+            </View>
             {/* MODEL: ortak satış İSTEĞE BAĞLI — satıcı isterse komisyonsuz NORMAL ilan verir.
                 "Normal ilan"da ortaklık talebi alınmaz, komisyon gerekmez (partnershipMode="none"). */}
             <View style={{ flexDirection: "row", gap: 8 }}>

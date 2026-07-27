@@ -732,6 +732,20 @@ export default function ListingDetailScreen() {
           {/* Fiyat sayfanın en güçlü öğesi olmalı (ürün sayfası) — komisyon kutusu daha hafif. */}
           <Text selectable style={{ color: colors.ink, fontSize: 33, fontWeight: "900", letterSpacing: -0.5 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
 
+          {/* ACİL SATIŞ banner — attributes._urgentUntil GELECEKTEyse (fiyatın hemen altında, dikkat çekici). */}
+          {(() => {
+            const uu = currentListing.attributes?._urgentUntil ? String(currentListing.attributes._urgentUntil) : "";
+            const until = uu ? Date.parse(uu) : 0;
+            if (!until || until <= Date.now()) return null;
+            const daysLeft = Math.max(1, Math.ceil((until - Date.now()) / 86400000));
+            return (
+              <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 9 }}>
+                <MaterialCommunityIcons name="fire" size={18} color={colors.accent} />
+                <Text style={{ color: colors.accent, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Acil satış", language)} — {daysLeft} {translateCopy("gün içinde satılmalı", language)}</Text>
+              </View>
+            );
+          })()}
+
           {/* Y6: sosyal kanıt — görüntülenme + favori (yalnız >0, "0 görüntülenme" gösterilmez). */}
           {(currentListing.viewCount > 0 || currentListing.favoriteCount > 0) ? (
             <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
@@ -766,6 +780,13 @@ export default function ListingDetailScreen() {
                 <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
                   <MaterialCommunityIcons name="account-group" size={13} color={colors.primaryDark} />
                   <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.partnerCount} {translateCopy("ortak tanıtıyor", language)}</Text>
+                </View>
+              ) : null}
+              {/* Ortaklık geçmişi (herkese açık): şimdiye kadar gelen talep sayısı — sosyal kanıt. */}
+              {currentListing.leadCount > 0 ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <MaterialCommunityIcons name="account-clock-outline" size={13} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.leadCount} {translateCopy("talep geldi", language)}</Text>
                 </View>
               ) : null}
               <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>

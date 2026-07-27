@@ -33,8 +33,12 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode }: { listin
   // "0 ortak" ASLA gösterilmez (çirkin + kötü pazarlama: "kimse ilgilenmemiş" izlenimi).
   // Ortak varsa sayısını, yoksa "Yeni" göster.
   // Rozet metni KISA olmalı (dar kartta kesilmesin): "Yeni ilan"→"Yeni".
-  const statusLabel = featured ? translateCopy("★ Öne Çıkan", language) : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? translateCopy("Yeni", language) : listing.partnerCount > 0 ? `${compactNumber(listing.partnerCount)} ${t("partners")}` : translateCopy("Yeni", language);
-  const statusTone: StatusTone = featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
+  // ACİL SATIŞ: attributes._urgentUntil (ISO) GELECEKTEyse → en yüksek öncelikli kırmızı "🔥 Acil"
+  // rozeti (DB kolonu değil; JSONB attributes zaten public feed'de → ekstra grant/migrasyon yok).
+  const urgentUntil = listing.attributes?._urgentUntil ? String(listing.attributes._urgentUntil) : "";
+  const urgent = urgentUntil ? Date.parse(urgentUntil) > Date.now() : false;
+  const statusLabel = urgent ? translateCopy("🔥 Acil", language) : featured ? translateCopy("★ Öne Çıkan", language) : listing.partnershipMode === "open" ? t("instantPartner") : isHighConversion ? t("highConversion") : isNew ? translateCopy("Yeni", language) : listing.partnerCount > 0 ? `${compactNumber(listing.partnerCount)} ${t("partners")}` : translateCopy("Yeni", language);
+  const statusTone: StatusTone = urgent ? "accent" : featured ? "gold" : listing.partnershipMode === "open" ? "success" : isHighConversion ? "accent" : isNew ? "info" : "dark";
   // Kartın kategori etiketleri ilanın GERÇEK ağaç kategorisinden gelir. Eski sezgisel
   // inferListingSubcategory tree-ilanlarda yanlış eşliyordu (kamera → "Araç elektroniği").
   const rootCat = String(listing.attributes?._root || "").trim();
