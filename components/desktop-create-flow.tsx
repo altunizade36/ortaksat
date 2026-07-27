@@ -6,7 +6,6 @@ import { useRouter } from "expo-router";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
-import { CategoryPicker } from "@/components/category-picker";
 import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
@@ -35,6 +34,11 @@ const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon
 // 5 idi: emlak/vasıta gibi kategorilerde ürünü anlatmaya yetmiyordu (Sahibinden 15-30 verir).
 // Yükleme otomatik 1600px'e ölçekler + sıkıştırır, ayrıca 512px kart varyantı üretir.
 const MAX_PHOTOS = 5;
+// MİNİMAL İLAN DETAYLARI (mockup): formda + zorunlulukta YALNIZ bu alanlar. Kategoriye özel
+// diğer detaylar (yıl/km/yakıt/vites/renk/donanım…) FORMDAN çıkarıldı — kullanıcı bunları
+// Açıklama'da yazar. Fazlalık temizliği: her kategoride sade, tek-tip form (Başlık, Kategori,
+// Marka/Model, Durum, Fiyat, Açıklama). brand/model/condition kategoride varsa gösterilir.
+const ESSENTIAL_KEYS = new Set(["title", "price", "description", "brand", "model", "condition"]);
 const RECOMMENDED_PHOTOS = 3;
 const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
 
@@ -264,7 +268,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     try { await Clipboard.setStringAsync(text); setShareCopied(true); setTimeout(() => setShareCopied(false), 1800); } catch { /* pano yoksa sessiz geç */ }
   };
   const missingFields = useMemo(() => (schema ? schema.fields.filter((f) => {
-    if (!f.required) return false;
+    if (!f.required || !ESSENTIAL_KEYS.has(f.key)) return false; // minimal form: yalnız temel alanlar zorunlu
     const val = values[f.key];
     if (Array.isArray(val)) return val.length === 0;
     return !String(val ?? "").trim();
@@ -1033,7 +1037,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                 </View>
               </View>
             ) : null}
-            <CategoryPicker key={intent} value={path} presetRootFormKey={intent === "seek" ? "arayan" : undefined} onChange={(p) => { setPath(p); if (p.length) setStep(1); }} />
+            <CategoryDropdowns value={path} presetFormKey={intent === "seek" ? "arayan" : undefined} onChange={(p) => { setPath(p); if (p.length) setStep(1); }} />
           </View>
 
         {/* Kart: İlan detayları (dinamik şema formu) */}
@@ -1045,8 +1049,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           const titleField = titleFieldRaw ? { ...titleFieldRaw, placeholder: titlePlaceholderFor(path[0]?.label) } : undefined;
           const priceField = schema.fields.find((f) => f.key === "price");
           const descField = schema.fields.find((f) => f.key === "description");
-          const multiFields = schema.fields.filter((f) => f.type === "multiselect" && f !== titleFieldRaw);
-          const specFields = schema.fields.filter((f) => f !== titleFieldRaw && f !== priceField && f !== descField && f.type !== "multiselect");
+          const multiFields: FieldDef[] = []; // minimal form: çoklu-seçim (etiket/donanım) formdan çıkarıldı → açıklamaya
+          // Yalnız Marka/Model/Durum (varsa) gösterilir; kategoriye özel fazla alanlar formdan çıkarıldı.
+          const specFields = schema.fields.filter((f) => ESSENTIAL_KEYS.has(f.key) && f !== titleFieldRaw && f !== priceField && f !== descField && f.type !== "multiselect");
           const renderField = (f: FieldDef) => {
             // Model alanı: marka seçiliyse markaya bağımlı model listesi.
             if (f.key === "model") {
@@ -1770,6 +1775,44 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
           style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: wide ? 84 : 46, paddingHorizontal: 12, paddingVertical: wide ? 10 : 8, textAlignVertical: wide ? "top" : "center" }}
         />
       )}
+    </View>
+  );
+}
+
+/** Kademeli kategori açılır menüleri (mockup): her seviye bir dropdown — Kategori ▾ / Alt ▾ / Alt ▾…
+ *  Yaprağa (çocuğu olmayan düğüm) inince durur. Eski sürükle-sütun seçicinin yerine geldi. */
+function CategoryDropdowns({ value, onChange, presetFormKey }: { value: CategoryNode[]; onChange: (path: CategoryNode[]) => void; presetFormKey?: string }) {
+  const { language } = useLanguage();
+  const { categoryTree } = useStore();
+  useEffect(() => {
+    if (presetFormKey && value.length === 0) {
+      const root = categoryTree.find((n) => n.formKey === presetFormKey);
+      if (root) onChange([root]);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [presetFormKey]);
+  const levels: Array<{ options: CategoryNode[]; selected?: CategoryNode }> = [];
+  let opts = categoryTree;
+  for (let i = 0; i < 8; i++) {
+    const sel = value[i];
+    levels.push({ options: opts, selected: sel });
+    if (!sel || !sel.children || sel.children.length === 0) break;
+    opts = sel.children;
+  }
+  const pick = (idx: number, label: string) => {
+    const node = levels[idx].options.find((o) => o.label === label);
+    const next = value.slice(0, idx);
+    if (node) next.push(node);
+    onChange(next);
+  };
+  return (
+    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+      {levels.map((lvl, i) => (
+        <View key={i} style={{ flexBasis: 190, flexGrow: 1, minWidth: 0, zIndex: 40 - i }}>
+          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>{i === 0 ? translateCopy("Kategori", language) : translateCopy("Alt kategori", language)}{i === 0 ? " *" : ""}</Text>
+          <DSelect label="" value={lvl.selected?.label ?? ""} options={lvl.options.map((o) => o.label)} onChange={(v) => pick(i, v)} placeholder={translateCopy(i === 0 ? "Kategori seç" : "Alt kategori seç", language)} />
+        </View>
+      ))}
     </View>
   );
 }
