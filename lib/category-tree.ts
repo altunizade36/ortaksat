@@ -82,6 +82,27 @@ export const CAR_BODY_TYPES = ["Sedan", "Hatchback (5 Kapı)", "Hatchback (3 Kap
 // ATV/UTV ÇIKARILDI — kendi "ATV & UTV" dalı var (aksi halde motosiklet+vasitaGenel çift şema).
 export const MOTO_TYPES = ["Scooter", "Maxi Scooter", "Naked", "Sport / Racing", "Touring", "Cruiser", "Chopper", "Enduro", "Motocross", "Trail / Adventure", "Café Racer", "Custom", "Trike", "Elektrikli Motosiklet", "Moped", "Cub / Kanatlı"];
 export const MOTO_BRANDS = ["Honda", "Yamaha", "Kawasaki", "Suzuki", "KTM", "BMW", "Ducati", "Triumph", "Harley-Davidson", "Aprilia", "Vespa", "Piaggio", "Benelli", "Royal Enfield", "Moto Guzzi", "Bajaj", "TVS", "CFMoto", "SYM", "Kymco", "Mondial", "Kuba", "RKS", "Arora", "Yuki", "Motolux", "Falcon", "Zontes", "Voge", "QJ Motor", "Keeway", "Hero", "Lifan", "Husqvarna", "Indian", "MV Agusta", "Bimota", "Can-Am", "Segway Powersports", "Diğer"];
+// Traktör marka → model haritası (Türkiye pazarı; Sahibinden derinliği). En çok aranan
+// kategori (GSC: "bursa satılık traktör" vb.). Marka seçilince model bu listeden gelir,
+// yoksa serbest metin. Klasikler (Fiat 480, Tümosan, Başak) + modern seriler.
+export const TRACTOR_MODELS: Record<string, string[]> = {
+  "New Holland": ["TD 65", "TD 75", "TD 85", "TD 95", "TD5.65", "TD5.75", "TD5.85", "TD5.95", "TD5.110", "T4.55", "T4.65", "T4.75", "T4.85", "T4.105", "T5.100", "T5.110", "T5.120", "TT4.55", "TT4.75", "TT50", "TT55", "TT65", "TT75", "56-66", "80-66", "4635", "8560"],
+  "Massey Ferguson": ["135", "240", "240S", "255", "260", "265", "285", "285S", "3050", "3060", "3065", "3070", "3080", "3090", "4708", "4709", "5710", "5711", "6713", "7614", "398", "399"],
+  "John Deere": ["5050D", "5055E", "5065E", "5075E", "5085E", "5090E", "5100E", "5310", "6100B", "6110B", "6120B", "6130B", "5720", "5820", "2140", "3130"],
+  "Case IH": ["JX 75", "JX 90", "JX 95", "JXU", "Farmall 90", "Farmall 105", "Farmall 110", "Maxxum 110", "Maxxum 125", "Luxxum", "Puma", "CS 78", "4210"],
+  "Fiat": ["480", "480 Özel", "540", "640", "780", "1300", "55-46", "60-56", "70-56", "80-66", "80-90", "110-90"],
+  "Ford": ["3000", "4000", "5000", "6600", "3910", "4110", "4610", "5610", "6610", "7610"],
+  "Deutz-Fahr": ["Agrolux 4.80", "Agrolux 65", "Agrolux 70", "Agrofarm 85", "Agrofarm 100", "Agrofarm 410", "5D", "5DS", "6D", "Agrotron"],
+  "Kubota": ["L4508", "L5018", "M7040", "M8540", "M9540", "MK5000", "B Serisi"],
+  "Same": ["Explorer", "Dorado", "Frutteto", "Argon", "Solaris", "Virtus"],
+  "Landini": ["Rex", "Powerfarm", "5-085", "5-100", "Landpower", "Serie 4", "Ghibli"],
+  "Tümosan": ["8000", "8001", "9500", "1054", "1074", "45.80", "50.55", "55.55", "65.55", "80.85", "8095", "8105", "8280", "8285"],
+  "Erkunt": ["ArmaTrac 55", "ArmaTrac 70", "ArmaTrac 85", "ArmaTrac 1054", "ArmaTrac 1104", "Kızıltepe", "Servet", "Haşmet", "Nimet", "Bereket"],
+  "Başak": ["2073", "2075", "2080", "2085", "2090", "2110", "5110", "5120"],
+  "Hattat": ["A70", "A80", "A90", "A100", "A110", "T4100", "T4110", "3075", "3085"],
+  "Claas": ["Arion", "Axion", "Atos", "Elios", "Nexos", "Celtis"],
+  "Valtra": ["A Serisi", "N Serisi", "T Serisi", "A75", "A95", "N123"]
+};
 export const WHITE_GOODS_BRANDS = ["Arçelik", "Beko", "Bosch", "Siemens", "Vestel", "Samsung", "LG", "Profilo", "Altus", "Grundig", "Regal", "Silverline", "Electrolux", "Whirlpool", "Simfer", "Kumtel", "Luxell", "Sharp", "Hisense", "Midea", "Candy", "Indesit", "Ariston", "Diğer"];
 // Kombi/klima markaları (beyaz eşyadan farklı).
 export const HEATING_BRANDS = ["Baymak", "DemirDöküm", "Vaillant", "Buderus", "Bosch", "ECA", "Airfel", "Viessmann", "Warmhaus", "Diğer"];
@@ -1731,7 +1752,7 @@ export const categoryTree: CategoryNode[] = [
     // KİRALIK — tek yapraktı; Sahibinden gibi tam alt-ağaç + kiralamaya özel şema (aracKiralik).
     // ——— Sahibinden listesinde OLMAYAN ek dallarımız: Sahibinden sırasının ALTINA alındı ———
     node("Ağır Vasıta", leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Oto Kurtarıcı & Taşıyıcı", "Dorse (Lowbed)", "Dorse (Damperli)", "Dorse (Tenteli)", "Dorse (Frigorifik)", "Dorse (Silobas)", "Dorse (Tanker)", "Römork (Ticari)", "Tanker", "Frigorifik", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "agirVasita"), "agirVasita"),
-    node("Traktör & Tarım Araçları", brandModelNodes(["New Holland", "Massey Ferguson", "John Deere", "Case IH", "Fiat", "Ford", "Deutz-Fahr", "Kubota", "Same", "Landini", "Tümosan", "Erkunt", "Başak", "TürkTraktör", "Hattat", "Claas", "Valtra", "Diğer"], {}, "traktor"), "traktor"),
+    node("Traktör & Tarım Araçları", brandModelNodes(["New Holland", "Massey Ferguson", "John Deere", "Case IH", "Fiat", "Ford", "Deutz-Fahr", "Kubota", "Same", "Landini", "Tümosan", "Erkunt", "Başak", "TürkTraktör", "Hattat", "Claas", "Valtra", "Diğer"], TRACTOR_MODELS, "traktor"), "traktor"),
     node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Elektrikli Bisiklet", "Elektrikli Motosiklet", "Hoverboard", "Segway", "Elektrikli Golf Aracı"], "vasitaGenel"), "vasitaGenel"),
     node("Kiralık Araçlar", [
       node("Otomobil Kiralama", leaves(["Günlük Kiralık", "Haftalık Kiralık", "Aylık Kiralık", "Uzun Dönem Kiralama", "Şoförlü Kiralama", "Filo Kiralama", "Ekonomik Segment", "Lüks & Premium"], "aracKiralik"), "aracKiralik"),
