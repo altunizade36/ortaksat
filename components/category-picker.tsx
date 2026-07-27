@@ -15,11 +15,21 @@ import { useStore } from "@/lib/use-store";
  * ile), sağda seçim özeti ve o kategori için gereken bilgiler. Seçim bitince
  * onChange(path) çağrılır; form alanları bu path'e göre değişir.
  */
-export function CategoryPicker({ value, onChange }: { value: CategoryNode[]; onChange: (path: CategoryNode[]) => void }) {
+export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: CategoryNode[]; onChange: (path: CategoryNode[]) => void; presetRootFormKey?: string }) {
   const { categoryTree } = useStore();
   const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
-  const [trail, setTrail] = useState<CategoryNode[]>(value ?? []);
+  // presetRootFormKey: dışarıdan bir kök kategoriye (ör. "arayan" = Talep İlanları) başla.
+  // value BOŞsa o kökün alt seviyelerini açar (finalized tetiklenmez; kullanıcı yaprağa iner).
+  // Ebeveyn key={intent} ile remount ettiğinde bu lazy init yeniden çalışır.
+  const [trail, setTrail] = useState<CategoryNode[]>(() => {
+    if (value && value.length) return value;
+    if (presetRootFormKey) {
+      const root = categoryTree.find((n) => n.formKey === presetRootFormKey);
+      if (root) return [root];
+    }
+    return value ?? [];
+  });
   const [query, setQuery] = useState("");
   const suggestions = query.trim().length >= 2 ? suggestCategories(query, 7) : [];
 

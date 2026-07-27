@@ -1,4 +1,5 @@
 import Head from "expo-router/head";
+import { useLocalSearchParams } from "expo-router";
 import { useEffect, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 
@@ -17,6 +18,8 @@ import { useStore } from "@/lib/use-store";
 export default function CreateListingScreen() {
   const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
+  const params = useLocalSearchParams<{ intent?: string }>();
+  const initialIntent = params.intent === "seek" ? "seek" : undefined;
   const { isAuthenticated, platformSettings, emailVerified, isSuspended } = useStore();
   // Hidrasyon-gate: SSG ve istemcinin İLK render'ı aynı olmalı (aksi halde SSG'de
   // AuthRequired, istemcide form → React #418 uyuşmazlığı; bu, derin kategori
@@ -57,7 +60,7 @@ export default function CreateListingScreen() {
         contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 48, paddingHorizontal: isWideWeb ? 20 : 12, paddingTop: 16 }}
       >
         <View style={{ alignSelf: "center", maxWidth: 1280, width: "100%" }}>
-          <DesktopCreateFlow />
+          <DesktopCreateFlow initialIntent={initialIntent} />
         </View>
       </ScrollView>
     </KeyboardAvoidingView>

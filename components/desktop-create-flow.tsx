@@ -119,13 +119,16 @@ type DraftShape = {
   urgentDays?: number;
 };
 
-export function DesktopCreateFlow() {
+export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | "seek" } = {}) {
   const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const router = useRouter();
   const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, isAuthenticated, listings } = useStore();
   const DRAFT_KEY = draftKeyFor(currentUser?.id);
   const [step, setStep] = useState(0);
+  // İlan niyeti: "sell" (ürün/hizmet satıyorum) | "seek" (bir şey arıyorum = talep/buluş komisyonu).
+  // seek → CategoryPicker "Arayanlar / Talep İlanları" kökünden başlar. Harici link /create?intent=seek.
+  const [intent, setIntent] = useState<"sell" | "seek">(initialIntent === "seek" ? "seek" : "sell");
   // Mobilde alan-grubu aç/kapa (Emlak/Vasıta uzun formları). Anahtar yoksa varsayılan kullanılır.
   const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   // "Donanım & Özellikler" (opsiyonel, en şişkin bölüm) mobilde varsayılan KAPALI.
@@ -927,7 +930,36 @@ export function DesktopCreateFlow() {
 
       {/* Body */}
       <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, padding: isWideWeb ? 22 : 14 }}>
-        {step === 0 ? <CategoryPicker value={path} onChange={(p) => { setPath(p); if (p.length) setStep(1); }} /> : null}
+        {step === 0 ? (
+          <View style={{ gap: 14 }}>
+            {!path.length ? (
+              <View style={{ gap: 9 }}>
+                <Text style={{ color: colors.ink, fontSize: isWideWeb ? 17 : 15.5, fontWeight: "900" }}>{translateCopy("Ne yapmak istersin?", language)}</Text>
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+                  {([
+                    { key: "sell", icon: "tag-outline", title: translateCopy("Ürün/hizmet satıyorum", language), sub: translateCopy("Komisyon belirle, ortaklar senin için satsın", language) },
+                    { key: "seek", icon: "magnify-scan", title: translateCopy("Bir şey arıyorum", language), sub: translateCopy("Bulana komisyon ver — talep ilanı", language) }
+                  ] as const).map((opt) => {
+                    const on = intent === opt.key;
+                    return (
+                      <Pressable key={opt.key} onPress={() => setIntent(opt.key)} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ backgroundColor: on ? colors.primarySoft : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 14, borderWidth: on ? 2 : 1, flexBasis: 240, flexGrow: 1, gap: 6, minWidth: 0, padding: 14 }}>
+                        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                          <View style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
+                            <MaterialCommunityIcons name={opt.icon} size={19} color={on ? "#FFFFFF" : colors.primary} />
+                          </View>
+                          <Text style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 14.5, fontWeight: "900" }}>{opt.title}</Text>
+                          {on ? <MaterialCommunityIcons name="check-circle" size={18} color={colors.primary} /> : null}
+                        </View>
+                        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{opt.sub}</Text>
+                      </Pressable>
+                    );
+                  })}
+                </View>
+              </View>
+            ) : null}
+            <CategoryPicker key={intent} value={path} presetRootFormKey={intent === "seek" ? "arayan" : undefined} onChange={(p) => { setPath(p); if (p.length) setStep(1); }} />
+          </View>
+        ) : null}
 
         {step === 1 && schema ? (() => {
           // Sahibinden tarzı gruplama: alanları rolüne göre bölümlere ayır (şema

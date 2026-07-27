@@ -109,6 +109,19 @@ export default function WelcomePage() {
           ))}
         </View>
 
+        {/* Talep (arayan) girişi — OrtakSat'ı klasik ilan sitesinden ayıran farklılaştırıcı:
+            alıcı aradığını ilan eder, BULANA komisyon öder. Kartları kalabalıklaştırmamak için şerit. */}
+        <Pressable onPress={() => router.push({ pathname: "/create", params: { intent: "seek" } })} accessibilityRole="button" style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 16, borderWidth: 1, flexDirection: "row", gap: 12, opacity: pressed ? 0.9 : 1, padding: 16 })}>
+          <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, height: 46, justifyContent: "center", width: 46 }}>
+            <MaterialCommunityIcons name="map-search-outline" size={24} color="#FFFFFF" />
+          </View>
+          <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+            <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{translateCopy("Aradığın bir şey mi var? Talep ilanı ver", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Ne aradığını yaz, bulana komisyon öde — ortaklar senin için bulsun. (Ör. “İstanbul'da 3+1 daire arıyorum, bulana 100.000 TL”)", language)}</Text>
+          </View>
+          <MaterialCommunityIcons name="arrow-right" size={20} color={colors.primaryDark} />
+        </Pressable>
+
         {/* Alt aksiyonlar */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 14, justifyContent: "center", marginTop: 4 }}>
           <Link href="/nasil-calisir" asChild>
