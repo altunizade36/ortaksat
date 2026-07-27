@@ -1452,13 +1452,16 @@ export async function updateReportStatusLive(report: Report, status: ModerationS
 export async function recordLegalConsentLive(userId: string, documentType: "privacy" | "terms" | "kvkk" | "seller_rules") {
   if (!supabase || !uuidPattern.test(userId)) return false;
 
+  // onConflict ŞART: unique constraint (user_id+document_type+version) PK değil; belirtilmezse
+  // upsert varsayılan PK'ye bakar → aynı onay 2. kez gelince INSERT edip 23505 (duplicate key) atardı.
+  // Çakışma hedefini vererek yeniden-onay accepted_at'i günceller (hata değil).
   const { error } = await supabase.from("legal_consents").upsert({
     user_id: userId,
     document_type: documentType,
     version: "2026-06-11",
     accepted: true,
     accepted_at: new Date().toISOString()
-  });
+  }, { onConflict: "user_id,document_type,version" });
 
   if (error) {
     console.warn("Supabase legal consent upsert failed", error);
