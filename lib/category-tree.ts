@@ -329,7 +329,7 @@ export const PERFUME_BRANDS = ["Dior", "Chanel", "Tom Ford", "Versace", "Hugo Bo
 
 // ---- shared field fragments ---------------------------------------------
 const F = {
-  title: { key: "title", label: "İlan başlığı", type: "text", required: true, placeholder: "Kısa ve net bir başlık" } as FieldDef,
+  title: { key: "title", label: "Başlık", type: "text", required: true, placeholder: "Kısa ve net bir başlık" } as FieldDef,
   price: { key: "price", label: "Fiyat", type: "number", required: true, suffix: "₺" } as FieldDef,
   desc: { key: "description", label: "Açıklama", type: "textarea", required: true, placeholder: "Ürünü/ilanı detaylı anlat" } as FieldDef,
   durum: { key: "condition", label: "Ürün durumu", type: "select", required: true, options: ["Sıfır", "İkinci El", "Yenilenmiş"] } as FieldDef,

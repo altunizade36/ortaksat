@@ -1739,7 +1739,23 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
           <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>{value === true ? translateCopy("Evet", language) : translateCopy("Hayır", language)}</Text>
         </Pressable>
       ) : field.type === "select" ? (
-        <DSelect label="" value={String(value ?? "")} options={field.options ?? []} onChange={onChange} placeholder={translateCopy("Seçin", language)} />
+        // Kısa-opsiyonlu select (Durum, çekiş, kabin… ≤4) → ÇİP (mockup'taki gibi: İkinci El / Yenilenmiş).
+        // Uzun listeler (marka/model/yıl…) dropdown kalır.
+        (field.options ?? []).length > 0 && (field.options ?? []).length <= 4 ? (
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+            {(field.options ?? []).map((opt) => {
+              const on = String(value ?? "") === opt;
+              return (
+                <Pressable key={opt} onPress={() => onChange(opt)} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: on ? 2 : 1, flexDirection: "row", gap: 4, paddingHorizontal: 13, paddingVertical: 8 }}>
+                  {on ? <MaterialCommunityIcons name="check" size={13} color={colors.primaryDark} /> : null}
+                  <Text style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: on ? "800" : "600" }}>{opt}</Text>
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : (
+          <DSelect label="" value={String(value ?? "")} options={field.options ?? []} onChange={onChange} placeholder={translateCopy("Seçin", language)} />
+        )
       ) : (
         <TextInput
           testID={`field-${field.key}`}
