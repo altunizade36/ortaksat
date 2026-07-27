@@ -125,8 +125,9 @@ function AdminScreenInner() {
     setUserVerification, adminNotifyUser, adminBroadcast,
     blogPosts, contentPages, seoSettings, saveBlogPost, deleteBlogPost, saveContentPage, saveSeoSetting,
     categoryTree, extraCategories, saveCategory, deleteCategory, importCategories,
-    hiddenCategories, toggleHiddenCategory
+    hiddenCategories, toggleHiddenCategory, refreshMarketplace, refreshUserData
   } = useStore();
+  const [refreshing, setRefreshing] = useState(false);
   const [annText, setAnnText] = useState(platformSettings.announcement);
   const canManageUsers = currentUser.role === "admin" || currentUser.role === "super_admin";
   const [userQuery, setUserQuery] = useState("");
@@ -226,6 +227,25 @@ function AdminScreenInner() {
     void fetchAdminMessageStats().then(setMsgStats).catch(() => setMsgStats(null));
   }, [section]);
 
+  // Manuel yenile: sunucu-gerçek admin verisi (overview/audit/mesaj) + market/hesap store'u tazelenir.
+  // (Eskiden analytics yalnız dashboard'da 15sn yenilenir, overview/audit mount'ta bir kez çekilirdi → bayat.)
+  const doRefresh = async () => {
+    if (refreshing) return;
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        fetchAdminOverview().then(setOverview).catch(() => {}),
+        fetchAdminAudit().then(setAudit).catch(() => {}),
+        fetchAdminMessages({ limit: 100 }).then(setModMessages).catch(() => {}),
+        fetchAdminMessageStats().then(setMsgStats).catch(() => {}),
+        Promise.resolve(refreshMarketplace?.()).catch(() => {}),
+        Promise.resolve(refreshUserData?.()).catch(() => {})
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
   const isAdmin = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
   const activeListings = listings.filter((l) => l.status === "active");
   const pendingReview = listings.filter((l) => l.status === "pending_review");
@@ -236,6 +256,8 @@ function AdminScreenInner() {
   const unpaidCommission = sales.filter((s) => s.status !== "paid" && s.status !== "cancelled").reduce((a, s) => a + s.commissionAmount, 0);
   const pendingCat = categorySuggestions.filter((s) => s.status === "pending").length;
   const pendingLoc = locationSuggestions.filter((s) => s.status === "pending").length;
+  // Sunucu-gerçek toplamlar (overview; istemci ≤1000/≤500 cap'inden DEĞİL) — başlıklarda gösterilir.
+  const ovPartnershipsTotal = overview?.partnerships ? Object.values(overview.partnerships).reduce((a, b) => a + b, 0) : null;
   const pendingReports = reports.filter((r) => r.status === "open" || r.status === "reviewing").length;
   const pendingPartnerships = partnerships.filter((p) => p.status === "pending").length;
 
@@ -320,6 +342,10 @@ function AdminScreenInner() {
             ))}
           </ScrollView>
           <View style={{ borderTopColor: "rgba(255,255,255,0.12)", borderTopWidth: 1, gap: 4, paddingHorizontal: 12, paddingBottom: 14, paddingTop: 10 }}>
+            <Pressable onPress={() => void doRefresh()} disabled={refreshing} style={{ alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 11, opacity: refreshing ? 0.6 : 1, paddingHorizontal: 12, paddingVertical: 10 }}>
+              <MaterialCommunityIcons name={refreshing ? "loading" : "refresh"} size={18} color="rgba(255,255,255,0.72)" />
+              <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 13.5, fontWeight: "700" }}>{refreshing ? "Yenileniyor…" : "Verileri Yenile"}</Text>
+            </Pressable>
             <Link href="/" asChild>
               <Pressable style={{ alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 11, paddingHorizontal: 12, paddingVertical: 10 }}>
                 <MaterialCommunityIcons name="storefront-outline" size={18} color="rgba(255,255,255,0.72)" />
@@ -340,12 +366,17 @@ function AdminScreenInner() {
               <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>Site</Text>
             </Pressable>
           </Link>
+          <Pressable onPress={() => void doRefresh()} disabled={refreshing} accessibilityLabel="Verileri yenile" style={{ alignItems: "center", borderColor: "rgba(255,255,255,0.3)", borderRadius: 999, borderWidth: 1, justifyContent: "center", opacity: refreshing ? 0.6 : 1, paddingHorizontal: 10, paddingVertical: 7 }}>
+            <MaterialCommunityIcons name={refreshing ? "loading" : "refresh"} size={15} color="#FFFFFF" />
+          </Pressable>
           {NAV.map((n) => {
             const on = section === n.key;
+            const badge = navBadge(n.key); // mobil nav'da da bekleyen-iş rozetleri (eskiden yalnız sidebar'da)
             return (
               <Pressable key={n.key} onPress={() => setSection(n.key)} style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.18)" : "transparent", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 8 }}>
                 <MaterialCommunityIcons name={n.icon} size={15} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: on ? "900" : "700" }}>{n.label}</Text>
+                {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 17, justifyContent: "center", minWidth: 17, paddingHorizontal: 4 }}><Text style={{ color: "#FFFFFF", fontSize: 9.5, fontWeight: "900" }}>{badge}</Text></View> : null}
               </Pressable>
             );
           })}
@@ -375,7 +406,7 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "users" ? (
-          <Panel title="Kullanıcılar" sub={`${analytics ? `${fmtN(analytics.total_users)} toplam kayıtlı (sunucu) · ` : ""}${shownUsers.length} yüklü${deletedUserCount ? ` · ${deletedUserCount} silinmiş (gizli)` : ""}${canManageUsers ? " · rol, durum, doğrulama" : ""}`}>
+          <Panel title="Kullanıcılar" sub={`${analytics ? `${fmtN(analytics.total_users)} toplam kayıtlı (sunucu) · ` : overview ? `${fmtN(overview.users_total)} toplam kayıtlı (sunucu) · ` : ""}${shownUsers.length} yüklü${deletedUserCount ? ` · ${deletedUserCount} silinmiş (gizli)` : ""}${canManageUsers ? " · rol, durum, doğrulama" : ""}`}>
             <AdminSearch value={userQuery} onChange={setUserQuery} placeholder="İsim, rol veya durum ara…" />
             <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between" }}>
               <FilterChips value={userFilter} onChange={setUserFilter} options={[
@@ -586,7 +617,7 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "partnerships" ? (
-          <Panel title="Ortak Satış Talepleri" sub={`${pendingPartnerships} bekliyor · ${partnerships.length} toplam`}>
+          <Panel title="Ortak Satış Talepleri" sub={`${pendingPartnerships} bekliyor · ${fmtN(ovPartnershipsTotal ?? partnerships.length)} toplam${ovPartnershipsTotal != null ? " (sunucu)" : ""}`}>
             {partnerships.length === 0 ? <EmptyState title="Ortak satış talebi yok" body="Bir kullanıcı bir ilana ortak satıcı olmak için başvurduğunda burada görünür." /> : null}
             <Table head={["İLAN", "İLAN SAHİBİ", "ORTAK ADAYI", "KOMİSYON", "DURUM", "TARİH", "İŞLEM"]} cols={[1.9, 1.3, 1.3, 1, 1, 0.9, 1.4]}>
               {partnerships.slice().sort((a, b) => (a.status === "pending" ? -1 : 1) - (b.status === "pending" ? -1 : 1) || b.createdAt.localeCompare(a.createdAt)).map((p) => {
@@ -621,7 +652,7 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "complaints" ? (
-          <Panel title="Şikayetler" sub={`${pendingReports} bekliyor · ${reports.length} toplam`}>
+          <Panel title="Şikayetler" sub={`${fmtN(overview?.reports_open ?? pendingReports)} açık · ${fmtN(overview?.reports_total ?? reports.length)} toplam${overview ? " (sunucu)" : ""}`}>
             {reports.length === 0 ? <EmptyState title="Şikayet yok" body="Kullanıcılar ilan veya satıcı şikayet ettiğinde burada görünür ve buradan işlem yapabilirsin." /> : null}
             {reports.slice().sort((a, b) => (isOpenReport(a) ? -1 : 1) - (isOpenReport(b) ? -1 : 1) || b.createdAt.localeCompare(a.createdAt)).map((r) => {
               const target = r.listingId ? listings.find((l) => l.id === r.listingId) : undefined;
