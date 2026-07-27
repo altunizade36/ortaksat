@@ -18,6 +18,10 @@ export const categoriesDict: Record<string, string> = {
   "Yapı Market & Bahçe": "Hardware Store & Garden",
   "Müzik Enstrümanları": "Musical Instruments",
   "Sağlık & Medikal": "Health & Medical",
+  // Ana kategori konsolidasyonuyla eklenen ara-düğüm etiketleri (kök → alt-kategori taşındı).
+  "Bahçe & Yapı Market": "Garden & Hardware Store",
+  "Müzik": "Music",
+  "Dijital Hizmetler": "Digital Services",
   "Diğer": "Other",
   "Satılık": "For Sale",
   "Kiralık": "For Rent",

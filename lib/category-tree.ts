@@ -1902,9 +1902,141 @@ export const categoryTree: CategoryNode[] = [
     node("Süpermarket & Gıda", leaves(["Temel Gıda", "Kahvaltılık", "Atıştırmalık & Şekerleme", "Bakliyat & Makarna", "Konserve & Hazır Yemek", "Kahve & Çay", "İçecek", "Su & Maden Suyu", "Süt & Süt Ürünleri", "Bebek Maması & Gıdası", "Organik & Glutensiz", "Baharat & Sos", "Zeytin & Zeytinyağı", "Bal & Reçel", "Kuruyemiş & Kurutulmuş Gıda", "Deterjan & Temizlik", "Kağıt Ürünleri", "Kişisel Temizlik & Hijyen"], "alisverisGenel"), "alisverisGenel"),
     node("Ofis & Kırtasiye", leaves(["Kırtasiye Malzemesi", "Defter & Bloknot", "Kalem & Yazı Gereçleri", "Ofis Mobilyası", "Yazıcı & Sarf Malzeme", "Dosyalama & Arşiv", "Sunum & Pano", "Hesap Makinesi", "Ofis Elektroniği", "Okul Malzemesi"], "alisverisGenel"), "alisverisGenel"),
     node("Oyuncak", leaves(["Eğitici Oyuncak", "Peluş Oyuncak", "Yapı & Bloklar (Lego)", "Uzaktan Kumandalı", "Bebek & Figür", "Puzzle & Zeka Oyunları", "Kutu Oyunları", "Oyun Seti", "Araba & Araç Oyuncak", "Su & Kum Oyuncakları", "Elektronik Oyuncak", "Bebek Oyuncakları (0-3 yaş)"], "oyuncak"), "oyuncak"),
-    node("Bahçe & Yaşam", leaves(["Bahçe Mobilyası", "Şemsiye & Gölgelik", "Barbekü & Mangal", "Saksı & Çiçeklik", "Yapay Çiçek & Bitki", "Bahçe Dekorasyonu", "Havuz & Şişme", "Kamp & Piknik"], "alisverisGenel"), "alisverisGenel"),
     node("Dijital Ürünler", leaves(["Yazılım Lisansı", "Dijital Eğitim", "E-kitap", "Tasarım Dosyası", "Oyun Kodu", "Tema & Şablon", "Dijital Hesap", "Online Hizmet"], "dijitalHizmet"), "dijitalHizmet"),
     node("Evcil Hayvan Ürünleri", leaves(["Kedi Ürünleri", "Köpek Ürünleri", "Kuş Ürünleri", "Balık & Akvaryum", "Kemirgen Ürünleri", "Mama & Yem", "Kafes & Aksesuar", "Pet Bakım & Hijyen", "Tasma & Gezdirme", "Oyuncak & Kaşıma"], "petUrun"), "petUrun"),
+    // Eski KÖK "Yapı Market & Bahçe" → İkinci El altına taşındı (ana kategori konsolidasyonu).
+    node("Bahçe & Yapı Market", [
+      node("Elektrikli El Aletleri", leaves([
+        "Matkap (Darbeli)", "Matkap (Şarjlı)", "Vidalama", "Kırıcı-Delici", "Dekupaj Testere",
+        "Daire Testere", "Şerit Testere", "Taşlama / Spiral", "Avuç Taşlama", "Zımpara Makinesi",
+        "Planya", "El Frezesi", "Sıcak Hava Tabancası", "Tutkal Tabancası", "Lehim İstasyonu",
+        "Basınçlı Yıkama Makinesi", "Ağaç Kesme Testeresi", "Atölye Vakumu"
+      ], "elektrikliAlet"), "elektrikliAlet"),
+      node("El Aletleri (Manuel)", leaves([
+        "Tornavida Seti", "Anahtar Takımı", "Lokma Takımı", "Pense & Kerpeten", "Çekiç & Balyoz",
+        "El Testeresi", "Mengene", "İşkence", "Şerit Metre", "Su Terazisi", "Lazer Metre",
+        "Lazer Hizalama", "Alet Çantası", "Takım Dolabı", "El Aleti Seti"
+      ], "yapiMarket"), "yapiMarket"),
+      node("Merdiven & Sehpa", leaves([
+        "Katlanır Merdiven", "Teleskopik Merdiven", "A Tipi Merdiven", "Çatı Merdiveni",
+        "Platform Merdiven", "İskele", "Çalışma Sehpası", "Kesim Sehpası (Tezgâh)",
+        "Seyyar Platform", "Merdiven Aksesuarı"
+      ], "yapiMarket"), "yapiMarket"),
+      node("Hırdavat", leaves([
+        "Vida & Cıvata", "Dübel", "Somun & Pul", "Menteşe", "Kilit", "Kapı Kolu", "Çilingir Malzemesi",
+        "Yapıştırıcı", "Silikon & Mastik", "Bant & İzole", "Zincir & Halat", "Kelepçe", "Ray & Tekerlek",
+        "Sarf Malzeme"
+      ], "yapiMarket"), "yapiMarket"),
+      node("Boya & Yüzey", leaves([
+        "İç Cephe Boyası", "Dış Cephe Boyası", "Ahşap Boyası & Vernik", "Metal Boyası", "Astar",
+        "Sprey Boya", "Rulo & Fırça", "Boya Tabancası", "Macun & Dolgu", "Duvar Kağıdı",
+        "Dekoratif Sıva", "Zımpara & Yüzey Hazırlık"
+      ], "yapiMarket"), "yapiMarket"),
+      node("Yapı Malzemeleri", leaves([
+        "Fayans & Seramik", "Granit & Mermer", "Parke & Laminat", "PVC Zemin", "Halıfleks",
+        "Alçıpan", "Alçı & Sıva", "Çimento & Kum", "Tuğla & Briket", "Isı Yalıtımı", "Su Yalıtımı",
+        "Ses Yalıtımı", "Çatı Malzemesi", "Kiremit & Oluk", "Kapı", "Pencere & PVC Doğrama"
+      ], "yapiMarket"), "yapiMarket"),
+      node("Elektrik & Aydınlatma", leaves([
+        "Kablo", "Priz & Anahtar", "Sigorta & Pano", "Ampul & LED", "Avize", "Spot & Downlight",
+        "Bahçe Aydınlatması", "Sensörlü Aydınlatma", "Uzatma Kablosu", "Adaptör & Trafo (Aydınlatma)"
+      ], "yapiMarket"), "yapiMarket"),
+      node("Tesisat & Su", leaves([
+        "Batarya & Musluk", "Duş Sistemi", "Klozet & Lavabo", "Rezervuar", "Boru & Fitting",
+        "Su Deposu", "Hidrofor", "Su Arıtma", "Kombi & Radyatör", "Petek & Vana", "Sifon & Gider"
+      ], "yapiMarket"), "yapiMarket"),
+      node("Bahçe & Peyzaj", leaves([
+        "Çim Biçme Makinesi (Benzinli)", "Çim Biçme Makinesi (Elektrikli)", "Robot Çim Biçme",
+        "Misinalı Tırpan", "Çit Budama Makinesi", "Ağaç Kesme Motoru", "Yaprak Üfleme",
+        "Toprak Frezesi", "Sulama Sistemi", "Damla Sulama", "Hortum & Fıskiye", "Bahçe Aletleri",
+        "Tohum & Fide", "Saksı & Toprak", "Gübre & İlaç", "Sera & Örtü", "Çit & Tel", "Bahçe Mobilyası",
+        "Şezlong & Salıncak", "Barbekü & Mangal", "Bahçe Havuzu", "Peyzaj Taşı & Çakıl",
+        "Şemsiye & Gölgelik", "Yapay Çiçek & Bitki", "Bahçe Dekorasyonu", "Havuz & Şişme", "Kamp & Piknik"
+      ], "yapiMarket"), "yapiMarket"),
+      node("Güvenlik & İş Güvenliği", leaves([
+        "Çelik Kapı Aksesuarı", "Kasa", "Alarm Sistemi", "Güvenlik Kamerası", "Baret & Eldiven",
+        "İş Ayakkabısı", "Koruyucu Gözlük & Maske", "Yangın Söndürücü"
+      ], "yapiMarket"), "yapiMarket")
+    ], "yapiMarket"),
+    // Eski KÖK "Müzik Enstrümanları" → İkinci El altına "Müzik" olarak taşındı.
+    node("Müzik", [
+      node("Gitar & Telli Çalgılar", leaves([
+        "Akustik Gitar", "Elektro Gitar", "Bas Gitar", "Klasik Gitar", "Elektro Akustik Gitar",
+        "12 Telli Gitar", "Ukulele", "Mandolin", "Banjo", "Arp", "Gitar Teli", "Gitar Askısı",
+        "Gitar Kılıfı & Case", "Pena & Aksesuar", "Capo", "Gitar Standı"
+      ], "muzik"), "muzik"),
+      node("Yaylı & Halk Çalgıları", leaves([
+        "Keman", "Viyola", "Çello", "Kontrbas", "Bağlama (Uzun Sap)", "Bağlama (Kısa Sap)", "Cura",
+        "Divan Sazı", "Ud", "Kanun", "Cümbüş", "Kabak Kemane", "Tambur", "Rebap", "Yay & Reçine",
+        "Halk Çalgısı Aksesuarı"
+      ], "muzik"), "muzik"),
+      node("Tuşlu Çalgılar", leaves([
+        "Akustik Piyano (Duvar)", "Akustik Piyano (Kuyruklu)", "Dijital Piyano", "Stage Piyano",
+        "Org", "Synthesizer", "MIDI Klavye", "Melodika", "Akordeon", "Piyano Taburesi", "Piyano Standı"
+      ], "muzik"), "muzik"),
+      node("Vurmalı Çalgılar", leaves([
+        "Akustik Bateri", "Elektronik Bateri", "Trampet", "Zil (Cymbal)", "Darbuka", "Def", "Cajon",
+        "Bongo & Conga", "Perküsyon Seti", "Bendir", "Davul", "Marakas & Ritim Aletleri",
+        "Baget & Aksesuar", "Bateri Standı"
+      ], "muzik"), "muzik"),
+      node("Nefesli Çalgılar", leaves([
+        "Ney", "Kaval", "Flüt", "Klarnet", "Saksofon", "Trompet", "Trombon", "Korno", "Tuba",
+        "Mızıka", "Zurna", "Mey", "Nefesli Aksesuar & Kamış"
+      ], "muzik"), "muzik"),
+      node("DJ & Stüdyo Ekipmanı", leaves([
+        "DJ Controller", "DJ Player", "DJ Mikser", "Ses Kartı (Audio Interface)", "Stüdyo Monitörü",
+        "Kayıt Mikrofonu (Condenser)", "Dinamik Mikrofon", "Mikrofon Standı", "Pop Filtre",
+        "Stüdyo Kulaklığı", "Akustik Panel", "Preamp", "Sampler & Groovebox", "Kablo & Konnektör"
+      ], "muzik"), "muzik"),
+      node("Amfi & Ses Sistemi", leaves([
+        "Gitar Amfisi", "Bas Amfisi", "Klavye Amfisi", "Kabin (Cabinet)", "Efekt Pedalı",
+        "Pedal Board", "Hoparlör & Monitör", "Power Mikser", "Anfi (PA)", "Sahne Işığı"
+      ], "muzik"), "muzik"),
+      node("Nota, Eğitim & Aksesuar", leaves([
+        "Nota Sehpası", "Nota Kitabı", "Metronom", "Akort Aleti", "Enstrüman Kılıfı", "Bakım & Temizlik Seti"
+      ], "muzik"), "muzik")
+    ], "muzik"),
+    // Eski KÖK "Sağlık & Medikal" → İkinci El altına taşındı (etiket/slug korundu).
+    node("Sağlık & Medikal", [
+      node("Hareket & Ortopedi", leaves([
+        "Tekerlekli Sandalye (Manuel)", "Tekerlekli Sandalye (Akülü)", "Refakatçi Sandalyesi",
+        "Yürüteç (Walker)", "Rollator", "Baston", "Koltuk Değneği", "Protez", "Ortez",
+        "Ortopedik Tabanlık", "Boyunluk", "Korse", "Bandaj & Atel", "Dizlik & Bileklik",
+        "Engelli Rampası", "Engelli Lift", "Hasta Transfer Ürünleri"
+      ], "medikal"), "medikal"),
+      node("Hasta Bakım Ürünleri", leaves([
+        "Hasta Yatağı (Manuel)", "Hasta Yatağı (Motorlu)", "Havalı Yatak", "Hasta Karyolası",
+        "Hasta Bezi & Altlık", "Yatak Koruyucu", "Serum Askısı", "Hasta Masası", "Banyo Sandalyesi",
+        "Klozet Yükseltici", "Sürgü & Ördek", "Medikal Sarf Malzeme", "Pansuman Malzemesi",
+        "Yara Bakım Ürünleri", "Eldiven & Maske"
+      ], "medikal"), "medikal"),
+      node("Ölçüm & Teşhis Cihazları", leaves([
+        "Tansiyon Aleti (Koldan)", "Tansiyon Aleti (Bilekten)", "Şeker Ölçüm Cihazı", "Şeker Ölçüm Stripi",
+        "Ateş Ölçer (Temassız)", "Ateş Ölçer (Klasik)", "Pulse Oksimetre", "Steteskop",
+        "Vücut Analiz Tartısı", "Holter Cihazı", "EKG Cihazı", "Doppler", "Otoskop", "Tıbbi Terazi"
+      ], "medikal"), "medikal"),
+      node("Solunum & İşitme", leaves([
+        "Oksijen Konsantratörü", "Oksijen Tüpü", "Nebulizatör", "Aspiratör", "CPAP Cihazı",
+        "BIPAP Cihazı", "Uyku Apne Maskesi", "İşitme Cihazı", "İşitme Cihazı Pili", "Hava Nemlendirici"
+      ], "medikal"), "medikal"),
+      node("Terapi & Fizik Tedavi", leaves([
+        "Masaj Cihazı", "Masaj Koltuğu", "Fizik Tedavi Ekipmanı", "TENS Cihazı", "Ultrason Terapi",
+        "Sıcak-Soğuk Terapi", "Egzersiz Bandı", "Rehabilitasyon Ekipmanı", "Pilates & Denge Ürünleri",
+        "Bel & Boyun Traksiyon"
+      ], "medikal"), "medikal"),
+      node("Anne & Bebek Sağlığı", leaves([
+        "Göğüs Pompası", "Bebek Tartısı", "Bebek Aspiratörü", "Buhar Makinesi", "Bebek Ateş Ölçer",
+        "Emzirme Ürünleri"
+      ], "medikal"), "medikal"),
+      node("Klinik & Muayene", leaves([
+        "Muayene Masası", "Sedye", "Tıbbi Dolap", "Muayene Lambası", "Sterilizatör", "Tıbbi Atık Kutusu",
+        "Diş Ünitesi", "Klinik Sandalyesi"
+      ], "medikal"), "medikal"),
+      node("Kişisel Bakım & Sağlık", leaves([
+        "Vitamin & Takviye", "Ağrı Kesici Bandı", "Termofor", "İlaç Kutusu / Hatırlatıcı",
+        "Tıbbi Çorap (Varis)", "Uyku Ürünleri"
+      ], "medikal"), "medikal")
+    ], "medikal"),
     leaf("Hediyelik Ürünler", "alisverisGenel"),
     leaf("Diğer Alışveriş", "alisverisGenel")
   ], "alisverisGenel", IMG("1498049794561-7780e7231661")),
@@ -1970,7 +2102,49 @@ export const categoryTree: CategoryNode[] = [
     node("Güzellik & Kişisel Bakım", leaves(["Kuaför & Berber", "Saç Boyama & Bakım", "Cilt Bakımı", "Ağda & Epilasyon", "Lazer Epilasyon", "Manikür & Pedikür", "Kalıcı Makyaj", "Makyaj (Gelin & Özel Gün)", "Masaj & Spa", "Dövme & Piercing", "Solaryum", "Evde Güzellik Hizmeti"], "hizmet"), "hizmet"),
     node("Organizasyon & Etkinlik", leaves(["Düğün Organizasyon", "Nişan & Kına", "Doğum Günü", "Catering & İkram", "Fotoğraf & Video Çekimi", "Müzik & DJ", "Süsleme & Balon", "Davetiye & Matbaa", "Sahne & Ses Sistemi"], "hizmet"), "hizmet"),
     node("Profesyonel Hizmetler", leaves(["Danışmanlık", "Muhasebe & Mali Müşavir", "Hukuki Danışmanlık", "Sigorta", "Tercüme & Çeviri", "Emlak Danışmanlığı", "İş Kurma Danışmanlığı", "Vergi Danışmanlığı"], "hizmet"), "hizmet"),
-    node("Güvenlik & Sağlık", leaves(["Özel Güvenlik", "Kamera & Alarm Sistemi", "Sağlık & Hasta Bakımı", "Yaşlı Bakımı", "Fizyoterapi", "Diyetisyen", "Psikolog & Danışman", "Evde Sağlık"], "hizmet"), "hizmet")
+    node("Güvenlik & Sağlık", leaves(["Özel Güvenlik", "Kamera & Alarm Sistemi", "Sağlık & Hasta Bakımı", "Yaşlı Bakımı", "Fizyoterapi", "Diyetisyen", "Psikolog & Danışman", "Evde Sağlık"], "hizmet"), "hizmet"),
+    // Eski KÖK "Dijital Ürünler & Hizmetler" → hizmet olduğu için Ustalar altına "Dijital Hizmetler" olarak taşındı (formKey korundu).
+    node("Dijital Hizmetler", [
+      node("Web & Yazılım", leaves([
+        "Web Sitesi (Kurumsal)", "Web Sitesi (E-ticaret)", "Landing Page", "WordPress Sitesi",
+        "Shopify / E-ticaret Kurulumu", "Mobil Uygulama (iOS)", "Mobil Uygulama (Android)",
+        "Yazılım Geliştirme", "API Entegrasyonu", "Bot / Otomasyon", "No-code Kurulum",
+        "Web Sitesi Bakım", "Hata Düzeltme / Debug", "Veritabanı Kurulumu"
+      ], "dijitalHizmet"), "dijitalHizmet"),
+      node("Tasarım", leaves([
+        "Logo Tasarım", "Kurumsal Kimlik", "Sosyal Medya Tasarımı", "Afiş & Broşür", "Ambalaj Tasarımı",
+        "UI/UX Tasarım", "Sunum Tasarımı", "Kartvizit", "Menü Tasarımı", "Banner & Reklam Görseli",
+        "İllüstrasyon", "3D Modelleme", "Fotoğraf Rötuş"
+      ], "dijitalHizmet"), "dijitalHizmet"),
+      node("Video & Ses", leaves([
+        "Video Kurgu", "Reels / TikTok Kurgu", "Motion Graphics", "Animasyon", "Intro / Outro",
+        "Seslendirme", "Podcast Kurgu", "Müzik Prodüksiyon", "Altyazı & Çeviri (Video)"
+      ], "dijitalHizmet"), "dijitalHizmet"),
+      node("Pazarlama & Reklam", leaves([
+        "Sosyal Medya Yönetimi", "Reklam Yönetimi (Meta)", "Reklam Yönetimi (Google)",
+        "SEO Hizmeti", "İçerik Pazarlama", "E-posta Pazarlama", "Influencer Kampanyası",
+        "Pazar Araştırması", "Marka Danışmanlığı"
+      ], "dijitalHizmet"), "dijitalHizmet"),
+      node("Yazı & Çeviri", leaves([
+        "İçerik / Blog Yazarlığı", "Metin Yazarlığı (Copywriting)", "Ürün Açıklaması", "CV Hazırlama",
+        "Ön Yazı & Motivasyon Mektubu", "Çeviri (İngilizce)", "Çeviri (Diğer Diller)",
+        "Redaksiyon & Düzelti", "Akademik Yazım Desteği"
+      ], "dijitalHizmet"), "dijitalHizmet"),
+      node("Hazır Dijital Ürünler", leaves([
+        "E-kitap", "Eğitim Dosyası / Kurs", "Şablon (Web)", "Şablon (Sunum)", "Şablon (Sosyal Medya)",
+        "Grafik Paketi", "Font & İkon Seti", "Stok Fotoğraf", "Müzik & Ses Efekti", "Preset & LUT",
+        "Excel / Tablo Şablonu", "Notion / Yönetim Şablonu"
+      ], "dijitalHizmet"), "dijitalHizmet"),
+      node("Danışmanlık & Destek", leaves([
+        "Teknik Destek", "Sistem Kurulumu", "Siber Güvenlik Danışmanlığı", "Veri Analizi",
+        "Yapay Zekâ Danışmanlığı", "E-ticaret Danışmanlığı"
+      ], "dijitalHizmet"), "dijitalHizmet"),
+      node("Veri Girişi & Sanal Asistanlık", leaves([
+        "Veri Girişi", "Sanal Asistan", "Web Araştırma", "İnternetten Veri Toplama",
+        "Transkripsiyon (Deşifre)", "E-posta & Takvim Yönetimi", "CRM & Liste Yönetimi",
+        "Müşteri Destek (Online)", "PDF & Doküman Düzenleme", "Excel & Veri Düzenleme"
+      ], "dijitalHizmet"), "dijitalHizmet")
+    ], "dijitalHizmet")
   ], "hizmet", IMG("1581578731548-c64695cc6952")),
 
   node("Özel Ders & Eğitim", [
@@ -1995,41 +2169,6 @@ export const categoryTree: CategoryNode[] = [
     node("Sağlık & Eğitim", leaves(["Doktor", "Hemşire", "Sağlık Teknikeri", "Fizyoterapist", "Öğretmen", "Öğretim Görevlisi", "Bakıcı & Refakatçi", "Eczane Personeli"], "isIlani"), "isIlani"),
     node("İnşaat & Mühendislik", leaves(["İnşaat Mühendisi", "Mimar", "Makine Mühendisi", "Elektrik Mühendisi", "Usta & Kalfa", "Şantiye Şefi", "Teknik Ressam", "İş Güvenliği Uzmanı"], "isIlani"), "isIlani")
   ], "isIlani", IMG("1521737604893-d14cc237f11d")),
-
-  node("Yardımcı Arayanlar", [
-    node("Çocuk & Bebek Bakımı", leaves([
-      "Bebek Bakıcısı (0-1 Yaş)", "Bebek Bakıcısı (1-3 Yaş)", "Çocuk Bakıcısı", "Yatılı Bakıcı",
-      "Saatlik Bakıcı", "Gündüz Bakıcısı", "Hafta Sonu Bakıcısı", "Kreş Öncesi Bakım",
-      "Okul Sonrası Bakım", "Yabancı Dil Bilen Bakıcı", "İkiz Bakıcısı", "Gece Bakıcısı",
-      "Ödev Takibi Yapan Bakıcı", "Sertifikalı Çocuk Gelişimci"
-    ], "yardimci"), "yardimci"),
-    node("Yaşlı & Hasta Bakımı", leaves([
-      "Yaşlı Bakıcısı", "Hasta Bakıcısı", "Refakatçi (Hastane)", "Yatılı Hasta Bakımı",
-      "Gündüz Hasta Bakımı", "Engelli Bakımı", "Alzheimer / Demans Bakımı", "Felç Hastası Bakımı",
-      "Yatağa Bağımlı Hasta Bakımı", "Ameliyat Sonrası Bakım", "Hemşire / Sağlık Personeli",
-      "Fizyoterapi Destekli Bakım"
-    ], "yardimci"), "yardimci"),
-    node("Ev İşleri & Temizlik", leaves([
-      "Ev Yardımcısı", "Temizlikçi (Gündelik)", "Temizlikçi (Haftalık)", "Yatılı Ev Yardımcısı",
-      "Gündelik Yardımcı", "Ütücü", "Çamaşır & Ütü", "Yemek Yapan (Aşçı)", "Diyet Yemeği Yapan",
-      "Detaylı / Derin Temizlik", "Bayram / Özel Gün Temizliği", "Ofis Yardımcısı"
-    ], "yardimci"), "yardimci"),
-    node("Şoför & Ulaşım", leaves([
-      "Özel Şoför", "Aile Şoförü", "Okul Servisi Şoförü", "Yaşlı Refakat Şoförü",
-      "Alışveriş & Ulaşım Yardımcısı"
-    ], "yardimci"), "yardimci"),
-    node("Bahçe & Dış Alan", leaves([
-      "Bahçıvan", "Peyzaj Bakımı", "Havuz Bakımı", "Kapıcı / Apartman Görevlisi", "Site Görevlisi"
-    ], "yardimci"), "yardimci"),
-    node("Eğitim & Destek", leaves([
-      "Özel Ders Yardımcısı", "Ödev Takip Öğretmeni", "Yabancı Dil Konuşma Partneri",
-      "Özel Eğitim Destek Personeli"
-    ], "yardimci"), "yardimci"),
-    node("Evcil Hayvan & Diğer", leaves([
-      "Evcil Hayvan Bakıcısı", "Köpek Gezdirici", "Ev & Bitki Bakımı (Tatilde)",
-      "Yardımcı Personel (Genel)"
-    ], "yardimci"), "yardimci")
-  ], "yardimci", IMG("1576091160550-2173dba999ef")),
 
   node("Hayvanlar Alemi", [
     node("Sahiplendirme", [
@@ -2094,6 +2233,41 @@ export const categoryTree: CategoryNode[] = [
     ], "petUrun"), "petUrun")
   ], "hayvan", IMG("1450778869180-41d0601e046e")),
 
+  node("Yardımcı Arayanlar", [
+    node("Çocuk & Bebek Bakımı", leaves([
+      "Bebek Bakıcısı (0-1 Yaş)", "Bebek Bakıcısı (1-3 Yaş)", "Çocuk Bakıcısı", "Yatılı Bakıcı",
+      "Saatlik Bakıcı", "Gündüz Bakıcısı", "Hafta Sonu Bakıcısı", "Kreş Öncesi Bakım",
+      "Okul Sonrası Bakım", "Yabancı Dil Bilen Bakıcı", "İkiz Bakıcısı", "Gece Bakıcısı",
+      "Ödev Takibi Yapan Bakıcı", "Sertifikalı Çocuk Gelişimci"
+    ], "yardimci"), "yardimci"),
+    node("Yaşlı & Hasta Bakımı", leaves([
+      "Yaşlı Bakıcısı", "Hasta Bakıcısı", "Refakatçi (Hastane)", "Yatılı Hasta Bakımı",
+      "Gündüz Hasta Bakımı", "Engelli Bakımı", "Alzheimer / Demans Bakımı", "Felç Hastası Bakımı",
+      "Yatağa Bağımlı Hasta Bakımı", "Ameliyat Sonrası Bakım", "Hemşire / Sağlık Personeli",
+      "Fizyoterapi Destekli Bakım"
+    ], "yardimci"), "yardimci"),
+    node("Ev İşleri & Temizlik", leaves([
+      "Ev Yardımcısı", "Temizlikçi (Gündelik)", "Temizlikçi (Haftalık)", "Yatılı Ev Yardımcısı",
+      "Gündelik Yardımcı", "Ütücü", "Çamaşır & Ütü", "Yemek Yapan (Aşçı)", "Diyet Yemeği Yapan",
+      "Detaylı / Derin Temizlik", "Bayram / Özel Gün Temizliği", "Ofis Yardımcısı"
+    ], "yardimci"), "yardimci"),
+    node("Şoför & Ulaşım", leaves([
+      "Özel Şoför", "Aile Şoförü", "Okul Servisi Şoförü", "Yaşlı Refakat Şoförü",
+      "Alışveriş & Ulaşım Yardımcısı"
+    ], "yardimci"), "yardimci"),
+    node("Bahçe & Dış Alan", leaves([
+      "Bahçıvan", "Peyzaj Bakımı", "Havuz Bakımı", "Kapıcı / Apartman Görevlisi", "Site Görevlisi"
+    ], "yardimci"), "yardimci"),
+    node("Eğitim & Destek", leaves([
+      "Özel Ders Yardımcısı", "Ödev Takip Öğretmeni", "Yabancı Dil Konuşma Partneri",
+      "Özel Eğitim Destek Personeli"
+    ], "yardimci"), "yardimci"),
+    node("Evcil Hayvan & Diğer", leaves([
+      "Evcil Hayvan Bakıcısı", "Köpek Gezdirici", "Ev & Bitki Bakımı (Tatilde)",
+      "Yardımcı Personel (Genel)"
+    ], "yardimci"), "yardimci")
+  ], "yardimci", IMG("1576091160550-2173dba999ef")),
+
   node("Arayanlar / Talep İlanları", [
     node("Emlak Talebi", leaves([
       "Satılık Daire Arıyorum", "Kiralık Daire Arıyorum", "Müstakil Ev Arıyorum", "Villa Arıyorum",
@@ -2131,183 +2305,7 @@ export const categoryTree: CategoryNode[] = [
       "Evcil Hayvan Arıyorum", "Çiftlik Hayvanı Arıyorum", "Hurda / İkinci El Alıyorum",
       "Hizmet Arıyorum"
     ], "arayan"), "arayan")
-  ], "arayan", IMG("1454165804606-c3d57bc86b40")),
-
-  node("Dijital Ürünler & Hizmetler", [
-    node("Web & Yazılım", leaves([
-      "Web Sitesi (Kurumsal)", "Web Sitesi (E-ticaret)", "Landing Page", "WordPress Sitesi",
-      "Shopify / E-ticaret Kurulumu", "Mobil Uygulama (iOS)", "Mobil Uygulama (Android)",
-      "Yazılım Geliştirme", "API Entegrasyonu", "Bot / Otomasyon", "No-code Kurulum",
-      "Web Sitesi Bakım", "Hata Düzeltme / Debug", "Veritabanı Kurulumu"
-    ], "dijitalHizmet"), "dijitalHizmet"),
-    node("Tasarım", leaves([
-      "Logo Tasarım", "Kurumsal Kimlik", "Sosyal Medya Tasarımı", "Afiş & Broşür", "Ambalaj Tasarımı",
-      "UI/UX Tasarım", "Sunum Tasarımı", "Kartvizit", "Menü Tasarımı", "Banner & Reklam Görseli",
-      "İllüstrasyon", "3D Modelleme", "Fotoğraf Rötuş"
-    ], "dijitalHizmet"), "dijitalHizmet"),
-    node("Video & Ses", leaves([
-      "Video Kurgu", "Reels / TikTok Kurgu", "Motion Graphics", "Animasyon", "Intro / Outro",
-      "Seslendirme", "Podcast Kurgu", "Müzik Prodüksiyon", "Altyazı & Çeviri (Video)"
-    ], "dijitalHizmet"), "dijitalHizmet"),
-    node("Pazarlama & Reklam", leaves([
-      "Sosyal Medya Yönetimi", "Reklam Yönetimi (Meta)", "Reklam Yönetimi (Google)",
-      "SEO Hizmeti", "İçerik Pazarlama", "E-posta Pazarlama", "Influencer Kampanyası",
-      "Pazar Araştırması", "Marka Danışmanlığı"
-    ], "dijitalHizmet"), "dijitalHizmet"),
-    node("Yazı & Çeviri", leaves([
-      "İçerik / Blog Yazarlığı", "Metin Yazarlığı (Copywriting)", "Ürün Açıklaması", "CV Hazırlama",
-      "Ön Yazı & Motivasyon Mektubu", "Çeviri (İngilizce)", "Çeviri (Diğer Diller)",
-      "Redaksiyon & Düzelti", "Akademik Yazım Desteği"
-    ], "dijitalHizmet"), "dijitalHizmet"),
-    node("Hazır Dijital Ürünler", leaves([
-      "E-kitap", "Eğitim Dosyası / Kurs", "Şablon (Web)", "Şablon (Sunum)", "Şablon (Sosyal Medya)",
-      "Grafik Paketi", "Font & İkon Seti", "Stok Fotoğraf", "Müzik & Ses Efekti", "Preset & LUT",
-      "Excel / Tablo Şablonu", "Notion / Yönetim Şablonu"
-    ], "dijitalHizmet"), "dijitalHizmet"),
-    node("Danışmanlık & Destek", leaves([
-      "Teknik Destek", "Sistem Kurulumu", "Siber Güvenlik Danışmanlığı", "Veri Analizi",
-      "Yapay Zekâ Danışmanlığı", "E-ticaret Danışmanlığı"
-    ], "dijitalHizmet"), "dijitalHizmet"),
-    node("Veri Girişi & Sanal Asistanlık", leaves([
-      "Veri Girişi", "Sanal Asistan", "Web Araştırma", "İnternetten Veri Toplama",
-      "Transkripsiyon (Deşifre)", "E-posta & Takvim Yönetimi", "CRM & Liste Yönetimi",
-      "Müşteri Destek (Online)", "PDF & Doküman Düzenleme", "Excel & Veri Düzenleme"
-    ], "dijitalHizmet"), "dijitalHizmet")
-  ], "dijitalHizmet", IMG("1461749280684-dccba630e2f6")),
-
-  node("Yapı Market & Bahçe", [
-    node("Elektrikli El Aletleri", leaves([
-      "Matkap (Darbeli)", "Matkap (Şarjlı)", "Vidalama", "Kırıcı-Delici", "Dekupaj Testere",
-      "Daire Testere", "Şerit Testere", "Taşlama / Spiral", "Avuç Taşlama", "Zımpara Makinesi",
-      "Planya", "El Frezesi", "Sıcak Hava Tabancası", "Tutkal Tabancası", "Lehim İstasyonu",
-      "Basınçlı Yıkama Makinesi", "Ağaç Kesme Testeresi", "Atölye Vakumu"
-    ], "elektrikliAlet"), "elektrikliAlet"),
-    node("El Aletleri (Manuel)", leaves([
-      "Tornavida Seti", "Anahtar Takımı", "Lokma Takımı", "Pense & Kerpeten", "Çekiç & Balyoz",
-      "El Testeresi", "Mengene", "İşkence", "Şerit Metre", "Su Terazisi", "Lazer Metre",
-      "Lazer Hizalama", "Alet Çantası", "Takım Dolabı", "El Aleti Seti"
-    ], "yapiMarket"), "yapiMarket"),
-    node("Merdiven & Sehpa", leaves([
-      "Katlanır Merdiven", "Teleskopik Merdiven", "A Tipi Merdiven", "Çatı Merdiveni",
-      "Platform Merdiven", "İskele", "Çalışma Sehpası", "Kesim Sehpası (Tezgâh)",
-      "Seyyar Platform", "Merdiven Aksesuarı"
-    ], "yapiMarket"), "yapiMarket"),
-    node("Hırdavat", leaves([
-      "Vida & Cıvata", "Dübel", "Somun & Pul", "Menteşe", "Kilit", "Kapı Kolu", "Çilingir Malzemesi",
-      "Yapıştırıcı", "Silikon & Mastik", "Bant & İzole", "Zincir & Halat", "Kelepçe", "Ray & Tekerlek",
-      "Sarf Malzeme"
-    ], "yapiMarket"), "yapiMarket"),
-    node("Boya & Yüzey", leaves([
-      "İç Cephe Boyası", "Dış Cephe Boyası", "Ahşap Boyası & Vernik", "Metal Boyası", "Astar",
-      "Sprey Boya", "Rulo & Fırça", "Boya Tabancası", "Macun & Dolgu", "Duvar Kağıdı",
-      "Dekoratif Sıva", "Zımpara & Yüzey Hazırlık"
-    ], "yapiMarket"), "yapiMarket"),
-    node("Yapı Malzemeleri", leaves([
-      "Fayans & Seramik", "Granit & Mermer", "Parke & Laminat", "PVC Zemin", "Halıfleks",
-      "Alçıpan", "Alçı & Sıva", "Çimento & Kum", "Tuğla & Briket", "Isı Yalıtımı", "Su Yalıtımı",
-      "Ses Yalıtımı", "Çatı Malzemesi", "Kiremit & Oluk", "Kapı", "Pencere & PVC Doğrama"
-    ], "yapiMarket"), "yapiMarket"),
-    node("Elektrik & Aydınlatma", leaves([
-      "Kablo", "Priz & Anahtar", "Sigorta & Pano", "Ampul & LED", "Avize", "Spot & Downlight",
-      "Bahçe Aydınlatması", "Sensörlü Aydınlatma", "Uzatma Kablosu", "Adaptör & Trafo (Aydınlatma)"
-    ], "yapiMarket"), "yapiMarket"),
-    node("Tesisat & Su", leaves([
-      "Batarya & Musluk", "Duş Sistemi", "Klozet & Lavabo", "Rezervuar", "Boru & Fitting",
-      "Su Deposu", "Hidrofor", "Su Arıtma", "Kombi & Radyatör", "Petek & Vana", "Sifon & Gider"
-    ], "yapiMarket"), "yapiMarket"),
-    node("Bahçe & Peyzaj", leaves([
-      "Çim Biçme Makinesi (Benzinli)", "Çim Biçme Makinesi (Elektrikli)", "Robot Çim Biçme",
-      "Misinalı Tırpan", "Çit Budama Makinesi", "Ağaç Kesme Motoru", "Yaprak Üfleme",
-      "Toprak Frezesi", "Sulama Sistemi", "Damla Sulama", "Hortum & Fıskiye", "Bahçe Aletleri",
-      "Tohum & Fide", "Saksı & Toprak", "Gübre & İlaç", "Sera & Örtü", "Çit & Tel", "Bahçe Mobilyası",
-      "Şezlong & Salıncak", "Barbekü & Mangal", "Bahçe Havuzu", "Peyzaj Taşı & Çakıl"
-    ], "yapiMarket"), "yapiMarket"),
-    node("Güvenlik & İş Güvenliği", leaves([
-      "Çelik Kapı Aksesuarı", "Kasa", "Alarm Sistemi", "Güvenlik Kamerası", "Baret & Eldiven",
-      "İş Ayakkabısı", "Koruyucu Gözlük & Maske", "Yangın Söndürücü"
-    ], "yapiMarket"), "yapiMarket")
-  ], "yapiMarket", IMG("1581092160562-40aa08e78837")),
-
-  node("Müzik Enstrümanları", [
-    node("Gitar & Telli Çalgılar", leaves([
-      "Akustik Gitar", "Elektro Gitar", "Bas Gitar", "Klasik Gitar", "Elektro Akustik Gitar",
-      "12 Telli Gitar", "Ukulele", "Mandolin", "Banjo", "Arp", "Gitar Teli", "Gitar Askısı",
-      "Gitar Kılıfı & Case", "Pena & Aksesuar", "Capo", "Gitar Standı"
-    ], "muzik"), "muzik"),
-    node("Yaylı & Halk Çalgıları", leaves([
-      "Keman", "Viyola", "Çello", "Kontrbas", "Bağlama (Uzun Sap)", "Bağlama (Kısa Sap)", "Cura",
-      "Divan Sazı", "Ud", "Kanun", "Cümbüş", "Kabak Kemane", "Tambur", "Rebap", "Yay & Reçine",
-      "Halk Çalgısı Aksesuarı"
-    ], "muzik"), "muzik"),
-    node("Tuşlu Çalgılar", leaves([
-      "Akustik Piyano (Duvar)", "Akustik Piyano (Kuyruklu)", "Dijital Piyano", "Stage Piyano",
-      "Org", "Synthesizer", "MIDI Klavye", "Melodika", "Akordeon", "Piyano Taburesi", "Piyano Standı"
-    ], "muzik"), "muzik"),
-    node("Vurmalı Çalgılar", leaves([
-      "Akustik Bateri", "Elektronik Bateri", "Trampet", "Zil (Cymbal)", "Darbuka", "Def", "Cajon",
-      "Bongo & Conga", "Perküsyon Seti", "Bendir", "Davul", "Marakas & Ritim Aletleri",
-      "Baget & Aksesuar", "Bateri Standı"
-    ], "muzik"), "muzik"),
-    node("Nefesli Çalgılar", leaves([
-      "Ney", "Kaval", "Flüt", "Klarnet", "Saksofon", "Trompet", "Trombon", "Korno", "Tuba",
-      "Mızıka", "Zurna", "Mey", "Nefesli Aksesuar & Kamış"
-    ], "muzik"), "muzik"),
-    node("DJ & Stüdyo Ekipmanı", leaves([
-      "DJ Controller", "DJ Player", "DJ Mikser", "Ses Kartı (Audio Interface)", "Stüdyo Monitörü",
-      "Kayıt Mikrofonu (Condenser)", "Dinamik Mikrofon", "Mikrofon Standı", "Pop Filtre",
-      "Stüdyo Kulaklığı", "Akustik Panel", "Preamp", "Sampler & Groovebox", "Kablo & Konnektör"
-    ], "muzik"), "muzik"),
-    node("Amfi & Ses Sistemi", leaves([
-      "Gitar Amfisi", "Bas Amfisi", "Klavye Amfisi", "Kabin (Cabinet)", "Efekt Pedalı",
-      "Pedal Board", "Hoparlör & Monitör", "Power Mikser", "Anfi (PA)", "Sahne Işığı"
-    ], "muzik"), "muzik"),
-    node("Nota, Eğitim & Aksesuar", leaves([
-      "Nota Sehpası", "Nota Kitabı", "Metronom", "Akort Aleti", "Enstrüman Kılıfı", "Bakım & Temizlik Seti"
-    ], "muzik"), "muzik")
-  ], "muzik", IMG("1511671782779-c97d3d27a1d4")),
-
-  node("Sağlık & Medikal", [
-    node("Hareket & Ortopedi", leaves([
-      "Tekerlekli Sandalye (Manuel)", "Tekerlekli Sandalye (Akülü)", "Refakatçi Sandalyesi",
-      "Yürüteç (Walker)", "Rollator", "Baston", "Koltuk Değneği", "Protez", "Ortez",
-      "Ortopedik Tabanlık", "Boyunluk", "Korse", "Bandaj & Atel", "Dizlik & Bileklik",
-      "Engelli Rampası", "Engelli Lift", "Hasta Transfer Ürünleri"
-    ], "medikal"), "medikal"),
-    node("Hasta Bakım Ürünleri", leaves([
-      "Hasta Yatağı (Manuel)", "Hasta Yatağı (Motorlu)", "Havalı Yatak", "Hasta Karyolası",
-      "Hasta Bezi & Altlık", "Yatak Koruyucu", "Serum Askısı", "Hasta Masası", "Banyo Sandalyesi",
-      "Klozet Yükseltici", "Sürgü & Ördek", "Medikal Sarf Malzeme", "Pansuman Malzemesi",
-      "Yara Bakım Ürünleri", "Eldiven & Maske"
-    ], "medikal"), "medikal"),
-    node("Ölçüm & Teşhis Cihazları", leaves([
-      "Tansiyon Aleti (Koldan)", "Tansiyon Aleti (Bilekten)", "Şeker Ölçüm Cihazı", "Şeker Ölçüm Stripi",
-      "Ateş Ölçer (Temassız)", "Ateş Ölçer (Klasik)", "Pulse Oksimetre", "Steteskop",
-      "Vücut Analiz Tartısı", "Holter Cihazı", "EKG Cihazı", "Doppler", "Otoskop", "Tıbbi Terazi"
-    ], "medikal"), "medikal"),
-    node("Solunum & İşitme", leaves([
-      "Oksijen Konsantratörü", "Oksijen Tüpü", "Nebulizatör", "Aspiratör", "CPAP Cihazı",
-      "BIPAP Cihazı", "Uyku Apne Maskesi", "İşitme Cihazı", "İşitme Cihazı Pili", "Hava Nemlendirici"
-    ], "medikal"), "medikal"),
-    node("Terapi & Fizik Tedavi", leaves([
-      "Masaj Cihazı", "Masaj Koltuğu", "Fizik Tedavi Ekipmanı", "TENS Cihazı", "Ultrason Terapi",
-      "Sıcak-Soğuk Terapi", "Egzersiz Bandı", "Rehabilitasyon Ekipmanı", "Pilates & Denge Ürünleri",
-      "Bel & Boyun Traksiyon"
-    ], "medikal"), "medikal"),
-    node("Anne & Bebek Sağlığı", leaves([
-      "Göğüs Pompası", "Bebek Tartısı", "Bebek Aspiratörü", "Buhar Makinesi", "Bebek Ateş Ölçer",
-      "Emzirme Ürünleri"
-    ], "medikal"), "medikal"),
-    node("Klinik & Muayene", leaves([
-      "Muayene Masası", "Sedye", "Tıbbi Dolap", "Muayene Lambası", "Sterilizatör", "Tıbbi Atık Kutusu",
-      "Diş Ünitesi", "Klinik Sandalyesi"
-    ], "medikal"), "medikal"),
-    node("Kişisel Bakım & Sağlık", leaves([
-      "Vitamin & Takviye", "Ağrı Kesici Bandı", "Termofor", "İlaç Kutusu / Hatırlatıcı",
-      "Tıbbi Çorap (Varis)", "Uyku Ürünleri"
-    ], "medikal"), "medikal")
-  ], "medikal", IMG("1584982751601-97dcc096659c")),
-
-  node("Diğer", [leaf("Kategori öner", "alisverisGenel")], "alisverisGenel", IMG("1441986300917-64674bd600d8"))
+  ], "arayan", IMG("1454165804606-c3d57bc86b40"))
 ];
 
 // ============================================================================
@@ -2613,8 +2611,8 @@ const HINTS: Array<{ words: string[]; path: string[] }> = [
   { words: ["kopek", "kedi", "yavru", "sahiplen"], path: ["Hayvanlar Alemi", "Sahiplendirme"] },
   // Yeni hizmet kategorileri (etiketle birebir eşleşmeyen yüksek-frekans arama terimleri).
   { words: ["guzellik", "estetik", "guzellik salonu", "guzellik merkezi", "kuafor", "berber", "epilasyon"], path: ["Ustalar & Hizmetler", "Güzellik & Kişisel Bakım"] },
-  { words: ["veri girisi", "sanal asistan", "data entry", "evden is", "evden calisma", "home office"], path: ["Dijital Ürünler & Hizmetler", "Veri Girişi & Sanal Asistanlık"] },
-  { words: ["merdiven", "iskele", "seyyar merdiven"], path: ["Yapı Market & Bahçe", "Merdiven & Sehpa"] }
+  { words: ["veri girisi", "sanal asistan", "data entry", "evden is", "evden calisma", "home office"], path: ["Ustalar & Hizmetler", "Dijital Hizmetler", "Veri Girişi & Sanal Asistanlık"] },
+  { words: ["merdiven", "iskele", "seyyar merdiven"], path: ["İkinci El & Sıfır Alışveriş", "Bahçe & Yapı Market", "Merdiven & Sehpa"] }
 ];
 
 function pathByLabels(labels: string[]): CategoryNode[] {
