@@ -54,6 +54,33 @@ export function AgreementCard({ listing, partnership }: { listing: Listing; part
         <AcceptPill label={translateCopy("Satıcı", language)} ok={sellerAccepted} rejected={rejected} />
       </View>
 
+      {/* İŞLEM GÜNLÜĞÜ — ortaklığın kronolojik akışı (mevcut partnership zaman damgaları; DB'siz). */}
+      {partnership ? (() => {
+        const d = (s?: string) => { if (!s) return ""; const dt = new Date(s); return Number.isNaN(dt.getTime()) ? "" : dt.toLocaleDateString(language === "en" ? "en-GB" : "tr-TR"); };
+        const steps: Array<{ done: boolean; bad?: boolean; label: string; date: string }> = [
+          { done: true, label: translateCopy("Başvuru yapıldı", language), date: d(partnership.createdAt) },
+          { done: sellerAccepted, bad: rejected, label: rejected ? translateCopy("Satıcı reddetti", language) : translateCopy("Onaylandı — ortaklık aktif", language), date: d(partnership.agreedAt ?? partnership.approvedAt) },
+          { done: partnership.status === "completed", label: translateCopy("Satış & komisyon tamamlandı", language), date: "" }
+        ];
+        return (
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, paddingTop: 10 }}>
+            <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900", marginBottom: 7 }}>{translateCopy("İşlem günlüğü", language)}</Text>
+            {steps.map((s, i) => (
+              <View key={i} style={{ flexDirection: "row", gap: 9 }}>
+                <View style={{ alignItems: "center", width: 16 }}>
+                  <MaterialCommunityIcons name={s.bad ? "close-circle" : s.done ? "check-circle" : "circle-outline"} size={15} color={s.bad ? colors.accent : s.done ? colors.success : colors.subtle} />
+                  {i < steps.length - 1 ? <View style={{ backgroundColor: s.done && !s.bad ? colors.success : colors.line, flex: 1, marginVertical: 1, width: 2 }} /> : null}
+                </View>
+                <View style={{ flex: 1, minWidth: 0, paddingBottom: i < steps.length - 1 ? 8 : 0 }}>
+                  <Text style={{ color: s.done || s.bad ? colors.ink : colors.muted, fontSize: 12, fontWeight: s.done ? "800" : "600" }}>{s.label}</Text>
+                  {s.date ? <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{s.date}</Text> : null}
+                </View>
+              </View>
+            ))}
+          </View>
+        );
+      })() : null}
+
       <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderRadius: 10, flexDirection: "row", gap: 8, padding: 10 }}>
         <MaterialCommunityIcons name="shield-alert-outline" size={16} color={colors.muted} style={{ marginTop: 1 }} />
         <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
