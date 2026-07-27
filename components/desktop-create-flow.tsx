@@ -1049,7 +1049,6 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           const titleField = titleFieldRaw ? { ...titleFieldRaw, placeholder: titlePlaceholderFor(path[0]?.label) } : undefined;
           const priceField = schema.fields.find((f) => f.key === "price");
           const descField = schema.fields.find((f) => f.key === "description");
-          const multiFields: FieldDef[] = []; // minimal form: çoklu-seçim (etiket/donanım) formdan çıkarıldı → açıklamaya
           // Yalnız Marka/Model/Durum (varsa) gösterilir; kategoriye özel fazla alanlar formdan çıkarıldı.
           const specFields = schema.fields.filter((f) => ESSENTIAL_KEYS.has(f.key) && f !== titleFieldRaw && f !== priceField && f !== descField && f.type !== "multiselect");
           const renderField = (f: FieldDef) => {
@@ -1064,47 +1063,31 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             return <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} invalid={showErrors && missingKeys.has(f.key)} />;
           };
           return (
-            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 22, padding: isWideWeb ? 22 : 14 }}>
-              {/* Seçilen kategori yolu — kullanıcı ne seçtiğini görür + tek tıkla değiştirir. */}
-              {path.length ? (
-                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, paddingHorizontal: 12, paddingVertical: 9 }}>
-                  <MaterialCommunityIcons name="tag-multiple-outline" size={15} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{path.map((p) => translateCopy(p.label, language)).join(" › ")}</Text>
-                  <Pressable onPress={() => setPath([])} accessibilityRole="button" accessibilityLabel={translateCopy("Kategoriyi değiştir", language)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 4 }}>
-                    <MaterialCommunityIcons name="pencil-outline" size={13} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
-                  </Pressable>
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 16, padding: isWideWeb ? 22 : 14 }}>
+              {/* "Diğer" seçildi → kategorimiz eksik. Kullanıcıdan aradığı kategoriyi iste;
+                  bu metin admin ÖNERİ HAVUZUNA düşer ve eksik kategoriler tamamlanır. */}
+              {isDigerPath ? (
+                <View style={{ gap: 6 }}>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Aradığın kategori", language)}</Text>
+                  <TextInput
+                    value={customCategory}
+                    onChangeText={setCustomCategory}
+                    placeholder={translateCopy("ör. Drone Yedek Parçası, Vintage Plak, Solar Panel…", language)}
+                    placeholderTextColor={colors.subtle}
+                    accessibilityLabel={translateCopy("Aradığın kategori", language)}
+                    style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }}
+                  />
                 </View>
               ) : null}
 
-                {/* "Diğer" seçildi → kategorimiz eksik. Kullanıcıdan aradığı kategoriyi iste;
-                  bu metin admin ÖNERİ HAVUZUNA düşer ve eksik kategoriler tamamlanır. */}
-              {isDigerPath ? (
-                <FormSection title="Aradığın kategori listede yok mu?" icon="playlist-plus" hint="Kategorini yaz — ekibimiz görüp kategori listesine ekler. İlanın yine de hemen yayınlanır.">
-                  <View style={{ gap: 6 }}>
-                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Aradığın kategori", language)}</Text>
-                    <TextInput
-                      value={customCategory}
-                      onChangeText={setCustomCategory}
-                      placeholder={translateCopy("ör. Drone Yedek Parçası, Vintage Plak, Solar Panel…", language)}
-                      placeholderTextColor={colors.subtle}
-                      accessibilityLabel={translateCopy("Aradığın kategori", language)}
-                      style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }}
-                    />
-                    <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
-                      {translateCopy("Seçtiğin yol", language)}: {path.map((p) => p.label).join(" › ")}
-                    </Text>
-                  </View>
-                </FormSection>
-              ) : null}
-
+              {/* Başlık — düz alan, FormSection başlığı yok (DField kendi etiketini gösterir). */}
               {titleField ? (
-                <FormSection title="İlan başlığı" icon="format-title" hint="Kısa, net ve aranan kelimelerle eşleşen bir başlık yaz.">
+                <View style={{ gap: 8 }}>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(titleField)}</View>
                   {/* MÜKERRER BAŞLIK — risk motoru bunu zaten yakalıyor ve ilanı sessizce
                       incelemeye düşürüyordu; kullanıcı nedenini asla öğrenemiyordu. */}
                   {duplicateTitle ? (
-                    <View style={{ alignItems: "flex-start", backgroundColor: colors.goldSoft, borderColor: colors.gold, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, marginTop: 8, padding: 10 }}>
+                    <View style={{ alignItems: "flex-start", backgroundColor: colors.goldSoft, borderColor: colors.gold, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, padding: 10 }}>
                       <MaterialCommunityIcons name="alert-outline" size={15} color={colors.goldInk} />
                       <Text style={{ color: colors.goldInk, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>
                         {duplicateTitle === "own"
@@ -1113,130 +1096,38 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                       </Text>
                     </View>
                   ) : null}
-                </FormSection>
-              ) : null}
-
-              {specFields.length ? (() => {
-                const hasGroups = specFields.some((f) => f.group);
-                if (!hasGroups) {
-                  return (
-                    <FormSection title={schema.title} icon="clipboard-list-outline" hint="* işaretli alanlar zorunludur.">
-                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{specFields.map(renderField)}</View>
-                    </FormSection>
-                  );
-                }
-                // Alt-başlıklara böl (Sahibinden gibi): group'a göre sırayı koruyarak
-                // grupla; group'suz alanlar "Diğer bilgiler"e düşer.
-                const buckets: Array<{ name: string; fields: FieldDef[] }> = [];
-                for (const f of specFields) {
-                  const g = f.group || "Diğer bilgiler";
-                  let bkt = buckets.find((x) => x.name === g);
-                  if (!bkt) { bkt = { name: g, fields: [] }; buckets.push(bkt); }
-                  bkt.fields.push(f);
-                }
-                return (
-                  <FormSection title={schema.title} icon="clipboard-list-outline" hint="* işaretli alanlar zorunludur.">
-                    <View style={{ gap: 20 }}>
-                      {/* MOBİL: gruplar KATLANABİLİR. Emlak/Vasıta gibi zengin şemalarda (konut ~50,
-                          otomobil ~32 alan) hepsi açıkken form 4700px'lik bir duvar oluyordu.
-                          Açık kalanlar: İLK grup + ZORUNLU alan içeren gruplar (kullanıcı zorunluyu
-                          kaçırmasın). Geniş web'de davranış AYNI (hepsi açık, başlık tıklanamaz). */}
-                      {buckets.map((bkt, bi) => {
-                        const hasRequired = bkt.fields.some((f) => f.required);
-                        const defaultOpen = isWideWeb || bi === 0 || hasRequired;
-                        const open = openGroups[bkt.name] ?? defaultOpen;
-                        return (
-                        <View key={bkt.name} style={{ gap: 11 }}>
-                          <Pressable
-                            accessibilityRole={isWideWeb ? undefined : "button"}
-                            accessibilityLabel={isWideWeb ? undefined : `${translateCopy(bkt.name, language)} — ${bkt.fields.length} ${translateCopy("alan", language)}`}
-                            disabled={isWideWeb}
-                            onPress={() => setOpenGroups((s) => ({ ...s, [bkt.name]: !open }))}
-                            style={{ alignItems: "center", flexDirection: "row", gap: 7, paddingVertical: isWideWeb ? 0 : 4 }}
-                          >
-                            <View style={{ backgroundColor: colors.primary, borderRadius: 2, height: 14, width: 3 }} />
-                            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy(bkt.name, language)}</Text>
-                            {!isWideWeb ? (
-                              <>
-                                <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 7, paddingVertical: 1 }}>
-                                  <Text style={{ color: colors.muted, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>{bkt.fields.length}</Text>
-                                </View>
-                                <View style={{ flex: 1 }} />
-                                <MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
-                              </>
-                            ) : null}
-                          </Pressable>
-                          {open ? <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{bkt.fields.map(renderField)}</View> : null}
-                        </View>
-                        );
-                      })}
-                    </View>
-                  </FormSection>
-                );
-              })() : null}
-
-              {multiFields.length ? (
-                <FormSection title="Donanım & Özellikler" icon="star-outline" hint="Ürünün öne çıkan özelliklerini işaretle — alıcının güvenini artırır.">
-                  {/* MOBİL: bu bölüm OPSİYONEL ama en şişkin kısım (Vasıta'da 4 dev multiselect →
-                      formu ~4700px'e çıkarıyordu). Mobilde varsayılan KAPALI, tek dokunuşla açılır.
-                      Geniş web'de her zaman açık (davranış değişmez).
-                      SATIR-sarmalı olmalı: DField kökü flexBasis:"100%"+flexGrow:1 taşır ve bu
-                      SÜTUN konteynerde flexBasis ANA EKSEN=YÜKSEKLİK olarak yorumlanıyordu →
-                      her multiselect tam-yükseklik kutuya şişip sayfayı devasa yapıyordu. */}
-                  {!isWideWeb ? (
-                    <Pressable
-                      accessibilityRole="button"
-                      accessibilityLabel={`${translateCopy("Donanım & Özellikler", language)} — ${multiFields.length} ${translateCopy("bölüm", language)}`}
-                      onPress={() => setOpenFeatures((v) => !v)}
-                      style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 11 }}
-                    >
-                      <MaterialCommunityIcons name="star-outline" size={17} color={colors.primaryDark} />
-                      <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "800" }}>
-                        {openFeatures ? translateCopy("Donanımı gizle", language) : translateCopy("Donanım ve özellikleri ekle (isteğe bağlı)", language)}
-                      </Text>
-                      <MaterialCommunityIcons name={openFeatures ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
-                    </Pressable>
-                  ) : null}
-                  {isWideWeb || openFeatures ? (
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>{multiFields.map(renderField)}</View>
-                  ) : null}
-                </FormSection>
-              ) : null}
-
-              <FormSection title="Fiyat" icon="cash-multiple" hint="Üst sınır yok. Nokta binlik ayırıcıdır (örn. 1.500.000).">
-                {priceField ? <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(priceField)}</View> : null}
-                {/* PİYASA İPUCU — risk motoru medyanı zaten hesaplıyordu ama kullanıcı görmüyordu. */}
-                {priceHint ? (
-                  <View style={{ backgroundColor: priceHint.tooLow ? colors.goldSoft : colors.surfaceAlt, borderColor: priceHint.tooLow ? colors.gold : colors.line, borderRadius: 10, borderWidth: 1, gap: 3, marginTop: 10, padding: 10 }}>
-                    <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>
-                      {translateCopy("Bu kategoride benzer ilanlar", language)}: {moneyIn(priceHint.low, currency)} – {moneyIn(priceHint.high, currency)}
-                      <Text style={{ color: colors.subtle, fontWeight: "600" }}>{`  (${priceHint.n} ilan)`}</Text>
-                    </Text>
-                    {priceHint.tooLow ? (
-                      <Text style={{ color: colors.goldInk, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>
-                        {translateCopy("Fiyatın piyasa medyanının çok altında. Doğruysa sorun yok — ama bu ilanlar dolandırıcılık şüphesiyle incelemeye düşebilir.", language)}
-                      </Text>
-                    ) : null}
-                  </View>
-                ) : null}
-                <View style={{ gap: 8, marginTop: priceField ? 12 : 0 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Para birimi", language)}</Text>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                    {CURRENCIES.map((c) => {
-                      const on = currency === c.code;
-                      return (
-                        <Pressable key={c.code} onPress={() => setCurrency(c.code)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 15, paddingVertical: 9 }}>
-                          <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 15, fontWeight: "900" }}>{c.symbol}</Text>
-                          <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{c.label}</Text>
-                        </Pressable>
-                      );
-                    })}
-                  </View>
                 </View>
-              </FormSection>
+              ) : null}
 
+              {/* Marka / Model / Durum (kategoride varsa) — düz map, alt-gruplama yok. */}
+              {specFields.length ? (
+                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{specFields.map(renderField)}</View>
+              ) : null}
+
+              {/* Fiyat — düz alan + piyasa ipucu (küçük yardımcı). Para birimi seçici kaldırıldı (TRY sabit). */}
+              {priceField ? (
+                <View style={{ gap: 8 }}>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(priceField)}</View>
+                  {/* PİYASA İPUCU — risk motoru medyanı zaten hesaplıyordu ama kullanıcı görmüyordu. */}
+                  {priceHint ? (
+                    <View style={{ backgroundColor: priceHint.tooLow ? colors.goldSoft : colors.surfaceAlt, borderColor: priceHint.tooLow ? colors.gold : colors.line, borderRadius: 10, borderWidth: 1, gap: 3, padding: 10 }}>
+                      <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>
+                        {translateCopy("Bu kategoride benzer ilanlar", language)}: {moneyIn(priceHint.low, currency)} – {moneyIn(priceHint.high, currency)}
+                        <Text style={{ color: colors.subtle, fontWeight: "600" }}>{`  (${priceHint.n} ilan)`}</Text>
+                      </Text>
+                      {priceHint.tooLow ? (
+                        <Text style={{ color: colors.goldInk, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>
+                          {translateCopy("Fiyatın piyasa medyanının çok altında. Doğruysa sorun yok — ama bu ilanlar dolandırıcılık şüphesiyle incelemeye düşebilir.", language)}
+                        </Text>
+                      ) : null}
+                    </View>
+                  ) : null}
+                </View>
+              ) : null}
+
+              {/* Açıklama — düz alan + tek-dokunuş şablon (küçük yardımcı). */}
               {descField ? (
-                <FormSection title="Açıklama" icon="text-box-outline" hint="Ürünü detaylı anlat; ne kadar açık yazarsan o kadar güven verirsin.">
+                <View style={{ gap: 8 }}>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{renderField(descField)}</View>
                   {/* Sahibinden tarzı tek-dokunuş şablon: boş açıklamayı, alıcının en çok
                       sorduğu maddelerle doldurur. Doluysa üzerine yazmamak için sadece
@@ -1252,7 +1143,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                       <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Örnek şablon ekle", language)}</Text>
                     </Pressable>
                   ) : null}
-                </FormSection>
+                </View>
               ) : null}
             </View>
           );
@@ -1260,22 +1151,10 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
         {/* Kart: Konum */}
         {schema ? (
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 16, padding: isWideWeb ? 22 : 14 }}>
-            <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Konum", language)}</Text>
-            <LocationSelector value={loc} onChange={setLoc} required neighborhoodRequired={false} showNeighborhood showAddressLine mode="listing" />
-            <View style={{ gap: 8 }}>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Adres görünürlüğü", language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {([["district_only", "Sadece il/ilçe"], ["neighborhood", "İl/ilçe/mahalle"], ["full_address_private", "Açık adres yalnızca onay sonrası"]] as const).map(([k, lbl]) => {
-                  const on = visibility === k;
-                  return (
-                    <Pressable key={k} onPress={() => setVisibility(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}>
-                      <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
-                    </Pressable>
-                  );
-                })}
-              </View>
-            </View>
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, padding: isWideWeb ? 22 : 14 }}>
+            <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{translateCopy("Konum", language)}</Text>
+            {/* Sade: yalnız İl + İlçe (mahalle / açık adres / görünürlük çipleri kaldırıldı). */}
+            <LocationSelector value={loc} onChange={setLoc} required neighborhoodRequired={false} showNeighborhood={false} showAddressLine={false} mode="listing" />
           </View>
         ) : null}
 
