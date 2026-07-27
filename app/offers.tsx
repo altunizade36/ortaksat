@@ -61,26 +61,34 @@ function OffersInner() {
     const t = TONE[o.status];
     // Karşı teklif geldiyse gösterilecek tutar satıcının istediği tutardır.
     const shown = o.status === "countered" ? (o.counterAmount ?? o.amount) : o.amount;
+    // NÖTR kart (eskiden tüm satır durum-renginde boyanıyordu → renk çorbası). Durum
+    // artık ikon çipi + pill ile taşınır; kart beyaz kalır (app kart deseniyle uyumlu).
     return (
-      <View style={{ backgroundColor: t.bg, borderColor: t.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
         <Pressable
           accessibilityRole="link"
           onPress={() => router.push({ pathname: "/listing/[id]", params: { id: o.listingId } })}
-          style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 8, opacity: pressed ? 0.7 : 1 })}
+          style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 9, opacity: pressed ? 0.7 : 1 })}
         >
-          <MaterialCommunityIcons name={t.icon} size={17} color={t.ink} />
-          <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>
+          <View style={{ alignItems: "center", backgroundColor: t.bg, borderRadius: 9, height: 34, justifyContent: "center", width: 34 }}>
+            <MaterialCommunityIcons name={t.icon} size={18} color={t.ink} />
+          </View>
+          <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900", minWidth: 0 }}>
             {l?.title ?? translateCopy("İlan", language)}
           </Text>
           <Text style={{ color: t.ink, fontSize: 15, fontWeight: "900" }}>{moneyIn(shown, l?.currency)}</Text>
         </Pressable>
 
-        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
-          {translateCopy(t.label, language)}
-          {o.status === "countered" ? ` · ${translateCopy("senin teklifin", language)}: ${moneyIn(o.amount, l?.currency)}` : ""}
-          {seller ? ` · ${seller.name}` : ""}
-          {` · ${shortDate(o.createdAt)}`}
-        </Text>
+        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+          <View style={{ backgroundColor: t.bg, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+            <Text style={{ color: t.ink, fontSize: 11, fontWeight: "900" }}>{translateCopy(t.label, language)}</Text>
+          </View>
+          <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "700", minWidth: 0 }}>
+            {o.status === "countered" ? `${translateCopy("senin teklifin", language)}: ${moneyIn(o.amount, l?.currency)} · ` : ""}
+            {seller ? `${seller.name} · ` : ""}
+            {shortDate(o.createdAt)}
+          </Text>
+        </View>
 
         {o.status === "countered" ? (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -146,6 +154,15 @@ function OffersInner() {
             </Text>
           </Card>
 
+          {/* Stat çipleri (app hero/chip paritesi — eskiden başlık çıplaktı). */}
+          {mine.length > 0 ? (
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <OfferMini icon="progress-clock" tint={colors.goldSoft} color={colors.gold} value={`${open.length}`} label={translateCopy("Süren", language)} />
+              <OfferMini icon="check-decagram" tint={colors.successSoft} color={colors.success} value={`${mine.filter((o) => o.status === "accepted").length}`} label={translateCopy("Kabul edilen", language)} />
+              <OfferMini icon="tag-multiple-outline" tint={colors.primarySoft} color={colors.primaryDark} value={`${mine.length}`} label={translateCopy("Toplam", language)} />
+            </View>
+          ) : null}
+
           {mine.length === 0 ? (
             <EmptyState
               title={translateCopy("Henüz teklif vermedin", language)}
@@ -171,6 +188,18 @@ function OffersInner() {
       </WebContainer>
       <WebFooter />
     </ScrollView>
+  );
+}
+
+function OfferMini({ icon, tint, color, value, label }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; label: string }) {
+  return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, gap: 6, minWidth: 0, padding: 10 }}>
+      <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 9, height: 30, justifyContent: "center", width: 30 }}>
+        <MaterialCommunityIcons name={icon} size={16} color={color} />
+      </View>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{label}</Text>
+    </View>
   );
 }
 

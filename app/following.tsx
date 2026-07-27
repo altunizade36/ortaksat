@@ -76,16 +76,26 @@ function FollowingInner() {
     >
       {/* İçerik 1280 ortalı (layout standardı); footer full-bleed + dibe sabit. */}
       <View style={{ alignSelf: "center", gap: 14, maxWidth: 1280, paddingHorizontal: horizontalPadding, paddingTop: 16, width: "100%" }}>
-        <View style={{ gap: 4 }}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+        {/* Markalı başlık: ikon çipi + sayı çipi (empty-state'lerle ve app'in çip diliyle tutarlı). */}
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 11 }}>
+          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 46, justifyContent: "center", width: 46 }}>
             <MaterialCommunityIcons name="storefront-check-outline" size={24} color={colors.primaryDark} />
-            <Text style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{translateCopy("Takip Ettiklerin", language)}</Text>
           </View>
-          <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>
-            {followedSellerIds.length > 0
-              ? `${followedSellerIds.length} ${translateCopy("satıcı takip ediyorsun · yeni ilanları burada", language)}`
-              : translateCopy("Takip ettiğin satıcıların yeni ilanları burada toplanır.", language)}
-          </Text>
+          <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{translateCopy("Takip Ettiklerin", language)}</Text>
+              {followedSellerIds.length > 0 ? (
+                <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2 }}>
+                  <Text style={{ color: colors.primaryDark, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{followedSellerIds.length}</Text>
+                </View>
+              ) : null}
+            </View>
+            <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>
+              {followedSellerIds.length > 0
+                ? translateCopy("Takip ettiğin satıcıların yeni ilanları burada.", language)
+                : translateCopy("Takip ettiğin satıcıların yeni ilanları burada toplanır.", language)}
+            </Text>
+          </View>
         </View>
 
         {loading ? (

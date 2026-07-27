@@ -345,22 +345,60 @@ function EarningsScreenInner() {
         <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>{translateCopy(isSeller ? "İlanlarından yapılan satışlar ve ortaklara ödenecek komisyonlar. OrtakSat para tutmaz." : "Ortak satış komisyonların. Ödeme satıcıyla aranızda yapılır; OrtakSat para tutmaz.", language)}</Text>
       </View>
       {RoleToggle ? <View style={{ alignSelf: "flex-start" }}>{RoleToggle}</View> : null}
+
+      {/* Hero — bekleyen komisyon + CTA (masaüstü sidebar paritesi). Yalnız satış varken. */}
+      {txns.length > 0 ? (
+        <View style={{ backgroundColor: colors.primaryDark, borderRadius: 16, gap: 7, padding: 16 }}>
+          <Text style={{ color: "rgba(255,255,255,0.85)", fontSize: 12.5, fontWeight: "700" }}>{translateCopy(isSeller ? "Ödenecek komisyon" : "Tahsil edilecek komisyon", language)}</Text>
+          <Text style={{ color: "#FFFFFF", fontSize: 28, fontWeight: "900" }}>{money(pendingCommission)}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.78)", fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy(isSeller ? "Onaylanan satışlar için ortaklara ödeyeceğin komisyon." : "Onaylanan satışların komisyonu; satıcıdan doğrudan tahsil edersin.", language)}</Text>
+          <Link href="/messages" asChild>
+            <Pressable style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", marginTop: 3, paddingVertical: 10 }}>
+              <MaterialCommunityIcons name="message-text-outline" size={17} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy(isSeller ? "Ortaklara mesaj at" : "Satıcıya mesaj at", language)}</Text>
+            </Pressable>
+          </Link>
+        </View>
+      ) : null}
+
       <View style={{ alignSelf: "flex-start" }}>{PeriodChips}</View>
       <View style={{ flexDirection: "row", gap: 8 }}>
         {isSeller ? (
           <>
-            <MiniStat label={translateCopy("Ciro", language)} value={money(totalRevenue)} />
-            <MiniStat label={translateCopy("Ödenecek", language)} value={money(pendingCommission)} />
-            <MiniStat label={translateCopy("Ödenen", language)} value={money(paidCommission)} />
+            <MiniStat icon="cash-register" tint={colors.successSoft} color={colors.success} label={translateCopy("Ciro", language)} value={money(totalRevenue)} />
+            <MiniStat icon="clock-outline" tint={colors.goldSoft} color={colors.gold} label={translateCopy("Ödenecek", language)} value={money(pendingCommission)} />
+            <MiniStat icon="check-decagram-outline" tint={colors.primarySoft} color={colors.primaryDark} label={translateCopy("Ödenen", language)} value={money(paidCommission)} />
           </>
         ) : (
           <>
-            <MiniStat label={translateCopy("Toplam", language)} value={money(totalCommission)} />
-            <MiniStat label={translateCopy("Tahsil edilecek", language)} value={money(pendingCommission)} />
-            <MiniStat label={translateCopy("Tahsil edilen", language)} value={money(paidCommission)} />
+            <MiniStat icon="cash-multiple" tint={colors.successSoft} color={colors.success} label={translateCopy("Toplam", language)} value={money(totalCommission)} />
+            <MiniStat icon="clock-outline" tint={colors.goldSoft} color={colors.gold} label={translateCopy("Tahsil edilecek", language)} value={money(pendingCommission)} />
+            <MiniStat icon="check-decagram-outline" tint={colors.primarySoft} color={colors.primaryDark} label={translateCopy("Tahsil edilen", language)} value={money(paidCommission)} />
           </>
         )}
       </View>
+
+      {/* Kazanç grafiği (kompakt, mobil — masaüstü paritesi). */}
+      {hasChartData ? (
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 14 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+            <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy("Kazanç grafiği", language)}</Text>
+            {growth !== null ? <Text style={{ color: growth >= 0 ? colors.success : colors.accent, fontSize: 12.5, fontWeight: "900" }}>{growth >= 0 ? "↑" : "↓"} %{Math.abs(growth).toString().replace(".", ",")}</Text> : null}
+          </View>
+          <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 6, height: 122, justifyContent: "space-between" }}>
+            {CHART.map((c, i) => {
+              const h = Math.round((c.v / chartMax) * 96) + 6;
+              const last = i === CHART.length - 1;
+              return (
+                <View key={c.m} style={{ alignItems: "center", flex: 1, gap: 5, justifyContent: "flex-end", minWidth: 0 }}>
+                  <View style={{ backgroundColor: last ? colors.primary : colors.primarySoft, borderRadius: 6, height: h, width: "100%" }} />
+                  <Text numberOfLines={1} style={{ color: last ? colors.primaryDark : colors.muted, fontSize: 10.5, fontWeight: last ? "900" : "700" }}>{c.m}</Text>
+                </View>
+              );
+            })}
+          </View>
+        </View>
+      ) : null}
       {/* CSV dışa aktarım: HER İKİ ROL (eskiden mobilde yalnız satıcıya açıktı; downloadReport
           zaten ortak dosyasını da üretiyordu → ortak mobilde raporunu indiremiyordu). */}
       {txns.length > 0 && Platform.OS === "web" ? (
@@ -368,6 +406,21 @@ function EarningsScreenInner() {
           <MaterialCommunityIcons name="download-outline" size={16} color={colors.primaryDark} />
           <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(isSeller ? "Satış raporu indir (CSV)" : "Rapor indir (CSV)", language)}</Text>
         </Pressable>
+      ) : null}
+
+      {/* En çok kazandıran/satan (mobil — masaüstü sidebar paritesi). */}
+      {topListings.length > 0 ? (
+        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, padding: 14 }}>
+          <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy(isSeller ? "En çok satan" : "En çok kazandıran", language)}</Text>
+          {topListings.map((t, i) => (
+            <View key={t.id} style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
+              <Text style={{ color: colors.subtle, fontSize: 13, fontWeight: "900", width: 14 }}>{i + 1}</Text>
+              {t.image ? <Image source={{ uri: t.image }} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 8, height: 32, width: 32 }} /> : <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 32, justifyContent: "center", width: 32 }}><MaterialCommunityIcons name="tag-outline" size={15} color={colors.primaryDark} /></View>}
+              <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", minWidth: 0 }}>{t.title}</Text>
+              <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{money(metric(t))}</Text>
+            </View>
+          ))}
+        </View>
       ) : null}
       {txns.length > 0 && periodTxns.length === 0 ? <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", paddingVertical: 18, textAlign: "center" }}>{translateCopy("Bu dönemde hareket yok. Farklı bir dönem seç.", language)}</Text> : null}
       {txns.length === 0 ? <EmptyState title={translateCopy(isSeller ? "Henüz satış yok" : "Henüz kazanç yok", language)} body={translateCopy(isSeller ? "İlanlarından satış yapıldıkça (ortak veya doğrudan) burada listelenecek." : "Ortak satış yaptıkça komisyonların burada görünecek.", language)} mascot="idea" /> : null}
@@ -409,15 +462,27 @@ function EarningsScreenInner() {
           </Card>
         );
       })}
+
+      {/* Komisyon nasıl alınır/ödenir bilgisi (masaüstü paritesi — para tutulmaz onboarding). */}
+      <View style={{ backgroundColor: colors.infoSoft, borderColor: colors.info, borderRadius: 14, borderWidth: 1, gap: 6, padding: 14 }}>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          <MaterialCommunityIcons name="information-outline" size={18} color={colors.info} />
+          <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy(isSeller ? "Komisyon nasıl ödenir?" : "Komisyon nasıl alınır?", language)}</Text>
+        </View>
+        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 18 }}>{translateCopy(isSeller ? "OrtakSat para tutmaz. Ortağının komisyonunu anlaştığınız kanaldan (havale/EFT, elden) doğrudan sen ödersin; ödeyince satışı “Ödendi” işaretle." : "OrtakSat para tutmaz. Komisyonunu satıcı anlaştığınız kanaldan (havale/EFT, elden) doğrudan sana öder; aldığında satışı “Ödendi” işaretle.", language)}</Text>
+      </View>
     </ScrollView>
   );
 }
 
-function MiniStat({ label, value }: { label: string; value: string }) {
+function MiniStat({ label, value, icon, tint, color }: { label: string; value: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string }) {
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flex: 1, gap: 3, padding: 10 }}>
-      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.78} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{value}</Text>
-      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{label}</Text>
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, gap: 7, minWidth: 0, padding: 11 }}>
+      <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 9, height: 32, justifyContent: "center", width: 32 }}>
+        <MaterialCommunityIcons name={icon} size={17} color={color} />
+      </View>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{label}</Text>
     </View>
   );
 }

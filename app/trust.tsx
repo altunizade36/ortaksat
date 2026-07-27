@@ -275,7 +275,7 @@ export default function TrustScreen() {
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, maxWidth: 920, marginHorizontal: "auto", padding: 12, paddingBottom: 96, width: "100%" }}>
       <Card>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
-          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, height: 54, justifyContent: "center", width: 54 }}>
+          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, height: 54, justifyContent: "center", width: 54 }}>
             <MaterialCommunityIcons name="shield-check" size={28} color={colors.primary} />
           </View>
           <View style={{ flex: 1, gap: 6 }}>
@@ -298,13 +298,11 @@ export default function TrustScreen() {
         </View>
       </Card>
 
-      <View style={{ flexDirection: "row", gap: 10 }}>
-        <View style={{ flex: 1 }}>
-          <TrustRoleCard description="Komisyon ödüyor mu, ürün doğru mu, müşteri memnun mu?" icon="store-check" title="Satıcı güveni" score={trust.seller} />
-        </View>
-        <View style={{ flex: 1 }}>
-          <TrustRoleCard description="Gerçek müşteri getiriyor mu, spam yapıyor mu, ürünü doğru temsil ediyor mu?" icon="account-check" title="Ortak güveni" score={trust.partner} />
-        </View>
+      {/* Mobilde TEK SÜTUN: 2-sütunda (320px ~141px) skor/bar/pill/kırılım satırları
+          sıkışıp kırpılıyordu. Stack → her kart tam genişlik, rahat okunur. */}
+      <View style={{ gap: 10 }}>
+        <TrustRoleCard description="Komisyon ödüyor mu, ürün doğru mu, müşteri memnun mu?" icon="store-check" title="Satıcı güveni" score={trust.seller} />
+        <TrustRoleCard description="Gerçek müşteri getiriyor mu, spam yapıyor mu, ürünü doğru temsil ediyor mu?" icon="account-check" title="Ortak güveni" score={trust.partner} />
       </View>
 
       <Card>

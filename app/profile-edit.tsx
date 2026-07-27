@@ -502,7 +502,9 @@ function ProfileEditScreenInner() {
         <Card>
           <SectionTitle title={translateCopy("Bildirimler", language)} />
           <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{translateCopy("Talep, satış, komisyon, ortaklık ve mesaj gibi", language)} <Text style={{ fontWeight: "900" }}>{translateCopy("önemli hareketler uygulama içinde anlık bildirim", language)}</Text> {translateCopy("olarak gösterilir; Bildirimler sekmesinden takip edebilirsin.", language)}</Text>
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("E-posta bildirimleri aktif — talep, satış ve mesaj olayları e-postana düşer (Bildirimler sayfasından yönet). SMS/WhatsApp yakında.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("E-posta bildirimleri aktif — talep, satış ve mesaj olayları e-postana düşer. SMS/WhatsApp yakında.", language)}</Text>
+          {/* Salt-metin yerine aksiyon: gerçek aç/kapa anahtarları Bildirimler sayfasında. */}
+          <PrimaryButton href="/notifications" tone="secondary" icon="bell-cog-outline">{translateCopy("Bildirim ayarlarını aç", language)}</PrimaryButton>
         </Card>
 
         <Card>
@@ -529,10 +531,15 @@ function ProfileEditScreenInner() {
           <PrimaryButton icon="shield-check-outline" tone="secondary" onPress={() => startVerification(translateCopy("Doğrulama talebi", language))}>{translateCopy("Doğrulama talebi oluştur", language)}</PrimaryButton>
         </Card>
 
-        <Card>
-          <SectionTitle title={translateCopy("Hesap", language)} />
+        {/* Tehlikeli bölge — web'deki accent-kart paritesi (eskiden mobilde çıplak buttondu). */}
+        <View style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 14, borderWidth: 1, gap: 8, padding: 14 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <MaterialCommunityIcons name="alert-outline" size={18} color={colors.accent} />
+            <Text style={{ color: colors.accent, fontSize: 15, fontWeight: "900" }}>{translateCopy("Tehlikeli bölge", language)}</Text>
+          </View>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Hesabını kapatırsan ilanların ve profilin kaldırılır. Bu işlem geri alınamaz.", language)}</Text>
           <PrimaryButton icon="account-cancel-outline" tone="danger" onPress={closeAccount}>{translateCopy("Hesabı kapat", language)}</PrimaryButton>
-        </Card>
+        </View>
       </ScrollView>
     </KeyboardAvoidingView>
   );

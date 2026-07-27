@@ -209,7 +209,7 @@ function FavoritesScreenInner() {
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 96 }} refreshControl={Platform.OS === "web" ? undefined : <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-        <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 8, height: 46, justifyContent: "center", width: 46 }}>
+        <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, height: 46, justifyContent: "center", width: 46 }}>
           <MaterialCommunityIcons name="heart" size={22} color={colors.accent} />
         </View>
         <View style={{ flex: 1 }}>
@@ -218,8 +218,23 @@ function FavoritesScreenInner() {
         </View>
       </View>
 
-      <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 50, paddingHorizontal: 12 }}>
-        <MaterialCommunityIcons name="magnify" size={21} color={colors.accent} />
+      {/* Stat çipleri (mobil parite — masaüstündeki FavStat satırının kompakt karşılığı). */}
+      {(() => {
+        const favs = favoriteListings.filter(Boolean) as { commissionType?: string; commissionValue?: number; partnershipMode?: string }[];
+        const hi = favs.filter((l) => l.commissionType === "rate" && (l.commissionValue ?? 0) >= 15).length;
+        const op = favs.filter((l) => l.partnershipMode === "open").length;
+        if (favs.length === 0) return null;
+        return (
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <FavMini icon="heart" tint={colors.accentSoft} color={colors.accent} value={`${favs.length}`} label={translateCopy("Kaydedilen", language)} />
+            <FavMini icon="percent" tint={colors.primarySoft} color={colors.primaryDark} value={`${hi}`} label={translateCopy("Yüksek komisyon", language)} />
+            <FavMini icon="handshake-outline" tint={colors.goldSoft} color={colors.gold} value={`${op}`} label={translateCopy("Ortak satışa açık", language)} />
+          </View>
+        );
+      })()}
+
+      <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 50, paddingHorizontal: 12 }}>
+        <MaterialCommunityIcons name="magnify" size={21} color={colors.muted} />
         <TextInput
           value={query}
           onChangeText={setQuery}
@@ -239,7 +254,7 @@ function FavoritesScreenInner() {
         {([["all", "Tümü"], ["open", "Ortak satışa açık"], ["highcomm", "Yüksek komisyon"]] as const).map(([k, lbl]) => {
           const on = favTab === k && !catFilter;
           return (
-            <Pressable key={k} onPress={() => { setFavTab(k); setCatFilter(null); }} style={{ backgroundColor: on ? colors.accent : colors.surface, borderColor: on ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+            <Pressable key={k} onPress={() => { setFavTab(k); setCatFilter(null); }} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
               <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(lbl, language)}</Text>
             </Pressable>
           );
@@ -255,7 +270,7 @@ function FavoritesScreenInner() {
 
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>{translateCopy("Ürünler", language)}</Text>
-        <Text selectable style={{ color: colors.accent, fontSize: 12, fontWeight: "900" }}>{visibleListings.length} {language === "en" ? "results" : "sonuç"}</Text>
+        <Text selectable style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{visibleListings.length} {language === "en" ? "results" : "sonuç"}</Text>
       </View>
 
       {favoriteListings.length === 0 ? <EmptyState title={language === "en" ? "No favorites" : "Favori yok"} body={language === "en" ? "Tap the heart on product details to add products to favorites." : "Ürün detayında kalp simgesine basarak ürünleri favorilerine ekleyebilirsin."} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="heart" /> : null}
@@ -282,6 +297,19 @@ function FavoritesScreenInner() {
       {/* Boşken üstteki EmptyState CTA'sı zaten var; çift buton olmasın. */}
       {favoriteListings.length > 0 ? <PrimaryButton href="/(tabs)/explore" tone="secondary">{translateCopy("Keşfete dön", language)}</PrimaryButton> : null}
     </ScrollView>
+  );
+}
+
+// Kompakt stat çipi (mobil) — masaüstü FavStat'ın 3'lü satıra sığan hâli.
+function FavMini({ icon, tint, color, value, label }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; label: string }) {
+  return (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, gap: 6, minWidth: 0, padding: 10 }}>
+      <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 9, height: 30, justifyContent: "center", width: 30 }}>
+        <MaterialCommunityIcons name={icon} size={16} color={color} />
+      </View>
+      <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{label}</Text>
+    </View>
   );
 }
 
