@@ -268,11 +268,13 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     try { await Clipboard.setStringAsync(text); setShareCopied(true); setTimeout(() => setShareCopied(false), 1800); } catch { /* pano yoksa sessiz geç */ }
   };
   const missingFields = useMemo(() => (schema ? schema.fields.filter((f) => {
-    if (!f.required || !ESSENTIAL_KEYS.has(f.key)) return false; // minimal form: yalnız temel alanlar zorunlu
+    // minimal form: yalnız temel alanlar zorunlu + o şemanın FİYAT alanı (anahtarı "price" olmayabilir:
+    // gecelik/aylık/kişi-başı → priceKey). Böylece kiralık/günlük kategoriler de fiyat ister/render eder.
+    if (!f.required || (!ESSENTIAL_KEYS.has(f.key) && f.key !== priceKey)) return false;
     const val = values[f.key];
     if (Array.isArray(val)) return val.length === 0;
     return !String(val ?? "").trim();
-  }) : []), [schema, values]);
+  }) : []), [schema, values, priceKey]);
 
   // Kategori seçiminden form alanlarını otomatik doldur: ağaçta seçilen marka/model/
   // ilan-tipi ilgili alanlara taşınır, başlık önerilir. Böylece bir sonraki adımda
@@ -1047,7 +1049,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           const titleFieldRaw = schema.fields.find((f) => f.key === "title");
           // Başlık boşken kategoriye özel iyi bir örnek göster (Sahibinden gibi).
           const titleField = titleFieldRaw ? { ...titleFieldRaw, placeholder: titlePlaceholderFor(path[0]?.label) } : undefined;
-          const priceField = schema.fields.find((f) => f.key === "price");
+          const priceField = schema.fields.find((f) => f.key === priceKey); // "price" olmayan şemalar da (gecelik/aylık/kişi-başı) fiyat alanını render eder
           const descField = schema.fields.find((f) => f.key === "description");
           // Yalnız Marka/Model/Durum (varsa) gösterilir; kategoriye özel fazla alanlar formdan çıkarıldı.
           const specFields = schema.fields.filter((f) => ESSENTIAL_KEYS.has(f.key) && f !== titleFieldRaw && f !== priceField && f !== descField && f.type !== "multiselect");
