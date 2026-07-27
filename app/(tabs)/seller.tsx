@@ -772,7 +772,7 @@ function SellerScreenInner() {
                   <Text selectable numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900", lineHeight: 20 }}>
                     {displayText(listing.title)}
                   </Text>
-                  <StatusPill label={listing.status === "active" ? (listing.stockCount <= 0 ? "Tükendi" : "Aktif") : listing.status === "pending_review" ? "İncelemede" : listing.status === "paused" ? "Pasif" : listing.status === "sold" ? "Satıldı" : listing.status} tone={listing.status === "active" ? (listing.stockCount <= 0 ? "danger" : "success") : listing.status === "pending_review" ? "info" : listing.status === "paused" || listing.status === "sold" ? "neutral" : "warning"} />
+                  <StatusPill label={listing.status === "active" ? (listing.stockCount <= 0 ? "Tükendi" : "Aktif") : listing.status === "pending_review" ? "İncelemede" : listing.status === "paused" ? "Pasif" : listing.status === "sold" ? "Satıldı" : listing.status === "draft" ? "Taslak" : listing.status} tone={listing.status === "active" ? (listing.stockCount <= 0 ? "danger" : "success") : listing.status === "pending_review" ? "info" : listing.status === "paused" || listing.status === "sold" ? "neutral" : "warning"} />
                 </View>
                 <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
                   {translateCopy(displayText(listing.category), language)} · {displayText(listing.location)}

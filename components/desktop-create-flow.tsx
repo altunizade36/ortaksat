@@ -537,7 +537,7 @@ export function DesktopCreateFlow() {
   };
   const canNext = () => nextBlockReason() === null;
 
-  async function publish() {
+  async function publish(asDraft = false) {
     if (!schema) {
       // Eskiden sessizce return ediyordu: "Yayınla" tıklanıyor, hiçbir şey olmuyordu.
       setError(translateCopy("Kategori formu yüklenemedi. Kategoriyi tekrar seç.", language));
@@ -615,7 +615,9 @@ export function DesktopCreateFlow() {
       }
       const catVerdict = categoryRisk(path.map((p) => p.label).concat(leafLabel));
       let verdict = kwVerdict === "review" || catVerdict === "review" ? "review" : "none";
-      let statusOverride: "pending_review" | undefined = verdict === "review" ? "pending_review" : undefined;
+      let statusOverride: "pending_review" | "draft" | undefined = verdict === "review" ? "pending_review" : undefined;
+      // TASLAK: yayınlanmaz/herkese görünmez → moderasyon/inceleme aktive edildiğinde yapılır.
+      if (asDraft) { verdict = "none"; statusOverride = "draft"; }
 
       // "Diğer" seçildiyse → kategori EKSİK demektir: kullanıcının yazdığı kategori adını
       // TAM YOL ile birlikte admin ÖNERİ HAVUZUNA düşür (category_suggestions).
@@ -688,7 +690,7 @@ export function DesktopCreateFlow() {
         adAssets: uploadedImages.slice(1), status: "active"
       } as unknown as Listing;
       const risk = computeListingRisk(riskDraft, listings, currentUser);
-      if (risk.level === "high" && !statusOverride) { verdict = "review"; statusOverride = "pending_review"; }
+      if (!asDraft && risk.level === "high" && !statusOverride) { verdict = "review"; statusOverride = "pending_review"; }
 
       const created = createListing({
         title: v.clean.title || leafLabel,
@@ -743,6 +745,12 @@ export function DesktopCreateFlow() {
         value: priceNum || 0,
         currency
       });
+      // TASLAK: yayın/paylaşım ekranı yerine Satıcı paneline git — taslak orada "Aktifleştir" ile yayınlanır.
+      if (asDraft) {
+        setPublishing(false);
+        router.replace("/(tabs)/seller");
+        return;
+      }
       setPublished({ listing: created, review: verdict === "review" });
       setPublishing(false);
       return;
@@ -1640,6 +1648,15 @@ export function DesktopCreateFlow() {
       {/* Adımın neden ilerleyemediğini açıkça göster (sessiz kilitli buton yerine). */}
       {step < STEPS.length - 1 && nextBlockReason() ? (
         <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700", marginBottom: 8 }}>{nextBlockReason()}</Text>
+      ) : null}
+
+      {/* TASLAK OLARAK KAYDET — son adımda; yayınlamadan draft olarak saklar (Satıcı panelinden
+          "Aktifleştir" ile sonra yayınlanır). Mevcut publish() akışı + draft status kullanılır. */}
+      {step === STEPS.length - 1 ? (
+        <Pressable accessibilityRole="button" disabled={publishing} onPress={() => void publish(true)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingVertical: 6 })}>
+          <MaterialCommunityIcons name="content-save-outline" size={16} color={colors.muted} />
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Taslak olarak kaydet (sonra yayınla)", language)}</Text>
+        </Pressable>
       ) : null}
 
       {/* Nav */}
