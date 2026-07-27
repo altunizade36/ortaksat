@@ -27,7 +27,7 @@ import { tokenize } from "@/lib/search";
 import { ImageWatermark } from "@/components/image-watermark";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { SafetyNote } from "@/components/safety-note";
-import { Card, EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
+import { Card, EmptyState, PrimaryButton, StatusPill } from "@/components/ui";
 import { ErrorScreen } from "@/components/error-boundary";
 import { commissionAmount, commissionText, listingInviteCode, listingNo, moneyIn, partnerInviteUrl, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
 import { categoryConversion } from "@/lib/conversion";
@@ -356,6 +356,10 @@ export default function ListingDetailScreen() {
   const favorited = isFavorite(currentListing.id);
   const inCompare = hasInCompare(currentListing.id);
   const commission = commissionAmount(currentListing);
+  // "Ortak Ol" butonu kapısı (EarningsCalculator'daki canApply ile aynı mantık): zaten aktif/
+  // pending/engelli ortak ya da davetsiz-invite değilse gösterilir. partnerable + non-owner +
+  // non-demo şart. Aksi halde yalnız "Satın Al" (tam genişlik) çıkar.
+  const canJoinNow = partnerable && !isOwner && !isDemo && partnership?.status !== "active" && partnership?.status !== "pending" && partnership?.status !== "blocked" && !(isInviteMode && !validInvite);
   const reviewableSale = sales.find((sale) => sale.listingId === currentListing.id && canReviewSale(sale.id));
   const relatedCardWidth = Math.max(148, Math.min(176, Math.floor((width - 34) / 2)));
   const sellerOtherListings = listings
@@ -665,6 +669,13 @@ export default function ListingDetailScreen() {
               <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
               {/* Kaynak filigranı — dosyaya gömülmez, yalnız görüntüleme katmanı (ürün bozulmaz). */}
               <ImageWatermark size={isWideWeb ? 20 : 15} />
+              {/* Ortaklığa AÇIK ilan rozeti (yeşil, sol üst) — kapalı/normal ilanda gösterilmez. */}
+              {partnerable ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.success, borderRadius: 999, flexDirection: "row", gap: 5, left: 12, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", top: 12 }}>
+                  <MaterialCommunityIcons name="check-decagram" size={14} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "900", letterSpacing: 0.2 }}>{translateCopy("Ortaklığa Açık", language)}</Text>
+                </View>
+              ) : null}
               <View style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
                 <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Büyüt", language)}{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
@@ -751,8 +762,9 @@ export default function ListingDetailScreen() {
             );
           })()}
 
-          {/* Fiyat sayfanın en güçlü öğesi olmalı (ürün sayfası) — komisyon kutusu daha hafif. */}
-          <Text selectable style={{ color: colors.ink, fontSize: 33, fontWeight: "900", letterSpacing: -0.5 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
+          {/* Fiyat sayfanın en güçlü öğesi olmalı (ürün sayfası) — ortaklığa açık ilanda turkuaz
+              (primaryDark) vurgu, kapalı/normal ilanda nötr ink. */}
+          <Text selectable style={{ color: partnerable ? colors.primaryDark : colors.ink, fontSize: 33, fontWeight: "900", letterSpacing: -0.5 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
 
           {/* ACİL SATIŞ banner — attributes._urgentUntil GELECEKTEyse (fiyatın hemen altında, dikkat çekici). */}
           {(() => {
@@ -786,81 +798,144 @@ export default function ListingDetailScreen() {
             </View>
           ) : null}
 
-          {/* Ortak kazancı — YALNIZ ortak satışa açık ilanlarda (normal ilanda gizli). */}
-          {partnerable ? (
-          <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 4, padding: 12 }}>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-              <MaterialCommunityIcons name={isDemand ? "magnify" : "cash-multiple"} size={16} color={colors.primaryDark} />
-              <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.3 }}>{translateCopy(isDemand ? "BULUŞ KOMİSYONU" : "ORTAK KAZANCI", language)}</Text>
-              <Text style={{ color: colors.primaryDark, fontSize: 17, fontWeight: "900" }}>{moneyIn(commission, currentListing.currency)}</Text>
-            </View>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy(isDemand ? "Bu talebi karşılayan ürünü/satıcıyı bul ve getir; bulan komisyonu kazanır. Komisyonu ilan sahibi öder." : "Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.", language)}</Text>
-            {/* Y5: Sosyal kanıt (kaç ortak tanıtıyor) + atıf penceresi şeffaflığı (K1 ile anlamlı:
-                referansın kaç gün boyunca sana kredi olduğu). Ortak, isteğinden ÖNCE değeri görür. */}
-            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 5, marginTop: 2 }}>
-              {currentListing.partnerCount > 0 ? (
-                <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-                  <MaterialCommunityIcons name="account-group" size={13} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.partnerCount} {translateCopy("ortak tanıtıyor", language)}</Text>
-                </View>
-              ) : null}
-              {/* Ortaklık geçmişi (herkese açık): şimdiye kadar gelen talep sayısı — sosyal kanıt. */}
-              {currentListing.leadCount > 0 ? (
-                <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-                  <MaterialCommunityIcons name="account-clock-outline" size={13} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.leadCount} {translateCopy("talep geldi", language)}</Text>
-                </View>
-              ) : null}
-              <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-                <MaterialCommunityIcons name="clock-outline" size={13} color={colors.muted} />
-                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Atıf penceresi", language)}: {currentListing.attributionWindowDays} {translateCopy("gün", language)}</Text>
-              </View>
-            </View>
-            {/* Faz 4: kategori-bazlı dönüşüm olayı — komisyon HANGİ olayda hak edilir. */}
-            {(() => {
-              const conv = categoryConversion(currentListing.category);
-              return (
-                <View style={{ alignItems: "flex-start", backgroundColor: colors.surface, borderRadius: 9, flexDirection: "row", gap: 7, marginTop: 4, padding: 9 }}>
-                  <MaterialCommunityIcons name={conv.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={15} color={colors.primaryDark} style={{ marginTop: 1 }} />
-                  <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                    <Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Komisyon şu olayda hak edilir", language)}: {translateCopy(conv.event, language)}</Text>
-                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy(conv.hint, language)}</Text>
-                  </View>
-                </View>
-              );
-            })()}
-          </View>
-          ) : null}
-
-          {/* İlan Bilgileri (Sahibinden tarzı) — kategoriye özel skaler özellikler,
-              fiyatın hemen altında öne çıkarılır. Donanım (çok-seçim) dizileri hariç. */}
+          {/* Ürün Detayları (Sahibinden tarzı) — kategoriye özel skaler özellikler + stok/iade/
+              komisyon vadesi/ortaklık durumu TEK tabloda konsolide (eski ayrı Metric kartları
+              buraya taşındı). Her zaman gösterilir (stok/iade her ilanda vardır). */}
           {(() => {
             const scalarSpecs = describeAttributes(currentListing.attributes).filter((r) => !r.items);
-            if (scalarSpecs.length === 0) return null;
+            const extraRows: { label: string; value: string }[] = [
+              { label: "Stok", value: `${currentListing.stockCount} ${translateCopy("adet", language)}` },
+              { label: "İade süresi", value: `${currentListing.returnWindowDays} ${translateCopy("gün", language)}` },
+              ...(partnerable ? [{ label: "Komisyon vadesi", value: `${currentListing.commissionDueDays} ${translateCopy("gün", language)}` }] : []),
+              { label: "Ortaklık", value: !partnerable ? translateCopy("Kapalı (normal ilan)", language) : translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı", language) }
+            ];
+            const rows: { label: string; value: string }[] = [...scalarSpecs.map((r) => ({ label: r.label, value: r.value })), ...extraRows];
             return (
               <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, overflow: "hidden" }}>
                 <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 13, paddingVertical: 9 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("İlan Bilgileri", language)}</Text>
+                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ürün Detayları", language)}</Text>
                 </View>
-                {scalarSpecs.map((row, i) => (
-                  <View key={row.label} style={{ backgroundColor: i % 2 === 1 ? colors.surface : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 13, paddingVertical: 8 }}>
-                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(row.label, language)}</Text>
-                    <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", textAlign: "right" }}>{translateCopy(row.value, language)}</Text>
+                {rows.map((row, i) => (
+                  <View key={`${row.label}-${i}`} style={{ backgroundColor: i % 2 === 1 ? colors.surface : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 13, paddingVertical: 8 }}>
+                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700", minWidth: 0 }}>{translateCopy(row.label, language)}</Text>
+                    <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0, textAlign: "right" }}>{translateCopy(row.value, language)}</Text>
                   </View>
                 ))}
               </View>
             );
           })()}
 
-          {/* Anahtar bilgiler */}
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <Metric label={translateCopy("Stok", language)} value={`${currentListing.stockCount} ${translateCopy("adet", language)}`} />
-            <Metric label={translateCopy("Ortaklık", language)} value={translateCopy(!partnerable ? "Kapalı (normal ilan)" : currentListing.partnershipMode === "open" ? "Anında" : isInviteMode ? "Davetle" : "Onaylı", language)} />
-          </View>
-          <View style={{ flexDirection: "row", gap: 8 }}>
-            <Metric label={translateCopy("İade", language)} value={`${currentListing.returnWindowDays} ${translateCopy("gün", language)}`} />
-            <Metric label={translateCopy("Komisyon vadesi", language)} value={`${currentListing.commissionDueDays} ${translateCopy("gün", language)}`} />
-          </View>
+          {/* Ortaklık kutusu — açık ilanda konsolide "Ortaklık Bilgisi", talep (arayan) ilanında
+              mevcut BULUŞ KOMİSYONU görünümü KORUNUR, ortaklığa kapalı ilanda sade not. */}
+          {partnerable ? (
+            isDemand ? (
+              /* ===== TALEP (arayan) — BULUŞ KOMİSYONU görünümü değiştirilmez ===== */
+              <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 4, padding: 12 }}>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                  <MaterialCommunityIcons name="magnify" size={16} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.3 }}>{translateCopy("BULUŞ KOMİSYONU", language)}</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 17, fontWeight: "900" }}>{moneyIn(commission, currentListing.currency)}</Text>
+                </View>
+                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy("Bu talebi karşılayan ürünü/satıcıyı bul ve getir; bulan komisyonu kazanır. Komisyonu ilan sahibi öder.", language)}</Text>
+                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 5, marginTop: 2 }}>
+                  {currentListing.partnerCount > 0 ? (
+                    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+                      <MaterialCommunityIcons name="account-group" size={13} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.partnerCount} {translateCopy("ortak tanıtıyor", language)}</Text>
+                    </View>
+                  ) : null}
+                  {currentListing.leadCount > 0 ? (
+                    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+                      <MaterialCommunityIcons name="account-clock-outline" size={13} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.leadCount} {translateCopy("talep geldi", language)}</Text>
+                    </View>
+                  ) : null}
+                  <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+                    <MaterialCommunityIcons name="clock-outline" size={13} color={colors.muted} />
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Atıf penceresi", language)}: {currentListing.attributionWindowDays} {translateCopy("gün", language)}</Text>
+                  </View>
+                </View>
+                {(() => {
+                  const conv = categoryConversion(currentListing.category);
+                  return (
+                    <View style={{ alignItems: "flex-start", backgroundColor: colors.surface, borderRadius: 9, flexDirection: "row", gap: 7, marginTop: 4, padding: 9 }}>
+                      <MaterialCommunityIcons name={conv.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={15} color={colors.primaryDark} style={{ marginTop: 1 }} />
+                      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                        <Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Komisyon şu olayda hak edilir", language)}: {translateCopy(conv.event, language)}</Text>
+                        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy(conv.hint, language)}</Text>
+                      </View>
+                    </View>
+                  );
+                })()}
+              </View>
+            ) : (
+              /* ===== ORTAKLIĞA AÇIK — "Ortaklık Bilgisi" (ORTAK KAZANCI + koşul kutusu birleşti) ===== */
+              (() => {
+                const partnerRegion = currentListing.attributes?._partnerRegion ? String(currentListing.attributes._partnerRegion).trim() : "";
+                const maxPartners = Number(currentListing.attributes?._maxPartners ?? 0) || 0;
+                const conv = categoryConversion(currentListing.category);
+                const bullets = [
+                  maxPartners > 0 ? `${translateCopy("En fazla", language)} ${maxPartners} ${translateCopy("ortak olabilir", language)}` : translateCopy("Birden fazla ortak olabilir", language),
+                  translateCopy("İlk müşteriyi getiren kazanır", language),
+                  partnerRegion ? `${translateCopy("Bölge", language)}: ${partnerRegion}` : translateCopy("Bölge sınırlaması yok", language),
+                  translateCopy("Ortaklar panelinden performans takibi", language)
+                ];
+                return (
+                  <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 10, padding: 13 }}>
+                    <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                      <MaterialCommunityIcons name="handshake" size={17} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 14, fontWeight: "900", minWidth: 90 }}>{translateCopy("Ortaklık Bilgisi", language)}</Text>
+                      <View style={{ backgroundColor: colors.surface, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
+                        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.commissionType === "rate" ? `${translateCopy("Komisyon Oranı", language)}: %${currentListing.commissionValue}` : `${translateCopy("Komisyon", language)}: ${moneyIn(commission, currentListing.currency)}`}</Text>
+                      </View>
+                    </View>
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy("Bu ürünü sat ya da alıcı getir; her satışta kazan. Komisyonu satıcı öder.", language)}</Text>
+                    <View style={{ gap: 6 }}>
+                      {bullets.map((t, i) => (
+                        <View key={i} style={{ alignItems: "flex-start", flexDirection: "row", gap: 7 }}>
+                          <MaterialCommunityIcons name="check-circle" size={14} color={colors.primaryDark} style={{ marginTop: 1 }} />
+                          <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", lineHeight: 17, minWidth: 0 }}>{t}</Text>
+                        </View>
+                      ))}
+                    </View>
+                    {/* Sosyal kanıt + atıf penceresi (ORTAK KAZANCI kutusundan taşındı — bilgi korunur). */}
+                    <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
+                      {currentListing.partnerCount > 0 ? (
+                        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+                          <MaterialCommunityIcons name="account-group" size={13} color={colors.primaryDark} />
+                          <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.partnerCount} {translateCopy("ortak tanıtıyor", language)}</Text>
+                        </View>
+                      ) : null}
+                      {currentListing.leadCount > 0 ? (
+                        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+                          <MaterialCommunityIcons name="account-clock-outline" size={13} color={colors.primaryDark} />
+                          <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.leadCount} {translateCopy("talep geldi", language)}</Text>
+                        </View>
+                      ) : null}
+                      <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
+                        <MaterialCommunityIcons name="clock-outline" size={13} color={colors.muted} />
+                        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Atıf penceresi", language)}: {currentListing.attributionWindowDays} {translateCopy("gün", language)}</Text>
+                      </View>
+                    </View>
+                    {/* Komisyon HANGİ olayda hak edilir (categoryConversion — "Komisyon şu olayda" kutusu birleşti). */}
+                    <View style={{ alignItems: "flex-start", backgroundColor: colors.surface, borderRadius: 9, flexDirection: "row", gap: 7, padding: 9 }}>
+                      <MaterialCommunityIcons name={conv.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={15} color={colors.primaryDark} style={{ marginTop: 1 }} />
+                      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+                        <Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Komisyon şu olayda hak edilir", language)}: {translateCopy(conv.event, language)}</Text>
+                        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy(conv.hint, language)}</Text>
+                      </View>
+                    </View>
+                  </View>
+                );
+              })()
+            )
+          ) : (
+            /* ===== ORTAKLIĞA KAPALI (normal ilan) — sade uyarı notu ===== */
+            <View style={{ alignItems: "flex-start", backgroundColor: colors.warningSoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 11 }}>
+              <MaterialCommunityIcons name="information-outline" size={16} color={colors.warning} style={{ marginTop: 1 }} />
+              <Text style={{ color: colors.warning, flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16, minWidth: 0 }}>{translateCopy("Bu ilan sahibi ürünü ortaklığa açmamış.", language)}</Text>
+            </View>
+          )}
 
           {/* Y5: Ortaklık şartları — satıcının ortaklardan beklentileri (partnerRules). Ortak,
               istek göndermeden ÖNCE kuralları görür → sürtünme + yanlış-eşleşme azalır. YALNIZ
@@ -898,58 +973,111 @@ export default function ListingDetailScreen() {
                 </View>
               ) : null}
             </View>
-          ) : !partnerable ? null : isDemo ? (
+          ) : isDemo ? (
             <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
               <MaterialCommunityIcons name="lock-outline" size={16} color={colors.muted} />
               <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Örnek ilan — ortaklık ve iletişim kapalıdır.", language)}</Text>
             </View>
-          ) : partnership?.status === "active" ? (
-            <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 9, padding: 12 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · ürünü kendi yönteminle tanıt", language)}</Text>
-              </View>
-              {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
-              {partnership?.agreedAt ? (
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                  <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "700" }}>
-                    {translateCopy("Komisyon şartların ortak olduğun anda kilitlendi — satıcı ilanı düzenlese de değişmez.", language)}
-                  </Text>
+          ) : isDemand ? (
+            /* ===== TALEP (arayan) — mevcut ortak-ol / başvuru akışı KORUNUR (Satın Al gösterilmez) ===== */
+            partnership?.status === "active" ? (
+              <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 9, padding: 12 }}>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                  <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · ürünü kendi yönteminle tanıt", language)}</Text>
                 </View>
-              ) : null}
-            </View>
-          ) : partnership?.status === "pending" ? (
-            <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
-              <MaterialCommunityIcons name="clock-outline" size={16} color={colors.warning} />
-              <Text style={{ color: colors.warning, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Başvurun satıcı onayında.", language)}</Text>
-            </View>
-          ) : isInviteMode && !validInvite ? (
-            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 14 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <MaterialCommunityIcons name="email-lock-outline" size={17} color={colors.muted} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ortaklık sadece davetle", language)}</Text>
+                {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
+                {partnership?.agreedAt ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                    <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Komisyon şartların ortak olduğun anda kilitlendi — satıcı ilanı düzenlese de değişmez.", language)}</Text>
+                  </View>
+                ) : null}
               </View>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Bu ürünün ortaklığı herkese açık değil. Ortak olmak istiyorsan satıcıdan davet linki iste; linkle geldiğinde anında ortak olabilirsin.", language)}</Text>
-              <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => void handleContact()}>{translateCopy("Satıcıdan davet iste", language)}</PrimaryButton>
-            </View>
+            ) : partnership?.status === "pending" ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
+                <MaterialCommunityIcons name="clock-outline" size={16} color={colors.warning} />
+                <Text style={{ color: colors.warning, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Başvurun satıcı onayında.", language)}</Text>
+              </View>
+            ) : isInviteMode && !validInvite ? (
+              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 14 }}>
+                <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+                  <MaterialCommunityIcons name="email-lock-outline" size={17} color={colors.muted} />
+                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ortaklık sadece davetle", language)}</Text>
+                </View>
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Bu ürünün ortaklığı herkese açık değil. Ortak olmak istiyorsan satıcıdan davet linki iste; linkle geldiğinde anında ortak olabilirsin.", language)}</Text>
+                <PrimaryButton tone="secondary" icon="message-text-outline" onPress={() => void handleContact()}>{translateCopy("Satıcıdan davet iste", language)}</PrimaryButton>
+              </View>
+            ) : (
+              <View style={{ gap: 10 }}>
+                {validInvite ? (
+                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, flexDirection: "row", gap: 8, padding: 12 }}>
+                    <MaterialCommunityIcons name="ticket-confirmation-outline" size={17} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Satıcı seni davet etti — anında ortak olabilirsin.", language)}</Text>
+                  </View>
+                ) : null}
+                {currentListing.partnershipMode !== "open" && !validInvite ? (
+                  <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, padding: 12 }}>
+                    <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} style={{ marginTop: 1 }} />
+                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Başvurunu gönder; satıcı kabul ederse anında ortak olur, ürünü kendi yönteminle tanıtmaya başlarsın. Ekstra bilgi doldurmana gerek yok.", language)}</Text>
+                  </View>
+                ) : null}
+                <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{translateCopy(currentListing.partnershipMode === "open" || validInvite ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder", language)}</PrimaryButton>
+              </View>
+            )
           ) : (
+            /* ===== NORMAL SAT/ORTAK İLAN — Satın Al + Ortak Ol (mockup) ===== */
             <View style={{ gap: 10 }}>
-              {validInvite ? (
-                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, flexDirection: "row", gap: 8, padding: 12 }}>
-                  <MaterialCommunityIcons name="ticket-confirmation-outline" size={17} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Satıcı seni davet etti — anında ortak olabilirsin.", language)}</Text>
+              {/* Ortaklık durum bantları (buton satırının üstünde bilgilendirici) */}
+              {partnership?.status === "active" ? (
+                <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 9, padding: 12 }}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                    <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · ürünü kendi yönteminle tanıt", language)}</Text>
+                  </View>
+                  {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
+                  {partnership?.agreedAt ? (
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+                      <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
+                      <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Komisyon şartların ortak olduğun anda kilitlendi — satıcı ilanı düzenlese de değişmez.", language)}</Text>
+                    </View>
+                  ) : null}
                 </View>
-              ) : null}
-              {/* Onaylı ilanda başvuru: FORM YOK — tek tık, satıcı onaylar/reddeder.
-                  (Eskiden neden/kanal/erişim/handle/kitle formu vardı; kaldırıldı.) */}
-              {currentListing.partnershipMode !== "open" && !validInvite ? (
-                <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, padding: 12 }}>
+              ) : partnership?.status === "pending" ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
+                  <MaterialCommunityIcons name="clock-outline" size={16} color={colors.warning} />
+                  <Text style={{ color: colors.warning, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Başvurun satıcı onayında.", language)}</Text>
+                </View>
+              ) : isInviteMode && !validInvite ? (
+                <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, padding: 11 }}>
+                  <MaterialCommunityIcons name="email-lock-outline" size={16} color={colors.muted} style={{ marginTop: 1 }} />
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16, minWidth: 0 }}>{translateCopy("Ortaklık sadece davetle — satıcıdan davet linki iste.", language)}</Text>
+                </View>
+              ) : validInvite ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 11 }}>
+                  <MaterialCommunityIcons name="ticket-confirmation-outline" size={16} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "800", minWidth: 0 }}>{translateCopy("Satıcı seni davet etti — anında ortak olabilirsin.", language)}</Text>
+                </View>
+              ) : partnerable && currentListing.partnershipMode !== "open" ? (
+                <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, padding: 11 }}>
                   <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} style={{ marginTop: 1 }} />
-                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Başvurunu gönder; satıcı kabul ederse anında ortak olur, ürünü kendi yönteminle tanıtmaya başlarsın. Ekstra bilgi doldurmana gerek yok.", language)}</Text>
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 16, minWidth: 0 }}>{translateCopy("Başvurunu gönder; satıcı kabul ederse anında ortak olursun. Ekstra bilgi doldurmana gerek yok.", language)}</Text>
                 </View>
               ) : null}
-              <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{translateCopy(currentListing.partnershipMode === "open" || validInvite ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder", language)}</PrimaryButton>
+
+              {/* Aksiyon: partnerable + katılabilir → [Satın Al | Ortak Ol]; aksi halde tek "Satın Al". */}
+              {canJoinNow ? (
+                <View style={{ flexDirection: "row", gap: 10 }}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <PrimaryButton tone="secondary" icon="cart-outline" onPress={() => void handleContact()}>{`${translateCopy("Satın Al", language)} (${moneyIn(currentListing.price, currentListing.currency)})`}</PrimaryButton>
+                  </View>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <PrimaryButton icon="handshake" onPress={handleJoin}>{`${translateCopy("Ortak Ol", language)} (${currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : moneyIn(commission, currentListing.currency)} ${translateCopy("Kazan", language)})`}</PrimaryButton>
+                  </View>
+                </View>
+              ) : (
+                <PrimaryButton icon="cart-outline" onPress={() => void handleContact()}>{`${translateCopy("Satın Al", language)} (${moneyIn(currentListing.price, currentListing.currency)})`}</PrimaryButton>
+              )}
             </View>
           )}
 
@@ -1005,7 +1133,9 @@ export default function ListingDetailScreen() {
               ) : (
                 <PrimaryButton tone="secondary" icon="handshake-outline" onPress={() => { if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; } setOfferAmount(""); setOfferNote(""); setOfferErr(null); setOfferOpen(true); }}>{translateCopy("Teklif Ver", language)}</PrimaryButton>
               )}
-              <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
+              {/* İletişim butonu: normal sat/ortak ilanda ana "Satın Al" bu akışı (handleContact)
+                  zaten çağırır; yalnız talep (arayan) ilanında burada ayrı gösterilir (Satın Al yok). */}
+              {isDemand ? <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton> : null}
               {/* Numarayı Göster (Sahibinden tarzı) — istek üzerine gerçek numara */}
               {revealedPhone ? (
                 <Pressable onPress={() => { const tel = revealedPhone.replace(/[^0-9+]/g, ""); if (tel) void openUrlSafe(`tel:${tel}`); }} accessibilityRole="button" accessibilityLabel={`${translateCopy("Ara", language)}: ${revealedPhone}`} style={{ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
