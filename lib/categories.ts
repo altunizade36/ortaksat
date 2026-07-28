@@ -343,6 +343,9 @@ const ICON_KEYWORDS: Array<[RegExp, IconName]> = [
   [/klima|kombi|ısıt/, "air-conditioner"],
   [/mobilya|koltuk|kanepe/, "sofa-outline"],
   [/mutfak/, "silverware-fork-knife"],
+  // "Yapı Market"/"Hırdavat" — genel /market/ (süpermarket) ve /bahçe/ kurallarından
+  // ÖNCE gelmeli, yoksa "Bahçe & Yapı Market" hub'ı sepet/çiçek ikonu alır.
+  [/yapı market|hırdavat/, "hammer-wrench"],
   [/süpermarket|gıda|market|bakkal|içecek|kahve|çay|atıştırmalık/, "basket-outline"],
   [/küçük ev|blender|ütü|süpürge|airfryer|kettle|tost/, "kettle-outline"],
   [/bahçe|çiçek|saksı|mangal|barbekü/, "flower-outline"],
@@ -372,10 +375,11 @@ const ICON_KEYWORDS: Array<[RegExp, IconName]> = [
   [/araç|araba|otomobil|vasıta/, "car-outline"],
   [/yedek parça|tuning|aksesuar/, "car-wrench"],
   [/iş makinesi|sanayi|fabrika/, "excavator"],
+  // "dijital" → "hizmet"ten ÖNCE: "Dijital Hizmetler" aksi halde usta ikonu alır.
+  [/dijital|yazılım|lisans/, "cloud-download-outline"],
   [/usta|hizmet|tesisat|tamir/, "account-hard-hat"],
   [/eğitim|ders|kurs|okul/, "school-outline"],
   [/iş ilan|kariyer/, "briefcase-outline"],
-  [/dijital|yazılım|lisans/, "cloud-download-outline"],
   [/yapı market|bahçe|hırdavat/, "hammer-wrench"],
   [/sağlık|medikal|tıbbi/, "medical-bag"],
   [/hediye/, "gift-outline"]

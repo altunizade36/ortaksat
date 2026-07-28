@@ -5,6 +5,21 @@
   "framework": null,
   "cleanUrls": true,
   "trailingSlash": false,
+  "redirects": [
+    { "source": "/kategori/muzik-enstrumanlari", "destination": "/kategori/muzik", "permanent": true },
+    { "source": "/kategori/yapi-market-ve-bahce", "destination": "/kategori/bahce-ve-yapi-market", "permanent": true },
+    { "source": "/kategori/dijital-urunler-ve-hizmetler", "destination": "/kategori/dijital-hizmetler", "permanent": true },
+    { "source": "/kategori/yedek-parca-aksesuar-ve-tuning", "destination": "/kategori/yedek-parca-aksesuar-donanim-ve-tuning", "permanent": true },
+    { "source": "/kategori/bahce-ve-yasam", "destination": "/kategori/bahce-ve-yapi-market", "permanent": true },
+    { "source": "/kategori/otomobil-markaya-gore", "destination": "/kategori/otomobil", "permanent": true },
+    { "source": "/kategori/otomobil-kasa-tipine-gore", "destination": "/kategori/otomobil", "permanent": true },
+    { "source": "/kategori/motosiklet-markaya-gore", "destination": "/kategori/motosiklet", "permanent": true },
+    { "source": "/kategori/elektrikli-ve-hibrit-araclar", "destination": "/kategori/elektrikli-araclar", "permanent": true },
+    { "source": "/kategori/ev-yasam", "destination": "/kategori/ev-ve-yasam", "permanent": true },
+    { "source": "/kategori/anne-bebek", "destination": "/kategori/anne-ve-bebek", "permanent": true },
+    { "source": "/kategori/spor-outdoor", "destination": "/kategori/spor-ve-outdoor", "permanent": true },
+    { "source": "/kategori/hobi-oyun", "destination": "/kategori/kitap-ve-hobi", "permanent": true }
+  ],
   "rewrites": [
     { "source": "/i/:slug", "destination": "/i/[slug]" },
     { "source": "/onay/:token", "destination": "/onay/[token]" },

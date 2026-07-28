@@ -59,7 +59,10 @@ export default function CategoriesPage() {
   const tops = categoryTree.filter((c) => c.label !== "Diğer");
   // Gerçek ilan sayıları — uydurma veri yok. Boşsa sayı gösterilmez, "İlan ekle" denir.
   const catData = tops.map((c) => {
-    const labels = descendantLabels(c);
+    // BENZERSİZ etiketler: descendantLabels tekrarlı döndürür ("Diğer" ~30 kez,
+    // dallar arası tekrar eden yaprak adları) → dedupe etmezsek counts çift sayılıp
+    // gerçek ilan sayısını şişirir (ör. 3 aktif ilan "4" görünürdü).
+    const labels = [...new Set(descendantLabels(c))];
     const real = labels.reduce((sum, lbl) => sum + (counts[lbl] ?? 0), 0);
     return {
       cat: { key: c.key, label: c.label, shortLabel: c.label, subcategories: (c.children ?? []).map((ch) => ch.label) },
