@@ -17,23 +17,25 @@ const OUT = join(__dirname, "..", "public", "sitemap.xml");
 // -> "bilgisayar-ve-oyun"). Bu liste gerçek ağaç slug'larına karşı doğrulanmıştır
 // (scripts/validate-slugs — findBySlug ile 56/56 çözümlenir).
 const CATEGORY_SLUGS = [
-  // 15 üst kategori
-  "emlak", "vasita", "yedek-parca-aksesuar-ve-tuning", "ikinci-el-ve-sifir-alisveris",
+  // 11 üst kategori (Sahibinden-modeli konsolidasyonu: 16→11).
+  // Eski kökler "dijital-urunler-ve-hizmetler / yapi-market-ve-bahce / muzik-enstrumanlari"
+  // kaldırıldı → İkinci El / Ustalar altına taşındı (yeni hub slug'ları aşağıda).
+  "emlak", "vasita", "yedek-parca-aksesuar-donanim-ve-tuning", "ikinci-el-ve-sifir-alisveris",
   "is-makineleri-ve-sanayi", "ustalar-ve-hizmetler", "ozel-ders-ve-egitim", "is-ilanlari",
-  "yardimci-arayanlar", "hayvanlar-alemi", "arayanlar-talep-ilanlari",
-  "dijital-urunler-ve-hizmetler", "yapi-market-ve-bahce", "muzik-enstrumanlari", "saglik-ve-medikal",
+  "hayvanlar-alemi", "yardimci-arayanlar", "arayanlar-talep-ilanlari",
   // Emlak alt kırılımları (yüksek arama hacmi)
   "konut", "is-yeri", "arsa-arazi", "bina", "turistik-tesis", "devre-mulk",
   // Vasıta alt kırılımları
-  "otomobil-markaya-gore", "otomobil-kasa-tipine-gore", "motosiklet-markaya-gore",
-  "arazi-suv-ve-pickup", "elektrikli-ve-hibrit-araclar", "ticari-araclar", "agir-vasita",
-  "deniz-araclari", "karavan",
+  "otomobil", "motosiklet", "arazi-suv-ve-pickup", "elektrikli-araclar",
+  "ticari-araclar", "agir-vasita", "traktor-ve-tarim-araclari", "deniz-araclari", "karavan",
   // Popüler retail alt-kategori landing sayfaları
   "elektronik", "cep-telefonu", "televizyon", "bilgisayar-ve-oyun", "dizustu-bilgisayar",
   "ev-ve-yasam", "mobilya", "beyaz-esya", "klima", "mutfak", "kucuk-ev-aletleri",
   "moda", "kadin-giyim", "erkek-giyim", "ayakkabi", "anne-ve-bebek", "kozmetik-ve-kisisel-bakim",
   "spor-ve-outdoor", "bisiklet", "kitap-ve-hobi", "koleksiyon-ve-antika", "supermarket-ve-gida",
-  "ofis-ve-kirtasiye", "oyuncak", "bahce-ve-yasam", "evcil-hayvan-urunleri"
+  "ofis-ve-kirtasiye", "oyuncak", "evcil-hayvan-urunleri",
+  // Konsolide edilen hub landing sayfaları (eski kökler → İkinci El/Ustalar altına taşındı)
+  "bahce-ve-yapi-market", "muzik", "saglik-ve-medikal", "dijital-hizmetler"
 ];
 
 // Şehir × kategori SEO sayfaları (/kategori/[slug]/[sehir]). Büyük şehirler ×

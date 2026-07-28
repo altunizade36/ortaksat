@@ -5,32 +5,28 @@
   <url><loc>https://www.ortaksat.com/kategoriler</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/emlak</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/vasita</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/yedek-parca-aksesuar-ve-tuning</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.ortaksat.com/kategori/yedek-parca-aksesuar-donanim-ve-tuning</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/ikinci-el-ve-sifir-alisveris</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/is-makineleri-ve-sanayi</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/ustalar-ve-hizmetler</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/ozel-ders-ve-egitim</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/is-ilanlari</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/yardimci-arayanlar</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/hayvanlar-alemi</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.ortaksat.com/kategori/yardimci-arayanlar</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/arayanlar-talep-ilanlari</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/dijital-urunler-ve-hizmetler</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/yapi-market-ve-bahce</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/muzik-enstrumanlari</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/saglik-ve-medikal</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/konut</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/is-yeri</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/arsa-arazi</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/bina</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/turistik-tesis</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/devre-mulk</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/otomobil-markaya-gore</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/otomobil-kasa-tipine-gore</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/motosiklet-markaya-gore</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.ortaksat.com/kategori/otomobil</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.ortaksat.com/kategori/motosiklet</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/arazi-suv-ve-pickup</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/elektrikli-ve-hibrit-araclar</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.ortaksat.com/kategori/elektrikli-araclar</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/ticari-araclar</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/agir-vasita</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.ortaksat.com/kategori/traktor-ve-tarim-araclari</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/deniz-araclari</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/karavan</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/elektronik</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
@@ -57,8 +53,11 @@
   <url><loc>https://www.ortaksat.com/kategori/supermarket-ve-gida</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/ofis-ve-kirtasiye</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/oyuncak</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
-  <url><loc>https://www.ortaksat.com/kategori/bahce-ve-yasam</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/kategori/evcil-hayvan-urunleri</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.ortaksat.com/kategori/bahce-ve-yapi-market</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.ortaksat.com/kategori/muzik</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.ortaksat.com/kategori/saglik-ve-medikal</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
+  <url><loc>https://www.ortaksat.com/kategori/dijital-hizmetler</loc><changefreq>daily</changefreq><priority>0.75</priority></url>
   <url><loc>https://www.ortaksat.com/create</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.ortaksat.com/partner</loc><changefreq>weekly</changefreq><priority>0.8</priority></url>
   <url><loc>https://www.ortaksat.com/ortak-kazanc</loc><changefreq>weekly</changefreq><priority>0.7</priority></url>
