@@ -852,7 +852,7 @@ export default function ExploreScreen() {
           {SORT_ORDER.map((key) => {
             const on = sortMode === key;
             return (
-              <Pressable key={key} accessibilityRole="button" onPress={() => setSortMode(key)} style={({ pressed }) => ({ backgroundColor: on ? colors.ink : colors.surfaceAlt, borderColor: on ? colors.ink : colors.line, borderRadius: 999, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 12, paddingVertical: 7 })}>
+              <Pressable key={key} accessibilityRole="button" onPress={() => setSortMode(key)} style={({ pressed }) => ({ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 12, paddingVertical: 7 })}>
                 <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(SORT_LABELS[key], language)}</Text>
               </Pressable>
             );
@@ -1226,15 +1226,35 @@ export default function ExploreScreen() {
           ))}
         </ScrollView>
 
-        {/* İstatistikler: eskiden "Görsel / Video" sayısıydı — alıcı/ortak için değersiz
-            (katalogda kaç FOTOĞRAF olduğu kimseyi ilgilendirmez). Artık karar verdiren
-            gerçek sinyaller: anında ortak olunabilen ilan + ortalama komisyon oranı. */}
-        {/* "İlan" çipi kaldırıldı: başlıktaki "90 ilan" ile tekrardı ve 3 çip 390px'e sıkışıp
-            etiketleri "Anında ..." / "Ort. k..." diye kırpıyordu. 2 çip → kırpılmadan sığar. */}
-        <View style={{ flexDirection: "row", gap: 6 }}>
-          <ExploreStat icon="flash" label="Anında ortak" value={`${openCount}`} />
-          <ExploreStat icon="percent" label="Ort. komisyon" value={avgRate > 0 ? `%${avgRate}` : "—"} />
-        </View>
+        {/* MOBİL KATEGORİ ŞERİDİ: mobilde üstte GERÇEK kategori girişi yoktu (yalnız
+            davranışsal filtreler) → kullanıcı verticalleri göremeden akordeon içinde
+            gizliydi. Gerçek taksonomi köklerini (Emlak/Vasıta/İkinci El…) yatay şerit
+            olarak yüzeye çıkardık; dokununca o kategoriye filtreler (selectTop). chevron
+            = "içine gir" sinyali (davranışsal çiplerden ayrışır). Masaüstünde sağ panel +
+            nav "Kategoriler" zaten var → yalnız mobil. */}
+        {!isWideWeb ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+            {topCategories().map((n) => {
+              const on = catPath[0] === n.key;
+              return (
+                <Pressable key={n.key} onPress={() => selectTop(n.key)} accessibilityRole="button" accessibilityLabel={translateCopy(n.label, language)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 3, minHeight: 34, paddingHorizontal: 12 }}>
+                  <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
+                  <MaterialCommunityIcons name="chevron-right" size={13} color={on ? "#FFFFFF" : colors.subtle} />
+                </Pressable>
+              );
+            })}
+          </ScrollView>
+        ) : null}
+
+        {/* Karar verdiren sinyaller (anında ortak + ort. komisyon). 0/boş olanı GİZLE:
+            cold-start'ta "Anında ortak: 0" negatif sinyaldi + üst kromu şişiriyordu.
+            İkisi de anlamsızsa satır hiç render edilmez (ürünler yukarı gelir). */}
+        {(openCount > 0 || avgRate > 0) ? (
+          <View style={{ flexDirection: "row", gap: 6 }}>
+            {openCount > 0 ? <ExploreStat icon="flash" label="Anında ortak" value={`${openCount}`} /> : null}
+            {avgRate > 0 ? <ExploreStat icon="percent" label="Ort. komisyon" value={`%${avgRate}`} /> : null}
+          </View>
+        ) : null}
 
         {/* Aktif filtre çipleri (tek-tek kaldırılabilir + tümünü temizle). */}
         {activeChips.length > 0 ? (
