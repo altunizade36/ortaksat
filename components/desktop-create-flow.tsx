@@ -33,7 +33,7 @@ import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon & Ortak Satış", "Önizleme & Yayınla"];
 // 5 idi: emlak/vasıta gibi kategorilerde ürünü anlatmaya yetmiyordu (Sahibinden 15-30 verir).
 // Yükleme otomatik 1600px'e ölçekler + sıkıştırır, ayrıca 512px kart varyantı üretir.
-const MAX_PHOTOS = 15;
+const MAX_PHOTOS = 5;
 // MİNİMAL İLAN DETAYLARI (mockup): formda + zorunlulukta YALNIZ bu alanlar. Kategoriye özel
 // Form, kategorinin ZORUNLU alanlarını gösterir: sade ürünlerde (elektronik/pet) yalnız
 // başlık/durum/fiyat/açıklama; araba/evde ise yıl/km/m²/oda gibi kategoriye özel zorunlular
