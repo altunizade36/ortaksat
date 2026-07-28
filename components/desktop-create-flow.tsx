@@ -35,10 +35,10 @@ const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon
 // Yükleme otomatik 1600px'e ölçekler + sıkıştırır, ayrıca 512px kart varyantı üretir.
 const MAX_PHOTOS = 5;
 // MİNİMAL İLAN DETAYLARI (mockup): formda + zorunlulukta YALNIZ bu alanlar. Kategoriye özel
-// diğer detaylar (yıl/km/yakıt/vites/renk/donanım…) FORMDAN çıkarıldı — kullanıcı bunları
-// Açıklama'da yazar. Fazlalık temizliği: her kategoride sade, tek-tip form (Başlık, Kategori,
-// Marka/Model, Durum, Fiyat, Açıklama). brand/model/condition kategoride varsa gösterilir.
-const ESSENTIAL_KEYS = new Set(["title", "price", "description", "brand", "model", "condition"]);
+// Form, kategorinin ZORUNLU alanlarını gösterir: sade ürünlerde (elektronik/pet) yalnız
+// başlık/durum/fiyat/açıklama; araba/evde ise yıl/km/m²/oda gibi kategoriye özel zorunlular
+// da eklenir (şemada required=true olanlar). Opsiyonel detaylar (renk/donanım/kat…) formda
+// yok — açıklamaya yazılır. Böylece hem sade hem eksiksiz + arama/filtre için yapısal veri.
 const RECOMMENDED_PHOTOS = 3;
 const CONDITION_IMG = "https://images.unsplash.com/photo-1556742502-ec7c0e9f34b1?w=1200";
 
@@ -281,13 +281,15 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     try { await Clipboard.setStringAsync(text); setShareCopied(true); setTimeout(() => setShareCopied(false), 1800); } catch { /* pano yoksa sessiz geç */ }
   };
   const missingFields = useMemo(() => (schema ? schema.fields.filter((f) => {
-    // minimal form: yalnız temel alanlar zorunlu + o şemanın FİYAT alanı (anahtarı "price" olmayabilir:
-    // gecelik/aylık/kişi-başı → priceKey). Böylece kiralık/günlük kategoriler de fiyat ister/render eder.
-    if (!f.required || (!ESSENTIAL_KEYS.has(f.key) && f.key !== priceKey)) return false;
+    // Şemanın ZORUNLU işaretlediği HER alan doldurulmalı (yalnız "temel" değil).
+    // Böylece otomobil yıl/km/yakıt/vites, konut m²/oda/ilan-tipi, telefon hafıza,
+    // iş ilanı çalışma-şekli gibi kategoriye özel zorunlu alanlar da istenir —
+    // eskiden ESSENTIAL_KEYS dışındaki zorunlular sessizce atlanıp ilan eksik yayınlanıyordu.
+    if (!f.required) return false;
     const val = values[f.key];
     if (Array.isArray(val)) return val.length === 0;
     return !String(val ?? "").trim();
-  }) : []), [schema, values, priceKey]);
+  }) : []), [schema, values]);
 
   // Kategori seçiminden form alanlarını otomatik doldur: ağaçta seçilen marka/model/
   // ilan-tipi ilgili alanlara taşınır, başlık önerilir. Böylece bir sonraki adımda
@@ -1077,8 +1079,12 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           const titleField = titleFieldRaw ? { ...titleFieldRaw, placeholder: titlePlaceholderFor(path[0]?.label) } : undefined;
           const priceField = schema.fields.find((f) => f.key === priceKey); // "price" olmayan şemalar da (gecelik/aylık/kişi-başı) fiyat alanını render eder
           const descField = schema.fields.find((f) => f.key === "description");
-          // Yalnız Marka/Model/Durum (varsa) gösterilir; kategoriye özel fazla alanlar formdan çıkarıldı.
-          const specFields = schema.fields.filter((f) => ESSENTIAL_KEYS.has(f.key) && f !== titleFieldRaw && f !== priceField && f !== descField && f.type !== "multiselect");
+          // Kimlik alanları (marka/model/durum) kategoride VARSA her zaman gösterilir +
+          // kategorinin ZORUNLU alanları (otomobilde yıl/km/yakıt/vites, konutta m²/oda/
+          // ilan-tipi, telefonda hafıza…). Opsiyonel detaylar (renk/donanım/kat) formda
+          // YOK → açıklamaya yazılır. Böylece sade AMA eksiksiz + arama/filtre için yapısal veri.
+          const IDENTITY_KEYS = new Set(["brand", "model", "condition"]);
+          const specFields = schema.fields.filter((f) => (f.required || IDENTITY_KEYS.has(f.key)) && f !== titleFieldRaw && f !== priceField && f !== descField && f.type !== "multiselect");
           const renderField = (f: FieldDef) => {
             // Model alanı: marka seçiliyse markaya bağımlı model listesi.
             if (f.key === "model") {
