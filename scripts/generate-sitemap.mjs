@@ -122,13 +122,22 @@ async function fetchListings() {
   }
 }
 
-// Blog yazısı slug'larını lib/blog.ts'ten okur (statik içerik SEO'su). TS dosyasını
-// import edemeyiz; slug: "..." satırlarını regex ile çıkarıp senkron kalırız.
-function blogSlugs() {
+// Build tarihi (kategori/info sayfaları lastmod'u — bunlar her build'de yeniden üretilir
+// ve katalog büyüdükçe içerikleri değişir; tazelik/yeniden-tarama sinyali).
+const BUILD_DATE = new Date().toISOString().slice(0, 10);
+
+// Blog yazısı slug + TARİH'i lib/blog.ts'ten okur (statik içerik SEO'su). Blok-tabanlı:
+// her slug'dan sonrakine kadarki metinden date çekilir → blog lastmod GERÇEK yazı tarihi.
+function blogPosts() {
   try {
     const src = readFileSync(join(__dirname, "..", "lib", "blog.ts"), "utf8");
-    const slugs = [...src.matchAll(/slug:\s*"([^"]+)"/g)].map((m) => m[1]);
-    return [...new Set(slugs)];
+    const marks = [...src.matchAll(/slug:\s*"([^"]+)"/g)].map((m) => ({ slug: m[1], idx: m.index }));
+    const out = marks.map((mk, i) => {
+      const block = src.slice(mk.idx, marks[i + 1]?.idx ?? mk.idx + 2000);
+      const dm = block.match(/(?:date|createdAt|publishedAt):\s*"([0-9]{4}-[0-9]{2}-[0-9]{2})/);
+      return { slug: mk.slug, date: dm ? dm[1] : BUILD_DATE };
+    });
+    return out.filter((p, i, a) => a.findIndex((x) => x.slug === p.slug) === i);
   } catch {
     return [];
   }
@@ -137,13 +146,13 @@ function blogSlugs() {
 async function main() {
   loadDotEnv();
   const rows = await fetchListings();
-  const posts = blogSlugs();
+  const posts = blogPosts();
 
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
-    ...STATIC.map(([loc, cf, pr]) => urlTag(loc, cf, pr)),
-    ...posts.map((s) => urlTag(`/blog/${s}`, "monthly", "0.55")),
+    ...STATIC.map(([loc, cf, pr]) => urlTag(loc, cf, pr, BUILD_DATE)),
+    ...posts.map((p) => urlTag(`/blog/${p.slug}`, "monthly", "0.55", p.date)),
     ...rows.map((r) => urlTag(`/listing/${r.id}`, "weekly", "0.7", r.created_at)),
     "</urlset>",
     ""

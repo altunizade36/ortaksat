@@ -426,16 +426,37 @@ function patchDynamicSeo() {
 
 export function patchSeo() {
   let n = 0;
-  for (const [file, meta] of Object.entries(ROUTES)) if (patch(file, meta)) n++;
+  // Statik landing/bilgi sayfaları: rewriteSeoHead → +html.tsx'ten kalan GENERIC og/desc/title
+  // dubleleri SİLİNİR (patch() sadece ilkini değiştirip ikinciyi bırakıyordu → çift meta).
+  for (const [file, meta] of Object.entries(ROUTES)) {
+    const fp = path.join(DIST, file);
+    if (meta.title && meta.description) {
+      const canonicalUrl = meta.canonical
+        ? (meta.canonical === "/" ? BASE : `${BASE}${meta.canonical}`)
+        : (`${BASE}/${file.replace(/index\.html$/, "").replace(/\.html$/, "")}`.replace(/\/$/, "") || BASE);
+      if (rewriteSeoHead(fp, { title: meta.title, description: meta.description, canonicalUrl, jsonld: meta.jsonld ? [meta.jsonld] : [], noindex: meta.noindex })) n++;
+    } else if (patch(file, meta)) n++;
+  }
   for (const file of NOINDEX) if (patch(file, { noindex: true })) n++;
 
+  // Blog yazıları: rewriteSeoHead → tek temiz makale OG/title/canonical + BlogPosting JSON-LD;
+  // generic ana-sayfa OG dublesi silinir (paylaşım kartı = büyüme motoru, doğru kart şart).
   let blogN = 0;
   for (const p of blogPosts()) {
+    const fp = path.join(DIST, "blog", `${p.slug}.html`);
     const title = `${p.title} | OrtakSat Blog`;
-    if (patch(path.join("blog", `${p.slug}.html`), { title, description: p.excerpt, canonical: `/blog/${p.slug}`, jsonld: blogArticleLd(p) })) blogN++;
+    if (rewriteSeoHead(fp, { title, description: p.excerpt, canonicalUrl: `${BASE}/blog/${p.slug}`, jsonld: [blogArticleLd(p)] })) blogN++;
   }
 
   const dyn = patchDynamicSeo();
 
-  console.log(`post-export: SEO meta yazıldı — ${n} statik rota + ${blogN} blog yazısı + ${dyn.hubs} kategori + ${dyn.cities} şehir sayfası`);
+  // SOFT-404 → NOINDEX: bilinmeyen/yanlış kategori slug'ları (bilinen sluglar kendi
+  // index.html'inden index alır) `[slug]` fallback şablonundan 200 ile servis ediliyordu →
+  // generic indekslenebilir kabuk (index şişmesi). Fallback şablonlarına noindex enjekte et.
+  let nx = 0;
+  for (const fb of ["kategori/[slug].html", "kategori/[slug]/index.html", "kategori/[slug]/[sehir].html"]) {
+    if (patch(fb, { noindex: true })) nx++;
+  }
+
+  console.log(`post-export: SEO meta yazıldı — ${n} statik rota + ${blogN} blog yazısı + ${dyn.hubs} kategori + ${dyn.cities} şehir sayfası + ${nx} fallback noindex`);
 }
