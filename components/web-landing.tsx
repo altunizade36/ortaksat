@@ -128,7 +128,7 @@ export function WebFooter() {
         paddingTop: isWideWeb ? 16 : 16
       }}
     >
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: isWideWeb ? 24 : 16, rowGap: 14 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: isWideWeb ? 24 : 16, rowGap: isWideWeb ? 14 : 10 }}>
         <View style={{ flex: 1.4, gap: 5, minWidth: 190 }}>
           <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "900", letterSpacing: 0.2 }}>ortaksat</Text>
           <Text style={{ color: light, fontSize: 12, fontWeight: "600", lineHeight: 16.5, maxWidth: 300 }}>
@@ -140,12 +140,12 @@ export function WebFooter() {
           </PressLink>
         </View>
         {columns.map((column) => (
-          <View key={column.heading} style={{ gap: 7, flexBasis: 130, flexGrow: 1, minWidth: 128 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900", letterSpacing: 0.2, marginBottom: 2 }}>{translateCopy(column.heading, language)}</Text>
+          <View key={column.heading} style={{ gap: 5, flexBasis: 128, flexGrow: 1, minWidth: 126 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900", letterSpacing: 0.2, marginBottom: 1 }}>{translateCopy(column.heading, language)}</Text>
             {column.links.map((link) => (
               <Link key={link.label} href={link.href} asChild>
                 <Pressable style={{ paddingVertical: 2 }}>
-                  <Text style={{ color: light, fontSize: 13, fontWeight: "600" }}>{translateCopy(link.label, language)}</Text>
+                  <Text style={{ color: light, fontSize: 12.5, fontWeight: "600" }}>{translateCopy(link.label, language)}</Text>
                 </Pressable>
               </Link>
             ))}
@@ -167,9 +167,9 @@ export function WebFooter() {
             flexBasis burada GENİŞLİK demektir (sütun konteynerde yükseklik olurdu). */}
         <View style={{ alignItems: "center", flexBasis: "100%", flexDirection: "row", flexWrap: "wrap", gap: 8, minWidth: 0 }}>
           {trustBadges.map((b) => (
-            <View key={b.label} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
-              <MaterialCommunityIcons name={b.icon} size={14} color="rgba(255,255,255,0.92)" />
-              <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11.5, fontWeight: "800" }}>{translateCopy(b.label, language)}</Text>
+            <View key={b.label} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 5 }}>
+              <MaterialCommunityIcons name={b.icon} size={13} color="rgba(255,255,255,0.92)" />
+              <Text style={{ color: "rgba(255,255,255,0.92)", fontSize: 11, fontWeight: "800" }}>{translateCopy(b.label, language)}</Text>
             </View>
           ))}
         </View>
