@@ -73,11 +73,11 @@ export function AppHeader() {
               </View>
             </Pressable>
           </Link>
-          <View style={{ flexShrink: 1, maxWidth: 640, minWidth: 220, width: 640 }}>
+          <View style={{ flexShrink: 1, maxWidth: 640, minWidth: 190, width: 640 }}>
             <GlobalSearchBar />
           </View>
-          {/* Boşluk: aksiyonları en sağa sabitler */}
-          <View style={{ flex: 1, minWidth: 16 }} />
+          {/* Boşluk: aksiyonları en sağa sabitler (minWidth 0 → dar tablette 3px taşmayı emer) */}
+          <View style={{ flex: 1, minWidth: 0 }} />
           <DesktopActions />
         </View>
         {/* İkincil yatay gezinme çubuğu — masaüstünde ana bölümlere tek tıkla erişim.
