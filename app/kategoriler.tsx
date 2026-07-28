@@ -85,7 +85,7 @@ export default function CategoriesPage() {
       <Head><title>Tüm Kategoriler — Emlak, Vasıta, Elektronik | OrtakSat</title><meta name="description" content="OrtakSat'ta tüm kategoriler: emlak, vasıta, elektronik, moda, ev & yaşam ve daha fazlası. Ürününü ortak sat, komisyon kazan." /></Head>
       <View style={{ alignSelf: "center", gap: 20, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
       {/* Hero */}
-      <View style={{ backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: isWideWeb ? "row" : "column", gap: isWideWeb ? 24 : 16, paddingHorizontal: isWideWeb ? 28 : 18, paddingVertical: isWideWeb ? 24 : 18 }}>
+      <View style={{ backgroundColor: colors.primarySoft, borderRadius: 18, flexDirection: isWideWeb ? "row" : "column", gap: isWideWeb ? 20 : 14, paddingHorizontal: isWideWeb ? 24 : 16, paddingVertical: isWideWeb ? 18 : 14 }}>
         <View style={{ flex: 1.5, gap: 12, justifyContent: "center", minWidth: 0 }}>
           <View style={{ alignSelf: "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
             <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Kategoriler", language)}</Text>

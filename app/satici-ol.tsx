@@ -64,7 +64,7 @@ export default function SellerLandingPage() {
 
       <WebContainer max={1080} padding={16} style={{ gap: 20, paddingTop: 18 }}>
         {/* Hero */}
-        <View style={{ backgroundColor: colors.primaryDark, borderRadius: 20, gap: 14, padding: isWideWeb ? 34 : 22 }}>
+        <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, gap: 12, padding: isWideWeb ? 22 : 16 }}>
           <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 6 }}>
             <MaterialCommunityIcons name="storefront-outline" size={15} color="#FFFFFF" />
             <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "900" }}>{translateCopy("Satıcılar için", language)}</Text>

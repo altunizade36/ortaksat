@@ -941,7 +941,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           </View>
 
           {/* Büyük kapak önizlemesi (kapak = ilk foto) */}
-          <View style={{ backgroundColor: colors.surfaceAlt, borderColor: images.length ? colors.primary : colors.line, borderRadius: 14, borderStyle: images.length ? "solid" : "dashed", borderWidth: images.length ? 2 : 1, height: 240, overflow: "hidden", width: "100%" }}>
+          <View style={{ backgroundColor: colors.surfaceAlt, borderColor: images.length ? colors.primary : colors.line, borderRadius: 14, borderStyle: images.length ? "solid" : "dashed", borderWidth: images.length ? 2 : 1, height: isWideWeb ? 200 : 164, overflow: "hidden", width: "100%" }}>
             {images.length ? (
               <>
                 <SafeRemoteImage uri={images[0]} style={{ height: "100%", width: "100%" }} contentFit="cover" />
@@ -1047,20 +1047,20 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                 <Text style={{ color: colors.ink, fontSize: isWideWeb ? 17 : 15.5, fontWeight: "900" }}>{translateCopy("Ne yapmak istersin?", language)}</Text>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                   {([
-                    { key: "sell", icon: "tag-outline", title: translateCopy("Ürün/hizmet satıyorum", language), sub: translateCopy("Komisyon belirle, ortaklar senin için satsın", language) },
+                    { key: "sell", icon: "tag-outline", title: translateCopy("Ürün/hizmet satıyorum", language), sub: translateCopy("Komisyonu belirle, ortaklar satsın", language) },
                     { key: "seek", icon: "magnify-scan", title: translateCopy("Bir şey arıyorum", language), sub: translateCopy("Bulana komisyon ver — talep ilanı", language) }
                   ] as const).map((opt) => {
                     const on = intent === opt.key;
                     return (
-                      <Pressable key={opt.key} onPress={() => setIntent(opt.key)} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ backgroundColor: on ? colors.primarySoft : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 14, borderWidth: on ? 2 : 1, flexBasis: 240, flexGrow: 1, gap: 6, minWidth: 0, padding: 14 }}>
+                      <Pressable key={opt.key} onPress={() => setIntent(opt.key)} accessibilityRole="button" accessibilityState={{ selected: on }} style={{ backgroundColor: on ? colors.primarySoft : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 12, borderWidth: on ? 2 : 1, flexBasis: 240, flexGrow: 1, gap: 3, minWidth: 0, paddingHorizontal: 11, paddingVertical: 9 }}>
                         <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                          <View style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
-                            <MaterialCommunityIcons name={opt.icon} size={19} color={on ? "#FFFFFF" : colors.primary} />
+                          <View style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderRadius: 8, height: 26, justifyContent: "center", width: 26 }}>
+                            <MaterialCommunityIcons name={opt.icon} size={15} color={on ? "#FFFFFF" : colors.primary} />
                           </View>
-                          <Text style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 14.5, fontWeight: "900" }}>{opt.title}</Text>
-                          {on ? <MaterialCommunityIcons name="check-circle" size={18} color={colors.primary} /> : null}
+                          <Text style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{opt.title}</Text>
+                          {on ? <MaterialCommunityIcons name="check-circle" size={17} color={colors.primary} /> : null}
                         </View>
-                        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{opt.sub}</Text>
+                        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{opt.sub}</Text>
                       </Pressable>
                     );
                   })}

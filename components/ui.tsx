@@ -189,7 +189,7 @@ export function EmptyState({ title, body, action, mascot }: { title: string; bod
   return (
     <Card>
       <View style={{ alignItems: "center", gap: 10 }}>
-        {mascot ? <Mascot name={mascot} size={168} /> : null}
+        {mascot ? <Mascot name={mascot} size={132} /> : null}
         <Text selectable style={{ color: colors.ink, fontSize: 17, fontWeight: "900", textAlign: mascot ? "center" : "left" }}>
           {translateCopy(title, language)}
         </Text>

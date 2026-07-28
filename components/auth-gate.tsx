@@ -40,7 +40,7 @@ export function AuthRequired({
         {/* Sıra: maskot (istendiyse) > bağlamsal ikon (askıya alındı/e-posta/yetki gibi) > MARKA LOGOSU.
             Varsayılan giriş kapısı artık jenerik kilit değil, logo gösterir. */}
         {mascot ? (
-          <Mascot name={mascot} size={172} />
+          <Mascot name={mascot} size={140} />
         ) : icon ? (
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 64, justifyContent: "center", width: 64 }}>
             <MaterialCommunityIcons name={icon} size={32} color={colors.primaryDark} />

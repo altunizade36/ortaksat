@@ -131,7 +131,7 @@ export function AppHeader() {
       }}
     >
       <MaintenanceBanner />
-      <View style={{ alignItems: "center", flexDirection: "row", minHeight: 48, overflow: "hidden" }}>
+      <View style={{ alignItems: "center", flexDirection: "row", minHeight: 44, overflow: "hidden" }}>
         {showBack ? (
           <Pressable
             accessibilityLabel={translateCopy("Geri", language)}
@@ -144,29 +144,29 @@ export function AppHeader() {
               borderColor: colors.line,
               borderRadius: 999,
               borderWidth: 1,
-              height: 38,
+              height: 34,
               justifyContent: "center",
               marginRight: 8,
               opacity: pressed ? 0.7 : 1,
-              width: 38,
+              width: 34,
               zIndex: 2
             })}
           >
-            <MaterialCommunityIcons name="chevron-left" size={26} color={colors.primaryDark} />
+            <MaterialCommunityIcons name="chevron-left" size={22} color={colors.primaryDark} />
           </Pressable>
         ) : null}
         {!showBack ? <View style={{ marginRight: 8, zIndex: 2 }}><MobileNavMenu /></View> : null}
         <Link href="/" asChild>
-          <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("OrtakSat ana sayfa", language)} style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minWidth: 0 }}>
-            <BrandMark size={42} />
+          <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("OrtakSat ana sayfa", language)} style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 9, minWidth: 0 }}>
+            <BrandMark size={36} />
             {/* flex:1 ŞART: minWidth:0 tek başına RNW'de no-op (View zaten flexShrink:0) →
                 kutu max-content kalıyor, 320-375px'te "ortaksat"+slogan header butonlarının
                 ALTINA giriyordu (390px'te kıl payı sığdığı için testlerde görünmedi). */}
-            <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-              <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 21, fontWeight: "900", letterSpacing: 0 }}>
+            <View style={{ flex: 1, gap: 0, minWidth: 0 }}>
+              <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900", letterSpacing: 0 }}>
                 ortaksat
               </Text>
-              <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
+              <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>
                 {t("appSlogan")}
               </Text>
             </View>

@@ -92,9 +92,9 @@ function HowItWorksStatic() {
     <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, gap: 24, paddingBottom: 0, paddingHorizontal: 20, paddingTop: 16 }} style={{ backgroundColor: colors.background }}>
       <Head><title>{translateCopy("Nasıl Çalışır? — Ortak sat, komisyon kazan | OrtakSat", language)}</title><meta name="description" content={translateCopy("OrtakSat nasıl çalışır: ilan ver, ortak satışa aç, komisyonu belirle. Ortaklar ürününü tanıtır, satışta komisyon kazanır. Aracı platform — ödeme taraflar arasında.", language)} /></Head>
       {/* Hero */}
-      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 20, flexDirection: isWideWeb ? "row" : "column", gap: isWideWeb ? 24 : 16, paddingHorizontal: isWideWeb ? 32 : 20, paddingVertical: isWideWeb ? 32 : 22 }}>
+      <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 18, flexDirection: isWideWeb ? "row" : "column", gap: isWideWeb ? 20 : 14, paddingHorizontal: isWideWeb ? 26 : 18, paddingVertical: isWideWeb ? 20 : 16 }}>
         <View style={{ alignItems: "center", flex: 1, justifyContent: "center", minWidth: 0 }}>
-          <Mascot name="laptop" size={isWideWeb ? 240 : 150} priority panel panelColor="#FFFFFF" />
+          <Mascot name="laptop" size={isWideWeb ? 150 : 108} priority panel panelColor="#FFFFFF" />
         </View>
         <View style={{ alignItems: isWideWeb ? "center" : "flex-start", flex: 1.1, gap: 14, minWidth: 0 }}>
           <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 32, fontWeight: "900", lineHeight: 38, textAlign: isWideWeb ? "center" : "left" }}>{translateCopy("OrtakSat nasıl çalışır?", language)}</Text>

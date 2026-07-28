@@ -52,18 +52,18 @@ function HeaderAction({
           borderColor: primary ? colors.primary : colors.line,
           borderRadius: 999,
           borderWidth: primary ? 2 : 1,
-          elevation: 3,
-          height: 40,
+          elevation: 2,
+          height: 34,
           justifyContent: "center",
           opacity: pressed ? 0.72 : 1,
           shadowColor: "#101828",
-          shadowOffset: { width: 0, height: 3 },
-          shadowOpacity: 0.08,
-          shadowRadius: 8,
-          width: 40
+          shadowOffset: { width: 0, height: 2 },
+          shadowOpacity: 0.06,
+          shadowRadius: 5,
+          width: 34
         }}
       >
-        <MaterialCommunityIcons name={icon} size={primary ? 23 : 21} color={colors.primaryDark} />
+        <MaterialCommunityIcons name={icon} size={primary ? 20 : 18} color={colors.primaryDark} />
         {badge ? (
           <View
             style={{

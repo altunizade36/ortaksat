@@ -406,7 +406,7 @@ export function HomeDesktop() {
             </View>
             {/* OrtakSat maskotu (başparmak yukarı) — açık daire arkalıkta, tam gövde önde. */}
             <View style={{ alignItems: "center", alignSelf: "center", flex: 0.9, justifyContent: "center", minHeight: 210, minWidth: 0, position: "relative", width: "100%" }}>
-              <Mascot name="success" size={228} priority panel panelColor={colors.background} />
+              <Mascot name="success" size={148} priority panel panelColor={colors.background} />
             </View>
           </LinearGradient>
 
