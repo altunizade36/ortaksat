@@ -8,7 +8,6 @@ import { colors } from "@/components/colors";
 import { PressLink } from "@/components/ui";
 import { SUPPORT_EMAIL } from "@/lib/contact";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { subscribeNewsletterLive } from "@/lib/live-service";
 
 type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
@@ -53,19 +52,11 @@ export function WebTrustStrip() {
 
 /** Web footer with brand, navigation columns and legal line. */
 export function WebFooter() {
-  const { t, language } = useLanguage();
+  const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
-  const [email, setEmail] = useState("");
-  const [subscribed, setSubscribed] = useState(false);
-  const [newsletterErr, setNewsletterErr] = useState(false);
-  const emailValid = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email.trim());
-  // Sonucu BEKLE + sonuca göre dallan (eskiden fire-and-forget → başarısızlıkta bile "kaydedildi" gösteriyordu).
-  const submitNewsletter = async () => {
-    if (!emailValid) return;
-    setNewsletterErr(false);
-    const res = await subscribeNewsletterLive(email.trim());
-    if (res?.ok) setSubscribed(true); else setNewsletterErr(true);
-  };
+  // NOT: Footer bülten bloğu KALDIRILDI (Sahibinden-tarzı ince footer; "çok
+  // kalın/abartı" geri bildirimi). Bülten kaydı blog sayfasında (app/blog.tsx)
+  // duruyor — özellik korundu, yalnız footer'daki büyük blok temizlendi.
   const columns: Array<{ heading: string; links: Array<{ label: string; href: Href }> }> = [
     {
       heading: "Pazaryeri",
@@ -132,54 +123,21 @@ export function WebFooter() {
         borderTopColor: colors.primary,
         borderTopWidth: 3,
         marginTop: "auto",
-        paddingBottom: isWideWeb ? 16 : 20,
+        paddingBottom: isWideWeb ? 12 : 14,
         paddingHorizontal: isWideWeb ? 32 : 16,
-        paddingTop: isWideWeb ? 24 : 22
+        paddingTop: isWideWeb ? 16 : 16
       }}
     >
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: isWideWeb ? 28 : 18, rowGap: 18 }}>
-        <View style={{ flex: 1.6, gap: 8, minWidth: 210 }}>
-          <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900", letterSpacing: 0.2 }}>ortaksat</Text>
-          <Text style={{ color: light, fontSize: 12.5, fontWeight: "600", lineHeight: 18, maxWidth: 360 }}>
-            {t("appSlogan")}. {translateCopy("İlanını aç, satış yapabilecek ortaklarla eşleş; komisyonu birlikte belirleyin.", language)}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: isWideWeb ? 24 : 16, rowGap: 14 }}>
+        <View style={{ flex: 1.4, gap: 5, minWidth: 190 }}>
+          <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "900", letterSpacing: 0.2 }}>ortaksat</Text>
+          <Text style={{ color: light, fontSize: 12, fontWeight: "600", lineHeight: 16.5, maxWidth: 300 }}>
+            {translateCopy("İlanını aç, satış yapabilecek ortaklarla eşleş; komisyonu birlikte belirleyin.", language)}
           </Text>
-          <PressLink href="/iletisim" accessibilityLabel={SUPPORT_EMAIL} pressedOpacity={0.75} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-            <MaterialCommunityIcons name="email-outline" size={14} color="#FFFFFF" />
-            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{SUPPORT_EMAIL}</Text>
+          <PressLink href="/iletisim" accessibilityLabel={SUPPORT_EMAIL} pressedOpacity={0.75} style={{ alignItems: "center", flexDirection: "row", gap: 6, marginTop: 2 }}>
+            <MaterialCommunityIcons name="email-outline" size={13} color="#FFFFFF" />
+            <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>{SUPPORT_EMAIL}</Text>
           </PressLink>
-          <View style={{ gap: 8, maxWidth: 380 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bültene abone ol", language)}</Text>
-            {subscribed ? (
-              <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 10, flexDirection: "row", gap: 8, paddingHorizontal: 14, paddingVertical: 12 }}>
-                <MaterialCommunityIcons name="check-circle" size={18} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", flex: 1, fontSize: 13, fontWeight: "700" }}>{translateCopy("Teşekkürler! Bülten aboneliğin kaydedildi.", language)}</Text>
-              </View>
-            ) : (
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                <TextInput
-                  value={email}
-                  onChangeText={setEmail}
-                  placeholder={translateCopy("E-posta adresin", language)}
-                  placeholderTextColor="rgba(255,255,255,0.55)"
-                  accessibilityLabel={translateCopy("Bülten için e-posta adresin", language)}
-                  keyboardType="email-address"
-                  autoCapitalize="none"
-                  autoComplete="email"
-                  textContentType="emailAddress"
-                  {...({ name: "newsletter_email", "aria-label": translateCopy("Bülten için e-posta adresin", language), inputMode: "email" } as Record<string, unknown>)}
-                  onSubmitEditing={() => { void submitNewsletter(); }}
-                  returnKeyType="go"
-                  style={{ backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.25)", borderRadius: 10, borderWidth: 1, color: "#FFFFFF", flex: 1, fontSize: 14, fontWeight: "600", height: 44, paddingHorizontal: 14 }}
-                />
-                <Pressable disabled={!emailValid} onPress={() => { void submitNewsletter(); }} style={{ alignItems: "center", backgroundColor: emailValid ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 10, height: 44, justifyContent: "center", paddingHorizontal: 18 }}>
-                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Abone Ol", language)}</Text>
-                </Pressable>
-              </View>
-            )}
-            {newsletterErr && !subscribed ? (
-              <Text style={{ color: "#FFE0E0", fontSize: 12, fontWeight: "700" }}>{translateCopy("Abonelik kaydedilemedi, birazdan tekrar dene.", language)}</Text>
-            ) : null}
-          </View>
         </View>
         {columns.map((column) => (
           <View key={column.heading} style={{ gap: 7, flexBasis: 130, flexGrow: 1, minWidth: 128 }}>
@@ -194,12 +152,12 @@ export function WebFooter() {
           </View>
         ))}
       </View>
-      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between", marginTop: 18, paddingTop: 14 }}>
-        <View style={{ flex: 1, gap: 3, minWidth: 200 }}>
-          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" }}>
+      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between", marginTop: 12, paddingTop: 10 }}>
+        <View style={{ flex: 1, gap: 2, minWidth: 200 }}>
+          <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "600" }}>
             {translateCopy("© 2026 OrtakSat. Tüm hakları saklıdır.", language)}
           </Text>
-          <Text style={{ color: "rgba(255,255,255,0.6)", fontSize: 11.5, fontWeight: "600", maxWidth: 640 }}>
+          <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: "600", lineHeight: 15, maxWidth: 680 }}>
             {translateCopy("OrtakSat ödeme, kargo veya komisyon tahsilatı yapmaz; yalnızca ilan, ortak satıcı eşleştirme, mesajlaşma ve anlaşma kaydı sağlar. Satış, ödeme, teslimat ve komisyon ödemesi kullanıcılar arasındaki anlaşmalardan ibaret olup tüm sorumluluk taraflara aittir.", language)}
           </Text>
         </View>
