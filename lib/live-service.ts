@@ -470,8 +470,10 @@ const ALLOWED_VIDEO_TYPES: Record<string, string> = { mp4: "video/mp4", mov: "vi
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024; // 5 MB
 export const MAX_MEDIA_BYTES = 10 * 1024 * 1024; // 10 MB (video dahil; bucket limiti)
 
-// Görseli canvas ile verilen boyut/kalitede JPEG'e çevirir (tek geçiş).
-async function renderJpeg(bitmap: ImageBitmap, maxDim: number, quality: number): Promise<Blob | null> {
+// Görseli canvas ile verilen boyut/kalitede hedef formata çevirir (varsayılan WebP:
+// JPEG'e göre ~%25-35 daha küçük, tüm modern tarayıcılar destekler). WebP encode
+// başarısızsa (çok eski tarayıcı → toBlob null) OTOMATİK JPEG'e düşer → kayıp yok.
+async function renderImage(bitmap: ImageBitmap, maxDim: number, quality: number, mime: string): Promise<{ blob: Blob; type: string } | null> {
   const scale = Math.min(1, maxDim / Math.max(bitmap.width, bitmap.height));
   const w = Math.max(1, Math.round(bitmap.width * scale));
   const h = Math.max(1, Math.round(bitmap.height * scale));
@@ -481,7 +483,12 @@ async function renderJpeg(bitmap: ImageBitmap, maxDim: number, quality: number):
   const ctx = canvas.getContext("2d");
   if (!ctx) return null;
   ctx.drawImage(bitmap, 0, 0, w, h);
-  return new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), "image/jpeg", quality));
+  const encode = (m: string) => new Promise<Blob | null>((resolve) => canvas.toBlob((b) => resolve(b), m, quality));
+  let blob = await encode(mime);
+  // toBlob istenen türü desteklemezse tarayıcı PNG döndürebilir veya null; JPEG'e düş.
+  if ((!blob || blob.size === 0 || (mime === "image/webp" && blob.type !== "image/webp")) && mime !== "image/jpeg") blob = await encode("image/jpeg");
+  if (!blob || blob.size === 0) return null;
+  return { blob, type: blob.type || "image/jpeg" };
 }
 
 // Web'de görseli en fazla maxDim px + hedef MB altına OTOMATİK sıkıştırır. Hedefe
@@ -491,7 +498,8 @@ async function compressImageBlob(
   blob: Blob,
   maxDim = 1600,
   quality = 0.82,
-  maxBytes = MAX_IMAGE_BYTES
+  maxBytes = MAX_IMAGE_BYTES,
+  mime = "image/webp"
 ): Promise<{ blob: Blob; contentType: string }> {
   try {
     if (typeof document === "undefined" || typeof createImageBitmap === "undefined") {
@@ -500,19 +508,19 @@ async function compressImageBlob(
     const bitmap = await createImageBitmap(blob);
     let dim = maxDim;
     let q = quality;
-    let best: Blob | null = null;
+    let best: { blob: Blob; type: string } | null = null;
     // En fazla 6 deneme: hedef altına inince dur. Önce kalite (0.82->0.5), sonra
     // boyut (%20 küçült) düşer. Kod pratikte 2-3 denemede biter.
     for (let i = 0; i < 6; i++) {
-      const out = await renderJpeg(bitmap, dim, q);
-      if (out && out.size > 0) {
+      const out = await renderImage(bitmap, dim, q, mime);
+      if (out && out.blob.size > 0) {
         best = out;
-        if (out.size <= maxBytes) break;
+        if (out.blob.size <= maxBytes) break;
       }
       if (q > 0.5) q = Math.max(0.5, q - 0.12);
       else dim = Math.round(dim * 0.8);
     }
-    if (best && best.size > 0) return { blob: best, contentType: "image/jpeg" };
+    if (best && best.blob.size > 0) return { blob: best.blob, contentType: best.type };
   } catch (e) {
     console.warn("Görsel sıkıştırma atlandı:", (e as Error)?.message);
   }
@@ -558,10 +566,11 @@ export async function uploadListingImage(uri: string, userId: string) {
   // Görselleri (video değil) hedef MB altına OTOMATİK sıkıştır/ölçekle (web: canvas;
   // native: yukarıda zaten ölçeklendi, burada boyut yine yüksekse ikinci geçiş).
   if (!isVideo) {
-    const compressed = await compressImageBlob(body, 1600, 0.82, MAX_IMAGE_BYTES);
+    // ANA görsel WebP (JPEG'e göre ~%25-35 küçük → hızlı LCP + az bant); desteklenmezse JPEG.
+    const compressed = await compressImageBlob(body, 1600, 0.82, MAX_IMAGE_BYTES, "image/webp");
     body = compressed.blob;
     contentType = compressed.contentType;
-    if (contentType === "image/jpeg") ext = "jpg";
+    ext = contentType === "image/webp" ? "webp" : "jpg";
   }
 
   // Video sıkıştırılamadığı için hard limiti aşarsa reddet. Görsel ise sıkıştırma
@@ -588,7 +597,9 @@ export async function uploadListingImage(uri: string, userId: string) {
     try {
       let thumbBlob: Blob | null = null;
       if (Platform.OS === "web") {
-        const t = await compressImageBlob(body, 512, 0.72, 120 * 1024);
+        // Thumbnail JPEG kalır (-t.jpg): cardImageUrl her zaman -t.jpg ister; küçük olduğu
+        // için WebP kazancı ihmal edilebilir, format tutarlılığı (eski+yeni) daha değerli.
+        const t = await compressImageBlob(body, 512, 0.72, 120 * 1024, "image/jpeg");
         // Kart HER ZAMAN <uuid>-t.jpg ister; yoksa 400/ORB hatası + tam-boyut yükleme (perf
         // kaybı) olur. O yüzden canvas başarıyla küçülttüyse (blob>0, hep JPEG) thumb'ı HER
         // ZAMAN yükle — "yalnız daha küçükse" koşulu yüzünden zaten-ufak/eski görsellerde
