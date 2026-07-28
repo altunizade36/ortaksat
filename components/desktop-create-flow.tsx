@@ -33,7 +33,7 @@ import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 const STEPS = ["Kategori", "İlan Bilgileri", "Konum", "Fotoğraflar", "Komisyon & Ortak Satış", "Önizleme & Yayınla"];
 // 5 idi: emlak/vasıta gibi kategorilerde ürünü anlatmaya yetmiyordu (Sahibinden 15-30 verir).
 // Yükleme otomatik 1600px'e ölçekler + sıkıştırır, ayrıca 512px kart varyantı üretir.
-const MAX_PHOTOS = 5;
+const MAX_PHOTOS = 15;
 // MİNİMAL İLAN DETAYLARI (mockup): formda + zorunlulukta YALNIZ bu alanlar. Kategoriye özel
 // Form, kategorinin ZORUNLU alanlarını gösterir: sade ürünlerde (elektronik/pet) yalnız
 // başlık/durum/fiyat/açıklama; araba/evde ise yıl/km/m²/oda gibi kategoriye özel zorunlular
@@ -143,7 +143,6 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   // seek → CategoryPicker "Arayanlar / Talep İlanları" kökünden başlar. Harici link /create?intent=seek.
   const [intent, setIntent] = useState<"sell" | "seek">(initialIntent === "seek" ? "seek" : "sell");
   // Mobilde alan-grubu aç/kapa (Emlak/Vasıta uzun formları). Anahtar yoksa varsayılan kullanılır.
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
   // "Donanım & Özellikler" (opsiyonel, en şişkin bölüm) mobilde varsayılan KAPALI.
   const [openFeatures, setOpenFeatures] = useState(false);
   const [path, setPath] = useState<CategoryNode[]>([]);
@@ -1079,12 +1078,14 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           const titleField = titleFieldRaw ? { ...titleFieldRaw, placeholder: titlePlaceholderFor(path[0]?.label) } : undefined;
           const priceField = schema.fields.find((f) => f.key === priceKey); // "price" olmayan şemalar da (gecelik/aylık/kişi-başı) fiyat alanını render eder
           const descField = schema.fields.find((f) => f.key === "description");
-          // Kimlik alanları (marka/model/durum) kategoride VARSA her zaman gösterilir +
-          // kategorinin ZORUNLU alanları (otomobilde yıl/km/yakıt/vites, konutta m²/oda/
-          // ilan-tipi, telefonda hafıza…). Opsiyonel detaylar (renk/donanım/kat) formda
-          // YOK → açıklamaya yazılır. Böylece sade AMA eksiksiz + arama/filtre için yapısal veri.
+          // Kimlik (marka/model/durum) + kategorinin ZORUNLU alanları HER ZAMAN görünür.
+          // Opsiyonel yapısal alanlar (renk/garanti/takas/kimden/hasar…) ve donanım
+          // çoklu-seçimleri (güvenlik/konfor/multimedya) ise "Detaylı Özellikler" AÇILIR
+          // bölümünde (varsayılan kapalı) → Sahibinden gibi zengin AMA form sade kalır.
           const IDENTITY_KEYS = new Set(["brand", "model", "condition"]);
           const specFields = schema.fields.filter((f) => (f.required || IDENTITY_KEYS.has(f.key)) && f !== titleFieldRaw && f !== priceField && f !== descField && f.type !== "multiselect");
+          const optionalFields = schema.fields.filter((f) => !f.required && !IDENTITY_KEYS.has(f.key) && f !== titleFieldRaw && f !== priceField && f !== descField && f.type !== "multiselect");
+          const featureFields = schema.fields.filter((f) => f.type === "multiselect" && f !== titleFieldRaw && f !== priceField && f !== descField);
           const renderField = (f: FieldDef) => {
             // Model alanı: marka seçiliyse markaya bağımlı model listesi.
             if (f.key === "model") {
@@ -1136,6 +1137,27 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
               {/* Marka / Model / Durum (kategoride varsa) — düz map, alt-gruplama yok. */}
               {specFields.length ? (
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{specFields.map(renderField)}</View>
+              ) : null}
+
+              {/* DETAYLI ÖZELLİKLER (isteğe bağlı) — Sahibinden gibi zengin opsiyonel alanlar
+                  (renk/garanti/takas/kimden/hasar…) + donanım çoklu-seçimleri, AÇILIR bölümde;
+                  varsayılan kapalı → form sade kalır, isteyen satıcı ilanını zenginleştirir.
+                  publish() zaten tüm alanları attributes'a yazar → arama/filtre + alıcı bilgisi. */}
+              {optionalFields.length > 0 || featureFields.length > 0 ? (
+                <View style={{ borderColor: colors.line, borderRadius: 12, borderWidth: 1, overflow: "hidden" }}>
+                  <Pressable onPress={() => setOpenFeatures((v) => !v)} accessibilityRole="button" accessibilityState={{ expanded: openFeatures }} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, flexDirection: "row", gap: 9, paddingHorizontal: 14, paddingVertical: 12 }}>
+                    <MaterialCommunityIcons name="tune-variant" size={17} color={colors.primaryDark} />
+                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Detaylı Özellikler", language)} <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>({translateCopy("isteğe bağlı", language)} · {optionalFields.length + featureFields.length})</Text></Text>
+                    <MaterialCommunityIcons name={openFeatures ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} />
+                  </Pressable>
+                  {openFeatures ? (
+                    <View style={{ gap: 14, padding: 14 }}>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Doldurdukça ilanın daha eksiksiz görünür ve aramada daha kolay bulunur — hepsi isteğe bağlı.", language)}</Text>
+                      {optionalFields.length ? <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>{optionalFields.map(renderField)}</View> : null}
+                      {featureFields.map(renderField)}
+                    </View>
+                  ) : null}
+                </View>
               ) : null}
 
               {/* Fiyat + Açıklama YAN YANA (mockup): tek satır; dar ekranda flexWrap alt alta sarar. */}
