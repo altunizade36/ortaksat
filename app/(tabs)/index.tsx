@@ -605,15 +605,18 @@ export default function HomeScreen() {
 // Sunucu + ilk istemci paint'inde gösterilen DETERMİNİSTİK SEO iskeleti.
 // Store/rastgele/tarih/ikon-font İÇERMEZ → server===client → #418 yok. Gerçek h1,
 // açıklama, CTA ve kategori iç-bağlantıları taşır (SEO). Mount sonrası gizlenir.
+// NOT: slug'lar category-tree.ts sl() ile BİREBİR aynı olmalı ("&"→"ve").
+// Aksi halde /kategori/<slug> soft-404 "Kategori bulunamadı"ya düşer (ölü SEO
+// internal link + mobil kullanıcı ölü sayfaya gider). Ağaca karşı doğrulandı.
 const SKELETON_CATS: Array<{ slug: string; label: string }> = [
   { slug: "emlak", label: "Emlak" },
   { slug: "vasita", label: "Vasıta" },
   { slug: "elektronik", label: "Elektronik" },
-  { slug: "ev-yasam", label: "Ev & Yaşam" },
+  { slug: "ev-ve-yasam", label: "Ev & Yaşam" },
   { slug: "moda", label: "Moda" },
-  { slug: "anne-bebek", label: "Anne & Bebek" },
-  { slug: "spor-outdoor", label: "Spor & Outdoor" },
-  { slug: "hobi-oyun", label: "Hobi & Oyun" }
+  { slug: "anne-ve-bebek", label: "Anne & Bebek" },
+  { slug: "spor-ve-outdoor", label: "Spor & Outdoor" },
+  { slug: "kitap-ve-hobi", label: "Kitap & Hobi" }
 ];
 
 function HomeSeoSkeleton() {
