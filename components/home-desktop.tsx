@@ -616,6 +616,20 @@ export function HomeDesktop() {
             ) : (
               <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{translateCopy("Tüm ilanları gördün", language)} · {filtered.length} {translateCopy("ilan", language)}</Text>
             )}
+            {/* AZ-İLAN (cold-start) arz CTA'sı: içerik sütunu filtre rayından kısa kalınca
+                sağda büyük boş alan oluyordu. Boşluğu ANLAMLI dolduruyor + arz tarafını
+                (platformun #1 ihtiyacı) büyütüyor. İlan çoğalınca kendiliğinden kaybolur. */}
+            {active.length < 8 ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 16, gap: 7, marginTop: 6, paddingHorizontal: 24, paddingVertical: 26 }}>
+                <MaterialCommunityIcons name="store-plus-outline" size={28} color={colors.primaryDark} />
+                <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900", textAlign: "center" }}>{translateCopy("Vitrini birlikte büyütelim", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19, maxWidth: 440, textAlign: "center" }}>{translateCopy("Ürününü ücretsiz ekle; ortakların kitlesiyle daha fazla kişiye ulaş, satışta komisyon paylaş.", language)}</Text>
+                <PressLink href="/create" accessibilityRole="button" accessibilityLabel={translateCopy("İlan Ver", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 7, marginTop: 4, paddingHorizontal: 22, paddingVertical: 12 }}>
+                  <MaterialCommunityIcons name="store-plus-outline" size={17} color="#FFFFFF" />
+                  <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ücretsiz İlan Ver", language)}</Text>
+                </PressLink>
+              </View>
+            ) : null}
           </>
         )}
       </View>

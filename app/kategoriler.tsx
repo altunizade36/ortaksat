@@ -168,7 +168,7 @@ export default function CategoriesPage() {
                   <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{translateCopy(cat.label, language)}</Text>
                 </View>
                 <View style={{ gap: 4 }}>
-                  {cat.subcategories.slice(0, 3).map((sub) => (
+                  {cat.subcategories.slice(0, isWideWeb ? 3 : 2).map((sub) => (
                     <View key={sub} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                       <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: 4, width: 4 }} />
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy(sub, language)}</Text>

@@ -92,7 +92,7 @@ export default function BuyerLandingPage() {
           <Text style={{ color: colors.ink, fontSize: 21, fontWeight: "900" }}>{translateCopy("Neden OrtakSat'tan almalısın?", language)}</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             {BENEFITS.map((c) => (
-              <View key={c.t} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 320, flexGrow: 1, gap: 6, padding: 16 }}>
+              <View key={c.t} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 250, flexGrow: 1, gap: 6, minWidth: 0, padding: 16 }}>
                 <MaterialCommunityIcons name={c.icon} size={22} color={colors.primaryDark} />
                 <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy(c.t, language)}</Text>
                 <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>{translateCopy(c.b, language)}</Text>
