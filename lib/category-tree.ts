@@ -1065,6 +1065,22 @@ export const formSchemas: Record<string, FormSchema> = {
       F.price, { ...F.takas, group: "Satış" }, VASITA_ETIKET_FIELD, F.desc
     ]
   },
+  // Ticari hat / plaka (taksi/dolmuş/minibüs hattı, ticari plaka DEVRİ) — araç DEĞİL,
+  // bir HAK/plaka devri → araç şemaları (yıl/km/motor zorunlu) uymaz; kendi hafif şeması.
+  ticariPlaka: {
+    key: "ticariPlaka",
+    title: "Ticari hat / plaka bilgileri",
+    fields: [
+      F.title,
+      { key: "plateType", label: "Hat / plaka tipi", type: "select", required: true, options: ["Taksi Plakası", "Taksi Durağı Hakkı", "Dolmuş Hattı", "Minibüs Hattı", "Servis Plakası (S)", "Okul Servisi Hattı", "Personel Servisi Hattı", "Otobüs Hattı", "Nakliye / Yük Plakası", "Ticari Taksi Plakası", "Diğer Ticari Plaka"], group: "Hat & Plaka" },
+      { key: "plateCity", label: "Şehir / bölge", type: "text", placeholder: "ör. İstanbul - Kadıköy", group: "Hat & Plaka" },
+      { key: "transferType", label: "Devir tipi", type: "select", options: ["Satılık (Devren)", "Kiralık", "Hisseli Satış"], group: "Hat & Plaka" },
+      { key: "withVehicle", label: "Araç dahil mi?", type: "bool", group: "Hat & Plaka" },
+      { key: "activeRoute", label: "Hat faal / çalışır durumda mı?", type: "bool", group: "Hat & Plaka" },
+      { key: "from", label: "Kimden", type: "select", options: ["Sahibinden", "Galeriden", "Aracıdan"], group: "Satış & Ödeme" },
+      F.price, { ...F.takas, group: "Satış & Ödeme" }, F.desc
+    ]
+  },
   // Deniz aracı (tekne/yat): boy/en/motor saati/malzeme.
   deniz: {
     key: "deniz",
@@ -1728,7 +1744,7 @@ export const categoryTree: CategoryNode[] = [
     // Düz marka-yaprağı (model seçilemiyordu) → brand→model. "Range Rover" ÇIKARILDI (Land Rover'ın MODELİ).
     node("Arazi, SUV & Pickup", brandModelNodes(["Audi", "BMW", "Chery", "Citroën", "Dacia", "Ford", "Honda", "Hyundai", "Jeep", "Kia", "Land Rover", "Mazda", "Mercedes-Benz", "MG", "Mitsubishi", "Nissan", "Opel", "Peugeot", "Porsche", "Renault", "Suzuki", "Toyota", "Volkswagen", "Volvo", "BYD", "Togg", "Tesla", "Diğer"], MODELS_BY_BRAND, "otomobil"), "otomobil"),
     // "Şarj Ekipmanı" ÇIKARILDI (araç değil aksesuar → Yedek Parça'da).
-    node("Elektrikli Araçlar", leaves(["Elektrikli Otomobil", "Hibrit (HEV)", "Plug-in Hibrit (PHEV)", "Menzil Artırıcılı (EREV)", "Elektrikli SUV", "Elektrikli Ticari"], "otomobil"), "otomobil"),
+    node("Elektrikli Araçlar", leaves(["Elektrikli Otomobil", "Hibrit (HEV)", "Plug-in Hibrit (PHEV)", "Menzil Artırıcılı (EREV)", "Elektrikli SUV", "Elektrikli Minivan & Panelvan", "Elektrikli Ticari", "Elektrikli Hizmet Araçları"], "otomobil"), "otomobil"),
     // Sahibinden'de tek başlık: "Motosiklet" (marka→model). Tür, formda `motoType` alanı.
     node("Motosiklet", brandModelNodes(MOTO_BRANDS, MOTO_MODELS, "motosiklet"), "motosiklet"),
     node("Minivan & Panelvan", leaves(["Panelvan", "Minivan", "Kombi Van", "Camlı Van", "Yük Vanı", "Yolcu Vanı"], "ticari"), "ticari"),
@@ -1751,13 +1767,18 @@ export const categoryTree: CategoryNode[] = [
     // Her araç tipi DOĞRU şemaya (Hasarlı Motosiklet artık motosiklet, Ticari→ticari, Ağır→agirVasita).
     node("Hasarlı Araçlar", [
       ...leaves(["Hasarlı Otomobil", "Pert Kayıtlı Otomobil", "Ağır Hasarlı Otomobil", "Hasarlı SUV & Arazi"], "otomobil"),
+      leaf("Hasarlı Minivan & Panelvan", "ticari"),
       leaf("Hasarlı Ticari Araç", "ticari"),
       leaf("Hasarlı Ağır Vasıta", "agirVasita"),
       leaf("Hasarlı Motosiklet", "motosiklet")
     ], "otomobil"),
     // KİRALIK — tek yapraktı; Sahibinden gibi tam alt-ağaç + kiralamaya özel şema (aracKiralik).
     // ——— Sahibinden listesinde OLMAYAN ek dallarımız: Sahibinden sırasının ALTINA alındı ———
-    node("Ağır Vasıta", leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Oto Kurtarıcı & Taşıyıcı", "Dorse (Lowbed)", "Dorse (Damperli)", "Dorse (Tenteli)", "Dorse (Frigorifik)", "Dorse (Silobas)", "Dorse (Tanker)", "Römork (Ticari)", "Tanker", "Frigorifik", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "agirVasita"), "agirVasita"),
+    node("Ağır Vasıta", [
+      ...leaves(["Kamyon", "Kamyonet", "Çekici (TIR)", "Otobüs", "Midibüs", "Minibüs", "Oto Kurtarıcı & Taşıyıcı", "Karoser & Üst Yapı", "Dorse (Lowbed)", "Dorse (Damperli)", "Dorse (Tenteli)", "Dorse (Frigorifik)", "Dorse (Silobas)", "Dorse (Tanker)", "Römork (Ticari)", "Tanker", "Frigorifik", "Damperli Kamyon", "Beton Mikseri", "Vinçli Kamyon"], "agirVasita"),
+      // Ticari hat/plaka DEVRİ (Sahibinden "Ticari Hat & Ticari Plaka") — araç değil, hat/plaka hakkı → ticariPlaka şeması.
+      leaf("Ticari Hat & Ticari Plaka", "ticariPlaka")
+    ], "agirVasita"),
     node("Traktör & Tarım Araçları", brandModelNodes(["New Holland", "Massey Ferguson", "John Deere", "Case IH", "Fiat", "Ford", "Deutz-Fahr", "Kubota", "Same", "Landini", "Tümosan", "Erkunt", "Başak", "TürkTraktör", "Hattat", "Claas", "Valtra", "Diğer"], TRACTOR_MODELS, "traktor"), "traktor"),
     node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Elektrikli Bisiklet", "Elektrikli Motosiklet", "Hoverboard", "Segway", "Elektrikli Golf Aracı"], "vasitaGenel"), "vasitaGenel"),
     node("Kiralık Araçlar", [
@@ -1768,6 +1789,9 @@ export const categoryTree: CategoryNode[] = [
       node("Otobüs & Minibüs Kiralama", leaves(["Otobüs (Şoförlü)", "Midibüs", "Minibüs", "VIP Minibüs", "Tur & Gezi Aracı", "Personel Servisi"], "aracKiralik"), "aracKiralik"),
       node("Motosiklet & Scooter Kiralama", leaves(["Motosiklet", "Scooter", "Elektrikli Scooter", "Motokurye Aracı"], "aracKiralik"), "aracKiralik"),
       node("Karavan Kiralama", leaves(["Motokaravan", "Çekme Karavan", "Van Karavan"], "aracKiralik"), "aracKiralik"),
+      // Sahibinden Kiralık'ta olup bizde eksik olan iki dal:
+      node("Oto Kurtarıcı & Taşıyıcı Kiralama", leaves(["Oto Kurtarıcı", "Çoklu Araç Taşıyıcı", "Tekli Kurtarıcı", "Kayar Kasa Kurtarıcı", "Forkliftli Taşıyıcı"], "aracKiralik"), "aracKiralik"),
+      node("Hava Aracı Kiralama", leaves(["Helikopter Kiralama", "Uçak Kiralama", "Özel Jet Kiralama", "Sıcak Hava Balonu", "Drone Kiralama"], "aracKiralik"), "aracKiralik"),
       ...leaves(["Lüks & VIP Araç", "Düğün Arabası", "Elektrikli Araç Kiralama", "Klasik Araç Kiralama"], "aracKiralik")
     ], "aracKiralik")
   ], "vasitaGenel", IMG("1503376780353-7e6692767b70")),
