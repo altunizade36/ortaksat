@@ -1,5 +1,5 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
@@ -14,7 +14,14 @@ import { useIsWideWeb } from "@/lib/layout";
  */
 export function LegalLibrary({ initialKey }: { initialKey?: string }) {
   const isWideWeb = useIsWideWeb();
-  const [activeKey, setActiveKey] = useState<string>(initialKey && LEGAL_DOCS[initialKey] ? initialKey : "hesap");
+  // SSG statik export param'sız "hesap" belgesini basar; ?doc=X ile gelen client ilk
+  // render'da FARKLI belge basarsa hydration metin uyuşmazlığı (React #418) olur.
+  // Çözüm: ilk render İKİ tarafta da "hesap" (SSG ile eşleşir), deep-link mount SONRASI
+  // uygulanır — bir tick sonra doğru belgeye geçer, göze çarpmaz, #418 kalkar.
+  const [activeKey, setActiveKey] = useState<string>("hesap");
+  useEffect(() => {
+    if (initialKey && LEGAL_DOCS[initialKey]) setActiveKey(initialKey);
+  }, [initialKey]);
   const doc = LEGAL_DOCS[activeKey];
 
   const menu = (

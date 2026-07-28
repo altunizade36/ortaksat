@@ -133,26 +133,17 @@ export function AppHeader() {
       <MaintenanceBanner />
       <View style={{ alignItems: "center", flexDirection: "row", minHeight: 44, overflow: "hidden" }}>
         {showBack ? (
+          // 44×44 şeffaf dokunma hedefi (Apple HIG); görsel daire 34px iç View'de.
           <Pressable
             accessibilityLabel={translateCopy("Geri", language)}
             accessibilityRole="button"
-            hitSlop={10}
+            hitSlop={6}
             onPress={goBack}
-            style={({ pressed }) => ({
-              alignItems: "center",
-              backgroundColor: colors.surface,
-              borderColor: colors.line,
-              borderRadius: 999,
-              borderWidth: 1,
-              height: 34,
-              justifyContent: "center",
-              marginRight: 8,
-              opacity: pressed ? 0.7 : 1,
-              width: 34,
-              zIndex: 2
-            })}
+            style={({ pressed }) => ({ alignItems: "center", justifyContent: "center", marginRight: 4, minHeight: 44, minWidth: 44, opacity: pressed ? 0.7 : 1, zIndex: 2 })}
           >
-            <MaterialCommunityIcons name="chevron-left" size={22} color={colors.primaryDark} />
+            <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}>
+              <MaterialCommunityIcons name="chevron-left" size={22} color={colors.primaryDark} />
+            </View>
           </Pressable>
         ) : null}
         {!showBack ? <View style={{ marginRight: 8, zIndex: 2 }}><MobileNavMenu /></View> : null}

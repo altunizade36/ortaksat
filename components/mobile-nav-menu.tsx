@@ -51,21 +51,24 @@ export function MobileNavMenu() {
 
   return (
     <>
+      {/* 44×44 şeffaf dokunma hedefi; görsel daire 38px iç View'de (hitSlop web'de yetersiz). */}
       <Pressable
         accessibilityRole="button"
         accessibilityLabel={`${translateCopy("Menü", language)}${unreadMsg + unreadNotif > 0 ? ` — ${unreadMsg + unreadNotif} ${translateCopy("okunmamış", language)}` : ""}`}
-        hitSlop={10}
+        hitSlop={6}
         onPress={() => setOpen(true)}
-        style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}
+        style={({ pressed }) => ({ alignItems: "center", justifyContent: "center", minHeight: 44, minWidth: 44, opacity: pressed ? 0.7 : 1 })}
       >
-        <MaterialCommunityIcons name="menu" size={22} color={colors.primaryDark} />
-        {/* Okunmamış mesaj/bildirim rozeti: mobilde tek bakışta görünsün (masaüstü
-            header ikonlarındaki rozetin karşılığı; hamburger'da saklı kalmasın). */}
-        {unreadMsg + unreadNotif > 0 ? (
-          <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1.5, height: 16, justifyContent: "center", minWidth: 16, paddingHorizontal: 3, position: "absolute", right: -5, top: -5 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{unreadMsg + unreadNotif > 9 ? "9+" : unreadMsg + unreadNotif}</Text>
-          </View>
-        ) : null}
+        <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", width: 38 }}>
+          <MaterialCommunityIcons name="menu" size={22} color={colors.primaryDark} />
+          {/* Okunmamış mesaj/bildirim rozeti: mobilde tek bakışta görünsün (masaüstü
+              header ikonlarındaki rozetin karşılığı; hamburger'da saklı kalmasın). */}
+          {unreadMsg + unreadNotif > 0 ? (
+            <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1.5, height: 16, justifyContent: "center", minWidth: 16, paddingHorizontal: 3, position: "absolute", right: -5, top: -5 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{unreadMsg + unreadNotif > 9 ? "9+" : unreadMsg + unreadNotif}</Text>
+            </View>
+          ) : null}
+        </View>
       </Pressable>
 
       <Modal visible={open} transparent animationType="fade" onRequestClose={() => setOpen(false)}>
@@ -79,7 +82,7 @@ export function MobileNavMenu() {
                 <Text style={{ color: colors.primaryDark, fontSize: 18, fontWeight: "900" }}>ortaksat</Text>
                 <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isAuthenticated ? currentUser.name : translateCopy("Ortak satışla kazan", language)}</Text>
               </View>
-              <Pressable accessibilityLabel={translateCopy("Kapat", language)} hitSlop={10} onPress={() => setOpen(false)} style={{ alignItems: "center", height: 36, justifyContent: "center", width: 36 }}>
+              <Pressable accessibilityLabel={translateCopy("Kapat", language)} hitSlop={6} onPress={() => setOpen(false)} style={{ alignItems: "center", justifyContent: "center", minHeight: 44, minWidth: 44 }}>
                 <MaterialCommunityIcons name="close" size={24} color={colors.muted} />
               </Pressable>
             </View>
