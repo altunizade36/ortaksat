@@ -19,7 +19,6 @@ import { ReviewCard } from "@/components/review-card";
 import { JsonLd } from "@/components/json-ld";
 import { LegalNote } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
-import { EarningsCalculator } from "@/components/earnings-calculator";
 import { ListingQA } from "@/components/listing-qa";
 import { ShareRow } from "@/components/share-row";
 import { Skeleton } from "@/components/skeleton";
@@ -356,9 +355,9 @@ export default function ListingDetailScreen() {
   const favorited = isFavorite(currentListing.id);
   const inCompare = hasInCompare(currentListing.id);
   const commission = commissionAmount(currentListing);
-  // "Ortak Ol" butonu kapısı (EarningsCalculator'daki canApply ile aynı mantık): zaten aktif/
-  // pending/engelli ortak ya da davetsiz-invite değilse gösterilir. partnerable + non-owner +
-  // non-demo şart. Aksi halde yalnız "Satın Al" (tam genişlik) çıkar.
+  // "Ortak Ol" butonu kapısı: zaten aktif/pending/engelli ortak ya da davetsiz-invite
+  // değilse gösterilir. partnerable + non-owner + non-demo şart. Aksi halde yalnız
+  // "Satın Al" (tam genişlik) çıkar.
   const canJoinNow = partnerable && !isOwner && !isDemo && partnership?.status !== "active" && partnership?.status !== "pending" && partnership?.status !== "blocked" && !(isInviteMode && !validInvite);
   const reviewableSale = sales.find((sale) => sale.listingId === currentListing.id && canReviewSale(sale.id));
   const relatedCardWidth = Math.max(148, Math.min(176, Math.floor((width - 34) / 2)));
@@ -1186,17 +1185,8 @@ export default function ListingDetailScreen() {
       </View>
 
       <View style={{ gap: 12, paddingHorizontal: isWideWeb ? 0 : 12 }}>
-        {/* Etkileşimli kazanç hesaplayıcı */}
-        {!isOwner && !isDemo && partnerable ? (
-          <EarningsCalculator
-            listing={currentListing}
-            isDemo={isDemo}
-            onJoin={handleJoin}
-            /* Zaten ortak/pending/engelli veya davetsiz-invite → apply butonu gizli (kazanç bilgisi kalır) */
-            canApply={partnership?.status !== "active" && partnership?.status !== "pending" && partnership?.status !== "blocked" && !(isInviteMode && !validInvite)}
-          />
-        ) : null}
-
+        {/* Kazanç hesaplayıcı (adet stepper + projeksiyon) KALDIRILDI — kullanıcı istemiyor.
+            Kazanç bilgisi zaten "Ortak Ol (%X Kazan)" butonunda + Ürün Detayları tablosunda var. */}
         <AgreementCard listing={currentListing} partnership={partnership} />
 
         {partnership?.status === "active" ? (
