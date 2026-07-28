@@ -80,7 +80,6 @@ export function WebFooter() {
       heading: "Kazan",
       links: [
         { label: "Ortak / Influencer Ol", href: "/influencer-kazanc" },
-        { label: "Kazanç Hesapla", href: "/ortak-kazanc" },
         { label: "Ortak Satış", href: "/partner" },
         { label: "Nasıl Çalışır?", href: "/nasil-calisir" }
       ]
@@ -128,17 +127,20 @@ export function WebFooter() {
         marginHorizontal: isWideWeb ? -20 : -12, // sayfa padding'iyle eşleş (mobil 12, masaüstü 20) — sabit -20 mobilde taşıyordu
         // Dibe sabit footer: ScrollView contentContainer flexGrow:1 olan sayfalarda
         // kısa içerikte footer'ı ekranın DİBİNE iter (altında beyaz boşluk kalmaz);
-        // içerik uzunsa marginTop:auto=0 → normal akış. paddingTop içeriden ayırır.
+        // içerik uzunsa marginTop:auto=0 → normal akış. İnce üst çizgi + paddingTop
+        // içerikten net AYIRIR ("içeriğe aşırı yakın" hissi biter).
+        borderTopColor: colors.primary,
+        borderTopWidth: 3,
         marginTop: "auto",
-        paddingBottom: 14,
+        paddingBottom: isWideWeb ? 16 : 20,
         paddingHorizontal: isWideWeb ? 32 : 16,
-        paddingTop: 18
+        paddingTop: isWideWeb ? 24 : 22
       }}
     >
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 24 }}>
-        <View style={{ flex: 1.6, gap: 8, minWidth: 220 }}>
-          <Text style={{ color: "#FFFFFF", fontSize: 20, fontWeight: "900" }}>ortaksat</Text>
-          <Text style={{ color: light, fontSize: 13, fontWeight: "600", lineHeight: 19, maxWidth: 380 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: isWideWeb ? 28 : 18, rowGap: 18 }}>
+        <View style={{ flex: 1.6, gap: 8, minWidth: 210 }}>
+          <Text style={{ color: "#FFFFFF", fontSize: 18, fontWeight: "900", letterSpacing: 0.2 }}>ortaksat</Text>
+          <Text style={{ color: light, fontSize: 12.5, fontWeight: "600", lineHeight: 18, maxWidth: 360 }}>
             {t("appSlogan")}. {translateCopy("İlanını aç, satış yapabilecek ortaklarla eşleş; komisyonu birlikte belirleyin.", language)}
           </Text>
           <PressLink href="/iletisim" accessibilityLabel={SUPPORT_EMAIL} pressedOpacity={0.75} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
@@ -180,19 +182,19 @@ export function WebFooter() {
           </View>
         </View>
         {columns.map((column) => (
-          <View key={column.heading} style={{ gap: 10, minWidth: 150 }}>
-            <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{translateCopy(column.heading, language)}</Text>
+          <View key={column.heading} style={{ gap: 7, flexBasis: 130, flexGrow: 1, minWidth: 128 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900", letterSpacing: 0.2, marginBottom: 2 }}>{translateCopy(column.heading, language)}</Text>
             {column.links.map((link) => (
               <Link key={link.label} href={link.href} asChild>
-                <Pressable>
-                  <Text style={{ color: light, fontSize: 14, fontWeight: "600" }}>{translateCopy(link.label, language)}</Text>
+                <Pressable style={{ paddingVertical: 2 }}>
+                  <Text style={{ color: light, fontSize: 13, fontWeight: "600" }}>{translateCopy(link.label, language)}</Text>
                 </Pressable>
               </Link>
             ))}
           </View>
         ))}
       </View>
-      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between", marginTop: 12, paddingTop: 10 }}>
+      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between", marginTop: 18, paddingTop: 14 }}>
         <View style={{ flex: 1, gap: 3, minWidth: 200 }}>
           <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 13, fontWeight: "600" }}>
             {translateCopy("© 2026 OrtakSat. Tüm hakları saklıdır.", language)}
