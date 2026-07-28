@@ -184,7 +184,9 @@ export const listingCategories: ListingCategory[] = [
   }
 ];
 
-const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?w=600&q=80&auto=format&fit=crop`;
+// Kategori kartları/çipleri ekranda ~130-256px; DPR-2'de bile ~400px yeter. w=600
+// (Lighthouse: 190px'e 356px+ teslim = ~324 KiB israf) → w=400 + q=72 ile ~%55 daha az bayt.
+const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?w=400&q=72&auto=format&fit=crop`;
 
 /** Curated, on-topic hero image per category (used for category tiles everywhere). */
 export const categoryImages: Record<string, string> = {

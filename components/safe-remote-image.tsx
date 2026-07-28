@@ -15,7 +15,10 @@ type SafeRemoteImageProps = Omit<ImageProps, "source"> & {
   full?: boolean;
 };
 
-export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, full, onError, onLoadEnd, onLoadStart, uri, transition, style, ...props }: SafeRemoteImageProps) {
+export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, full, onError, onLoadEnd, onLoadStart, uri, transition, style, alt, accessibilityLabel, ...props }: SafeRemoteImageProps) {
+  // a11y + SEO: HER görselde alt olsun. Çağıran alt/accessibilityLabel geçerse o kullanılır;
+  // yoksa jenerik bir metne düşülür (Lighthouse "alt eksik" ve ekran-okuyucu boşluğu biter).
+  const a11yAlt = alt ?? accessibilityLabel ?? "OrtakSat ürün görseli";
   const [failed, setFailed] = useState(false);
   const [loading, setLoading] = useState(Boolean(uri));
   // Kartlar/küçük görünümler tam boyut görsel indiriyordu (demo JPEG'ler ~150kB × 23 =
@@ -39,6 +42,8 @@ export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, full, o
     <View style={[{ backgroundColor: colors.neutralSoft, overflow: "hidden" }, style]}>
       <Image
         {...props}
+        alt={a11yAlt}
+        accessibilityLabel={a11yAlt}
         style={{ height: "100%", width: "100%" }}
         source={!shown || failed ? resolvedFallback : { uri: shown }}
         transition={transition ?? { duration: 260, effect: "cross-dissolve" }}

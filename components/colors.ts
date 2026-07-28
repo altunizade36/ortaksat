@@ -9,7 +9,7 @@ export const colors = {
   subtle: "#6B7A8C",       // en soluk yazı — WCAG için koyulaştırıldı (#94A3B8 ≈2.4:1 kalıyordu; şimdi ~4.3:1)
   line: "#D8F3F6",         // turkuaz kenarlık
   primary: "#0EA5B7",      // ana turkuaz
-  primaryDark: "#0B7285",  // koyu turkuaz
+  primaryDark: "#096273",  // koyu turkuaz — primarySoft çip üstünde AA (4.2→5.2:1) için hafif koyultuldu; beyazda da kontrast arttı
   primarySoft: "#B8E8DE",  // açık turkuaz (soft yüzey/chip) — göz yormayan sakin ton
   accent: "#EF4444",       // hata/tehlike (kırmızı)
   accentSoft: "#FEE4E2",

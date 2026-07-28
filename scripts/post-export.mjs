@@ -69,4 +69,14 @@ try {
 } catch (e) {
   console.warn("post-export: route prefetch enjekte edilemedi:", e.message);
 }
+
+// MaterialCommunityIcons fontunu (~1.3 MB ham / ~573 KiB gzip, ~7000 glif) yalnız
+// GERÇEKTEN kullanılan ikonlara subset et → mobil 4G'de kritik-yol yükü çöker.
+// Kendi içinde try/catch'li: başarısızsa orijinal font korunur, build KIRILMAZ.
+import { subsetIconFont } from "./subset-icon-font.mjs";
+try {
+  await subsetIconFont();
+} catch (e) {
+  console.warn("post-export: font subset atlandı:", e.message);
+}
 // 404.html varsayılan başlıkta kalmasın (patchSeo'dan sonra kopyalanmadıysa da).

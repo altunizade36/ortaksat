@@ -63,6 +63,7 @@
     "@playwright/test": "^1.61.1",
     "@types/react": "~19.1.10",
     "pg": "^8.21.0",
+    "subset-font": "^2.5.0",
     "typescript": "~5.9.2"
   },
   "expo": {

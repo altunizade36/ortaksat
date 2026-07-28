@@ -41,7 +41,8 @@ export type CategoryNode = {
   children?: CategoryNode[];
 };
 
-const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?w=600&q=80&auto=format&fit=crop`;
+// Kategori kartları ~130-256px; w=400+q=72 DPR-2'de yeter, w=600'e göre ~%55 az bayt.
+const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?w=400&q=72&auto=format&fit=crop`;
 
 // ---- builders ------------------------------------------------------------
 function leaf(label: string, formKey?: string): CategoryNode {
