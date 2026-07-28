@@ -73,7 +73,7 @@ export function AppHeader() {
               </View>
             </Pressable>
           </Link>
-          <View style={{ flexShrink: 1, maxWidth: 640, minWidth: 190, width: 640 }}>
+          <View style={{ flexShrink: 1, maxWidth: 640, minWidth: 168, width: 640 }}>
             <GlobalSearchBar />
           </View>
           {/* Boşluk: aksiyonları en sağa sabitler (minWidth 0 → dar tablette 3px taşmayı emer) */}
@@ -229,15 +229,15 @@ function DesktopActions() {
     // "Ücretsiz İlan Ver" butonu (arz tarafının #1 CTA'sı). Butona basınca /create'e
     // gider; anonim form doldurulur, kapı yalnız Yayınla anında (kayıt/giriş) çıkar.
     return (
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-        <PressLink href="/auth" accessibilityLabel={translateCopy("Giriş yap", language)} pressedOpacity={0.7} style={{ paddingHorizontal: 4, paddingVertical: 8 }}>
-          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Giriş yap", language)}</Text>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+        <PressLink href="/auth" accessibilityLabel={translateCopy("Giriş yap", language)} pressedOpacity={0.7} style={{ paddingHorizontal: 3, paddingVertical: 8 }}>
+          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Giriş yap", language)}</Text>
         </PressLink>
         <View style={{ backgroundColor: colors.line, height: 16, width: 1 }} />
-        <PressLink href="/auth" accessibilityLabel={translateCopy("Kayıt ol", language)} pressedOpacity={0.7} style={{ paddingHorizontal: 4, paddingVertical: 8 }}>
-          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Kayıt ol", language)}</Text>
+        <PressLink href="/auth" accessibilityLabel={translateCopy("Kayıt ol", language)} pressedOpacity={0.7} style={{ paddingHorizontal: 3, paddingVertical: 8 }}>
+          <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Kayıt ol", language)}</Text>
         </PressLink>
-        <PressLink href="/create" accessibilityLabel={translateCopy("Ücretsiz İlan Ver", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 10 }}>
+        <PressLink href="/create" accessibilityLabel={translateCopy("Ücretsiz İlan Ver", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 10 }}>
           <MaterialCommunityIcons name="plus-box" size={18} color="#FFFFFF" />
           <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ücretsiz İlan Ver", language)}</Text>
         </PressLink>
