@@ -1665,7 +1665,10 @@ export const categoryTree: CategoryNode[] = [
       node("Satılık", konutBranch("konut"), "konut"),
       node("Kiralık", konutBranch("konut"), "konut"),
       // Sahibinden'de Konut'un 3. kardeşi (eskiden ayrı üst-düğümdü, kullanıcı burada arar).
-      node("Turistik Günlük Kiralık", konutBranch("gunlukKiralik"), "gunlukKiralik")
+      node("Turistik Günlük Kiralık", konutBranch("gunlukKiralik"), "gunlukKiralik"),
+      // Devren satılık konut (Sahibinden paritesi): kiralık konutun / kira sözleşmesinin
+      // devri. konut şeması listingType'ında "Devren" zaten var; aynı konut tipleri kullanılır.
+      node("Devren Satılık Konut", konutBranch("konut"), "konut")
     ], "konut"),
     node("İş Yeri", [
       node("Satılık", isyeriBranch("isyeri"), "isyeri"),
