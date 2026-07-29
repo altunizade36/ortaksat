@@ -1620,4 +1620,18 @@ export const categoriesDict: Record<string, string> = {
   "Çorap": "Socks",
   "Saç Aksesuarı": "Hair Accessory",
   "Şemsiye": "Umbrella",
+  // 2026-07-29 Sahibinden paritesi eklemeleri — yeni dal/etiket EN çevirileri
+  // (derin yapraklar çevrilmezse translateCopy TR'ye graceful düşer).
+  "Devren Satılık Konut": "Transfer Sale Residence",
+  "Ticari Hat & Ticari Plaka": "Commercial Route & License Plate",
+  "Karoser & Üst Yapı": "Bodywork & Superstructure",
+  "Hasarlı Minivan & Panelvan": "Damaged Minivan & Panel Van",
+  "Oto Kurtarıcı & Taşıyıcı Kiralama": "Tow Truck & Carrier Rental",
+  "Hava Aracı Kiralama": "Aircraft Rental",
+  "Teknik Elektronik": "Technical Electronics",
+  "Elektronik Ekipman": "Electronic Equipment",
+  "Araç Servis & Bakım": "Vehicle Service & Maintenance",
+  "Endüstriyel Ürünler": "Industrial Products",
+  "Elektrikli Minivan & Panelvan": "Electric Minivan & Panel Van",
+  "Elektrikli Hizmet Araçları": "Electric Service Vehicles",
 };
