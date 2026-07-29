@@ -611,8 +611,11 @@ export default function ListingDetailScreen() {
     ]
   });
 
+  // Mobil sabit alt aksiyon çubuğu görünürse içerik onun arkasına gizlenmesin diye ekstra alt boşluk.
+  const showMobileActionBar = !isWideWeb && !isDemo;
   return (
-    <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: 96 }}>
+    <View style={{ flex: 1 }}>
+    <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: showMobileActionBar ? 132 : 96 }}>
       <Head>
         <title>{`${currentListing.title} — OrtakSat`}</title>
         <meta name="description" content={metaDesc} />
@@ -1514,6 +1517,38 @@ export default function ListingDetailScreen() {
         </View>
       </Modal>
     </ScrollView>
+    {/* MOBİL SABİT ALT AKSİYON ÇUBUĞU (e-ticaret standardı): kaydırınca fiyat + birincil CTA
+        her zaman erişilebilir kalır (Trendyol/Sahibinden deseni). Masaüstünde sağ karar kutusu
+        zaten hep görünür; native/dar-web'de yoktu → dönüşüm sızıntısı. Aynı handler'ları kullanır. */}
+    {showMobileActionBar ? (
+      <View style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, bottom: 0, elevation: 12, flexDirection: "row", gap: 10, left: 0, paddingBottom: 12, paddingHorizontal: 14, paddingTop: 10, position: "absolute", right: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 8 }}>
+        {!isOwner ? (
+          <View style={{ minWidth: 0 }}>
+            <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{translateCopy("Fiyat", language)}</Text>
+            <Text numberOfLines={1} style={{ color: partnerable ? colors.primaryDark : colors.ink, fontSize: 18, fontWeight: "900", letterSpacing: -0.3 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
+          </View>
+        ) : null}
+        <View style={{ flex: 1, flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
+          {isOwner ? (
+            <View style={{ flex: 1 }}><PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: currentListing.id } }} icon="pencil-outline">{translateCopy("İlanı Düzenle", language)}</PrimaryButton></View>
+          ) : isDemand ? (
+            canJoinNow ? (
+              <View style={{ flex: 1 }}><PrimaryButton icon="handshake" onPress={handleJoin}>{translateCopy("Ortak Ol", language)}</PrimaryButton></View>
+            ) : (
+              <View style={{ flex: 1 }}><PrimaryButton icon="message-text-outline" onPress={() => void handleContact()}>{translateCopy("Mesaj gönder", language)}</PrimaryButton></View>
+            )
+          ) : canJoinNow ? (
+            <>
+              <View style={{ flex: 1 }}><PrimaryButton tone="secondary" icon="cart-outline" onPress={() => void handleContact()}>{translateCopy("Satın Al", language)}</PrimaryButton></View>
+              <View style={{ flex: 1 }}><PrimaryButton icon="handshake" onPress={handleJoin}>{translateCopy("Ortak Ol", language)}</PrimaryButton></View>
+            </>
+          ) : (
+            <View style={{ flex: 1 }}><PrimaryButton icon="cart-outline" onPress={() => void handleContact()}>{translateCopy("Satın Al", language)}</PrimaryButton></View>
+          )}
+        </View>
+      </View>
+    ) : null}
+    </View>
   );
 }
 
