@@ -35,7 +35,11 @@ const CATEGORY_SLUGS = [
   "spor-ve-outdoor", "bisiklet", "kitap-ve-hobi", "koleksiyon-ve-antika", "supermarket-ve-gida",
   "ofis-ve-kirtasiye", "oyuncak", "evcil-hayvan-urunleri",
   // Konsolide edilen hub landing sayfaları (eski kökler → İkinci El/Ustalar altına taşındı)
-  "bahce-ve-yapi-market", "muzik", "saglik-ve-medikal", "dijital-hizmetler"
+  "bahce-ve-yapi-market", "muzik", "saglik-ve-medikal", "dijital-hizmetler",
+  // 2026-07-29 Sahibinden-parite ile eklenen yüksek-arama-hacimli dallar (hepsi canlı 200 doğrulandı):
+  // canlı hayvan ticareti (TR'de yüksek talep), oto servis, teknik/hobi elektroniği, özel eğitim.
+  "buyukbas-hayvanlar", "kucukbas-hayvanlar", "kumes-hayvanlari", "akvaryum-ve-deniz-canlilari",
+  "bocekler-ve-aricilik", "arac-servis-ve-bakim", "teknik-elektronik", "ozel-egitim-ve-cocuk-gelisimi"
 ];
 
 // Şehir × kategori SEO sayfaları (/kategori/[slug]/[sehir]). Büyük şehirler ×
