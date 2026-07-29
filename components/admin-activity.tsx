@@ -7,8 +7,10 @@ import { colors } from "@/components/colors";
 import { money } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
 
-type DayPoint = { day: string; active: number; signups: number; listings: number };
+type DayPoint = { day: string; active: number; signups: number; listings: number; gmv: number; commission: number };
 type CatPoint = { category: string; n: number };
+type StatusAmount = { status: string; n: number; amount: number };
+type EarnerPoint = { name: string; amount: number; n: number };
 export type AdminAnalytics = {
   total_users: number;
   confirmed_users: number;
@@ -27,6 +29,11 @@ export type AdminAnalytics = {
   gmv: number; // GERÇEK GMV = sum(orders.amount) (satış/ürün değeri), komisyon DEĞİL
   commission_amount: number; // sum(commissions.amount) — kaydedilen toplam komisyon
   commission_paid_amount: number; // ödenen komisyon
+  commission_pending_amount: number; // ödenmemiş (paid/cancelled dışı)
+  gmv_7d: number; // son 7 gün GMV
+  commission_7d: number; // son 7 gün komisyon
+  commission_status: StatusAmount[] | null; // komisyon durum dağılımı (adet+tutar)
+  top_earners: EarnerPoint[] | null; // en çok komisyon kazanan ortaklar
   partnerships_total: number;
   partnerships_active: number;
   partnerships_pending: number;
@@ -51,6 +58,7 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
   const [loading, setLoading] = useState(true);
   const [updatedAt, setUpdatedAt] = useState<string>("");
   const [lineW, setLineW] = useState(560); // çizgi grafiği responsive genişliği (onLayout ile ölçülür)
+  const [moneyW, setMoneyW] = useState(560); // para trendi grafik genişliği
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
   const onDataRef = useRef(onData);
   onDataRef.current = onData;
@@ -127,6 +135,14 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
     { label: "Yeni ilan", color: "#E4572E", values: data.days.map((d) => d.listings) }
   ];
   const catBars = (data.top_categories ?? []).slice(0, 6).map((c) => ({ label: c.category, value: c.n }));
+  // PARA AKIŞI — GMV (satış değeri) + komisyon, ikisi de ₺ → TEK eksen (dataviz uyumlu).
+  const moneySeries = [
+    { label: "GMV (satış değeri)", color: "#0F9D66", values: data.days.map((d) => d.gmv) },
+    { label: "Komisyon", color: "#E4572E", values: data.days.map((d) => d.commission) }
+  ];
+  const commStatusData = (data.commission_status ?? []).filter((s) => s.amount > 0).map((s) => ({ label: commLabel(s.status), value: s.amount }));
+  const topEarners = (data.top_earners ?? []).filter((e) => e.amount > 0).map((e) => ({ label: e.name, value: e.amount }));
+  const hasMoney = data.gmv > 0 || data.commission_amount > 0;
 
   return (
     <View style={{ gap: 16 }}>
@@ -188,6 +204,53 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
         </View>
       ) : null}
 
+      {/* PARA AKIŞI — GMV (satış değeri) + komisyon. Platform PARA TUTMAZ; ödeme satıcı↔ortak
+          arasında platform DIŞI yapılır. Bu bölüm sistemden AKAN parayı İZLER (gelir/kesinti YOK). */}
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          <MaterialCommunityIcons name="cash-multiple" size={18} color={colors.primaryDark} />
+          <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>Para akışı</Text>
+          <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>platform para tutmaz — akan parayı izler</Text>
+        </View>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+          <KpiDeltaTile label="GMV (satış değeri)" value={data.gmv} money icon="cash-multiple" tint="#E0A81E" accent="#B7791F" sub={`Son 7 gün +${money(data.gmv_7d)}`} />
+          <KpiDeltaTile label="Toplam komisyon" value={data.commission_amount} money icon="receipt-text-outline" tint="#2C82F6" accent="#1E63C8" sub={`Son 7 gün +${money(data.commission_7d)}`} />
+          <KpiDeltaTile label="Bekleyen komisyon" value={data.commission_pending_amount} money icon="cash-clock" tint={colors.warning} accent="#B7791F" sub="Satıcı→ortak, ödenmemiş" />
+          <KpiDeltaTile label="Ödenen komisyon" value={data.commission_paid_amount} money icon="cash-check" tint={colors.primary} accent={colors.primaryDark} sub={`${fmt(data.commissions_paid)} ödeme kaydı`} />
+        </View>
+        {hasMoney ? (
+          <>
+            <View onLayout={(e) => setMoneyW(Math.max(240, Math.round(e.nativeEvent.layout.width)))}>
+              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900", marginBottom: 8 }}>Son 14 gün — GMV &amp; komisyon (₺)</Text>
+              <MultiLineChart labels={trendLabels} series={moneySeries} width={moneyW} valueFmt={money} />
+            </View>
+            {commStatusData.length || topEarners.length ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+                {commStatusData.length ? (
+                  <View style={{ flex: 1, gap: 8, minWidth: 240 }}>
+                    <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Komisyon durumu (₺)</Text>
+                    <DonutChart data={commStatusData} size={140} centerTop={money(data.commission_amount)} centerBottom="komisyon" />
+                  </View>
+                ) : null}
+                {topEarners.length ? (
+                  <View style={{ flex: 1, gap: 8, minWidth: 240 }}>
+                    <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>En çok kazanan ortaklar</Text>
+                    <HBarChart data={topEarners} valueFmt={money} rank />
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
+          </>
+        ) : (
+          <View style={{ backgroundColor: colors.infoSoft, borderRadius: 12, gap: 4, padding: 14 }}>
+            <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "900" }}>Henüz para akışı yok</Text>
+            <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "600", lineHeight: 18 }}>
+              Ortak satış tamamlandıkça GMV (satış değeri) + komisyon GERÇEK veriyle burada trend, durum dağılımı ve en çok kazanan ortaklar olarak canlanır. Sahte sayaç yok. Ödemeler satıcı ile ortak arasında, platform dışında yapılır.
+            </Text>
+          </View>
+        )}
+      </View>
+
       {allZero ? (
         <View style={{ backgroundColor: colors.infoSoft, borderRadius: 12, gap: 4, padding: 14 }}>
           <Text style={{ color: colors.info, fontSize: 13, fontWeight: "900" }}>Henüz canlı aktivite yok</Text>
@@ -198,6 +261,15 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
       ) : null}
     </View>
   );
+}
+
+// Komisyon durum kodlarını TR etikete çevir (donut/liste için).
+function commLabel(s: string): string {
+  const m: Record<string, string> = {
+    recorded: "Kaydedildi", pending: "Bekliyor", approved: "Onaylandı", paid: "Ödendi",
+    disputed: "Anlaşmazlık", cancelled: "İptal", refunded: "İade", released: "Serbest"
+  };
+  return m[s] ?? s;
 }
 
 // >=1000 sayıları kısalt (1.2B gibi), tabular hizalama için.
