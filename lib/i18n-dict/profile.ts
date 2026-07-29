@@ -1,6 +1,12 @@
 export const profileDict: Record<string, string> = {
   "Türkçe": "English",
 
+  // app/(tabs)/seller.tsx — satıcı paneli sekme redesign
+  "Bekleyen işin yok — her şey yolunda.": "No pending tasks — all good.",
+  "Henüz teklif yok": "No offers yet",
+  "Alıcılar ilanlarına teklif verdikçe burada görünür; kabul/karşı-teklif/ret edebilirsin.": "Offers from buyers on your listings appear here; you can accept, counter or decline.",
+  "Teklifler": "Offers",
+
   // app/store/[id].tsx — herkese-açık profil profesyonelleştirme (üye-tarihi/paylaş/uzmanlık)
   "Uzmanlık alanları": "Areas of expertise",
   "Profili paylaş": "Share profile",

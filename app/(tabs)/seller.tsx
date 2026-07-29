@@ -102,6 +102,9 @@ function SellerScreenInner() {
   const { refreshing, onRefresh } = useNativeRefresh(() => Promise.all([refreshMarketplace(), refreshUserData()]));
   const [query, setQuery] = useState("");
   const [filter, setFilter] = useState<SellerFilter>("all");
+  // Panel sekmeleri (Trendyol Satıcı Merkezi tarzı) — eskiden HER ŞEY tek uzun scroll'da
+  // yığılıydı (KPI + görev + hat + ops-özeti + ilan yönetimi) → mükerrer + "dandik". Sekme:
+  const [panelTab, setPanelTab] = useState<"ozet" | "ilanlar" | "teklifler">("ozet");
   const [expandedId, setExpandedId] = useState<string | null>(null);
   // Kullanıcının ELLE kapattığı ilanlar (oto-açılmayı ezer).
   const [collapsedIds, setCollapsedIds] = useState<Set<string>>(new Set());
@@ -189,7 +192,6 @@ function SellerScreenInner() {
   // Anlaşmazlıktaki (disputed) komisyonlar "açık"tan düşülür ama gizlenmemeli — ayrı tile.
   const disputedCommission = mySales.filter((sale) => sale.status === "disputed").reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const newLeads = myLeads.filter((lead) => lead.status === "new");
-  const contactedLeads = myLeads.filter((lead) => lead.status === "contacted");
   const convertedLeads = myLeads.filter((lead) => lead.status === "converted");
   const unpaidSales = mySales.filter(isOwedSale);
   const lowStockListings = myListings.filter((listing) => listing.status === "active" && listing.stockCount <= 3);
@@ -377,9 +379,32 @@ function SellerScreenInner() {
         </Pressable>
       </Card>
 
+      {/* Panel sekmeleri — Özet / İlanlarım / Teklifler. Tek uzun scroll yerine odaklı bölümler. */}
+      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 4, padding: 4 }}>
+        {[
+          { key: "ozet" as const, label: "Özet", icon: "view-dashboard-outline", count: 0 },
+          { key: "ilanlar" as const, label: "İlanlarım", icon: "storefront-outline", count: myListings.length },
+          { key: "teklifler" as const, label: "Teklifler", icon: "handshake-outline", count: pendingOffers.length + acceptedOffers.length }
+        ].map((tb) => {
+          const on = panelTab === tb.key;
+          return (
+            <Pressable key={tb.key} onPress={() => setPanelTab(tb.key)} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={translateCopy(tb.label, language)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : "transparent", borderRadius: 9, flex: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 11 }}>
+              <MaterialCommunityIcons name={tb.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={17} color={on ? "#FFFFFF" : colors.muted} />
+              <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy(tb.label, language)}</Text>
+              {tb.count > 0 ? <View style={{ backgroundColor: on ? "rgba(255,255,255,0.25)" : colors.primarySoft, borderRadius: 999, minWidth: 20, paddingHorizontal: 6, paddingVertical: 1 }}><Text style={{ color: on ? "#FFFFFF" : colors.primaryDark, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900", textAlign: "center" }}>{tb.count}</Text></View> : null}
+            </Pressable>
+          );
+        })}
+      </View>
+
+      {/* ===== TEKLİFLER SEKMESİ ===== */}
+      {panelTab === "teklifler" && pendingOffers.length === 0 && acceptedOffers.length === 0 ? (
+        <Card><EmptyState title={translateCopy("Henüz teklif yok", language)} body={translateCopy("Alıcılar ilanlarına teklif verdikçe burada görünür; kabul/karşı-teklif/ret edebilirsin.", language)} mascot="thinking" /></Card>
+      ) : null}
+
       {/* GELEN TEKLİFLER — eskiden teklif yalnız sohbete serbest metin olarak geliyordu;
           satıcı takip edemiyor, kabul/ret edemiyor, mesaj geçmişinde kayboluyordu. */}
-      {pendingOffers.length > 0 ? (
+      {panelTab === "teklifler" && pendingOffers.length > 0 ? (
         <Card>
           <SectionTitle title="Gelen teklifler" action={`${pendingOffers.length}`} />
           <View style={{ gap: 10 }}>
@@ -478,7 +503,7 @@ function SellerScreenInner() {
 
       {/* ANLAŞMALAR — kabul edilen teklif "pending" listesinden düşünce satıcının elinde
           hiçbir şey kalmıyordu: anlaşma vardı ama takip edilecek yer yoktu. */}
-      {acceptedOffers.length > 0 ? (
+      {panelTab === "teklifler" && acceptedOffers.length > 0 ? (
         <Card>
           <SectionTitle title="Anlaşmalar" action={`${acceptedOffers.length}`} />
           <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", marginBottom: 8 }}>
@@ -530,66 +555,58 @@ function SellerScreenInner() {
         </Card>
       ) : null}
 
-      <Card>
-        <SectionTitle title="Bugün dikkat isteyenler" action={`${newLeads.length + myApplications.length + unpaidSales.length + lowStockListings.length} ${t("taskShort")}`} />
-        <View style={{ gap: 8 }}>
-          <TaskRow icon="account-plus-outline" label={translateCopy("Yeni ortak başvurusu", language)} value={`${myApplications.length}`} tone={myApplications.length ? "warning" : "neutral"} />
-          <TaskRow icon="account-clock-outline" label={translateCopy("Yeni müşteri talebi", language)} value={`${newLeads.length}`} tone={newLeads.length ? "warning" : "neutral"} />
-          <TaskRow icon="cash-clock" label={translateCopy("Ödeme bekleyen komisyon", language)} value={`${unpaidSales.length}`} tone={unpaidSales.length ? "warning" : "neutral"} />
-          <TaskRow icon="package-variant" label={translateCopy("Az stoklu ilan", language)} value={`${lowStockListings.length}`} tone={lowStockListings.length ? "warning" : "neutral"} />
-        </View>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-            <PrimaryButton tone={filter === "applications" ? "soft" : "secondary"} icon="account-plus-outline" onPress={() => setFilter("applications")}>Başvuruları Gör</PrimaryButton>
-          </View>
-          <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-            <PrimaryButton tone={filter === "withLeads" ? "soft" : "secondary"} icon="phone-in-talk-outline" onPress={() => setFilter("withLeads")}>Talepleri Ara</PrimaryButton>
-          </View>
-          <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-            <PrimaryButton tone={filter === "payments" ? "soft" : "secondary"} icon="cash-check" onPress={() => setFilter("payments")}>Ödeme Bekleyenler</PrimaryButton>
-          </View>
-          <View style={{ flexBasis: "47%", flexGrow: 1 }}>
-            <PrimaryButton tone={filter === "lowStock" ? "soft" : "secondary"} icon="package-variant-closed" onPress={() => setFilter("lowStock")}>Az Stoklular</PrimaryButton>
-          </View>
-        </View>
-      </Card>
-
-      {/* Masaüstünde iki analitik kartı yan yana (geniş ekran boşluğunu kullanır); mobilde alt alta. */}
-      <View style={isWideWeb ? { flexDirection: "row", gap: 14, alignItems: "stretch" } : { gap: 14 }}>
-        <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
+      {/* ===== ÖZET SEKMESİ ===== görevler (yalnız sıfır-olmayan) + satış hattı (yalnız veri varken) */}
+      {panelTab === "ozet" ? (() => {
+        const tasks = [
+          { icon: "account-plus-outline", label: "Yeni ortak başvurusu", count: myApplications.length, target: "applications" as SellerFilter },
+          { icon: "account-clock-outline", label: "Yeni müşteri talebi", count: newLeads.length, target: "withLeads" as SellerFilter },
+          { icon: "cash-clock", label: "Ödeme bekleyen komisyon", count: unpaidSales.length, target: "payments" as SellerFilter },
+          { icon: "package-variant", label: "Az stoklu ilan", count: lowStockListings.length, target: "lowStock" as SellerFilter }
+        ].filter((tk) => tk.count > 0);
+        return (
           <Card>
-            <SectionTitle title="Satış hattı" action={`${totalConversionRate}%`} />
-            <SellerPipeline
-              activePartners={activePartnerCount}
-              applications={myApplications.length}
-              leads={myLeads.length}
-              paidSales={mySales.filter((sale) => sale.status === "paid").length}
-              sales={mySales.length}
-              unpaidSales={unpaidSales.length}
-            />
+            <SectionTitle title="Bugün dikkat isteyenler" action={`${tasks.reduce((s, tk) => s + tk.count, 0)} ${t("taskShort")}`} />
+            {tasks.length === 0 ? (
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 4 }}>
+                <MaterialCommunityIcons name="check-circle" size={20} color={colors.success} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "800" }}>{translateCopy("Bekleyen işin yok — her şey yolunda.", language)}</Text>
+              </View>
+            ) : tasks.map((tk) => (
+              <Pressable key={tk.target} onPress={() => { setPanelTab("ilanlar"); setFilter(tk.target); }} accessibilityRole="button" accessibilityLabel={translateCopy(tk.label, language)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.warningSoft, borderColor: colors.warning, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 10, opacity: pressed ? 0.8 : 1, padding: 12 })}>
+                <MaterialCommunityIcons name={tk.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={18} color={colors.warning} />
+                <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy(tk.label, language)}</Text>
+                <Text style={{ color: colors.warning, fontSize: 15, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{tk.count}</Text>
+                <MaterialCommunityIcons name="chevron-right" size={18} color={colors.warning} />
+              </Pressable>
+            ))}
           </Card>
-        </View>
-        <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
-          <Card>
-            <SectionTitle title="Operasyon özeti" action={`${newLeads.length + myApplications.length + unpaidSales.length} ${translateCopy("aksiyon", language)}`} />
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <OperationTile icon="account-clock-outline" label="Yeni talep" tone={newLeads.length ? "warning" : "neutral"} value={`${newLeads.length}`} />
-              <OperationTile icon="phone-check-outline" label="Aranan" tone="neutral" value={`${contactedLeads.length}`} />
-              <OperationTile icon="cart-check" label="Satış" tone={convertedLeads.length ? "success" : "neutral"} value={`${convertedLeads.length}`} />
-            </View>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <OperationTile icon="cash-clock" label="Ödeme bekleyen" tone={unpaidSales.length ? "warning" : "neutral"} value={`${unpaidSales.length}`} />
-              <OperationTile icon="package-variant" label="Az stok" tone={lowStockListings.length ? "warning" : "neutral"} value={`${lowStockListings.length}`} />
-              <OperationTile icon="account-plus-outline" label="Başvuru" tone={myApplications.length ? "warning" : "neutral"} value={`${myApplications.length}`} />
-            </View>
-          </Card>
-        </View>
-      </View>
+        );
+      })() : null}
 
-      {mounted && myLeads.length > 0 ? (
+      {/* Satış hattı (funnel) — YALNIZ gerçek aktivite varken. Boş satıcıya sıfır-hunisi
+          gösterme. Eski "Operasyon özeti" kartı KALDIRILDI: KPI grid'ini birebir tekrarlıyordu
+          (aynı metrik 3-4 yerde → "karışık/dandik" hissinin ana kaynağı). */}
+      {panelTab === "ozet" && (myLeads.length > 0 || mySales.length > 0 || myApplications.length > 0 || activePartnerCount > 0) ? (
+        <Card>
+          <SectionTitle title="Satış hattı" action={`${totalConversionRate}%`} />
+          <SellerPipeline
+            activePartners={activePartnerCount}
+            applications={myApplications.length}
+            leads={myLeads.length}
+            paidSales={mySales.filter((sale) => sale.status === "paid").length}
+            sales={mySales.length}
+            unpaidSales={unpaidSales.length}
+          />
+        </Card>
+      ) : null}
+
+      {panelTab === "ozet" && mounted && myLeads.length > 0 ? (
         <MiniBarChart data={activitySeries} title={translateCopy("Son 14 gün · gelen talep", language)} totalLabel={`${activitySeries.reduce((s, d) => s + d.value, 0)} ${translateCopy("talep", language)}`} />
       ) : null}
 
+      {/* ===== İLANLARIM SEKMESİ ===== ilan yönetimi + başvurular + per-ilan talep/ortak/satış */}
+      {panelTab === "ilanlar" ? (
+      <>
       <Card>
         <SectionTitle title="İlan yönetimi" action={`${visibleListings.length}`} />
         {rejectedListings.length > 0 ? (
@@ -1108,6 +1125,8 @@ function SellerScreenInner() {
           </Card>
         );
       })}
+      </>
+      ) : null}
       </WebContainer>
       <ReasonModal
         visible={rejectTargetId !== null}
@@ -1386,67 +1405,6 @@ function SellerPipeline({
           </View>
         );
       })}
-    </View>
-  );
-}
-
-function TaskRow({
-  icon,
-  label,
-  tone,
-  value
-}: {
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  label: string;
-  tone: "warning" | "neutral";
-  value: string;
-}) {
-  const { language } = useLanguage();
-  const active = tone === "warning";
-
-  return (
-    <View style={{ alignItems: "center", backgroundColor: active ? colors.warningSoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 44, paddingHorizontal: 10, paddingVertical: 8 }}>
-      <View style={{ alignItems: "center", backgroundColor: active ? "#FFFFFF" : colors.surface, borderRadius: 8, height: 30, justifyContent: "center", width: 30 }}>
-        <MaterialCommunityIcons name={icon} size={17} color={active ? colors.warning : colors.primary} />
-      </View>
-      <Text ellipsizeMode="tail" numberOfLines={1} selectable style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>
-        {translateCopy(label, language)}
-      </Text>
-      <Text adjustsFontSizeToFit minimumFontScale={0.8} numberOfLines={1} selectable style={{ color: active ? colors.warning : colors.muted, fontSize: 16, fontVariant: ["tabular-nums"], fontWeight: "900", minWidth: 28, textAlign: "right" }}>
-        {value}
-      </Text>
-    </View>
-  );
-}
-
-function OperationTile({
-  icon,
-  label,
-  tone,
-  value
-}: {
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
-  label: string;
-  tone: "warning" | "success" | "neutral";
-  value: string;
-}) {
-  const { language } = useLanguage();
-  const palette =
-    tone === "warning"
-      ? { backgroundColor: colors.warningSoft, color: colors.warning }
-      : tone === "success"
-        ? { backgroundColor: colors.successSoft, color: colors.success }
-        : { backgroundColor: colors.surfaceAlt, color: colors.primary };
-
-  return (
-    <View style={{ backgroundColor: palette.backgroundColor, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flex: 1, gap: 6, padding: 10 }}>
-      <MaterialCommunityIcons name={icon} size={19} color={palette.color} />
-      <Text ellipsizeMode="tail" numberOfLines={2} selectable style={{ color: colors.muted, fontSize: 11, fontWeight: "800", lineHeight: 14, minHeight: 28 }}>
-        {translateCopy(label, language)}
-      </Text>
-      <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} selectable style={{ color: colors.ink, fontSize: 18, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-        {value}
-      </Text>
     </View>
   );
 }
