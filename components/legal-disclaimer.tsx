@@ -12,9 +12,6 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
  * konur ki uygulama e-ticaret/ödeme kuruluşu sorumluluğuna kaymasın.
  */
 
-export const DISCLAIMER_SHORT =
-  "OrtakSat aracı bir ilan ve iletişim platformudur; ödeme almaz, para tutmaz, komisyon kesmez, kargo yapmaz. Fiyat, ücret ve komisyon yalnızca taraflar arasında belirlenir; tüm alışveriş, ödeme ve teslimat uygulama dışında, kullanıcıların kendi sorumluluğunda yapılır.";
-
 const POINTS = [
   "Ödeme almaz, para tutmaz, transfer etmez.",
   "Komisyon/satıştan kesinti yapmaz; cüzdan, bakiye veya güvenli ödeme (emanet) sistemi yoktur.",
@@ -23,16 +20,6 @@ const POINTS = [
   "Alışveriş, ödeme, komisyon tahsilatı ve teslimat; alıcı, satıcı ve ortak arasında uygulama dışında yapılır.",
   "OrtakSat bu işlemlerin tarafı değildir; ürün, ödeme, teslimat ve anlaşmazlıklardan sorumlu değildir."
 ];
-
-/** Kompakt tek-satır uyarı (form altları, kartlar). */
-export function LegalNote({ style }: { style?: object }) {
-  return (
-    <View style={[{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, padding: 11 }, style]}>
-      <MaterialCommunityIcons name="information-outline" size={16} color={colors.muted} style={{ marginTop: 1 }} />
-      <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{DISCLAIMER_SHORT}</Text>
-    </View>
-  );
-}
 
 /**
  * Açılır-kapanır koruma kutusu (ilan ver adımları). Varsayılan KAPALI: tek satır özet +

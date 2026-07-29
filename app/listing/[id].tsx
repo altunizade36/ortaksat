@@ -17,7 +17,7 @@ import { colors } from "@/components/colors";
 import { StarRatingInput } from "@/components/star-rating-input";
 import { ReviewCard } from "@/components/review-card";
 import { JsonLd } from "@/components/json-ld";
-import { LegalNote } from "@/components/legal-disclaimer";
+import { LegalDisclaimerCollapsible } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
 import { ListingQA } from "@/components/listing-qa";
 import { ShareRow } from "@/components/share-row";
@@ -1277,7 +1277,7 @@ export default function ListingDetailScreen() {
             <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>
               {translateCopy("Teslimat ve ödeme, satıcı ile alıcı arasında", language)} {translateCopy(contactLabel(currentListing.contactMethod), language)}{translateCopy(" üzerinden kararlaştırılır. İade ve değişim koşullarını satışı kapatmadan önce satıcıyla netleştir.", language)}
             </Text>
-            <LegalNote style={{ marginTop: 8 }} />
+            <View style={{ marginTop: 8 }}><LegalDisclaimerCollapsible /></View>
           </Accordion>
           <Accordion title={translateCopy("Sıkça sorulan sorular", language)} icon="comment-question-outline">
             <SpecRow label="Komisyonu kim öder?" value="İlan sahibi, satış gerçekleştiğinde ortağa öder." />

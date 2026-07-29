@@ -15,7 +15,7 @@ import { colors } from "@/components/colors";
 import { StarRatingInput } from "@/components/star-rating-input";
 import { Seo } from "@/components/seo";
 import { DisputeModal } from "@/components/dispute-modal";
-import { LegalNote } from "@/components/legal-disclaimer";
+import { LegalDisclaimerCollapsible } from "@/components/legal-disclaimer";
 import { MiniBarChart } from "@/components/mini-bar-chart";
 import { PartnerLeaderboard } from "@/components/partner-leaderboard";
 import { PartnerTier } from "@/components/partner-tier";
@@ -411,7 +411,7 @@ function PartnerScreenInner() {
               <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Ortak Satış", language)}</Text>
             </View>
             <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900", lineHeight: 27 }}>{translateCopy("Ortak satış fırsatları", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 520 }}>{translateCopy("Güvenilir satıcılarla eşleşin, ürünleri paylaşın; komisyonu satıcıyla belirleyin. Ödeme ve teslimat taraflar arasında yapılır.", language)}</Text>
+            <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 520 }}>{translateCopy("Güvenilir satıcıların ürünlerini paylaş, satışta komisyon kazan.", language)}</Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16, marginTop: 2 }}>
               {[
                 { icon: "shield-check" as const, label: translateCopy("Anlaşma şartları kayıt altında", language) },
@@ -466,7 +466,7 @@ function PartnerScreenInner() {
 
         {funnelCard}
 
-        <LegalNote />
+        <LegalDisclaimerCollapsible />
 
         {/* Tabs */}
         <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 6 }}>
@@ -722,7 +722,6 @@ function PartnerScreenInner() {
       {allOpportunities.length > 0 ? (
         <Card>
           <SectionTitle title="Ortak satış fırsatları" action={`${mobileOpportunities.length}`} />
-          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Beğendiğin ürüne ortak ol, kendi kitlene sat, satış olunca komisyon kazan.", language)}</Text>
           {myCity ? (
             <Pressable onPress={() => setOppNearMe((v) => !v)} accessibilityRole="button" accessibilityState={{ selected: oppNearMe }} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: oppNearMe ? colors.primary : colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 13, paddingVertical: 8 }}>
               <MaterialCommunityIcons name="map-marker-account" size={15} color={oppNearMe ? "#FFFFFF" : colors.primaryDark} />
@@ -837,18 +836,8 @@ function PartnerScreenInner() {
 
       {/* Kazançlarım (özet panosu) + liderlik + dizin köprüleri — fırsatlardan SONRA (ikincil). */}
       <Card>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 14 }}>
-          <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 8, height: 48, justifyContent: "center", width: 48 }}>
-            <MaterialCommunityIcons name="handshake" size={26} color={colors.info} />
-          </View>
-          <View style={{ flex: 1, gap: 6 }}>
-            <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Kazançlarım", language)}</Text>
-            <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
-              {t("partnerEarningsBody")}
-            </Text>
-          </View>
-        </View>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 16 }}>
+        <SectionTitle title="Kazançlarım" />
+        <View style={{ flexDirection: "row", gap: 10 }}>
           <Metric label="Bekleyen" value={money(waiting)} />
           <Metric label="Onaylanan" value={money(approved)} />
         </View>
