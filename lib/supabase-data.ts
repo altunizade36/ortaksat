@@ -57,6 +57,7 @@ type ProfileRow = {
   verified_phone: boolean;
   verified_identity: boolean;
   verified_instagram?: boolean | null;
+  created_at?: string | null;
   rating: number | string | null;
   response_rate: number | null;
   role?: User["role"] | null;
@@ -128,6 +129,7 @@ function mapProfile(row: ProfileRow): User {
     bio: repairTurkishText(row.bio ?? ""),
     verifiedPhone: row.verified_phone,
     verifiedIdentity: row.verified_identity,
+    createdAt: row.created_at ? String(row.created_at).slice(0, 10) : undefined,
     verifiedInstagram: Boolean(row.verified_instagram),
     rating: toNumber(row.rating),
     listingCount: 0,
@@ -666,6 +668,7 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       amount: toNumber(row.sale_amount, toNumber(row.amount)),
       quantity: toNumber(row.quantity, 1),
       commissionAmount: toNumber(row.amount),
+      createdAt: row.created_at ? String(row.created_at).slice(0, 10) : undefined,
       status: row.status,
       buyerName: row.buyer_name ?? undefined,
       deliveryStatus: row.delivery_status ?? undefined,

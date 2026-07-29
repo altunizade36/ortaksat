@@ -21,6 +21,7 @@ export type User = {
   phone: string;
   avatar: string;
   bio: string;
+  createdAt?: string; // hesap kayıt tarihi (admin snapshot select('*') doldurur; cohort/aylık trend)
   verifiedPhone: boolean;
   verifiedIdentity: boolean;
   verifiedInstagram?: boolean;
@@ -152,6 +153,7 @@ export type Sale = {
   leadId?: string; // doğrudan (ortağa atanan) satışta lead olmayabilir
   amount: number;
   quantity?: number;
+  createdAt?: string; // komisyon/satış kayıt tarihi (aylık trend + saleDate fallback)
   commissionAmount: number; // taban komisyon + varsa başlangıç bonusu (satıcının toplam borcu)
   bonusApplied?: number; // commissionAmount içindeki başlangıç bonusu payı (gösterim)
   status: SaleStatus;
