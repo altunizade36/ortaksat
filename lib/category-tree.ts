@@ -1831,11 +1831,14 @@ export const categoryTree: CategoryNode[] = [
     node("Motosiklet Ekipmanları", [
       node("Yedek Parça", leaves(MOTO_PARCA_SISTEM, "yedekParca"), "yedekParca"),
       node("Aksesuar & Tuning", leaves(["Kask", "Motosiklet Giyim", "Çanta & Bagaj", "Koruma Demiri", "İç Aksesuar", "Dış Aksesuar", "Performans", "Bakım & Onarım Ürünleri"], "yedekParca"), "yedekParca"),
-      node("Lastik & Jant", leaves(["Ön Lastik", "Arka Lastik", "Jant", "Jant & Lastik Takımı", "İç Lastik"], "yedekParca"), "yedekParca")
+      node("Lastik & Jant", leaves(["Ön Lastik", "Arka Lastik", "Jant", "Jant & Lastik Takımı", "İç Lastik"], "yedekParca"), "yedekParca"),
+      // Sahibinden "Motosiklet Ekipmanları > Elektronik Ekipman" karşılığı (bizde eksikti; Kask/Giyim zaten Aksesuar & Tuning'de).
+      node("Elektronik Ekipman", leaves(["İnterkom & Kask İçi Haberleşme", "Navigasyon", "Aksiyon Kamera", "Alarm & İmmobilizer", "Isıtmalı Ekipman", "Telefon Tutucu", "Sensör & Röle", "USB & Şarj"], "yedekParca"), "yedekParca")
     ], "yedekParca"),
     node("Deniz Aracı Ekipmanları", [
       node("Yedek Parça", leaves(["Motor Parçası", "Şaft & Pervane", "Elektrik & Elektronik", "Yakıt Sistemi", "Dümen & Direksiyon", "Gövde & Kaporta", "Soğutma Sistemi"], "yedekParca"), "yedekParca"),
-      node("Aksesuar & Donanım", leaves(["Can Yeleği & Güvenlik", "Halat & Palamar", "Çıpa & Demir", "Fender & Usturmaça", "Navigasyon & Elektronik", "Aydınlatma", "Tekne Örtüsü & Branda", "Temizlik & Bakım"], "yedekParca"), "yedekParca"),
+      // Sahibinden Deniz Ekipmanları'ndaki eksik dallar eklendi (Giyim/Havalandırma/Hırdavat/Güverte/Kabin & Kamera).
+      node("Aksesuar & Donanım", leaves(["Can Yeleği & Güvenlik", "Halat & Palamar", "Çıpa & Demir", "Fender & Usturmaça", "Navigasyon & Elektronik", "Aydınlatma", "Tekne Örtüsü & Branda", "Temizlik & Bakım", "Deniz Giyim & Yağmurluk", "Havalandırma & Klima", "Hırdavat & Tesisat", "Güverte Donanımı", "Kabin & Kamera"], "yedekParca"), "yedekParca"),
       node("Motor & Şaft", leaves(["Dıştan Takma Motor", "İçten Takma Motor", "Pervane", "Şaft", "Motor Yedek Parça"], "yedekParca"), "yedekParca")
     ], "yedekParca")
   ], "yedekParca", IMG("1486262715619-67b85e0b08d3")),
@@ -1845,10 +1848,13 @@ export const categoryTree: CategoryNode[] = [
       node("Televizyon", brandModelNodes(TV_BRANDS, TV_MODELS, "televizyon"), "televizyon"),
       node("Tablet", leaves(["iPad", "Samsung Galaxy Tab", "Xiaomi Pad", "Huawei MatePad", "Lenovo Tab", "Reeder Tablet", "Diğer Tablet"], "elektronik"), "elektronik"),
       node("Ses & Kulaklık", leaves(["Kablosuz Kulaklık", "Kulak İçi Kulaklık", "Kulak Üstü Kulaklık", "Bluetooth Hoparlör", "Soundbar", "Ev Sinema Sistemi", "Mikrofon"], "elektronik"), "elektronik"),
-      node("Foto & Kamera", leaves(["DSLR Fotoğraf Makinesi", "Aynasız Fotoğraf Makinesi", "Kompakt Kamera", "Aksiyon Kamera", "Objektif", "Tripod", "Drone", "Güvenlik Kamerası"], "elektronik"), "elektronik"),
+      // Foto & Kamera Sahibinden granülerliğine çıkarıldı (Analog/Lens & Filtre/Stüdyo + optik: Dürbün/Teleskop/Mikroskop).
+      node("Foto & Kamera", leaves(["DSLR Fotoğraf Makinesi", "Aynasız Fotoğraf Makinesi", "Kompakt Kamera", "Analog Fotoğraf Makinesi", "Aksiyon Kamera", "Objektif", "Lens & Filtre", "Tripod", "Stüdyo Ekipmanı (Işık/Softbox)", "Drone", "Güvenlik Kamerası", "Dürbün", "Teleskop", "Mikroskop"], "elektronik"), "elektronik"),
       node("Giyilebilir Teknoloji", leaves(["Akıllı Saat", "Akıllı Bileklik", "VR Gözlük", "Akıllı Yüzük", "Akıllı Gözlük"], "elektronik"), "elektronik"),
       node("Akıllı Ev", leaves(["Akıllı Ampul & Priz", "Güvenlik Kamerası", "Akıllı Kilit", "Sesli Asistan", "Akıllı Termostat", "Robot Süpürge"], "elektronik"), "elektronik"),
       node("Elektrikli Ulaşım", leaves(["Elektrikli Scooter", "Hoverboard", "Elektrikli Kaykay", "Segway", "Scooter Yedek Parça"], "elektronik"), "elektronik"),
+      // Teknik/hobi elektroniği (Sahibinden "Teknik Elektronik", 120K ilan) — bizde HİÇ yoktu: maker/tekniker segmenti.
+      node("Teknik Elektronik", leaves(["Devre & Montaj", "Test & Ölçüm Cihazı", "Metal Dedektörü", "Terazi & Tartı", "Pil & Batarya", "Güç Kaynağı & Adaptör", "Lisanssız Telsiz", "El Feneri & Lazer", "Lehim & Havya", "Sensör & Modül", "Arduino & Geliştirme Kartı", "Kablo & Konnektör", "Yedek Parça"], "elektronik"), "elektronik"),
       ...leaves(["Projeksiyon", "Yazıcı & Tarayıcı", "Network & Modem", "Elektronik Aksesuar"], "elektronik")
     ], "elektronik"),
     node("Telefon & Aksesuar", [
