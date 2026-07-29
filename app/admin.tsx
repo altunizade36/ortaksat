@@ -17,13 +17,13 @@ import { downloadCsv } from "@/lib/csv-export";
 import { getDistrict, getProvince } from "@/lib/locations";
 import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
-import { adminBroadcastLive, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, type AdminMessageRow, type AdminOverview } from "@/lib/live-service";
+import { adminBroadcastLive, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminSiteRecords } from "@/lib/live-service";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 type Section =
   | "dashboard" | "users" | "listings" | "partnerships" | "complaints" | "categories" | "locations"
-  | "messages" | "commissions" | "stats" | "notifications" | "content" | "blog" | "seo" | "settings" | "reports";
+  | "messages" | "commissions" | "records" | "stats" | "notifications" | "content" | "blog" | "seo" | "settings" | "reports";
 
 type NavItem = { key: Section; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string };
 const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
@@ -36,7 +36,8 @@ const NAV_GROUPS: Array<{ title: string; items: NavItem[] }> = [
     { key: "users", icon: "account-group-outline", label: "Kullanıcılar" },
     { key: "listings", icon: "file-document-outline", label: "İlanlar" },
     { key: "partnerships", icon: "handshake-outline", label: "Ortak Satış Talepleri" },
-    { key: "commissions", icon: "cash-multiple", label: "Komisyon Kayıtları" }
+    { key: "commissions", icon: "cash-multiple", label: "Komisyon Kayıtları" },
+    { key: "records", icon: "database-outline", label: "Site Kayıtları" }
   ] },
   { title: "Güven & İletişim", items: [
     { key: "complaints", icon: "flag-outline", label: "Şikayetler" },
@@ -211,6 +212,7 @@ function AdminScreenInner() {
   // SUNUCU GERÇEĞİ: operasyonel sayılar (ilan/kullanıcı/ortaklık/komisyon/şikayet) artık
   // istemci bellek penceresinden (≤1000/≤500 — ölçekte YANLIŞ) değil, gerçek tablolardan.
   const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [siteRecords, setSiteRecords] = useState<AdminSiteRecords | null>(null);
   // Platform geneli mesaj moderasyonu (eski bölüm ADMİNİN KENDİ kutusunu gösteriyordu).
   const [modMessages, setModMessages] = useState<AdminMessageRow[]>([]);
   const [msgStats, setMsgStats] = useState<{ conversations: number; messages: number; messages_24h: number; blocked_pairs: number } | null>(null);
@@ -225,6 +227,12 @@ function AdminScreenInner() {
     if (section !== "messages") return;
     void fetchAdminMessages({ limit: 100 }).then(setModMessages).catch(() => setModMessages([]));
     void fetchAdminMessageStats().then(setMsgStats).catch(() => setMsgStats(null));
+  }, [section]);
+
+  // "Site Kayıtları" bölümü açılınca teklif/yorum/soru-cevap/talep/ortak-talep çek (admin-gated RPC).
+  useEffect(() => {
+    if (section !== "records") return;
+    void fetchAdminSiteRecords().then(setSiteRecords).catch(() => setSiteRecords(null));
   }, [section]);
 
   // Manuel yenile: sunucu-gerçek admin verisi (overview/audit/mesaj) + market/hesap store'u tazelenir.
@@ -883,6 +891,93 @@ function AdminScreenInner() {
           </Panel>
           );
         })() : null}
+
+        {section === "records" ? (
+          <View style={{ gap: 16 }}>
+            <Panel title="Site Kayıtları" sub="Sitede olup ayrı bölümü olmayan varlıklar — operatör görsün/izlesin (son 30 kayıt, admin-gated RPC).">
+              {!siteRecords ? <EmptyState title="Yükleniyor…" body="Site kayıtları çekiliyor." /> : (
+                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>
+                  {`${fmtN(siteRecords.offers_count)} teklif · ${fmtN(siteRecords.reviews_count)} yorum · ${fmtN(siteRecords.questions_count)} soru · ${fmtN(siteRecords.leads_count)} talep · ${fmtN(siteRecords.partner_requests_count)} ortak-arayan`}
+                </Text>
+              )}
+            </Panel>
+
+            <Panel title="Teklifler" sub={siteRecords ? `${fmtN(siteRecords.offers_count)} toplam` : ""}>
+              {(siteRecords?.offers ?? []).length === 0 ? <EmptyState title="Teklif yok" body="Alıcı teklif verdikçe burada görünür." /> : (
+                <Table head={["İLAN", "TUTAR", "DURUM", "TARİH"]} cols={[2, 1.4, 1, 1]}>
+                  {(siteRecords?.offers ?? []).map((o) => (
+                    <Row key={o.id} cols={[2, 1.4, 1, 1]} cells={[
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{String(o.listingId).slice(0, 8)}…</Text>,
+                      <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{money(o.amount)}{o.counterAmount ? ` → ${money(o.counterAmount)}` : ""}</Text>,
+                      <StatusBadge label={o.status} tone="neutral" />,
+                      <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{String(o.createdAt).slice(0, 10)}</Text>
+                    ]} />
+                  ))}
+                </Table>
+              )}
+            </Panel>
+
+            <Panel title="Yorumlar" sub={siteRecords ? `${fmtN(siteRecords.reviews_count)} aktif` : ""}>
+              {(siteRecords?.reviews ?? []).length === 0 ? <EmptyState title="Yorum yok" body="Satış sonrası yorumlar burada görünür." /> : (
+                <Table head={["İLAN", "PUAN", "YORUM", "DURUM"]} cols={[1.2, 0.9, 2.4, 1]}>
+                  {(siteRecords?.reviews ?? []).map((r) => (
+                    <Row key={r.id} cols={[1.2, 0.9, 2.4, 1]} cells={[
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{String(r.listingId).slice(0, 8)}…</Text>,
+                      <Text style={{ color: colors.gold, fontSize: 12.5, fontWeight: "800" }}>{"★".repeat(Math.max(0, Math.min(5, Math.round(r.rating))))}</Text>,
+                      <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12, fontWeight: "600" }}>{r.comment || "—"}</Text>,
+                      <StatusBadge label={r.deleted ? "Silinmiş" : "Aktif"} tone={r.deleted ? "accent" : "success"} />
+                    ]} />
+                  ))}
+                </Table>
+              )}
+            </Panel>
+
+            <Panel title="İlan Soru-Cevap" sub={siteRecords ? `${fmtN(siteRecords.questions_count)} soru` : ""}>
+              {(siteRecords?.questions ?? []).length === 0 ? <EmptyState title="Soru yok" body="Alıcı ilanlara soru sordukça burada görünür." /> : (
+                <Table head={["SORAN", "SORU", "CEVAP", "TARİH"]} cols={[1, 2, 1.6, 1]}>
+                  {(siteRecords?.questions ?? []).map((q) => (
+                    <Row key={q.id} cols={[1, 2, 1.6, 1]} cells={[
+                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{q.askerName || "—"}</Text>,
+                      <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12, fontWeight: "600" }}>{q.question}</Text>,
+                      <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{q.answer || "yanıtsız"}</Text>,
+                      <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{String(q.createdAt).slice(0, 10)}</Text>
+                    ]} />
+                  ))}
+                </Table>
+              )}
+            </Panel>
+
+            <Panel title="Talepler (Lead)" sub={siteRecords ? `${fmtN(siteRecords.leads_count)} toplam` : ""}>
+              {(siteRecords?.leads ?? []).length === 0 ? <EmptyState title="Talep yok" body="Alıcı talepleri (ürün ilgisi) burada görünür." /> : (
+                <Table head={["İLAN", "ALICI", "KAYNAK", "DURUM"]} cols={[1.2, 1.2, 1, 1]}>
+                  {(siteRecords?.leads ?? []).map((l) => (
+                    <Row key={l.id} cols={[1.2, 1.2, 1, 1]} cells={[
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{String(l.listingId).slice(0, 8)}…</Text>,
+                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "600" }}>{l.buyerName || "—"}</Text>,
+                      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{l.source || l.intent || "—"}</Text>,
+                      <StatusBadge label={l.status} tone="neutral" />
+                    ]} />
+                  ))}
+                </Table>
+              )}
+            </Panel>
+
+            <Panel title="Ortak Aranıyor Talepleri" sub={siteRecords ? `${fmtN(siteRecords.partner_requests_count)} toplam` : ""}>
+              {(siteRecords?.partner_requests ?? []).length === 0 ? <EmptyState title="Talep yok" body="Satıcı 'ürünüme ortak arıyorum' talepleri burada görünür." /> : (
+                <Table head={["BAŞLIK", "KATEGORİ", "KOMİSYON", "DURUM"]} cols={[2, 1.2, 1, 1]}>
+                  {(siteRecords?.partner_requests ?? []).map((p) => (
+                    <Row key={p.id} cols={[2, 1.2, 1, 1]} cells={[
+                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{p.title}</Text>,
+                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.category || "—"}</Text>,
+                      <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.commissionHint || "—"}</Text>,
+                      <StatusBadge label={p.status} tone="neutral" />
+                    ]} />
+                  ))}
+                </Table>
+              )}
+            </Panel>
+          </View>
+        ) : null}
 
         {section === "stats" ? (
           <View style={{ gap: 16 }}>

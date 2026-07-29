@@ -1302,6 +1302,27 @@ export async function fetchAdminOverview(): Promise<AdminOverview | null> {
   return (data ?? null) as AdminOverview | null;
 }
 
+// "Site Kayıtları" — sitede olup admin bölümü olmayan varlıklar (teklif/yorum/soru-cevap/
+// talep/ortak-talep) tek admin-gated RPC ile. Operatör görsün + kontrol etsin.
+export type AdminSiteRecords = {
+  offers_count: number;
+  offers: Array<{ id: string; listingId: string; amount: number; counterAmount: number | null; status: string; note: string | null; createdAt: string }> | null;
+  reviews_count: number;
+  reviews: Array<{ id: string; listingId: string; rating: number; comment: string | null; type: string | null; deleted: boolean; createdAt: string }> | null;
+  questions_count: number;
+  questions: Array<{ id: string; listingId: string; askerName: string | null; question: string; answer: string | null; createdAt: string }> | null;
+  leads_count: number;
+  leads: Array<{ id: string; listingId: string; buyerName: string | null; note: string | null; source: string | null; intent: string | null; status: string; createdAt: string }> | null;
+  partner_requests_count: number;
+  partner_requests: Array<{ id: string; title: string; category: string | null; commissionHint: string | null; location: string | null; status: string; createdAt: string }> | null;
+};
+export async function fetchAdminSiteRecords(): Promise<AdminSiteRecords | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("admin_site_records");
+  if (error) { console.warn("admin_site_records failed", error); return null; }
+  return (data ?? null) as AdminSiteRecords | null;
+}
+
 export type AdminListingRow = {
   id: string; title: string; status: string; price: number; category: string; location: string;
   owner_id: string; owner_name: string | null; created_at: string; featured: boolean;
