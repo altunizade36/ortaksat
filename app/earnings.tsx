@@ -5,6 +5,7 @@ import { useState } from "react";
 import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
+import { ResponsiveLineArea } from "@/components/charts";
 import { AuthRequired } from "@/components/auth-gate";
 import { Card, EmptyState, PrimaryButton } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
@@ -87,7 +88,6 @@ function EarningsScreenInner() {
   const monthEarn = CHART[CHART.length - 1].v;
   const prevMonthEarn = CHART[CHART.length - 2]?.v ?? 0;
   const growth = prevMonthEarn > 0 ? Math.round(((monthEarn - prevMonthEarn) / prevMonthEarn) * 1000) / 10 : null;
-  const chartMax = Math.max(...CHART.map((c) => c.v), 1);
   const hasChartData = CHART.some((c) => c.v > 0);
 
   const topListings = [...txns].sort((a, b) => metric(b) - metric(a)).slice(0, 4);
@@ -216,19 +216,7 @@ function EarningsScreenInner() {
               {!hasChartData ? (
                 <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", paddingVertical: 40, textAlign: "center" }}>{translateCopy("Henüz komisyon kazancın yok. Ortak satış yaptıkça grafiğin burada oluşacak.", language)}</Text>
               ) : (
-              <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 18, height: 200, justifyContent: "space-between", paddingTop: 10 }}>
-                {CHART.map((c, i) => {
-                  const h = Math.round((c.v / chartMax) * 168) + 8;
-                  const last = i === CHART.length - 1;
-                  return (
-                    <View key={c.m} style={{ alignItems: "center", flex: 1, gap: 8, justifyContent: "flex-end" }}>
-                      <Text style={{ color: last ? colors.primaryDark : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{money(c.v)}</Text>
-                      <View style={{ backgroundColor: last ? colors.primary : colors.primarySoft, borderRadius: 8, height: h, width: "100%" }} />
-                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{c.m}</Text>
-                    </View>
-                  );
-                })}
-              </View>
+                <ResponsiveLineArea points={CHART.map((c) => ({ label: c.m, value: c.v }))} color={colors.primary} height={200} valueFmt={money} />
               )}
             </View>
 
@@ -385,18 +373,7 @@ function EarningsScreenInner() {
             <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy("Kazanç grafiği", language)}</Text>
             {growth !== null ? <Text style={{ color: growth >= 0 ? colors.success : colors.accent, fontSize: 12.5, fontWeight: "900" }}>{growth >= 0 ? "↑" : "↓"} %{Math.abs(growth).toString().replace(".", ",")}</Text> : null}
           </View>
-          <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 6, height: 122, justifyContent: "space-between" }}>
-            {CHART.map((c, i) => {
-              const h = Math.round((c.v / chartMax) * 96) + 6;
-              const last = i === CHART.length - 1;
-              return (
-                <View key={c.m} style={{ alignItems: "center", flex: 1, gap: 5, justifyContent: "flex-end", minWidth: 0 }}>
-                  <View style={{ backgroundColor: last ? colors.primary : colors.primarySoft, borderRadius: 6, height: h, width: "100%" }} />
-                  <Text numberOfLines={1} style={{ color: last ? colors.primaryDark : colors.muted, fontSize: 10.5, fontWeight: last ? "900" : "700" }}>{c.m}</Text>
-                </View>
-              );
-            })}
-          </View>
+          <ResponsiveLineArea points={CHART.map((c) => ({ label: c.m, value: c.v }))} color={colors.primary} height={140} valueFmt={money} />
         </View>
       ) : null}
       {/* CSV dışa aktarım: HER İKİ ROL (eskiden mobilde yalnız satıcıya açıktı; downloadReport
