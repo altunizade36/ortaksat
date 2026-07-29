@@ -658,7 +658,10 @@ export default function ListingDetailScreen() {
         </View>
       ) : null}
       <View style={isWideWeb ? { flexDirection: "row", gap: 20, alignItems: "flex-start" } : { gap: 12 }}>
-      <View style={isWideWeb ? { flex: 1.12, minWidth: 0 } : undefined}>
+      {/* Masaüstü: galeri sütunu STICKY — kaydırırken sabit kalır, sağdaki uzun içerik akar
+          (Amazon/Trendyol deseni). Eskiden galeri kısa olduğundan sol tarafta DEV boş beyaz
+          alan oluşuyordu. alignSelf:flex-start → sütun galeri boyunda kalır (sticky çalışsın). */}
+      <View style={isWideWeb ? ({ flex: 1.12, minWidth: 0, alignSelf: "flex-start", position: "sticky", top: 12 } as any) : undefined}>
       {(() => {
         const mainImg = gallery[galleryIdx] ?? currentListing.image;
         // SEO + a11y: ürün görseline açıklayıcı alt (Google Görseller + ekran okuyucu).
