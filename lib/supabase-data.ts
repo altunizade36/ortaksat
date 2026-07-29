@@ -598,7 +598,7 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
     ownedListingIds.length
       ? supabase.from("orders").select("*").in("listing_id", ownedListingIds).order("created_at", { ascending: false }).limit(500)
       : supabase.from("orders").select("*").eq("seller_id", userId).order("created_at", { ascending: false }).limit(500),
-    supabase.from("reviews").select("*").eq("reviewer_id", userId).order("created_at", { ascending: false }).limit(300),
+    supabase.from("reviews").select("*").eq("reviewer_id", userId).is("deleted_at", null).order("created_at", { ascending: false }).limit(300),
     supabase.from("favorites").select("*").eq("user_id", userId).limit(500),
     supabase.from("conversations").select("*").contains("participant_ids", [userId]).order("last_message_at", { ascending: false }).limit(200),
     supabase.from("messages").select("*").or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order("created_at", { ascending: false }).limit(1000),

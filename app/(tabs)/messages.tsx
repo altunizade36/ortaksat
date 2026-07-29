@@ -7,6 +7,8 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useEffect, useRef, useState } from "react";
 import { Modal, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 
+import { Alert } from "@/lib/alert";
+
 import { openUrlSafe } from "@/lib/link";
 
 import { colors } from "@/components/colors";
@@ -110,7 +112,7 @@ function scanMessageRisk(text: string) {
 }
 
 function MessagesScreenInner() {
-  const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, partnerships, refreshUserData, sales, sendConversationMessage, retryMessage } = useStore();
+  const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, partnerships, refreshUserData, sales, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   // Sekme ön plana dönünce mesajları tazele (WS askıdayken kaçan yanıtları getirir).
   useForegroundRefresh(refreshUserData);
@@ -206,6 +208,7 @@ function MessagesScreenInner() {
     const activeConversation = visibleConversations.find((c) => c.id === activeId) ?? visibleConversations[0] ?? myConversations[0];
     const activeListing = activeConversation ? findListing(activeConversation.listingId) : undefined;
     const activeOtherId = activeConversation?.participantIds.find((id) => id !== currentUser.id);
+    const activeBlocked = activeOtherId ? isUserBlocked(activeOtherId) : false; // masaüstünde de engelleme (mobil paritesi)
     const activeOther = activeOtherId ? findUser(activeOtherId) : undefined;
     // Eskiden yeniye sırala. `messages` dizisi yeni→eski tutulur (başa eklenir);
     // aynı zaman damgasında daha yüksek index = daha eski, o yüzden önce gelir.
@@ -226,7 +229,10 @@ function MessagesScreenInner() {
       if (!activeConversation || !text || sendingDraftRef.current) return;
       sendingDraftRef.current = true;
       setDraft("");
-      sendConversationMessage(activeConversation.id, text);
+      // Reddedilirse (hız-limiti/askı/kapalı/engel) metni GERİ YÜKLE — mobil sohbette olduğu gibi
+      // sessiz kayıp yok (masaüstü regresyonuydu: dönüş değeri yok sayılıp taslak hep temizleniyordu).
+      const ok = sendConversationMessage(activeConversation.id, text);
+      if (!ok) setDraft(text);
       setTimeout(() => { sendingDraftRef.current = false; }, 250);
       // Snap: onContentSizeChange zaten anlık olarak sona kaydırır (çift/kaymalı jank yok).
     };
@@ -239,8 +245,8 @@ function MessagesScreenInner() {
       setAttaching(true);
       try {
         const url = await uploadMessageAttachment(result.assets[0].uri, currentUser.id);
-        sendConversationMessage(activeConversation.id, draft.trim(), { url, type: "image" });
-        setDraft("");
+        const ok = sendConversationMessage(activeConversation.id, draft.trim(), { url, type: "image" });
+        if (ok) setDraft("");
       } finally {
         setAttaching(false);
       }
@@ -398,6 +404,21 @@ function MessagesScreenInner() {
                   ) : null}
                   <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Önemli işaretle", language)} onPress={() => toggleStar(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name={starred[activeConversation.id] ? "star" : "star-outline"} size={16} color={starred[activeConversation.id] ? colors.gold : colors.muted} /></Pressable>
                   <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Arşivle", language)} onPress={() => toggleArchive(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="archive-outline" size={16} color={colors.muted} /></Pressable>
+                  {/* Engelle/kaldır — masaüstünde eksikti (mobil paritesi). Engellenince composer banner'a döner. */}
+                  {activeOtherId ? (
+                    <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={activeBlocked ? translateCopy("Engeli kaldır", language) : translateCopy("Kullanıcıyı engelle", language)}
+                      onPress={() => {
+                        if (!activeOtherId) return;
+                        if (activeBlocked) { void unblockUser(activeOtherId); return; }
+                        Alert.alert(translateCopy("Kullanıcıyı engelle", language), translateCopy("Bu kişi sana mesaj gönderemez, sen de ona gönderemezsin.", language), [
+                          { text: translateCopy("Vazgeç", language), style: "cancel" },
+                          { text: translateCopy("Engelle", language), style: "destructive", onPress: () => void blockUser(activeOtherId) }
+                        ]);
+                      }}
+                      style={{ alignItems: "center", backgroundColor: activeBlocked ? colors.accentSoft : colors.surfaceAlt, borderColor: activeBlocked ? colors.accent : colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}>
+                      <MaterialCommunityIcons name={activeBlocked ? "account-cancel" : "account-cancel-outline"} size={16} color={activeBlocked ? colors.accent : colors.muted} />
+                    </Pressable>
+                  ) : null}
                 </View>
 
                 <ScrollView ref={deskScrollRef} scrollEventThrottle={16} onScroll={(e) => { const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent; deskNearBottomRef.current = contentSize.height - (contentOffset.y + layoutMeasurement.height) < 120; }} onContentSizeChange={() => { if (deskNearBottomRef.current) deskScrollRef.current?.scrollToEnd({ animated: false }); }} showsVerticalScrollIndicator={false} style={{ backgroundColor: colors.background, flex: 1 }} contentContainerStyle={{ flexGrow: 1, justifyContent: activeMessages.length === 0 ? "center" : "flex-start", padding: 22 }}>
@@ -460,11 +481,21 @@ function MessagesScreenInner() {
                       <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{translateCopy("Bu mesajda hassas ödeme veya site dışı iletişim ifadesi var. Görüşmeyi kayıtlı mesaj içinde net tutun.", language)}</Text>
                     </View>
                   ) : null}
+                  {activeBlocked ? (
+                    <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 12 }}>
+                      <MaterialCommunityIcons name="account-cancel" size={18} color={colors.accent} />
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Bu kişiyi engelledin. Mesajlaşma iki yönlü kapalı.", language)}</Text>
+                      <Pressable accessibilityRole="button" onPress={() => activeOtherId && void unblockUser(activeOtherId)} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: colors.accent, borderRadius: 999, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 8 })}>
+                        <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Engeli Kaldır", language)}</Text>
+                      </Pressable>
+                    </View>
+                  ) : (
                   <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
                     <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Görsel ekle", language)} onPress={() => void attachImage()} disabled={attaching} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 44, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 44 })}><MaterialCommunityIcons name={attaching ? "loading" : "paperclip"} size={20} color={attaching ? colors.primary : colors.muted} /></Pressable>
                     <TextInput value={draft} onChangeText={(text) => { setDraft(text); notifyTyping(); }} multiline accessibilityLabel={translateCopy("Mesaj yaz…", language)} placeholder={translateCopy("Mesaj yaz…", language)} placeholderTextColor={colors.muted} onKeyPress={onComposerKeyPress} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 22, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, maxHeight: 120, minHeight: 44, paddingHorizontal: 16, paddingVertical: 12 }} />
                     <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Mesajı gönder", language)} disabled={!draft.trim()} onPress={sendDraft} style={({ pressed }) => ({ alignItems: "center", backgroundColor: draft.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.8 : 1, width: 44 })}><MaterialCommunityIcons name="send" size={19} color="#FFFFFF" /></Pressable>
                   </View>
+                  )}
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
                     <MaterialCommunityIcons name="lock-outline" size={12} color={colors.subtle} />
                     <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{translateCopy("OrtakSat ödeme/kargo işlemez; taraflar kendi aralarında anlaşır. Kişisel veri paylaşımına dikkat.", language)}</Text>

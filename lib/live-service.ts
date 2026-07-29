@@ -1061,6 +1061,39 @@ export async function fetchReviewsForUser(userId: string): Promise<Review[]> {
   }));
 }
 
+// Bir İLANIN yorumları (herkese açık — ilan detay sayfası). Eskiden yoktu → ilan sayfası
+// yalnız giriş yapanın KENDİ yorumunu gösteriyordu (başkalarınınki hiç çekilmiyordu, sosyal
+// kanıt çalışmıyordu + crawler'ın bastığı yıldızlar sayfada görünmüyordu). middleware SEO ile
+// AYNI kapsam (listing_id + silinmemiş) → görünür içerik ile işaretleme eşleşir.
+export async function fetchReviewsForListing(listingId: string): Promise<Review[]> {
+  if (!supabase || !listingId) return [];
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("*")
+    .eq("listing_id", listingId)
+    .is("deleted_at", null)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) {
+    console.warn("Supabase fetch listing reviews failed", error);
+    return [];
+  }
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    listingId: row.listing_id,
+    saleId: row.sale_id ?? undefined,
+    reviewerId: row.reviewer_id,
+    reviewedUserId: row.reviewed_user_id ?? undefined,
+    rating: row.rating,
+    comment: row.comment,
+    type: row.type ?? "product",
+    createdAt: (row.created_at ?? "").slice(0, 10),
+    sellerReply: row.seller_reply ?? undefined,
+    sellerReplyAt: row.seller_reply_at ?? undefined,
+    helpfulCount: Number(row.helpful_count ?? 0)
+  }));
+}
+
 // Satıcı yorumuna yanıt yazar/günceller (RPC: yalnız yorumun hakkında olduğu kişi).
 export async function replyToReviewLive(reviewId: string, reply: string): Promise<boolean> {
   if (!supabase) return true;
@@ -1203,7 +1236,14 @@ export async function messageSendBlockedReason(message: Message): Promise<"gone"
     .maybeSingle();
   if (error) return null;              // ağ/geçici → normal "tekrar dene" akışı
   if (!data) return "gone";            // konuşma sunucuda YOK (ilan silinmiş → cascade)
-  if (data.status !== "open") return "denied"; // kapalı/engelli
+  if (data.status !== "open") return "denied"; // kapalı
+  // ENGELLEME: blockUser yalnız blocked_users'a yazar; conversations.status hiç 'blocked'
+  // yapılmıyor → engellenen tarafın insert'i RESTRICTIVE policy ile 42501 reddedilir ama status
+  // "open" kalır → eskiden null (geçici) dönüp sonsuz "tekrar dene" oluyordu. is_blocked ile ayırt et.
+  try {
+    const { data: blk } = await supabase.rpc("is_blocked", { a: message.senderId, b: message.receiverId });
+    if (blk === true) return "denied";
+  } catch { /* RPC yok/hata → geçici say */ }
   return null;
 }
 
@@ -1221,6 +1261,14 @@ export async function markMessageReadLive(message: Message) {
   if (!supabase) return;
   const { error } = await supabase.from("messages").update({ read: true }).eq("id", message.id);
   if (error) console.warn("Supabase message read update failed", error);
+}
+// Bir konuşmanın TÜM okunmamış mesajlarını TEK istekle okundu yap (eskiden mesaj başına
+// ayrı UPDATE atılıyordu → 50 okunmamışta 50 istek). RLS "alıcı okundu-update" izin verir.
+export async function markConversationReadLive(conversationId: string, userId: string) {
+  if (!supabase) return;
+  const { error } = await supabase.from("messages").update({ read: true })
+    .eq("conversation_id", conversationId).eq("receiver_id", userId).eq("read", false);
+  if (error) console.warn("Supabase mark conversation read failed", error);
 }
 export async function insertNotification(notification: Notification) {
   if (!supabase) return;

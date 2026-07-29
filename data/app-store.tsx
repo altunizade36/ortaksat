@@ -56,7 +56,7 @@ import {
   setBuyerConfirmToken,
   isLiveUser,
   makeUuid,
-  markMessageReadLive,
+  markConversationReadLive,
   markNotificationReadLive,
   updateLeadStatusLive,
   updateListingLive,
@@ -2199,7 +2199,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
       markConversationRead(conversationId) {
         const unread = messages.filter((item) => item.conversationId === conversationId && item.receiverId === currentUser.id && !item.read);
         setMessages((items) => items.map((item) => (item.conversationId === conversationId && item.receiverId === currentUser.id ? { ...item, read: true } : item)));
-        if (liveUser) unread.forEach((message) => void markMessageReadLive({ ...message, read: true }));
+        // TEK istek (eskiden mesaj başına ayrı UPDATE → N istek + tutarsız sayaç titremesi).
+        if (liveUser && unread.length) void markConversationReadLive(conversationId, currentUser.id);
       },
       markNotificationRead(notificationId) {
         const notification = notifications.find((item) => item.id === notificationId);

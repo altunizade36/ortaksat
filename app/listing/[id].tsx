@@ -36,7 +36,7 @@ import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
-import { insertReferralLead, logReferralClick, recordListingView, resolveReferralLink } from "@/lib/live-service";
+import { fetchReviewsForListing, insertReferralLead, logReferralClick, recordListingView, resolveReferralLink } from "@/lib/live-service";
 import { getRefAttribution, saveRefAttribution } from "@/lib/referral";
 import { metaTrack } from "@/lib/meta-pixel";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -108,6 +108,14 @@ export default function ListingDetailScreen() {
   const [recentIds, setRecentIds] = useState<string[]>([]);
   useEffect(() => { setRecentIds(getRecent()); return subscribeRecent(setRecentIds); }, [id]);
   const [revealedPhone, setRevealedPhone] = useState<string | null>(null);
+  // İLANIN yorumları (herkese açık) — eskiden yalnız store'daki (giriş yapanın KENDİ) yorumu
+  // gösteriliyordu; başkalarınınki hiç çekilmiyordu. Artık DB'den çekilir (middleware SEO ile aynı kapsam).
+  const [fetchedReviews, setFetchedReviews] = useState<Awaited<ReturnType<typeof fetchReviewsForListing>>>([]);
+  useEffect(() => {
+    let alive = true;
+    if (id) void fetchReviewsForListing(String(id)).then((r) => { if (alive) setFetchedReviews(r); }).catch(() => {});
+    return () => { alive = false; };
+  }, [id, retryTick]);
   const [revealingPhone, setRevealingPhone] = useState(false);
   const [buyerName, setBuyerName] = useState("");
   const [buyerPhone, setBuyerPhone] = useState("");
@@ -351,7 +359,13 @@ export default function ListingDetailScreen() {
   function demoBlocked() {
     Alert.alert(translateCopy("Örnek ilan", language), translateCopy("Bu bir örnek (vitrin) ilandır; yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık bu ilanda kapalıdır.", language));
   }
-  const listingReviews = reviews.filter((item) => item.listingId === currentListing.id);
+  // DB'den çekilen (herkesin) + store'daki (kendi, oturumda yeni yazılan) yorumlar birleşir (id ile tekilleştir).
+  const listingReviews = useMemo(() => {
+    const byId = new Map<string, (typeof fetchedReviews)[number]>();
+    for (const r of fetchedReviews) byId.set(r.id, r);
+    for (const r of reviews) if (r.listingId === currentListing.id) byId.set(r.id, r);
+    return [...byId.values()].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  }, [fetchedReviews, reviews, currentListing.id]);
   const favorited = isFavorite(currentListing.id);
   const inCompare = hasInCompare(currentListing.id);
   const commission = commissionAmount(currentListing);

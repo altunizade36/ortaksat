@@ -3,6 +3,7 @@ import { useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
 import { colors } from "./colors";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 
 const LABELS: Record<number, string> = {
   1: "Çok kötü",
@@ -28,6 +29,7 @@ export function StarRatingInput({
   size?: number;
   showLabel?: boolean;
 }) {
+  const { language } = useLanguage();
   const [hover, setHover] = useState(0);
   const active = hover || value;
   return (
@@ -54,7 +56,7 @@ export function StarRatingInput({
       </View>
       {showLabel ? (
         <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
-          {value ? `${value}/5 · ${LABELS[value]}` : "Puan vermek için yıldıza dokun"}
+          {value ? `${value}/5 · ${translateCopy(LABELS[value], language)}` : translateCopy("Puan vermek için yıldıza dokun", language)}
         </Text>
       ) : null}
     </View>
