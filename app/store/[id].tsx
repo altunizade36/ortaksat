@@ -527,7 +527,7 @@ export default function StoreScreen() {
                   {reviewsAboutSeller.length === 0 ? (
                     <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
                   ) : reviewsAboutSeller.map((r) => (
-                    <ReviewCard key={r.id} review={r} reviewerName={findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} onRemove={removeFetched} isMine={r.reviewerId === currentUser.id} onEdit={editReview} onDelete={deleteReview} onReport={reportReview} language={language} />
+                    <ReviewCard key={r.id} review={r} reviewerName={r.reviewerName ?? findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} onRemove={removeFetched} isMine={r.reviewerId === currentUser.id} onEdit={editReview} onDelete={deleteReview} onReport={reportReview} language={language} />
                   ))}
                 </View>
               ) : null}
@@ -827,7 +827,7 @@ export default function StoreScreen() {
           // Mobilde de paylaşılan ReviewCard: satıcı yanıtı + faydalı oyu masaüstüyle eşit (eskiden
           // mobil satır bunları HİÇ göstermiyordu → satıcı yanıtları mobil ziyaretçiye görünmezdi).
           reviewsAboutSeller.map((r) => (
-            <ReviewCard key={r.id} review={r} reviewerName={findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} onRemove={removeFetched} isMine={r.reviewerId === currentUser.id} onEdit={editReview} onDelete={deleteReview} onReport={reportReview} language={language} />
+            <ReviewCard key={r.id} review={r} reviewerName={r.reviewerName ?? findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} onRemove={removeFetched} isMine={r.reviewerId === currentUser.id} onEdit={editReview} onDelete={deleteReview} onReport={reportReview} language={language} />
           ))
         )}
       </View>
@@ -978,23 +978,27 @@ function StoreFilterChip({ active, icon, label, onPress }: { active?: boolean; i
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityState={{ selected: !!active }}
+      accessibilityLabel={translateCopy(label, language)}
       style={({ pressed }) => ({
         alignItems: "center",
+        // İÇERİK-BOYUTU (Trendyol filtre pill'i): eskiden flex:1 → tam-genişlik grid'de
+        // her çip 1/3 genişliğe gerilip devleşiyordu. Artık içerik kadar, sola hizalı, sarar.
         backgroundColor: active ? colors.primary : colors.surface,
         borderColor: active ? colors.primary : colors.line,
         borderRadius: 999,
         borderWidth: 1,
-        flex: 1,
         flexDirection: "row",
         gap: 6,
         justifyContent: "center",
         minHeight: 40,
         opacity: pressed ? 0.72 : 1,
-        paddingHorizontal: 8
+        paddingHorizontal: 14
       })}
     >
       <MaterialCommunityIcons name={icon} size={15} color={active ? "#FFFFFF" : colors.primary} />
-      <Text adjustsFontSizeToFit minimumFontScale={0.78} numberOfLines={1} style={{ color: active ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12, fontWeight: "900" }}>
+      <Text numberOfLines={1} style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "900" }}>
         {translateCopy(label, language)}
       </Text>
     </Pressable>

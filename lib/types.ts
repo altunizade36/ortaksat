@@ -196,6 +196,10 @@ export type Review = {
   sellerReply?: string;
   sellerReplyAt?: string;
   helpfulCount?: number;
+  // Yazar kimliği — PostgREST FK-embed ile doldurulur (reviews_reviewer_id_fkey → profiles).
+  // Anon ziyaretçide findUser boş dönebilir; embed sayesinde gerçek ad/avatar her zaman gelir.
+  reviewerName?: string;
+  reviewerAvatar?: string;
 };
 
 export type Favorite = {

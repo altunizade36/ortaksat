@@ -1,4 +1,5 @@
 import { MaterialCommunityIcons } from "@/components/icons";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Pressable, Text, TextInput, View } from "react-native";
@@ -83,8 +84,14 @@ export function ReviewCard({ review, reviewerName, isSeller, authed, onPatch, on
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 8, padding: 16 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 38, justifyContent: "center", width: 38 }}>
-          <MaterialCommunityIcons name="account" size={20} color={colors.primaryDark} />
+        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 38, justifyContent: "center", overflow: "hidden", width: 38 }}>
+          {review.reviewerAvatar && review.reviewerAvatar.startsWith("http") ? (
+            <Image source={{ uri: review.reviewerAvatar }} contentFit="cover" style={{ height: 38, width: 38 }} accessibilityLabel={reviewerName ?? undefined} />
+          ) : review.reviewerAvatar && review.reviewerAvatar.trim() ? (
+            <Text style={{ color: colors.primaryDark, fontSize: 16, fontWeight: "900" }}>{review.reviewerAvatar.trim().slice(0, 2)}</Text>
+          ) : (
+            <MaterialCommunityIcons name="account" size={20} color={colors.primaryDark} />
+          )}
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>

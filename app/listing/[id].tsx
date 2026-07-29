@@ -1328,7 +1328,7 @@ export default function ListingDetailScreen() {
             <ReviewCard
               key={item.id}
               review={item}
-              reviewerName={findUser(item.reviewerId)?.name}
+              reviewerName={item.reviewerName ?? findUser(item.reviewerId)?.name}
               isSeller={isOwner}
               authed={isReviewAuthed}
               isMine={item.reviewerId === currentUser.id}

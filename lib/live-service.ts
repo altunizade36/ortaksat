@@ -1036,7 +1036,7 @@ export async function fetchReviewsForUser(userId: string): Promise<Review[]> {
   if (!supabase || !userId) return [];
   const { data, error } = await supabase
     .from("reviews")
-    .select("*")
+    .select("*, reviewer:profiles!reviews_reviewer_id_fkey(full_name, avatar_url)")
     .eq("reviewed_user_id", userId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
@@ -1045,7 +1045,13 @@ export async function fetchReviewsForUser(userId: string): Promise<Review[]> {
     console.warn("Supabase fetch user reviews failed", error);
     return [];
   }
-  return (data ?? []).map((row) => ({
+  return (data ?? []).map(mapReviewRow);
+}
+
+// Yorum satırı → Review; yazar profilini FK-embed'den çözer (anon'da bile gerçek ad/avatar).
+function mapReviewRow(row: Record<string, any>): Review {
+  const reviewer = row.reviewer ?? null;
+  return {
     id: row.id,
     listingId: row.listing_id,
     saleId: row.sale_id ?? undefined,
@@ -1057,8 +1063,10 @@ export async function fetchReviewsForUser(userId: string): Promise<Review[]> {
     createdAt: (row.created_at ?? "").slice(0, 10),
     sellerReply: row.seller_reply ?? undefined,
     sellerReplyAt: row.seller_reply_at ?? undefined,
-    helpfulCount: Number(row.helpful_count ?? 0)
-  }));
+    helpfulCount: Number(row.helpful_count ?? 0),
+    reviewerName: (reviewer?.full_name as string) || undefined,
+    reviewerAvatar: (reviewer?.avatar_url as string) || undefined
+  };
 }
 
 // Bir İLANIN yorumları (herkese açık — ilan detay sayfası). Eskiden yoktu → ilan sayfası
@@ -1069,7 +1077,7 @@ export async function fetchReviewsForListing(listingId: string): Promise<Review[
   if (!supabase || !listingId) return [];
   const { data, error } = await supabase
     .from("reviews")
-    .select("*")
+    .select("*, reviewer:profiles!reviews_reviewer_id_fkey(full_name, avatar_url)")
     .eq("listing_id", listingId)
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
@@ -1078,20 +1086,7 @@ export async function fetchReviewsForListing(listingId: string): Promise<Review[
     console.warn("Supabase fetch listing reviews failed", error);
     return [];
   }
-  return (data ?? []).map((row) => ({
-    id: row.id,
-    listingId: row.listing_id,
-    saleId: row.sale_id ?? undefined,
-    reviewerId: row.reviewer_id,
-    reviewedUserId: row.reviewed_user_id ?? undefined,
-    rating: row.rating,
-    comment: row.comment,
-    type: row.type ?? "product",
-    createdAt: (row.created_at ?? "").slice(0, 10),
-    sellerReply: row.seller_reply ?? undefined,
-    sellerReplyAt: row.seller_reply_at ?? undefined,
-    helpfulCount: Number(row.helpful_count ?? 0)
-  }));
+  return (data ?? []).map(mapReviewRow);
 }
 
 // Satıcı yorumuna yanıt yazar/günceller (RPC: yalnız yorumun hakkında olduğu kişi).
