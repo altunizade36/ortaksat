@@ -20,10 +20,14 @@ export function HeaderActions() {
           accessibilityLabel={translateCopy("Ücretsiz İlan Ver", language)}
           onPressIn={() => setPressed(true)}
           onPressOut={() => setPressed(false)}
-          style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, elevation: 2, flexDirection: "row", gap: 4, minHeight: 40, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, shadowColor: colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6 }}
+          style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, elevation: 2, flexDirection: "row", gap: 5, minHeight: 40, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, shadowColor: colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6 }}
         >
-          <MaterialCommunityIcons name="plus-box" size={18} color="#FFFFFF" />
-          <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("İlan Ver", language)}</Text>
+          <MaterialCommunityIcons name="plus-box" size={19} color="#FFFFFF" />
+          {/* 2-satır: küçük "ÜCRETSİZ" etiketi + "İlan Ver" — genişlik artmadan "ücretsiz" vurgusu (mobilde tam metin logoyu sıkıştırıyordu). */}
+          <View style={{ gap: 0 }}>
+            <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.9)", fontSize: 7.5, fontWeight: "900", letterSpacing: 0.6, lineHeight: 9 }}>{translateCopy("ÜCRETSİZ", language)}</Text>
+            <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900", lineHeight: 15 }}>{translateCopy("İlan Ver", language)}</Text>
+          </View>
         </Pressable>
       </Link>
       <HeaderAction href="/(tabs)/profile" icon="account-circle-outline" label={translateCopy("Profil", language)} primary />

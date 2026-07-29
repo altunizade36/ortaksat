@@ -66,6 +66,7 @@ export const componentsDict: Record<string, string> = {
   "Ana Sayfa": "Home",
   "Keşfet": "Explore",
   "İlan Ver": "Post Listing",
+  "ÜCRETSİZ": "FREE",
   "Ortak Satış": "Partner Sales",
   "Kategoriler": "Categories",
   "Nasıl Çalışır?": "How It Works?",
