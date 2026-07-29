@@ -161,10 +161,12 @@ const metaPixelScript = /^\d{5,20}$/.test(META_PIXEL_ID)
     "(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');" +
     "fbq('init'," + JSON.stringify(META_PIXEL_ID) + ");fbq('track','PageView');"
   : "";
-const PROFILE_COLS = "id,full_name,avatar_url,bio,verified_phone,verified_identity,verified_instagram,rating,response_rate,role,status,successful_sales,follower_count";
-
-// Sorgular loadMarketplaceSnapshot ile AYNI olmalı; ayrışırsa ön-çekim sessizce atlanır
-// (store normal yolundan çeker) — yani yanlış veri riski yok, sadece hız kazancı kaybolur.
+// KRİTİK: PUBLIC_PROFILE_COLUMNS (lib/supabase-data.ts) ile BİREBİR aynı kolonlar olmalı.
+// Ayrışırsa prefetch ATLANMAZ — takePrefetched bu 13-kolonu döndürür, loadMarketplaceSnapshot
+// ERKEN döner ve taze 17-kolon fetch HİÇ çalışmaz → marketplace kullanıcılarında yeni alanlar
+// (createdAt/city/expertiseCategories) SESSİZCE eksik kalır (store profilinde üye-tarihi/konum/
+// uzmanlık görünmedi). Yeni public profil kolonu eklerken BURAYI da güncelle. Hepsi anon-SELECT'e açık.
+const PROFILE_COLS = "id,full_name,avatar_url,bio,verified_phone,verified_identity,verified_instagram,rating,response_rate,role,status,successful_sales,follower_count,invite_code,expertise_categories,city,created_at";
 const prefetchScript = SB_URL && SB_KEY
   ? "(function(){try{" +
     "var u=" + JSON.stringify(SB_URL + "/rest/v1") + ",k=" + JSON.stringify(SB_KEY) + ";" +
