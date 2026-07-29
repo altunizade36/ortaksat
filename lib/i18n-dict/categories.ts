@@ -1631,6 +1631,7 @@ export const categoriesDict: Record<string, string> = {
   "Teknik Elektronik": "Technical Electronics",
   "Elektronik Ekipman": "Electronic Equipment",
   "Araç Servis & Bakım": "Vehicle Service & Maintenance",
+  "Özel Eğitim & Çocuk Gelişimi": "Special Education & Child Development",
   "Elektrikli Minivan & Panelvan": "Electric Minivan & Panel Van",
   "Elektrikli Hizmet Araçları": "Electric Service Vehicles",
 };

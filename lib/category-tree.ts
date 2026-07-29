@@ -2197,6 +2197,8 @@ export const categoryTree: CategoryNode[] = [
     node("Spor Dersleri", leaves(["Yüzme", "Tenis", "Fitness & PT", "Yoga & Pilates", "Basketbol", "Futbol", "Dövüş Sanatları", "Kayak", "Binicilik"], "ders"), "ders"),
     node("Meslek & Yazılım", leaves(["Yazılım & Kodlama", "Web Tasarım", "Grafik Tasarım", "Dijital Pazarlama", "Muhasebe Eğitimi", "Bilgisayar Kullanımı", "Ofis Programları", "Yapay Zeka & Veri"], "ders"), "ders"),
     node("Kişisel Gelişim & Diğer", leaves(["Direksiyon Dersi", "Diksiyon & Sunum", "Satranç", "Kişisel Gelişim", "Koçluk", "El Sanatları", "Aşçılık", "Kariyer Danışmanlığı"], "ders"), "ders"),
+    // Sahibinden "Özel Ders Verenler"deki "Özel Eğitim" (özel gereksinim) + "Çocuk Gelişimi" eksikti → tek dalda.
+    node("Özel Eğitim & Çocuk Gelişimi", leaves(["Özel Eğitim (Genel)", "Disleksi Eğitimi", "Otizm & Özel Gereksinim", "Konuşma & Dil Terapisi", "İşitme / Görme Engelli Eğitimi", "Zihinsel Engelli Eğitimi", "Çocuk Gelişimi", "Okul Öncesi Gelişim", "Etüt & Ödev Desteği", "Dikkat & Zeka Geliştirme", "Rehberlik & Psikolojik Danışmanlık"], "ders"), "ders"),
     leaf("Online Eğitim", "ders")
   ], "ders", IMG("1503676260728-1c00da094a0b")),
 
