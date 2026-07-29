@@ -74,6 +74,7 @@ export default function StoreScreen() {
     );
   }
   const [filter, setFilter] = useState<StoreFilter>("active");
+  const [catFilter, setCatFilter] = useState<string>("all"); // mağaza-içi kategori filtresi (Trendyol)
   const [storeSort, setStoreSort] = useState<"new" | "priceAsc" | "priceDesc">("new");
   const [tab, setTab] = useState<ProfileTab>("about");
   const [refreshing, setRefreshing] = useState(false);
@@ -121,19 +122,30 @@ export default function StoreScreen() {
   const partnerBroughtSales = partnerSalesList.length;
   const partnerEarned = partnerSalesList.reduce((sum, s) => sum + s.commissionAmount, 0);
   const hasPartnerActivity = partnerAllPartnerships.length > 0 || partnerBroughtSales > 0;
+  // Durum filtresi (aktif/ortak/tümü) uygulanmış ama KATEGORİ filtresi uygulanmamış liste —
+  // kategori çipleri ve sayıları bundan türer (böylece sayılar seçili duruma göre tutarlı).
+  const filteredByStatus = useMemo(() => scopedListings
+    .filter((listing) => listing.status !== "rejected")
+    .filter((listing) => {
+      if (filter === "active") return listing.status === "active";
+      if (filter === "partner") return listing.status === "active" && listing.partnershipMode !== "invite";
+      return true;
+    }), [filter, scopedListings]);
+  // Mağazadaki kategoriler [ad, adet] — çoktan aza. Trendyol mağaza-içi kategori filtresi.
+  const storeCategories = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of filteredByStatus) { const c = displayText(l.category); if (c) m.set(c, (m.get(c) ?? 0) + 1); }
+    return Array.from(m.entries()).sort((a, b) => b[1] - a[1]);
+  }, [filteredByStatus]);
+  // Seçili kategori artık listede yoksa (durum filtresi değişti) "tümü"ne düş.
+  useEffect(() => { if (catFilter !== "all" && !storeCategories.some(([c]) => c === catFilter)) setCatFilter("all"); }, [storeCategories, catFilter]);
   const sellerListings = useMemo(() => {
-    const arr = scopedListings
-      .filter((listing) => listing.status !== "rejected")
-      .filter((listing) => {
-        if (filter === "active") return listing.status === "active";
-        if (filter === "partner") return listing.status === "active" && listing.partnershipMode !== "invite";
-        return true;
-      });
+    const arr = filteredByStatus.filter((listing) => catFilter === "all" || displayText(listing.category) === catFilter);
     if (storeSort === "priceAsc") arr.sort((a, b) => a.price - b.price);
     else if (storeSort === "priceDesc") arr.sort((a, b) => b.price - a.price);
     else arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt)); // "new"
     return arr;
-  }, [filter, scopedListings, storeSort]);
+  }, [filteredByStatus, catFilter, storeSort]);
   const activeListings = scopedListings.filter((listing) => listing.status === "active");
   const totalCommission = activeListings.reduce((sum, listing) => {
     return sum + (listing.commissionType === "rate" ? Math.round((listing.price * listing.commissionValue) / 100) : listing.commissionValue);
@@ -481,6 +493,7 @@ export default function StoreScreen() {
                     <StoreFilterChip active={storeSort === "priceAsc"} icon="sort-ascending" label="En düşük fiyat" onPress={() => setStoreSort("priceAsc")} />
                     <StoreFilterChip active={storeSort === "priceDesc"} icon="sort-descending" label="En yüksek fiyat" onPress={() => setStoreSort("priceDesc")} />
                   </View>
+                  <StoreCategoryBar categories={storeCategories} value={catFilter} onChange={setCatFilter} total={filteredByStatus.length} language={language} />
                   {sellerListings.length === 0 ? (
                     <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca burada görünür.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
                   ) : (
@@ -784,6 +797,7 @@ export default function StoreScreen() {
         <StoreFilterChip active={storeSort === "priceAsc"} icon="sort-ascending" label="En düşük fiyat" onPress={() => setStoreSort("priceAsc")} />
         <StoreFilterChip active={storeSort === "priceDesc"} icon="sort-descending" label="En yüksek fiyat" onPress={() => setStoreSort("priceDesc")} />
       </ScrollView>
+      <StoreCategoryBar categories={storeCategories} value={catFilter} onChange={setCatFilter} total={filteredByStatus.length} language={language} />
 
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 19, fontWeight: "900" }}>
@@ -1002,6 +1016,26 @@ function StoreFilterChip({ active, icon, label, onPress }: { active?: boolean; i
         {translateCopy(label, language)}
       </Text>
     </Pressable>
+  );
+}
+
+/** Mağaza-içi kategori filtresi (Trendyol): satıcının ürünleri ≥2 kategorideyse yatay çip barı.
+ *  Her çip kategori adı + adet rozeti; "Tümü" varsayılan. Tek kategoride HİÇ render olmaz (kalabalık yok). */
+function StoreCategoryBar({ categories, value, onChange, total, language }: { categories: Array<[string, number]>; value: string; onChange: (v: string) => void; total: number; language: "tr" | "en" }) {
+  if (categories.length < 2) return null;
+  const Chip = ({ label, count, on, onPress }: { label: string; count: number; on: boolean; onPress: () => void }) => (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={label} style={({ pressed }) => ({ alignItems: "center", backgroundColor: on ? colors.primarySoft : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.72 : 1, paddingHorizontal: 13, paddingVertical: 8 })}>
+      <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
+      <View style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderRadius: 999, minWidth: 20, paddingHorizontal: 6, paddingVertical: 1 }}>
+        <Text style={{ color: on ? "#FFFFFF" : colors.muted, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "900", textAlign: "center" }}>{count}</Text>
+      </View>
+    </Pressable>
+  );
+  return (
+    <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 8, paddingVertical: 1 }}>
+      <Chip label={translateCopy("Tümü", language)} count={total} on={value === "all"} onPress={() => onChange("all")} />
+      {categories.map(([c, n]) => <Chip key={c} label={translateCopy(c, language)} count={n} on={value === c} onPress={() => onChange(c)} />)}
+    </ScrollView>
   );
 }
 
