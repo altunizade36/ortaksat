@@ -10,7 +10,7 @@ import { Mascot } from "@/components/brand/Mascot";
 import { colors } from "@/components/colors";
 import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { OptionSheet } from "@/components/option-sheet";
-import { LegalDisclaimer } from "@/components/legal-disclaimer";
+import { LegalDisclaimerAccept } from "@/components/legal-disclaimer";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { modelsForSchema, deriveFieldsFromPath, describeAttributes, getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
@@ -176,6 +176,8 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState(""); // bot tuzağı: gerçek kullanıcı boş bırakır
+  const [acceptedLegal, setAcceptedLegal] = useState(false); // aracı-platform onay kutucuğu (yayın şartı)
+  const [showLegalError, setShowLegalError] = useState(false); // yayın denemesinde işaretsizse uyar
   const [pendingDraft, setPendingDraft] = useState<DraftShape | null>(null); // "devam et?" banner'ı
   const [draftReady, setDraftReady] = useState(false); // ilk yükleme bitti mi (autosave'i geciktir)
   const [published, setPublished] = useState<{ listing: Listing; review: boolean } | null>(null);
@@ -1448,8 +1450,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             </View>
           </View>
         ) : null}
-        {/* Yasal uyarı — bu tek sayfada yayınlanıyor: tam kutu göster. */}
-        <LegalDisclaimer />
+        {/* Yasal uyarı — KOMPAKT onay kutucuğu (eski büyük kutu mobilde ekranı kaplıyordu).
+            İşaretleyip yayınlayınca aracı-platform şartları kabul edilmiş olur; "Tüm maddeleri gör" ile açılır. */}
+        <LegalDisclaimerAccept value={acceptedLegal} onChange={(v) => { setAcceptedLegal(v); if (v) setShowLegalError(false); }} error={showLegalError} />
 
         {/* Honeypot (botlar için gizli tuzak; ekranda görünmez, gerçek kullanıcı dokunmaz) */}
         <TextInput
@@ -1496,7 +1499,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             <MaterialCommunityIcons name="content-save-outline" size={16} color={colors.muted} />
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Taslak Olarak Kaydet", language)}</Text>
           </Pressable>
-          <Pressable accessibilityRole="button" disabled={publishing || missingFields.length > 0 || liveModeration?.level === "block"} onPress={() => void publish()} style={{ alignItems: "center", backgroundColor: missingFields.length || liveModeration?.level === "block" ? colors.line : colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
+          <Pressable accessibilityRole="button" disabled={publishing || missingFields.length > 0 || liveModeration?.level === "block"} onPress={() => { if (!acceptedLegal) { setShowLegalError(true); return; } void publish(); }} style={{ alignItems: "center", backgroundColor: missingFields.length || liveModeration?.level === "block" ? colors.line : colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
             <MaterialCommunityIcons name="check-decagram" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{publishing ? translateCopy("Yayınlanıyor…", language) : translateCopy("İlanı Yayınla", language)}</Text>
           </Pressable>
         </View>

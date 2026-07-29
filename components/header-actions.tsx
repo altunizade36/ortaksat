@@ -5,18 +5,27 @@ import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { useStore } from "@/lib/use-store";
 
 export function HeaderActions() {
   const { language } = useLanguage();
-  const { currentUser, messages, notifications } = useStore();
-  const unreadMessages = messages.filter((message) => message.receiverId === currentUser.id && !message.read).length;
-  const unreadNotifications = notifications.filter((notification) => notification.userId === currentUser.id && !notification.read).length;
-
+  const [pressed, setPressed] = useState(false);
+  // KIRMIZI "İlan Ver" CTA — mobil header'da ziyaretçiyi ÜCRETSİZ ilan vermeye çeker (dikkat çeken
+  // kırmızı). Mesaj/bildirim ikonları KALDIRILDI → hamburger menüsünde (rozetiyle) zaten var; header
+  // sadeleşti + ilan-verme öne çıktı. asChild + STATİK stil + useState (fonksiyon-style anchor'da bg düşer).
   return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 2, zIndex: 2 }}>
-      <HeaderAction href="/(tabs)/messages" icon="message-text-outline" label={translateCopy("Mesaj", language)} badge={unreadMessages} />
-      <HeaderAction href="/(tabs)/notifications-tab" icon="bell-outline" label={translateCopy("Bildirim", language)} badge={unreadNotifications} />
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 6, zIndex: 2 }}>
+      <Link href="/create" asChild>
+        <Pressable
+          accessibilityRole="link"
+          accessibilityLabel={translateCopy("Ücretsiz İlan Ver", language)}
+          onPressIn={() => setPressed(true)}
+          onPressOut={() => setPressed(false)}
+          style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, elevation: 2, flexDirection: "row", gap: 4, minHeight: 40, opacity: pressed ? 0.85 : 1, paddingHorizontal: 12, shadowColor: colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6 }}
+        >
+          <MaterialCommunityIcons name="plus-box" size={18} color="#FFFFFF" />
+          <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("İlan Ver", language)}</Text>
+        </Pressable>
+      </Link>
       <HeaderAction href="/(tabs)/profile" icon="account-circle-outline" label={translateCopy("Profil", language)} primary />
     </View>
   );

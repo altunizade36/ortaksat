@@ -228,7 +228,7 @@ function DesktopActions() {
         <PressLink href="/auth" accessibilityLabel={translateCopy("Kayıt ol", language)} pressedOpacity={0.7} style={{ paddingHorizontal: 3, paddingVertical: 8 }}>
           <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Kayıt ol", language)}</Text>
         </PressLink>
-        <PressLink href="/create" accessibilityLabel={translateCopy("Ücretsiz İlan Ver", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 10 }}>
+        <PressLink href="/create" accessibilityLabel={translateCopy("Ücretsiz İlan Ver", language)} style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 15, paddingVertical: 10, shadowColor: colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.28, shadowRadius: 7 }}>
           <MaterialCommunityIcons name="plus-box" size={18} color="#FFFFFF" />
           <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ücretsiz İlan Ver", language)}</Text>
         </PressLink>
@@ -237,14 +237,18 @@ function DesktopActions() {
   }
 
   const items: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; href: Href; badge?: number }> = [
-    { icon: "plus-box-outline", label: "İlan Ver", href: "/create" },
     { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
     { icon: "message-text-outline", label: "Mesajlar", href: "/messages", badge: unreadMessages },
     { icon: "bell-outline", label: "Bildirimler", href: "/notifications-tab", badge: unreadNotifications }
   ];
 
   return (
-    <View style={{ alignItems: "center", flexDirection: "row", gap: 18 }}>
+    <View style={{ alignItems: "center", flexDirection: "row", gap: 16 }}>
+      {/* KIRMIZI "Ücretsiz İlan Ver" — girişli kullanıcıda da EN belirgin CTA (ikon değil buton). */}
+      <PressLink href="/create" accessibilityLabel={translateCopy("Ücretsiz İlan Ver", language)} style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 15, paddingVertical: 10, shadowColor: colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.28, shadowRadius: 7 }}>
+        <MaterialCommunityIcons name="plus-box" size={18} color="#FFFFFF" />
+        <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ücretsiz İlan Ver", language)}</Text>
+      </PressLink>
       {items.map((item) => (
         <Link key={item.label} href={item.href} asChild>
           {/* Dokunma hedefi: ikonun kendisi 22px → kutu 20x21px oluyordu (44px erişilebilirlik
