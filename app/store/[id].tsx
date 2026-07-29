@@ -286,7 +286,11 @@ export default function StoreScreen() {
   if (isWideWeb) {
     const sellerPartnerships = partnerships.filter((p) => activeListings.some((l) => l.id === p.listingId));
     const featured = activeListings.slice(0, 3);
-    const deskCardWidth = responsiveGrid({ available: Math.min(width, 1480) - 40 - 300 - 24, gap: 16, minCardWidth: 210, maxColumns: 3 }).cardWidth;
+    // Vitrin/hakkında (sidebar'lı, dar sütun): kompakt 3-4'lü. Eskiden maxColumns:3 +
+    // 1480 kapağı (konteyner 1280) → kartlar ~360px DEVdi. 1280 uyumu + minCardWidth düşürüldü.
+    const deskCardWidth = responsiveGrid({ available: Math.min(width, 1280) - 40 - 300 - 20, gap: 14, minCardWidth: 195, maxColumns: 4 }).cardWidth;
+    // Ürünler sekmesi TAM GENİŞLİK (sidebar gizli) → Trendyol yoğunluğu 4-5 sütun, kart ~215px.
+    const deskGridCardWidth = responsiveGrid({ available: Math.min(width, 1280) - 40, gap: 14, minCardWidth: 208, maxColumns: 5 }).cardWidth;
     const tabs: Array<{ key: ProfileTab; label: string; count?: number }> = [
       { key: "about", label: translateCopy("Hakkında", language) },
       { key: "listings", label: translateCopy("İlanları", language), count: activeListings.length },
@@ -462,10 +466,14 @@ export default function StoreScreen() {
 
               {tab === "listings" ? (
                 <>
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                    <StoreFilterChip active={filter === "active"} icon="check-circle-outline" label="Aktif" onPress={() => setFilter("active")} />
-                    <StoreFilterChip active={filter === "partner"} icon="handshake-outline" label="Ortaklığa açık" onPress={() => setFilter("partner")} />
-                    <StoreFilterChip active={filter === "all"} icon="view-grid-outline" label="Tümü" onPress={() => setFilter("all")} />
+                  {/* Trendyol-tarzı araç çubuğu: solda filtre çipleri, sağda sonuç sayısı + sıralama. */}
+                  <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                      <StoreFilterChip active={filter === "active"} icon="check-circle-outline" label="Aktif" onPress={() => setFilter("active")} />
+                      <StoreFilterChip active={filter === "partner"} icon="handshake-outline" label="Ortaklığa açık" onPress={() => setFilter("partner")} />
+                      <StoreFilterChip active={filter === "all"} icon="view-grid-outline" label="Tümü" onPress={() => setFilter("all")} />
+                    </View>
+                    <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{sellerListings.length} {translateCopy("ürün", language)}</Text>
                   </View>
                   {/* Mağaza-içi sıralama (Trendyol mağaza sayfasındaki gibi). */}
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -476,8 +484,8 @@ export default function StoreScreen() {
                   {sellerListings.length === 0 ? (
                     <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca burada görünür.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
                   ) : (
-                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-                      {sellerListings.map((listing) => <ListingCard key={listing.id} listing={listing} owner={seller} width={deskCardWidth} />)}
+                    <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+                      {sellerListings.map((listing) => <ListingCard key={listing.id} listing={listing} owner={seller} width={deskGridCardWidth} />)}
                     </View>
                   )}
                 </>
@@ -540,7 +548,9 @@ export default function StoreScreen() {
               ) : null}
             </View>
 
-            {/* Sidebar */}
+            {/* Sidebar — ÜRÜNLER sekmesinde GİZLİ: grid tam genişlik olsun (Trendyol ürün
+                listesi gibi kompakt 4-5 sütun; sidebar yalnız hakkında/diğer sekmelerde). */}
+            {tab !== "listings" ? (
             <View style={{ gap: 16, width: 300 }}>
               <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
                 <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Doğrulama durumu", language)}</Text>
@@ -589,6 +599,7 @@ export default function StoreScreen() {
                 ) : null}
               </View>
             </View>
+            ) : null}
           </View>
         </View>
 
