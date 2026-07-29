@@ -2104,7 +2104,8 @@ export const categoryTree: CategoryNode[] = [
       "Güneş Paneli (Monokristal)", "Güneş Paneli (Polikristal)", "İnvertör (On-Grid)", "İnvertör (Off-Grid)",
       "Hibrit İnvertör", "Şarj Regülatörü", "Akü (Jel)", "Akü (Lityum)", "Akü Grubu",
       "Jeneratör (Dizel)", "Jeneratör (Benzinli)", "Kabinli Jeneratör", "Trafo", "Pano & Şalt Malzemesi",
-      "Kesintisiz Güç Kaynağı", "Rüzgâr Türbini", "Kojenerasyon", "Kablo Kanalı", "Elektrik Motoru"
+      "Kesintisiz Güç Kaynağı", "Rüzgâr Türbini", "Su Türbini (Hidroelektrik)", "Buhar Türbini",
+      "Kojenerasyon", "Kablo Kanalı", "Elektrik Motoru", "Akaryakıt Ürünleri & Tank", "Basınçlı Kaplar & Kompresör Tankı"
     ], "isMakinesi"), "isMakinesi"),
     node("İnşaat Malzemeleri & Ekipman", leaves([
       "İskele Sistemi", "Kalıp Sistemi", "Beton Mikseri", "Beton Santrali", "Perdah Makinesi",
@@ -2124,13 +2125,20 @@ export const categoryTree: CategoryNode[] = [
       "İş Makinesi Yedek Parçası", "Palet & Zincir Takımı", "Hidrolik Hortum & Pompa",
       "Filtre & Yağ", "Ataşman", "Bakım & Servis Hizmeti"
     ], "isMakinesi"), "isMakinesi"),
-    leaf("Endüstriyel Ürünler", "isMakinesi")
+    // Sahibinden "Sanayi" makine-DIŞI kalemleri (bizde boş leaf'ti) → tam dal.
+    node("Endüstriyel Ürünler", leaves([
+      "Endüstriyel Mutfak", "Endüstriyel Mobilya", "Endüstriyel Temizlik", "Endüstriyel Hırdavat",
+      "Raf & Ürün Teşhir", "Çadır, Tente & Kepenk", "Konteyner & Kabin", "Koruma & Sığınak Sistemleri",
+      "Kompresör", "Taşıma & İstifleme Ekipmanı", "Vinç & Kaldırma Ekipmanı", "Soğutma & İklimlendirme"
+    ], "isMakinesi"), "isMakinesi")
   ], "isMakinesi", IMG("1581094794329-c8112a89af12")),
 
   node("Ustalar & Hizmetler", [
-    node("Ev Tadilat & Dekorasyon", leaves(["Ev Tadilat", "Boya & Badana", "Alçı & Alçıpan", "Fayans & Seramik", "Parke & Zemin", "Cam & Alüminyum", "Mutfak & Dolap", "Duvar Kağıdı", "Asma Tavan", "İç Mimari & Dekorasyon", "Su Yalıtımı & İzolasyon", "Çatı & Oluk"], "hizmet"), "hizmet"),
+    node("Ev Tadilat & Dekorasyon", leaves(["Ev Tadilat", "Boya & Badana", "Alçı & Alçıpan", "Fayans & Seramik", "Parke & Zemin", "Cam & Alüminyum", "Kapı, Pencere & Cam Balkon", "Mutfak & Dolap", "Marangoz & Doğrama", "Demir & Ferforje", "Duvar Kağıdı", "Asma Tavan", "İç Mimari & Dekorasyon", "Mimarlık & Mühendislik", "Bahçe & Peyzaj Düzenleme", "Mantolama & Dış Cephe", "Su Yalıtımı & İzolasyon", "Çatı & Oluk"], "hizmet"), "hizmet"),
     node("Tesisat & Teknik", leaves(["Elektrikçi", "Su Tesisatçısı", "Doğalgaz Tesisatı", "Kombi & Klima Servisi", "Beyaz Eşya Servisi", "Asansör Bakım", "Jeneratör Servisi", "Güneş Enerjisi Kurulumu", "Uydu & Anten"], "hizmet"), "hizmet"),
-    node("Teknik Servis & Tamir", leaves(["Bilgisayar Teknik Servis", "Telefon Tamiri", "TV & Elektronik Tamiri", "Oto Servis", "Mobilya Montaj & Tamir", "Saat Tamiri", "Ayakkabı & Çanta Tamiri", "Anahtarcı & Çilingir"], "hizmet"), "hizmet"),
+    node("Teknik Servis & Tamir", leaves(["Bilgisayar Teknik Servis", "Telefon Tamiri", "TV & Elektronik Tamiri", "Mobilya Montaj & Tamir", "Saat Tamiri", "Ayakkabı & Çanta Tamiri", "Anahtarcı & Çilingir", "Enstrüman Tamiri & Piyano Akort", "Jakuzi & Havuz Tamiri", "Tekstil Tadilatı & Terzi", "Yazıcı & Fotokopi Tamiri", "Bisiklet Tamiri", "Altın & Gümüş Tamiri", "Tabela Tamiri"], "hizmet"), "hizmet"),
+    // Sahibinden "Araç Servis & Bakım" sekmesinin TAMAMI eksikti (yalnız "Oto Servis" tek yaprak vardı) → tam dal.
+    node("Araç Servis & Bakım", leaves(["Oto Tamir & Servis", "Oto Kaporta & Boya", "Oto Lastik Tamiri", "Oto Elektrik & Ses", "Oto Ekspertiz", "Oto Modifiye", "Oto Döşeme", "Oto Plaka", "Oto Temizlik & Yıkama", "Çekici & Yol Yardım", "Motosiklet Servisi", "Marina & Liman Hizmetleri", "Tekne & Yat Tamiri", "Trafik Müşavirliği"], "hizmet"), "hizmet"),
     node("Nakliye & Lojistik", leaves(["Evden Eve Nakliyat", "Şehirler Arası Nakliyat", "Ofis Taşıma", "Parça Eşya Taşıma", "Asansörlü Taşıma", "Depolama & Ambar", "Kurye & Kargo", "Uluslararası Taşıma"], "hizmet"), "hizmet"),
     node("Temizlik & Bakım", leaves(["Ev Temizliği", "Ofis Temizliği", "İnşaat Sonrası Temizlik", "Cam Temizliği", "Halı & Koltuk Yıkama", "Dezenfeksiyon", "İlaçlama & Haşere", "Bahçe Bakımı"], "hizmet"), "hizmet"),
     node("Güzellik & Kişisel Bakım", leaves(["Kuaför & Berber", "Saç Boyama & Bakım", "Cilt Bakımı", "Ağda & Epilasyon", "Lazer Epilasyon", "Manikür & Pedikür", "Kalıcı Makyaj", "Makyaj (Gelin & Özel Gün)", "Masaj & Spa", "Dövme & Piercing", "Solaryum", "Evde Güzellik Hizmeti"], "hizmet"), "hizmet"),
