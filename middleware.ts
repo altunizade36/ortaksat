@@ -60,10 +60,10 @@ ${extraHead}</head><body>${body}</body></html>`;
 
 async function listingResponse(id: string): Promise<Response | undefined> {
   if (!id || !SUPABASE_KEY) return;
-  const api = `${SUPABASE_URL}/rest/v1/listing_public_cards?id=eq.${encodeURIComponent(id)}&select=title,description,price,image_url,category,stock_count,currency,commission_tl,review_count,attributes&limit=1`;
+  const api = `${SUPABASE_URL}/rest/v1/listing_public_cards?id=eq.${encodeURIComponent(id)}&select=title,description,price,image_url,category,stock_count,currency,commission_tl,review_count,attributes,created_at&limit=1`;
   const res = await fetch(api, { headers: { apikey: SUPABASE_KEY, authorization: `Bearer ${SUPABASE_KEY}` } });
   if (!res.ok) return;
-  const rows = (await res.json()) as Array<{ title: string; description: string; price: number; image_url: string | null; category: string | null; stock_count: number | null; currency: string | null; commission_tl: number | null; review_count: number | null; attributes?: Record<string, unknown> | null }>;
+  const rows = (await res.json()) as Array<{ title: string; description: string; price: number; image_url: string | null; category: string | null; stock_count: number | null; currency: string | null; commission_tl: number | null; review_count: number | null; attributes?: Record<string, unknown> | null; created_at?: string | null }>;
   const l = rows && rows[0];
   if (!l) return;
   const url = `https://www.ortaksat.com/listing/${id}`;
@@ -80,6 +80,8 @@ async function listingResponse(id: string): Promise<Response | undefined> {
   // Google merchant-listing önerileri: sku (ilan id), brand (attributes'tan), offers.priceValidUntil.
   const brand = typeof l.attributes?.brand === "string" && l.attributes.brand.trim() ? l.attributes.brand.trim() : "";
   const priceValidUntil = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
+  // validFrom = ilanın yayın tarihi (fiyat o tarihten geçerli). GSC "validFrom eksik" uyarısını karşılar.
+  const validFrom = (typeof l.created_at === "string" && l.created_at ? l.created_at : new Date().toISOString()).slice(0, 10);
   const product: Record<string, unknown> = {
     "@context": "https://schema.org",
     "@type": "Product",
@@ -94,8 +96,12 @@ async function listingResponse(id: string): Promise<Response | undefined> {
       price: Number(l.price || 0),
       priceCurrency: currency,
       priceValidUntil,
+      validFrom,
       availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
       url,
+      // OrtakSat SATICI/ödeme tarafı DEĞİL (aracı platform) — Offer yalnız ilan FİYATINI belirtir,
+      // platform işlem/ödeme İDDİA ETMEZ. shippingDetails/gtin bilinçli EKLENMEZ (kargo/ödeme yapmıyoruz;
+      // sahte merchant verisi = sahte-veri yasağı). GSC'de bunlar HATA değil "optimize edilebilir" öneri.
       seller: { "@type": "Organization", name: "OrtakSat" }
     }
   };
