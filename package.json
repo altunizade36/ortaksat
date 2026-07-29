@@ -10,7 +10,8 @@
     "ios": "expo start --ios",
     "typecheck": "tsc --noEmit",
     "check:encoding": "node scripts/check-encoding.mjs",
-    "quality": "npm run check:encoding && npm run typecheck && npm run doctor",
+    "lint:hooks": "eslint app components lib data --ext .ts,.tsx",
+    "quality": "npm run check:encoding && npm run lint:hooks && npm run typecheck && npm run doctor",
     "export:android": "expo export --platform android --output-dir dist-check-android",
     "sitemap": "node scripts/generate-sitemap.mjs",
     "build:web": "node scripts/gen-og-maps.mjs && node scripts/generate-sitemap.mjs && node scripts/generate-listing-seed.mjs && expo export --platform web --output-dir dist-web && node scripts/post-export.mjs",
@@ -62,6 +63,9 @@
   "devDependencies": {
     "@playwright/test": "^1.61.1",
     "@types/react": "~19.1.10",
+    "@typescript-eslint/parser": "^6.21.0",
+    "eslint": "^8.57.1",
+    "eslint-plugin-react-hooks": "^4.6.2",
     "pg": "^8.21.0",
     "subset-font": "^2.5.0",
     "typescript": "~5.9.2"
