@@ -1632,6 +1632,13 @@ export const categoriesDict: Record<string, string> = {
   "Elektronik Ekipman": "Electronic Equipment",
   "Araç Servis & Bakım": "Vehicle Service & Maintenance",
   "Özel Eğitim & Çocuk Gelişimi": "Special Education & Child Development",
+  "Büyükbaş Hayvanlar": "Cattle & Large Livestock",
+  "Küçükbaş Hayvanlar": "Sheep & Goats",
+  "Kümes Hayvanları": "Poultry",
+  "Akvaryum & Deniz Canlıları": "Aquarium & Marine Life",
+  "Böcekler & Arıcılık": "Insects & Beekeeping",
+  "Medya, Tasarım & Yaratıcılık": "Media, Design & Creative",
+  "Tarım, Hayvancılık & Tekstil": "Agriculture, Livestock & Textile",
   "Elektrikli Minivan & Panelvan": "Electric Minivan & Panel Van",
   "Elektrikli Hizmet Araçları": "Electric Service Vehicles",
 };

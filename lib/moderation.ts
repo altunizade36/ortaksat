@@ -42,7 +42,12 @@ const BLOCK_WORDS = [
   // İnsan / organ / anne sütü
   "insan organı", "organ satışı", "böbrek satışı", "anne sütü",
   // Kumar / bahis
-  "kumar", "bahis", "iddaa", "yasa dışı bahis", "şans oyunu kuponu"
+  "kumar", "bahis", "iddaa", "yasa dışı bahis", "şans oyunu kuponu",
+  // Hayvan / yaban hayatı — 5199 sayılı Kanun: yasaklı köpek ırkları (satış/üretim/takas yasak),
+  // hayvan dövüşü, yaban hayatı ürünü (fildişi) ve kaçak av / nesli tükenmekte olan tür.
+  "pitbull", "pit bull", "amerikan pitbull", "amerikan staffordshire terrier", "dogo argentino",
+  "fila brasileiro", "japon tosa", "köpek dövüşü", "horoz dövüşü", "dövüş köpeği",
+  "fildişi", "kaçak avlanmış", "nesli tükenmekte olan"
 ];
 
 // Manuel moderasyona (pending_review) düşecek dikkatli/ambigü ifadeler.
@@ -51,7 +56,10 @@ const REVIEW_WORDS = [
   "yetişkin", "18+", "escort", "porno",
   "kaçak", "gümrüksüz", "sahte", "taklit", "a kalite",
   "kimlik", "diploma", "sertifika satışı",
-  "bıçak", "kelebek bıçak", "muşta", "biber gazı"
+  "bıçak", "kelebek bıçak", "muşta", "biber gazı",
+  // Hayvan: kedi/köpek TİCARİ satışı 5199 ile kısıtlı (sahiplendirme serbest) → insan incelemesi.
+  // Yaban/egzotik tür + kürk belirsiz (evcil/suni olabilir) → blok değil inceleme.
+  "satılık köpek", "satılık kedi", "köpek satışı", "kedi satışı", "yaban hayvanı", "yabani hayvan", "kürk"
 ];
 
 // Türkçe harf-duyarlı kelime sınırı: kelime, harf olmayan bir karakterle çevrili olmalı.

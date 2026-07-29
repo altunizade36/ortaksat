@@ -2211,7 +2211,11 @@ export const categoryTree: CategoryNode[] = [
     node("Hizmet & Turizm", leaves(["Garson & Komi", "Aşçı & Mutfak", "Barista", "Resepsiyon", "Kat Görevlisi", "Animasyon", "Temizlik Personeli", "Güvenlik Görevlisi", "Çağrı Merkezi"], "isIlani"), "isIlani"),
     node("Güzellik & Bakım", leaves(["Kuaför & Berber", "Estetisyen", "Cilt Bakım Uzmanı", "Manikürist & Pedikürist", "Masör & Masöz", "Makyaj Artisti", "Kalıcı Makyaj Uzmanı", "Epilasyon Uzmanı", "Güzellik Merkezi Danışmanı", "Spa Terapisti"], "isIlani"), "isIlani"),
     node("Sağlık & Eğitim", leaves(["Doktor", "Hemşire", "Sağlık Teknikeri", "Fizyoterapist", "Öğretmen", "Öğretim Görevlisi", "Bakıcı & Refakatçi", "Eczane Personeli"], "isIlani"), "isIlani"),
-    node("İnşaat & Mühendislik", leaves(["İnşaat Mühendisi", "Mimar", "Makine Mühendisi", "Elektrik Mühendisi", "Usta & Kalfa", "Şantiye Şefi", "Teknik Ressam", "İş Güvenliği Uzmanı"], "isIlani"), "isIlani")
+    node("İnşaat & Mühendislik", leaves(["İnşaat Mühendisi", "Mimar", "Makine Mühendisi", "Elektrik Mühendisi", "Usta & Kalfa", "Şantiye Şefi", "Teknik Ressam", "İş Güvenliği Uzmanı"], "isIlani"), "isIlani"),
+    // Sahibinden'de ayrı sektörler (Radyo/Sinema/TV + Tasarım & Yaratıcılık) bizde eksikti.
+    node("Medya, Tasarım & Yaratıcılık", leaves(["Grafik Tasarımcı", "UI/UX Tasarımcı", "Video Editör & Kurgu", "Fotoğrafçı", "İçerik Üreticisi", "Sosyal Medya Uzmanı", "Radyo/TV Sunucu", "Kameraman", "Ses Teknisyeni", "Oyuncu & Figüran", "Yazar & Editör", "Seslendirme Sanatçısı", "Reklam & Kreatif"], "isIlani"), "isIlani"),
+    // Sahibinden "Tarım & Hayvancılık" + "Tekstil & Konfeksiyon" sektörleri bizde eksikti.
+    node("Tarım, Hayvancılık & Tekstil", leaves(["Tarım İşçisi", "Çiftlik Çalışanı", "Hayvan Bakıcısı", "Ziraat Mühendisi", "Veteriner & Veteriner Teknikeri", "Terzi & Dikişçi", "Konfeksiyon İşçisi", "Modelist & Stilist", "Kesimci", "Ütücü (Tekstil)", "Kalıpçı & Örgü Ustası"], "isIlani"), "isIlani")
   ], "isIlani", IMG("1521737604893-d14cc237f11d")),
 
   node("Hayvanlar Alemi", [
@@ -2232,21 +2236,20 @@ export const categoryTree: CategoryNode[] = [
         "Cennet Papağanı", "Forpus", "Sevda Papağanı", "Güvercin", "Bülbül & Ötücü", "Saka",
         "Kakadu", "Diğer Kuş"
       ], "hayvan"), "hayvan"),
-      node("Balık & Akvaryum Canlısı", leaves([
-        "Japon Balığı", "Beta (Siyam)", "Lepistes", "Melek Balığı", "Discus", "Çiklet",
-        "Karides & Salyangoz", "Akvaryum Bitkisi"
-      ], "hayvan"), "hayvan"),
       node("Kemirgen & Küçük Dost", leaves([
         "Hamster", "Tavşan", "Gine Domuzu", "Sincap", "Chinchilla (Kemirgen)", "Fare & Gerbil"
       ], "hayvan"), "hayvan"),
       node("Sürüngen & Egzotik", leaves([
-        "Kaplumbağa", "İguana", "Gecko", "Yılan", "Örümcek (Tarantula)", "Diğer Egzotik"
-      ], "hayvan"), "hayvan"),
-      node("Çiftlik & Kümes", leaves([
-        "Tavuk", "Horoz", "Ördek", "Kaz", "Hindi", "Bıldırcın", "Keçi", "Koyun", "Kuzu", "Buzağı", "İnek"
-      ], "hayvan"), "hayvan"),
-      node("At & Binek", leaves(["Yarış Atı", "Binek Atı", "Midilli", "Eşek & Katır"], "hayvan"), "hayvan")
+        "Kaplumbağa (Kara)", "Kaplumbağa (Su)", "İguana", "Gecko", "Bearded Dragon", "Kral Yılanı",
+        "Boa & Piton (Evcil)", "Örümcek (Tarantula)", "Diğer Egzotik"
+      ], "hayvan"), "hayvan")
     ], "hayvan"),
+    // Çiftlik hayvanları ARTIK sahiplendirme değil, SATIŞ (Sahibinden paritesi: Büyükbaş/Küçükbaş/Kümes ayrı dallar).
+    node("Büyükbaş Hayvanlar", leaves(["At", "Yarış Atı", "Binek Atı", "Midilli", "Boğa", "İnek", "Düve", "Buzağı", "Dana", "Manda", "Deve", "Eşek & Katır"], "hayvan"), "hayvan"),
+    node("Küçükbaş Hayvanlar", leaves(["Keçi", "Teke", "Koç", "Koyun", "Kuzu", "Oğlak", "Toklu", "Çepiç"], "hayvan"), "hayvan"),
+    node("Kümes Hayvanları", leaves(["Tavuk", "Horoz", "Ördek", "Kaz", "Hindi", "Bıldırcın", "Güvercin", "Devekuşu", "Tavus Kuşu", "Sülün", "Beç Tavuğu", "Kuluçkalık Yumurta"], "hayvan"), "hayvan"),
+    node("Akvaryum & Deniz Canlıları", leaves(["Japon Balığı", "Beta (Siyam)", "Lepistes & Canlı Doğuran", "Melek Balığı", "Discus", "Cichlid (Çiklet)", "Tetra", "Labirentli Balık", "Sazan & Koi", "Vatoz & Kedi Balığı", "Karides & Salyangoz", "Deniz Balığı & Mercan", "Anemon & Deniz Canlısı", "Akvaryum Bitkisi"], "hayvan"), "hayvan"),
+    node("Böcekler & Arıcılık", leaves(["Ana Arı", "Oğul & Bal Arısı Kolonisi", "İpek Böceği", "Karınca Kolonisi", "Solucan (Kompost)", "Diğer Böcek"], "hayvan"), "hayvan"),
     leaf("Kayıp Hayvan İlanı", "hayvan"),
     leaf("Bulunan Hayvan İlanı", "hayvan"),
     node("Mama & Besleme", leaves([
