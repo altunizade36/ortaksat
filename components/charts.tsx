@@ -135,6 +135,7 @@ export function GroupedBarChart({ groups, series, height = 200, valueFmt }: { gr
 
 // ---- ÇİZGİ + ALAN grafiği (referans: lead generation / visits per month) ----
 export function LineAreaChart({ points, color = CAT[0], height = 190, width = 560, valueFmt }: { points: Array<{ label: string; value: number }>; color?: string; height?: number; width?: number; valueFmt?: (n: number) => string }) {
+  const [hover, setHover] = useState<number | null>(null);
   const max = niceMax(Math.max(1, ...points.map((p) => p.value)));
   const padL = 38, padB = 22, padT = 8, padR = 8;
   const plotW = width - padL - padR, plotH = height - padB - padT;
@@ -144,8 +145,16 @@ export function LineAreaChart({ points, color = CAT[0], height = 190, width = 56
   const line = points.map((p, i) => `${x(i)},${y(p.value)}`).join(" ");
   const area = `${padL},${padT + plotH} ${line} ${x(n - 1)},${padT + plotH}`;
   const ticks = 4;
+  const vf = valueFmt ?? fmt;
+  const onMove = (e: { nativeEvent?: { offsetX?: number; locationX?: number } }) => {
+    const ox = e.nativeEvent?.offsetX ?? e.nativeEvent?.locationX;
+    if (ox == null || n <= 1) return;
+    setHover(Math.max(0, Math.min(n - 1, Math.round(((ox - padL) / (plotW || 1)) * (n - 1)))));
+  };
+  const hx = hover != null ? x(hover) : 0;
+  const tipLeft = hover != null ? Math.max(0, Math.min(width - 116, hx - 58)) : 0;
   return (
-    <View>
+    <View style={{ position: "relative" }} {...({ onMouseMove: onMove, onMouseLeave: () => setHover(null) } as Record<string, unknown>)}>
       <Svg width={width} height={height}>
         <Defs>
           <LinearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -158,15 +167,22 @@ export function LineAreaChart({ points, color = CAT[0], height = 190, width = 56
           return (
             <G key={i}>
               <Line x1={padL} y1={gy} x2={width - padR} y2={gy} stroke={colors.line} strokeWidth={1} opacity={i === ticks ? 1 : 0.5} />
-              <SvgText x={padL - 6} y={gy + 3} fontSize={8.5} fontWeight="700" fill={colors.subtle} textAnchor="end">{(valueFmt ?? fmt)((max * (ticks - i)) / ticks)}</SvgText>
+              <SvgText x={padL - 6} y={gy + 3} fontSize={8.5} fontWeight="700" fill={colors.subtle} textAnchor="end">{vf((max * (ticks - i)) / ticks)}</SvgText>
             </G>
           );
         })}
         {n > 1 ? <Polyline points={area} fill="url(#areaGrad)" stroke="none" /> : null}
         <Polyline points={line} fill="none" stroke={color} strokeWidth={2.5} strokeLinejoin="round" strokeLinecap="round" />
-        {points.map((p, i) => <Circle key={i} cx={x(i)} cy={y(p.value)} r={n > 20 ? 0 : 3} fill={colors.surface} stroke={color} strokeWidth={2} />)}
+        {hover != null ? <Line x1={hx} y1={padT} x2={hx} y2={padT + plotH} stroke={colors.muted} strokeWidth={1} strokeDasharray="3 3" opacity={0.55} /> : null}
+        {points.map((p, i) => <Circle key={i} cx={x(i)} cy={y(p.value)} r={hover === i ? 4.5 : n > 20 ? 0 : 3} fill={hover === i ? color : colors.surface} stroke={color} strokeWidth={2} />)}
         {points.map((p, i) => (n <= 14 || i % Math.ceil(n / 10) === 0) ? <SvgText key={`l${i}`} x={x(i)} y={height - 6} fontSize={8.5} fontWeight="800" fill={colors.muted} textAnchor="middle">{p.label}</SvgText> : null)}
       </Svg>
+      {hover != null ? (
+        <View pointerEvents="none" style={{ backgroundColor: colors.ink, borderRadius: 8, gap: 2, left: tipLeft, minWidth: 106, paddingHorizontal: 9, paddingVertical: 6, position: "absolute", top: 2 }}>
+          <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 10, fontWeight: "700" }}>{points[hover]?.label}</Text>
+          <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{vf(points[hover]?.value ?? 0)}</Text>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -175,6 +191,7 @@ export function LineAreaChart({ points, color = CAT[0], height = 190, width = 56
 // dataviz: tek y-ekseni (3 seri de "sayı/gün"), legend zorunlu, recessive grid,
 // ince 2px çizgi, tabular y-etiket, yalnız uç-noktada işaretçi (her noktada değil).
 export function MultiLineChart({ labels, series, height = 200, width = 560, valueFmt }: { labels: string[]; series: Array<{ label: string; color: string; values: number[] }>; height?: number; width?: number; valueFmt?: (n: number) => string }) {
+  const [hover, setHover] = useState<number | null>(null);
   const max = niceMax(Math.max(1, ...series.flatMap((s) => s.values)));
   const padL = 34, padB = 22, padT = 8, padR = 12;
   const plotW = width - padL - padR, plotH = height - padB - padT;
@@ -183,27 +200,54 @@ export function MultiLineChart({ labels, series, height = 200, width = 560, valu
   const y = (v: number) => padT + plotH - (v / max) * plotH;
   const ticks = 4;
   const vf = valueFmt ?? fmt;
+  // Web hover: fareyle en yakın günü bul → crosshair + tooltip (dataviz interaktivite katmanı).
+  const onMove = (e: { nativeEvent?: { offsetX?: number; locationX?: number } }) => {
+    const ox = e.nativeEvent?.offsetX ?? e.nativeEvent?.locationX;
+    if (ox == null || n <= 1) return;
+    setHover(Math.max(0, Math.min(n - 1, Math.round(((ox - padL) / (plotW || 1)) * (n - 1)))));
+  };
+  const hx = hover != null ? x(hover) : 0;
+  const tipLeft = hover != null ? Math.max(0, Math.min(width - 138, hx - 68)) : 0;
   return (
     <View style={{ gap: 10 }}>
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
         {series.map((s) => <Legend key={s.label} color={s.color} label={s.label} />)}
       </View>
-      <Svg width={width} height={height}>
-        {Array.from({ length: ticks + 1 }).map((_, i) => {
-          const gy = padT + (plotH * i) / ticks;
-          return (
-            <G key={i}>
-              <Line x1={padL} y1={gy} x2={width - padR} y2={gy} stroke={colors.line} strokeWidth={1} opacity={i === ticks ? 1 : 0.5} />
-              <SvgText x={padL - 5} y={gy + 3} fontSize={8.5} fontWeight="700" fill={colors.subtle} textAnchor="end">{vf((max * (ticks - i)) / ticks)}</SvgText>
+      <View style={{ position: "relative" }} {...({ onMouseMove: onMove, onMouseLeave: () => setHover(null) } as Record<string, unknown>)}>
+        <Svg width={width} height={height}>
+          {Array.from({ length: ticks + 1 }).map((_, i) => {
+            const gy = padT + (plotH * i) / ticks;
+            return (
+              <G key={i}>
+                <Line x1={padL} y1={gy} x2={width - padR} y2={gy} stroke={colors.line} strokeWidth={1} opacity={i === ticks ? 1 : 0.5} />
+                <SvgText x={padL - 5} y={gy + 3} fontSize={8.5} fontWeight="700" fill={colors.subtle} textAnchor="end">{vf((max * (ticks - i)) / ticks)}</SvgText>
+              </G>
+            );
+          })}
+          {series.map((s) => (
+            <Polyline key={s.label} points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+          ))}
+          {hover != null ? (
+            <G>
+              <Line x1={hx} y1={padT} x2={hx} y2={padT + plotH} stroke={colors.muted} strokeWidth={1} strokeDasharray="3 3" opacity={0.55} />
+              {series.map((s) => <Circle key={`h-${s.label}`} cx={hx} cy={y(s.values[hover] ?? 0)} r={4} fill={s.color} stroke={colors.surface} strokeWidth={1.5} />)}
             </G>
-          );
-        })}
-        {series.map((s) => (
-          <Polyline key={s.label} points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
-        ))}
-        {n > 0 ? series.map((s) => <Circle key={`m-${s.label}`} cx={x(n - 1)} cy={y(s.values[n - 1] ?? 0)} r={3} fill={colors.surface} stroke={s.color} strokeWidth={2} />) : null}
-        {labels.map((lb, i) => (n <= 14 || i % Math.ceil(n / 10) === 0) ? <SvgText key={`x${i}`} x={x(i)} y={height - 6} fontSize={8.5} fontWeight="800" fill={colors.muted} textAnchor="middle">{lb}</SvgText> : null)}
-      </Svg>
+          ) : n > 0 ? series.map((s) => <Circle key={`m-${s.label}`} cx={x(n - 1)} cy={y(s.values[n - 1] ?? 0)} r={3} fill={colors.surface} stroke={s.color} strokeWidth={2} />) : null}
+          {labels.map((lb, i) => (n <= 14 || i % Math.ceil(n / 10) === 0) ? <SvgText key={`x${i}`} x={x(i)} y={height - 6} fontSize={8.5} fontWeight="800" fill={colors.muted} textAnchor="middle">{lb}</SvgText> : null)}
+        </Svg>
+        {hover != null ? (
+          <View pointerEvents="none" style={{ backgroundColor: colors.ink, borderRadius: 8, gap: 3, left: tipLeft, minWidth: 128, paddingHorizontal: 9, paddingVertical: 7, position: "absolute", top: 2 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{labels[hover]}</Text>
+            {series.map((s) => (
+              <View key={s.label} style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
+                <View style={{ backgroundColor: s.color, borderRadius: 2, height: 8, width: 8 }} />
+                <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.82)", flex: 1, fontSize: 10, fontWeight: "700" }}>{s.label}</Text>
+                <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{vf(s.values[hover] ?? 0)}</Text>
+              </View>
+            ))}
+          </View>
+        ) : null}
+      </View>
     </View>
   );
 }
