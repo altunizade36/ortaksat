@@ -17,7 +17,7 @@ import { downloadCsv } from "@/lib/csv-export";
 import { getDistrict, getProvince } from "@/lib/locations";
 import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
-import { adminBroadcastLive, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminSiteRecords } from "@/lib/live-service";
+import { adminBroadcastLive, adminClosePartnerRequest, adminDeleteQuestion, adminModerateReview, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminSiteRecords } from "@/lib/live-service";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
@@ -234,6 +234,11 @@ function AdminScreenInner() {
     if (section !== "records") return;
     void fetchAdminSiteRecords().then(setSiteRecords).catch(() => setSiteRecords(null));
   }, [section]);
+  // Moderasyon aksiyonları — izleme değil KONTROL: aksiyon sonrası kayıtları tazele.
+  const reloadRecords = () => { void fetchAdminSiteRecords().then(setSiteRecords).catch(() => {}); };
+  const modReview = (id: string, del: boolean) => confirmAction(del ? "Bu yorumu gizle (herkese kapat)?" : "Yorumu geri al (yayına aç)?", async () => { if (await adminModerateReview(id, del)) reloadRecords(); }, del ? "Gizle" : "Geri Al");
+  const delQuestion = (id: string) => confirmAction("Bu soruyu KALICI sil? (spam/uygunsuz)", async () => { if (await adminDeleteQuestion(id)) reloadRecords(); }, "Sil");
+  const closePR = (id: string) => confirmAction("Bu 'ortak aranıyor' talebini kapat?", async () => { if (await adminClosePartnerRequest(id)) reloadRecords(); }, "Kapat");
 
   // Manuel yenile: sunucu-gerçek admin verisi (overview/audit/mesaj) + market/hesap store'u tazelenir.
   // (Eskiden analytics yalnız dashboard'da 15sn yenilenir, overview/audit mount'ta bir kez çekilirdi → bayat.)
@@ -925,7 +930,9 @@ function AdminScreenInner() {
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{String(r.listingId).slice(0, 8)}…</Text>,
                       <Text style={{ color: colors.gold, fontSize: 12.5, fontWeight: "800" }}>{"★".repeat(Math.max(0, Math.min(5, Math.round(r.rating))))}</Text>,
                       <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12, fontWeight: "600" }}>{r.comment || "—"}</Text>,
-                      <StatusBadge label={r.deleted ? "Silinmiş" : "Aktif"} tone={r.deleted ? "accent" : "success"} />
+                      <Pressable onPress={() => modReview(r.id, !r.deleted)} style={{ alignSelf: "flex-start", backgroundColor: r.deleted ? colors.successSoft : colors.accentSoft, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
+                        <Text style={{ color: r.deleted ? colors.success : colors.accent, fontSize: 11, fontWeight: "800" }}>{r.deleted ? "Geri Al" : "Gizle"}</Text>
+                      </Pressable>
                     ]} />
                   ))}
                 </Table>
@@ -934,13 +941,15 @@ function AdminScreenInner() {
 
             <Panel title="İlan Soru-Cevap" sub={siteRecords ? `${fmtN(siteRecords.questions_count)} soru` : ""}>
               {(siteRecords?.questions ?? []).length === 0 ? <EmptyState title="Soru yok" body="Alıcı ilanlara soru sordukça burada görünür." /> : (
-                <Table head={["SORAN", "SORU", "CEVAP", "TARİH"]} cols={[1, 2, 1.6, 1]}>
+                <Table head={["SORAN", "SORU", "CEVAP", "AKSİYON"]} cols={[1, 2, 1.6, 0.9]}>
                   {(siteRecords?.questions ?? []).map((q) => (
-                    <Row key={q.id} cols={[1, 2, 1.6, 1]} cells={[
+                    <Row key={q.id} cols={[1, 2, 1.6, 0.9]} cells={[
                       <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{q.askerName || "—"}</Text>,
                       <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12, fontWeight: "600" }}>{q.question}</Text>,
                       <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{q.answer || "yanıtsız"}</Text>,
-                      <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{String(q.createdAt).slice(0, 10)}</Text>
+                      <Pressable onPress={() => delQuestion(q.id)} style={{ alignSelf: "flex-start", backgroundColor: colors.accentSoft, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
+                        <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "800" }}>Sil</Text>
+                      </Pressable>
                     ]} />
                   ))}
                 </Table>
@@ -964,13 +973,17 @@ function AdminScreenInner() {
 
             <Panel title="Ortak Aranıyor Talepleri" sub={siteRecords ? `${fmtN(siteRecords.partner_requests_count)} toplam` : ""}>
               {(siteRecords?.partner_requests ?? []).length === 0 ? <EmptyState title="Talep yok" body="Satıcı 'ürünüme ortak arıyorum' talepleri burada görünür." /> : (
-                <Table head={["BAŞLIK", "KATEGORİ", "KOMİSYON", "DURUM"]} cols={[2, 1.2, 1, 1]}>
+                <Table head={["BAŞLIK", "KATEGORİ", "KOMİSYON", "AKSİYON"]} cols={[2, 1.2, 1, 1]}>
                   {(siteRecords?.partner_requests ?? []).map((p) => (
                     <Row key={p.id} cols={[2, 1.2, 1, 1]} cells={[
                       <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{p.title}</Text>,
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.category || "—"}</Text>,
                       <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.commissionHint || "—"}</Text>,
-                      <StatusBadge label={p.status} tone="neutral" />
+                      p.status === "closed" ? <StatusBadge label="Kapalı" tone="neutral" /> : (
+                        <Pressable onPress={() => closePR(p.id)} style={{ alignSelf: "flex-start", backgroundColor: colors.warningSoft, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
+                          <Text style={{ color: colors.warning, fontSize: 11, fontWeight: "800" }}>Kapat</Text>
+                        </Pressable>
+                      )
                     ]} />
                   ))}
                 </Table>

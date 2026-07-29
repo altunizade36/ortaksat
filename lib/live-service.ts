@@ -1323,6 +1323,26 @@ export async function fetchAdminSiteRecords(): Promise<AdminSiteRecords | null> 
   return (data ?? null) as AdminSiteRecords | null;
 }
 
+// "Site Kayıtları" MODERASYON aksiyonları (admin-gated RPC) — izleme → gerçek kontrol.
+export async function adminModerateReview(id: string, deleted: boolean): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.rpc("admin_moderate_review", { p_id: id, p_deleted: deleted });
+  if (error) { console.warn("admin_moderate_review failed", error); return false; }
+  return true;
+}
+export async function adminDeleteQuestion(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.rpc("admin_delete_question", { p_id: id });
+  if (error) { console.warn("admin_delete_question failed", error); return false; }
+  return true;
+}
+export async function adminClosePartnerRequest(id: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.rpc("admin_close_partner_request", { p_id: id });
+  if (error) { console.warn("admin_close_partner_request failed", error); return false; }
+  return true;
+}
+
 export type AdminListingRow = {
   id: string; title: string; status: string; price: number; category: string; location: string;
   owner_id: string; owner_name: string | null; created_at: string; featured: boolean;
