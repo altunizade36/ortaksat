@@ -294,6 +294,19 @@ export default function ListingDetailScreen() {
     return scored.length ? scored : listings.filter((item) => item.id !== listing.id && item.status === "active" && item.category === listing.category).slice(0, 8);
   }, [listing, listings]);
 
+  // DB'den çekilen (herkesin) + store'daki (kendi, oturumda yeni yazılan) yorumlar birleşir (id ile tekilleştir).
+  // KRİTİK: bu useMemo, aşağıdaki `if (!listing) return` ERKEN-RETURN'ünden ÖNCE çağrılmalı.
+  // Eskiden return SONRASINDAYDI → paylaşılan/doğrudan ilan linkinde (ilan bellekte yok) render-1
+  // erken-return alıp bu hook'u ATLIYOR, render-2'de ilan gelince çağırıyordu → hook sayısı
+  // değişiyor → React #310 → error-boundary reload → "/" ana sayfaya bounce. `id` (route param)
+  // kullanır (currentListing henüz tanımlı değil) — [[hooks-order]] Rules of Hooks.
+  const listingReviews = useMemo(() => {
+    const byId = new Map<string, (typeof fetchedReviews)[number]>();
+    for (const r of fetchedReviews) byId.set(r.id, r);
+    for (const r of reviews) if (r.listingId === id) byId.set(r.id, r);
+    return [...byId.values()].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
+  }, [fetchedReviews, reviews, id]);
+
   if (!listing) {
     if (fetching) {
       return (
@@ -359,13 +372,6 @@ export default function ListingDetailScreen() {
   function demoBlocked() {
     Alert.alert(translateCopy("Örnek ilan", language), translateCopy("Bu bir örnek (vitrin) ilandır; yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık bu ilanda kapalıdır.", language));
   }
-  // DB'den çekilen (herkesin) + store'daki (kendi, oturumda yeni yazılan) yorumlar birleşir (id ile tekilleştir).
-  const listingReviews = useMemo(() => {
-    const byId = new Map<string, (typeof fetchedReviews)[number]>();
-    for (const r of fetchedReviews) byId.set(r.id, r);
-    for (const r of reviews) if (r.listingId === currentListing.id) byId.set(r.id, r);
-    return [...byId.values()].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  }, [fetchedReviews, reviews, currentListing.id]);
   const favorited = isFavorite(currentListing.id);
   const inCompare = hasInCompare(currentListing.id);
   const commission = commissionAmount(currentListing);
