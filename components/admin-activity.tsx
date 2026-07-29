@@ -2,7 +2,7 @@ import { MaterialCommunityIcons } from "@/components/icons";
 import { useEffect, useRef, useState } from "react";
 import { Pressable, Text, View } from "react-native";
 
-import { CAT, DonutChart, HBarChart, KpiDeltaTile, LineAreaChart } from "@/components/charts";
+import { CAT, DonutChart, HBarChart, KpiDeltaTile, MultiLineChart } from "@/components/charts";
 import { colors } from "@/components/colors";
 import { money } from "@/lib/format";
 import { supabase } from "@/lib/supabase";
@@ -118,7 +118,14 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
     { label: "Duraklatılmış", value: data.listings_paused, color: CAT[7] },
     { label: "Satıldı", value: data.listings_sold, color: CAT[3] }
   ].filter((d) => d.value > 0);
-  const activeTrend = data.days.map((d) => ({ label: d.day.slice(8, 10), value: d.active }));
+  // 14-gün trend — TEK ekseni paylaşan 3 seri (hepsi "sayı/gün"). Sunucu zaten
+  // günlük active+signups+listings döndürüyordu; eskiden yalnız `active` çiziliyordu.
+  const trendLabels = data.days.map((d) => d.day.slice(8, 10));
+  const trendSeries = [
+    { label: "Aktif kullanıcı", color: "#0F9D66", values: data.days.map((d) => d.active) },
+    { label: "Yeni kayıt", color: "#7C5CFC", values: data.days.map((d) => d.signups) },
+    { label: "Yeni ilan", color: "#E4572E", values: data.days.map((d) => d.listings) }
+  ];
   const catBars = (data.top_categories ?? []).slice(0, 6).map((c) => ({ label: c.category, value: c.n }));
 
   return (
@@ -164,8 +171,8 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
       {/* Grafikler: 14-gün aktif trendi (çizgi+alan) + ilan durumu (donut) */}
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
         <View onLayout={(e) => setLineW(Math.max(240, Math.round(e.nativeEvent.layout.width) - 36))} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 420, flexGrow: 2, gap: 12, minWidth: 300, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
-          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Son 14 gün — aktif kullanıcı</Text>
-          <LineAreaChart points={activeTrend} width={lineW} color={CAT[0]} />
+          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Son 14 gün — aktivite trendi</Text>
+          <MultiLineChart labels={trendLabels} series={trendSeries} width={lineW} />
         </View>
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 300, flexGrow: 1, gap: 12, minWidth: 260, padding: 18, shadowColor: "#0B3A44", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>İlan durumu</Text>

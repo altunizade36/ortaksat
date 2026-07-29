@@ -171,6 +171,43 @@ export function LineAreaChart({ points, color = CAT[0], height = 190, width = 56
   );
 }
 
+// ---- ÇOK-SERİLİ ÇİZGİ (aynı birim → TEK eksen; ör. aktif/kayıt/ilan trendi) ----
+// dataviz: tek y-ekseni (3 seri de "sayı/gün"), legend zorunlu, recessive grid,
+// ince 2px çizgi, tabular y-etiket, yalnız uç-noktada işaretçi (her noktada değil).
+export function MultiLineChart({ labels, series, height = 200, width = 560, valueFmt }: { labels: string[]; series: Array<{ label: string; color: string; values: number[] }>; height?: number; width?: number; valueFmt?: (n: number) => string }) {
+  const max = niceMax(Math.max(1, ...series.flatMap((s) => s.values)));
+  const padL = 34, padB = 22, padT = 8, padR = 12;
+  const plotW = width - padL - padR, plotH = height - padB - padT;
+  const n = labels.length;
+  const x = (i: number) => padL + (n <= 1 ? plotW / 2 : (plotW * i) / (n - 1));
+  const y = (v: number) => padT + plotH - (v / max) * plotH;
+  const ticks = 4;
+  const vf = valueFmt ?? fmt;
+  return (
+    <View style={{ gap: 10 }}>
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
+        {series.map((s) => <Legend key={s.label} color={s.color} label={s.label} />)}
+      </View>
+      <Svg width={width} height={height}>
+        {Array.from({ length: ticks + 1 }).map((_, i) => {
+          const gy = padT + (plotH * i) / ticks;
+          return (
+            <G key={i}>
+              <Line x1={padL} y1={gy} x2={width - padR} y2={gy} stroke={colors.line} strokeWidth={1} opacity={i === ticks ? 1 : 0.5} />
+              <SvgText x={padL - 5} y={gy + 3} fontSize={8.5} fontWeight="700" fill={colors.subtle} textAnchor="end">{vf((max * (ticks - i)) / ticks)}</SvgText>
+            </G>
+          );
+        })}
+        {series.map((s) => (
+          <Polyline key={s.label} points={s.values.map((v, i) => `${x(i)},${y(v)}`).join(" ")} fill="none" stroke={s.color} strokeWidth={2} strokeLinejoin="round" strokeLinecap="round" />
+        ))}
+        {n > 0 ? series.map((s) => <Circle key={`m-${s.label}`} cx={x(n - 1)} cy={y(s.values[n - 1] ?? 0)} r={3} fill={colors.surface} stroke={s.color} strokeWidth={2} />) : null}
+        {labels.map((lb, i) => (n <= 14 || i % Math.ceil(n / 10) === 0) ? <SvgText key={`x${i}`} x={x(i)} y={height - 6} fontSize={8.5} fontWeight="800" fill={colors.muted} textAnchor="middle">{lb}</SvgText> : null)}
+      </Svg>
+    </View>
+  );
+}
+
 // ---- TREEMAP (referans: kategori dağılımı — flex-tabanlı, renkli dikdörtgenler) ----
 export function Treemap({ data, height = 180 }: { data: Array<{ label: string; value: number; color?: string }>; height?: number }) {
   // Basit satır-tabanlı squarify: değerlere göre ağırlıklı 2 satır.
