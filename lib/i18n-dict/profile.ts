@@ -1,6 +1,16 @@
 export const profileDict: Record<string, string> = {
   "Türkçe": "English",
 
+  // app/store/[id].tsx — herkese-açık profil profesyonelleştirme (üye-tarihi/paylaş/uzmanlık)
+  "Uzmanlık alanları": "Areas of expertise",
+  "Profili paylaş": "Share profile",
+  "Üyelik": "Membership",
+  "Bağlantı kopyalandı": "Link copied",
+  "Profil bağlantısı panoya kopyalandı; istediğin yere yapıştırabilirsin.": "Profile link copied to clipboard; paste it wherever you like.",
+  "Mağaza yüklenemedi": "Store could not be loaded",
+  "Bağlantın kesilmiş olabilir; mağaza kaldırılmış değil. Yeniden dene.": "Your connection may have dropped; the store hasn't been removed. Try again.",
+  "mağazasındaki ürünler için bilgi almak istiyorum.": "— I'd like information about the products in this store.",
+
   // app/(tabs)/profile.tsx
   "Telefon doğrulandı": "Phone verified",
   "Kimlik doğrulandı": "Identity verified",

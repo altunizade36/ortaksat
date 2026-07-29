@@ -14,11 +14,12 @@ import { ReviewCard } from "@/components/review-card";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { ErrorScreen } from "@/components/error-boundary";
 import { WebFooter } from "@/components/web-landing";
-import { money, moneyCompact, trPhoneIntl } from "@/lib/format";
+import { money, trPhoneIntl } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { haptic } from "@/lib/haptics";
 import { fetchSellerPhone, fetchListingsBySellers } from "@/lib/supabase-data";
 import { openUrlSafe } from "@/lib/link";
+import { shareOrCopy } from "@/lib/share";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { displayText } from "@/lib/text";
 import { fetchReviewsForUser } from "@/lib/live-service";
@@ -28,6 +29,16 @@ import { useStore } from "@/lib/use-store";
 
 type StoreFilter = "active" | "all" | "partner";
 type ProfileTab = "about" | "listings" | "partnerships" | "policies" | "reviews" | "badges";
+
+/** "Üye olma tarihi" güven sinyali — createdAt "YYYY-MM-DD" → dilbilgisel olarak güvenli
+ * "{yıl} yılından beri üye" / "Member since {yıl}". TR ek-uyumu tuzağını "yılından beri"
+ * ile aşar (2025'ten / 2026'dan farkına takılmaz). */
+function memberSinceLabel(createdAt: string | undefined, language: string): string | null {
+  if (!createdAt) return null;
+  const year = String(createdAt).slice(0, 4);
+  if (!/^\d{4}$/.test(year)) return null;
+  return language === "en" ? `Member since ${year}` : `${year} yılından beri üye`;
+}
 
 export default function StoreScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -184,7 +195,7 @@ export default function StoreScreen() {
       Alert.alert(translateCopy("İletişim kurulamadı", language), translateCopy("Bu satıcının şu an aktif ilanı yok. İlan yayınlandığında mesaj gönderebilirsin.", language));
       return;
     }
-    const conversation = startConversation(firstListing.id, seller.id, `${seller.name} mağazasındaki ürünler için bilgi almak istiyorum.`);
+    const conversation = startConversation(firstListing.id, seller.id, `${seller.name} ${translateCopy("mağazasındaki ürünler için bilgi almak istiyorum.", language)}`);
     if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
     else Alert.alert(translateCopy("İletişim kurulamadı", language), translateCopy("Şu an konuşma başlatılamadı, lütfen tekrar dene.", language));
   }
@@ -235,8 +246,8 @@ export default function StoreScreen() {
     if (sellerFetchError) {
       return (
         <ErrorScreen
-          title="Mağaza yüklenemedi"
-          body="Bağlantın kesilmiş olabilir; mağaza kaldırılmış değil. Yeniden dene."
+          title={translateCopy("Mağaza yüklenemedi", language)}
+          body={translateCopy("Bağlantın kesilmiş olabilir; mağaza kaldırılmış değil. Yeniden dene.", language)}
           onRetry={() => setSellerRetryTick((t) => t + 1)}
         />
       );
@@ -247,6 +258,20 @@ export default function StoreScreen() {
       </ScrollView>
     );
   }
+
+  // Paylaşılabilir profil: native'de OS paylaşım tabakası, web'de navigator.share → panoya.
+  async function shareStore() {
+    if (!seller) return;
+    haptic.selection();
+    const res = await shareOrCopy({
+      title: `${seller.name} — OrtakSat`,
+      message: `${seller.name} — OrtakSat mağazasına göz at:`,
+      url: `https://www.ortaksat.com/store/${seller.id}`
+    });
+    if (res === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Profil bağlantısı panoya kopyalandı; istediğin yere yapıştırabilirsin.", language));
+  }
+
+  const memberLabel = memberSinceLabel(seller.createdAt, language);
 
   // Doğrulama/başarı rozetleri — hem masaüstü hem mobil dal kullanır.
   const badges: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; on: boolean; tint: string; color: string }> = [
@@ -307,7 +332,7 @@ export default function StoreScreen() {
                 <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 2 }}>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                     <MaterialCommunityIcons name="star" size={15} color={colors.gold} />
-                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{seller.rating}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{seller.rating.toFixed(1)}</Text>
                     <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>({reviewsAboutSeller.length} {translateCopy("yorum", language)})</Text>
                   </View>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
@@ -322,6 +347,18 @@ export default function StoreScreen() {
                     <MaterialCommunityIcons name="account-heart-outline" size={15} color={colors.muted} />
                     <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{seller.followerCount} {translateCopy("takipçi", language)}</Text>
                   </View>
+                  {seller.city ? (
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                      <MaterialCommunityIcons name="map-marker-outline" size={15} color={colors.muted} />
+                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{seller.city}</Text>
+                    </View>
+                  ) : null}
+                  {memberLabel ? (
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                      <MaterialCommunityIcons name="calendar-check-outline" size={15} color={colors.muted} />
+                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{memberLabel}</Text>
+                    </View>
+                  ) : null}
                 </View>
               </View>
               <View style={{ flexDirection: "row", gap: 10, paddingTop: 6 }}>
@@ -332,16 +369,17 @@ export default function StoreScreen() {
                   </Pressable>
                 ) : null}
                 {isOwnStore ? (
-                  <Link href="/create" asChild><Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="plus" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Yeni ilan", language)}</Text></Pressable></Link>
+                  <Link href="/create" asChild><Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Yeni ilan", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="plus" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Yeni ilan", language)}</Text></Pressable></Link>
                 ) : (
-                  <Pressable onPress={messageSeller} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="message-text-outline" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Mesaj gönder", language)}</Text></Pressable>
+                  <Pressable onPress={messageSeller} accessibilityRole="button" accessibilityLabel={translateCopy("Mesaj gönder", language)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="message-text-outline" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Mesaj gönder", language)}</Text></Pressable>
                 )}
+                <Pressable onPress={() => void shareStore()} accessibilityRole="button" accessibilityLabel={translateCopy("Profili paylaş", language)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 14, paddingVertical: 11 })}><MaterialCommunityIcons name="share-variant-outline" size={17} color={colors.muted} /></Pressable>
               </View>
             </View>
 
             {/* Stats strip */}
             <View style={{ borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", marginTop: 18, paddingTop: 16 }}>
-              <DeskProfileStat value={`${seller.rating}`} label={translateCopy("Puan", language)} />
+              <DeskProfileStat value={seller.rating.toFixed(1)} label={translateCopy("Puan", language)} />
               <DeskProfileStat value={`${seller.successfulSales}`} label={translateCopy("Satış", language)} />
               <DeskProfileStat value={`${activeListings.length}`} label={translateCopy("Aktif ilan", language)} />
               <DeskProfileStat value={`${sellerPartnerships.length}`} label={translateCopy("Ortaklık", language)} />
@@ -354,7 +392,7 @@ export default function StoreScreen() {
             {tabs.map((tb) => {
               const on = tab === tb.key;
               return (
-                <Pressable key={tb.key} onPress={() => setTab(tb.key)} style={{ borderBottomColor: on ? colors.primary : "transparent", borderBottomWidth: 2.5, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 11 }}>
+                <Pressable key={tb.key} onPress={() => setTab(tb.key)} accessibilityRole="tab" accessibilityState={{ selected: on }} accessibilityLabel={tb.label} style={{ borderBottomColor: on ? colors.primary : "transparent", borderBottomWidth: 2.5, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 11 }}>
                   <Text style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 14, fontWeight: "800" }}>{tb.label}</Text>
                   {tb.count != null ? <View style={{ backgroundColor: on ? colors.primarySoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 }}><Text style={{ color: on ? colors.primaryDark : colors.muted, fontSize: 11, fontWeight: "800" }}>{tb.count}</Text></View> : null}
                 </Pressable>
@@ -376,7 +414,22 @@ export default function StoreScreen() {
                       <DeskAboutRow icon="lightning-bolt" label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} />
                       <DeskAboutRow icon="tag-multiple-outline" label={translateCopy("Toplam komisyon havuzu", language)} value={money(totalCommission)} />
                       <DeskAboutRow icon="shield-check" label={translateCopy("Satıcı güven puanı", language)} value={`%${trust?.seller.score ?? 0}`} />
+                      {memberLabel ? <DeskAboutRow icon="calendar-check-outline" label={translateCopy("Üyelik", language)} value={memberLabel} /> : null}
+                      {seller.city ? <DeskAboutRow icon="map-marker-outline" label={translateCopy("Konum", language)} value={seller.city} /> : null}
                     </View>
+                    {seller.expertiseCategories && seller.expertiseCategories.length > 0 ? (
+                      <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, marginTop: 4, paddingTop: 14 }}>
+                        <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Uzmanlık alanları", language)}</Text>
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+                          {seller.expertiseCategories.map((cat) => (
+                            <View key={cat} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6 }}>
+                              <MaterialCommunityIcons name="star-four-points-outline" size={12} color={colors.primaryDark} />
+                              <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy(cat, language)}</Text>
+                            </View>
+                          ))}
+                        </View>
+                      </View>
+                    ) : null}
                   </View>
                   {hasPartnerActivity ? (
                     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
@@ -554,6 +607,19 @@ export default function StoreScreen() {
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={refresh} tintColor={colors.primary} colors={[colors.primary]} />}
       contentContainerStyle={{ gap: 12, padding: 12, paddingBottom: 104 }}
     >
+      {/* SEO/JsonLd mobil dalda da (eskiden yalnız masaüstündeydi → dar-ekran web'de
+          sayfa meta/aggregateRating üretmiyordu). Görsel çıktı yok; head'e enjekte eder. */}
+      <Seo title={`${seller?.name ?? "Satıcı"} — Mağaza ve ilanları | OrtakSat`} description={`${seller?.name ?? "Bu satıcının"} OrtakSat mağazası: ${activeListings.length} aktif ilan. Ürünleri incele, ortak ol veya doğrudan satıcıyla iletişime geç.`} path={id ? `/store/${id}` : undefined} image={seller?.avatar?.startsWith("http") ? seller.avatar : undefined} />
+      {seller ? (
+        <JsonLd id="store" json={JSON.stringify({
+          "@context": "https://schema.org",
+          "@type": "Store",
+          name: seller.name,
+          url: `https://www.ortaksat.com/store/${seller.id}`,
+          ...(seller.avatar?.startsWith("http") ? { image: seller.avatar } : {}),
+          ...(reviewsAboutSeller.length > 0 && seller.rating > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: Number(seller.rating.toFixed(1)), reviewCount: reviewsAboutSeller.length } } : {})
+        })} />
+      ) : null}
       <StoreCover seed={seller.id} height={92} radius={10} />
       <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, gap: 12, marginTop: -44, padding: 14 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
@@ -574,16 +640,39 @@ export default function StoreScreen() {
               {seller.bio || translateCopy("Satıcı mağazası", language)}
             </Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              <StatusPill label={`${seller.rating} ${t("points")}`} tone="info" />
+              <StatusPill label={`${seller.rating.toFixed(1)} ${t("points")}`} tone="info" />
               <StatusPill label={seller.verifiedIdentity ? t("identityVerified") : t("identityPending")} tone={seller.verifiedIdentity ? "success" : "warning"} />
             </View>
+            {seller.city || memberLabel ? (
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+                {seller.city ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                    <MaterialCommunityIcons name="map-marker-outline" size={13} color={colors.muted} />
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{seller.city}</Text>
+                  </View>
+                ) : null}
+                {memberLabel ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                    <MaterialCommunityIcons name="calendar-check-outline" size={13} color={colors.muted} />
+                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{memberLabel}</Text>
+                  </View>
+                ) : null}
+              </View>
+            ) : null}
           </View>
         </View>
 
+        {/* Güven sinyalleri (masaüstü paritesi): eskiden mobilde yanıt oranı ve satıcı güven
+            puanı HİÇ yoktu → ziyaretçi en kritik güven metriklerini göremiyordu. */}
         <View style={{ flexDirection: "row", gap: 8 }}>
+          <Metric label={translateCopy("Satış", language)} value={`${seller.successfulSales}`} />
           <Metric label={t("activeListing")} value={`${activeListings.length}`} />
           <Metric label={translateCopy("Takipçi", language)} value={`${seller.followerCount}`} />
-          <Metric label={t("earning")} value={moneyCompact(totalCommission)} />
+        </View>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Metric label={translateCopy("Puan", language)} value={seller.rating.toFixed(1)} />
+          <Metric label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} />
+          <Metric label={translateCopy("Satıcı güveni", language)} value={`%${trust?.seller.score ?? 0}`} />
         </View>
         {!isOwnStore ? (
           <Pressable onPress={handleFollow} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: following ? colors.surfaceAlt : colors.primary, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
@@ -621,6 +710,10 @@ export default function StoreScreen() {
                 {isOwnStore ? translateCopy("Satıcı paneli", language) : translateCopy("Ortaklık ürünleri", language)}
               </PrimaryButton>
             </View>
+            {/* Profili paylaş (mobil) — native paylaşım tabakası / web panoya. */}
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Profili paylaş", language)} onPress={() => void shareStore()} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 14 })}>
+              <MaterialCommunityIcons name="share-variant-outline" size={19} color={colors.muted} />
+            </Pressable>
             {/* Şikayet et (mobil) — masaüstü sidebar'daki güvenlik aksiyonunun karşılığı. */}
             {!isOwnStore ? (
               <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Satıcıyı şikayet et", language)} onPress={() => void handleReportSeller()} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, justifyContent: "center", opacity: pressed ? 0.7 : 1, paddingHorizontal: 14 })}>
@@ -655,6 +748,19 @@ export default function StoreScreen() {
             </View>
           ))}
         </View>
+        {seller.expertiseCategories && seller.expertiseCategories.length > 0 ? (
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 7, marginTop: 2, paddingTop: 10 }}>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Uzmanlık alanları", language)}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7 }}>
+              {seller.expertiseCategories.map((cat) => (
+                <View key={cat} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
+                  <MaterialCommunityIcons name="star-four-points-outline" size={12} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{translateCopy(cat, language)}</Text>
+                </View>
+              ))}
+            </View>
+          </View>
+        ) : null}
       </View>
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>

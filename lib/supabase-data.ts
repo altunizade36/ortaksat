@@ -73,8 +73,11 @@ type ProfileRow = {
 // çekilir. `phone` ve `preferences` KASITEN dışarıda: anon role'de bu kolonlar
 // DB'de geri alınmıştır (bkz. migration 20260704120000_profiles_phone_privacy),
 // telefon yalnızca iletişim anında girişli kullanıcıya `fetchSellerPhone` ile verilir.
+// created_at → herkese-açık profilde "üye olma tarihi" (X yıldır üye) güven sinyali.
+// anon'a kolon-bazlı SELECT grant'ı ZATEN var (doğrulandı) → 401 riski yok; mapProfile
+// zaten row.created_at'i okur (bkz [[anon-column-grant-gotcha]]).
 const PUBLIC_PROFILE_COLUMNS =
-  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales, follower_count, invite_code, expertise_categories, city" as const;
+  "id, full_name, avatar_url, bio, verified_phone, verified_identity, verified_instagram, rating, response_rate, role, status, successful_sales, follower_count, invite_code, expertise_categories, city, created_at" as const;
 
 export type MarketplaceSnapshot = {
   listings: Listing[];
