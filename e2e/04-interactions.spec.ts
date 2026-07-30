@@ -62,12 +62,14 @@ test("FAVORİ: 'Beğen' → favorites kaydı oluşur", async ({ page }) => {
   expect(Number(rows[0].n), "favori DB'ye yazılmalı").toBeGreaterThan(0);
 });
 
-test("ORTAK OL: 'Hemen Ortak Ol ve Kazan' → partnership/lead kaydı oluşur", async ({ page }) => {
+test("ORTAK OL: ortak-ol CTA → partnership/lead kaydı oluşur", async ({ page }) => {
   const { listingId } = await seedSellerListing();
   const buyerId = await loginBuyer(page);
   await gotoListingReady(page, listingId);
 
-  await page.getByText(/Hemen Ortak Ol ve Kazan/i).first().click();
+  // CTA etiketi ilan tipine göre değişir: TALEP ilanında "Hemen Ortak Ol ve Kazan",
+  // normal sat/ortak ilanında "Ortak Ol (%X Kazan)". İkisini de yakala.
+  await page.getByText(/Hemen Ortak Ol|Ortak Ol \(/i).first().click();
   await page.waitForTimeout(2000);
   // Açılan panelde ikinci bir onay/başvuru butonu olabilir — varsa tıkla.
   const confirm = page.getByText(/Ortak ol|Başvur|Onayla|Gönder|Bağlantı/i);
@@ -88,7 +90,9 @@ test("MESAJ: 'Mesaj gönder' → conversation/message oluşur", async ({ page })
   const buyerId = await loginBuyer(page);
   await gotoListingReady(page, listingId);
 
-  await page.getByText("Mesaj gönder", { exact: true }).first().click();
+  // İletişim tetikleyicisi: masaüstü normal ilanda ana "Satın Al" handleContact'ı
+  // (startConversation) çağırır; mobil/talep akışında "Mesaj gönder" ayrı görünür.
+  await page.getByText(/Mesaj gönder|Satın Al/i).first().click();
   await page.waitForTimeout(2500);
   // Mesaj composer'ı açıldıysa yaz + gönder.
   const box = page.locator("textarea, input[type='text'], input:not([type])").last();
