@@ -11,7 +11,6 @@ import { Card, Metric, PressLink, PrimaryButton, StatusPill } from "@/components
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
-import { haptic } from "@/lib/haptics";
 import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
@@ -311,29 +310,6 @@ function ProfileScreenInner() {
           <Shortcut href="/legal" icon="face-agent" label={t("customerService")} />
           <Shortcut href="/favorites" icon="bookmark-outline" label={t("savedItems")} />
         </View>
-        <Pressable
-          onPress={() => { haptic.selection(); void signOut(); }}
-          style={({ pressed }) => ({
-            alignItems: "center",
-            backgroundColor: isLiveAccount ? colors.accentSoft : colors.surfaceAlt,
-            borderColor: isLiveAccount ? colors.accentSoft : colors.line,
-            borderRadius: 8,
-            borderWidth: 1,
-            flexDirection: "row",
-            gap: 10,
-            minHeight: 48,
-            opacity: pressed ? 0.75 : 1,
-            padding: 10
-          })}
-        >
-          <MaterialCommunityIcons name="logout" size={20} color={isLiveAccount ? colors.accent : colors.muted} />
-          <Text selectable style={{ color: isLiveAccount ? colors.accent : colors.muted, flex: 1, fontSize: 14, fontWeight: "900" }}>
-            {t("signOut")}
-          </Text>
-          <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>
-            {isLiveAccount ? t("active") : t("preview")}
-          </Text>
-        </Pressable>
       </Card>
 
 
