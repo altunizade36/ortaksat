@@ -40,8 +40,9 @@ ${sku},E2E Ozellikli Urun ${E2E_LISTING_TAG},Kategori ozel alan testi icin yeter
   await page.waitForTimeout(1500);
 
   const body = await page.locator("body").innerText();
-  expect(body, "önizlemede tanınan özellik göstergesi olmalı").toContain("özellik");
-  expect(body, "Marka özelliği tanınmalı").toContain("Marka");
+  // Önizleme göstergesi "3 özellik: Marka, Renk, Ürün durumu" — yardım metnindeki
+  // "Marka"/"özellik" kelimeleriyle karışmasın diye kesin sayaç ifadesini ara.
+  expect(body, "önizlemede 3 tanınan özellik göstergesi olmalı").toContain("3 özellik");
   await page.screenshot({ path: "e2e-artifacts/bulk-attributes.png", fullPage: true });
 
   await page.getByText(/ilanı onaya gönder/i).first().click();

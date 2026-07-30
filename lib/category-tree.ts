@@ -2425,9 +2425,21 @@ export function matchCategoryByName(name: string): { node: CategoryNode; path: C
     }
   };
   walk2(categoryTree, []);
-  // 1) Birebir etiket eşleşmesi.
-  const exact = flat.find((f) => norm(f.node.label) === target);
-  if (exact) return exact;
+  // 1) Birebir etiket eşleşmesi. Aynı etiket AĞAÇTA BİRDEN ÇOK yerde olabilir (ör.
+  //    "Elektronik" hem üst kategori DALI hem de Vasıta > Yedek Parça altında bir
+  //    aksesuar YAPRAĞI). DFS sırası yaprağı önce bulup yanlış kategoriye ("yedekParca")
+  //    düşürüyordu. Kullanıcının kastı neredeyse her zaman DAHA GENEL olan: önce DALLI
+  //    (children) düğüm, sonra daha SIĞ (kısa yol) düğüm tercih edilir.
+  const exacts = flat.filter((f) => norm(f.node.label) === target);
+  if (exacts.length) {
+    exacts.sort((a, b) => {
+      const ab = a.node.children && a.node.children.length ? 0 : 1;
+      const bb = b.node.children && b.node.children.length ? 0 : 1;
+      if (ab !== bb) return ab - bb;
+      return a.path.length - b.path.length;
+    });
+    return exacts[0];
+  }
   if (target.length < 2) return undefined;
   // 2) TAM-KELİME örtüşmesi (alt-string değil): "ev" artık "Televizyon"a eşleşmez;
   //    "Ev & Yaşam"a eşleşir. Ortak anlamlı-kelime sayısına göre puanla, sonra
