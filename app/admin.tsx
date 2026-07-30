@@ -1666,7 +1666,10 @@ function Row({ cols, cells }: { cols: number[]; cells: ReactNode[] }) {
   }
   return (
     <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", paddingVertical: 10 }}>
-      {cells.map((c, i) => <View key={i} style={{ alignItems: i === cells.length - 1 ? "flex-end" : "flex-start", flex: cols[i], minWidth: 0 }}>{c}</View>)}
+      {/* non-last hücreler: alignItems STRETCH → içerik hücre genişliğini doldurur (RN column'da
+          aksi halde içerik-boyutlu kalıp uzun metin taşar). Son hücre (İŞLEM) sağa hizalı kalır.
+          Kendi alignSelf'i olan çipler (status pill) etkilenmez. */}
+      {cells.map((c, i) => <View key={i} style={{ alignItems: i === cells.length - 1 ? "flex-end" : "stretch", flex: cols[i], minWidth: 0, overflow: "hidden" }}>{c}</View>)}
     </View>
   );
 }
