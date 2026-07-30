@@ -358,10 +358,25 @@ function ProfileScreenInner() {
 
       <Card>
         <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{t("attentionToday")}</Text>
-        <ActionRow href="/(tabs)/seller" icon="account-clock-outline" label={t("sellerApplications")} tone={pendingSellerApplications.length ? "warning" : "neutral"} value={`${pendingSellerApplications.length}`} />
-        <ActionRow href="/(tabs)/partner" icon="handshake-outline" label={t("pendingPartnership")} tone={pendingPartnerships.length ? "warning" : "neutral"} value={`${pendingPartnerships.length}`} />
-        <ActionRow href="/(tabs)/messages" icon="message-badge-outline" label={t("unreadMessage")} tone={unreadMessages.length ? "warning" : "neutral"} value={`${unreadMessages.length}`} />
-        <ActionRow href="/trust" icon="shield-alert-outline" label={t("openTrustRecord")} tone={openReports.length ? "warning" : "neutral"} value={`${openReports.length}`} />
+        {(() => {
+          // Yalnız aksiyon gerektirenler (>0); hepsi 0 ise sıfır-duvarı yerine tek temiz satır.
+          const todo: Array<{ href: Href; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; n: number }> = [
+            { href: "/(tabs)/seller", icon: "account-clock-outline", label: t("sellerApplications"), n: pendingSellerApplications.length },
+            { href: "/(tabs)/partner", icon: "handshake-outline", label: t("pendingPartnership"), n: pendingPartnerships.length },
+            { href: "/(tabs)/messages", icon: "message-badge-outline", label: t("unreadMessage"), n: unreadMessages.length },
+            { href: "/trust", icon: "shield-alert-outline", label: t("openTrustRecord"), n: openReports.length }
+          ];
+          const actionable = todo.filter((x) => x.n > 0);
+          if (actionable.length === 0) {
+            return (
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 4 }}>
+                <MaterialCommunityIcons name="check-circle-outline" size={20} color={colors.success} />
+                <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "700" }}>{translateCopy("Bekleyen işin yok — her şey güncel.", language)}</Text>
+              </View>
+            );
+          }
+          return actionable.map((x) => <ActionRow key={x.label} href={x.href} icon={x.icon} label={x.label} tone="warning" value={`${x.n}`} />);
+        })()}
       </Card>
 
       <Card>
@@ -381,18 +396,6 @@ function ProfileScreenInner() {
         <MenuRow icon="database-check-outline" label={t("dataInfrastructure")} detail={isLiveAccount ? t("liveProfileActive") : t("previewData")} value={isLiveAccount ? t("live") : t("preview")} href="/profile-edit" />
       </Card>
 
-      <Card>
-        <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{t("shortcuts")}</Text>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-          <Shortcut href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} icon="store-search-outline" label={translateCopy("Mağazam", language)} />
-          <Shortcut href="/(tabs)/seller" icon="storefront-outline" label={t("seller")} />
-          <Shortcut href="/(tabs)/partner" icon="handshake-outline" label={t("partner")} />
-          <Shortcut href={"/davet" as Href} icon="account-heart-outline" label={translateCopy("Davet Et", language)} />
-          <Shortcut href="/favorites" icon="heart-outline" label={t("favorite")} />
-          <Shortcut href="/trust" icon="shield-check-outline" label={t("trust")} />
-          <Shortcut href="/legal" icon="file-document-outline" label={t("legal")} />
-        </View>
-      </Card>
       </WebContainer>
     </ScrollView>
   );
