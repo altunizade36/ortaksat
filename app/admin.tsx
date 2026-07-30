@@ -599,7 +599,7 @@ function AdminScreenInner() {
                 const riskBg = risk.level === "high" ? colors.accentSoft : risk.level === "medium" ? colors.warningSoft : colors.successSoft;
                 return (
                 <Row key={l.id} cols={[2.2, 1.2, 1, 1.4, 1, 1.2]} cells={[
-                  <View style={{ gap: 3, minWidth: 0 }}>
+                  <View style={{ gap: 3, minWidth: 0, alignSelf: "stretch", overflow: "hidden" }}>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 6, minWidth: 0 }}>
                       <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, minWidth: 0, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>
                       <View style={{ alignItems: "center", backgroundColor: riskBg, borderRadius: 999, flexDirection: "row", flexShrink: 0, gap: 2, paddingHorizontal: 6, paddingVertical: 1 }}>
