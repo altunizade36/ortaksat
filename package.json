@@ -25,7 +25,8 @@
     "submit:android": "eas submit -p android --profile production",
     "submit:ios": "eas submit -p ios --profile production",
     "db:migrate": "node scripts/apply-supabase-migration.mjs",
-    "db:apply-all": "node scripts/apply-all.mjs"
+    "db:apply-all": "node scripts/apply-all.mjs",
+    "backfill:thumbnails": "node scripts/backfill-thumbnails.mjs"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
@@ -66,6 +67,7 @@
     "@typescript-eslint/parser": "^6.21.0",
     "eslint": "^8.57.1",
     "eslint-plugin-react-hooks": "^4.6.2",
+    "jimp": "^1.6.1",
     "pg": "^8.21.0",
     "subset-font": "^2.5.0",
     "typescript": "~5.9.2"
