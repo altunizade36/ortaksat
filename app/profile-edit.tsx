@@ -3,7 +3,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useCallback, useEffect, useState } from "react";
-import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -29,9 +29,20 @@ function isImageAvatar(value: string) {
 }
 
 function ProfileEditScreenInner() {
-  const { language } = useLanguage();
+  const { language, setLanguage } = useLanguage();
   const router = useRouter();
-  const { authError, backendMode, currentUser, updateProfile, savePreferences, requestAccountDeletion, requestVerification, signOut, signOutAllDevices } = useStore();
+  const { authError, backendMode, currentUser, updateProfile, savePreferences, setEmailNotifications, requestAccountDeletion, requestVerification, signOut, signOutAllDevices } = useStore();
+  // Gerçek e-posta bildirim aç/kapa (eskiden ayarlar sadece statik metin gösteriyordu; toggle YOKTU).
+  const [emailNotif, setEmailNotif] = useState(currentUser.emailNotifications ?? true);
+  const [emailBusy, setEmailBusy] = useState(false);
+  async function toggleEmailNotif(next: boolean) {
+    if (emailBusy) return;
+    setEmailNotif(next); // iyimser
+    setEmailBusy(true);
+    const ok = await setEmailNotifications(next);
+    setEmailBusy(false);
+    if (!ok) setEmailNotif(!next); // geri al
+  }
   const prefs0 = currentUser.preferences ?? {};
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const [name, setName] = useState(currentUser.name);
@@ -288,7 +299,7 @@ function ProfileEditScreenInner() {
     const navItems: Array<{ key: SettingsSection; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string }> = [
       { key: "personal", icon: "account-outline", label: translateCopy("Kişisel Bilgiler", language), sub: translateCopy("Ad, telefon, foto, bio", language) },
       { key: "security", icon: "lock-outline", label: translateCopy("Hesap Güvenliği", language), sub: translateCopy("Şifre ve oturumlar", language) },
-      { key: "notifications", icon: "bell-outline", label: translateCopy("Bildirim Tercihleri", language), sub: translateCopy("E-posta, SMS, anlık", language) },
+      { key: "notifications", icon: "bell-outline", label: translateCopy("Bildirim & Uygulama", language), sub: translateCopy("E-posta bildirimi, dil", language) },
       { key: "store", icon: "storefront-outline", label: translateCopy("Mağaza Ayarları", language), sub: translateCopy("Mağaza adı ve bilgiler", language) },
       { key: "verification", icon: "shield-check-outline", label: translateCopy("Doğrulama Durumu", language), sub: translateCopy("Kimlik ve hesap", language) }
     ];
@@ -394,13 +405,20 @@ function ProfileEditScreenInner() {
             ) : null}
 
             {section === "notifications" ? (
-              <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 22 }}>
-                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Bildirimler", language)}</Text>
+              <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 22 }}>
+                <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Bildirim & Uygulama", language)}</Text>
+                <ToggleRow icon="email-outline" label="E-posta bildirimleri" desc="Talep, satış, komisyon ve mesaj olayları e-postana düşer." value={emailNotif} busy={emailBusy} onValueChange={toggleEmailNotif} />
                 <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
-                  <MaterialCommunityIcons name="bell-ring-outline" size={20} color={colors.primary} style={{ marginTop: 1 }} />
-                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{translateCopy("Talep, satış, komisyon, ortaklık ve mesaj gibi", language)} <Text style={{ fontWeight: "900" }}>{translateCopy("önemli hareketler uygulama içinde anlık bildirim", language)}</Text> {translateCopy("olarak sana gösterilir — Bildirimler sekmesinden takip edebilirsin.", language)}</Text>
+                  <MaterialCommunityIcons name="bell-ring-outline" size={18} color={colors.muted} style={{ marginTop: 1 }} />
+                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Önemli hareketler ayrıca uygulama içinde anlık bildirim olarak da gösterilir. SMS/WhatsApp yakında.", language)}</Text>
                 </View>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("E-posta bildirimleri aktif — talep, satış ve mesaj olayları e-postana düşer (Bildirimler sayfasından yönet). SMS/WhatsApp yakında.", language)}</Text>
+                <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 14 }}>
+                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Uygulama dili", language)}</Text>
+                  <View style={{ flexDirection: "row", gap: 8 }}>
+                    <LangChip active={language === "tr"} label="Türkçe" onPress={() => void setLanguage("tr")} />
+                    <LangChip active={language === "en"} label="English" onPress={() => void setLanguage("en")} />
+                  </View>
+                </View>
               </View>
             ) : null}
 
@@ -582,11 +600,16 @@ function ProfileEditScreenInner() {
         ) : null}
 
         <Card>
-          <SectionTitle title={translateCopy("Bildirimler", language)} />
-          <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "600", lineHeight: 20 }}>{translateCopy("Talep, satış, komisyon, ortaklık ve mesaj gibi", language)} <Text style={{ fontWeight: "900" }}>{translateCopy("önemli hareketler uygulama içinde anlık bildirim", language)}</Text> {translateCopy("olarak gösterilir; Bildirimler sekmesinden takip edebilirsin.", language)}</Text>
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("E-posta bildirimleri aktif — talep, satış ve mesaj olayları e-postana düşer. SMS/WhatsApp yakında.", language)}</Text>
-          {/* Salt-metin yerine aksiyon: gerçek aç/kapa anahtarları Bildirimler sayfasında. */}
-          <PrimaryButton href="/notifications" tone="secondary" icon="bell-cog-outline">{translateCopy("Bildirim ayarlarını aç", language)}</PrimaryButton>
+          <SectionTitle title={translateCopy("Bildirim & Uygulama", language)} />
+          <ToggleRow icon="email-outline" label="E-posta bildirimleri" desc="Talep, satış, komisyon ve mesaj olayları e-postana düşer." value={emailNotif} busy={emailBusy} onValueChange={toggleEmailNotif} />
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Önemli hareketler ayrıca uygulama içinde anlık bildirim olarak da gösterilir. SMS/WhatsApp yakında.", language)}</Text>
+          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 12 }}>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Uygulama dili", language)}</Text>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <LangChip active={language === "tr"} label="Türkçe" onPress={() => void setLanguage("tr")} />
+              <LangChip active={language === "en"} label="English" onPress={() => void setLanguage("en")} />
+            </View>
+          </View>
         </Card>
 
         <Card>
@@ -708,6 +731,31 @@ function ExpertisePicker({ value, onChange }: { value: string[]; onChange: (v: s
         })}
       </View>
     </View>
+  );
+}
+
+/** Ayarlar aç/kapa satırı (etiket + açıklama + Switch). Gerçek tercih toggle'ları için. */
+function ToggleRow({ busy, desc, icon, label, onValueChange, value }: { busy?: boolean; desc: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onValueChange: (v: boolean) => void; value: boolean }) {
+  const { language } = useLanguage();
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 12, opacity: busy ? 0.7 : 1, padding: 14 }}>
+      <MaterialCommunityIcons name={icon} size={20} color={colors.primary} />
+      <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
+        <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy(label, language)}</Text>
+        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy(desc, language)}</Text>
+      </View>
+      <Switch value={value} onValueChange={onValueChange} disabled={busy} trackColor={{ false: colors.line, true: colors.primary }} thumbColor="#FFFFFF" ios_backgroundColor={colors.line} />
+    </View>
+  );
+}
+
+/** Dil seçim çipi (TR/EN). */
+function LangChip({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
+  return (
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }} accessibilityLabel={label} style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.8 : 1, paddingHorizontal: 16, paddingVertical: 9 })}>
+      {active ? <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" /> : null}
+      <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>{label}</Text>
+    </Pressable>
   );
 }
 

@@ -1,6 +1,14 @@
 export const profileDict: Record<string, string> = {
   "Türkçe": "English",
 
+  // app/profile-edit.tsx — ayarlar: bildirim toggle + dil
+  "Bildirim & Uygulama": "Notifications & App",
+  "E-posta bildirimleri": "Email notifications",
+  "Talep, satış, komisyon ve mesaj olayları e-postana düşer.": "Requests, sales, commissions and messages are sent to your email.",
+  "Önemli hareketler ayrıca uygulama içinde anlık bildirim olarak da gösterilir. SMS/WhatsApp yakında.": "Important activity is also shown as in-app notifications. SMS/WhatsApp coming soon.",
+  "Uygulama dili": "App language",
+  "E-posta bildirimi, dil": "Email notifications, language",
+
   // app/(tabs)/seller.tsx — satıcı paneli sekme redesign
   "Bekleyen işin yok — her şey yolunda.": "No pending tasks — all good.",
   "Henüz teklif yok": "No offers yet",
