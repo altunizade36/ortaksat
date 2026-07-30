@@ -16,7 +16,7 @@ import { getRecent, subscribeRecent } from "@/lib/recent";
 import { loadPartnerDirectory, type PartnerDirectoryEntry } from "@/lib/supabase-data";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState, PressLink } from "@/components/ui";
-import type { CategoryNode } from "@/lib/category-tree";
+import { categoryTree, type CategoryNode } from "@/lib/category-tree";
 import { WebFooter } from "@/components/web-landing";
 import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { commissionAmount, commissionRatePct, money } from "@/lib/format";
@@ -605,19 +605,13 @@ export default function HomeScreen() {
 // Sunucu + ilk istemci paint'inde gösterilen DETERMİNİSTİK SEO iskeleti.
 // Store/rastgele/tarih/ikon-font İÇERMEZ → server===client → #418 yok. Gerçek h1,
 // açıklama, CTA ve kategori iç-bağlantıları taşır (SEO). Mount sonrası gizlenir.
-// NOT: slug'lar category-tree.ts sl() ile BİREBİR aynı olmalı ("&"→"ve").
-// Aksi halde /kategori/<slug> soft-404 "Kategori bulunamadı"ya düşer (ölü SEO
-// internal link + mobil kullanıcı ölü sayfaya gider). Ağaca karşı doğrulandı.
-const SKELETON_CATS: Array<{ slug: string; label: string }> = [
-  { slug: "emlak", label: "Emlak" },
-  { slug: "vasita", label: "Vasıta" },
-  { slug: "elektronik", label: "Elektronik" },
-  { slug: "ev-ve-yasam", label: "Ev & Yaşam" },
-  { slug: "moda", label: "Moda" },
-  { slug: "anne-ve-bebek", label: "Anne & Bebek" },
-  { slug: "spor-ve-outdoor", label: "Spor & Outdoor" },
-  { slug: "kitap-ve-hobi", label: "Kitap & Hobi" }
-];
+// Kategoriler GÜNCEL kök ağaçtan (categoryTree — statik sabit, server===client)
+// TÜRETİLİR → slug'lar tanımı gereği sl() ile birebir aynı, ölü SEO linki YOK,
+// taksonomi değişince ELLE güncelleme gerekmez (eskiden hardcoded liste konsolidasyon
+// sonrası drift edip var-olmayan kategorilere -Moda/Anne&Bebek- link veriyordu).
+const SKELETON_CATS: Array<{ slug: string; label: string }> = categoryTree
+  .slice(0, 8)
+  .map((c) => ({ slug: c.slug, label: c.label }));
 
 function HomeSeoSkeleton() {
   const { language } = useLanguage();
