@@ -150,7 +150,6 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   const [customCategory, setCustomCategory] = useState("");
   const [values, setValues] = useState<Values>({});
   const [images, setImages] = useState<string[]>([]);
-  const [imageDraft, setImageDraft] = useState("");
   const [loc, setLoc] = useState<LocationValue>({});
   const [visibility, setVisibility] = useState<"city_only" | "district_only" | "neighborhood" | "full_address_private">("neighborhood");
 
@@ -410,21 +409,6 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   const MAX_BYTES = 32 * 1024 * 1024; // 32 MB (yalnız absürt dosya koruması)
 
   /** Seçilen görselleri (boyut sınırı + adet sınırı ile) listeye ekler. Galeri ve kamera ortak kullanır. */
-  /**
-   * URL ile görsel ekleme. Eskiden: herhangi bir metni (ör. "asdf") görsel diye kabul
-   * ediyor, sınıra gelindiğinde ise SESSİZCE hiçbir şey yapmıyordu (buton ölü görünüyordu).
-   */
-  function addImageUrl() {
-    const u = imageDraft.trim();
-    if (!u) return;
-    if (!/^https?:\/\/.+/i.test(u)) { setError(translateCopy("Görsel bağlantısı http:// veya https:// ile başlamalı.", language)); return; }
-    if (images.includes(u)) { setError(translateCopy("Bu görsel zaten ekli.", language)); return; }
-    if (images.length >= MAX_PHOTOS) { setError(`${translateCopy("En fazla", language)} ${MAX_PHOTOS} ${translateCopy("görsel ekleyebilirsin.", language)}`); return; }
-    setError(null);
-    setImages((s) => [...s, u]);
-    setImageDraft("");
-  }
-
   // WEB: SÜRÜKLE-BIRAK + PANODAN YAPIŞTIR. İkisi de yoktu; masaüstünde fotoğraf eklemenin
   // tek yolu dosya seçiciydi. Yalnız fotoğraf adımında (step 3) ve yalnız web'de dinlenir.
   const [dragOver, setDragOver] = useState(false);
@@ -941,23 +925,22 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy(`En az 1, en fazla ${MAX_PHOTOS} fotoğraf. İlk fotoğraf kapak olur; fotoğraflar otomatik ölçeklenir.`, language)}</Text>
           </View>
 
-          {/* Büyük kapak önizlemesi (kapak = ilk foto) */}
-          <View style={{ backgroundColor: colors.surfaceAlt, borderColor: images.length ? colors.primary : colors.line, borderRadius: 14, borderStyle: images.length ? "solid" : "dashed", borderWidth: images.length ? 2 : 1, height: isWideWeb ? 200 : 164, overflow: "hidden", width: "100%" }}>
-            {images.length ? (
-              <>
-                <SafeRemoteImage uri={images[0]} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-                <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 8, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", top: 8 }}>
-                  <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Kapak", language)}</Text>
-                </View>
-              </>
-            ) : (
-              <View style={{ alignItems: "center", flex: 1, gap: 8, justifyContent: "center", padding: 18 }}>
-                <MaterialCommunityIcons name="image-plus" size={34} color={colors.subtle} />
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy("En az 1 fotoğraf ekle", language)}</Text>
-                <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", textAlign: "center" }}>{translateCopy("İlk eklediğin fotoğraf kapak olur.", language)}</Text>
+          {/* Büyük kapak önizlemesi (kapak = ilk foto). BOŞken KUTUNUN KENDİSİ tıklanabilir →
+              doğrudan galeri/cihaz seçici açılır (ayrı butona gitmeye gerek yok). */}
+          {images.length ? (
+            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.primary, borderRadius: 14, borderWidth: 2, height: isWideWeb ? 200 : 164, overflow: "hidden", width: "100%" }}>
+              <SafeRemoteImage uri={images[0]} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+              <View style={{ backgroundColor: colors.primary, borderRadius: 6, left: 8, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", top: 8 }}>
+                <Text style={{ color: "#FFFFFF", fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Kapak", language)}</Text>
               </View>
-            )}
-          </View>
+            </View>
+          ) : (
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Fotoğraf ekle — galeriden / cihazdan seç", language)} onPress={() => void pickFromGallery()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.primary, borderRadius: 14, borderStyle: "dashed", borderWidth: 2, gap: 8, height: isWideWeb ? 200 : 164, justifyContent: "center", padding: 18, width: "100%" })}>
+              <MaterialCommunityIcons name="image-plus" size={36} color={colors.primary} />
+              <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900", textAlign: "center" }}>{translateCopy("Fotoğraf eklemek için dokun", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", textAlign: "center" }}>{translateCopy("Galerinden seç · ilk eklediğin kapak olur.", language)}</Text>
+            </Pressable>
+          )}
 
           {/* Ekle butonları — kamera (yalnız native) + galeri/cihaz */}
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
@@ -1025,16 +1008,6 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             </View>
           ) : null}
 
-          {/* Görsel adresi ile ekle (opsiyonel) */}
-          <View style={{ gap: 6 }}>
-            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("veya görsel adresi yapıştır:", language)}</Text>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-              <TextInput value={imageDraft} onChangeText={setImageDraft} placeholder="https://…/foto.jpg" placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 13, minHeight: 46, minWidth: 0, paddingHorizontal: 12 }} />
-              <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Ekle", language)} onPress={() => addImageUrl()} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 11, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 12 }}>
-                <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" />
-              </Pressable>
-            </View>
-          </View>
         </View>
 
         {/* ── SAĞ KOLON: İlan Detayları (kategori → form → konum → komisyon) ── */}
