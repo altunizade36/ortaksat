@@ -18,7 +18,7 @@ import { autoFillListing } from "@/lib/listing-autofill";
 import { formatLocation, getProvince, resolveProvinceByName, districtsOfProvince } from "@/lib/locations";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { downloadCsv } from "@/lib/csv-export";
-import { uploadListingImage, fetchMyListingSkus, updateListingFieldsLive } from "@/lib/live-service";
+import { uploadListingImage, fetchMyListingSkus, updateListingFieldsLive, fetchMyListingsForExport } from "@/lib/live-service";
 import { useStore } from "@/lib/use-store";
 import { parseTrPrice, validateListing } from "@/lib/validation";
 
@@ -45,19 +45,30 @@ type ParsedRow = {
   errors: string[];
 };
 
-// Basit ama tırnak-farkında CSV satır ayrıştırıcı (alan içinde virgül destekler).
-function splitCsvLine(line: string): string[] {
+// Basit ama tırnak-farkında CSV satır ayrıştırıcı (alan içinde ayraç destekler).
+function splitCsvLine(line: string, delim: string = ","): string[] {
   const out: string[] = [];
   let cur = "";
   let inQ = false;
   for (let i = 0; i < line.length; i++) {
     const c = line[i];
     if (c === '"') { if (inQ && line[i + 1] === '"') { cur += '"'; i++; } else inQ = !inQ; }
-    else if (c === "," && !inQ) { out.push(cur); cur = ""; }
+    else if (c === delim && !inQ) { out.push(cur); cur = ""; }
     else cur += c;
   }
   out.push(cur);
   return out.map((s) => s.trim());
+}
+
+// TÜRKÇE EXCEL TUZAĞI: TR yerelinde Excel "CSV" dosyasını NOKTALI VİRGÜL (;) ayraçla
+// kaydeder (virgül ondalık ayracı olduğu için). Başlık satırındaki ; ve , sayısını
+// karşılaştırıp ayracı otomatik seç — yoksa tüm satır tek hücreye düşer.
+function detectDelimiter(headerLine: string): string {
+  const semis = (headerLine.match(/;/g) || []).length;
+  const commas = (headerLine.match(/,/g) || []).length;
+  const tabs = (headerLine.match(/\t/g) || []).length;
+  if (tabs > commas && tabs > semis) return "\t";
+  return semis > commas ? ";" : ",";
 }
 
 const COL_ALIASES: Record<string, string[]> = {
@@ -101,6 +112,7 @@ function BulkUploadInner() {
   // Aynı SKU tekrar gelirse yeni oluşturmaz, MEVCUDU günceller (Trendyol/Sahibinden modeli).
   const [existingSkus, setExistingSkus] = useState<Map<string, { id: string; title: string; status: string }>>(new Map());
   const [deactivateMissing, setDeactivateMissing] = useState(false);
+  const [exporting, setExporting] = useState(false);
   useEffect(() => {
     void fetchMyListingSkus(currentUser.id).then((list) => {
       setExistingSkus(new Map(list.map((r) => [r.externalId, { id: r.id, title: r.title, status: r.status }])));
@@ -109,7 +121,9 @@ function BulkUploadInner() {
 
   const parse = () => {
     setNotice(null);
-    const lines = csv.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+    // BOM'u at (Excel UTF-8 CSV başına ﻿ ekler → ilk sütun adı bozulur).
+    const clean = csv.replace(/^﻿/, "");
+    const lines = clean.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
     if (lines.length < 2) { Alert.alert(translateCopy("Boş veri", language), translateCopy("Başlık satırı + en az 1 ürün satırı gerekli.", language)); return; }
     // Spam/hız koruması: tek partide üst sınır (Trendyol'da da parti tavanı vardır).
     const MAX_BULK = 200;
@@ -117,7 +131,8 @@ function BulkUploadInner() {
       Alert.alert(translateCopy("Çok fazla satır", language), `${translateCopy("Tek seferde en fazla", language)} ${MAX_BULK} ${translateCopy("ürün yükleyebilirsin. Partiyi böl.", language)}`);
       return;
     }
-    const headers = splitCsvLine(lines[0]);
+    const delim = detectDelimiter(lines[0]); // TR Excel ; ayracını otomatik yakala
+    const headers = splitCsvLine(lines[0], delim);
     const col = resolveHeader(headers);
     if (col.title === undefined || col.price === undefined) {
       Alert.alert(translateCopy("Sütun bulunamadı", language), translateCopy("En az 'baslik' ve 'fiyat' sütunları gerekli. Şablonu kullan.", language));
@@ -129,7 +144,7 @@ function BulkUploadInner() {
     const seenSkus = new Set<string>();
     const bos = translateCopy("(boş)", language);
     const parsed: ParsedRow[] = lines.slice(1).map((line, idx) => {
-      const cells = splitCsvLine(line);
+      const cells = splitCsvLine(line, delim);
       const get = (k: string) => (col[k] !== undefined ? (cells[col[k]] ?? "") : "");
       const sku = get("sku").trim();
       // SKU EŞLEŞMESİ: bu satırın SKU'su satıcının mevcut bir ilanına denk geliyorsa GÜNCELLEME modu.
@@ -191,6 +206,53 @@ function BulkUploadInner() {
     const uris = result.assets.map((a) => a.uri).filter(Boolean);
     setBulkImages(uris);
     setNotice(translateCopy(`${uris.length} fotoğraf seçildi — satırlara sırayla atanacak (görsel_url boş olanlara). "Ayrıştır"a tekrar bas.`, language));
+  }
+
+  // DOSYADAN YÜKLE (web) — .csv seç → metni oku → yapıştırma alanına doldur.
+  // Excel için: "Farklı Kaydet → CSV UTF-8" (xlsx kütüphanesi bundle'ı şişirmesin diye taşımıyoruz).
+  function pickCsvFile() {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    const input = document.createElement("input");
+    input.type = "file";
+    input.accept = ".csv,text/csv,text/plain";
+    input.onchange = () => {
+      const file = input.files && input.files[0];
+      if (!file) return;
+      const name = file.name.toLowerCase();
+      if (name.endsWith(".xlsx") || name.endsWith(".xls")) {
+        setNotice(translateCopy("Excel dosyasını doğrudan yükleyemiyoruz. Excel'de 'Farklı Kaydet → CSV UTF-8' seçip .csv olarak yükle.", language));
+        return;
+      }
+      const reader = new FileReader();
+      reader.onload = () => {
+        setCsv(String(reader.result || "").replace(/^﻿/, ""));
+        setNotice(`${file.name} — ${translateCopy("yüklendi. 'Ayrıştır ve önizle'ye bas.", language)}`);
+      };
+      reader.readAsText(file, "utf-8");
+    };
+    input.click();
+  }
+
+  // MEVCUT KATALOĞU DIŞA AKTAR (web) — satıcının ilanlarını şablon sütunlarında CSV'ye döker.
+  // "Excel'de düzenle → tekrar yükle" (SKU upsert) döngüsünü tamamlar.
+  async function exportMyCatalog() {
+    if (Platform.OS !== "web") return;
+    setExporting(true);
+    setNotice(null);
+    try {
+      const list = await fetchMyListingsForExport(currentUser.id);
+      if (!list.length) { setNotice(translateCopy("Dışa aktarılacak ilan bulunamadı.", language)); return; }
+      const body = list.map((r) => {
+        const prov = getProvince(r.provinceId);
+        const dist = r.districtId ? districtsOfProvince(r.provinceId).find((d) => d.id === r.districtId) : undefined;
+        return [r.externalId ?? "", r.title, r.description ?? "", String(r.price), r.category ?? "", prov?.name ?? "", dist?.name ?? "", String(r.commissionValue), String(r.stockCount), ""];
+      });
+      downloadCsv("ortaksat-ilanlarim.csv", ["harici_kod", "baslik", "aciklama", "fiyat", "kategori", "il", "ilce", "komisyon", "stok", "gorsel_url"], body);
+      const noSku = list.filter((r) => !r.externalId).length;
+      setNotice(`${list.length} ${translateCopy("ilan CSV olarak indirildi. Excel'de düzenleyip tekrar yükle — harici_kod'u koru, eşleşenler güncellenir.", language)}${noSku ? ` ${translateCopy("Not:", language)} ${noSku} ${translateCopy("ilanın harici kodu yok; kod ekleyip yüklersen upsert eşleşir.", language)}` : ""}`);
+    } finally {
+      setExporting(false);
+    }
   }
 
   async function publish() {
@@ -354,12 +416,29 @@ function BulkUploadInner() {
                 <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şablonu indir (.csv)", language)}</Text>
               </Pressable>
             ) : null}
+            {Platform.OS === "web" ? (
+              <Pressable disabled={exporting} onPress={() => void exportMyCatalog()} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, opacity: exporting ? 0.6 : 1, paddingHorizontal: 14, paddingVertical: 9 }}>
+                <MaterialCommunityIcons name={exporting ? "loading" : "database-export-outline"} size={15} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{exporting ? translateCopy("Hazırlanıyor…", language) : translateCopy("Mevcut ilanlarımı dışa aktar", language)}</Text>
+              </Pressable>
+            ) : null}
           </View>
+          {Platform.OS === "web" ? (
+            <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy("İpucu: Mevcut ilanlarını dışa aktar, Excel'de fiyat/stok güncelle, tekrar yükle — harici_kod eşleşenler otomatik güncellenir (yeni ilan açılmaz).", language)}</Text>
+          ) : null}
         </View>
 
         {/* Adım 2: yapıştır + toplu ayarlar */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 12, padding: 16 }}>
-          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>2) {translateCopy("CSV yapıştır", language)}</Text>
+          <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>2) {translateCopy("CSV yükle veya yapıştır", language)}</Text>
+            {Platform.OS === "web" ? (
+              <Pressable onPress={pickCsvFile} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 9, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}>
+                <MaterialCommunityIcons name="file-upload-outline" size={15} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Dosyadan yükle (.csv)", language)}</Text>
+              </Pressable>
+            ) : null}
+          </View>
           <TextInput value={csv} onChangeText={setCsv} multiline placeholder={translateCopy("CSV içeriğini buraya yapıştır…", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", fontSize: 12.5, minHeight: 150, paddingHorizontal: 12, paddingVertical: 10, textAlignVertical: "top" }} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
             <View style={{ gap: 5, minWidth: 200 }}>

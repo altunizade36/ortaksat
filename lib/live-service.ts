@@ -937,6 +937,45 @@ export async function fetchMyListingSkus(ownerId: string): Promise<Array<{ id: s
     .map((r) => ({ id: r.id, externalId: r.external_id as string, title: r.title, status: r.status }));
 }
 
+export type ExportListingRow = {
+  externalId: string | null;
+  title: string;
+  description: string | null;
+  price: number;
+  category: string | null;
+  provinceId: number | null;
+  districtId: number | null;
+  commissionValue: number;
+  stockCount: number;
+  status: string;
+};
+
+/** Toplu yükleme DIŞA-AKTARIM — satıcının ilanlarını şablon sütunlarında CSV'ye dökmek için.
+ * "Excel'de düzenle → tekrar yükle" (SKU upsert) döngüsünü kapatır. Arşiv/satılmış hariç. */
+export async function fetchMyListingsForExport(ownerId: string): Promise<ExportListingRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("listings")
+    .select("external_id, title, description, price, category, province_id, district_id, commission_value, stock_count, status")
+    .eq("owner_id", ownerId)
+    .not("status", "in", "(archived,sold,rejected)")
+    .order("created_at", { ascending: false })
+    .limit(5000);
+  if (error) { console.warn("fetchMyListingsForExport failed", error); return []; }
+  return ((data ?? []) as Array<Record<string, unknown>>).map((r) => ({
+    externalId: (r.external_id as string) ?? null,
+    title: (r.title as string) ?? "",
+    description: (r.description as string) ?? null,
+    price: Number(r.price) || 0,
+    category: (r.category as string) ?? null,
+    provinceId: (r.province_id as number) ?? null,
+    districtId: (r.district_id as number) ?? null,
+    commissionValue: Number(r.commission_value) || 0,
+    stockCount: Number(r.stock_count) || 0,
+    status: (r.status as string) ?? ""
+  }));
+}
+
 /** Toplu yükleme upsert güncelleme — SKU eşleşen mevcut ilanın alanlarını günceller (RLS: sahip). */
 export async function updateListingFieldsLive(id: string, patch: { title?: string; description?: string; price?: number; commissionValue?: number; stockCount?: number; category?: string; location?: string; provinceId?: number | null; districtId?: number | null; status?: ListingStatus }): Promise<boolean> {
   if (!supabase) return true;
