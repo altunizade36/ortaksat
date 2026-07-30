@@ -27,7 +27,10 @@
 -- 11 fonksiyonun HEPSİ zaten iç rol-kontrollü (role in admin/super_admin/moderator,
 -- yoksa "not authorized" raise). Admin panel authenticated admin ile çalışır; anon
 -- hiçbir admin işlemini meşru çağırmaz → anon EXECUTE'u kaldırmak güvenli + saldırı
--- yüzeyini kapatır. Signatürler değişebildiği için oid::regprocedure ile döngü.
+-- yüzeyini kapatır. DİKKAT: fn'lerde EXECUTE varsayılan olarak PUBLIC'e grant'lı;
+-- yalnız 'from anon' revoke PUBLIC üzerinden anon erişimini bırakır → PUBLIC'ten
+-- revoke edip authenticated'a AÇIKÇA grant ver (admins authenticated → panel çalışır,
+-- anon tamamen düşer). Signatürler değişebildiği için oid::regprocedure ile döngü.
 do $$
 declare r record;
 begin
@@ -37,7 +40,8 @@ begin
     join pg_namespace n on n.oid = p.pronamespace
     where n.nspname = 'public' and p.proname like 'admin\_%' and p.prosecdef
   loop
-    execute format('revoke execute on function %s from anon', r.sig);
+    execute format('revoke execute on function %s from public, anon', r.sig);
+    execute format('grant execute on function %s to authenticated', r.sig);
   end loop;
 end $$;
 
