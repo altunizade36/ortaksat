@@ -653,7 +653,7 @@ function AdminScreenInner() {
 
         {section === "partnerships" ? (
           <Panel title="Ortak Satış Talepleri" sub={`${(adminPartnerships ?? []).filter((p) => p.status === "pending").length} bekliyor · ${fmtN(adminPartnerships ? adminPartnerships.length : (ovPartnershipsTotal ?? partnerships.length))} toplam (sunucu)`}>
-            {adminPartnerships === null ? <EmptyState title="Yükleniyor…" body="Platform geneli ortaklıklar çekiliyor." /> : adminPartnerships.length === 0 ? <EmptyState title="Ortak satış talebi yok" body="Bir kullanıcı bir ilana ortak satıcı olmak için başvurduğunda burada görünür." /> : null}
+            {adminPartnerships === null ? <EmptyState title="Yükleniyor…" body="Platform geneli ortaklıklar çekiliyor." /> : adminPartnerships.length === 0 ? <EmptyState icon="handshake-outline" title="Ortak satış talebi yok" body="Bir kullanıcı bir ilana ortak satıcı olmak için başvurduğunda burada görünür." /> : null}
             {adminPartnerships && adminPartnerships.length ? (
             <Table head={["İLAN", "İLAN SAHİBİ", "ORTAK ADAYI", "KOMİSYON", "DURUM", "TARİH", "İŞLEM"]} cols={[1.9, 1.3, 1.3, 1, 1, 0.9, 1.4]}>
               {adminPartnerships.map((p) => {
@@ -687,7 +687,7 @@ function AdminScreenInner() {
 
         {section === "complaints" ? (
           <Panel title="Şikayetler" sub={`${fmtN(overview?.reports_open ?? pendingReports)} açık · ${fmtN(overview?.reports_total ?? reports.length)} toplam${overview ? " (sunucu)" : ""}`}>
-            {reports.length === 0 ? <EmptyState title="Şikayet yok" body="Kullanıcılar ilan veya satıcı şikayet ettiğinde burada görünür ve buradan işlem yapabilirsin." /> : null}
+            {reports.length === 0 ? <EmptyState icon="flag-outline" title="Şikayet yok" body="Kullanıcılar ilan veya satıcı şikayet ettiğinde burada görünür ve buradan işlem yapabilirsin." /> : null}
             {reports.slice().sort((a, b) => (isOpenReport(a) ? -1 : 1) - (isOpenReport(b) ? -1 : 1) || b.createdAt.localeCompare(a.createdAt)).map((r) => {
               const target = r.listingId ? listings.find((l) => l.id === r.listingId) : undefined;
               const reportedUser = r.reportedUserId ? findUser(r.reportedUserId) : undefined;
@@ -771,7 +771,7 @@ function AdminScreenInner() {
           <View style={{ gap: 16 }}>
             <CategoryManager extra={extraCategories} onSave={saveCategory} onDelete={deleteCategory} onImport={importCategories} confirmAction={confirmAction} />
             <Panel title="Kategori Önerileri" sub={`${pendingCat} bekliyor`}>
-              {categorySuggestions.length === 0 ? <EmptyState title="Öneri yok" body="Henüz kategori önerisi gelmedi." /> : null}
+              {categorySuggestions.length === 0 ? <EmptyState icon="shape-outline" title="Öneri yok" body="Henüz kategori önerisi gelmedi." /> : null}
               {categorySuggestions.map((s) => (
                 <SuggestionRow key={s.id} title={s.suggestedPath} note={s.note} meta={`${s.userName ?? "Kullanıcı"} · ${s.createdAt}`} status={s.status} onApprove={() => adoptCategorySuggestion(s.id, s.suggestedPath)} onReject={() => setCategorySuggestionStatus(s.id, "rejected")} />
               ))}
@@ -811,7 +811,7 @@ function AdminScreenInner() {
 
         {section === "locations" ? (
           <Panel title="Konum Önerileri" sub={`${pendingLoc} bekliyor`}>
-            {locationSuggestions.length === 0 ? <EmptyState title="Öneri yok" body="Henüz konum/mahalle önerisi gelmedi." /> : null}
+            {locationSuggestions.length === 0 ? <EmptyState icon="map-marker-outline" title="Öneri yok" body="Henüz konum/mahalle önerisi gelmedi." /> : null}
             {locationSuggestions.map((s) => (
               <SuggestionRow key={s.id} title={`${s.suggestedName} (${s.type})`} note={[getProvince(s.provinceId)?.name, getDistrict(s.districtId)?.name].filter(Boolean).join(" / ") + (s.note ? ` — ${s.note}` : "")} meta={`${s.userName ?? "Kullanıcı"} · ${s.createdAt}`} status={s.status} onApprove={() => setLocationSuggestionStatus(s.id, "approved")} onReject={() => setLocationSuggestionStatus(s.id, "rejected")} />
             ))}
@@ -836,7 +836,7 @@ function AdminScreenInner() {
                   : "Yükleniyor…"}
               >
                 <FilterChips value={msgFilter} onChange={setMsgFilter} options={[{ key: "all", label: "Tümü", count: rows.length }, { key: "risky", label: "⚠ Riskli", count: riskyCount }]} />
-                {shown.length === 0 ? <EmptyState title="Mesaj yok" body={msgFilter === "risky" ? "Son mesajlarda riskli ifade bulunmuyor." : "Platformda henüz mesaj yok."} /> : null}
+                {shown.length === 0 ? <EmptyState icon="message-text-outline" title="Mesaj yok" body={msgFilter === "risky" ? "Son mesajlarda riskli ifade bulunmuyor." : "Platformda henüz mesaj yok."} /> : null}
                 <Table head={["GÖNDEREN → ALICI", "İLAN", "MESAJ", "DURUM"]} cols={[1.4, 1.5, 1.8, 1]}>
                   {shown.map(({ m, risk }) => (
                     <Row key={m.id} cols={[1.4, 1.5, 1.8, 1]} cells={[
@@ -885,7 +885,7 @@ function AdminScreenInner() {
                 <Text style={{ color: colors.accent, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{sales.filter((s) => s.status === "disputed").length} anlaşmazlık kaydı arabuluculuk bekliyor (en üstte).</Text>
               </View>
             ) : null}
-            {shownSales.length === 0 ? <EmptyState title="Kayıt yok" body="Bu filtreye uygun komisyon kaydı bulunmuyor." /> : null}
+            {shownSales.length === 0 ? <EmptyState icon="cash-multiple" title="Kayıt yok" body="Bu filtreye uygun komisyon kaydı bulunmuyor." /> : null}
             <Table head={["İLAN", "KOMİSYON", "ORTAKLIK", "ALICI ONAYI", "DURUM", "ARABULUCULUK"]} cols={[2, 1, 1.2, 1, 1, 1.4]}>
               {[...shownSales].sort((a, b) => (a.status === "disputed" ? -1 : 0) - (b.status === "disputed" ? -1 : 0)).map((s) => {
                 const listing = listings.find((l) => l.id === s.listingId);
@@ -929,7 +929,7 @@ function AdminScreenInner() {
             </Panel>
 
             <Panel title="Teklifler" sub={siteRecords ? `${fmtN(siteRecords.offers_count)} toplam` : ""}>
-              {(siteRecords?.offers ?? []).length === 0 ? <EmptyState title="Teklif yok" body="Alıcı teklif verdikçe burada görünür." /> : (
+              {(siteRecords?.offers ?? []).length === 0 ? <EmptyState icon="tag-outline" title="Teklif yok" body="Alıcı teklif verdikçe burada görünür." /> : (
                 <Table head={["İLAN", "TUTAR", "DURUM", "TARİH"]} cols={[2, 1.4, 1, 1]}>
                   {(siteRecords?.offers ?? []).map((o) => (
                     <Row key={o.id} cols={[2, 1.4, 1, 1]} cells={[
@@ -944,7 +944,7 @@ function AdminScreenInner() {
             </Panel>
 
             <Panel title="Yorumlar" sub={siteRecords ? `${fmtN(siteRecords.reviews_count)} aktif` : ""}>
-              {(siteRecords?.reviews ?? []).length === 0 ? <EmptyState title="Yorum yok" body="Satış sonrası yorumlar burada görünür." /> : (
+              {(siteRecords?.reviews ?? []).length === 0 ? <EmptyState icon="star-outline" title="Yorum yok" body="Satış sonrası yorumlar burada görünür." /> : (
                 <Table head={["İLAN", "PUAN", "YORUM", "DURUM"]} cols={[1.2, 0.9, 2.4, 1]}>
                   {(siteRecords?.reviews ?? []).map((r) => (
                     <Row key={r.id} cols={[1.2, 0.9, 2.4, 1]} cells={[
@@ -961,7 +961,7 @@ function AdminScreenInner() {
             </Panel>
 
             <Panel title="İlan Soru-Cevap" sub={siteRecords ? `${fmtN(siteRecords.questions_count)} soru` : ""}>
-              {(siteRecords?.questions ?? []).length === 0 ? <EmptyState title="Soru yok" body="Alıcı ilanlara soru sordukça burada görünür." /> : (
+              {(siteRecords?.questions ?? []).length === 0 ? <EmptyState icon="comment-question-outline" title="Soru yok" body="Alıcı ilanlara soru sordukça burada görünür." /> : (
                 <Table head={["SORAN", "SORU", "CEVAP", "AKSİYON"]} cols={[1, 2, 1.6, 0.9]}>
                   {(siteRecords?.questions ?? []).map((q) => (
                     <Row key={q.id} cols={[1, 2, 1.6, 0.9]} cells={[
@@ -978,7 +978,7 @@ function AdminScreenInner() {
             </Panel>
 
             <Panel title="Talepler (Lead)" sub={siteRecords ? `${fmtN(siteRecords.leads_count)} toplam` : ""}>
-              {(siteRecords?.leads ?? []).length === 0 ? <EmptyState title="Talep yok" body="Alıcı talepleri (ürün ilgisi) burada görünür." /> : (
+              {(siteRecords?.leads ?? []).length === 0 ? <EmptyState icon="account-search-outline" title="Talep yok" body="Alıcı talepleri (ürün ilgisi) burada görünür." /> : (
                 <Table head={["İLAN", "ALICI", "KAYNAK", "DURUM"]} cols={[1.2, 1.2, 1, 1]}>
                   {(siteRecords?.leads ?? []).map((l) => (
                     <Row key={l.id} cols={[1.2, 1.2, 1, 1]} cells={[
@@ -993,7 +993,7 @@ function AdminScreenInner() {
             </Panel>
 
             <Panel title="Ortak Aranıyor Talepleri" sub={siteRecords ? `${fmtN(siteRecords.partner_requests_count)} toplam` : ""}>
-              {(siteRecords?.partner_requests ?? []).length === 0 ? <EmptyState title="Talep yok" body="Satıcı 'ürünüme ortak arıyorum' talepleri burada görünür." /> : (
+              {(siteRecords?.partner_requests ?? []).length === 0 ? <EmptyState icon="bullhorn-variant-outline" title="Talep yok" body="Satıcı 'ürünüme ortak arıyorum' talepleri burada görünür." /> : (
                 <Table head={["BAŞLIK", "KATEGORİ", "KOMİSYON", "AKSİYON"]} cols={[2, 1.2, 1, 1]}>
                   {(siteRecords?.partner_requests ?? []).map((p) => (
                     <Row key={p.id} cols={[2, 1.2, 1, 1]} cells={[
@@ -1103,7 +1103,7 @@ function AdminScreenInner() {
                 <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{n.createdAt}</Text>
               </View>
             ))}
-            {notifications.length === 0 ? <EmptyState title="Bildirim yok" body="Sistem bildirimi bulunmuyor." /> : null}
+            {notifications.length === 0 ? <EmptyState icon="bell-outline" title="Bildirim yok" body="Sistem bildirimi bulunmuyor." /> : null}
           </Panel>
           </View>
         ) : null}
@@ -1184,7 +1184,7 @@ function AdminScreenInner() {
             {/* AKTİVİTE ÖZETİ — ham logdan türetilen aksiyon-tipi dağılımı (ham döküm değil, RAPOR). */}
             <Panel title="Aktivite özeti" sub={audit ? `Son ${audit.logs.length} olay · son 1 saatte ${audit.rateHits} hız-limiti olayı` : "yükleniyor / erişim yok"}>
               {!audit || audit.logs.length === 0 ? (
-                <EmptyState title="Aktivite yok" body="Kullanıcılar giriş yapıp işlem yaptıkça aksiyon dağılımı burada canlanır." />
+                <EmptyState icon="chart-timeline-variant" title="Aktivite yok" body="Kullanıcılar giriş yapıp işlem yaptıkça aksiyon dağılımı burada canlanır." />
               ) : (() => {
                 const counts: Record<string, number> = {};
                 for (const a of audit.logs) counts[a.action] = (counts[a.action] ?? 0) + 1;
@@ -1786,7 +1786,7 @@ function BlogManager({ posts, onSave, onDelete, confirmAction }: { posts: DbBlog
   return (
     <Panel title="Blog Yönetimi" sub={`${posts.length} yazı`}>
       <Pressable onPress={() => setEdit(blank())} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, marginBottom: 12, paddingHorizontal: 16, paddingVertical: 10 }}><MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Yeni Yazı</Text></Pressable>
-      {posts.length === 0 ? <EmptyState title="Blog yazısı yok" body="İlk yazıyı oluştur; ortaksat.com/blog'da yayınlanır." /> : null}
+      {posts.length === 0 ? <EmptyState icon="post-outline" title="Blog yazısı yok" body="İlk yazıyı oluştur; ortaksat.com/blog'da yayınlanır." /> : null}
       <Table head={["BAŞLIK", "KATEGORİ", "DURUM", "İŞLEM"]} cols={[2.4, 1.2, 1, 1.4]}>
         {posts.map((p) => (
           <Row key={p.id} cols={[2.4, 1.2, 1, 1.4]} cells={[

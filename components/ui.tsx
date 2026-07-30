@@ -171,7 +171,7 @@ export function Metric({ label, value }: { label: string; value: string }) {
   );
 }
 
-export function EmptyState({ title, body, action, mascot }: { title: string; body: string; action?: { label: string; href?: Href; onPress?: () => void; icon?: keyof typeof MaterialCommunityIcons.glyphMap }; mascot?: MascotName }) {
+export function EmptyState({ title, body, action, mascot, icon }: { title: string; body: string; action?: { label: string; href?: Href; onPress?: () => void; icon?: keyof typeof MaterialCommunityIcons.glyphMap }; mascot?: MascotName; icon?: keyof typeof MaterialCommunityIcons.glyphMap }) {
   const { language } = useLanguage();
   // STATİK style: action.href → <Link asChild> ile sarılıyor; fonksiyon-style web'de anchor'a
   // uygulanmaz (bg/flexDirection düşer → görünmez CTA). Statik obje asChild'da korunur.
@@ -188,12 +188,16 @@ export function EmptyState({ title, body, action, mascot }: { title: string; bod
   ) : null;
   return (
     <Card>
-      <View style={{ alignItems: "center", gap: 10 }}>
-        {mascot ? <Mascot name={mascot} size={132} /> : null}
-        <Text selectable style={{ color: colors.ink, fontSize: 17, fontWeight: "900", textAlign: mascot ? "center" : "left" }}>
+      <View style={{ alignItems: "center", gap: 10, paddingVertical: mascot || icon ? 6 : 0 }}>
+        {mascot ? <Mascot name={mascot} size={132} /> : icon ? (
+          <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 54, justifyContent: "center", width: 54 }}>
+            <MaterialCommunityIcons name={icon} size={27} color={colors.primaryDark} />
+          </View>
+        ) : null}
+        <Text selectable style={{ color: colors.ink, fontSize: 17, fontWeight: "900", textAlign: mascot || icon ? "center" : "left" }}>
           {translateCopy(title, language)}
         </Text>
-        <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20, textAlign: mascot ? "center" : "left" }}>
+        <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20, textAlign: mascot || icon ? "center" : "left" }}>
           {translateCopy(body, language)}
         </Text>
         {action?.href ? <Link href={action.href} asChild>{cta}</Link> : cta}
