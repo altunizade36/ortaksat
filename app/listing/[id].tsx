@@ -42,21 +42,8 @@ import { metaTrack } from "@/lib/meta-pixel";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { getRecent, pushRecent, subscribeRecent } from "@/lib/recent";
 import { calculateUserTrustScores } from "@/lib/trust-score";
-import type { LeadSource, Listing, PurchaseIntent, User } from "@/lib/types";
+import type { LeadSource, Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
-
-const sourceLabels: Record<LeadSource, string> = {
-  whatsapp: "WhatsApp",
-  instagram: "Instagram",
-  web: "Web",
-  phone: "Telefon"
-};
-
-const intentLabels: Record<PurchaseIntent, string> = {
-  hot: "Sıcak",
-  warm: "Ilık",
-  cold: "Soğuk"
-};
 
 export default function ListingDetailScreen() {
   const params = useLocalSearchParams<{ id: string; ref?: string; p?: string; "ortak-davet"?: string; apply?: string }>();
@@ -117,11 +104,6 @@ export default function ListingDetailScreen() {
     return () => { alive = false; };
   }, [id, retryTick]);
   const [revealingPhone, setRevealingPhone] = useState(false);
-  const [buyerName, setBuyerName] = useState("");
-  const [buyerPhone, setBuyerPhone] = useState("");
-  const [leadNote, setLeadNote] = useState("");
-  const [leadSource, setLeadSource] = useState<LeadSource>("whatsapp");
-  const [purchaseIntent, setPurchaseIntent] = useState<PurchaseIntent>("warm");
   const [message, setMessage] = useState("");
   const [reviewComment, setReviewComment] = useState("");
   const [reviewRating, setReviewRating] = useState(5);
@@ -481,31 +463,6 @@ export default function ListingDetailScreen() {
     if (!p) { Alert.alert(translateCopy("Numara görünmüyor", language), translateCopy("Numarayı görmek için giriş yap; ya da satıcıya mesaj gönder.", language)); return; }
     attributeReferralLead("phone");
     setRevealedPhone(p);
-  }
-
-  function handleCreateLead() {
-    if (!partnership || partnership.status !== "active") return;
-    if (!buyerName.trim() || !buyerPhone.trim()) {
-      Alert.alert(translateCopy("Eksik bilgi", language), translateCopy("Alıcı adı ve telefonu gerekli.", language));
-      return;
-    }
-    const created = createLead({
-      listingId: currentListing.id,
-      partnershipId: partnership.id,
-      buyerName: buyerName.trim(),
-      buyerPhone: buyerPhone.trim(),
-      source: leadSource,
-      intent: purchaseIntent,
-      note: leadNote.trim() || "Ortak paylaşımından gelen talep."
-    });
-    if (!created) {
-      Alert.alert(translateCopy("Talep açılamadı", language), translateCopy(authError ?? "İlan pasif olabilir veya ortaklık bağlantısı aktif değildir.", language));
-      return;
-    }
-    setBuyerName("");
-    setBuyerPhone("");
-    setLeadNote("");
-    Alert.alert(translateCopy("Talep kaydedildi", language), translateCopy("Satıcı paneline ve ortak paneline işlendi.", language));
   }
 
   function handleSaleReview() {
@@ -1215,18 +1172,6 @@ export default function ListingDetailScreen() {
             Kazanç bilgisi zaten "Ortak Ol (%X Kazan)" butonunda + Ürün Detayları tablosunda var. */}
         <AgreementCard listing={currentListing} partnership={partnership} />
 
-        {partnership?.status === "active" ? (
-          <Card>
-            <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Alıcı talebi", language)}</Text>
-            <Field label="Alıcı adı" value={buyerName} onChangeText={setBuyerName} />
-            <Field label="Telefon" value={buyerPhone} onChangeText={setBuyerPhone} />
-            <ChoiceRow<LeadSource> value={leadSource} setValue={setLeadSource} options={["whatsapp", "instagram", "web", "phone"]} labels={sourceLabels} />
-            <ChoiceRow<PurchaseIntent> value={purchaseIntent} setValue={setPurchaseIntent} options={["hot", "warm", "cold"]} labels={intentLabels} />
-            <Field label="Not" value={leadNote} onChangeText={setLeadNote} multiline />
-            <PrimaryButton icon="account-plus-outline" onPress={handleCreateLead}>{translateCopy("Talebi kaydet", language)}</PrimaryButton>
-          </Card>
-        ) : null}
-
         <View style={{ gap: 10 }}>
           <Accordion title={translateCopy("Ürün açıklaması", language)} icon="text-box-outline" defaultOpen>
             <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{currentListing.description}</Text>
@@ -1623,19 +1568,6 @@ function SpecRow({ label, value }: { label: string; value: string }) {
     <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 12, paddingVertical: 4 }}>
       <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700", width: 130 }}>{translateCopy(label, language)}</Text>
       <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600", lineHeight: 20 }}>{translateCopy(value, language)}</Text>
-    </View>
-  );
-}
-
-function ChoiceRow<T extends string>({ labels, options, setValue, value }: { labels: Record<T, string>; options: T[]; setValue: (value: T) => void; value: T }) {
-  const { language } = useLanguage();
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-      {options.map((item) => (
-        <Pressable key={item} onPress={() => setValue(item)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: item === value ? colors.primarySoft : colors.surfaceAlt, borderColor: item === value ? colors.primary : colors.line, borderRadius: 8, borderWidth: 1, flexGrow: 1, flexBasis: options.length > 3 ? "23%" : "30%", minHeight: 38, justifyContent: "center", opacity: pressed ? 0.74 : 1, paddingHorizontal: 8 })}>
-          <Text adjustsFontSizeToFit ellipsizeMode="tail" minimumFontScale={0.82} numberOfLines={1} selectable style={{ color: item === value ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: "900" }}>{translateCopy(labels[item], language)}</Text>
-        </Pressable>
-      ))}
     </View>
   );
 }
