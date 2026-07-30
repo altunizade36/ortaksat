@@ -15,7 +15,7 @@ import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { compactNumber } from "@/lib/locale";
-import { calculateUserTrustScores, type RoleTrustScore } from "@/lib/trust-score";
+import { calculateUserTrustScores } from "@/lib/trust-score";
 import { useStore } from "@/lib/use-store";
 import { WebContainer } from "@/components/web-container";
 
@@ -283,11 +283,6 @@ function ProfileScreenInner() {
           </Text>
         ) : null}
 
-        <View style={{ flexDirection: "row", gap: 8 }}>
-          <Metric label={t("generalTrust")} value={`%${trust.overall}`} />
-          <Metric label={t("responseRate")} value={`%${currentUser.responseRate}`} />
-        </View>
-
         <ProfileStrength user={currentUser} hasListing={myListings.length > 0} hasPartnership={myPartnerships.length > 0} />
 
         <View style={{ flexDirection: "row", gap: 8 }}>
@@ -313,23 +308,27 @@ function ProfileScreenInner() {
       </Card>
 
 
-      <TrustRoleCard icon="storefront-outline" title={t("sellerTrust")} score={trust.seller} />
-      <TrustRoleCard icon="handshake-outline" title={t("partnerTrust")} score={trust.partner} />
+      {/* Güven puanların — masaüstüyle aynı KOMPAKT kart (eskiden 2 ayrı büyük
+          "Satıcı/Ortak güveni" kartıydı + Genel güven metriği → güven 4 yerde tekrar
+          ediyordu). Tek kartta 3 bar; genel güven zaten hero'da. */}
+      <Card>
+        <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Güven puanların", language)}</Text>
+        <DeskTrustBar label={translateCopy("Satıcı güveni", language)} value={trust.seller.score} />
+        <DeskTrustBar label={translateCopy("Ortak güveni", language)} value={trust.partner.score} />
+        <DeskTrustBar label={translateCopy("Yanıt oranı", language)} value={currentUser.responseRate} />
+      </Card>
 
       {/* Ortak başarı rozeti/seviyesi — motivasyon (onaylı satışlardan). */}
       <PartnerTier sales={partnerSales} />
 
+      {/* Finansal/satış özeti (4 metrik). Puan hero'da, Favori Hesap özetinde → tekrar kaldırıldı. */}
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Metric label={t("rating")} value={`${currentUser.rating}`} />
         <Metric label={t("successfulSales")} value={compactNumber(currentUser.successfulSales)} />
-      </View>
-      <View style={{ flexDirection: "row", gap: 8 }}>
         <Metric label={t("totalEarnings")} value={money(totalCommission)} />
-        <Metric label={t("pending")} value={money(pendingCommission)} />
       </View>
       <View style={{ flexDirection: "row", gap: 8 }}>
+        <Metric label={t("pending")} value={money(pendingCommission)} />
         <Metric label={t("paid")} value={money(paidCommission)} />
-        <Metric label={t("favorite")} value={`${myFavorites.length}`} />
       </View>
 
       <Card>
@@ -377,32 +376,6 @@ function ProfileScreenInner() {
   );
 }
 
-
-function TrustRoleCard({ icon, score, title }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; score: RoleTrustScore; title: string }) {
-  const { language } = useLanguage();
-  return (
-    <Card>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-        <MaterialCommunityIcons name={icon} size={22} color={score.score >= 70 ? colors.success : score.score >= 50 ? colors.warning : colors.accent} />
-        <View style={{ flex: 1 }}>
-          <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy(title, language)}</Text>
-          <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy(score.label, language)}</Text>
-        </View>
-        <Text selectable style={{ color: colors.primaryDark, fontSize: 18, fontVariant: ["tabular-nums"], fontWeight: "900" }}>%{score.score}</Text>
-      </View>
-      <ProgressBar value={score.score} />
-      {score.breakdown.filter((item) => item.value !== 0).slice(0, 5).map((item) => (
-        <View key={`${title}-${item.label}`} style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-          <MaterialCommunityIcons name={item.tone === "negative" ? "minus-circle" : "check-circle"} size={15} color={item.tone === "negative" ? colors.accent : colors.success} />
-          <Text selectable numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "800" }}>{translateCopy(item.label, language)}</Text>
-          <Text selectable style={{ color: item.tone === "negative" ? colors.accent : colors.success, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "900" }}>
-            {item.value > 0 ? `+${item.value}` : item.value}
-          </Text>
-        </View>
-      ))}
-    </Card>
-  );
-}
 
 function DeskTrustBar({ label, value }: { label: string; value: number }) {
   return (
