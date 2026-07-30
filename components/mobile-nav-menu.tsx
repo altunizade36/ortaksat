@@ -20,11 +20,14 @@ export function MobileNavMenu() {
   const { language } = useLanguage();
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const { isAuthenticated, currentUser, messages, notifications, signOut } = useStore();
+  const { isAuthenticated, currentUser, messages, notifications, offers, signOut } = useStore();
   const [open, setOpen] = useState(false);
 
   const unreadMsg = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
   const unreadNotif = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
+  // Bekleyen teklif (satıcı karşı-teklif verdi, sıra bende) — masaüstü menüyle aynı rozet.
+  const pendingOffers = offers.filter((o) => o.buyerId === currentUser.id && o.status === "countered").length;
+  const badgeTotal = unreadMsg + unreadNotif + pendingOffers;
 
   const primary: NavItem[] = [
     { label: "Ana Sayfa", href: "/", icon: "home-outline" },
@@ -36,7 +39,7 @@ export function MobileNavMenu() {
   const account: NavItem[] = [
     { label: "Favorilerim", href: "/favorites", icon: "heart-outline" },
     { label: "Takip Ettiklerin", href: "/following", icon: "storefront-check-outline" },
-    { label: "Tekliflerim", href: "/offers", icon: "tag-outline" },
+    { label: "Tekliflerim", href: "/offers", icon: "tag-outline", badge: pendingOffers },
     { label: "Mesajlar", href: "/(tabs)/messages", icon: "message-text-outline", badge: unreadMsg },
     { label: "Bildirimler", href: "/(tabs)/notifications-tab", icon: "bell-outline", badge: unreadNotif },
     { label: "Satıcı Panelim", href: "/(tabs)/seller", icon: "storefront-outline" },
@@ -54,7 +57,7 @@ export function MobileNavMenu() {
       {/* 44×44 şeffaf dokunma hedefi; görsel daire 38px iç View'de (hitSlop web'de yetersiz). */}
       <Pressable
         accessibilityRole="button"
-        accessibilityLabel={`${translateCopy("Menü", language)}${unreadMsg + unreadNotif > 0 ? ` — ${unreadMsg + unreadNotif} ${translateCopy("okunmamış", language)}` : ""}`}
+        accessibilityLabel={`${translateCopy("Menü", language)}${badgeTotal > 0 ? ` — ${badgeTotal} ${translateCopy("okunmamış", language)}` : ""}`}
         hitSlop={6}
         onPress={() => setOpen(true)}
         style={({ pressed }) => ({ alignItems: "center", justifyContent: "center", minHeight: 44, minWidth: 44, opacity: pressed ? 0.7 : 1 })}
@@ -63,9 +66,9 @@ export function MobileNavMenu() {
           <MaterialCommunityIcons name="menu" size={22} color={colors.primaryDark} />
           {/* Okunmamış mesaj/bildirim rozeti: mobilde tek bakışta görünsün (masaüstü
               header ikonlarındaki rozetin karşılığı; hamburger'da saklı kalmasın). */}
-          {unreadMsg + unreadNotif > 0 ? (
+          {badgeTotal > 0 ? (
             <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1.5, height: 16, justifyContent: "center", minWidth: 16, paddingHorizontal: 3, position: "absolute", right: -5, top: -5 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{unreadMsg + unreadNotif > 9 ? "9+" : unreadMsg + unreadNotif}</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{badgeTotal > 9 ? "9+" : badgeTotal}</Text>
             </View>
           ) : null}
         </View>

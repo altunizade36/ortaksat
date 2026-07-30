@@ -284,11 +284,13 @@ function AccountMenu() {
   const router = useRouter();
   const { language } = useLanguage();
   const { height: winHeight } = useWindowDimensions();
-  const { isAuthenticated, currentUser, messages, notifications, signOut } = useStore();
+  const { isAuthenticated, currentUser, messages, notifications, offers, signOut } = useStore();
   const avatarIsImage = isAuthenticated && (currentUser.avatar?.startsWith("http") || currentUser.avatar?.startsWith("file"));
   const unreadMessages = messages.filter((m) => m.receiverId === currentUser.id && !m.read).length;
   const unreadNotifications = notifications.filter((n) => n.userId === currentUser.id && !n.read).length;
-  const hasUnread = unreadMessages + unreadNotifications > 0;
+  // Tekliflerim rozeti: satıcı karşı-teklif verdi, SIRA BENDE (alıcı) → aksiyon gerekli.
+  const pendingOffers = offers.filter((o) => o.buyerId === currentUser.id && o.status === "countered").length;
+  const hasUnread = unreadMessages + unreadNotifications + pendingOffers > 0;
 
   async function handleSignOut() {
     setOpen(false);
@@ -296,26 +298,42 @@ function AccountMenu() {
     router.replace("/");
   }
 
-  // Gruplanmış menü: hesap · yönetim · oturum. Her grup arasında ince ayraç.
-  const groups: AccountItem[][] = [
-    [
-      { icon: "account-circle-outline", label: "Profilim", href: "/profile" },
-      { icon: "view-list-outline", label: "İlanlarım", href: "/seller" },
-      { icon: "handshake-outline", label: "Ortak Satışlarım", href: "/partner" },
-      { icon: "cash-multiple", label: "Kazançlarım", href: "/earnings" },
-      { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
-      { icon: "storefront-check-outline", label: "Takip Ettiklerin", href: "/following" as Href },
-      { icon: "message-text-outline", label: "Mesajlarım", href: "/messages", badge: unreadMessages }
-    ],
-    [
-      { icon: "shield-check-outline", label: "Güven Merkezi", href: "/trust" },
-      { icon: "cog-outline", label: "Ayarlar", href: "/profile-edit" },
-      // "Yönetim Paneli" yalnızca staff'a; önceden HERKESE görünüyordu.
-      ...(currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin"
-        ? [{ icon: "shield-crown-outline", label: "Yönetim Paneli", href: "/admin" } as AccountItem]
-        : []),
-      { icon: "file-document-outline", label: "Yasal & Destek", href: "/legal" }
-    ]
+  // Gruplanmış + BAŞLIKLI menü: Hesabım · Satış & Kazanç · Ayarlar & Destek.
+  // Mobil menüyle (mobile-nav-menu) tutarlı: Tekliflerim + Bildirimlerim burada da var
+  // (eskiden masaüstünde YOKTU → platformlar uyuşmuyordu).
+  const groups: { title: string; items: AccountItem[] }[] = [
+    {
+      title: "Hesabım",
+      items: [
+        { icon: "account-circle-outline", label: "Profilim", href: "/profile" },
+        { icon: "tag-outline", label: "Tekliflerim", href: "/offers" as Href, badge: pendingOffers },
+        { icon: "heart-outline", label: "Favorilerim", href: "/favorites" },
+        { icon: "storefront-check-outline", label: "Takip Ettiklerin", href: "/following" as Href },
+        { icon: "message-text-outline", label: "Mesajlarım", href: "/messages", badge: unreadMessages },
+        { icon: "bell-outline", label: "Bildirimlerim", href: "/notifications-tab" as Href, badge: unreadNotifications }
+      ]
+    },
+    {
+      title: "Satış & Kazanç",
+      items: [
+        { icon: "view-list-outline", label: "İlanlarım", href: "/seller" },
+        { icon: "handshake-outline", label: "Ortak Satışlarım", href: "/partner" },
+        { icon: "cash-multiple", label: "Kazançlarım", href: "/earnings" }
+      ]
+    },
+    {
+      title: "Ayarlar & Destek",
+      items: [
+        { icon: "cog-outline", label: "Ayarlar", href: "/profile-edit" },
+        { icon: "shield-check-outline", label: "Güven Merkezi", href: "/trust" },
+        { icon: "account-cancel-outline", label: "Engellenenler", href: "/engellenenler" as Href },
+        // "Yönetim Paneli" yalnızca staff'a; önceden HERKESE görünüyordu.
+        ...(currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin"
+          ? [{ icon: "shield-crown-outline", label: "Yönetim Paneli", href: "/admin" } as AccountItem]
+          : []),
+        { icon: "file-document-outline", label: "Yasal & Destek", href: "/legal" }
+      ]
+    }
   ];
 
   return (
@@ -354,7 +372,10 @@ function AccountMenu() {
             <ScrollView style={{ flexShrink: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: 2 }} keyboardShouldPersistTaps="handled">
             {groups.map((group, gi) => (
               <View key={gi} style={{ borderTopColor: colors.line, borderTopWidth: gi === 0 ? 0 : 1, paddingVertical: 5 }}>
-                {group.map((item) => (
+                <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "900", letterSpacing: 0.6, paddingBottom: 2, paddingHorizontal: 14, paddingTop: 4, textTransform: "uppercase" }}>
+                  {translateCopy(group.title, language)}
+                </Text>
+                {group.items.map((item) => (
                   <Link key={item.label} href={item.href} asChild>
                     <Pressable
                       onPress={() => setOpen(false)}
