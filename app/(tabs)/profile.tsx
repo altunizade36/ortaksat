@@ -159,17 +159,25 @@ function ProfileScreenInner() {
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 18 }}>
               <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900", marginBottom: 4 }}>{translateCopy("Hesap özeti", language)}</Text>
-              <MenuRow icon="storefront-outline" label="İlanlarım" detail={`${activeListings.length} aktif · ${pausedListings.length} duraklatılmış`} value={`${myListings.length}`} href="/(tabs)/seller" />
-              <MenuRow icon="handshake-outline" label="Ortaklıklarım" detail={`${activePartnerships.length} aktif · ${pendingPartnerships.length} bekliyor`} value={`${myPartnerships.length}`} href="/(tabs)/partner" />
-              <MenuRow icon="account-star-outline" label="Uzman Ortaklar" detail="Deneyimli ortak bul · favori ortakların" value="→" href={"/ortaklar" as Href} />
-              <MenuRow icon="bullhorn-variant-outline" label="Ortak Aranıyor" detail="İlansız ortak talebi aç veya açık taleplere başvur" value="→" href={"/ortak-araniyor" as Href} />
-              <MenuRow icon="star-outline" label="Değerlendirmeler" detail={`${reviewsAboutMe.length} hakkımda · ${reviewsByMe.length} yazdığım`} value={`${reviewsAboutMe.length + reviewsByMe.length}`} />
-              <MenuRow icon="handshake-outline" label="Tekliflerim" detail={liveOffers.length ? `${liveOffers.length} süren teklif` : "Verdiğin teklifler"} value={`${myOffers.length}`} href="/offers" />
-              <MenuRow icon="heart-outline" label="Favoriler" detail="Kaydedilen ilanlar" value={`${myFavorites.length}`} href="/favorites" />
-              <MenuRow icon="storefront-check-outline" label="Takip Ettiklerin" detail="Takip ettiğin satıcıların yeni ilanları" value={`${followedSellerIds.length}`} href="/following" />
-              <MenuRow icon="account-heart-outline" label="Davet Ettiklerim" detail="Arkadaşını davet et, ağını büyüt" value="→" href={"/davet" as Href} />
-              <MenuRow icon="chat-outline" label="Görüşmeler" detail="Alıcı, satıcı ve ortak mesajları" value={`${myConversations.length}`} href="/(tabs)/messages" />
-              <MenuRow icon="account-cancel-outline" label="Engellenenler" detail="Engellediğin kullanıcılar sana mesaj gönderemez" value={`${blockedUserIds.length}`} href="/engellenenler" />
+              {/* 2 sütun: sol = kendi içeriğim/aktivitem, sağ = keşif/ağ/diğer. Tek uzun
+                  liste yerine kompakt + sidebar yüksekliğiyle dengeli. */}
+              <View style={{ flexDirection: "row", gap: 22 }}>
+                <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
+                  <MenuRow icon="storefront-outline" label="İlanlarım" detail={`${activeListings.length} aktif · ${pausedListings.length} duraklatılmış`} value={`${myListings.length}`} href="/(tabs)/seller" />
+                  <MenuRow icon="handshake-outline" label="Ortaklıklarım" detail={`${activePartnerships.length} aktif · ${pendingPartnerships.length} bekliyor`} value={`${myPartnerships.length}`} href="/(tabs)/partner" />
+                  <MenuRow icon="tag-outline" label="Tekliflerim" detail={liveOffers.length ? `${liveOffers.length} süren teklif` : "Verdiğin teklifler"} value={`${myOffers.length}`} href="/offers" />
+                  <MenuRow icon="heart-outline" label="Favoriler" detail="Kaydedilen ilanlar" value={`${myFavorites.length}`} href="/favorites" />
+                  <MenuRow icon="storefront-check-outline" label="Takip Ettiklerin" detail="Takip ettiğin satıcıların yeni ilanları" value={`${followedSellerIds.length}`} href="/following" />
+                  <MenuRow icon="chat-outline" label="Görüşmeler" detail="Alıcı, satıcı ve ortak mesajları" value={`${myConversations.length}`} href="/(tabs)/messages" />
+                </View>
+                <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
+                  <MenuRow icon="star-outline" label="Değerlendirmeler" detail={`${reviewsAboutMe.length} hakkımda · ${reviewsByMe.length} yazdığım`} value={`${reviewsAboutMe.length + reviewsByMe.length}`} />
+                  <MenuRow icon="account-star-outline" label="Uzman Ortaklar" detail="Deneyimli ortak bul · favori ortakların" value="→" href={"/ortaklar" as Href} />
+                  <MenuRow icon="bullhorn-variant-outline" label="Ortak Aranıyor" detail="İlansız ortak talebi aç veya açık taleplere başvur" value="→" href={"/ortak-araniyor" as Href} />
+                  <MenuRow icon="account-heart-outline" label="Davet Ettiklerim" detail="Arkadaşını davet et, ağını büyüt" value="→" href={"/davet" as Href} />
+                  <MenuRow icon="account-cancel-outline" label="Engellenenler" detail="Engellediğin kullanıcılar sana mesaj gönderemez" value={`${blockedUserIds.length}`} href="/engellenenler" />
+                </View>
+              </View>
             </View>
 
           </View>
