@@ -26,6 +26,7 @@
     "submit:ios": "eas submit -p ios --profile production",
     "db:migrate": "node scripts/apply-supabase-migration.mjs",
     "db:apply-all": "node scripts/apply-all.mjs",
+    "db:advisors": "node scripts/supabase-advisors.mjs",
     "backfill:thumbnails": "node scripts/backfill-thumbnails.mjs"
   },
   "dependencies": {
