@@ -1366,6 +1366,39 @@ export async function fetchAdminSiteRecords(): Promise<AdminSiteRecords | null> 
   return (data ?? null) as AdminSiteRecords | null;
 }
 
+// "Ortak Satış Talepleri" — PLATFORM GENELİ ortaklıklar (admin-gated RPC). Eskiden bölüm
+// yalnız admin'in KENDİ ortaklıklarını (client, RLS-scoped) gösteriyordu → başlık "N toplam"
+// derken liste BOŞ kalıyordu. Bu RPC hepsini ilan/sahip/ortak birleşimiyle döndürür.
+export type AdminPartnershipRow = {
+  id: string;
+  listingId: string;
+  listingTitle: string | null;
+  ownerId: string | null;
+  ownerName: string | null;
+  partnerId: string | null;
+  partnerName: string | null;
+  status: string;
+  commissionType: string | null;
+  commissionValue: number | null;
+  currency: string | null;
+  createdAt: string;
+};
+export async function fetchAdminPartnerships(): Promise<AdminPartnershipRow[]> {
+  if (!supabase) return [];
+  const { data, error } = await supabase.rpc("admin_list_partnerships");
+  if (error) { console.warn("admin_list_partnerships failed", error); return []; }
+  return (Array.isArray(data) ? data : []) as AdminPartnershipRow[];
+}
+// Admin herhangi bir ortaklığın durumunu değiştirir (onayla=active, reddet=rejected,
+// sonlandır=cancelled, engelle=blocked). RLS "yalnız ilan-sahibi" olduğundan client
+// updatePartnershipStatus admin için çalışmaz → bu SD RPC (app.trusted_join bypass'lı).
+export async function adminSetPartnershipStatus(id: string, status: "active" | "rejected" | "cancelled" | "blocked", reason?: string): Promise<boolean> {
+  if (!supabase) return false;
+  const { error } = await supabase.rpc("admin_set_partnership_status", { p_id: id, p_status: status, p_reason: reason ?? null });
+  if (error) { console.warn("admin_set_partnership_status failed", error); return false; }
+  return true;
+}
+
 // "Site Kayıtları" MODERASYON aksiyonları (admin-gated RPC) — izleme → gerçek kontrol.
 export async function adminModerateReview(id: string, deleted: boolean): Promise<boolean> {
   if (!supabase) return false;

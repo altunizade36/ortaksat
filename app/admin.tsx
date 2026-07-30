@@ -17,7 +17,7 @@ import { downloadCsv } from "@/lib/csv-export";
 import { getDistrict, getProvince } from "@/lib/locations";
 import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
-import { adminBroadcastLive, adminClosePartnerRequest, adminDeleteQuestion, adminModerateReview, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminSiteRecords } from "@/lib/live-service";
+import { adminBroadcastLive, adminClosePartnerRequest, adminDeleteQuestion, adminModerateReview, adminSetPartnershipStatus, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminPartnerships, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminPartnershipRow, type AdminSiteRecords } from "@/lib/live-service";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
@@ -121,7 +121,7 @@ function AdminScreenInner() {
     listings, users, sales, partnerships, leads, conversations, messages, notifications,
     categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
     updateListingStatus, setListingFeatured, deleteListing, findUser, signOut, currentUser, reports, updateReportStatus,
-    approvePartnership, rejectPartnership, updateSaleStatus,
+    updateSaleStatus,
     platformSettings, updatePlatformSetting, setAnnouncement, setUserRole, setUserStatus,
     setUserVerification, adminNotifyUser, adminBroadcast,
     blogPosts, contentPages, seoSettings, saveBlogPost, deleteBlogPost, saveContentPage, saveSeoSetting,
@@ -213,6 +213,9 @@ function AdminScreenInner() {
   // istemci bellek penceresinden (≤1000/≤500 — ölçekte YANLIŞ) değil, gerçek tablolardan.
   const [overview, setOverview] = useState<AdminOverview | null>(null);
   const [siteRecords, setSiteRecords] = useState<AdminSiteRecords | null>(null);
+  // Platform geneli ortaklıklar (admin-gated RPC) — bölüm eskiden admin'in KENDİ (client,
+  // RLS-scoped) ortaklıklarını gösteriyordu → "N toplam" derken liste boştu. null=yükleniyor.
+  const [adminPartnerships, setAdminPartnerships] = useState<AdminPartnershipRow[] | null>(null);
   // Platform geneli mesaj moderasyonu (eski bölüm ADMİNİN KENDİ kutusunu gösteriyordu).
   const [modMessages, setModMessages] = useState<AdminMessageRow[]>([]);
   const [msgStats, setMsgStats] = useState<{ conversations: number; messages: number; messages_24h: number; blocked_pairs: number } | null>(null);
@@ -234,6 +237,12 @@ function AdminScreenInner() {
     if (section !== "records") return;
     void fetchAdminSiteRecords().then(setSiteRecords).catch(() => setSiteRecords(null));
   }, [section]);
+  // "Ortak Satış Talepleri" bölümü açılınca platform geneli ortaklıkları çek (admin-gated RPC).
+  useEffect(() => {
+    if (section !== "partnerships") return;
+    void fetchAdminPartnerships().then(setAdminPartnerships).catch(() => setAdminPartnerships([]));
+  }, [section]);
+  const reloadAdminPartnerships = () => { void fetchAdminPartnerships().then(setAdminPartnerships).catch(() => {}); };
   // Moderasyon aksiyonları — izleme değil KONTROL: aksiyon sonrası kayıtları tazele.
   const reloadRecords = () => { void fetchAdminSiteRecords().then(setSiteRecords).catch(() => {}); };
   const modReview = (id: string, del: boolean) => confirmAction(del ? "Bu yorumu gizle (herkese kapat)?" : "Yorumu geri al (yayına aç)?", async () => { if (await adminModerateReview(id, del)) reloadRecords(); }, del ? "Gizle" : "Geri Al");
@@ -630,37 +639,36 @@ function AdminScreenInner() {
         ) : null}
 
         {section === "partnerships" ? (
-          <Panel title="Ortak Satış Talepleri" sub={`${pendingPartnerships} bekliyor · ${fmtN(ovPartnershipsTotal ?? partnerships.length)} toplam${ovPartnershipsTotal != null ? " (sunucu)" : ""}`}>
-            {partnerships.length === 0 ? <EmptyState title="Ortak satış talebi yok" body="Bir kullanıcı bir ilana ortak satıcı olmak için başvurduğunda burada görünür." /> : null}
+          <Panel title="Ortak Satış Talepleri" sub={`${(adminPartnerships ?? []).filter((p) => p.status === "pending").length} bekliyor · ${fmtN(adminPartnerships ? adminPartnerships.length : (ovPartnershipsTotal ?? partnerships.length))} toplam (sunucu)`}>
+            {adminPartnerships === null ? <EmptyState title="Yükleniyor…" body="Platform geneli ortaklıklar çekiliyor." /> : adminPartnerships.length === 0 ? <EmptyState title="Ortak satış talebi yok" body="Bir kullanıcı bir ilana ortak satıcı olmak için başvurduğunda burada görünür." /> : null}
+            {adminPartnerships && adminPartnerships.length ? (
             <Table head={["İLAN", "İLAN SAHİBİ", "ORTAK ADAYI", "KOMİSYON", "DURUM", "TARİH", "İŞLEM"]} cols={[1.9, 1.3, 1.3, 1, 1, 0.9, 1.4]}>
-              {partnerships.slice().sort((a, b) => (a.status === "pending" ? -1 : 1) - (b.status === "pending" ? -1 : 1) || b.createdAt.localeCompare(a.createdAt)).map((p) => {
-                const listing = listings.find((l) => l.id === p.listingId);
-                const owner = listing ? findUser(listing.ownerId) : undefined;
-                const partner = findUser(p.partnerId);
+              {adminPartnerships.map((p) => {
                 const tone = PARTNERSHIP_TONE[p.status] ?? { tint: colors.surfaceAlt, color: colors.muted, label: p.status };
-                const comm = listing ? (listing.commissionType === "rate" ? `%${listing.commissionValue}` : money(listing.commissionValue)) : "—";
+                const comm = p.commissionType === "rate" ? `%${p.commissionValue}` : (p.commissionValue != null ? money(p.commissionValue) : "—");
                 return (
                   <Row key={p.id} cols={[1.9, 1.3, 1.3, 1, 1, 0.9, 1.4]} cells={[
-                    listing ? (
-                      <Link href={{ pathname: "/listing/[id]", params: { id: listing.id } }} asChild>
-                        <Pressable><Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{listing.title}</Text></Pressable>
-                      </Link>
-                    ) : <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{p.listingId.slice(0, 10)}</Text>,
-                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{owner?.name ?? "—"}</Text>,
-                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{partner?.name ?? "—"}</Text>,
+                    <Link href={{ pathname: "/listing/[id]", params: { id: p.listingId } }} asChild>
+                      <Pressable><Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{p.listingTitle ?? p.listingId.slice(0, 10)}</Text></Pressable>
+                    </Link>,
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{p.ownerName ?? "—"}</Text>,
+                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{p.partnerName ?? "—"}</Text>,
                     <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{comm}</Text>,
                     <View style={{ alignSelf: "flex-start", backgroundColor: tone.tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: tone.color, fontSize: 10.5, fontWeight: "900" }}>{tone.label}</Text></View>,
-                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.createdAt}</Text>,
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.createdAt.slice(0, 10)}</Text>,
                     p.status === "pending" ? (
                       <View style={{ flexDirection: "row", gap: 8 }}>
-                        <Pressable onPress={() => approvePartnership(p.id)} accessibilityRole="button" accessibilityLabel="Ortaklığı onayla"><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>Onayla</Text></Pressable>
-                        <Pressable onPress={() => confirmAction("Bu ortaklık başvurusu reddedilsin mi?", () => rejectPartnership(p.id))} accessibilityRole="button" accessibilityLabel="Ortaklığı reddet"><Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "900" }}>Reddet</Text></Pressable>
+                        <Pressable onPress={() => confirmAction("Bu ortaklık başvurusu ONAYLANSIN mı?", async () => { if (await adminSetPartnershipStatus(p.id, "active")) reloadAdminPartnerships(); }, "Onayla")} accessibilityRole="button" accessibilityLabel="Ortaklığı onayla"><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>Onayla</Text></Pressable>
+                        <Pressable onPress={() => confirmAction("Bu ortaklık başvurusu reddedilsin mi?", async () => { if (await adminSetPartnershipStatus(p.id, "rejected")) reloadAdminPartnerships(); }, "Reddet")} accessibilityRole="button" accessibilityLabel="Ortaklığı reddet"><Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "900" }}>Reddet</Text></Pressable>
                       </View>
+                    ) : p.status === "active" ? (
+                      <Pressable onPress={() => confirmAction("Bu aktif ortaklık sonlandırılsın mı? Paylaşım linki devre dışı kalır.", async () => { if (await adminSetPartnershipStatus(p.id, "cancelled")) reloadAdminPartnerships(); }, "Sonlandır")}><Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "800" }}>Sonlandır</Text></Pressable>
                     ) : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>—</Text>
                   ]} />
                 );
               })}
             </Table>
+            ) : null}
           </Panel>
         ) : null}
 
