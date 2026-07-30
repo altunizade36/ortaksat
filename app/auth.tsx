@@ -369,13 +369,6 @@ export default function AuthScreen() {
       { key: "register", icon: "account-plus-outline", label: translateCopy("Kayıt Ol", language) },
       { key: "reset", icon: "lock-reset", label: translateCopy("Şifremi Unuttum", language) }
     ];
-    const security: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; title: string; sub: string; tint: string; color: string }> = [
-      { icon: "email-check-outline", title: translateCopy("E-posta doğrulama", language), sub: translateCopy("Hesabınızı doğrulayan güvenli e-posta doğrulama sistemi.", language), tint: colors.infoSoft, color: colors.info },
-      { icon: "shield-alert-outline", title: translateCopy("Dolandırıcılık koruması", language), sub: translateCopy("Şüpheli işlem tespiti ve yapay zekâ destekli koruma mekanizmaları.", language), tint: colors.successSoft, color: colors.success },
-      { icon: "lock-outline", title: translateCopy("Güvenli oturum", language), sub: translateCopy("Tüm oturumlarınız şifrelenir ve düzenli olarak izlenir.", language), tint: colors.violetSoft, color: colors.violet },
-      { icon: "history", title: translateCopy("Oturum ve etkinlik takibi", language), sub: translateCopy("Hesabınızdaki tüm hareketleri görüntüleyin ve kontrol edin.", language), tint: colors.goldSoft, color: colors.gold },
-      { icon: "headset", title: translateCopy("Destek her zaman yanınızda", language), sub: translateCopy("Sorularınız için 7/24 destek ekibimiz hizmetinizde.", language), tint: colors.accentSoft, color: colors.accent }
-    ];
     const strip: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }> = [
       { icon: "lock-check", label: translateCopy("256-Bit SSL ile korunur", language) },
       { icon: "database-check", label: translateCopy("Güvenli veri altyapısı", language) },
@@ -426,9 +419,10 @@ export default function AuthScreen() {
             </View>
           </View>
 
-          <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 20 }}>
-            {/* Left: auth card */}
-            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexBasis: 420, flexGrow: 1, minWidth: 0, padding: 26 }}>
+          <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 20, justifyContent: "center" }}>
+            {/* Giriş/kayıt kartı — ORTALI, tek sütun. Eskiden sağda 5 kartlık "Hesabınız güvende"
+                paneli vardı → kalabalık/pazarlama gürültüsü; kaldırıldı. Slim güven şeridi altta kalır. */}
+            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexBasis: 460, flexGrow: 1, maxWidth: 560, minWidth: 0, padding: 26 }}>
               {/* Marka logosu — giriş/kayıt formunun başı (klasik "logo + form" deseni). */}
               <View style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, gap: 6, marginBottom: 16, paddingBottom: 14 }}>
                 <BrandMark size={52} />
@@ -440,7 +434,7 @@ export default function AuthScreen() {
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("Güvenli hesap erişimi", language)}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Hesabınıza güvenli bir şekilde giriş yapın. E-posta doğrulama, şifreleme ve gelişmiş koruma sistemlerimizle güvendesiniz.", language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Gezmek için giriş gerekmez; hesabını işlem yaparken kullanırsın.", language)}</Text>
                 </View>
               </View>
 
@@ -539,29 +533,6 @@ export default function AuthScreen() {
                 <Pressable onPress={() => setMode(mode === "login" ? "register" : "login")} style={{ alignItems: "center", paddingTop: 4 }}>
                   <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{mode === "login" ? translateCopy("Hesabınız yok mu? ", language) : translateCopy("Zaten hesabınız var mı? ", language)}<Text style={{ color: colors.primaryDark, fontWeight: "900" }}>{mode === "login" ? translateCopy("Kayıt olun", language) : translateCopy("Giriş yapın", language)}</Text></Text>
                 </Pressable>
-              </View>
-            </View>
-
-            {/* Right: security panel */}
-            <View style={{ flexBasis: 360, flexGrow: 1, gap: 14, minWidth: 0 }}>
-              <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{translateCopy("Hesabınız güvende", language)}</Text>
-              {security.map((s) => (
-                <View key={s.title} style={{ alignItems: "flex-start", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 12, padding: 16 }}>
-                  <View style={{ alignItems: "center", backgroundColor: s.tint, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
-                    <MaterialCommunityIcons name={s.icon} size={20} color={s.color} />
-                  </View>
-                  <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                    <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{s.title}</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{s.sub}</Text>
-                  </View>
-                </View>
-              ))}
-              <View style={{ alignItems: "flex-start", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, padding: 16 }}>
-                <MaterialCommunityIcons name="check-decagram" size={22} color={colors.primaryDark} />
-                <View style={{ flex: 1, minWidth: 0 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("OrtakSat ile güvenli alışverişin keyfini çıkarın.", language)}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Bilgileriniz bizim için değerlidir ve gizli tutulur.", language)}</Text>
-                </View>
               </View>
             </View>
           </View>

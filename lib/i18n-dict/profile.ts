@@ -1,6 +1,9 @@
 export const profileDict: Record<string, string> = {
   "Türkçe": "English",
 
+  // app/auth.tsx — giriş sadeleştirme
+  "Gezmek için giriş gerekmez; hesabını işlem yaparken kullanırsın.": "No sign-in needed to browse; use your account when you take an action.",
+
   // app/profile-edit.tsx — ayarlar: bildirim toggle + dil
   "Bildirim & Uygulama": "Notifications & App",
   "E-posta bildirimleri": "Email notifications",
