@@ -83,7 +83,9 @@ const STATUS_TONE: Record<SuggestionStatus, { tint: string; color: string; label
 // Raporlar — denetim aksiyonlarının okunur Türkçe etiketleri + özet bar renkleri (dataviz-safe).
 const ACTION_LABEL: Record<string, string> = {
   sign_in: "Giriş", sign_up: "Kayıt",
-  listing_created: "İlan oluşturuldu", listing_updated: "İlan güncellendi",
+  listing_create: "İlan oluşturuldu", listing_created: "İlan oluşturuldu",
+  listing_update: "İlan güncellendi", listing_updated: "İlan güncellendi",
+  listing_remove: "İlan kaldırıldı", offer_answered: "Teklif yanıtlandı",
   partnership_pending: "Ortaklık başvurusu", partnership_active: "Ortaklık onaylandı",
   partnership_rejected: "Ortaklık reddedildi", partnership_cancelled: "Ortaklık sonlandırıldı",
   sale_recorded: "Satış kaydı", sale_confirmed: "Satış onaylandı",
