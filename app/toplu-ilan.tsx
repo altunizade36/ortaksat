@@ -13,7 +13,7 @@ import { colors } from "@/components/colors";
 import { Alert } from "@/lib/alert";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
-import { matchCategoryByName, resolveFormKey, type CategoryNode } from "@/lib/category-tree";
+import { matchCategoryByName, resolveFormKey, getFormSchema, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { autoFillListing } from "@/lib/listing-autofill";
 import { formatLocation, getProvince, resolveProvinceByName, districtsOfProvince } from "@/lib/locations";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -43,6 +43,8 @@ type ParsedRow = {
   stock: number;
   image: string; // kapak (galerinin ilki)
   images: string[]; // tüm görseller: kapak + ek galeri (gorsel_url'de | ile ayrılmış)
+  attrs: Record<string, string | number | boolean | string[]>; // kategori-özel alanlar (attributes)
+  recognizedAttrs: string[]; // tanınan özellik etiketleri (önizleme göstergesi)
   errors: string[];
 };
 
@@ -87,8 +89,49 @@ const COL_ALIASES: Record<string, string[]> = {
   image: ["gorsel_url", "görsel", "gorsel", "foto", "image", "url", "resim"]
 };
 
+// Başlık/etiket normalize (tr-TR küçült, boşluk/altçizgi at) — sütun eşleştirmesinde ortak.
+function normKey(s: string): string {
+  return s.toLocaleLowerCase("tr-TR").replace(/[\s_]+/g, "").trim();
+}
+
+// KATEGORİ-ÖZEL ALAN değeri, alanın tipine göre attributes'a yazılacak biçime çevrilir.
+// undefined → bu değeri yazma (boş/tanınmaz). Büyük pazaryeri şablonları marka/model/
+// yıl/renk/durum gibi sütunlar taşır; başlık şema alanının etiketi (Marka) veya
+// anahtarıyla (brand) eşleşirse otomatik doldurulur.
+function coerceAttr(field: FieldDef, raw: string): string | number | boolean | string[] | undefined {
+  const v = raw.trim();
+  if (!v) return undefined;
+  switch (field.type) {
+    case "number": {
+      const n = parseTrPrice(v);
+      return n > 0 ? n : v === "0" ? 0 : undefined;
+    }
+    case "bool": {
+      const t = v.toLocaleLowerCase("tr-TR");
+      if (["evet", "var", "1", "true", "e", "x", "✓", "yes"].includes(t)) return true;
+      if (["hayır", "hayir", "yok", "0", "false", "h", "no"].includes(t)) return false;
+      return undefined;
+    }
+    case "select": {
+      const opt = (field.options ?? []).find((o) => normKey(o) === normKey(v));
+      return opt ?? v; // eşleşmese de ham değeri sakla (özellik tablosunda yine görünür)
+    }
+    case "multiselect":
+    case "tags": {
+      const parts = v.split(/[|;/]/).map((s) => s.trim()).filter(Boolean);
+      if (!parts.length) return undefined;
+      if (field.type === "multiselect" && field.options) {
+        return parts.map((p) => field.options!.find((o) => normKey(o) === normKey(p)) ?? p);
+      }
+      return parts;
+    }
+    default: // text, textarea
+      return v;
+  }
+}
+
 function resolveHeader(headers: string[]): Record<string, number> {
-  const norm = (s: string) => s.toLocaleLowerCase("tr-TR").replace(/[\s_]+/g, "").trim();
+  const norm = normKey;
   const map: Record<string, number> = {};
   headers.forEach((h, i) => {
     const hn = norm(h);
@@ -137,6 +180,10 @@ function BulkUploadInner() {
     const delim = detectDelimiter(lines[0]); // TR Excel ; ayracını otomatik yakala
     const headers = splitCsvLine(lines[0], delim);
     const col = resolveHeader(headers);
+    // Base olmayan (harici_kod/baslik/... dışındaki) başlık sütunları = kategori-özel
+    // ADAY alanlar. Satırın kategorisine göre şema alanıyla eşleşirse attributes'a yazılır.
+    const consumed = new Set<number>(Object.values(col));
+    const attrCols = headers.map((h, i) => ({ i, h })).filter((x) => !consumed.has(x.i) && x.h.trim() !== "");
     if (col.title === undefined || col.price === undefined) {
       Alert.alert(translateCopy("Sütun bulunamadı", language), translateCopy("En az 'baslik' ve 'fiyat' sütunları gerekli. Şablonu kullan.", language));
       return;
@@ -173,6 +220,23 @@ function BulkUploadInner() {
       const imageList = rawImage.split(/[|\n]/).map((s) => s.trim()).filter(Boolean).slice(0, MAX_IMAGES);
       const images = imageList.length ? imageList : (bulkImages[idx] ? [bulkImages[idx]] : []);
       const image = images[0] || "";
+      // KATEGORİ-ÖZEL ALANLAR: satırın kategorisinin şemasına göre aday sütunları eşle.
+      const attrs: Record<string, string | number | boolean | string[]> = {};
+      const recognizedAttrs: string[] = [];
+      if (attrCols.length && category) {
+        const schema = getFormSchema(resolveFormKey(category.path));
+        for (const ac of attrCols) {
+          const rawVal = (cells[ac.i] ?? "").trim();
+          if (!rawVal) continue;
+          const hn = normKey(ac.h);
+          const field = schema.fields.find((f) => normKey(f.label) === hn || normKey(f.key) === hn);
+          if (!field) continue;
+          const coerced = coerceAttr(field, rawVal);
+          if (coerced === undefined || (Array.isArray(coerced) && coerced.length === 0)) continue;
+          attrs[field.key] = coerced;
+          if (!recognizedAttrs.includes(field.label)) recognizedAttrs.push(field.label);
+        }
+      }
       const errors: string[] = [];
       // Fiyat her iki modda da zorunlu ve geçerli olmalı.
       if (!(price > 0)) errors.push(translateCopy("Fiyat geçersiz (0'dan büyük olmalı)", language));
@@ -197,7 +261,7 @@ function BulkUploadInner() {
       const titleKey = title.toLocaleLowerCase("tr-TR").trim();
       if (!sku && titleKey && seenTitles.has(titleKey)) errors.push(translateCopy("Bu başlık partide zaten var (mükerrer)", language));
       else if (!sku && titleKey) seenTitles.add(titleKey);
-      return { raw: {}, sku, existingId: existing?.id, mode, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, stock, image, images, errors };
+      return { raw: {}, sku, existingId: existing?.id, mode, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, stock, image, images, attrs, recognizedAttrs, errors };
     });
     setRows(parsed);
   };
@@ -339,7 +403,7 @@ function BulkUploadInner() {
             deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; OrtakSat para tutmaz.",
             contactMethod: "message",
             partnershipMode: "approval",
-            attributes: { _root: rootLabel, _leaf: leaf.label, _formKey: formKey }
+            attributes: { _root: rootLabel, _leaf: leaf.label, _formKey: formKey, ...r.attrs }
           }, "pending_review"); // TOPLU: yayından önce admin onayı
           created++;
         }
@@ -413,6 +477,14 @@ function BulkUploadInner() {
               <Text style={{ color: colors.ink, fontWeight: "800" }}>{translateCopy("harici_kod (SKU)", language)}</Text>
               {" "}
               {translateCopy("kendi ürün kodun/barkodun. Aynı kodla tekrar yükleyince sistem yeni ilan AÇMAZ, mevcut ilanı GÜNCELLER (fiyat/stok senkronu). Boş bırakırsan her zaman yeni ilan açılır.", language)}
+            </Text>
+          </View>
+          <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, padding: 11 }}>
+            <MaterialCommunityIcons name="tune-variant" size={16} color={colors.primaryDark} style={{ marginTop: 1 }} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
+              <Text style={{ color: colors.ink, fontWeight: "800" }}>{translateCopy("Kategoriye özel sütunlar (opsiyonel):", language)}</Text>
+              {" "}
+              {translateCopy("Marka, Model, Yıl, Renk, Durum gibi sütunlar ekleyebilirsin. Sütun başlığı o kategorinin özelliğiyle eşleşirse otomatik doldurulur (özellik tablosunda + filtrelerde görünür). Eşleşmeyen sütunlar yok sayılır.", language)}
             </Text>
           </View>
           <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, padding: 10 }}>
@@ -562,10 +634,20 @@ function BulkUploadInner() {
                         <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 40 }}>%{r.commission}</Text>
                       </View>
                       {!okRow ? <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700", marginLeft: 34 }}>{r.errors.join(" · ")}</Text> : null}
-                      {okRow && r.images.length > 1 ? (
-                        <View style={{ alignItems: "center", flexDirection: "row", gap: 4, marginLeft: 34 }}>
-                          <MaterialCommunityIcons name="image-multiple-outline" size={12} color={colors.muted} />
-                          <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{r.images.length} {translateCopy("görsel (galeri)", language)}</Text>
+                      {okRow && (r.images.length > 1 || r.recognizedAttrs.length > 0) ? (
+                        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, marginLeft: 34 }}>
+                          {r.images.length > 1 ? (
+                            <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                              <MaterialCommunityIcons name="image-multiple-outline" size={12} color={colors.muted} />
+                              <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{r.images.length} {translateCopy("görsel (galeri)", language)}</Text>
+                            </View>
+                          ) : null}
+                          {r.recognizedAttrs.length > 0 ? (
+                            <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                              <MaterialCommunityIcons name="tag-check-outline" size={12} color={colors.primaryDark} />
+                              <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "700" }}>{r.recognizedAttrs.length} {translateCopy("özellik", language)}: {r.recognizedAttrs.slice(0, 4).join(", ")}{r.recognizedAttrs.length > 4 ? "…" : ""}</Text>
+                            </View>
+                          ) : null}
                         </View>
                       ) : null}
                     </View>
