@@ -86,6 +86,8 @@ export type Listing = {
   status: ListingStatus;
   rejectionReason?: string; // admin reddi / yasaklı içerik sebebi (satıcıya gösterilir; edit'te yeniden taranır)
   partnershipMode: PartnershipMode;
+  // Satıcının harici ürün kodu (SKU). Toplu yüklemede upsert anahtarı; (owner_id, external_id) tekil.
+  externalId?: string;
   stockCount: number;
   minPartnerRating: number;
   commissionDueDays: number;

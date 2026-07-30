@@ -130,6 +130,7 @@ import type {
 type NewListingInput = Pick<
   Listing,
   | "title"
+  | "externalId"
   | "description"
   | "salesPitch"
   | "shareTemplates"

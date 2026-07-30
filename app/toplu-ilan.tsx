@@ -3,7 +3,7 @@ import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import Head from "expo-router/head";
 import { useRouter } from "expo-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
@@ -18,16 +18,19 @@ import { autoFillListing } from "@/lib/listing-autofill";
 import { formatLocation, getProvince, resolveProvinceByName, districtsOfProvince } from "@/lib/locations";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { downloadCsv } from "@/lib/csv-export";
-import { uploadListingImage } from "@/lib/live-service";
+import { uploadListingImage, fetchMyListingSkus, updateListingFieldsLive } from "@/lib/live-service";
 import { useStore } from "@/lib/use-store";
 import { parseTrPrice, validateListing } from "@/lib/validation";
 
-const TEMPLATE = `baslik,aciklama,fiyat,kategori,il,ilce,komisyon,stok,gorsel_url
-Örnek Ürün Adı,Ürünün kısa açıklaması burada,1500,Elektronik,İstanbul,Kadıköy,15,3,https://...jpg
-İkinci Ürün,Açıklama metni,899,Moda & Giyim,Ankara,Çankaya,20,10,`;
+const TEMPLATE = `harici_kod,baslik,aciklama,fiyat,kategori,il,ilce,komisyon,stok,gorsel_url
+URUN-1001,Örnek Ürün Adı,Ürünün kısa açıklaması burada,1500,Elektronik,İstanbul,Kadıköy,15,3,https://...jpg
+URUN-1002,İkinci Ürün,Açıklama metni,899,Moda & Giyim,Ankara,Çankaya,20,10,`;
 
 type ParsedRow = {
   raw: Record<string, string>;
+  sku: string;
+  existingId?: string;
+  mode: "new" | "update";
   title: string;
   description: string;
   price: number;
@@ -58,6 +61,7 @@ function splitCsvLine(line: string): string[] {
 }
 
 const COL_ALIASES: Record<string, string[]> = {
+  sku: ["harici_kod", "harici kod", "sku", "stok_kodu", "stok kodu", "urun_kodu", "ürün kodu", "kod", "external_id", "externalid", "barkod", "barcode"],
   title: ["baslik", "başlık", "title", "urun", "ürün", "ad"],
   description: ["aciklama", "açıklama", "description", "aciklamasi"],
   price: ["fiyat", "price", "tutar"],
@@ -93,6 +97,15 @@ function BulkUploadInner() {
   const [notice, setNotice] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
   const [failedRows, setFailedRows] = useState<Array<{ row: number; title: string; reason: string }>>([]);
+  // SKU SENKRONİZASYONU: satıcının mevcut ilanlarının harici-kod → {id,başlık,durum} haritası.
+  // Aynı SKU tekrar gelirse yeni oluşturmaz, MEVCUDU günceller (Trendyol/Sahibinden modeli).
+  const [existingSkus, setExistingSkus] = useState<Map<string, { id: string; title: string; status: string }>>(new Map());
+  const [deactivateMissing, setDeactivateMissing] = useState(false);
+  useEffect(() => {
+    void fetchMyListingSkus(currentUser.id).then((list) => {
+      setExistingSkus(new Map(list.map((r) => [r.externalId, { id: r.id, title: r.title, status: r.status }])));
+    }).catch(() => {});
+  }, [currentUser.id]);
 
   const parse = () => {
     setNotice(null);
@@ -110,12 +123,18 @@ function BulkUploadInner() {
       Alert.alert(translateCopy("Sütun bulunamadı", language), translateCopy("En az 'baslik' ve 'fiyat' sütunları gerekli. Şablonu kullan.", language));
       return;
     }
-    // Mükerrer başlık uyarısı (aynı partide aynı ürün adı) — kullanıcı fark etsin.
+    // Mükerrer başlık/SKU uyarısı (aynı partide) — kullanıcı fark etsin.
     const overrideComm = Number(commissionAll) > 0 ? Number(commissionAll) : undefined;
     const seenTitles = new Set<string>();
+    const seenSkus = new Set<string>();
+    const bos = translateCopy("(boş)", language);
     const parsed: ParsedRow[] = lines.slice(1).map((line, idx) => {
       const cells = splitCsvLine(line);
       const get = (k: string) => (col[k] !== undefined ? (cells[col[k]] ?? "") : "");
+      const sku = get("sku").trim();
+      // SKU EŞLEŞMESİ: bu satırın SKU'su satıcının mevcut bir ilanına denk geliyorsa GÜNCELLEME modu.
+      const existing = sku ? existingSkus.get(sku) : undefined;
+      const mode: "new" | "update" = existing ? "update" : "new";
       const title = get("title");
       const description = get("description");
       const price = parseTrPrice(get("price"));
@@ -132,21 +151,37 @@ function BulkUploadInner() {
       const stock = Math.max(1, Math.floor(parseTrPrice(get("stock")) || 1)); // TR-binlik ("1.500"→1500, Number 1.5 yapardı)
       const image = get("image") || bulkImages[idx] || "";
       const errors: string[] = [];
-      const v = validateListing({ title, description: description || "Toplu yükleme ürünü.", price });
-      v.errors.forEach((e) => { if (e.field !== "description") errors.push(e.message); });
-      const bos = translateCopy("(boş)", language);
-      if (!category) errors.push(`${translateCopy("Kategori eşleşmedi", language)}: "${categoryRaw || bos}"`);
-      if (!prov) errors.push(`${translateCopy("İl eşleşmedi", language)}: "${get("province") || bos}"`);
+      // Fiyat her iki modda da zorunlu ve geçerli olmalı.
+      if (!(price > 0)) errors.push(translateCopy("Fiyat geçersiz (0'dan büyük olmalı)", language));
+      // Başlık: YENİ ilanda zorunlu; GÜNCELLEMEDE boşsa mevcut korunur (kısmi güncelleme).
+      if (mode === "new" || title) {
+        const v = validateListing({ title, description: description || "Toplu yükleme ürünü.", price });
+        v.errors.forEach((e) => { if (e.field !== "description" && e.field !== "price") errors.push(e.message); });
+      }
+      // Kategori/İl: YENİ ilanda zorunlu; GÜNCELLEMEDE yalnız dolu ama eşleşmezse hatadır.
+      if (mode === "new") {
+        if (!category) errors.push(`${translateCopy("Kategori eşleşmedi", language)}: "${categoryRaw || bos}"`);
+        if (!prov) errors.push(`${translateCopy("İl eşleşmedi", language)}: "${get("province") || bos}"`);
+      } else {
+        if (categoryRaw && !category) errors.push(`${translateCopy("Kategori eşleşmedi", language)}: "${categoryRaw}"`);
+        if (get("province") && !prov) errors.push(`${translateCopy("İl eşleşmedi", language)}: "${get("province")}"`);
+      }
       if (commission <= 0 || commission > 90) errors.push(translateCopy("Komisyon 1–90 arası olmalı", language));
+      // Mükerrer SKU (aynı partide iki kez) → upsert çakışması; reddet.
+      if (sku && seenSkus.has(sku)) errors.push(translateCopy("Bu harici kod (SKU) partide zaten var (mükerrer)", language));
+      else if (sku) seenSkus.add(sku);
+      // Mükerrer başlık uyarısı yalnız SKU'suz yeni ilanlarda anlamlı (SKU'lu satırlar zaten tekil).
       const titleKey = title.toLocaleLowerCase("tr-TR").trim();
-      if (titleKey && seenTitles.has(titleKey)) errors.push(translateCopy("Bu başlık partide zaten var (mükerrer)", language));
-      else if (titleKey) seenTitles.add(titleKey);
-      return { raw: {}, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, stock, image, errors };
+      if (!sku && titleKey && seenTitles.has(titleKey)) errors.push(translateCopy("Bu başlık partide zaten var (mükerrer)", language));
+      else if (!sku && titleKey) seenTitles.add(titleKey);
+      return { raw: {}, sku, existingId: existing?.id, mode, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, stock, image, errors };
     });
     setRows(parsed);
   };
 
   const validRows = useMemo(() => (rows ?? []).filter((r) => r.errors.length === 0), [rows]);
+  const newCount = useMemo(() => validRows.filter((r) => r.mode === "new").length, [validRows]);
+  const updateCount = useMemo(() => validRows.filter((r) => r.mode === "update").length, [validRows]);
 
   async function pickBulkImages() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -164,50 +199,75 @@ function BulkUploadInner() {
     setNotice(null);
     setFailedRows([]);
     setProgress({ done: 0, total: validRows.length });
-    let ok = 0;
+    let created = 0;
+    let updated = 0;
+    let pausedCount = 0;
     const failures: Array<{ row: number; title: string; reason: string }> = [];
+    const touchedIds = new Set<string>(); // dosyada geçen mevcut ilan id'leri (pasife-al senkronu için)
     for (let i = 0; i < validRows.length; i++) {
       const r = validRows[i];
       try {
-        const leaf = r.category!.node;
-        const rootLabel = r.category!.path[0]?.label ?? leaf.label;
-        const formKey = resolveFormKey(r.category!.path);
-        const cover = r.image ? await uploadListingImage(r.image, currentUser.id) : (leaf.image || r.category!.path.find((p) => p.image)?.image || "");
-        const auto = autoFillListing({ title: r.title, category: leaf.label, price: r.price, commission: r.commission, currency: "TRY" });
-        const location = formatLocation({ provinceId: r.provinceId, districtId: r.districtId }, "neighborhood") || getProvince(r.provinceId)?.name || "Türkiye";
-        createListing({
-          title: r.title,
-          description: r.description || auto.description,
-          salesPitch: auto.salesPitch,
-          shareTemplates: auto.shareTemplates,
-          adAssets: [],
-          tags: [rootLabel, leaf.label].filter(Boolean),
-          price: r.price,
-          currency: "TRY",
-          commissionType: "rate",
-          commissionValue: r.commission,
-          bonusAmount: undefined,
-          bonusQuota: undefined,
-          category: leaf.label,
-          location,
-          provinceId: r.provinceId,
-          districtId: r.districtId,
-          neighborhoodId: undefined,
-          addressVisibility: "neighborhood",
-          locationNote: undefined,
-          image: cover,
-          stockCount: r.stock,
-          minPartnerRating: 0,
-          commissionDueDays: 3,
-          returnWindowDays: 7,
-          attributionWindowDays: 30,
-          partnerRules: ["Komisyon sadece onaylı satış kaydında oluşur."],
-          deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; OrtakSat para tutmaz.",
-          contactMethod: "message",
-          partnershipMode: "approval",
-          attributes: { _root: rootLabel, _leaf: leaf.label, _formKey: formKey }
-        }, "pending_review"); // TOPLU: yayından önce admin onayı
-        ok++;
+        if (r.mode === "update" && r.existingId) {
+          // MEVCUT İLANI GÜNCELLE (SKU eşleşti) — yalnız DOLU alanlar yazılır (kısmi upsert).
+          const leaf = r.category?.node;
+          const location = r.provinceId ? (formatLocation({ provinceId: r.provinceId, districtId: r.districtId }, "neighborhood") || getProvince(r.provinceId)?.name || undefined) : undefined;
+          const okUpd = await updateListingFieldsLive(r.existingId, {
+            title: r.title || undefined,
+            description: r.description || undefined,
+            price: r.price,
+            commissionValue: r.commission,
+            stockCount: r.stock,
+            category: leaf?.label,
+            location,
+            provinceId: r.provinceId,
+            districtId: r.districtId
+          });
+          if (!okUpd) throw new Error(translateCopy("güncelleme kaydedilemedi", language));
+          touchedIds.add(r.existingId);
+          updated++;
+        } else {
+          // YENİ İLAN — SKU'yu externalId olarak yaz (sonraki yüklemede eşleşsin).
+          const leaf = r.category!.node;
+          const rootLabel = r.category!.path[0]?.label ?? leaf.label;
+          const formKey = resolveFormKey(r.category!.path);
+          const cover = r.image ? await uploadListingImage(r.image, currentUser.id) : (leaf.image || r.category!.path.find((p) => p.image)?.image || "");
+          const auto = autoFillListing({ title: r.title, category: leaf.label, price: r.price, commission: r.commission, currency: "TRY" });
+          const location = formatLocation({ provinceId: r.provinceId, districtId: r.districtId }, "neighborhood") || getProvince(r.provinceId)?.name || "Türkiye";
+          createListing({
+            externalId: r.sku || undefined,
+            title: r.title,
+            description: r.description || auto.description,
+            salesPitch: auto.salesPitch,
+            shareTemplates: auto.shareTemplates,
+            adAssets: [],
+            tags: [rootLabel, leaf.label].filter(Boolean),
+            price: r.price,
+            currency: "TRY",
+            commissionType: "rate",
+            commissionValue: r.commission,
+            bonusAmount: undefined,
+            bonusQuota: undefined,
+            category: leaf.label,
+            location,
+            provinceId: r.provinceId,
+            districtId: r.districtId,
+            neighborhoodId: undefined,
+            addressVisibility: "neighborhood",
+            locationNote: undefined,
+            image: cover,
+            stockCount: r.stock,
+            minPartnerRating: 0,
+            commissionDueDays: 3,
+            returnWindowDays: 7,
+            attributionWindowDays: 30,
+            partnerRules: ["Komisyon sadece onaylı satış kaydında oluşur."],
+            deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; OrtakSat para tutmaz.",
+            contactMethod: "message",
+            partnershipMode: "approval",
+            attributes: { _root: rootLabel, _leaf: leaf.label, _formKey: formKey }
+          }, "pending_review"); // TOPLU: yayından önce admin onayı
+          created++;
+        }
       } catch (e) {
         // TEK bir hatalı satır tüm partiyi durdurmasın: hatayı topla, devam et.
         failures.push({ row: i + 1, title: r.title, reason: e instanceof Error ? e.message : translateCopy("bilinmeyen hata", language) });
@@ -215,18 +275,31 @@ function BulkUploadInner() {
         setProgress({ done: i + 1, total: validRows.length });
       }
     }
+    // TAM-KATALOG SENKRONU (opsiyonel): dosyada OLMAYAN, SKU'lu AKTİF ilanları pasife al.
+    // Yalnız hatasız partide çalışır (yarım dosyayla yanlışlıkla ilan gizlenmesin).
+    if (deactivateMissing && failures.length === 0) {
+      const toPause: string[] = [];
+      existingSkus.forEach((v) => { if (!touchedIds.has(v.id) && v.status === "active") toPause.push(v.id); });
+      for (const id of toPause) {
+        try { if (await updateListingFieldsLive(id, { status: "paused" })) pausedCount++; } catch { /* yut — tek ilan takılmasın */ }
+      }
+    }
     setProgress(null);
     setPublishing(false);
     setFailedRows(failures);
     if (failures.length === 0) {
-      setNotice(translateCopy(`${ok} ilan admin onayına gönderildi. Onaylandıkça yayına alınır.`, language));
+      const parts: string[] = [];
+      if (created) parts.push(`${created} ${translateCopy("yeni ilan onaya gönderildi", language)}`);
+      if (updated) parts.push(`${updated} ${translateCopy("mevcut ilan güncellendi", language)}`);
+      if (pausedCount) parts.push(`${pausedCount} ${translateCopy("ilan pasife alındı", language)}`);
+      setNotice(`${parts.join(" · ")}.`);
       setRows(null);
       setCsv("");
       setBulkImages([]);
-      setTimeout(() => router.replace("/(tabs)/seller"), 2200);
+      setTimeout(() => router.replace("/(tabs)/seller"), 2400);
     } else {
       // Kısmi başarı: başarısızlar listelenir + CSV indirilebilir; kullanıcı düzeltip tekrar dener.
-      setNotice(`${ok} ${translateCopy("başarılı", language)} · ${failures.length} ${translateCopy("başarısız", language)}. ${translateCopy("Başarısız satırları aşağıda görüp CSV olarak indirebilirsin.", language)}`);
+      setNotice(`${created + updated} ${translateCopy("başarılı", language)} · ${failures.length} ${translateCopy("başarısız", language)}. ${translateCopy("Başarısız satırları aşağıda görüp CSV olarak indirebilirsin.", language)}`);
     }
   }
 
@@ -258,7 +331,15 @@ function BulkUploadInner() {
         {/* Adım 1: şablon */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, padding: 16 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>1) {translateCopy("Şablonu kullan", language)}</Text>
-          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Sütunlar: baslik, aciklama, fiyat, kategori, il, ilce, komisyon, stok, gorsel_url. Excel'de düzenleyip CSV olarak kaydet, sonra buraya yapıştır.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Sütunlar: harici_kod, baslik, aciklama, fiyat, kategori, il, ilce, komisyon, stok, gorsel_url. Excel'de düzenleyip CSV olarak kaydet, sonra buraya yapıştır.", language)}</Text>
+          <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 11 }}>
+            <MaterialCommunityIcons name="barcode-scan" size={16} color={colors.info} style={{ marginTop: 1 }} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
+              <Text style={{ color: colors.ink, fontWeight: "800" }}>{translateCopy("harici_kod (SKU)", language)}</Text>
+              {" "}
+              {translateCopy("kendi ürün kodun/barkodun. Aynı kodla tekrar yükleyince sistem yeni ilan AÇMAZ, mevcut ilanı GÜNCELLER (fiyat/stok senkronu). Boş bırakırsan her zaman yeni ilan açılır.", language)}
+            </Text>
+          </View>
           <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, padding: 10 }}>
             <Text selectable style={{ color: colors.ink, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", fontSize: 11.5 }}>{TEMPLATE}</Text>
           </View>
@@ -268,7 +349,7 @@ function BulkUploadInner() {
               <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şablonu kopyala", language)}</Text>
             </Pressable>
             {Platform.OS === "web" ? (
-              <Pressable onPress={() => downloadCsv("ortaksat-toplu-ilan-sablon.csv", ["baslik", "aciklama", "fiyat", "kategori", "il", "ilce", "komisyon", "stok", "gorsel_url"], [["Örnek Ürün Adı", "Ürünün kısa açıklaması", "1500", "Elektronik", "İstanbul", "Kadıköy", "15", "3", "https://...jpg"], ["İkinci Ürün", "Açıklama metni", "899", "Moda & Giyim", "Ankara", "Çankaya", "20", "10", ""]])} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}>
+              <Pressable onPress={() => downloadCsv("ortaksat-toplu-ilan-sablon.csv", ["harici_kod", "baslik", "aciklama", "fiyat", "kategori", "il", "ilce", "komisyon", "stok", "gorsel_url"], [["URUN-1001", "Örnek Ürün Adı", "Ürünün kısa açıklaması", "1500", "Elektronik", "İstanbul", "Kadıköy", "15", "3", "https://...jpg"], ["URUN-1002", "İkinci Ürün", "Açıklama metni", "899", "Moda & Giyim", "Ankara", "Çankaya", "20", "10", ""]])} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}>
                 <MaterialCommunityIcons name="download" size={15} color={colors.primaryDark} />
                 <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Şablonu indir (.csv)", language)}</Text>
               </Pressable>
@@ -342,31 +423,51 @@ function BulkUploadInner() {
         {/* Adım 3: önizleme */}
         {rows ? (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, padding: 16 }}>
-            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
               <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>3) {translateCopy("Önizleme", language)} · {validRows.length}/{rows.length} {translateCopy("geçerli", language)}</Text>
+              {newCount > 0 ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 4 }}>
+                  <MaterialCommunityIcons name="plus-circle" size={12} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>{newCount} {translateCopy("yeni", language)}</Text>
+                </View>
+              ) : null}
+              {updateCount > 0 ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.infoSoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 4 }}>
+                  <MaterialCommunityIcons name="sync" size={12} color={colors.info} />
+                  <Text style={{ color: colors.info, fontSize: 11, fontWeight: "800" }}>{updateCount} {translateCopy("güncelle", language)}</Text>
+                </View>
+              ) : null}
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator style={{ maxWidth: "100%" }}>
-              <View style={{ gap: 6, minWidth: 720 }}>
+              <View style={{ gap: 6, minWidth: 812 }}>
                 <View style={{ flexDirection: "row", gap: 8, paddingBottom: 6 }}>
-                  {["#", translateCopy("Durum", language), translateCopy("Başlık", language), translateCopy("Fiyat", language), translateCopy("Kategori", language), translateCopy("İl", language), "%"].map((h, i) => (
-                    <Text key={i} style={{ color: colors.muted, fontSize: 11, fontWeight: "900", width: i === 0 ? 26 : i === 1 ? 60 : i === 2 ? 220 : i === 4 ? 150 : 90 }}>{h}</Text>
+                  {[["#", 26], [translateCopy("Durum", language), 58], [translateCopy("İşlem", language), 78], [translateCopy("SKU", language), 96], [translateCopy("Başlık", language), 190], [translateCopy("Fiyat", language), 84], [translateCopy("Kategori", language), 130], [translateCopy("İl", language), 78], ["%", 40]].map(([h, w], i) => (
+                    <Text key={i} style={{ color: colors.muted, fontSize: 11, fontWeight: "900", width: w as number }}>{h as string}</Text>
                   ))}
                 </View>
                 {rows.map((r, i) => {
                   const okRow = r.errors.length === 0;
+                  const isUpdate = r.mode === "update";
                   return (
                     <View key={i} style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 3, paddingVertical: 7 }}>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                         <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700", width: 26 }}>{i + 1}</Text>
-                        <View style={{ alignItems: "center", flexDirection: "row", gap: 3, width: 60 }}>
+                        <View style={{ alignItems: "center", flexDirection: "row", gap: 3, width: 58 }}>
                           <MaterialCommunityIcons name={okRow ? "check-circle" : "alert-circle"} size={14} color={okRow ? colors.success : colors.accent} />
                           <Text style={{ color: okRow ? colors.success : colors.accent, fontSize: 11, fontWeight: "800" }}>{okRow ? "OK" : translateCopy("Hata", language)}</Text>
                         </View>
-                        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 220 }}>{r.title || "—"}</Text>
-                        <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 90 }}>{r.price ? `₺${r.price.toLocaleString("tr-TR")}` : "—"}</Text>
-                        <Text numberOfLines={1} style={{ color: r.category ? colors.ink : colors.accent, fontSize: 12, fontWeight: "700", width: 150 }}>{r.category?.node.label ?? r.categoryRaw ?? "—"}</Text>
-                        <Text numberOfLines={1} style={{ color: r.provinceName ? colors.ink : colors.accent, fontSize: 12, fontWeight: "700", width: 90 }}>{r.provinceName ?? "—"}</Text>
-                        <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 90 }}>%{r.commission}</Text>
+                        <View style={{ width: 78 }}>
+                          <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: isUpdate ? colors.infoSoft : colors.primarySoft, borderRadius: 6, flexDirection: "row", gap: 3, paddingHorizontal: 7, paddingVertical: 3 }}>
+                            <MaterialCommunityIcons name={isUpdate ? "sync" : "plus"} size={11} color={isUpdate ? colors.info : colors.primaryDark} />
+                            <Text style={{ color: isUpdate ? colors.info : colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{isUpdate ? translateCopy("Güncelle", language) : translateCopy("Yeni", language)}</Text>
+                          </View>
+                        </View>
+                        <Text numberOfLines={1} style={{ color: r.sku ? colors.ink : colors.subtle, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", fontSize: 11, fontWeight: "700", width: 96 }}>{r.sku || "—"}</Text>
+                        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 190 }}>{r.title || (isUpdate ? existingSkus.get(r.sku)?.title ?? "—" : "—")}</Text>
+                        <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 84 }}>{r.price ? `₺${r.price.toLocaleString("tr-TR")}` : "—"}</Text>
+                        <Text numberOfLines={1} style={{ color: r.category ? colors.ink : (isUpdate ? colors.muted : colors.accent), fontSize: 12, fontWeight: "700", width: 130 }}>{r.category?.node.label ?? (r.categoryRaw || "—")}</Text>
+                        <Text numberOfLines={1} style={{ color: r.provinceName ? colors.ink : (isUpdate ? colors.muted : colors.accent), fontSize: 12, fontWeight: "700", width: 78 }}>{r.provinceName ?? "—"}</Text>
+                        <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 40 }}>%{r.commission}</Text>
                       </View>
                       {!okRow ? <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700", marginLeft: 34 }}>{r.errors.join(" · ")}</Text> : null}
                     </View>
@@ -375,14 +476,25 @@ function BulkUploadInner() {
               </View>
             </ScrollView>
 
+            {/* TAM-KATALOG SENKRONU — yalnız satıcının SKU'lu aktif ilanı varsa göster (yoksa anlamsız). */}
+            {existingSkus.size > 0 ? (
+              <Pressable onPress={() => setDeactivateMissing((v) => !v)} accessibilityRole="switch" accessibilityState={{ checked: deactivateMissing }} style={{ alignItems: "flex-start", backgroundColor: deactivateMissing ? colors.accentSoft : colors.surfaceAlt, borderColor: deactivateMissing ? colors.accent : colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 10, padding: 12 }}>
+                <MaterialCommunityIcons name={deactivateMissing ? "checkbox-marked" : "checkbox-blank-outline"} size={20} color={deactivateMissing ? colors.accent : colors.muted} style={{ marginTop: 1 }} />
+                <View style={{ flex: 1, gap: 2 }}>
+                  <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Bu dosyada olmayan ilanlarımı pasife al", language)}</Text>
+                  <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy("Tam katalog senkronu: SKU'su bu dosyada geçmeyen AKTİF ilanların yayından kaldırılır (silinmez, pasife alınır). Yalnız tüm kataloğunu yüklüyorsan işaretle.", language)}</Text>
+                </View>
+              </Pressable>
+            ) : null}
+
             <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 11 }}>
               <MaterialCommunityIcons name="shield-check-outline" size={16} color={colors.info} style={{ marginTop: 1 }} />
-              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Toplu yüklenen ilanlar YAYINA ALINMADAN önce admin onayına düşer. Onaylananlar pazara çıkar.", language)}</Text>
+              <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Yeni toplu ilanlar YAYINA ALINMADAN önce admin onayına düşer; güncellenen mevcut ilanlar anında değişir.", language)}</Text>
             </View>
 
             <Pressable disabled={!validRows.length || publishing} onPress={() => void publish()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: !validRows.length || publishing ? colors.line : colors.primary, borderRadius: 12, flexDirection: "row", gap: 8, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingVertical: 14 })}>
               <MaterialCommunityIcons name={publishing ? "loading" : "cloud-upload-outline"} size={18} color="#FFFFFF" />
-              <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{publishing ? translateCopy("Yükleniyor…", language) : `${validRows.length} ${translateCopy("ilanı onaya gönder", language)}`}</Text>
+              <Text style={{ color: "#FFFFFF", fontSize: 14, fontWeight: "900" }}>{publishing ? translateCopy("Yükleniyor…", language) : updateCount > 0 ? `${newCount} ${translateCopy("yeni", language)} · ${updateCount} ${translateCopy("güncelle", language)}` : `${validRows.length} ${translateCopy("ilanı onaya gönder", language)}`}</Text>
             </Pressable>
           </View>
         ) : null}

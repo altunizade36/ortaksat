@@ -2,7 +2,7 @@
 import { manipulateAsync, SaveFormat } from "expo-image-manipulator";
 
 import { supabase } from "@/lib/supabase";
-import type { CategorySuggestion, Conversation, Lead, Listing, LocationSuggestion, Message, ModerationStatus, Notification, Offer, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
+import type { CategorySuggestion, Conversation, Lead, Listing, ListingStatus, LocationSuggestion, Message, ModerationStatus, Notification, Offer, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -432,6 +432,7 @@ export async function insertListing(listing: Listing): Promise<boolean> {
     location_note: listing.locationNote ?? null,
     status: listing.status,
     partnership_mode: listing.partnershipMode,
+    external_id: listing.externalId ? listing.externalId : null,
     stock_count: listing.stockCount,
     min_partner_rating: listing.minPartnerRating,
     commission_due_days: listing.commissionDueDays,
@@ -919,6 +920,41 @@ export async function updateListingStockPriceLive(id: string, patch: { stockCoun
   const { error } = await supabase.from("listings").update(payload).eq("id", id);
   if (error) console.warn("Supabase listing stock/price update failed", error);
   return !error;
+}
+
+/** Toplu yükleme SKU eşleştirmesi — satıcının external_id'li ilanları (RLS: sahip kendi satırlarını okur). */
+export async function fetchMyListingSkus(ownerId: string): Promise<Array<{ id: string; externalId: string; title: string; status: string }>> {
+  if (!supabase) return [];
+  const { data, error } = await supabase
+    .from("listings")
+    .select("id, external_id, title, status")
+    .eq("owner_id", ownerId)
+    .not("external_id", "is", null)
+    .limit(5000);
+  if (error) { console.warn("fetchMyListingSkus failed", error); return []; }
+  return ((data ?? []) as Array<{ id: string; external_id: string | null; title: string; status: string }>)
+    .filter((r) => r.external_id)
+    .map((r) => ({ id: r.id, externalId: r.external_id as string, title: r.title, status: r.status }));
+}
+
+/** Toplu yükleme upsert güncelleme — SKU eşleşen mevcut ilanın alanlarını günceller (RLS: sahip). */
+export async function updateListingFieldsLive(id: string, patch: { title?: string; description?: string; price?: number; commissionValue?: number; stockCount?: number; category?: string; location?: string; provinceId?: number | null; districtId?: number | null; status?: ListingStatus }): Promise<boolean> {
+  if (!supabase) return true;
+  const payload: Record<string, unknown> = {};
+  if (patch.title !== undefined) payload.title = patch.title;
+  if (patch.description !== undefined) payload.description = patch.description;
+  if (patch.price !== undefined) payload.price = patch.price;
+  if (patch.commissionValue !== undefined) payload.commission_value = patch.commissionValue;
+  if (patch.stockCount !== undefined) payload.stock_count = patch.stockCount;
+  if (patch.category !== undefined) payload.category = patch.category;
+  if (patch.location !== undefined) payload.location = patch.location;
+  if (patch.provinceId !== undefined) payload.province_id = patch.provinceId;
+  if (patch.districtId !== undefined) payload.district_id = patch.districtId;
+  if (patch.status !== undefined) payload.status = patch.status;
+  if (Object.keys(payload).length === 0) return true;
+  const { error } = await supabase.from("listings").update(payload).eq("id", id);
+  if (error) { console.warn("updateListingFieldsLive failed", error); return false; }
+  return true;
 }
 
 export async function updateListingInventoryLive(listing: Pick<Listing, "id" | "status" | "stockCount">) {
