@@ -116,19 +116,24 @@ export default function CategoriesPage() {
             </Link>
           </View>
         </View>
-        <View style={{ gap: 12, justifyContent: "center", width: isWideWeb ? 260 : "100%" }}>
+        {/* Stat kartları: masaüstü sağ sütunda dikey; MOBİLDE kompakt yatay 3'lü satır
+            (eskiden full-width stacked dev kartlardı → ilk ekranı doldurup kategorileri
+            aşağı itiyordu). */}
+        <View style={{ flexDirection: isWideWeb ? "column" : "row", gap: isWideWeb ? 12 : 8, justifyContent: "center", width: isWideWeb ? 260 : "100%" }}>
           {[
             { icon: "shape-outline" as const, value: `${tops.length}`, label: translateCopy("Toplam kategori", language) },
             { icon: "tag-multiple-outline" as const, value: `${totalActive}`, label: translateCopy("Aktif ilan", language) },
             { icon: "gift-outline" as const, value: translateCopy("Ücretsiz", language), label: translateCopy("İlan & başvuru", language) }
           ].map((s) => (
-            <View key={s.label} style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 14, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 }}>
-              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 40, justifyContent: "center", width: 40 }}>
-                <MaterialCommunityIcons name={s.icon} size={20} color={colors.primaryDark} />
+            <View key={s.label} style={isWideWeb
+              ? { alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 14, flexDirection: "row", gap: 12, paddingHorizontal: 16, paddingVertical: 14 }
+              : { alignItems: "center", backgroundColor: "#FFFFFF", borderRadius: 12, flex: 1, gap: 5, minWidth: 0, paddingHorizontal: 6, paddingVertical: 11 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: isWideWeb ? 40 : 34, justifyContent: "center", width: isWideWeb ? 40 : 34 }}>
+                <MaterialCommunityIcons name={s.icon} size={isWideWeb ? 20 : 17} color={colors.primaryDark} />
               </View>
-              <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{s.value}</Text>
-                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{s.label}</Text>
+              <View style={isWideWeb ? { flex: 1, gap: 1, minWidth: 0 } : { alignItems: "center", gap: 1, minWidth: 0, width: "100%" }}>
+                <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: colors.ink, fontSize: isWideWeb ? 18 : 15, fontWeight: "900" }}>{s.value}</Text>
+                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: isWideWeb ? 12 : 10.5, fontWeight: "700", textAlign: isWideWeb ? "left" : "center" }}>{s.label}</Text>
               </View>
             </View>
           ))}
