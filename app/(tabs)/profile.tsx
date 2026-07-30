@@ -135,10 +135,26 @@ function ProfileScreenInner() {
           <View style={{ flex: 1, gap: 16, minWidth: 0 }}>
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18 }}>
               <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Bugün dikkat etmen gerekenler", language)}</Text>
-              <ActionRow href="/(tabs)/seller" icon="account-clock-outline" label="Ortak başvuruları" tone={pendingSellerApplications.length ? "warning" : "neutral"} value={`${pendingSellerApplications.length}`} />
-              <ActionRow href="/(tabs)/partner" icon="handshake-outline" label="Bekleyen ortaklıklar" tone={pendingPartnerships.length ? "warning" : "neutral"} value={`${pendingPartnerships.length}`} />
-              <ActionRow href="/messages" icon="message-badge-outline" label="Okunmamış mesaj" tone={unreadMessages.length ? "warning" : "neutral"} value={`${unreadMessages.length}`} />
-              <ActionRow href="/notifications" icon="bell-outline" label="Yeni bildirim" tone={unreadNotifications.length ? "warning" : "neutral"} value={`${unreadNotifications.length}`} />
+              {(() => {
+                // Sadece AKSİYON gerektirenleri göster (>0). Hepsi 0 ise sıfır-duvarı yerine
+                // tek satır "her şey güncel" — yeni kullanıcıda temiz görünüm.
+                const todo: Array<{ href: Href; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; n: number }> = [
+                  { href: "/(tabs)/seller", icon: "account-clock-outline", label: "Ortak başvuruları", n: pendingSellerApplications.length },
+                  { href: "/(tabs)/partner", icon: "handshake-outline", label: "Bekleyen ortaklıklar", n: pendingPartnerships.length },
+                  { href: "/messages", icon: "message-badge-outline", label: "Okunmamış mesaj", n: unreadMessages.length },
+                  { href: "/notifications", icon: "bell-outline", label: "Yeni bildirim", n: unreadNotifications.length }
+                ];
+                const actionable = todo.filter((x) => x.n > 0);
+                if (actionable.length === 0) {
+                  return (
+                    <View style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 4 }}>
+                      <MaterialCommunityIcons name="check-circle-outline" size={20} color={colors.success} />
+                      <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "700" }}>{translateCopy("Bekleyen işin yok — her şey güncel.", language)}</Text>
+                    </View>
+                  );
+                }
+                return actionable.map((x) => <ActionRow key={x.label} href={x.href} icon={x.icon} label={x.label} tone="warning" value={`${x.n}`} />);
+              })()}
             </View>
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 6, padding: 18 }}>
@@ -156,18 +172,6 @@ function ProfileScreenInner() {
               <MenuRow icon="account-cancel-outline" label="Engellenenler" detail="Engellediğin kullanıcılar sana mesaj gönderemez" value={`${blockedUserIds.length}`} href="/engellenenler" />
             </View>
 
-            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 17, fontWeight: "900" }}>{translateCopy("Hızlı işlemler", language)}</Text>
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-                <Shortcut href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} icon="store-search-outline" label="Mağazam" />
-                <Shortcut href="/(tabs)/seller" icon="storefront-outline" label="İlanlarım" />
-                <Shortcut href="/(tabs)/partner" icon="handshake-outline" label="Ortak Satış" />
-                <Shortcut href={"/davet" as Href} icon="account-heart-outline" label="Davet Et" />
-                <Shortcut href="/favorites" icon="heart-outline" label="Favoriler" />
-                <Shortcut href="/profile-edit" icon="cog-outline" label="Ayarlar" />
-                <Shortcut href="/trust" icon="shield-check-outline" label="Güven Merkezi" />
-              </View>
-            </View>
           </View>
 
           {/* Sidebar */}

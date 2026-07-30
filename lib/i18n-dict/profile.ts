@@ -46,6 +46,7 @@ export const profileDict: Record<string, string> = {
   "Profili düzenle": "Edit profile",
   "İlan ver": "Post a listing",
   "Bugün dikkat etmen gerekenler": "What to watch today",
+  "Bekleyen işin yok — her şey güncel.": "Nothing pending — you're all caught up.",
   "Hesap özeti": "Account summary",
   "Hızlı işlemler": "Quick actions",
   "Profil gücü": "Profile strength",
