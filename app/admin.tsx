@@ -79,6 +79,17 @@ const STATUS_TONE: Record<SuggestionStatus, { tint: string; color: string; label
   approved: { tint: colors.successSoft, color: colors.success, label: "Onaylandı" },
   rejected: { tint: colors.accentSoft, color: colors.accent, label: "Reddedildi" }
 };
+
+// Raporlar — denetim aksiyonlarının okunur Türkçe etiketleri + özet bar renkleri (dataviz-safe).
+const ACTION_LABEL: Record<string, string> = {
+  sign_in: "Giriş", sign_up: "Kayıt",
+  listing_created: "İlan oluşturuldu", listing_updated: "İlan güncellendi",
+  partnership_pending: "Ortaklık başvurusu", partnership_active: "Ortaklık onaylandı",
+  partnership_rejected: "Ortaklık reddedildi", partnership_cancelled: "Ortaklık sonlandırıldı",
+  sale_recorded: "Satış kaydı", sale_confirmed: "Satış onaylandı",
+  offer_created: "Teklif verildi", review_created: "Yorum yazıldı", lead_created: "Talep oluştu"
+};
+const REPORT_BARS = ["#0EA5B7", "#0F9D66", "#7C5CFC", "#E4572E", "#E0A81E", "#0B7285"];
 const SALE_TONE: Record<SaleStatus, { tint: string; color: string; label: string }> = {
   pending: { tint: colors.warningSoft, color: colors.warning, label: "Bekliyor" },
   return_pending: { tint: colors.warningSoft, color: colors.warning, label: "İade süresi" },
@@ -1168,6 +1179,32 @@ function AdminScreenInner() {
 
         {section === "reports" ? (
           <View style={{ gap: 16 }}>
+            {/* AKTİVİTE ÖZETİ — ham logdan türetilen aksiyon-tipi dağılımı (ham döküm değil, RAPOR). */}
+            <Panel title="Aktivite özeti" sub={audit ? `Son ${audit.logs.length} olay · son 1 saatte ${audit.rateHits} hız-limiti olayı` : "yükleniyor / erişim yok"}>
+              {!audit || audit.logs.length === 0 ? (
+                <EmptyState title="Aktivite yok" body="Kullanıcılar giriş yapıp işlem yaptıkça aksiyon dağılımı burada canlanır." />
+              ) : (() => {
+                const counts: Record<string, number> = {};
+                for (const a of audit.logs) counts[a.action] = (counts[a.action] ?? 0) + 1;
+                const rows = Object.entries(counts).sort((x, y) => y[1] - x[1]);
+                const max = rows[0]?.[1] ?? 1;
+                return (
+                  <View style={{ gap: 10 }}>
+                    {rows.map(([action, n], i) => (
+                      <View key={action} style={{ gap: 5 }}>
+                        <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+                          <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{ACTION_LABEL[action] ?? action}</Text>
+                          <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{n}</Text>
+                        </View>
+                        <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 8, overflow: "hidden" }}>
+                          <View style={{ backgroundColor: REPORT_BARS[i % REPORT_BARS.length], borderRadius: 999, height: "100%", width: `${Math.max(4, Math.round((n / max) * 100))}%` }} />
+                        </View>
+                      </View>
+                    ))}
+                  </View>
+                );
+              })()}
+            </Panel>
             <Panel title="Denetim Kaydı (activity_logs)" sub={audit ? `${audit.logs.length} son kayıt · son 1 saatte ${audit.rateHits} hız-limiti olayı` : "yükleniyor / erişim yok"}>
               {!audit ? (
                 <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", paddingVertical: 8 }}>Denetim kaydı yüklenemedi (admin değilsen veya henüz kayıt yoksa boş görünür).</Text>
