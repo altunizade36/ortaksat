@@ -10,8 +10,23 @@
  * kategori görseli, harici link) AYNEN döndürür — yani bilinmeyen kaynakta sessizce
  * bozulmaz, sadece optimize edilmemiş olur.
  */
+// Oturum-içi "thumbnail yok" hafızası. Bir kart görselinin `-t.jpg` küçük varyantı
+// bir kez 400/404 verince (SafeRemoteImage onError → markThumbnailMissing) buraya
+// işaretlenir → cardImageUrl o URI için ARTIK `-t.jpg` istemez, doğrudan orijinali
+// döner. Böylece aynı görsel her render'da tekrar 400 üretmez (Supabase Storage log
+// spam'i + gereksiz istek biter). KALICI çözüm thumbnail'i üretmektir
+// (scripts/backfill-thumbnails.mjs); bu yalnızca istemci-tarafı dayanıklılık/gürültü azaltma.
+const knownMissingThumb = new Set<string>();
+
+export function markThumbnailMissing(url?: string | null): void {
+  if (url) knownMissingThumb.add(url);
+}
+
 export function cardImageUrl(url?: string | null): string | undefined {
   if (!url) return undefined;
+
+  // Bu görselin küçük varyantı bu oturumda zaten eksik bulundu → orijinali ver (yeni 400 yok).
+  if (knownMissingThumb.has(url)) return url;
 
   // Demo ilanları: build'de üretilen 512px WebP varyantı.
   const demo = url.match(/^(.*)\/demo\/([^/?#]+)\.jpe?g(\?.*)?$/i);

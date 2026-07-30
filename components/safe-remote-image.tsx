@@ -3,7 +3,7 @@ import { useEffect, useState } from "react";
 import { View } from "react-native";
 
 import { colors } from "@/components/colors";
-import { cardImageUrl } from "@/lib/image-url";
+import { cardImageUrl, markThumbnailMissing } from "@/lib/image-url";
 
 const fallbackImage = require("../assets/mascot.png");
 
@@ -62,6 +62,9 @@ export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, full, o
         onError={(event) => {
           // Küçük varyant bulunamadıysa önce orijinali dene; asıl görsel de düşerse fallback.
           if (!noThumb && !full && uri && shown && shown !== uri) {
+            // Oturum-içi hatırla → bu görselin -t.jpg'si tüm kartlarda artık istenmez
+            // (her render'da tekrarlanan 400 / storage log spam'i biter).
+            markThumbnailMissing(uri);
             setNoThumb(true);
             return;
           }
