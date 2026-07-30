@@ -41,9 +41,12 @@ type ParsedRow = {
   provinceName?: string;
   commission: number;
   stock: number;
-  image: string;
+  image: string; // kapak (galerinin ilki)
+  images: string[]; // tüm görseller: kapak + ek galeri (gorsel_url'de | ile ayrılmış)
   errors: string[];
 };
+
+const MAX_IMAGES = 10; // ilan başına kapak + 9 ek görsel (create akışıyla uyumlu üst sınır)
 
 // Basit ama tırnak-farkında CSV satır ayrıştırıcı (alan içinde ayraç destekler).
 function splitCsvLine(line: string, delim: string = ","): string[] {
@@ -164,7 +167,12 @@ function BulkUploadInner() {
       }
       const commission = overrideComm ?? (Number(get("commission")) || 10);
       const stock = Math.max(1, Math.floor(parseTrPrice(get("stock")) || 1)); // TR-binlik ("1.500"→1500, Number 1.5 yapardı)
-      const image = get("image") || bulkImages[idx] || "";
+      // ÇOKLU GÖRSEL: gorsel_url'de | (veya boşlukla ayrılmış birden çok http) → galeri.
+      // İlki kapak, kalanı ek görsel (adAssets). CSV'de görsel yoksa sıralı toplu-foto.
+      const rawImage = get("image");
+      const imageList = rawImage.split(/[|\n]/).map((s) => s.trim()).filter(Boolean).slice(0, MAX_IMAGES);
+      const images = imageList.length ? imageList : (bulkImages[idx] ? [bulkImages[idx]] : []);
+      const image = images[0] || "";
       const errors: string[] = [];
       // Fiyat her iki modda da zorunlu ve geçerli olmalı.
       if (!(price > 0)) errors.push(translateCopy("Fiyat geçersiz (0'dan büyük olmalı)", language));
@@ -189,7 +197,7 @@ function BulkUploadInner() {
       const titleKey = title.toLocaleLowerCase("tr-TR").trim();
       if (!sku && titleKey && seenTitles.has(titleKey)) errors.push(translateCopy("Bu başlık partide zaten var (mükerrer)", language));
       else if (!sku && titleKey) seenTitles.add(titleKey);
-      return { raw: {}, sku, existingId: existing?.id, mode, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, stock, image, errors };
+      return { raw: {}, sku, existingId: existing?.id, mode, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, stock, image, images, errors };
     });
     setRows(parsed);
   };
@@ -292,7 +300,12 @@ function BulkUploadInner() {
           const leaf = r.category!.node;
           const rootLabel = r.category!.path[0]?.label ?? leaf.label;
           const formKey = resolveFormKey(r.category!.path);
-          const cover = r.image ? await uploadListingImage(r.image, currentUser.id) : (leaf.image || r.category!.path.find((p) => p.image)?.image || "");
+          // ÇOKLU GÖRSEL: tüm URL'leri yükle (uzak URL'ler zaten geçer) → kapak + ek galeri (adAssets).
+          const uploaded = r.images.length
+            ? (await Promise.all(r.images.map((u) => uploadListingImage(u, currentUser.id)))).filter(Boolean)
+            : [];
+          const cover = uploaded[0] || (leaf.image || r.category!.path.find((p) => p.image)?.image || "");
+          const extraAssets = uploaded.slice(1);
           const auto = autoFillListing({ title: r.title, category: leaf.label, price: r.price, commission: r.commission, currency: "TRY" });
           const location = formatLocation({ provinceId: r.provinceId, districtId: r.districtId }, "neighborhood") || getProvince(r.provinceId)?.name || "Türkiye";
           createListing({
@@ -301,7 +314,7 @@ function BulkUploadInner() {
             description: r.description || auto.description,
             salesPitch: auto.salesPitch,
             shareTemplates: auto.shareTemplates,
-            adAssets: [],
+            adAssets: extraAssets,
             tags: [rootLabel, leaf.label].filter(Boolean),
             price: r.price,
             currency: "TRY",
@@ -393,7 +406,7 @@ function BulkUploadInner() {
         {/* Adım 1: şablon */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, padding: 16 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>1) {translateCopy("Şablonu kullan", language)}</Text>
-          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Sütunlar: harici_kod, baslik, aciklama, fiyat, kategori, il, ilce, komisyon, stok, gorsel_url. Excel'de düzenleyip CSV olarak kaydet, sonra buraya yapıştır.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Sütunlar: harici_kod, baslik, aciklama, fiyat, kategori, il, ilce, komisyon, stok, gorsel_url. Birden çok görsel için gorsel_url'e URL'leri | ile ayır (ilki kapak olur). Excel'de düzenleyip CSV olarak kaydet, sonra buraya yapıştır.", language)}</Text>
           <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 11 }}>
             <MaterialCommunityIcons name="barcode-scan" size={16} color={colors.info} style={{ marginTop: 1 }} />
             <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
@@ -549,6 +562,12 @@ function BulkUploadInner() {
                         <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 40 }}>%{r.commission}</Text>
                       </View>
                       {!okRow ? <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700", marginLeft: 34 }}>{r.errors.join(" · ")}</Text> : null}
+                      {okRow && r.images.length > 1 ? (
+                        <View style={{ alignItems: "center", flexDirection: "row", gap: 4, marginLeft: 34 }}>
+                          <MaterialCommunityIcons name="image-multiple-outline" size={12} color={colors.muted} />
+                          <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{r.images.length} {translateCopy("görsel (galeri)", language)}</Text>
+                        </View>
+                      ) : null}
                     </View>
                   );
                 })}
