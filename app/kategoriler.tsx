@@ -72,7 +72,6 @@ export default function CategoriesPage() {
     };
   });
   const totalActive = listings.filter((l) => l.status === "active").length;
-  const popular = catData.slice().sort((a, b) => b.count - a.count || b.subCount - a.subCount).slice(0, 8);
   const quickChips = tops.slice(0, 8).map((c) => ({ key: c.key, label: c.label, shortLabel: c.label }));
 
 
@@ -140,26 +139,9 @@ export default function CategoriesPage() {
         </View>
       </View>
 
-      {/* Popüler kategoriler — tam genişlik (sağdaki "nasıl çalışır" kartı
-          kaldırıldı; hem gereksiz tekrar hem mobilde bozulmaya yol açıyordu). */}
-      <View style={{ gap: 14 }}>
-        <SectionHead title={translateCopy("Popüler kategoriler", language)} subtitle={translateCopy("En çok ilgi gören kategorilere göz at.", language)} />
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-          {popular.map(({ cat, count, image }, i) => (
-            <Link key={cat.key} href={categoryHref(cat.key)} asChild>
-              <Pressable dataSet={{ card: "listing" }} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 130, flexGrow: 1, gap: 8, maxWidth: 200, padding: 12 }}>
-                <View style={{ alignItems: "center", backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 84, justifyContent: "center", overflow: "hidden", width: "100%" }}>
-                  <SafeRemoteImage uri={image} alt={`${translateCopy(cat.label, language)} kategorisi`} accessibilityLabel={`${translateCopy(cat.label, language)} kategorisi`} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
-                </View>
-                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800", textAlign: "center" }}>{translateCopy(cat.label, language)}</Text>
-                <Text numberOfLines={1} style={{ color: count > 0 ? colors.muted : colors.primaryDark, fontSize: 11, fontWeight: "700" }}>{count > 0 ? `${groupTr(count)} ilan` : translateCopy("İlan ekle →", language)}</Text>
-              </Pressable>
-            </Link>
-          ))}
-        </View>
-      </View>
-
-      {/* Tüm kategoriler */}
+      {/* Tüm kategoriler — tek kategori bölümü. Eskiden ÜSTTE bir de "Popüler
+          kategoriler" (aynı 8 kategorinin görsel kartları) vardı; hızlı-çip + bu grid
+          ile ÜÇ kez tekrar ediyordu (11 kategori için fazlalık) → kaldırıldı. */}
       <View style={{ gap: 14 }}>
         <SectionHead title={translateCopy("Tüm kategoriler", language)} subtitle={translateCopy("Tüm ana kategoriler ve alt kategorileri keşfet.", language)} />
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
