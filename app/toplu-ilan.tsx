@@ -14,6 +14,7 @@ import { Alert } from "@/lib/alert";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
 import { matchCategoryByName, resolveFormKey, getFormSchema, type CategoryNode, type FieldDef } from "@/lib/category-tree";
+import type { PartnershipMode } from "@/lib/types";
 import { autoFillListing } from "@/lib/listing-autofill";
 import { formatLocation, getProvince, resolveProvinceByName, districtsOfProvince } from "@/lib/locations";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -40,6 +41,7 @@ type ParsedRow = {
   districtId?: number;
   provinceName?: string;
   commission: number;
+  partnershipMode: PartnershipMode; // ortak satış modu (none/open/approval)
   stock: number;
   image: string; // kapak (galerinin ilki)
   images: string[]; // tüm görseller: kapak + ek galeri (gorsel_url'de | ile ayrılmış)
@@ -86,8 +88,20 @@ const COL_ALIASES: Record<string, string[]> = {
   district: ["ilce", "ilçe", "district"],
   commission: ["komisyon", "commission", "oran"],
   stock: ["stok", "stock", "adet"],
-  image: ["gorsel_url", "görsel", "gorsel", "foto", "image", "url", "resim"]
+  image: ["gorsel_url", "görsel", "gorsel", "foto", "image", "url", "resim"],
+  partnership: ["ortak_satis", "ortak satış", "ortaksatis", "ortaklık", "ortaklik", "partnership", "partner_mode", "ortak"]
 };
+
+// ORTAK SATIŞ modu (opsiyonel sütun). Boş/tanınmaz → "approval" (güvenli varsayılan:
+// satıcı ortakları onaylar). "none" = normal ilan, ortaksız (komisyon yok).
+function resolvePartnershipMode(raw: string): PartnershipMode {
+  const t = normKey(raw);
+  if (!t) return "approval";
+  if (["yok", "kapali", "kapalı", "none", "normal", "hayır", "hayir", "ortaksatisyok"].includes(t)) return "none";
+  if (["acik", "açık", "herkeseacik", "herkeseaçık", "open", "serbest", "herkes"].includes(t)) return "open";
+  if (["onayli", "onaylı", "onay", "approval", "onayla"].includes(t)) return "approval";
+  return "approval";
+}
 
 // Başlık/etiket normalize (tr-TR küçült, boşluk/altçizgi at) — sütun eşleştirmesinde ortak.
 function normKey(s: string): string {
@@ -213,6 +227,7 @@ function BulkUploadInner() {
         districtId = d?.id;
       }
       const commission = overrideComm ?? (Number(get("commission")) || 10);
+      const partnershipMode = resolvePartnershipMode(get("partnership"));
       const stock = Math.max(1, Math.floor(parseTrPrice(get("stock")) || 1)); // TR-binlik ("1.500"→1500, Number 1.5 yapardı)
       // ÇOKLU GÖRSEL: gorsel_url'de | (veya boşlukla ayrılmış birden çok http) → galeri.
       // İlki kapak, kalanı ek görsel (adAssets). CSV'de görsel yoksa sıralı toplu-foto.
@@ -253,7 +268,8 @@ function BulkUploadInner() {
         if (categoryRaw && !category) errors.push(`${translateCopy("Kategori eşleşmedi", language)}: "${categoryRaw}"`);
         if (get("province") && !prov) errors.push(`${translateCopy("İl eşleşmedi", language)}: "${get("province")}"`);
       }
-      if (commission <= 0 || commission > 90) errors.push(translateCopy("Komisyon 1–90 arası olmalı", language));
+      // Komisyon yalnız ortak satış AÇIK/ONAYLI iken anlamlı; normal ilanda (none) atlanır.
+      if (partnershipMode !== "none" && (commission <= 0 || commission > 90)) errors.push(translateCopy("Komisyon 1–90 arası olmalı", language));
       // Mükerrer SKU (aynı partide iki kez) → upsert çakışması; reddet.
       if (sku && seenSkus.has(sku)) errors.push(translateCopy("Bu harici kod (SKU) partide zaten var (mükerrer)", language));
       else if (sku) seenSkus.add(sku);
@@ -261,7 +277,7 @@ function BulkUploadInner() {
       const titleKey = title.toLocaleLowerCase("tr-TR").trim();
       if (!sku && titleKey && seenTitles.has(titleKey)) errors.push(translateCopy("Bu başlık partide zaten var (mükerrer)", language));
       else if (!sku && titleKey) seenTitles.add(titleKey);
-      return { raw: {}, sku, existingId: existing?.id, mode, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, stock, image, images, attrs, recognizedAttrs, errors };
+      return { raw: {}, sku, existingId: existing?.id, mode, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, partnershipMode, stock, image, images, attrs, recognizedAttrs, errors };
     });
     setRows(parsed);
   };
@@ -402,7 +418,7 @@ function BulkUploadInner() {
             partnerRules: ["Komisyon sadece onaylı satış kaydında oluşur."],
             deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; OrtakSat para tutmaz.",
             contactMethod: "message",
-            partnershipMode: "approval",
+            partnershipMode: r.partnershipMode,
             attributes: { _root: rootLabel, _leaf: leaf.label, _formKey: formKey, ...r.attrs }
           }, "pending_review"); // TOPLU: yayından önce admin onayı
           created++;
@@ -485,6 +501,14 @@ function BulkUploadInner() {
               <Text style={{ color: colors.ink, fontWeight: "800" }}>{translateCopy("Kategoriye özel sütunlar (opsiyonel):", language)}</Text>
               {" "}
               {translateCopy("Marka, Model, Yıl, Renk, Durum gibi sütunlar ekleyebilirsin. Sütun başlığı o kategorinin özelliğiyle eşleşirse otomatik doldurulur (özellik tablosunda + filtrelerde görünür). Eşleşmeyen sütunlar yok sayılır.", language)}
+            </Text>
+          </View>
+          <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, padding: 11 }}>
+            <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} style={{ marginTop: 1 }} />
+            <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
+              <Text style={{ color: colors.ink, fontWeight: "800" }}>{translateCopy("ortak_satis (opsiyonel):", language)}</Text>
+              {" "}
+              {translateCopy("Ortaklık modunu satır bazında seç — onaylı (varsayılan: ortakları onaylarsın), açık (herkes ortak olabilir) veya kapalı (normal ilan, ortaksız/komisyonsuz). Boş bırakırsan onaylı.", language)}
             </Text>
           </View>
           <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, padding: 10 }}>
@@ -634,7 +658,7 @@ function BulkUploadInner() {
                         <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 40 }}>%{r.commission}</Text>
                       </View>
                       {!okRow ? <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700", marginLeft: 34 }}>{r.errors.join(" · ")}</Text> : null}
-                      {okRow && (r.images.length > 1 || r.recognizedAttrs.length > 0) ? (
+                      {okRow && (r.images.length > 1 || r.recognizedAttrs.length > 0 || (r.mode === "new" && r.partnershipMode !== "approval")) ? (
                         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, marginLeft: 34 }}>
                           {r.images.length > 1 ? (
                             <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
@@ -646,6 +670,12 @@ function BulkUploadInner() {
                             <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                               <MaterialCommunityIcons name="tag-check-outline" size={12} color={colors.primaryDark} />
                               <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "700" }}>{r.recognizedAttrs.length} {translateCopy("özellik", language)}: {r.recognizedAttrs.slice(0, 4).join(", ")}{r.recognizedAttrs.length > 4 ? "…" : ""}</Text>
+                            </View>
+                          ) : null}
+                          {r.mode === "new" && r.partnershipMode !== "approval" ? (
+                            <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                              <MaterialCommunityIcons name={r.partnershipMode === "none" ? "account-off-outline" : "account-group-outline"} size={12} color={colors.muted} />
+                              <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{r.partnershipMode === "none" ? translateCopy("ortak satış kapalı", language) : translateCopy("ortaklık herkese açık", language)}</Text>
                             </View>
                           ) : null}
                         </View>
