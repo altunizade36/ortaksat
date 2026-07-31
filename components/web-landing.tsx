@@ -123,15 +123,17 @@ export function WebFooter() {
         borderTopColor: colors.primary,
         borderTopWidth: 3,
         marginTop: "auto",
-        paddingBottom: isWideWeb ? 12 : 14,
+        paddingBottom: isWideWeb ? 12 : 12,
         paddingHorizontal: isWideWeb ? 32 : 16,
-        paddingTop: isWideWeb ? 16 : 16
+        paddingTop: isWideWeb ? 16 : 12
       }}
     >
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: isWideWeb ? 24 : 16, rowGap: isWideWeb ? 14 : 10 }}>
-        <View style={{ flex: 1.4, gap: 5, minWidth: 190 }}>
+      {/* MOBİL: marka bloğu TAM GENİŞLİK (kendi satırı), link sütunları DENGELİ 2-sütun
+          ızgara (~%47) → eşit hizalı, kısa. MASAÜSTÜ: marka + 5 sütun tek satır (aynı). */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: isWideWeb ? 24 : 14, rowGap: isWideWeb ? 14 : 12 }}>
+        <View style={{ flex: isWideWeb ? 1.4 : undefined, flexBasis: isWideWeb ? undefined : "100%", gap: isWideWeb ? 5 : 3, minWidth: isWideWeb ? 190 : 0 }}>
           <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "900", letterSpacing: 0.2 }}>ortaksat</Text>
-          <Text style={{ color: light, fontSize: 12, fontWeight: "600", lineHeight: 16.5, maxWidth: 300 }}>
+          <Text style={{ color: light, fontSize: 12, fontWeight: "600", lineHeight: 16, maxWidth: 320 }}>
             {translateCopy("İlanını aç, satış yapabilecek ortaklarla eşleş; komisyonu birlikte belirleyin.", language)}
           </Text>
           <PressLink href="/iletisim" accessibilityLabel={SUPPORT_EMAIL} pressedOpacity={0.75} style={{ alignItems: "center", flexDirection: "row", gap: 6, marginTop: 2 }}>
@@ -140,24 +142,24 @@ export function WebFooter() {
           </PressLink>
         </View>
         {columns.map((column) => (
-          <View key={column.heading} style={{ gap: 5, flexBasis: 128, flexGrow: 1, minWidth: 126 }}>
+          <View key={column.heading} style={{ gap: isWideWeb ? 5 : 3, flexBasis: isWideWeb ? 128 : "47%", flexGrow: 1, minWidth: isWideWeb ? 126 : 0 }}>
             <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900", letterSpacing: 0.2, marginBottom: 1 }}>{translateCopy(column.heading, language)}</Text>
             {column.links.map((link) => (
               <Link key={link.label} href={link.href} asChild>
                 <Pressable style={{ paddingVertical: 2 }}>
-                  <Text style={{ color: light, fontSize: 12.5, fontWeight: "600" }}>{translateCopy(link.label, language)}</Text>
+                  <Text numberOfLines={1} style={{ color: light, fontSize: 12.5, fontWeight: "600" }}>{translateCopy(link.label, language)}</Text>
                 </Pressable>
               </Link>
             ))}
           </View>
         ))}
       </View>
-      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between", marginTop: 12, paddingTop: 10 }}>
+      <View style={{ alignItems: "center", borderTopColor: "rgba(255,255,255,0.16)", borderTopWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "space-between", marginTop: isWideWeb ? 12 : 10, paddingTop: isWideWeb ? 10 : 9 }}>
         <View style={{ flex: 1, gap: 2, minWidth: 200 }}>
           <Text style={{ color: "rgba(255,255,255,0.7)", fontSize: 12, fontWeight: "600" }}>
             {translateCopy("© 2026 OrtakSat. Tüm hakları saklıdır.", language)}
           </Text>
-          <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: "600", lineHeight: 15, maxWidth: 680 }}>
+          <Text style={{ color: "rgba(255,255,255,0.55)", fontSize: 11, fontWeight: "600", lineHeight: 14.5, maxWidth: 680 }}>
             {translateCopy("OrtakSat ödeme, kargo veya komisyon tahsilatı yapmaz; yalnızca ilan, ortak satıcı eşleştirme, mesajlaşma ve anlaşma kaydı sağlar. Satış, ödeme, teslimat ve komisyon ödemesi kullanıcılar arasındaki anlaşmalardan ibaret olup tüm sorumluluk taraflara aittir.", language)}
           </Text>
         </View>
