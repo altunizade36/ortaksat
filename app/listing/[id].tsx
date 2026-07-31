@@ -648,7 +648,9 @@ export default function ListingDetailScreen() {
               }}
               style={{ position: "relative" }}
             >
-              <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
+              {/* LCP: ilan detayının kahraman görseli → yüksek öncelik + fade/scrim yok
+                  (SafeRemoteImage priority="high" ile eager). Eskiden low+cross-dissolve idi. */}
+              <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} priority="high" style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 330, width: "100%" }} contentFit="cover" />
               {/* Kaynak filigranı — dosyaya gömülmez, yalnız görüntüleme katmanı (ürün bozulmaz). */}
               <ImageWatermark size={isWideWeb ? 20 : 15} />
               {/* Ortaklığa AÇIK ilan rozeti (yeşil, sol üst) — kapalı/normal ilanda gösterilmez. */}
