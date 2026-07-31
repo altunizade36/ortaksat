@@ -4,7 +4,7 @@ import * as ImagePicker from "expo-image-picker";
 import { Link, useLocalSearchParams, type Href } from "expo-router";
 
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
@@ -154,9 +154,10 @@ function MessagesScreenInner() {
     deskNearBottomRef.current = true;
     deskScrollRef.current?.scrollToEnd({ animated: false });
   }, [activeId]);
-  const myConversations = conversations
+  // PERF: memo'lu → composer/arama tuş vuruşlarında (draft/query) yeniden hesaplanmaz.
+  const myConversations = useMemo(() => conversations
     .filter((conversation) => conversation.participantIds.includes(currentUser.id))
-    .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt));
+    .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt)), [conversations, currentUser.id]);
 
   // Masaüstünde ilk konuşmayı varsayılan seçili yap ("yazıyor…" ve okundu için).
   useEffect(() => {
@@ -164,15 +165,15 @@ function MessagesScreenInner() {
   }, [isWideWeb, activeId, myConversations]);
 
   const { otherTyping, notifyTyping } = useTypingIndicator(activeId ?? undefined, currentUser.id);
-  const unreadMessages = messages.filter((item) => item.receiverId === currentUser.id && !item.read);
-  const tokens = searchKey(query).split(" ").filter(Boolean);
+  const unreadMessages = useMemo(() => messages.filter((item) => item.receiverId === currentUser.id && !item.read), [messages, currentUser.id]);
+  const tokens = useMemo(() => searchKey(query).split(" ").filter(Boolean), [query]);
 
   // PERF: her konuşmanın context'i RENDER BAŞINA BİR KEZ hesaplanır (Map). Eskiden
   // buildConversationContext filter + sort (O(n log n)) + iki render map'inde DEFALARCA
   // yeniden kuruluyordu (her tuş vuruşunda ağır). Tek hesap → sort/filter/render Map'ten okur.
-  const ctxById = new Map(myConversations.map((conversation) => [conversation.id, buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t })]));
+  const ctxById = useMemo(() => new Map(myConversations.map((conversation) => [conversation.id, buildConversationContext({ conversation, currentUserId: currentUser.id, findUser, leads, messages, partnerships, sales, t })])), [myConversations, messages, leads, partnerships, sales, currentUser.id, findUser, t]);
 
-  const visibleConversations = myConversations.filter((conversation) => {
+  const visibleConversations = useMemo(() => myConversations.filter((conversation) => {
     if (archivedIds.includes(conversation.id) !== showArchived) return false;
     const context = ctxById.get(conversation.id)!;
     const listing = findListing(conversation.listingId);
@@ -201,7 +202,7 @@ function MessagesScreenInner() {
         .join(" ")
     );
     return tokens.every((token) => haystack.includes(token));
-  }).sort((a, b) => conversationPriority(b, currentUser.id, messages, ctxById.get(b.id)!) - conversationPriority(a, currentUser.id, messages, ctxById.get(a.id)!));
+  }).sort((a, b) => conversationPriority(b, currentUser.id, messages, ctxById.get(b.id)!) - conversationPriority(a, currentUser.id, messages, ctxById.get(a.id)!)), [myConversations, ctxById, messages, archivedIds, showArchived, filter, tokens, currentUser.id, findListing, findUser]);
   const actionCount = myConversations.reduce((n, conversation) => n + (ctxById.get(conversation.id)!.needsAction ? 1 : 0), 0);
 
   if (isWideWeb) {
