@@ -321,6 +321,11 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
   // ---- Taslak (yarım kalan ilan) otomatik kaydetme/geri-yükleme ----
   // İlk açılışta cihazdaki taslağı oku; kategori seçilmişse "devam et?" banner'ı göster.
+  // KRİTİK YARIŞ (düzeltildi): hesap ASENKRON hidrat olur → mount'ta currentUser.id
+  // henüz yoksa DRAFT_KEY "anon" olur, kullanıcının uid'li taslağını KAÇIRIRDI ve deps=[]
+  // olduğu için bir daha DENEMEZDİ (dönen kullanıcı taslağını kaybederdi). Artık DRAFT_KEY/
+  // isAuthenticated değişince yeniden dener; banner'ı bir-kez göstermek için ref-guard var.
+  const draftShownRef = useRef(false);
   useEffect(() => {
     let alive = true;
     (async () => {
@@ -341,15 +346,16 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       }
       if (!alive) return;
       setDraftReady(true);
-      if (!raw) return;
+      if (!raw || draftShownRef.current) return; // banner'ı yalnız bir kez göster
       try {
         const d = JSON.parse(raw) as DraftShape;
         if (!d?.savedAt || Date.now() - d.savedAt > DRAFT_TTL_MS) { void AsyncStorage.removeItem(DRAFT_KEY); return; }
-        if (Array.isArray(d.path) && d.path.length) setPendingDraft(d);
+        if (Array.isArray(d.path) && d.path.length) { draftShownRef.current = true; setPendingDraft(d); }
       } catch { void AsyncStorage.removeItem(DRAFT_KEY); }
     })().catch(() => { if (alive) setDraftReady(true); });
     return () => { alive = false; };
-  }, []);
+    // DRAFT_KEY (currentUser.id) / isAuthenticated hidrasyonunda yeniden dene.
+  }, [DRAFT_KEY, isAuthenticated]);
 
   // Değişiklikleri cihaza yaz (debounce). Sadece kategori seçilip form başladıysa ve
   // ilk yükleme bittiyse — böylece boş/eski taslağın üzerine hemen yazılmaz.

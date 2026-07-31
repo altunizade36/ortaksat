@@ -59,8 +59,10 @@ test("YAYIN SONRASI: başarı ekranı gerçek link ile gelir", async ({ page }) 
   await page.goto("/create", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(4000);
 
-  // Taslağı geri yükle → tüm form state dolar, önizleme adımına gelir
-  await page.getByText(/Devam et/i).first().click({ timeout: 8000 }).catch(() => {});
+  // Taslağı geri yükle → tüm form state dolar, önizleme adımına gelir.
+  // exact "Devam et" = geri-yükle banner butonu; /Devam et/i ayrıca "Devam etmek için
+  // bir kategori seç" doğrulama ipucuna eşleşip yanlış öğeye tıklıyordu.
+  await page.getByText("Devam et", { exact: true }).first().click({ timeout: 12000 }).catch(() => {});
   await page.waitForTimeout(2500);
 
   const yayinla = page.getByText("İlanı Yayınla", { exact: true }).first();
