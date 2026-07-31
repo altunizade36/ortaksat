@@ -455,8 +455,8 @@ export default function CategoryLandingScreen() {
         ) : (
           <>
             <View dataSet={{ cardGrid: "1" }} style={{ gap: 12 }}>
-              {items.slice(0, visible).map((l) => (
-                <ListingCard key={l.id} listing={l} owner={resolveOwner(l.ownerId)} />
+              {items.slice(0, visible).map((l, index) => (
+                <ListingCard key={l.id} listing={l} owner={resolveOwner(l.ownerId)} eager={index < 4} />
               ))}
             </View>
             {visible < items.length ? (

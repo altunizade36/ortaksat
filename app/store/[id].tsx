@@ -469,7 +469,7 @@ export default function StoreScreen() {
                         <Pressable onPress={() => setTab("listings")}><Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Tüm ilanları gör →", language)}</Text></Pressable>
                       </View>
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-                        {featured.map((listing) => <ListingCard key={listing.id} listing={listing} owner={seller} width={deskCardWidth} />)}
+                        {featured.map((listing, index) => <ListingCard key={listing.id} listing={listing} owner={seller} width={deskCardWidth} eager={index < 4} />)}
                       </View>
                     </View>
                   ) : null}
@@ -498,7 +498,7 @@ export default function StoreScreen() {
                     <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca burada görünür.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
                   ) : (
                     <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-                      {sellerListings.map((listing) => <ListingCard key={listing.id} listing={listing} owner={seller} width={deskGridCardWidth} />)}
+                      {sellerListings.map((listing, index) => <ListingCard key={listing.id} listing={listing} owner={seller} width={deskGridCardWidth} eager={index < 4} />)}
                     </View>
                   )}
                 </>
@@ -812,8 +812,8 @@ export default function StoreScreen() {
         <EmptyState title={translateCopy("Ürün yok", language)} body={isOwnStore ? translateCopy("İlk ilanını açınca mağazana ve ana pazara otomatik düşer.", language) : translateCopy("Bu mağazada şu an görünür ürün yok.", language)} />
       ) : (
         <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: gridGap }}>
-          {sellerListings.map((listing) => (
-            <ListingCard key={listing.id} listing={listing} owner={seller} width={cardWidth} />
+          {sellerListings.map((listing, index) => (
+            <ListingCard key={listing.id} listing={listing} owner={seller} width={cardWidth} eager={index < 4} />
           ))}
         </View>
       )}

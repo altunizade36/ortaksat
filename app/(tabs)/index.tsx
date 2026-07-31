@@ -580,8 +580,8 @@ export default function HomeScreen() {
             ) : visibleListings.length === 0 && marketplaceLoadFailed ? (
               <MarketplaceRetry onRetry={retryMarketplace} />
             ) : (
-              visibleListings.map((listing) => (
-                <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} />
+              visibleListings.map((listing, index) => (
+                <ListingCard key={listing.id} listing={listing} owner={findUser(listing.ownerId)} width={cardWidth} eager={index < 4} />
               ))
             )}
           </View>

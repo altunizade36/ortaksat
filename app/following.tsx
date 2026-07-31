@@ -123,7 +123,7 @@ function FollowingInner() {
           </View>
         ) : (
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap }}>
-            {items.map((listing) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} />)}
+            {items.map((listing, index) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} eager={index < 4} />)}
           </View>
         )}
       </View>

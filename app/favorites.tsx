@@ -249,7 +249,7 @@ function FavoritesScreenInner() {
             ) : (
               <>
                 <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-                  {filtered.slice(0, visibleCount).map((listing) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} onCollection={() => { setNewCol(""); setAssignFor(listing); }} collectionOn={Boolean(favColMap.get(listing.id))} />)}
+                  {filtered.slice(0, visibleCount).map((listing, index) => <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={cardWidth} priceNote={priceNoteFor(listing.id, listing.price)} onCollection={() => { setNewCol(""); setAssignFor(listing); }} collectionOn={Boolean(favColMap.get(listing.id))} eager={index < 4} />)}
                 </View>
                 {filtered.length > visibleCount ? (
                   <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Daha fazla göster", language)} onPress={() => setVisibleCount((c) => c + PAGE * 2)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.7 : 1, paddingHorizontal: 18, paddingVertical: 10 })}>

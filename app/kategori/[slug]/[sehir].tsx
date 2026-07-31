@@ -217,8 +217,8 @@ export default function CityCategoryScreen() {
         {items.length > 0 ? (
           <>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-              {items.slice(0, visible).map((l) => (
-                <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardWidth} />
+              {items.slice(0, visible).map((l, index) => (
+                <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardWidth} eager={index < 4} />
               ))}
             </View>
             {visible < items.length ? (
