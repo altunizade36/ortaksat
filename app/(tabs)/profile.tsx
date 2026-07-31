@@ -54,16 +54,6 @@ function ProfileScreenInner() {
   const isWideWeb = useIsWideWeb();
 
   if (isWideWeb) {
-    // Etiket duruma göre: yapılmamışsa EMİR ("Telefonunu doğrula"), yapılmışsa GEÇMİŞ
-    // ("Telefon doğrulandı ✓"). Eskiden hep "doğrulandı" yazıyordu → boş daire + "Tamamla"
-    // ile çelişiyordu (henüz doğrulanmamışken "doğrulandı" demek amatör/yanıltıcı).
-    const verifications: Array<{ label: string; done: boolean }> = [
-      { label: translateCopy(currentUser.verifiedPhone ? "Telefon doğrulandı" : "Telefonunu doğrula", language), done: currentUser.verifiedPhone },
-      { label: translateCopy(currentUser.verifiedIdentity ? "Kimlik doğrulandı" : "Kimliğini doğrula", language), done: currentUser.verifiedIdentity },
-      { label: translateCopy(currentUser.verifiedInstagram ? "Instagram bağlandı" : "Instagram hesabını bağla", language), done: !!currentUser.verifiedInstagram }
-    ];
-    const doneCount = verifications.filter((v) => v.done).length;
-    const completion = Math.round(((doneCount + (currentUser.bio ? 1 : 0) + (myListings.length ? 1 : 0)) / 5) * 100);
     const firstName = currentUser.name.split(" ")[0];
 
     const stats: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; sub: string; href: Href }> = [
@@ -188,23 +178,10 @@ function ProfileScreenInner() {
 
           {/* Sidebar */}
           <View style={{ gap: 16, width: 300 }}>
-            <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
-              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Profil gücü", language)}</Text>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 56, justifyContent: "center", width: 56 }}>
-                  <Text style={{ color: colors.primaryDark, fontSize: 17, fontWeight: "900" }}>%{completion}</Text>
-                </View>
-                <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Profilini tamamla, güven puanını ve satışlarını artır.", language)}</Text>
-              </View>
-              <ProgressBar value={completion} />
-              {verifications.map((v) => (
-                <View key={v.label} style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
-                  <MaterialCommunityIcons name={v.done ? "check-circle" : "circle-outline"} size={17} color={v.done ? colors.success : colors.subtle} />
-                  <Text style={{ color: v.done ? colors.ink : colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{v.label}</Text>
-                  {!v.done ? <Link href="/profile-edit" asChild><Pressable><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Tamamla", language)}</Text></Pressable></Link> : null}
-                </View>
-              ))}
-            </View>
+            {/* Profil gücü — masaüstü/mobil ORTAK bileşen (tek kaynak). Eskiden masaüstünde
+                ayrı, eksik (3 doğrulama) ve "Tamamla"yı yanlış /profile-edit'e yollayan bespoke
+                kart vardı; ProfileStrength 6 adımlı + doğrulamayı doğru /trust'a yönlendirir. */}
+            <ProfileStrength user={currentUser} hasListing={myListings.length > 0} hasPartnership={myPartnerships.length > 0} />
 
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18 }}>
               <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Güven puanların", language)}</Text>
