@@ -440,7 +440,23 @@ export async function loadOwnListings(userId: string): Promise<Listing[]> {
     .order("created_at", { ascending: false })
     .limit(500);
   if (error || !data) return [];
-  return (data as PublicListingCardRow[]).map(mapListing);
+  const listings = (data as PublicListingCardRow[]).map(mapListing);
+  // external_id (SKU) public view'de YOK (satıcıya özel, herkese açılmaz) → sahibinin
+  // kendi ilanları için listings tablosundan ayrıca çek + birleştir (RLS: owner=self).
+  // Böylece satıcı panosunda toplu-yüklü ilanların ürün kodu görünür ve aranabilir.
+  const { data: skuRows } = await supabase
+    .from("listings")
+    .select("id, external_id")
+    .eq("owner_id", userId)
+    .not("external_id", "is", null)
+    .limit(500);
+  if (skuRows && skuRows.length) {
+    const skuMap = new Map(
+      (skuRows as Array<{ id: string; external_id: string | null }>).filter((r) => r.external_id).map((r) => [r.id, r.external_id as string])
+    );
+    for (const l of listings) { const sku = skuMap.get(l.id); if (sku) l.externalId = sku; }
+  }
+  return listings;
 }
 
 /**
