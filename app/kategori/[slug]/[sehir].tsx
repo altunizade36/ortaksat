@@ -172,7 +172,7 @@ export default function CityCategoryScreen() {
         {/* SEO tanıtım metni (benzersiz içerik) */}
         <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, padding: 14 }}>
           <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 20 }}>
-            {cityName}'da {node.label.toLocaleLowerCase("tr-TR")} satmak isteyen satıcılar OrtakSat'ta ürününü ücretsiz listeler, komisyon oranını kendi belirler. Ortaklar (influencer/sosyal medya kullanıcıları) ürünü kendi takipçisiyle paylaşır; satış olursa komisyon kazanır. Platform ücret almaz, kargo yapmaz — sadece {cityName}'daki satıcı, ortak ve alıcıyı buluşturur.
+            {cityName}'da {node.label.toLocaleLowerCase("tr-TR")} satmak isteyen satıcılar OrtakSat'ta ürününü ücretsiz listeler, komisyon oranını kendi belirler. Ortaklar (sosyal medya kullanıcıları) ürünü kendi takipçisiyle paylaşır; satış olursa komisyon kazanır. Platform ücret almaz, kargo yapmaz — sadece {cityName}'daki satıcı, ortak ve alıcıyı buluşturur.
           </Text>
         </View>
 

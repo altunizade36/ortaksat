@@ -14,7 +14,7 @@ type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 const BENEFITS: Array<{ icon: IconName; t: string; b: string }> = [
   { icon: "cash-remove", t: "Ücretsiz listeleme", b: "İlan açmak, komisyon belirlemek ve ortak toplamak tamamen ücretsiz. Aidat veya üyelik yok." },
-  { icon: "account-group", t: "Bedava satış ordusu", b: "Onlarca ortak (influencer/sosyal medya kullanıcısı) ürününü kendi takipçisiyle paylaşır — sen tek kuruş reklam vermeden." },
+  { icon: "account-group", t: "Bedava satış ordusu", b: "Onlarca ortak (sosyal medya kullanıcıları) ürününü kendi takipçisiyle paylaşır — sen tek kuruş reklam vermeden." },
   { icon: "shield-check", t: "Risksiz model", b: "Komisyonu yalnızca satış gerçekleşince, kendi belirlediğin oranda ödersin. Önden maliyet yok." },
   { icon: "tune", t: "Kontrol sende", b: "Komisyon vermek senin tercihin; oranını, ortaklık türünü (anında/onaylı) ve stok limitini sen belirlersin." },
   { icon: "chart-line", t: "Şeffaf takip", b: "İlanına kaç ortak katıldı, kaç talep ve satış geldi — panelinden canlı görürsün." },

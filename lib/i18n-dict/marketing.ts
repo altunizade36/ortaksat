@@ -144,7 +144,7 @@ export const marketingDict: Record<string, string> = {
   "Ücretsiz listeleme": "Free listing",
   "İlan açmak, komisyon belirlemek ve ortak toplamak tamamen ücretsiz. Aidat veya üyelik yok.": "Posting a listing, setting the commission, and gathering partners are completely free. No dues or membership.",
   "Bedava satış ordusu": "A free sales army",
-  "Onlarca ortak (influencer/sosyal medya kullanıcısı) ürününü kendi takipçisiyle paylaşır — sen tek kuruş reklam vermeden.": "Dozens of partners (influencers/social media users) share your product with their own followers — without you spending a single penny on ads.",
+  "Onlarca ortak (sosyal medya kullanıcıları) ürününü kendi takipçisiyle paylaşır — sen tek kuruş reklam vermeden.": "Dozens of partners (social media users) share your product with their own followers — without you spending a single penny on ads.",
   "Risksiz model": "Risk-free model",
   "Komisyonu yalnızca satış gerçekleşince, kendi belirlediğin oranda ödersin. Önden maliyet yok.": "You pay the commission only when a sale happens, at the rate you set. No upfront cost.",
   "Kontrol sende": "You're in control",
