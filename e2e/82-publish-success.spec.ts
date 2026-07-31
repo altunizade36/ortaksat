@@ -50,7 +50,9 @@ test("YAYIN SONRASI: başarı ekranı gerçek link ile gelir", async ({ page }) 
     commissionValue: "15",
     bonusAmount: "",
     bonusQuota: "",
-    partnershipMode: "approval",
+    // "Ortak davet linki" başarı ekranında YALNIZ invite modunda gösterilir (approval'da yok);
+    // testin bu assertion'ı invite modunu doğruladığı için taslak da invite olmalı.
+    partnershipMode: "invite",
     partnerNote: "",
     contactMethod: "message"
   };
@@ -67,6 +69,9 @@ test("YAYIN SONRASI: başarı ekranı gerçek link ile gelir", async ({ page }) 
 
   const yayinla = page.getByText("İlanı Yayınla", { exact: true }).first();
   await expect(yayinla, "önizleme adımında Yayınla butonu olmalı").toBeVisible({ timeout: 10000 });
+  // Yasal aracı-platform onayı — yayın ŞARTI; taslakta saklanmaz (oturum-içi), elle işaretle.
+  await page.getByText(/Okudum, kabul ediyorum/i).first().click({ timeout: 6000 }).catch(() => {});
+  await page.waitForTimeout(500);
   await yayinla.click();
   await page.waitForTimeout(6000);
 
