@@ -443,7 +443,7 @@ export default function CategoryLandingScreen() {
                   <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" />
                   <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ücretsiz İlan Ver", language)}</Text>
                 </Pressable>
-                <Link href="/influencer-kazanc" asChild>
+                <Link href="/partner" asChild>
                   <Pressable style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}>
                     <MaterialCommunityIcons name="cash-multiple" size={16} color={colors.primaryDark} />
                     <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortak Ol, Kazan", language)}</Text>

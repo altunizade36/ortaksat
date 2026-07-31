@@ -70,8 +70,7 @@ export function WebFooter() {
     {
       heading: "Kazan",
       links: [
-        { label: "Ortak / Influencer Ol", href: "/influencer-kazanc" },
-        { label: "Ortak Satış", href: "/partner" },
+        { label: "Ortak Ol", href: "/partner" },
         { label: "Nasıl Çalışır?", href: "/nasil-calisir" }
       ]
     },
