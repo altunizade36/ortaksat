@@ -954,8 +954,8 @@ export default function ExploreScreen() {
               </View>
             ) : (
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-                {visibleProducts.map((listing) => (
-                  <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={productGrid.cardWidth} />
+                {visibleProducts.map((listing, index) => (
+                  <ListingCard key={listing.id} listing={listing} owner={resolveOwner(listing.ownerId)} width={productGrid.cardWidth} eager={index < 4} />
                 ))}
               </View>
             )}
@@ -1861,7 +1861,7 @@ function ExploreTileBase({ favorited, height, inCompare, item, language, onCompa
       {/* Görsel — TAM KARE (aspectRatio:1, ListingCard'la aynı). Eskiden height:size idi ve
           kenarlık/yuvarlama ile 176×178 gibi hafif kayıyordu; artık her platformda birebir kare. */}
       <View style={{ aspectRatio: 1, backgroundColor: colors.surfaceAlt, overflow: "hidden", width: "100%" }}>
-        <SafeRemoteImage uri={item.type === "video" ? item.poster : item.uri} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={120} />
+        <SafeRemoteImage uri={item.type === "video" ? item.poster : item.uri} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={order < 4 ? 0 : 120} priority={order < 4 ? "high" : "low"} />
         <View style={{ left: 8, position: "absolute", right: 8, top: 8 }}>
           <StatusLabel icon={status.icon} label={status.label} tone={status.tone} />
         </View>

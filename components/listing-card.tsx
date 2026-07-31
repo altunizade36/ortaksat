@@ -17,7 +17,7 @@ import type { Listing, User } from "@/lib/types";
 
 type StatusTone = "success" | "accent" | "info" | "dark" | "gold";
 
-function ListingCardBase({ listing, owner, width, priceNote, refCode, onCollection, collectionOn }: { listing: Listing; owner?: User; width?: number; priceNote?: { text: string; down: boolean }; refCode?: string; onCollection?: () => void; collectionOn?: boolean }) {
+function ListingCardBase({ listing, owner, width, priceNote, refCode, onCollection, collectionOn, eager }: { listing: Listing; owner?: User; width?: number; priceNote?: { text: string; down: boolean }; refCode?: string; onCollection?: () => void; collectionOn?: boolean; eager?: boolean }) {
   // Ortak vitrininden gelen kartlar ref TAŞIR → ilan detay URL'den atfı yakalar (URL-garantili
   // first-touch; localStorage silinse/engellense bile ortak kredisi kaybolmaz). c=shop kanal ölçümü.
   const cardHref = refCode ? `/listing/${listing.id}?ref=${encodeURIComponent(refCode)}&c=shop` : `/listing/${listing.id}`;
@@ -141,8 +141,8 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode, onCollecti
                 fallbackUri={listing.fallbackCategoryImage}
                 style={{ height: "100%", width: "100%" }}
                 contentFit="cover"
-                transition={160}
-                priority="low"
+                transition={eager ? 0 : 160}
+                priority={eager ? "high" : "low"}
                 alt={imageAlt}
                 accessibilityLabel={imageAlt}
               />

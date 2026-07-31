@@ -31,6 +31,9 @@ export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, full, o
   const thumb = full || noThumb ? (uri ?? undefined) : cardImageUrl(uri);
   const shown = thumb;
   const resolvedFallback = fallbackUri ? { uri: fallbackUri } : fallback;
+  // LCP: yüksek öncelikli (ekran üstü) görsel fade + karartma scrim'i olmadan boyanır →
+  // cross-dissolve tarayıcının "contentful paint"ini ~260ms geciktiriyordu.
+  const eager = props.priority === "high";
 
   useEffect(() => {
     setFailed(false);
@@ -46,7 +49,7 @@ export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, full, o
         accessibilityLabel={a11yAlt}
         style={{ height: "100%", width: "100%" }}
         source={!shown || failed ? resolvedFallback : { uri: shown }}
-        transition={transition ?? { duration: 260, effect: "cross-dissolve" }}
+        transition={transition ?? (eager ? 0 : { duration: 260, effect: "cross-dissolve" })}
         recyclingKey={(failed ? fallbackUri : shown) ?? undefined}
         cachePolicy="memory-disk"
         placeholderContentFit="cover"
@@ -73,7 +76,7 @@ export function SafeRemoteImage({ fallback = fallbackImage, fallbackUri, full, o
           onError?.(event);
         }}
       />
-      {loading ? (
+      {loading && !eager ? (
         <View
           pointerEvents="none"
           style={{
