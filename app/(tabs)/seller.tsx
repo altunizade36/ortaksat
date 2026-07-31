@@ -220,7 +220,11 @@ function SellerScreenInner() {
     if (filter === "payments" && !listingSales.some((sale) => sale.status === "approved" || sale.status === "seller_paid" || sale.status === "return_pending" || sale.status === "disputed")) return false;
     if (filter === "lowStock" && !(listing.status === "active" && listing.stockCount <= 3)) return false;
     if (tokens.length === 0) return true;
-    return matchesQuery(listing, undefined, tokens);
+    if (matchesQuery(listing, undefined, tokens)) return true;
+    // Satıcının KENDİ kataloğu: harici ürün kodu (SKU) ile de ara — yüzlerce toplu-yüklü
+    // ilanda ürünü koddan bulmak şart (genel site aramasına SKU eklenmez, satıcıya özel).
+    const skuKey = searchKey(listing.externalId ?? "");
+    return skuKey.length > 0 && tokens.every((tk) => skuKey.includes(tk));
   }).sort((a, b) => {
     // Derin-linkten gelen ilan her zaman en üstte.
     if (focusId) { if (a.id === focusId) return -1; if (b.id === focusId) return 1; }
@@ -794,6 +798,14 @@ function SellerScreenInner() {
                 <Text selectable numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>
                   {translateCopy(displayText(listing.category), language)} · {displayText(listing.location)}
                 </Text>
+                {/* Harici ürün kodu (SKU) — toplu yüklemede eşleştirme anahtarı; kataloğunu
+                    kod ile takip eden satıcı için görünür (yalnız kodu olan ilanlarda). */}
+                {listing.externalId ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
+                    <MaterialCommunityIcons name="barcode" size={13} color={colors.subtle} />
+                    <Text selectable numberOfLines={1} style={{ color: colors.subtle, fontFamily: Platform.OS === "ios" ? "Courier" : "monospace", fontSize: 11, fontWeight: "700" }}>{listing.externalId}</Text>
+                  </View>
+                ) : null}
                 <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                   <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{moneyIn(listing.price, listing.currency)}</Text>
                   {listing.partnershipMode !== "none" ? (
