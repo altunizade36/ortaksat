@@ -571,7 +571,21 @@ function PartnerScreenInner() {
                   <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Henüz kayıt yok.", language)}</Text>
                 ) : (
                   (tab === "earning"
-                    ? mySales.map((s) => {
+                    ? <>
+                      {/* Kazanç özeti — ortağın parası tek bakışta: toplam · bekleyen · ödenen. */}
+                      <View key="earn-sum" style={{ flexDirection: "row", gap: 8, marginBottom: 2 }}>
+                        {[
+                          { label: translateCopy("Toplam kazanç", language), value: money(funnelEarn), color: colors.ink },
+                          { label: translateCopy("Bekleyen", language), value: money(waiting + approved), color: colors.warning },
+                          { label: translateCopy("Ödenen", language), value: money(paid), color: colors.success }
+                        ].map((m) => (
+                          <View key={m.label} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flex: 1, gap: 3, padding: 11 }}>
+                            <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{m.label}</Text>
+                            <Text adjustsFontSizeToFit minimumFontScale={0.75} numberOfLines={1} style={{ color: m.color, fontSize: 16, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{m.value}</Text>
+                          </View>
+                        ))}
+                      </View>
+                      {mySales.map((s) => {
                         const l = listings.find((x) => x.id === s.listingId);
                         const canConfirm = s.status === "seller_paid" || s.status === "disputed";
                         const canDispute = s.status !== "paid" && s.status !== "cancelled" && s.status !== "disputed";
@@ -604,7 +618,8 @@ function PartnerScreenInner() {
                             ) : null}
                           </View>
                         );
-                      })
+                      })}
+                    </>
                     : (tab === "active" ? activePartnerships : pendingPartnerships).map(renderPartnershipCard))
                 )}
               </View>
