@@ -32,6 +32,8 @@ test("Profil hub: Kazançlarım girişi (masaüstü+mobil) + tıklanabilir stat 
   let body = await page.locator("body").innerText();
   expect(body, "masaüstü hub'da Kazançlarım girişi").toContain("Kazançlarım");
   expect(body, "masaüstü stat kartı 'Kayıtlı komisyon'").toContain("Kayıtlı komisyon");
+  expect(body, "masaüstü Mağazanı paylaş kartı").toContain("Mağazanı paylaş");
+  expect(body, "masaüstü gerçek paylaş aksiyonu").toContain("Bağlantıyı paylaş");
   await page.screenshot({ path: "e2e-artifacts/hesabim-desktop.png", fullPage: true });
 
   // Stat kartına tıkla → /earnings'e gitmeli.
@@ -45,5 +47,7 @@ test("Profil hub: Kazançlarım girişi (masaüstü+mobil) + tıklanabilir stat 
   await page.waitForTimeout(3500);
   body = await page.locator("body").innerText();
   expect(body, "mobil hub'da Kazançlarım girişi").toContain("Kazançlarım");
+  expect(body, "mobil Mağazanı paylaş kartı (masaüstü paritesi)").toContain("Mağazanı paylaş");
+  expect(body, "mobil gerçek paylaş aksiyonu").toContain("Bağlantıyı paylaş");
   await page.screenshot({ path: "e2e-artifacts/hesabim-mobile.png", fullPage: true });
 });

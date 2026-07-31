@@ -10,6 +10,9 @@ import { AuthRequired } from "@/components/auth-gate";
 import { Card, Metric, PressLink, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
+import { Alert } from "@/lib/alert";
+import { shareOrCopy } from "@/lib/share";
+import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useNativeRefresh } from "@/lib/use-native-refresh";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
@@ -52,6 +55,18 @@ function ProfileScreenInner() {
   const openReports = reports.filter((report) => report.reporterId === currentUser.id && (report.status === "open" || report.status === "reviewing"));
   const trust = calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: currentUser });
   const isWideWeb = useIsWideWeb();
+
+  // Mağaza bağlantısını PAYLAŞ/KOPYALA (büyüme kaldıracı) — web'de navigator.share,
+  // yoksa panoya kopyalar; native'de OS paylaşım paneli. Store sayfasıyla aynı desen.
+  async function shareMyStore() {
+    haptic.selection();
+    const res = await shareOrCopy({
+      title: `${currentUser.name} — OrtakSat`,
+      message: `${currentUser.name} — OrtakSat mağazama göz at:`,
+      url: `https://www.ortaksat.com/store/${currentUser.id}`
+    });
+    if (res === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Mağaza bağlantın panoya kopyalandı; istediğin yere yapıştırabilirsin.", language));
+  }
 
   if (isWideWeb) {
     const firstName = currentUser.name.split(" ")[0];
@@ -196,10 +211,16 @@ function ProfileScreenInner() {
             <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 16, borderWidth: 1, gap: 8, padding: 18 }}>
               <MaterialCommunityIcons name="store" size={24} color={colors.primaryDark} />
               <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Mağazanı paylaş", language)}</Text>
-              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Tüm ilanlarının bulunduğu mağaza sayfanı müşterilerinle paylaş.", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Tüm ilanlarının bulunduğu mağaza sayfanı tek bağlantıyla müşterilerinle paylaş.", language)}</Text>
+              {/* Gerçek PAYLAŞ aksiyonu (eskiden yalnız "Mağazama git" navigasyonu vardı). */}
+              <Pressable onPress={() => void shareMyStore()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", marginTop: 4, opacity: pressed ? 0.85 : 1, paddingVertical: 10 })}>
+                <MaterialCommunityIcons name="share-variant" size={16} color="#FFFFFF" />
+                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bağlantıyı paylaş", language)}</Text>
+              </Pressable>
               <Link href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} asChild>
-                <Pressable style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, marginTop: 4, paddingVertical: 10 }}>
-                  <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Mağazama git", language)}</Text>
+                <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingVertical: 10 })}>
+                  <MaterialCommunityIcons name="storefront-outline" size={16} color={colors.primaryDark} />
+                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Mağazama git", language)}</Text>
                 </Pressable>
               </Link>
             </View>
@@ -289,6 +310,18 @@ function ProfileScreenInner() {
         </View>
       </Card>
 
+      {/* Mağazanı paylaş — masaüstü sidebar paritesi + GERÇEK paylaş aksiyonu (büyüme). */}
+      <View style={{ backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, gap: 8, padding: 16 }}>
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+          <MaterialCommunityIcons name="store" size={22} color={colors.primaryDark} />
+          <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{translateCopy("Mağazanı paylaş", language)}</Text>
+        </View>
+        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Tüm ilanlarının bulunduğu mağaza sayfanı tek bağlantıyla müşterilerinle paylaş.", language)}</Text>
+        <Pressable onPress={() => void shareMyStore()} accessibilityRole="button" accessibilityLabel={translateCopy("Bağlantıyı paylaş", language)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingVertical: 12 })}>
+          <MaterialCommunityIcons name="share-variant" size={16} color="#FFFFFF" />
+          <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Bağlantıyı paylaş", language)}</Text>
+        </Pressable>
+      </View>
 
       {/* Güven puanların — masaüstüyle aynı KOMPAKT kart (eskiden 2 ayrı büyük
           "Satıcı/Ortak güveni" kartıydı + Genel güven metriği → güven 4 yerde tekrar
