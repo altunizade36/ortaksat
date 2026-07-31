@@ -33,10 +33,14 @@ test("Satıcı paneli: SKU ilan satırında görünür + SKU ile aranabilir", as
   await login(page, email);
   await page.goto("/(tabs)/seller", { waitUntil: "domcontentloaded" });
   await page.waitForTimeout(4000);
+  // Panel varsayılan "Özet" sekmesinde açılır; ilanlar (SKU + arama) "İlanlarım" sekmesinde.
+  await page.getByText("İlanlarım", { exact: false }).first().click();
+  await page.waitForTimeout(1500);
 
   let body = await page.locator("body").innerText();
   expect(body, "ilan satırında SKU görünmeli").toContain(sku);
-  expect(body, "arama placeholder'ı ürün kodunu belirtmeli").toContain("ürün kodu");
+  // Placeholder bir ATTRIBUTE'tur (innerText'e girmez) → locator ile kontrol et.
+  expect(await page.getByPlaceholder(/ürün kodu/i).count(), "arama placeholder'ı ürün kodunu belirtmeli").toBeGreaterThan(0);
   await page.screenshot({ path: "e2e-artifacts/seller-sku.png", fullPage: true });
 
   // SKU ile ara → SKU'lu ilan kalır, kodsuz diğer ilan elenir.
