@@ -2,7 +2,7 @@
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -323,61 +323,9 @@ function ChatScreenInner() {
         {conversationMessages.length === 0 ? (
           <EmptyState title={language === "en" ? "No messages yet" : "Henüz mesaj yok"} body={language === "en" ? "Write the first message and start the conversation." : "İlk mesajı yaz ve konuşmayı başlat."} mascot="mobile" />
         ) : null}
-        {conversationMessages.map((message, i) => {
-          const mine = message.senderId === currentUser.id;
-          const showDay = i === 0 || chatMsgDay(message.createdAt) !== chatMsgDay(conversationMessages[i - 1].createdAt);
-          const nextMsg = conversationMessages[i + 1];
-          const prevMsg = conversationMessages[i - 1];
-          const grouped = Boolean(prevMsg) && prevMsg.senderId === message.senderId && !showDay;
-          const lastOfGroup = !nextMsg || nextMsg.senderId !== message.senderId || chatMsgDay(nextMsg.createdAt) !== chatMsgDay(message.createdAt);
-          return (
-            <View key={message.id} style={{ gap: 6, marginTop: i === 0 ? 0 : showDay ? 6 : grouped ? 2 : 10 }}>
-              {showDay ? (
-                <View style={{ alignItems: "center", marginVertical: 3 }}>
-                  <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 3 }}>
-                    <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{chatDayHeader(chatMsgDay(message.createdAt), language)}</Text>
-                  </View>
-                </View>
-              ) : null}
-              <View style={{ alignItems: mine ? "flex-end" : "flex-start" }}>
-                <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "82%", overflow: "hidden", paddingHorizontal: message.attachmentType === "image" ? 4 : 12, paddingVertical: message.attachmentType === "image" ? 4 : 8 }}>
-                  {message.attachmentType === "image" && message.attachmentUrl ? (
-                    <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => message.attachmentUrl && setLightboxUri(message.attachmentUrl)}>
-                      <SafeRemoteImage uri={message.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 180, width: 220 }} />
-                    </Pressable>
-                  ) : null}
-                  {message.attachmentType === "file" && message.attachmentUrl ? (
-                    <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}>
-                      <MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} />
-                      <Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 170 }}>{message.attachmentName ?? "Dosya"}</Text>
-                    </View>
-                  ) : null}
-                  {message.body ? (
-                    <Text selectable style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 20, paddingHorizontal: message.attachmentType === "image" ? 8 : 0, paddingTop: message.attachmentType === "image" ? 5 : 0 }}>
-                      {message.body}
-                    </Text>
-                  ) : null}
-                  {lastOfGroup ? (
-                    <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: message.attachmentType === "image" ? 8 : 0, paddingBottom: message.attachmentType === "image" ? 4 : 0 }}>
-                      <Text selectable style={{ color: mine ? "#E6FBF7" : colors.subtle, fontSize: 10, fontWeight: "700" }}>
-                        {chatMsgTime(message.createdAt) || shortDate(message.createdAt)}
-                      </Text>
-                      {mine ? (message.status === "failed"
-                        ? <MaterialCommunityIcons name="alert-circle" size={13} color="#FFD9D0" />
-                        : <MaterialCommunityIcons name={message.read ? "check-all" : "check"} size={13} color={message.read ? "#E6FBF7" : "rgba(255,255,255,0.7)"} />) : null}
-                    </View>
-                  ) : null}
-                </View>
-                {mine && message.status === "failed" ? (
-                  <Pressable accessibilityRole="button" onPress={() => retryMessage(message.id)} style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, marginTop: 3, opacity: pressed ? 0.7 : 1 })}>
-                    <MaterialCommunityIcons name="refresh" size={12} color={colors.accent} />
-                    <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "800" }}>{translateCopy("Gönderilemedi · tekrar dene", language)}</Text>
-                  </Pressable>
-                ) : null}
-              </View>
-            </View>
-          );
-        })}
+        {/* PERF: baloncuklar memo'lu ayrı bileşende → composer'a her tuş vuruşunda (body
+            state) TÜM mesaj listesi yeniden çizilmez; yalnız mesajlar değişince çizilir. */}
+        <MessageBubbles messages={conversationMessages} currentUserId={currentUser.id} language={language} onRetry={retryMessage} onImagePress={setLightboxUri} />
       </ScrollView>
         {/* "En alta in" FAB — yalnız yukarı kaydırıldığında; yukarıdayken yeni mesaj
             gelirse üstünde turkuaz nokta belirir. */}
@@ -482,6 +430,76 @@ function ChatScreenInner() {
     </KeyboardAvoidingView>
   );
 }
+
+// Mesaj baloncukları — memo'lu: yalnız `messages`/`currentUserId`/`language` değişince
+// yeniden çizilir (composer yazarken parent re-render'ından etkilenmez → akıcı yazım).
+const MessageBubbles = memo(function MessageBubbles({ messages, currentUserId, language, onRetry, onImagePress }: {
+  messages: Message[];
+  currentUserId: string;
+  language: "tr" | "en";
+  onRetry: (id: string) => void;
+  onImagePress: (uri: string) => void;
+}) {
+  return (
+    <>
+      {messages.map((message, i) => {
+        const mine = message.senderId === currentUserId;
+        const showDay = i === 0 || chatMsgDay(message.createdAt) !== chatMsgDay(messages[i - 1].createdAt);
+        const nextMsg = messages[i + 1];
+        const prevMsg = messages[i - 1];
+        const grouped = Boolean(prevMsg) && prevMsg.senderId === message.senderId && !showDay;
+        const lastOfGroup = !nextMsg || nextMsg.senderId !== message.senderId || chatMsgDay(nextMsg.createdAt) !== chatMsgDay(message.createdAt);
+        return (
+          <View key={message.id} style={{ gap: 6, marginTop: i === 0 ? 0 : showDay ? 6 : grouped ? 2 : 10 }}>
+            {showDay ? (
+              <View style={{ alignItems: "center", marginVertical: 3 }}>
+                <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 3 }}>
+                  <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{chatDayHeader(chatMsgDay(message.createdAt), language)}</Text>
+                </View>
+              </View>
+            ) : null}
+            <View style={{ alignItems: mine ? "flex-end" : "flex-start" }}>
+              <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "82%", overflow: "hidden", paddingHorizontal: message.attachmentType === "image" ? 4 : 12, paddingVertical: message.attachmentType === "image" ? 4 : 8 }}>
+                {message.attachmentType === "image" && message.attachmentUrl ? (
+                  <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => message.attachmentUrl && onImagePress(message.attachmentUrl)}>
+                    <SafeRemoteImage uri={message.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 180, width: 220 }} />
+                  </Pressable>
+                ) : null}
+                {message.attachmentType === "file" && message.attachmentUrl ? (
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}>
+                    <MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} />
+                    <Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 170 }}>{message.attachmentName ?? "Dosya"}</Text>
+                  </View>
+                ) : null}
+                {message.body ? (
+                  <Text selectable style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 20, paddingHorizontal: message.attachmentType === "image" ? 8 : 0, paddingTop: message.attachmentType === "image" ? 5 : 0 }}>
+                    {message.body}
+                  </Text>
+                ) : null}
+                {lastOfGroup ? (
+                  <View style={{ alignItems: "center", alignSelf: "flex-end", flexDirection: "row", gap: 3, marginTop: 3, paddingHorizontal: message.attachmentType === "image" ? 8 : 0, paddingBottom: message.attachmentType === "image" ? 4 : 0 }}>
+                    <Text selectable style={{ color: mine ? "#E6FBF7" : colors.subtle, fontSize: 10, fontWeight: "700" }}>
+                      {chatMsgTime(message.createdAt) || shortDate(message.createdAt)}
+                    </Text>
+                    {mine ? (message.status === "failed"
+                      ? <MaterialCommunityIcons name="alert-circle" size={13} color="#FFD9D0" />
+                      : <MaterialCommunityIcons name={message.read ? "check-all" : "check"} size={13} color={message.read ? "#E6FBF7" : "rgba(255,255,255,0.7)"} />) : null}
+                  </View>
+                ) : null}
+              </View>
+              {mine && message.status === "failed" ? (
+                <Pressable accessibilityRole="button" onPress={() => onRetry(message.id)} style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 3, marginTop: 3, opacity: pressed ? 0.7 : 1 })}>
+                  <MaterialCommunityIcons name="refresh" size={12} color={colors.accent} />
+                  <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "800" }}>{translateCopy("Gönderilemedi · tekrar dene", language)}</Text>
+                </Pressable>
+              ) : null}
+            </View>
+          </View>
+        );
+      })}
+    </>
+  );
+}, (a, b) => a.messages === b.messages && a.currentUserId === b.currentUserId && a.language === b.language);
 
 function chatMsgTime(createdAt: string) {
   const m = /\d{2}:\d{2}/.exec(createdAt);
