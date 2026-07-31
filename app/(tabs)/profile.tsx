@@ -66,11 +66,11 @@ function ProfileScreenInner() {
     const completion = Math.round(((doneCount + (currentUser.bio ? 1 : 0) + (myListings.length ? 1 : 0)) / 5) * 100);
     const firstName = currentUser.name.split(" ")[0];
 
-    const stats: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; sub: string }> = [
-      { icon: "cash-multiple", tint: colors.successSoft, color: colors.success, value: money(totalCommission), title: translateCopy("Kayıtlı komisyon", language), sub: translateCopy("Taraflar arası anlaşma", language) },
-      { icon: "clock-outline", tint: colors.goldSoft, color: colors.gold, value: money(pendingCommission), title: translateCopy("Bekleyen komisyon", language), sub: translateCopy("Onay sürecinde", language) },
-      { icon: "storefront-outline", tint: colors.primarySoft, color: colors.primaryDark, value: `${activeListings.length}`, title: translateCopy("Aktif ilan", language), sub: `${myListings.length} toplam ilan` },
-      { icon: "handshake-outline", tint: colors.violetSoft, color: colors.violet, value: `${activePartnerships.length}`, title: translateCopy("Aktif ortaklık", language), sub: `${pendingPartnerships.length} bekliyor` }
+    const stats: Array<{ icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; sub: string; href: Href }> = [
+      { icon: "cash-multiple", tint: colors.successSoft, color: colors.success, value: money(totalCommission), title: translateCopy("Kayıtlı komisyon", language), sub: translateCopy("Taraflar arası anlaşma", language), href: "/earnings" as Href },
+      { icon: "clock-outline", tint: colors.goldSoft, color: colors.gold, value: money(pendingCommission), title: translateCopy("Bekleyen komisyon", language), sub: translateCopy("Onay sürecinde", language), href: "/earnings" as Href },
+      { icon: "storefront-outline", tint: colors.primarySoft, color: colors.primaryDark, value: `${activeListings.length}`, title: translateCopy("Aktif ilan", language), sub: `${myListings.length} toplam ilan`, href: "/(tabs)/seller" as Href },
+      { icon: "handshake-outline", tint: colors.violetSoft, color: colors.violet, value: `${activePartnerships.length}`, title: translateCopy("Aktif ortaklık", language), sub: `${pendingPartnerships.length} bekliyor`, href: "/(tabs)/partner" as Href }
     ];
 
     return (
@@ -115,17 +115,21 @@ function ProfileScreenInner() {
           </View>
         </View>
 
-        {/* Stat cards */}
+        {/* Stat cards — tıklanabilir (detay sayfasına götürür): komisyon → Kazançlarım,
+            ilan → İlanlarım, ortaklık → Ortak Satışlarım. Eskiden ölü statik kartlardı. */}
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
           {stats.map((s) => (
-            <View key={s.title} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 220, flexGrow: 1, gap: 10, minWidth: 0, padding: 16 }}>
-              <View style={{ alignItems: "center", backgroundColor: s.tint, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
-                <MaterialCommunityIcons name={s.icon} size={23} color={s.color} />
+            <PressLink key={s.title} href={s.href} accessibilityLabel={`${s.title}: ${s.value}`} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 220, flexGrow: 1, gap: 10, minWidth: 0, padding: 16 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
+                <View style={{ alignItems: "center", backgroundColor: s.tint, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
+                  <MaterialCommunityIcons name={s.icon} size={23} color={s.color} />
+                </View>
+                <MaterialCommunityIcons name="arrow-top-right" size={16} color={colors.subtle} />
               </View>
               <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{s.value}</Text>
               <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{s.title}</Text>
               <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{s.sub}</Text>
-            </View>
+            </PressLink>
           ))}
         </View>
 
@@ -164,6 +168,7 @@ function ProfileScreenInner() {
                 <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
                   <MenuRow icon="storefront-outline" label="İlanlarım" detail={`${activeListings.length} aktif · ${pausedListings.length} duraklatılmış`} value={`${myListings.length}`} href="/(tabs)/seller" />
                   <MenuRow icon="handshake-outline" label="Ortaklıklarım" detail={`${activePartnerships.length} aktif · ${pendingPartnerships.length} bekliyor`} value={`${myPartnerships.length}`} href="/(tabs)/partner" />
+                  <MenuRow icon="cash-multiple" label="Kazançlarım" detail={`${money(paidCommission)} ödendi · ${money(pendingCommission)} bekliyor`} value="→" href={"/earnings" as Href} />
                   <MenuRow icon="tag-outline" label="Tekliflerim" detail={liveOffers.length ? `${liveOffers.length} süren teklif` : "Verdiğin teklifler"} value={`${myOffers.length}`} href="/offers" />
                   <MenuRow icon="heart-outline" label="Favoriler" detail="Kaydedilen ilanlar" value={`${myFavorites.length}`} href="/favorites" />
                   <MenuRow icon="storefront-check-outline" label="Takip Ettiklerin" detail="Takip ettiğin satıcıların yeni ilanları" value={`${followedSellerIds.length}`} href="/following" />
@@ -358,6 +363,7 @@ function ProfileScreenInner() {
         <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{t("accountSummary")}</Text>
         <MenuRow icon="storefront-outline" label={t("myListings")} detail={`${activeListings.length} ${t("activeShort")} · ${pausedListings.length} ${t("pausedShort")}`} value={`${myListings.length}`} href="/(tabs)/seller" />
         <MenuRow icon="handshake-outline" label={t("myPartnerships")} detail={`${activePartnerships.length} ${t("activeShort")} · ${pendingPartnerships.length} ${t("pending")}`} value={`${myPartnerships.length}`} href="/(tabs)/partner" />
+        <MenuRow icon="cash-multiple" label={translateCopy("Kazançlarım", language)} detail={`${money(paidCommission)} ${translateCopy("ödendi", language)} · ${money(pendingCommission)} ${translateCopy("bekliyor", language)}`} value="→" href={"/earnings" as Href} />
         <MenuRow icon="star-outline" label={t("reviews")} detail={`${reviewsAboutMe.length} ${t("profileReviews")} · ${reviewsByMe.length} ${t("writtenByYou")}`} value={`${reviewsAboutMe.length + reviewsByMe.length}`} />
         <MenuRow icon="tag-outline" label={translateCopy("Tekliflerim", language)} detail={liveOffers.length ? `${liveOffers.length} ${translateCopy("süren teklif", language)}` : translateCopy("Verdiğin teklifler", language)} value={`${myOffers.length}`} href="/offers" />
         <MenuRow icon="heart-outline" label={translateCopy("Favoriler", language)} detail={translateCopy("Kaydedilen ilanlar", language)} value={`${myFavorites.length}`} href="/favorites" />

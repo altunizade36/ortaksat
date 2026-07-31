@@ -43,6 +43,7 @@ export function MobileNavMenu() {
     { label: "Mesajlar", href: "/(tabs)/messages", icon: "message-text-outline", badge: unreadMsg },
     { label: "Bildirimler", href: "/(tabs)/notifications-tab", icon: "bell-outline", badge: unreadNotif },
     { label: "Satıcı Panelim", href: "/(tabs)/seller", icon: "storefront-outline" },
+    { label: "Kazançlarım", href: "/earnings", icon: "cash-multiple" },
     { label: "Profilim", href: "/(tabs)/profile", icon: "account-circle-outline" },
     { label: "Menü & Ayarlar", href: "/(tabs)/menu", icon: "cog-outline" }
   ];
