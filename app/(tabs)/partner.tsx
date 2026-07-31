@@ -564,7 +564,7 @@ function PartnerScreenInner() {
                     {activePartnerships.length === 0 ? <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Aktif ortaklığın yok.", language)}</Text> :
                     activePartnerships.map((p) => {
                       const l = listings.find((x) => x.id === p.listingId);
-                      return l ? <ShareRow key={p.id} title={l.title} url={productUrl(l)} onCopy={() => void copyText("Bağlantı", productUrl(l))} /> : null;
+                      return l ? <ShareRow key={p.id} title={l.title} url={productUrl(l)} onCopy={() => void copyText("Bağlantı", productUrl(l))} clicks={clickCounts[p.id] ?? 0} leads={myBroughtLeads.filter((ld) => ld.partnershipId === p.id).length} /> : null;
                     })}
                   </>
                 ) : (tab === "earning" ? mySales : tab === "active" ? activePartnerships : pendingPartnerships).length === 0 ? (
@@ -651,7 +651,7 @@ function PartnerScreenInner() {
               ) : (
                 activePartnerships.slice(0, 3).map((p) => {
                   const l = listings.find((x) => x.id === p.listingId);
-                  return l ? <ShareRow key={p.id} title={l.title} url={productUrl(l)} onCopy={() => void copyText("Bağlantı", productUrl(l))} compact /> : null;
+                  return l ? <ShareRow key={p.id} title={l.title} url={productUrl(l)} onCopy={() => void copyText("Bağlantı", productUrl(l))} compact clicks={clickCounts[p.id] ?? 0} leads={myBroughtLeads.filter((ld) => ld.partnershipId === p.id).length} /> : null;
                 })
               )}
               {/* Paylaşım linkleri ortak olunca otomatik üretilir; buradan yeni ürüne ortak olunur. */}
@@ -1352,14 +1352,28 @@ function OppMiniRow({ title, image, right, sub }: { title: string; image?: strin
   );
 }
 
-function ShareRow({ title, url, onCopy, compact }: { title: string; url: string; onCopy: () => void; compact?: boolean }) {
+function ShareRow({ title, url, onCopy, compact, clicks, leads }: { title: string; url: string; onCopy: () => void; compact?: boolean; clicks?: number; leads?: number }) {
   const { language } = useLanguage();
+  const showPerf = clicks !== undefined || leads !== undefined;
   return (
     <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
       <MaterialCommunityIcons name="link-variant" size={18} color={colors.primary} />
-      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
+      <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
         <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{displayText(title)}</Text>
         <Text numberOfLines={1} style={{ color: colors.muted, fontSize: compact ? 10 : 11, fontWeight: "600" }}>{url}</Text>
+        {/* Link başına performans: hangi linkin tıklama/talep getirdiği ortağa görünür. */}
+        {showPerf ? (
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 12, marginTop: 1 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+              <MaterialCommunityIcons name="cursor-default-click-outline" size={11} color={(clicks ?? 0) > 0 ? colors.primaryDark : colors.subtle} />
+              <Text style={{ color: (clicks ?? 0) > 0 ? colors.primaryDark : colors.subtle, fontSize: 10.5, fontWeight: "800" }}>{clicks ?? 0} {translateCopy("tıklama", language)}</Text>
+            </View>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+              <MaterialCommunityIcons name="phone-in-talk-outline" size={11} color={(leads ?? 0) > 0 ? colors.success : colors.subtle} />
+              <Text style={{ color: (leads ?? 0) > 0 ? colors.success : colors.subtle, fontSize: 10.5, fontWeight: "800" }}>{leads ?? 0} {translateCopy("talep", language)}</Text>
+            </View>
+          </View>
+        ) : null}
       </View>
       <Pressable onPress={onCopy} hitSlop={8} accessibilityRole="button" accessibilityLabel={translateCopy("Bağlantıyı kopyala", language)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 8, borderWidth: 1, height: 32, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 32 })}>
         <MaterialCommunityIcons name="content-copy" size={15} color={colors.primaryDark} />
