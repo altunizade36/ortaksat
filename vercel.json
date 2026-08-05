@@ -6,6 +6,7 @@
   "cleanUrls": true,
   "trailingSlash": false,
   "redirects": [
+    { "source": "/influencer-kazanc", "destination": "/sosyal-medya-kazanc", "permanent": true },
     { "source": "/kategori/muzik-enstrumanlari", "destination": "/kategori/muzik", "permanent": true },
     { "source": "/kategori/yapi-market-ve-bahce", "destination": "/kategori/bahce-ve-yapi-market", "permanent": true },
     { "source": "/kategori/dijital-urunler-ve-hizmetler", "destination": "/kategori/dijital-hizmetler", "permanent": true },

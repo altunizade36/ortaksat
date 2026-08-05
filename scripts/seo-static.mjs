@@ -64,11 +64,11 @@ const ROUTES = {
       "İlanını aç, komisyonunu belirle, yüzlerce ortak ürününü paylaşsın. Reklam bütçesi yakmadan, yalnız satış olduğunda komisyon ödeyerek büyü.",
     canonical: "/satici-ol"
   },
-  "influencer-kazanc.html": {
-    title: "Influencer kazancı — Takipçilerinle komisyon kazan | OrtakSat",
+  "sosyal-medya-kazanc.html": {
+    title: "Sosyal medyadan para kazan — Takipçilerinle komisyon kazan | OrtakSat",
     description:
       "Instagram, TikTok, YouTube veya WhatsApp gruplarındaki kitleni gelire dönüştür. Ürün seç, kendi yönteminle tanıt, satışta komisyon kazan.",
-    canonical: "/influencer-kazanc"
+    canonical: "/sosyal-medya-kazanc"
   },
   "alici.html": {
     title: "Alıcılar için — Güvenli, şeffaf ve avantajlı alışveriş | OrtakSat",
@@ -116,7 +116,7 @@ const ROUTES = {
   "blog.html": {
     title: "Blog — Ortak satış, komisyon ve e-ticaret rehberleri | OrtakSat",
     description:
-      "Ortak satış, komisyonla kazanç, influencer pazarlaması ve güvenli e-ticaret üzerine pratik rehberler ve gerçek ipuçları. OrtakSat blog.",
+      "Ortak satış, komisyonla kazanç, sosyal medya pazarlaması ve güvenli e-ticaret üzerine pratik rehberler ve gerçek ipuçları. OrtakSat blog.",
     canonical: "/blog"
   },
   "legal.html": {

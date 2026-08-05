@@ -1,7 +1,7 @@
 // Marketing / info page copy — Turkish → English.
 // Keys are the exact Turkish source strings wrapped with translateCopy() in the
 // app/ marketing & info screens (nasil-calisir, hakkimizda, alici, satici-ol,
-// ortak-kazanc, influencer-kazanc, guvenli-alisveris, iletisim, sss, hosgeldin).
+// ortak-kazanc, sosyal-medya-kazanc, guvenli-alisveris, iletisim, sss, hosgeldin).
 export const marketingDict: Record<string, string> = {
   // --- nasil-calisir.tsx ---
   "Nasıl Çalışır? — Ortak sat, komisyon kazan | OrtakSat": "How It Works — Sell together, earn commission | OrtakSat",
@@ -174,8 +174,8 @@ export const marketingDict: Record<string, string> = {
   "Bugün ilk ürününü ekle": "Add your first product today",
   "Ücretsiz, 5 dakika. Ortakların satış getirmeye başlasın.": "Free, 5 minutes. Let your partners start bringing in sales.",
 
-  // --- influencer-kazanc.tsx ---
-  "Sosyal Medyadan Para Kazan — Influencer Ortak Programı | OrtakSat": "Earn Money from Social Media — Influencer Partner Program | OrtakSat",
+  // --- sosyal-medya-kazanc.tsx ---
+  "Sosyal Medyadan Para Kazan — Ortak Programı | OrtakSat": "Earn Money from Social Media — Partner Program | OrtakSat",
   "Instagram, TikTok veya WhatsApp hesabınla para kazan. Sıfır sermaye, stok yok, para yatırma yok — ürün seç, ortak ol, kendi yönteminle tanıt, satışta komisyon kazan. Ücretsiz başla.": "Earn money with your Instagram, TikTok, or WhatsApp account. Zero capital, no stock, no deposits — pick a product, become a partner, promote it your own way, earn commission on sales. Start for free.",
   "Sıfır sermaye · stok yok · para yatırma yok": "Zero capital · no stock · no deposits",
   "Sosyal medya hesabınla para kazan": "Earn money with your social media account",

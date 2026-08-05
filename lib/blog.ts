@@ -459,7 +459,7 @@ export const BLOG_POSTS: BlogPost[] = [
   {
     slug: "mikro-influencer-ilk-1000-tl-nasil-kazanilir",
     category: "Pazarlama",
-    title: "Mikro-Influencer Olarak İlk 1000 TL'ni Nasıl Kazanırsın?",
+    title: "Küçük Bir Sosyal Medya Hesabıyla İlk 1000 TL'ni Nasıl Kazanırsın?",
     excerpt: "Küçük ama etkileşimli bir hesabı gelire çevirmenin adım adım yolu. Takipçi sayısı değil, güven ve doğru ürün kazandırır.",
     author: "OrtakSat Editör Ekibi",
     authorRole: "Editör",
@@ -468,13 +468,13 @@ export const BLOG_POSTS: BlogPost[] = [
     dateShort: "2 Tem",
     image: img("1483985988355-763728e1935b"),
     body: [
-      "Mikro-influencer, genelde 1.000–30.000 takipçili, ama kitlesiyle güçlü bağı olan içerik üreticisidir. Markalar bu hesapları sever çünkü etkileşimleri yüksektir. İyi haber: gelire çevirmek için büyük markalarla anlaşmayı beklemene gerek yok; ortak satışla bugün başlayabilirsin.",
+      "Küçük ama etkileşimli bir sosyal medya hesabı — genelde 1.000–30.000 takipçili, ama kitlesiyle güçlü bağı olan bir içerik üreticisi — reklamverenlerin en sevdiği kitledir çünkü etkileşimleri yüksektir. İyi haber: gelire çevirmek için büyük markalarla anlaşmayı beklemene gerek yok; ortak satışla bugün başlayabilirsin.",
       "1. Nişini netleştir. Her şeyi paylaşan hesap kimseye satamaz. Moda, teknoloji, ev-yaşam, bebek, spor... kitleni tanı ve o alandaki ürünleri seç. OrtakSat'ta ürünü seçip ona ortak olursun (satıcı onaylayınca).",
       "2. Güvenini koru. Kitlenin sana güvenmesi en büyük sermayendir. Sadece gerçekten iyi bulduğun, kitleye faydalı ürünleri öner. Tek bir kötü öneri, aylarca kurduğun güveni sarsabilir.",
       "3. Ürünü kullanarak göster. 'Şunu aldım, şu işime yaradı' formatı, cilalı reklamdan çok daha ikna edicidir. Gerçek kullanım, gerçek ortam, abartısız anlatım.",
       "4. Net çağrı yap. 'Detaylar açıklamada' ya da 'bilgi için bana yazın' gibi ne yapılacağını açıkça söyle. Belirsiz bırakılan paylaşım ilgi toplasa da satışa dönmez.",
       "5. Ölç ve tekrarla. Hangi ürün, hangi format ve hangi saat daha çok tıklama getirdi? Kazandıran paylaşımı çoğalt. İlk 1000 TL genelde birkaç iyi üründen, birkaç iyi paylaşımdan gelir; sırrı tutarlılıktır.",
-      "Unutma: kazanç garantisi yoktur ve tek videoda zengin olunmaz. Ama küçük, güvenen bir kitleyle dürüst çalışırsan, mikro-influencer olmak istikrarlı bir ek gelir kanalına dönüşebilir.",
+      "Unutma: kazanç garantisi yoktur ve tek videoda zengin olunmaz. Ama küçük, güvenen bir kitleyle dürüst çalışırsan, küçük bir hesapla ortak satış istikrarlı bir ek gelir kanalına dönüşebilir.",
       commonLegalNote
     ]
   },

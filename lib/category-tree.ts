@@ -2164,7 +2164,7 @@ export const categoryTree: CategoryNode[] = [
       ], "dijitalHizmet"), "dijitalHizmet"),
       node("Pazarlama & Reklam", leaves([
         "Sosyal Medya Yönetimi", "Reklam Yönetimi (Meta)", "Reklam Yönetimi (Google)",
-        "SEO Hizmeti", "İçerik Pazarlama", "E-posta Pazarlama", "Influencer Kampanyası",
+        "SEO Hizmeti", "İçerik Pazarlama", "E-posta Pazarlama", "Sosyal Medya Kampanyası",
         "Pazar Araştırması", "Marka Danışmanlığı"
       ], "dijitalHizmet"), "dijitalHizmet"),
       node("Yazı & Çeviri", leaves([

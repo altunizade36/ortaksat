@@ -155,7 +155,6 @@ export const homeDict: Record<string, string> = {
   "Keşfet": "Explore",
   "İlan Ver (Satıcı)": "Post a Listing (Seller)",
   "Satıcı Ol": "Become a Seller",
-  "Ortak / Influencer Ol": "Become a Partner / Influencer",
   "Kazanç Hesapla": "Calculate Earnings",
   "Ortak Satış": "Partner Selling",
   "Nasıl Çalışır?": "How It Works?",

@@ -42,12 +42,12 @@ const faqLd = JSON.stringify({
   mainEntity: FAQ.map((f) => ({ "@type": "Question", name: f.q, acceptedAnswer: { "@type": "Answer", text: f.a } }))
 });
 
-export default function InfluencerLandingPage() {
+export default function SosyalMedyaLandingPage() {
   const isWideWeb = useIsWideWeb();
   const { language } = useLanguage();
-  const title = translateCopy("Sosyal Medyadan Para Kazan — Influencer Ortak Programı | OrtakSat", language);
+  const title = translateCopy("Sosyal Medyadan Para Kazan — Ortak Programı | OrtakSat", language);
   const desc = translateCopy("Instagram, TikTok veya WhatsApp hesabınla para kazan. Sıfır sermaye, stok yok, para yatırma yok — ürün seç, ortak ol, kendi yönteminle tanıt, satışta komisyon kazan. Ücretsiz başla.", language);
-  const url = "https://www.ortaksat.com/influencer-kazanc";
+  const url = "https://www.ortaksat.com/sosyal-medya-kazanc";
 
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ backgroundColor: colors.background, paddingBottom: 24 }} style={{ backgroundColor: colors.background }}>
