@@ -80,7 +80,7 @@ export default function BlogPage() {
         <View style={{ flex: 1, gap: 16, minWidth: 0 }}>
           {/* Featured */}
           <View dataSet={{ blogFeat: "1" }} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 20, overflow: "hidden", padding: 20 }}>
-            <View style={{ flex: 1.1, gap: 12, justifyContent: "center", minWidth: 0 }}>
+            <View dataSet={{ blogFeattext: "1" }} style={{ gap: 12, minWidth: 0 }}>
               <View style={{ alignSelf: "flex-start", backgroundColor: colors.goldSoft, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <Text style={{ color: colors.gold, fontSize: 11, fontWeight: "900" }}>Öne Çıkan Yazı</Text>
               </View>

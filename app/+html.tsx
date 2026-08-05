@@ -359,10 +359,11 @@ body {
    (DOM aynı; yalnız CSS viewport'a göre değişir). Taban (mobil) = dikey/tam-genişlik. */
 [data-blog-featimg] { width: 100%; }
 @media (min-width: 760px) {
-  [data-blog-wrap]    { flex-direction: row !important; }
-  [data-blog-feat]    { flex-direction: row !important; }
-  [data-blog-side]    { width: 320px !important; flex: 0 0 320px !important; }
-  [data-blog-featimg] { width: auto !important; min-width: 0 !important; }
+  [data-blog-wrap]     { flex-direction: row !important; }
+  [data-blog-feat]     { flex-direction: row !important; }
+  [data-blog-feattext] { flex: 1.1 1 0% !important; justify-content: center !important; }
+  [data-blog-side]     { width: 320px !important; flex: 0 0 320px !important; }
+  [data-blog-featimg]  { width: auto !important; min-width: 0 !important; }
 }
 
 /* CLS FIX — İlan kart grid'i CSS-grid ile (JS responsiveGrid yerine). Kart genişliği
