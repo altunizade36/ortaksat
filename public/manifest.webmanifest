@@ -18,7 +18,7 @@
     { "name": "Favorilerim", "short_name": "Favoriler", "url": "/favorites", "description": "Kaydettiğin ilanlar" }
   ],
   "icons": [
-    { "src": "/pwa-icon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/pwa-icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
     { "src": "/pwa-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
     { "src": "/pwa-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
   ]

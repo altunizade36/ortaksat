@@ -45,6 +45,14 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="icon" href="/favicon.ico" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
+        {/* iOS "Ana Ekrana Ekle" → uygulama gibi standalone açılış + durum çubuğu stili.
+            manifest display:standalone iOS 16.4+'da yeter ama daha eski iOS bu meta'lara bakar.
+            status-bar "default" = çakışmasız (siyah metin, opak alan); black-translucent header'ı
+            durum çubuğu altına iterdi. mobile-web-app-capable = standart (Android/Chrome) eşdeğeri. */}
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+        <meta name="apple-mobile-web-app-title" content="OrtakSat" />
+        <meta name="mobile-web-app-capable" content="yes" />
         {/* PWA: service worker kaydı + OTOMATİK GÜNCELLEME. Eskiden yalnız register vardı;
             yeni sürüm deploy edilince kullanıcı eski JS'te takılı kalıyordu (önbellek). Artık
             yeni SW devralınca (controllerchange) sayfa BİR KEZ yenilenir → herkes otomatik güncel
