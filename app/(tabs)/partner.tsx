@@ -870,6 +870,10 @@ function PartnerScreenInner() {
         <MiniBarChart data={leadSeries} title={translateCopy("Son 14 gün · getirdiğin talep", language)} totalLabel={`${myBroughtLeads.length} ${translateCopy("talep", language)}`} />
       ) : null}
 
+      {/* Ortak seviyesi/ilerleme kartı — eskiden yalnız masaüstü sidebar'da vardı; mobil
+          ortak kendi seviyesini göremiyordu (parite açığı). Aynı bileşen mobilde de. */}
+      <PartnerTier sales={mySales} />
+
       <PartnerLeaderboard users={users} partnerships={partnerships} sales={sales} highlightUserId={currentUser.id} />
 
       {/* Liderlik yalnız top-N gösterir → aranabilir tam dizine köprü (kategori/performans filtresi). */}

@@ -120,6 +120,7 @@ export default function ExploreScreen() {
   const [numRange, setNumRange] = useState<Record<string, { min: string; max: string }>>(() => parseNumParam(sp(params.num)));
   const [statusOpen, setStatusOpen] = useState(() => sp(params.open) === "1");
   const [showMobileFilters, setShowMobileFilters] = useState(false); // mobilde filtre panelini aç/kapat
+  const [showSortSheet, setShowSortSheet] = useState(false); // mobilde sıralama seçim alt-sayfası
   // Mobilde "Kategoriye göre filtrele" varsayılan KAPALI: ~18 kategori çipi ilanları
   // ekranın çok altına itiyordu. Kategori seçiliyken açık kalır (drill filtreleri görünsün).
   const [catFilterOpen, setCatFilterOpen] = useState(false);
@@ -1163,6 +1164,32 @@ export default function ExploreScreen() {
           </View>
         </Modal>
       ) : null}
+      {/* Mobil sıralama alt-sayfası — tüm seçenekler görünür + aktif olan işaretli
+          (eski kör ikon-döngü yerine). */}
+      {!isWideWeb ? (
+        <Modal visible={showSortSheet} transparent animationType="slide" onRequestClose={() => setShowSortSheet(false)}>
+          <View style={{ backgroundColor: "rgba(6,26,32,0.5)", flex: 1, justifyContent: "flex-end" }}>
+            <Pressable accessibilityLabel={translateCopy("Kapat", language)} onPress={() => setShowSortSheet(false)} style={{ flex: 1 }} />
+            <View style={{ backgroundColor: colors.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, overflow: "hidden", paddingBottom: insets.bottom + 8 }}>
+              <View style={{ alignItems: "center", paddingTop: 10 }}>
+                <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 5, width: 42 }} />
+              </View>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900", paddingHorizontal: 18, paddingTop: 12 }}>{translateCopy("Sırala", language)}</Text>
+              <View style={{ paddingHorizontal: 8, paddingTop: 6 }}>
+                {SORT_ORDER.map((key) => {
+                  const on = sortMode === key;
+                  return (
+                    <Pressable key={key} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => { setSortMode(key); setShowSortSheet(false); }} style={{ alignItems: "center", borderRadius: 12, flexDirection: "row", gap: 12, minHeight: 48, paddingHorizontal: 12 }}>
+                      <MaterialCommunityIcons name={on ? "check-circle" : "circle-outline"} size={20} color={on ? colors.primary : colors.subtle} />
+                      <Text style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 15, fontWeight: on ? "900" : "700" }}>{translateCopy(SORT_LABELS[key], language)}</Text>
+                    </Pressable>
+                  );
+                })}
+              </View>
+            </View>
+          </View>
+        </Modal>
+      ) : null}
       <View style={isWideWeb ? { flex: 1, minWidth: 0 } : undefined}>
       <View style={{ gap: 7, paddingBottom: 8, paddingHorizontal: isWideWeb ? 0 : padding, paddingTop: isWideWeb ? 0 : 6 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
@@ -1185,13 +1212,15 @@ export default function ExploreScreen() {
           </View>
           {!isWideWeb ? (
             <>
-              {/* Mobil sıralama (masaüstü toolbar'ın karşılığı): dokununca sıralamayı döndürür.
-                  İkon-only (320px'de taşmasın); seçili sıralama aktif-filtre çipinde görünür. */}
-              <Pressable onPress={() => setSortMode(SORT_ORDER[(SORT_ORDER.indexOf(sortMode) + 1) % SORT_ORDER.length])} accessibilityRole="button" accessibilityLabel={`${translateCopy("Sırala", language)}: ${translateCopy(SORT_LABELS[sortMode], language)}`} style={{ alignItems: "center", backgroundColor: sortMode !== "recommended" ? colors.primary : colors.surface, borderColor: sortMode !== "recommended" ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, justifyContent: "center", minWidth: 38, paddingHorizontal: 9, paddingVertical: 7 }}>
-                <MaterialCommunityIcons name="sort" size={16} color={sortMode !== "recommended" ? "#FFFFFF" : colors.primaryDark} />
+              {/* Mobil sıralama: eskiden ikon-only kör-döngü (her dokunuş bir sonraki mod, ne
+                  seçtiğin görünmüyordu, ~30px hedef). Artık etiketli buton (aktif sıralamayı
+                  gösterir) + alt-sayfada tüm seçenekler işaretli. Dokunma hedefi 40px. */}
+              <Pressable onPress={() => setShowSortSheet(true)} accessibilityRole="button" accessibilityLabel={`${translateCopy("Sırala", language)}: ${translateCopy(SORT_LABELS[sortMode], language)}`} style={{ alignItems: "center", backgroundColor: sortMode !== "recommended" ? colors.primary : colors.surface, borderColor: sortMode !== "recommended" ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, justifyContent: "center", minHeight: 40, paddingHorizontal: 12, paddingVertical: 9 }}>
+                <MaterialCommunityIcons name="sort" size={15} color={sortMode !== "recommended" ? "#FFFFFF" : colors.primaryDark} />
+                <Text numberOfLines={1} style={{ color: sortMode !== "recommended" ? "#FFFFFF" : colors.primaryDark, fontSize: 12, fontWeight: "900", maxWidth: 92 }}>{sortMode === "recommended" ? translateCopy("Sırala", language) : translateCopy(SORT_LABELS[sortMode], language)}</Text>
               </Pressable>
               {/* Mobilde şehir/komisyon/il-ilçe/stok/onaylı filtreleri. */}
-              <Pressable onPress={() => setShowMobileFilters((v) => !v)} accessibilityRole="button" accessibilityLabel={translateCopy("Filtrele", language)} style={{ alignItems: "center", backgroundColor: showMobileFilters ? colors.primary : colors.surface, borderColor: hasPanelFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
+              <Pressable onPress={() => setShowMobileFilters((v) => !v)} accessibilityRole="button" accessibilityLabel={translateCopy("Filtrele", language)} style={{ alignItems: "center", backgroundColor: showMobileFilters ? colors.primary : colors.surface, borderColor: hasPanelFilter ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: 40, paddingHorizontal: 12, paddingVertical: 9 }}>
                 <MaterialCommunityIcons name="tune-variant" size={15} color={showMobileFilters ? "#FFFFFF" : colors.primaryDark} />
                 <Text style={{ color: showMobileFilters ? "#FFFFFF" : colors.primaryDark, fontSize: 12, fontWeight: "900" }}>{translateCopy("Filtre", language)}</Text>
                 {hasPanelFilter ? <View style={{ backgroundColor: showMobileFilters ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 7, width: 7 }} /> : null}
