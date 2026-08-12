@@ -99,7 +99,8 @@ export const catalogDict: Record<string, string> = {
   // components/desktop-create-flow.tsx
   "Bu kategori, güvenlik gereği yayından önce yönetici onayına düşer.": "For safety, this category requires admin approval before publishing.",
   "Bazı görseller 5 MB sınırını aşıyor ve eklenmedi. Lütfen daha küçük dosyalar seçin.": "Some images exceed the 5 MB limit and were not added. Please choose smaller files.",
-  "En fazla 5 görsel ekleyebilirsin. Fazlası eklenmedi.": "You can add at most 5 images. The extras were not added.",
+  "En fazla 15 görsel ekleyebilirsin. Fazlası eklenmedi.": "You can add at most 15 images. The extras were not added.",
+  "En az 1, en fazla 15 fotoğraf. İlk fotoğraf kapak olur; fotoğraflar otomatik ölçeklenir.": "At least 1, up to 15 photos. The first photo becomes the cover; photos are scaled automatically.",
   "Çok sık denediniz, lütfen sonra tekrar deneyin.": "You've tried too often, please try again later.",
   "Yeni ilan oluştur": "Create a new listing",
   "Kategorini seç, sana özel form açılsın. Ortak satışa açarak ortakların ürününü kendi kitlesine yaysın.": "Choose your category and a tailored form opens. Open it to partner sales so partners spread your product to their audience.",

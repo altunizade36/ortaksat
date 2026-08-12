@@ -33,6 +33,8 @@ import { categoryConversion } from "@/lib/conversion";
 import { VerificationBadges } from "@/components/verification-badges";
 import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
 import { useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
@@ -56,6 +58,7 @@ export default function ListingDetailScreen() {
   const { language } = useLanguage();
   const { width } = useWindowDimensions();
   const isWideWeb = useIsWideWeb();
+  const insets = useSafeAreaInsets();
   const {
     createLead,
     createSaleReview,
@@ -572,7 +575,7 @@ export default function ListingDetailScreen() {
   const showMobileActionBar = !isWideWeb && !isDemo;
   return (
     <View style={{ flex: 1 }}>
-    <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: showMobileActionBar ? 132 : 96 }}>
+    <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: (showMobileActionBar ? 132 : 96) + insets.bottom }}>
       <Head>
         <title>{`${currentListing.title} — OrtakSat`}</title>
         <meta name="description" content={metaDesc} />
@@ -1468,7 +1471,7 @@ export default function ListingDetailScreen() {
         her zaman erişilebilir kalır (Trendyol/Sahibinden deseni). Masaüstünde sağ karar kutusu
         zaten hep görünür; native/dar-web'de yoktu → dönüşüm sızıntısı. Aynı handler'ları kullanır. */}
     {showMobileActionBar ? (
-      <View style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, bottom: 0, elevation: 12, flexDirection: "row", gap: 10, left: 0, paddingBottom: 12, paddingHorizontal: 14, paddingTop: 10, position: "absolute", right: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 8 }}>
+      <View style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, bottom: 0, elevation: 12, flexDirection: "row", gap: 10, left: 0, paddingBottom: 12 + insets.bottom, paddingHorizontal: 14, paddingTop: 10, position: "absolute", right: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 8 }}>
         {!isOwner ? (
           <View style={{ minWidth: 0 }}>
             <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{translateCopy("Fiyat", language)}</Text>
