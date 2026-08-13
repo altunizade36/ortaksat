@@ -260,13 +260,17 @@ export async function fetchAdminAudit(): Promise<{ logs: AuditEntry[]; rateHits:
  */
 export async function loadAdminSnapshot(limit = 1000): Promise<{ listings: Listing[]; users: User[] } | null> {
   if (!supabase) return null;
-  const [listingsResult, profilesResult] = await Promise.all([
+  const [listingsResult, profilesResult, phonesResult] = await Promise.all([
     supabase.from("listing_public_cards").select("*").order("created_at", { ascending: false }).limit(limit),
-    supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).order("updated_at", { ascending: false }).limit(limit)
+    supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).order("updated_at", { ascending: false }).limit(limit),
+    // Telefon yalnız is_admin-korumalı RPC ile (toplu phone SELECT grant'ı kaldırıldı) →
+    // admin CSV/detay için geri getirilir; normal kullanıcıda boş döner. Bkz 20260813150000.
+    supabase.rpc("admin_user_phones")
   ]);
   if (listingsResult.error && profilesResult.error) return null;
   const listings = ((listingsResult.data ?? []) as PublicListingCardRow[]).map(mapListing);
-  const users = ((profilesResult.data ?? []) as ProfileRow[]).map(mapProfile);
+  const phoneMap = new Map(((phonesResult.data ?? []) as Array<{ id: string; phone: string | null }>).map((r) => [r.id, r.phone ?? ""]));
+  const users = ((profilesResult.data ?? []) as ProfileRow[]).map(mapProfile).map((u) => ({ ...u, phone: phoneMap.get(u.id) ?? u.phone }));
   const counts = listings.reduce<Record<string, number>>((acc, l) => { acc[l.ownerId] = (acc[l.ownerId] ?? 0) + 1; return acc; }, {});
   return { listings, users: users.map((u) => ({ ...u, listingCount: counts[u.id] ?? u.listingCount })) };
 }
