@@ -512,7 +512,8 @@ export function useLanguage() {
   return context ?? fallbackLanguageContext;
 }
 
-const baseTrToEn: Record<string, string> = {
+// Tembel: yalnızca EN sözlüğü ilk kez kurulurken çağrılır (TR kullanıcıda hiç kurulmaz).
+function baseTrToEnDict(): Record<string, string> { return {
   "Açık": "Open",
   "Açık komisyon": "Open commission",
   "Açık güven kaydı": "Open trust record",
@@ -1224,28 +1225,34 @@ const baseTrToEn: Record<string, string> = {
   "Yükleniyor...": "Loading...",
   "Bir hata oluştu": "An error occurred",
   "Tekrar dene": "Try again"
-};
+}; }
 
 // Temel + tüm sayfa-grubu sözlükleri birleştirilmiş nihai TR→EN haritası.
-const trToEnCopy: Record<string, string> = {
-  ...baseTrToEn,
-  ...homeDict,
-  ...exploreDict,
-  ...catalogDict,
-  ...socialDict,
-  ...componentsDict,
-  ...components2Dict,
-  ...categoriesDict,
-  ...accountDict,
-  ...profileDict,
-  ...marketingDict,
-  ...pass2Dict,
-  ...extraDict
-};
+// EN sözlüğü YALNIZCA dil EN olunca gerekli (translateCopy TR'de erken döner). ~5000
+// girişlik birleştirme eskiden HER sayfa yükünde (TR %99 kitle) boşa yapılıyordu →
+// tembelleştirildi: ilk EN çağrısında bir kez kurulur, TR kullanıcıda hiç kurulmaz.
+let _trToEnCopy: Record<string, string> | null = null;
+function trToEnDict(): Record<string, string> {
+  return _trToEnCopy ?? (_trToEnCopy = {
+    ...baseTrToEnDict(),
+    ...homeDict,
+    ...exploreDict,
+    ...catalogDict,
+    ...socialDict,
+    ...componentsDict,
+    ...components2Dict,
+    ...categoriesDict,
+    ...accountDict,
+    ...profileDict,
+    ...marketingDict,
+    ...pass2Dict,
+    ...extraDict
+  });
+}
 
 export function translateCopy(value: string, language: AppLanguage): string {
   if (language !== "en") return value;
-  const direct = trToEnCopy[value.trim()];
+  const direct = trToEnDict()[value.trim()];
   if (direct) return direct;
   return value
     .replace(/\bKazanç\b/g, "Earning")

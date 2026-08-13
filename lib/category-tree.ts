@@ -46,10 +46,12 @@ const IMG = (id: string) => `https://images.unsplash.com/photo-${id}?w=400&q=72&
 
 // ---- builders ------------------------------------------------------------
 function leaf(label: string, formKey?: string): CategoryNode {
-  return { key: sl(label), label, slug: sl(label), formKey };
+  const s = sl(label); // key===slug; iki kez hesaplama (7467 düğüm × 2 sl → başlangıç maliyeti)
+  return { key: s, label, slug: s, formKey };
 }
 function node(label: string, children: CategoryNode[], formKey?: string, image?: string): CategoryNode {
-  return { key: sl(label), label, slug: sl(label), children, formKey, image };
+  const s = sl(label);
+  return { key: s, label, slug: s, children, formKey, image };
 }
 const leaves = (labels: string[], formKey?: string) => labels.map((l) => leaf(l, formKey));
 
