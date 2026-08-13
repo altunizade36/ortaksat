@@ -372,15 +372,15 @@ export function makeUuid() {
 export async function ensureProfile(user: User) {
   if (!supabase || !isLiveUser(user)) return;
 
-  // .select("id"): upsert VARSAYILAN olarak temsili (SELECT *) döndürür → phone kolon-grant'ı
-  // kaldırıldığından (migration 20260813130000) 403 verirdi → yalnız id döndür (yazma etkilenmez).
-  const { error } = await supabase.from("profiles").upsert({
-    id: user.id,
-    full_name: user.name,
-    phone: user.phone || null,
-    avatar_url: user.avatar.length > 3 ? user.avatar : null,
-    bio: user.bio
-  }).select("id");
+  // SECURITY DEFINER RPC ile upsert: phone kolon-SELECT grant'ı kaldırıldığından (20260813130000)
+  // profiles TABLO-SELECT'i yok → düz upsert (INSERT ON CONFLICT) "permission denied" (42501) verirdi.
+  // RPC sahip yetkisiyle yalnız auth.uid()'in kendi satırını yazar. Bkz 20260813160000.
+  const { error } = await supabase.rpc("ensure_my_profile", {
+    p_full_name: user.name,
+    p_phone: user.phone || null,
+    p_avatar_url: user.avatar.length > 3 ? user.avatar : null,
+    p_bio: user.bio
+  });
 
   if (error) console.warn("Supabase profile upsert failed", error);
 }
