@@ -865,9 +865,11 @@ export default function ExploreScreen() {
           <View style={{ flex: 1, gap: 14, minWidth: 0 }}>
             {/* renderCatFilter() SOL PANELE taşındı — burada gridi aşağı itiyordu. */}
             <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between" }}>
-              <View style={{ gap: 2 }}>
-                <Text style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{translateCopy("Öne çıkan ilanlar", language)}</Text>
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{translateCopy("Sizin için seçilmiş en iyi ortaklık fırsatları", language)}</Text>
+              <View style={{ gap: 2, minWidth: 0 }}>
+                {/* Arama yapıldığında başlık sorguyu yansıtır (eskiden hep "Öne çıkan ilanlar"
+                    yazıyordu → aramanın bağlamı kaybolıyordu). */}
+                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{queryText ? (language === "en" ? `Results for “${queryText}”` : `“${queryText}” için sonuçlar`) : translateCopy("Öne çıkan ilanlar", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{queryText ? (language === "en" ? "Commissioned listings matching your search" : "Aramanla eşleşen komisyonlu ilanlar") : translateCopy("Sizin için seçilmiş en iyi ortaklık fırsatları", language)}</Text>
               </View>
               <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{productListings.length} {translateCopy("ilan bulundu", language)}</Text>
             </View>
@@ -1194,13 +1196,13 @@ export default function ExploreScreen() {
       <View style={{ gap: 7, paddingBottom: 8, paddingHorizontal: isWideWeb ? 0 : padding, paddingTop: isWideWeb ? 0 : 6 }}>
         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
           <View style={{ flex: 1, minWidth: 0 }}>
-            <Text selectable style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, fontWeight: "900" }}>
-              {t("explore")}
+            <Text selectable numberOfLines={1} style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, fontWeight: "900" }}>
+              {queryText ? (language === "en" ? `Results for “${queryText}”` : `“${queryText}” için sonuçlar`) : t("explore")}
             </Text>
             {/* Alt metin mobilde 320px'de 4 satıra yayılıp başlığı şişiriyordu → 2 satır sınırı
                 + biraz küçük; ürünler daha yukarıda görünür (Instagram-vari kompakt başlık). */}
             <Text selectable numberOfLines={2} style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700", lineHeight: 17 }}>
-              {t("visualExploreBody")}
+              {queryText ? (language === "en" ? "Commissioned listings matching your search" : "Aramanla eşleşen komisyonlu ilanlar") : t("visualExploreBody")}
             </Text>
           </View>
           {/* Sayaç artık İLAN sayısı (eskiden "içerik" = medya sayısıydı ve gridde
