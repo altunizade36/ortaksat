@@ -372,13 +372,15 @@ export function makeUuid() {
 export async function ensureProfile(user: User) {
   if (!supabase || !isLiveUser(user)) return;
 
+  // .select("id"): upsert VARSAYILAN olarak temsili (SELECT *) döndürür → phone kolon-grant'ı
+  // kaldırıldığından (migration 20260813130000) 403 verirdi → yalnız id döndür (yazma etkilenmez).
   const { error } = await supabase.from("profiles").upsert({
     id: user.id,
     full_name: user.name,
     phone: user.phone || null,
     avatar_url: user.avatar.length > 3 ? user.avatar : null,
     bio: user.bio
-  });
+  }).select("id");
 
   if (error) console.warn("Supabase profile upsert failed", error);
 }
