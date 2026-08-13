@@ -6,7 +6,7 @@ export const colors = {
   surfaceAlt: "#F0FBFC",   // hafif turkuaz tint (ikincil yüzey)
   ink: "#0F172A",          // başlık yazısı
   muted: "#64748B",        // açıklama yazısı
-  subtle: "#6B7A8C",       // en soluk yazı — WCAG için koyulaştırıldı (#94A3B8 ≈2.4:1 kalıyordu; şimdi ~4.3:1)
+  subtle: "#5E6A7A",       // en soluk yazı — WCAG için koyulaştırıldı (#94A3B8→#6B7A8C→şimdi #5E6A7A; kart yüzeyi #F0FDFF üstünde 4.22:1 kalıp AA'yı geçemiyordu → ~5.3:1)
   line: "#D8F3F6",         // turkuaz kenarlık
   primary: "#0EA5B7",      // ana turkuaz
   primaryDark: "#096273",  // koyu turkuaz — primarySoft çip üstünde AA (4.2→5.2:1) için hafif koyultuldu; beyazda da kontrast arttı

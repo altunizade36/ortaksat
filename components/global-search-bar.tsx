@@ -66,7 +66,8 @@ export function GlobalSearchBar() {
           onBlur={() => setTimeout(() => setFocused(false), 180)}
           onSubmitEditing={() => submitSearch()}
           blurOnSubmit
-          accessibilityRole="search"
+          // role="search" bir <input>'te geçersiz (landmark rolü) → Lighthouse aria-allowed-role
+          // hatası. Erişilebilir ad zaten accessibilityLabel'dan gelir; rolü kaldırdık.
           accessibilityLabel={t("searchPlaceholder")}
           placeholder={t("searchPlaceholder")}
           placeholderTextColor={colors.muted}
