@@ -225,9 +225,13 @@ export async function fetchListingById(id: string): Promise<{ listing: Listing; 
 // listeleme/feed yanıtında taşınmaz (kazıma yüzeyi kapalı).
 export async function fetchSellerPhone(ownerId: string): Promise<string> {
   if (!supabase || !ownerId) return "";
-  const { data, error } = await supabase.from("profiles").select("phone").eq("id", ownerId).maybeSingle();
+  // Telefon artık SECURITY DEFINER RPC ile döner: doğrudan profiles.phone SELECT grant'ı
+  // KALDIRILDI (girişli kullanıcı `select phone from profiles` ile TÜM numaraları
+  // toplayabiliyordu → PII sızıntısı). RPC tek-satıcı/id başına döner. Bkz migration
+  // 20260813130000_phone_reveal_rpc.
+  const { data, error } = await supabase.rpc("reveal_seller_phone", { p_seller: ownerId });
   if (error || !data) return "";
-  return (data as { phone: string | null }).phone ?? "";
+  return typeof data === "string" ? data : "";
 }
 
 export type AuditEntry = { id: number; userId: string | null; action: string; entityType: string | null; entityId: string | null; createdAt: string };
@@ -248,14 +252,17 @@ export async function fetchAdminAudit(): Promise<{ logs: AuditEntry[]; rateHits:
 }
 
 /**
- * Admin tam veri: TUM ilanlar (her statu) + TUM kullanicilar. RLS "admins read
- * all listings" ile admin/moderator icin calisir; normal kullanicida bos/az doner.
+ * Admin/moderator veri yükü: TUM ilanlar (her statu) + kullanicilar (moderasyon/arama icin).
+ * Profiller PUBLIC_PROFILE_COLUMNS ile cekilir — `phone` DAHIL DEGIL (doğrudan phone kolon
+ * grant'ı güvenlik için kaldırıldı; toplu telefon kazıma kapalı). Admin bir kullanıcının
+ * telefonuna gerekirse `reveal_seller_phone` RPC'siyle tek-tek erişir. Bkz migration
+ * 20260813130000. (`select("*")` kullanılmıyor: revoke sonrası "permission denied" verirdi.)
  */
 export async function loadAdminSnapshot(limit = 1000): Promise<{ listings: Listing[]; users: User[] } | null> {
   if (!supabase) return null;
   const [listingsResult, profilesResult] = await Promise.all([
     supabase.from("listing_public_cards").select("*").order("created_at", { ascending: false }).limit(limit),
-    supabase.from("profiles").select("*").order("updated_at", { ascending: false }).limit(limit)
+    supabase.from("profiles").select(PUBLIC_PROFILE_COLUMNS).order("updated_at", { ascending: false }).limit(limit)
   ]);
   if (listingsResult.error && profilesResult.error) return null;
   const listings = ((listingsResult.data ?? []) as PublicListingCardRow[]).map(mapListing);
