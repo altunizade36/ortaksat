@@ -55,6 +55,8 @@ function ProfileScreenInner() {
   const openReports = reports.filter((report) => report.reporterId === currentUser.id && (report.status === "open" || report.status === "reviewing"));
   const trust = calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: currentUser });
   const isWideWeb = useIsWideWeb();
+  // Yönetim Paneli girişi — yalnız staff. Hesabım'da belirgin dursun (kullanıcı "bulamıyorum" dedi).
+  const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
 
   // Mağaza bağlantısını PAYLAŞ/KOPYALA (büyüme kaldıracı) — web'de navigator.share,
   // yoksa panoya kopyalar; native'de OS paylaşım paneli. Store sayfasıyla aynı desen.
@@ -171,6 +173,7 @@ function ProfileScreenInner() {
                   liste yerine kompakt + sidebar yüksekliğiyle dengeli. */}
               <View style={{ flexDirection: "row", gap: 22 }}>
                 <View style={{ flex: 1, gap: 6, minWidth: 0 }}>
+                  {isStaff ? <MenuRow icon="shield-crown-outline" label="Yönetim Paneli" detail="Kullanıcı, ilan, komisyon ve site yönetimi" value="→" href={"/admin" as Href} /> : null}
                   <MenuRow icon="storefront-outline" label="İlanlarım" detail={`${activeListings.length} aktif · ${pausedListings.length} duraklatılmış`} value={`${myListings.length}`} href="/(tabs)/seller" />
                   <MenuRow icon="handshake-outline" label="Ortaklıklarım" detail={`${activePartnerships.length} aktif · ${pendingPartnerships.length} bekliyor`} value={`${myPartnerships.length}`} href="/(tabs)/partner" />
                   <MenuRow icon="cash-multiple" label="Kazançlarım" detail={`${money(paidCommission)} ödendi · ${money(pendingCommission)} bekliyor`} value="→" href={"/earnings" as Href} />
@@ -301,6 +304,7 @@ function ProfileScreenInner() {
       <Card>
         <Text selectable style={{ color: colors.ink, fontSize: 18, fontWeight: "900" }}>{t("accountSupport")}</Text>
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {isStaff ? <Shortcut href={"/admin" as Href} icon="shield-crown-outline" label={translateCopy("Yönetim", language)} /> : null}
           <Shortcut href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} icon="store-search-outline" label={translateCopy("Mağazam", language)} />
           <Shortcut href="/auth" icon="account-switch-outline" label={t("switchAccounts")} />
           {/* Girişli (canlı) hesapta "Giriş Yap / Kayıt Ol" gösterme — gereksiz/kafa karıştırıcı. */}
