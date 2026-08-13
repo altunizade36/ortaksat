@@ -630,11 +630,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
 
     async function loadProfile(userId: string, fallbackPhone?: string | null, fallbackName?: string | null) {
       const fallback = userFromAuth(userId, fallbackPhone, fallbackName);
-      const { data, error } = await supabase!
-        .from("profiles")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle();
+      // Own profil'i SECURITY DEFINER RPC ile getir: phone kolon-grant'ı güvenlik için
+      // kaldırıldığından `select("*")` "permission denied for column phone" verirdi (→ fallback,
+      // role="user", admin linki kaybolurdu). get_my_profile auth.uid()'in KENDİ satırını
+      // (phone dahil) döner. Bkz migration 20260813140000 / 20260813130000.
+      const { data: myRows, error } = await supabase!.rpc("get_my_profile");
+      const data = (Array.isArray(myRows) ? myRows[0] : myRows) as Record<string, any> | null;
 
       const profile: User =
         data && !error
