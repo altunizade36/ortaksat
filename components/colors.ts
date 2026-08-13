@@ -11,7 +11,7 @@ export const colors = {
   primary: "#0EA5B7",      // ana turkuaz
   primaryDark: "#096273",  // koyu turkuaz — primarySoft çip üstünde AA (4.2→5.2:1) için hafif koyultuldu; beyazda da kontrast arttı
   primarySoft: "#B8E8DE",  // açık turkuaz (soft yüzey/chip) — göz yormayan sakin ton
-  accent: "#EF4444",       // hata/tehlike (kırmızı)
+  accent: "#DC2626",       // hata/tehlike (kırmızı) — beyaz metinle 3.76:1 (#EF4444) AA'yı geçmiyordu (popüler/acil rozetleri, İlan Ver CTA) → #DC2626 ile 4.83:1
   accentSoft: "#FEE4E2",
   warning: "#F59E0B",
   warningSoft: "#FEF3C7",
