@@ -36,7 +36,11 @@ export function MobileNavMenu() {
     { label: "İlan Ver", href: "/create", icon: "store-plus-outline" },
     { label: "Ortak Satış Fırsatları", href: "/partner", icon: "handshake-outline" }
   ];
+  const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
   const account: NavItem[] = [
+    // Yönetim Paneli — yalnız staff (admin/moderatör). Masaüstü header'da vardı, mobilde YOKTU
+    // → admin panele mobilden erişmek için URL'yi elle yazmak gerekiyordu. En üstte, belirgin.
+    ...(isStaff ? [{ label: "Yönetim Paneli", href: "/admin" as Href, icon: "shield-crown-outline" as IconName }] : []),
     { label: "Favorilerim", href: "/favorites", icon: "heart-outline" },
     { label: "Takip Ettiklerin", href: "/following", icon: "storefront-check-outline" },
     { label: "Tekliflerim", href: "/offers", icon: "tag-outline", badge: pendingOffers },
