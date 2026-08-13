@@ -25,7 +25,7 @@ export function HeaderActions() {
           <MaterialCommunityIcons name="plus-box" size={19} color="#FFFFFF" />
           {/* 2-satır: küçük "ÜCRETSİZ" etiketi + "İlan Ver" — genişlik artmadan "ücretsiz" vurgusu (mobilde tam metin logoyu sıkıştırıyordu). */}
           <View style={{ gap: 0 }}>
-            <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.9)", fontSize: 7.5, fontWeight: "900", letterSpacing: 0.6, lineHeight: 9 }}>{translateCopy("ÜCRETSİZ", language)}</Text>
+            <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 7.5, fontWeight: "900", letterSpacing: 0.6, lineHeight: 9 }}>{translateCopy("ÜCRETSİZ", language)}</Text>
             <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900", lineHeight: 15 }}>{translateCopy("İlan Ver", language)}</Text>
           </View>
         </Pressable>
