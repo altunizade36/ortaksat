@@ -204,7 +204,15 @@ export default function AuthScreen() {
   async function register() {
     setFormError(null);
     if (!firstName.trim() || !lastName.trim() || !cleanEmail) {
-      const msg = translateCopy("Ad, soyad ve e-posta gerekli.", language);
+      // Yalnızca GERÇEKTEN eksik alanları söyle (eskiden e-posta dolu olsa bile
+      // "Ad, soyad ve e-posta gerekli" diyordu → kullanıcı "ama e-postayı yazdım" diye şaşırıyordu).
+      const missing: string[] = [];
+      if (!firstName.trim()) missing.push(language === "en" ? "first name" : "ad");
+      if (!lastName.trim()) missing.push(language === "en" ? "last name" : "soyad");
+      if (!cleanEmail) missing.push(language === "en" ? "email" : "e-posta");
+      const joined = missing.length === 1 ? missing[0] : `${missing.slice(0, -1).join(", ")}${language === "en" ? " and " : " ve "}${missing[missing.length - 1]}`;
+      const cap = joined.charAt(0).toUpperCase() + joined.slice(1);
+      const msg = language === "en" ? `${cap} required.` : `${cap} gerekli.`;
       setFormError(msg);
       Alert.alert(language === "en" ? "Missing information" : "Eksik bilgi", msg);
       return;
