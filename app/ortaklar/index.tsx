@@ -224,7 +224,7 @@ function Inner() {
             </View>
           )
         ) : (
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap }}>
+          <View style={{ alignItems: "stretch", flexDirection: "row", flexWrap: "wrap", gap }}>
             {entries.map((e) => (
               <PartnerCard key={e.partnerId} entry={e} width={cardWidth} favorited={favIds.has(e.partnerId)} isSelf={currentUser?.id === e.partnerId} onFav={() => void toggleFav(e.partnerId)} />
             ))}
@@ -299,8 +299,8 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
         </Pressable>
       </Link>
 
-      {/* Alt aksiyon: vitrini gör + favori kalp */}
-      <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", justifyContent: "space-between", paddingHorizontal: 14, paddingVertical: 8 }}>
+      {/* Alt aksiyon: vitrini gör + favori kalp — marginTop:auto → kart uzasa da hep DİPTE (eşit yükseklik). */}
+      <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", justifyContent: "space-between", marginTop: "auto", paddingHorizontal: 14, paddingVertical: 8 }}>
         <Link href={{ pathname: "/ortak/[id]", params: { id: entry.partnerId } }} asChild>
           <Pressable accessibilityRole="link" style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
             <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{t("Vitrini gör")}</Text>
