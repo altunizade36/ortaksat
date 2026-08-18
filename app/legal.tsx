@@ -38,6 +38,8 @@ export default function LegalScreen() {
   const [deleteReason, setDeleteReason] = useState("Hesabımı ve kişisel verilerimi silmek istiyorum.");
   const [category, setCategory] = useState("Genel");
   const [priority, setPriority] = useState("Normal");
+  const [deletionBusy, setDeletionBusy] = useState(false);
+  const [deletionSent, setDeletionSent] = useState(false);
 
   async function acceptAll() {
     const results = await Promise.all([
@@ -56,9 +58,24 @@ export default function LegalScreen() {
     else Alert.alert(translateCopy("Gönderilemedi", language), translateCopy("Canlı hesapla giriş yapıp konu ve mesaj yazmalısın.", language));
   }
 
-  async function requestDeletion() {
+  // Hesap silme talebi HASSAS + geri döndürülmesi zor → tek dokunuşla açılmasın: onay iste.
+  // deletionBusy/deletionSent yinelenen (çift-dokunuş) talebi engeller (dedupe sunucuda da var).
+  function requestDeletion() {
+    if (deletionBusy || deletionSent) return;
+    Alert.alert(
+      translateCopy("Hesap silme talebi", language),
+      translateCopy("Hesabının silinmesi için talep açılacak ve ekibimiz KVKK kapsamında işleme alacak. Devam edilsin mi?", language),
+      [
+        { text: translateCopy("Vazgeç", language), style: "cancel" },
+        { text: translateCopy("Talep aç", language), style: "destructive", onPress: () => void submitDeletion() }
+      ]
+    );
+  }
+  async function submitDeletion() {
+    setDeletionBusy(true);
     const ok = await requestAccountDeletion(deleteReason);
-    if (ok) showToast(translateCopy("Silme talebin kayıt altına alındı", language));
+    setDeletionBusy(false);
+    if (ok) { setDeletionSent(true); showToast(translateCopy("Silme talebin kayıt altına alındı", language)); }
     else Alert.alert(translateCopy("Talep açılamadı", language), translateCopy("Bu işlem için canlı hesapla giriş yapmalısın.", language));
   }
 

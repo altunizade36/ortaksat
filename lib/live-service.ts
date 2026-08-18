@@ -1720,6 +1720,12 @@ export async function reauthenticateLive(password: string): Promise<boolean> {
 export async function requestAccountDeletionLive(input: { userId: string; reason: string }) {
   if (!supabase || !uuidPattern.test(input.userId)) return false;
 
+  // Yinelenen talep koruması: kullanıcının zaten AÇIK silme talebi varsa yenisini AÇMA (eskiden
+  // her dokunuş yeni satır ekliyordu → admin'de mükerrer talep). Kapanmış talep yenisini engellemez.
+  const { data: existing } = await supabase.from("account_deletion_requests")
+    .select("id").eq("user_id", input.userId).eq("status", "open").limit(1);
+  if (existing && existing.length > 0) return true;
+
   const { error } = await supabase.from("account_deletion_requests").insert({
     id: makeUuid(),
     user_id: input.userId,
