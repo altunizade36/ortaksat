@@ -79,3 +79,21 @@ export function shortDate(value: string | Date) {
   const months = activeLanguage === "en" ? SHORT_MONTHS_EN : SHORT_MONTHS_TR;
   return `${String(date.getDate()).padStart(2, "0")} ${months[date.getMonth()]}`;
 }
+
+// Göreli zaman ("az önce" / "5 dk önce" / "2 sa önce" / "3 gün önce"); 7 günden eski → tarih.
+// Bildirimler için: aynı güne ait olanlar shortDate ile hep "18 Ağu" görünüyordu (ayırt edilemez).
+export function relativeTime(value: string | Date) {
+  const date = typeof value === "string" ? new Date(value) : value;
+  const ms = date.getTime();
+  if (Number.isNaN(ms)) return shortDate(value);
+  const diff = Date.now() - ms;
+  const en = activeLanguage === "en";
+  if (diff < 45_000) return en ? "just now" : "az önce";
+  const min = Math.floor(diff / 60_000);
+  if (min < 60) return en ? `${min} min ago` : `${min} dk önce`;
+  const hr = Math.floor(min / 60);
+  if (hr < 24) return en ? `${hr} h ago` : `${hr} sa önce`;
+  const day = Math.floor(hr / 24);
+  if (day < 7) return en ? `${day} d ago` : `${day} gün önce`;
+  return shortDate(value);
+}

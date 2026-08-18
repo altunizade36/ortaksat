@@ -782,7 +782,9 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       title: row.title,
       body: row.body,
       read: row.read,
-      createdAt: row.created_at.slice(0, 10),
+      // TAM ISO zaman damgası korunur (eskiden .slice(0,10) ile tarihe kırpılıyordu → bugünkü
+      // TÜM bildirimler "18 Ağu" görünüp ayırt edilemiyordu; göreli zaman da imkansızdı).
+      createdAt: row.created_at,
       metadata: parseNotifMeta(row.metadata)
     })),
     reports: (reportsResult.data ?? []).map((row) => ({

@@ -5,7 +5,7 @@ import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "rea
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
-import { shortDate } from "@/lib/locale";
+import { relativeTime } from "@/lib/locale";
 import { Card, EmptyState, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -255,7 +255,7 @@ function NotificationsScreenInner() {
                             </View>
                             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{translateCopy(n.body, language)}</Text>
                             <View style={{ alignItems: "center", flexDirection: "row", gap: 10, marginTop: 2 }}>
-                              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{shortDate(n.createdAt)}</Text>
+                              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{relativeTime(n.createdAt)}</Text>
                               <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{hasLink ? translateCopy(n.type === "message" ? "Mesaja git →" : "İlana git →", language) : read ? translateCopy("Görüntülendi", language) : translateCopy("Okundu işaretle", language)}</Text>
                             </View>
                           </View>
@@ -466,7 +466,7 @@ function NotificationsScreenInner() {
                 </View>
                 {!read ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, height: 8, width: 8 }} /> : null}
                 <View style={{ flex: 1 }} />
-                <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{shortDate(notification.createdAt)}</Text>
+                <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{relativeTime(notification.createdAt)}</Text>
               </View>
               <Text selectable style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900", lineHeight: 19 }}>{translateCopy(notification.title, language)}</Text>
               <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "500", lineHeight: 18 }}>{translateCopy(notification.body, language)}</Text>

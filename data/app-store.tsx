@@ -1043,7 +1043,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         title,
         body,
         read: false,
-        createdAt: today(),
+        // TAM zaman damgası (eskiden today() = yalnız tarih → optimistik kopya "az önce" gösteremiyor,
+        // DB now() ile de uyuşmuyordu). insertNotification created_at yazmaz → DB now() ile hizalı.
+        createdAt: new Date().toISOString(),
         // Derin-link için metadata (ilan/ortaklık) — bildirim merkezi tıklanınca yönlendirir.
         ...(metadata ? { metadata } : {})
       };
