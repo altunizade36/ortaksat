@@ -29,17 +29,21 @@ function levenshtein(a: string, b: string, maxDist: number): number {
 }
 
 // Bir token'ın kelime listesindeki eşleşme gücü: 2 tam, 1.6 önek, 1.2 alt-dize, ≤0.6 fuzzy, 0 yok.
-function tokenStrength(words: string[], token: string): number {
+// maxDist SIKILAŞTIRILDI: kısa kelimede (≤5) yalnız 1 düzenleme; 2-düzenleme yalnız 6+ harfte.
+// Eski (≤4→1, else→2) 5-harfli sorgularda 2 düzenlemeye izin veriyordu → "araba"↔"arsa" (d=2)
+// gibi ALAKASIZ eşleşmeler (araba arayan kullanıcı ARSA ilanı görüyordu). allowFuzzy=false ile
+// UZUN metin alanlarında (açıklama) fuzzy kapatılır: uzun metinde her sorgunun ~d2 komşusu bulunur.
+function tokenStrength(words: string[], token: string, allowFuzzy = true): number {
   if (!token) return 0;
   let best = 0;
-  const maxDist = token.length <= 4 ? 1 : 2;
+  const maxDist = token.length <= 5 ? 1 : 2;
   for (const w of words) {
     if (w === token) return 2;
     if (w.startsWith(token) || (token.length >= 4 && token.startsWith(w) && w.length >= token.length - 1)) {
       best = Math.max(best, 1.6);
     } else if (w.includes(token) && token.length >= 3) {
       best = Math.max(best, 1.2);
-    } else if (token.length >= 4 && Math.abs(w.length - token.length) <= maxDist) {
+    } else if (allowFuzzy && token.length >= 4 && Math.abs(w.length - token.length) <= maxDist) {
       const d = levenshtein(w, token, maxDist);
       if (d <= maxDist) best = Math.max(best, 0.7 - (d - 1) * 0.15);
     }
@@ -47,13 +51,15 @@ function tokenStrength(words: string[], token: string): number {
   return best;
 }
 
-const FIELD_WEIGHTS: Array<{ pick: (l: Listing, owner?: string) => string | undefined; weight: number }> = [
-  { pick: (l) => l.title, weight: 5 },
-  { pick: (l) => l.category, weight: 3 },
-  { pick: (l) => l.tags.join(" "), weight: 2.5 },
-  { pick: (l) => l.location, weight: 2 },
-  { pick: (_l, owner) => owner, weight: 1.5 },
-  { pick: (l) => l.description, weight: 1 }
+// fuzzy: yalnız kısa/yüksek-sinyal alanlarda açık. Açıklama UZUN → fuzzy'de her sorgunun
+// bir ~d2 komşusu bulunur (gürültü) → kapalı (yalnız tam/önek/alt-dize sayılır).
+const FIELD_WEIGHTS: Array<{ pick: (l: Listing, owner?: string) => string | undefined; weight: number; fuzzy: boolean }> = [
+  { pick: (l) => l.title, weight: 5, fuzzy: true },
+  { pick: (l) => l.category, weight: 3, fuzzy: true },
+  { pick: (l) => l.tags.join(" "), weight: 2.5, fuzzy: true },
+  { pick: (l) => l.location, weight: 2, fuzzy: true },
+  { pick: (_l, owner) => owner, weight: 1.5, fuzzy: false },
+  { pick: (l) => l.description, weight: 1, fuzzy: false }
 ];
 
 /**
@@ -64,13 +70,14 @@ export function scoreListing(listing: Listing, ownerName: string | undefined, to
   if (tokens.length === 0) return 1;
   const fieldWords = FIELD_WEIGHTS.map((f) => ({
     words: searchKey(f.pick(listing, ownerName) ?? "").split(" ").filter(Boolean),
-    weight: f.weight
+    weight: f.weight,
+    fuzzy: f.fuzzy
   }));
   let total = 0;
   for (const token of tokens) {
     let tokenBest = 0;
-    for (const { words, weight } of fieldWords) {
-      const s = tokenStrength(words, token);
+    for (const { words, weight, fuzzy } of fieldWords) {
+      const s = tokenStrength(words, token, fuzzy);
       if (s > 0) tokenBest = Math.max(tokenBest, s * weight);
     }
     if (tokenBest === 0) return 0; // token hiçbir alanda eşleşmedi -> ilan elenir
