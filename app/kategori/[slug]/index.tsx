@@ -49,6 +49,10 @@ function findTrail(nodes: CategoryNode[], slug: string): CategoryNode[] | undefi
 const catHref = (slug: string): Href => ({ pathname: "/kategori/[slug]", params: { slug } }) as unknown as Href;
 const cityHref = (slug: string, sehir: string): Href => ({ pathname: "/kategori/[slug]/[sehir]", params: { slug, sehir } }) as unknown as Href;
 
+// Jenerik ilan-tipi etiketleri: aynı ad birçok üst kategoride tekrar eder → başlık/H1
+// benzersizliği için EBEVEYN bağlamı eklenir ("Satılık İş Yeri", "Kiralık Bina").
+const GENERIC_TYPE_LABELS = new Set(["Satılık", "Kiralık", "Devren Satılık", "Devren Kiralık", "Devren", "Kat Karşılığı Satılık"]);
+
 // Statik export: üst + alt kategori hub sayfalarını build'de kendi H1/içeriğiyle
 // önceden üret (SEO). Marka/model gibi derin slug'lar [slug] fallback ile çalışır.
 export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
@@ -233,11 +237,19 @@ export default function CategoryLandingScreen() {
   useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, numRange, loc.provinceId, loc.districtId]);
   useEffect(() => { setAttrFilters({}); setNumRange({}); }, [slug]);
 
-  const title = node ? `${node.label} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
+  // BENZERSİZ BAŞLIK: "Satılık"/"Kiralık" gibi jenerik ilan-tipi etiketleri birçok üst
+  // kategoride tekrar eder (Emlak›Konut/İş Yeri/Arsa›Satılık). Slug'lar artık benzersiz
+  // (uniquifySlugs) ama başlık hâlâ salt node.label ise İş Yeri→Satılık ile Konut→Satılık
+  // AYNI "Satılık ilanları" başlığını alır (mükerrer title = SEO zararı). Jenerik tipte
+  // EBEVEYN eklenir, doğal TR sırasıyla: "Satılık İş Yeri" ("satılık işyeri" aramasıyla uyumlu).
+  const parentLabel = trail && trail.length >= 2 ? trail[trail.length - 2].label : "";
+  const isGenericType = node ? GENERIC_TYPE_LABELS.has(node.label) : false;
+  const ctxName = node ? (isGenericType && parentLabel ? `${node.label} ${parentLabel}` : node.label) : "";
+  const title = node ? `${ctxName} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
   // SEO açıklaması: SABİT/evergreen — ilan SAYISI YAZMA. SSG bake'te sayı 0'dır ve
   // "0 ortak satış ilanı" arama sonucunda sayfayı boş/değersiz gösterirdi.
   const desc = node
-    ? `${node.label} kategorisindeki ortak satış ilanlarını keşfet. Komisyonlu ürünleri incele, ürününü ortak satışla daha çok kişiye ulaştır, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`
+    ? `${ctxName} kategorisindeki ortak satış ilanlarını keşfet. Komisyonlu ürünleri incele, ürününü ortak satışla daha çok kişiye ulaştır, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`
     : "OrtakSat kategori sayfası.";
   const url = `https://www.ortaksat.com/kategori/${slug}`;
 
@@ -328,7 +340,7 @@ export default function CategoryLandingScreen() {
             <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={26} color={colors.primaryDark} />
           </View>
           <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
-            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{translateCopy(node.label, language)} ilanları</Text>
+            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{isGenericType && parentLabel ? `${translateCopy(node.label, language)} ${translateCopy(parentLabel, language)}` : translateCopy(node.label, language)} ilanları</Text>
             <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{items.length} ortak satış ilanı · komisyonlu ürünleri keşfet</Text>
           </View>
         </View>
