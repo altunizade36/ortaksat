@@ -2389,6 +2389,36 @@ function ensureDigerEverywhere(nodes: CategoryNode[], inheritedFormKey?: string)
 }
 ensureDigerEverywhere(categoryTree);
 
+// SLUG'LARI GLOBAL BENZERSİZ YAP — /kategori/[slug] TEK segmenttir. Aynı ada sahip alt
+// kategoriler (Satılık/Kiralık/Devren birçok Emlak alt-dalında; marka adları birden çok
+// üst kategoride) BİRE düşüp yanlış içeriğe çözülüyordu: örn. İş Yeri→Satılık, en sığ
+// eşleşen Konut→Satılık'a gidiyordu (findTrail genişlik-öncelikli). BFS ile ilk (en sığ)
+// oluşum bare slug'ını KORUR (mevcut indeksli URL bozulmaz), sonraki her tekrar EBEVEYN
+// slug'ıyla nitelenir → "is-yeri-satilik". key===slug tutulur. Böylece her kategori kendi
+// benzersiz URL'ini alır (doğru gezinme + SEO'da mükerrer-içerik biter). Etiketler değişmez.
+function uniquifySlugs(roots: CategoryNode[]): void {
+  const used = new Set<string>();
+  type Q = { node: CategoryNode; parent?: CategoryNode };
+  let frontier: Q[] = roots.map((n) => ({ node: n }));
+  while (frontier.length) {
+    const next: Q[] = [];
+    for (const { node: n, parent } of frontier) {
+      if (used.has(n.slug)) {
+        const base = parent ? `${parent.slug}-${n.slug}` : n.slug;
+        let cand = base;
+        let i = 2;
+        while (used.has(cand)) cand = `${base}-${i++}`;
+        n.slug = cand;
+        n.key = cand;
+      }
+      used.add(n.slug);
+      for (const c of n.children ?? []) next.push({ node: c, parent: n });
+    }
+    frontier = next;
+  }
+}
+uniquifySlugs(categoryTree);
+
 
 // ---- lookups & helpers ---------------------------------------------------
 // Admin panelden gizlenen kategoriler (üst veya alt, key ile). Store DB'den yükleyip
