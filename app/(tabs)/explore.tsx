@@ -214,6 +214,15 @@ export default function ExploreScreen() {
     const x = chipX.current[filter];
     if (x != null) feedScrollRef.current?.scrollTo({ x: Math.max(0, x - 12), animated: true });
   }, [filter]);
+  // Aynı desen mobil kategori şeridi için: derin-link (?cat=vasita) veya kayıtlı-arama geri
+  // yüklenince seçili kök kategori şeridin sağında/ekran-dışında kalabiliyordu → ona kaydır.
+  const catScrollRef = useRef<ScrollView>(null);
+  const catChipX = useRef<Record<string, number>>({});
+  useEffect(() => {
+    const key = catPath[0];
+    const x = key ? catChipX.current[key] : undefined;
+    if (x != null) catScrollRef.current?.scrollTo({ x: Math.max(0, x - 12), animated: true });
+  }, [catPath]);
   const isWideWeb = useIsWideWeb();
   const insets = useSafeAreaInsets();
   // Hidrasyon güvenliği: SSG'de genişlik bilinmez → isWideWeb dalı sunucu/istemci
@@ -1277,11 +1286,11 @@ export default function ExploreScreen() {
             = "içine gir" sinyali (davranışsal çiplerden ayrışır). Masaüstünde sağ panel +
             nav "Kategoriler" zaten var → yalnız mobil. */}
         {!isWideWeb ? (
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+          <ScrollView ref={catScrollRef} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
             {topCategories().map((n) => {
               const on = catPath[0] === n.key;
               return (
-                <Pressable key={n.key} onPress={() => selectTop(n.key)} accessibilityRole="button" accessibilityLabel={translateCopy(n.label, language)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 3, minHeight: 34, paddingHorizontal: 12 }}>
+                <Pressable key={n.key} onPress={() => selectTop(n.key)} onLayout={(e) => { const x = e.nativeEvent.layout.x; catChipX.current[n.key] = x; if (n.key === catPath[0]) catScrollRef.current?.scrollTo({ x: Math.max(0, x - 12), animated: false }); }} accessibilityRole="button" accessibilityLabel={translateCopy(n.label, language)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 3, minHeight: 34, paddingHorizontal: 12 }}>
                   <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
                   <MaterialCommunityIcons name="chevron-right" size={13} color={on ? "#FFFFFF" : colors.subtle} />
                 </Pressable>
