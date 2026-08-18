@@ -1244,6 +1244,49 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
               </View>
             </View>
 
+            {/* Kademeli komisyon (yalnız %): ortağın kümülatif satışı arttıkça oran yükselir.
+                Edit'te vardı, CREATE'te YOKTU → satıcı önce yayınlayıp sonra düzenlemek zorundaydı (bulgu #4). */}
+            {commissionType === "rate" ? (
+              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Kademeli komisyon (opsiyonel)", language)}</Text>
+                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Ortağın bu ilandaki kümülatif satışı arttıkça oran yükselsin. Boş bırakırsan tek oran geçerli.", language)}</Text>
+                {tiers.map((tr, i) => (
+                  <View key={i} style={{ alignItems: "flex-end", flexDirection: "row", gap: 8 }}>
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Satıştan sonra", language)}</Text>
+                      <TextInput accessibilityLabel={translateCopy("Satıştan sonra", language)} value={tr.minSales} onChangeText={(v) => setTiers((s) => s.map((x, j) => (j === i ? { ...x, minSales: v } : x)))} keyboardType="numeric" style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 42, paddingHorizontal: 10 }} />
+                    </View>
+                    <View style={{ flex: 1, gap: 4 }}>
+                      <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Oran (%)", language)}</Text>
+                      <TextInput accessibilityLabel={translateCopy("Oran (%)", language)} value={tr.rate} onChangeText={(v) => setTiers((s) => s.map((x, j) => (j === i ? { ...x, rate: v } : x)))} keyboardType="numeric" style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 42, paddingHorizontal: 10 }} />
+                    </View>
+                    <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kademeyi kaldır", language)} onPress={() => setTiers((s) => s.filter((_, j) => j !== i))} hitSlop={8} style={{ paddingBottom: 10 }}><MaterialCommunityIcons name="close-circle" size={22} color={colors.muted} /></Pressable>
+                  </View>
+                ))}
+                {tiers.length < 4 ? (
+                  <Pressable accessibilityRole="button" onPress={() => setTiers((s) => [...s, { minSales: "", rate: "" }])} style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 9 }}>
+                    <MaterialCommunityIcons name="plus" size={15} color={colors.primaryDark} />
+                    <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Kademe ekle", language)}</Text>
+                  </Pressable>
+                ) : null}
+              </View>
+            ) : null}
+
+            {/* Başlangıç bonusu + kontenjan — ilk N satışta ortağa komisyona EK sabit ödül.
+                Edit'te vardı, CREATE'te YOKTU (bulgu #4). */}
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Başlangıç bonusu (opsiyonel)", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("İlk satışları getiren ortağa komisyona EK sabit ödül (₺). Kontenjan: kaç satışa kadar geçerli.", language)}</Text>
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <TextInput accessibilityLabel={translateCopy("Başlangıç bonusu (₺)", language)} value={bonusAmount} onChangeText={setBonusAmount} keyboardType="numeric" placeholder={translateCopy("Bonus (₺)", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <TextInput accessibilityLabel={translateCopy("Bonus kontenjanı", language)} value={bonusQuota} onChangeText={setBonusQuota} keyboardType="numeric" placeholder={translateCopy("Kontenjan", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                </View>
+              </View>
+            </View>
+
             {/* Komisyon Koşulları (YENİ dropdown) — attributes._commissionCondition */}
             <View style={{ gap: 6 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Komisyon Koşulları", language)}</Text>
