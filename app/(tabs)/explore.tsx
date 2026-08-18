@@ -378,11 +378,14 @@ export default function ExploreScreen() {
   const activeListings = useMemo(() => {
     const provKey = provinceName ? locKey(provinceName) : "";
     const distKey = districtName ? locKey(districtName) : "";
-    // "Trend" GÖRELİ eşik (ana sayfayla tutarlı): mutlak 50 eşiği genç/düşük-hacimli
-    // katalogda hiçbir ilanı geçirmiyor → Trend çipi BOŞ ızgara veriyordu. Havuzun
-    // en aktifine göre eşik → her zaman "en trend" olanları gösterir.
-    const maxHot = filter === "hot" ? baseListings.reduce((mx, l) => Math.max(mx, l.leadCount + l.favoriteCount), 0) : 0;
-    const hotThreshold = Math.max(6, maxHot * 0.5);
+    // "Trend" GÖRELİ eşik: havuzun EN aktifine göre üst yarıyı gösterir → hiçbir zaman BOŞ
+    // kalmaz. TUZAK (düzeltildi): eski `Math.max(6, maxHot*0.5)` SABİT 6 TABANI, düşük-aktiviteli
+    // katalogda (her ilan <6 etkileşim) HİÇBİRİNİ geçirmiyordu → Trend çipi 0 sonuç veriyordu.
+    // Sabit taban kaldırıldı; ayrıca görüntülenme (viewCount) de trend sinyaline katıldı —
+    // lead/favori 0 olsa bile en çok bakılanlar trend sayılır. maxHot=0 → eşik 0 → hepsi geçer.
+    const hotScore = (l: typeof baseListings[number]) => l.viewCount + l.leadCount + l.favoriteCount;
+    const maxHot = filter === "hot" ? baseListings.reduce((mx, l) => Math.max(mx, hotScore(l)), 0) : 0;
+    const hotThreshold = maxHot * 0.5;
     const nonText = baseListings.filter((listing) => {
       if (city && listing.location !== city) return false;
       // Yapısal id varsa kesin eşleşme; yoksa (eski ilan) serbest metne düş.
@@ -402,7 +405,7 @@ export default function ExploreScreen() {
       if (stockFilter === "low" && (listing.stockCount > 5 || listing.stockCount <= 0)) return false;
       if (statusOpen && listing.partnershipMode !== "open") return false;
       if (filter === "open" && listing.partnershipMode !== "open") return false;
-      if (filter === "hot" && listing.leadCount + listing.favoriteCount < hotThreshold) return false;
+      if (filter === "hot" && hotScore(listing) < hotThreshold) return false;
       if (filter === "new" && !isNewListing(listing.createdAt)) return false;
       // Kategori-özel filtre: seçili kategori + facet (attribute) + sayısal aralık.
       if (catLabelSet) {

@@ -150,7 +150,8 @@ export default function HomeScreen() {
     return activeListings
       .filter((listing) => {
         if (filter.startsWith("cat:")) return listing.category === filter.replace("cat:", "");
-        if (filter === "trending") return momentumScore(listing) >= Math.max(18, maxMomentum * 0.55);
+        // GÖRELİ eşik (SABİT 18 tabanı KALDIRILDI — düşük-aktiviteli katalogda Trend'i boşaltıyordu).
+        if (filter === "trending") return momentumScore(listing) >= maxMomentum * 0.55;
         if (filter === "open") return listing.partnershipMode === "open";
         if (filter === "highCommission") return commissionAmount(listing) >= Math.max(250, maxCommission * 0.6);
         if (filter === "lowStock") return listing.stockCount <= 5;
@@ -659,7 +660,9 @@ function HomeSeoSkeleton() {
 }
 
 function momentumScore(listing: Listing) {
-  return listing.leadCount * 2 + listing.partnerCount + listing.favoriteCount / 10;
+  // viewCount eklendi: lead/favori 0 olan düşük-aktiviteli katalogda bile "en çok bakılan"
+  // trend sinyali verir (aksi halde momentum ~0 → Trend hiç dolmuyordu).
+  return listing.leadCount * 2 + listing.partnerCount + listing.favoriteCount / 10 + listing.viewCount / 10;
 }
 
 // (id, seed) -> deterministik pseudo-random sıra anahtarı (FNV-1a benzeri).
