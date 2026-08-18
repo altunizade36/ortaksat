@@ -7,6 +7,7 @@ import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-na
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 
 import { colors } from "@/components/colors";
+import { PressLink } from "@/components/ui";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { WebContainer } from "@/components/web-container";
 import { getCategoryIcon } from "@/lib/categories";
@@ -188,20 +189,24 @@ function AccordionCard({ expanded, group, language, onPress }: { expanded: boole
 }
 
 function SubItem({ item, language }: { item: { label: string; href?: Href }; language: "tr" | "en" }) {
-  const row = (
-    <Pressable style={({ pressed }) => ({ alignItems: "center", flexDirection: "row", gap: 8, minHeight: 40, opacity: pressed ? 0.7 : 1 })}>
-      <MaterialCommunityIcons name="chevron-right" size={18} color={colors.primary} />
+  // KRİTİK: Link asChild + fonksiyon-style Pressable → web anchor'da flexDirection:"row" DÜŞER,
+  // chevron etiketin ÜSTÜNE yığılırdı (bkz [[rnweb-aschild-funcstyle-trap]]). PressLink statik
+  // stil + useState ile bunu çözer. Chevron SAĞA alındı (nav satırı standardı: "git →").
+  const content = (
+    <>
       <Text selectable numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>
         {translateCopy(item.label, language)}
       </Text>
-    </Pressable>
+      <MaterialCommunityIcons name="chevron-right" size={18} color={colors.primary} />
+    </>
   );
+  const rowStyle = { alignItems: "center", flexDirection: "row", gap: 8, minHeight: 40 } as const;
 
-  if (!item.href) return row;
+  if (!item.href) return <View style={rowStyle}>{content}</View>;
 
   return (
-    <Link href={item.href} asChild>
-      {row}
-    </Link>
+    <PressLink href={item.href} accessibilityLabel={translateCopy(item.label, language)} pressedOpacity={0.7} style={rowStyle}>
+      {content}
+    </PressLink>
   );
 }

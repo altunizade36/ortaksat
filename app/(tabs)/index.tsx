@@ -779,8 +779,7 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
     const n = counts.get(node.key) ?? 0;
     const hot = rank === 0 && n > 0; // en aktif kategori rozeti
     return (
-      <Link href={{ pathname: "/kategori/[slug]", params: { slug: node.slug ?? node.key } }} asChild>
-        <Pressable style={({ pressed }) => ({ alignItems: "center", gap: 6, opacity: pressed ? 0.75 : 1, width: tileW })}>
+      <PressLink href={{ pathname: "/kategori/[slug]", params: { slug: node.slug ?? node.key } }} accessibilityLabel={translateCopy(node.label, language)} pressedOpacity={0.75} style={{ alignItems: "center", gap: 6, width: tileW }}>
           <View style={{ height: boxSize, width: boxSize }}>
             <View style={{ alignItems: "center", borderColor: colors.line, borderRadius: 18, borderWidth: 1, height: boxSize, justifyContent: "center", overflow: "hidden", width: boxSize }}>
               {node.image ? (
@@ -809,8 +808,7 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
           ) : (
             <Text style={{ color: colors.subtle, fontSize: 10, fontWeight: "700" }}>{translateCopy("keşfet", language)}</Text>
           )}
-        </Pressable>
-      </Link>
+        </PressLink>
     );
   };
 

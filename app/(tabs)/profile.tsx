@@ -220,12 +220,12 @@ function ProfileScreenInner() {
                 <MaterialCommunityIcons name="share-variant" size={16} color="#FFFFFF" />
                 <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bağlantıyı paylaş", language)}</Text>
               </Pressable>
-              <Link href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} asChild>
-                <Pressable style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", opacity: pressed ? 0.85 : 1, paddingVertical: 10 })}>
-                  <MaterialCommunityIcons name="storefront-outline" size={16} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Mağazama git", language)}</Text>
-                </Pressable>
-              </Link>
+              {/* PressLink ŞART: Link asChild + fonksiyon-style Pressable web anchor'da bg/border/
+                  flexDirection düşürür → buton çöker (bkz [[rnweb-aschild-funcstyle-trap]]). */}
+              <PressLink href={{ pathname: "/store/[id]", params: { id: currentUser.id } }} accessibilityLabel={translateCopy("Mağazama git", language)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, justifyContent: "center", paddingVertical: 10 }}>
+                <MaterialCommunityIcons name="storefront-outline" size={16} color={colors.primaryDark} />
+                <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Mağazama git", language)}</Text>
+              </PressLink>
             </View>
           </View>
         </View>
