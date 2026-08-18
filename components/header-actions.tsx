@@ -5,13 +5,21 @@ import { Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
+import { useStore } from "@/lib/use-store";
 
 export function HeaderActions() {
   const { language } = useLanguage();
+  const { isAuthenticated, currentUser, messages, notifications, offers } = useStore();
   const [pressed, setPressed] = useState(false);
-  // KIRMIZI "İlan Ver" CTA — mobil header'da ziyaretçiyi ÜCRETSİZ ilan vermeye çeker (dikkat çeken
-  // kırmızı). Mesaj/bildirim ikonları KALDIRILDI → hamburger menüsünde (rozetiyle) zaten var; header
-  // sadeleşti + ilan-verme öne çıktı. asChild + STATİK stil + useState (fonksiyon-style anchor'da bg düşer).
+  // OKUNMAMIŞ AKTİVİTE ROZETİ (hesap ikonu) — mesaj + bildirim + bekleyen (karşı-teklif) toplamı.
+  // Ayrı mesaj/bildirim ikonları KALDIRILMIŞTI (header sade + İlan Ver öne çıksın) ama hesap ikonu
+  // EVRENSEL "benim hesabım" girişi → aktivite BURADA da görünmeli (hamburger'daki rozetin ikizi;
+  // kullanıcı okunmamış mesajı tek bakışta görsün, geri gelsin). Anon'da 0 (filtre boş döner).
+  const badgeTotal = isAuthenticated
+    ? messages.filter((m) => m.receiverId === currentUser.id && !m.read).length
+      + notifications.filter((n) => n.userId === currentUser.id && !n.read).length
+      + offers.filter((o) => o.buyerId === currentUser.id && o.status === "countered").length
+    : 0;
   return (
     <View style={{ alignItems: "center", flexDirection: "row", gap: 6, zIndex: 2 }}>
       <Link href="/create" asChild>
@@ -30,7 +38,7 @@ export function HeaderActions() {
           </View>
         </Pressable>
       </Link>
-      <HeaderAction href="/(tabs)/profile" icon="account-circle-outline" label={translateCopy("Profil", language)} primary />
+      <HeaderAction href="/(tabs)/profile" icon="account-circle-outline" label={badgeTotal > 0 ? `${translateCopy("Profil", language)} — ${badgeTotal} ${translateCopy("okunmamış", language)}` : translateCopy("Profil", language)} badge={badgeTotal} primary />
     </View>
   );
 }
