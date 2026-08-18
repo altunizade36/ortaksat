@@ -169,14 +169,19 @@ function ChatScreenInner() {
   async function attachImage() {
     if (attaching) return;
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!perm.granted) return;
+    // İzin reddedilirse sessiz no-op yerine nedenini + çözümü söyle (ataç dokunuşu ölü kalmasın).
+    if (!perm.granted) { Alert.alert(translateCopy("Fotoğraf izni gerekli", language), translateCopy("Görsel göndermek için ayarlardan fotoğraf erişimine izin ver.", language)); return; }
     const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.85 });
     if (result.canceled || !result.assets?.[0]?.uri) return;
     setAttaching(true);
     try {
       const url = await uploadMessageAttachment(result.assets[0].uri, currentUser.id);
-      sendConversationMessage(currentConversation.id, body.trim(), { url, type: "image" });
-      setBody("");
+      // Yükleme başarısız (null) → YEREL uri ile GÖNDERME: alıcı yükleyemez, sessiz "kırık" mesaj olur.
+      if (!url) { Alert.alert(translateCopy("Görsel gönderilemedi", language), translateCopy("Görsel yüklenemedi. Bağlantını kontrol edip tekrar dene.", language)); return; }
+      const ok = sendConversationMessage(currentConversation.id, body.trim(), { url, type: "image" });
+      if (ok) setBody(""); // reddedilirse (kapalı/rate-limit) yazılan başlık metnini KORU
+    } catch {
+      Alert.alert(translateCopy("Görsel gönderilemedi", language), translateCopy("Bir sorun oluştu. Lütfen tekrar dene.", language));
     } finally {
       setAttaching(false);
     }
@@ -463,7 +468,7 @@ const MessageBubbles = memo(function MessageBubbles({ messages, currentUserId, l
               <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "82%", overflow: "hidden", paddingHorizontal: message.attachmentType === "image" ? 4 : 12, paddingVertical: message.attachmentType === "image" ? 4 : 8 }}>
                 {message.attachmentType === "image" && message.attachmentUrl ? (
                   <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => message.attachmentUrl && onImagePress(message.attachmentUrl)}>
-                    <SafeRemoteImage uri={message.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 180, width: 220 }} />
+                    <SafeRemoteImage uri={message.attachmentUrl} accessibilityLabel={translateCopy("Sohbet görseli", language)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 180, width: 220 }} />
                   </Pressable>
                 ) : null}
                 {message.attachmentType === "file" && message.attachmentUrl ? (

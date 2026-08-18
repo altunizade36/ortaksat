@@ -240,14 +240,19 @@ function MessagesScreenInner() {
     const attachImage = async () => {
       if (!activeConversation || attaching) return;
       const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-      if (!perm.granted) return;
+      // İzin reddedilirse sessiz no-op yerine nedenini + çözümü söyle.
+      if (!perm.granted) { Alert.alert(translateCopy("Fotoğraf izni gerekli", language), translateCopy("Görsel göndermek için ayarlardan fotoğraf erişimine izin ver.", language)); return; }
       const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.85 });
       if (result.canceled || !result.assets?.[0]?.uri) return;
       setAttaching(true);
       try {
         const url = await uploadMessageAttachment(result.assets[0].uri, currentUser.id);
+        // Yükleme başarısız (null) → yerel uri ile gönderme (alıcı yükleyemez, kırık mesaj olur).
+        if (!url) { Alert.alert(translateCopy("Görsel gönderilemedi", language), translateCopy("Görsel yüklenemedi. Bağlantını kontrol edip tekrar dene.", language)); return; }
         const ok = sendConversationMessage(activeConversation.id, draft.trim(), { url, type: "image" });
         if (ok) setDraft("");
+      } catch {
+        Alert.alert(translateCopy("Görsel gönderilemedi", language), translateCopy("Bir sorun oluştu. Lütfen tekrar dene.", language));
       } finally {
         setAttaching(false);
       }
@@ -361,7 +366,7 @@ function MessagesScreenInner() {
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{otherUser?.name ?? t("user")}</Text>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                         <Text numberOfLines={1} style={{ color: unread ? colors.ink : colors.muted, flex: 1, fontSize: 12, fontWeight: unread ? "800" : "500" }}>{last ? `${last.senderId === currentUser.id ? translateCopy("Sen: ", language) : ""}${messagePreview(last)}` : t("conversationStarted")}</Text>
-                        {unread ? <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{unread}</Text></View> : null}
+                        {unread ? <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{unread > 9 ? "9+" : unread}</Text></View> : null}
                       </View>
                       {/* Durum etiketi: görüşmenin nerede olduğunu (stok/fiyat/komisyon…) tek bakışta göster. */}
                       {ctx.status ? (
@@ -446,7 +451,7 @@ function MessagesScreenInner() {
                           ) : null}
                           <View style={{ backgroundColor: mine ? colors.primary : colors.surface, borderColor: mine ? colors.primary : colors.line, borderTopLeftRadius: 14, borderTopRightRadius: 14, borderBottomLeftRadius: mine ? 14 : 4, borderBottomRightRadius: mine ? 4 : 14, borderWidth: 1, maxWidth: "64%", overflow: "hidden", paddingHorizontal: m.attachmentType === "image" ? 4 : 13, paddingVertical: m.attachmentType === "image" ? 4 : 9 }}>
                             {m.attachmentType === "image" && m.attachmentUrl ? (
-                              <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => m.attachmentUrl && setLightboxUri(m.attachmentUrl)}><SafeRemoteImage uri={m.attachmentUrl} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, width: 240 }} /></Pressable>
+                              <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => m.attachmentUrl && setLightboxUri(m.attachmentUrl)}><SafeRemoteImage uri={m.attachmentUrl} accessibilityLabel={translateCopy("Sohbet görseli", language)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, width: 240 }} /></Pressable>
                             ) : null}
                             {m.attachmentType === "file" && m.attachmentUrl ? (
                               <Pressable accessibilityRole="button" accessibilityLabel={`Dosyayı aç: ${m.attachmentName ?? "Dosya"}`} onPress={() => m.attachmentUrl && void openUrlSafe(m.attachmentUrl)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primary} /><Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? "Dosya"}</Text></Pressable>

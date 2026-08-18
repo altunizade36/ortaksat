@@ -1324,8 +1324,14 @@ export async function messageSendBlockedReason(message: Message): Promise<"gone"
  * sikistirma + boyut siniri uploadListingImage ile ayni. Canli olmayan modda
  * (uuid olmayan userId) yerel uri'yi aynen dondurur, boylece onizleme calisir.
  */
-export async function uploadMessageAttachment(uri: string, userId: string) {
-  return uploadListingImage(uri, userId);
+export async function uploadMessageAttachment(uri: string, userId: string): Promise<string | null> {
+  const result = await uploadListingImage(uri, userId);
+  // uploadListingImage başarısızlıkta ORİJİNAL yerel uri'yi döndürür (ilan akışında optimistik
+  // fallback kabul). Mesaj ekinde yerel file://‌/blob: alıcıya ULAŞMAZ + yenilemede kaybolur →
+  // uzak http(s) değilse BAŞARISIZ say. Çağıran null görünce hata gösterip göndermeyi iptal eder
+  // (eskiden kırık-URL'li "görsel" mesajı sessizce DB'ye yazılıyordu; alıcı hiç göremiyordu).
+  if (!result || !/^https?:\/\//i.test(result)) return null;
+  return result;
 }
 
 

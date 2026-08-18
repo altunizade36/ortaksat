@@ -211,7 +211,15 @@ function ProfileEditScreenInner() {
     }
 
     setSaving(true);
+    // Kullanıcı YENİ (yerel) bir foto seçtiyse: uploadProfileAvatar başarısızlıkta yerel uri'yi
+    // geri döndürür → onu KALICI kaydetmek demek başka cihazda/temizlemede yüklenmeyen kırık avatar.
+    const localAvatarPicked = isLiveAccount && Boolean(avatar.trim()) && !/^https?:\/\//i.test(avatar.trim());
     const uploadedAvatar = isLiveAccount ? await uploadProfileAvatar(avatar.trim(), currentUser.id) : avatar.trim();
+    if (localAvatarPicked && !/^https?:\/\//i.test(uploadedAvatar)) {
+      setSaving(false);
+      Alert.alert(translateCopy("Fotoğraf yüklenemedi", language), translateCopy("Profil fotoğrafın yüklenemedi. Bağlantını kontrol edip tekrar dene.", language));
+      return;
+    }
     const ok = await updateProfile({ name, phone, avatar: uploadedAvatar, bio, expertiseCategories: expertise, city });
     setSaving(false);
 

@@ -414,7 +414,8 @@ function userFromAuth(id: string, phone?: string | null, name?: string | null): 
     successfulSales: 0,
     followerCount: 0,
     responseRate: 0,
-    role: "user"
+    role: "user",
+    expertiseCategories: []
   };
 }
 
@@ -656,6 +657,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
               role: data.role ?? "user",
               status: (data.status as User["status"]) ?? "active",
               emailNotifications: data.email_notifications ?? true,
+              // VERİ KAYBI DÜZELTMESİ: uzmanlık kategorileri YÜKLENMİYORDU (undefined) → profil-düzenle
+              // formu boş başlıyor, kaydedince expertise_categories = [] ile ÜZERİNE YAZILIYOR
+              // (vitrin/ortak-dizini uzmanlık filtresinden düşüyordu). Artık geri okunuyor.
+              expertiseCategories: Array.isArray(data.expertise_categories) ? data.expertise_categories : [],
               city: typeof data.city === "string" && data.city.trim() ? data.city : undefined,
               preferences: (data.preferences ?? {}) as Record<string, boolean>
             }
@@ -989,7 +994,9 @@ export function StoreProvider({ children }: PropsWithChildren) {
         };
         setMessages((items) => [message, ...items]);
         setConversations((items) => items.map((item) => (item.id === conversation.id ? { ...item, lastMessageAt: message.createdAt } : item)));
-        notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${message.body}`);
+        // conversationId + listingId ekli: bildirime dokununca DOĞRU sohbet açılır (eskiden
+        // meta yoktu → "en son katılımcı görüşmesi"ne düşüyordu, çok görüşmede yanlış sohbet).
+        notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${message.body}`, { conversationId: conversation.id, listingId });
         // Başarısızsa mesajı SİLME (eskiden siliniyor + ham tarayıcı uyarısı çıkıyordu):
         // "failed" işaretle → baloncukta "Gönderilemedi · tekrar dene" görünür ve tek
         // dokunuşla yeniden gönderilir. sendConversationMessage ile aynı davranış.
@@ -2159,9 +2166,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (!rateLimitSync("message_send")) { setSyncError("Çok hızlı mesaj gönderiyorsun. Lütfen biraz yavaşla."); return false; }
         haptic.light();
         const conversation = conversations.find((item) => item.id === conversationId);
-        if (!conversation || conversation.status !== "open") return false;
+        // Kapalı/geçersiz görüşmede de sebep göster (eskiden sessizce false → gönder dokunuşu ölüydü).
+        if (!conversation || conversation.status !== "open") { setSyncError("Bu görüşme kapalı — mesaj gönderilemiyor."); return false; }
         const receiverId = conversation.participantIds.find((id) => id !== currentUser.id);
-        if (!receiverId) return false;
+        if (!receiverId) { setSyncError("Alıcı bulunamadı — görüşme geçersiz."); return false; }
         const message: Message = {
           id: newId("m", liveUser),
           conversationId,
