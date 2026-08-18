@@ -218,10 +218,13 @@ function ProfileEditScreenInner() {
     }
 
     setSaving(true);
-    // Kullanıcı YENİ (yerel) bir foto seçtiyse: uploadProfileAvatar başarısızlıkta yerel uri'yi
-    // geri döndürür → onu KALICI kaydetmek demek başka cihazda/temizlemede yüklenmeyen kırık avatar.
-    const localAvatarPicked = isLiveAccount && Boolean(avatar.trim()) && !/^https?:\/\//i.test(avatar.trim());
-    const uploadedAvatar = isLiveAccount ? await uploadProfileAvatar(avatar.trim(), currentUser.id) : avatar.trim();
+    // Kullanıcı YENİ (yerel) bir FOTO seçtiyse: uploadProfileAvatar başarısızlıkta yerel uri'yi
+    // geri döndürür → onu KALICI kaydetmek demek başka cihazda yüklenmeyen kırık avatar. AMA
+    // avatar bir baş-harf yer tutucusu ("EU") ya da zaten uzak URL olabilir — bunlar geçerli,
+    // yükleme gerektirmez. Yalnız GERÇEK yerel görsel URI'sinde (file/blob/data/content) kontrol et.
+    const av = avatar.trim();
+    const localAvatarPicked = isLiveAccount && /^(file|blob|data|content):/i.test(av);
+    const uploadedAvatar = isLiveAccount ? await uploadProfileAvatar(av, currentUser.id) : av;
     if (localAvatarPicked && !/^https?:\/\//i.test(uploadedAvatar)) {
       setSaving(false);
       Alert.alert(translateCopy("Fotoğraf yüklenemedi", language), translateCopy("Profil fotoğrafın yüklenemedi. Bağlantını kontrol edip tekrar dene.", language));
