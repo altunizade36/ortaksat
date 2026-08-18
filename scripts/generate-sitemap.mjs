@@ -6,17 +6,20 @@
 import { writeFileSync, readFileSync, existsSync } from "node:fs";
 import { fileURLToPath } from "node:url";
 import { dirname, join } from "node:path";
+import { createRequire } from "node:module";
+import vm from "node:vm";
 
 const BASE = "https://www.ortaksat.com";
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const OUT = join(__dirname, "..", "public", "sitemap.xml");
 
-// Üst + alt kategori landing sayfaları (SEO hub'ları).
-// ÖNEMLİ: slug'lar category-tree.ts'deki sl() ile BİREBİR aynı olmalı.
-// sl(), TR_MAP üzerinden "&" karakterini "ve" yapar (örn. "Bilgisayar & Oyun"
-// -> "bilgisayar-ve-oyun"). Bu liste gerçek ağaç slug'larına karşı doğrulanmıştır
-// (scripts/validate-slugs — findBySlug ile 56/56 çözümlenir).
-const CATEGORY_SLUGS = [
+// Kategori hub slug'ları ARTIK category-tree.ts'ten OTOMATİK türetilir (aşağıdaki
+// categorySlugsFromTree). Bu sabit liste yalnızca ağaç yüklenemezse (typescript/vm
+// hatası) FALLBACK olarak kullanılır. ÖNEMLİ (düzeltilen SEO açığı): build
+// generateStaticParams ile ~1425 kategori HTML'i üretiyor ama bu elle-bakımlı liste
+// yalnız ~63 tanesini sitemap'e yazıyordu → 1362 hazır+indekslenebilir hub Google'a
+// yalnız iç-link taramasıyla görünüyordu. Ağaç-yürüyüşü drift'i kalıcı kapatır.
+const CATEGORY_SLUGS_FALLBACK = [
   // 11 üst kategori (Sahibinden-modeli konsolidasyonu: 16→11).
   // Eski kökler "dijital-urunler-ve-hizmetler / yapi-market-ve-bahce / muzik-enstrumanlari"
   // kaldırıldı → İkinci El / Ustalar altına taşındı (yeni hub slug'ları aşağıda).
@@ -62,7 +65,7 @@ const STATIC = [
   ["/", "daily", "1.0"],
   ["/explore", "hourly", "0.9"],
   ["/kategoriler", "weekly", "0.8"],
-  ...CATEGORY_SLUGS.map((s) => [`/kategori/${s}`, "daily", "0.75"]),
+  // Kategori hub'ları artık main()'de ağaçtan türetilip eklenir (categorySlugsFromTree).
   // NOT: Şehir×kategori sayfaları (kategori/<cat>/<sehir>) sitemap'e YAZILMAZ.
   // Gerçek ilan olmadan bunlar ince/yinelenen içerik (144 near-dup) → SEO riski.
   // seo-static.mjs bu sayfalara noindex koyar. İlan geldikçe tekrar değerlendirilecek.
@@ -147,15 +150,58 @@ function blogPosts() {
   }
 }
 
+// category-tree.ts'i TypeScript ile derleyip vm'de çalıştırır (import zinciri yok → bağımsız).
+// generate-category-artifacts.mjs ile AYNI yükleyici deseni. Hata olursa null → fallback liste.
+function loadCategoryTree() {
+  try {
+    const require = createRequire(import.meta.url);
+    const ts = require("typescript");
+    const src = readFileSync(join(__dirname, "..", "lib", "category-tree.ts"), "utf8");
+    const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
+    const mod = { exports: {} };
+    const sandbox = { module: mod, exports: mod.exports, require, console };
+    vm.createContext(sandbox);
+    new vm.Script(js).runInContext(sandbox);
+    const tree = mod.exports.categoryTree;
+    return Array.isArray(tree) && tree.length ? tree : null;
+  } catch (err) {
+    console.warn(`category-tree yüklenemedi (${err?.message ?? err}) — sabit fallback kategori listesi.`);
+    return null;
+  }
+}
+
+// Derinlik 0-2 kategori slug'ları — app/kategori/[slug]/index.tsx generateStaticParams ile
+// BİREBİR aynı küme (build'de gerçekten üretilen hub sayfaları). Derinliğe göre öncelik.
+function categorySlugsFromTree(tree) {
+  const seen = new Set();
+  const out = [];
+  const add = (slug, pr) => { if (slug && !seen.has(slug)) { seen.add(slug); out.push([slug, pr]); } };
+  for (const top of tree) {
+    add(top.slug, "0.8");
+    for (const sub of top.children ?? []) {
+      add(sub.slug, "0.7");
+      for (const sub2 of sub.children ?? []) add(sub2.slug, "0.6");
+    }
+  }
+  // generateStaticParams ayrıca CITY_CATEGORY_SLUGS hub'larını garanti eder (çoğu ağaçta zaten var).
+  for (const slug of CITY_CATEGORY_SLUGS) add(slug, "0.7");
+  return out;
+}
+
 async function main() {
   loadDotEnv();
   const rows = await fetchListings();
   const posts = blogPosts();
+  const tree = loadCategoryTree();
+  const categoryPairs = tree
+    ? categorySlugsFromTree(tree)
+    : CATEGORY_SLUGS_FALLBACK.map((s) => [s, "0.75"]);
 
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
     '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
     ...STATIC.map(([loc, cf, pr]) => urlTag(loc, cf, pr, BUILD_DATE)),
+    ...categoryPairs.map(([slug, pr]) => urlTag(`/kategori/${slug}`, "daily", pr, BUILD_DATE)),
     ...posts.map((p) => urlTag(`/blog/${p.slug}`, "monthly", "0.55", p.date)),
     ...rows.map((r) => urlTag(`/listing/${r.id}`, "weekly", "0.7", r.created_at)),
     "</urlset>",
@@ -163,7 +209,8 @@ async function main() {
   ];
 
   writeFileSync(OUT, lines.join("\n"), "utf8");
-  console.log(`Sitemap yazıldı: ${OUT} — ${STATIC.length} statik + ${rows.length} ilan = ${STATIC.length + rows.length} URL`);
+  const total = STATIC.length + categoryPairs.length + posts.length + rows.length;
+  console.log(`Sitemap yazıldı: ${OUT} — ${STATIC.length} statik + ${categoryPairs.length} kategori${tree ? " (ağaçtan)" : " (FALLBACK)"} + ${posts.length} blog + ${rows.length} ilan = ${total} URL`);
 }
 
 main().catch((err) => {

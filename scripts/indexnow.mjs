@@ -17,9 +17,10 @@ const HOST = "www.ortaksat.com";
 const KEY_FILE = join(__dirname, "..", "public", "indexnow-key.txt");
 
 function readKey() {
+  // Anahtar yoksa build'i KIRMA (IndexNow zorunlu değil, bir hızlandırma) → atla.
   if (!existsSync(KEY_FILE)) {
-    console.error("IndexNow anahtarı yok: public/indexnow-key.txt");
-    process.exit(1);
+    console.warn("IndexNow anahtarı yok (public/indexnow-key.txt) — bildirim atlandı.");
+    return null;
   }
   return readFileSync(KEY_FILE, "utf8").trim();
 }
@@ -70,6 +71,7 @@ async function submit(urls, key) {
 
 async function main() {
   const key = readKey();
+  if (!key) return; // anahtar yok → sessizce atla (build kırılmaz)
   const argv = process.argv.slice(2);
   const urls = argv.length ? argv : sitemapUrls();
   console.log(`IndexNow: ${urls.length} URL bildiriliyor (anahtar ...${key.slice(-6)})`);
@@ -77,6 +79,7 @@ async function main() {
 }
 
 main().catch((err) => {
-  console.error(err);
-  process.exit(1);
+  // IndexNow build-kritik DEĞİL: herhangi bir hata deploy'u kırmasın (yalnız uyar).
+  console.warn(`IndexNow atlandı: ${err?.message ?? err}`);
+  process.exit(0);
 });
