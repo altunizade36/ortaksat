@@ -476,9 +476,11 @@ export default function ListingDetailScreen() {
     // Uygulama-içi mesaja düşmeden önce anonim ise girişe yönlendir (hayalet konuşma yok).
     if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; }
     const fallbackMessage = `${currentListing.title} ilanı için bilgi almak istiyorum. Fiyat, stok ve teslimat detayları güncel mi?`;
-    const conversation = startConversation(currentListing.id, owner.id, message.trim() || fallbackMessage);
-    setMessage("");
-    if (conversation) router.push({ pathname: "/chat/[id]", params: { id: conversation.id } });
+    // currentListing (store'da yoksa remote) fallback geçilir → paylaşılan/derin-linkli ilanda
+    // da konuşma kurulur. Başarısızsa metni KORU + geri bildir (eskiden sessiz ölü-uçtu).
+    const conversation = startConversation(currentListing.id, owner.id, message.trim() || fallbackMessage, currentListing);
+    if (conversation) { setMessage(""); router.push({ pathname: "/chat/[id]", params: { id: conversation.id } }); }
+    else Alert.alert(translateCopy("Mesaj başlatılamadı", language), translateCopy("Şu an mesaj gönderilemedi. Lütfen tekrar dene.", language));
   }
 
   // Sahibinden tarzı "Numarayı Göster": tıklayınca gerçek numarayı çeker (girişli

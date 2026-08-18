@@ -323,7 +323,7 @@ type AppStore = {
   isUserBlocked: (userId: string) => boolean;
   blockUser: (userId: string) => Promise<void>;
   unblockUser: (userId: string) => Promise<void>;
-  startConversation: (listingId: string, receiverId: string, body?: string) => Conversation | undefined;
+  startConversation: (listingId: string, receiverId: string, body?: string, fallbackListing?: Listing) => Conversation | undefined;
   sendMessage: (listingId: string, receiverId: string, body: string) => void;
   sendConversationMessage: (conversationId: string, body: string, attachment?: { url: string; type: "image" | "file"; name?: string }) => boolean;
   retryMessage: (messageId: string) => void;
@@ -957,9 +957,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
     const listingById = new Map(listings.map((l) => [l.id, l]));
     const conversationById = new Map(conversations.map((c) => [c.id, c]));
 
-    function createOrReuseConversation(listingId: string, receiverId: string, body?: string) {
+    function createOrReuseConversation(listingId: string, receiverId: string, body?: string, fallbackListing?: Listing) {
       if (isSuspended) return undefined;
-      const listing = listings.find((item) => item.id === listingId);
+      // Paylaşılan/derin-linkli ilan store feed'inde OLMAYABİLİR (yalnız remote fetch ile gelir) →
+      // listings.find undefined → eskiden mesaj SESSİZCE başlamıyordu. Çağıran remote ilanı
+      // fallback geçer → konuşma yine kurulur (yüksek-niyetli paylaşım trafiği ölmesin).
+      const listing = listings.find((item) => item.id === listingId) ?? fallbackListing;
       if (!listing || listing.demo || receiverId === currentUser.id) return undefined;
       const existing = conversations.find(
         (item) => item.listingId === listingId && item.participantIds.includes(currentUser.id) && item.participantIds.includes(receiverId)
@@ -2153,8 +2156,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setBlockedUserIds((ids) => ids.filter((id) => id !== userId));
         if (liveUser) { const ok = await unblockUserLive(userId); if (!ok) { setBlockedUserIds((ids) => (ids.includes(userId) ? ids : [...ids, userId])); setSyncError("Engel kaldırılamadı. Tekrar dene."); } }
       },
-      startConversation(listingId, receiverId, body) {
-        return createOrReuseConversation(listingId, receiverId, body);
+      startConversation(listingId, receiverId, body, fallbackListing) {
+        return createOrReuseConversation(listingId, receiverId, body, fallbackListing);
       },
       sendMessage(listingId, receiverId, body) {
         createOrReuseConversation(listingId, receiverId, body);

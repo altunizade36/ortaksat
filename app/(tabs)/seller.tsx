@@ -126,12 +126,12 @@ function SellerScreenInner() {
   const tabParam = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   useEffect(() => {
     if (focusId) { setExpandedId(focusId); setFilter("all"); setQuery(""); }
-  }, [focusId]);
-  // Bildirim derin-linki sekme hedefi (?tab=teklifler): satıcıya gelen TEKLİF bildirimi doğrudan
-  // Teklifler sekmesini açsın (eskiden özet sekmesinde kalıyor, satıcı teklifi elle arıyordu).
-  useEffect(() => {
+    // Sekme hedefi: açık ?tab= varsa ona git; yoksa odaklı ilan varsa "İlanlarım" sekmesini aç.
+    // KRİTİK: odaklanan ilan YALNIZ "İlanlarım" sekmesinde render olur → eskiden satış/ödeme/
+    // lead/başvuru bildirimleri (tab'sız ?focus=) özet sekmesinde kalıp hedef ilan GÖRÜNMÜYORDU.
     if (tabParam === "teklifler" || tabParam === "ilanlar") setPanelTab(tabParam);
-  }, [tabParam]);
+    else if (focusId) setPanelTab("ilanlar");
+  }, [focusId, tabParam]);
 
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status !== "rejected" && listing.status !== "archived");
   // Reddedilen ilanlar myListings'ten çıkarılır ama SATICI onları görmeli (eskiden sessizce
