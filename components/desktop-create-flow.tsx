@@ -1184,6 +1184,28 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
               </View>
             </View>
 
+            {/* KOMİSYON ÖNERİSİ — kategoriye göre rekabetçi aralık (fiyat ipucuyla simetrik).
+                Satıcı "ne kadar komisyon vereyim?" sorusuna takılmasın: aralığı gösterir +
+                tek dokunuşla ortalamayı uygular. Cazip komisyon = daha çok ortak = daha çok satış.
+                Yüzde → doğrudan aralık; Sabit → fiyatın yüzdesinden ₺ aralığı türetilir (fiyat girildiyse). */}
+            {(() => {
+              const isRate = commissionType === "rate";
+              const lowAmt = Math.round((priceNum * suggestedRange[0]) / 100);
+              const highAmt = Math.round((priceNum * suggestedRange[1]) / 100);
+              const mid = isRate ? Math.round((suggestedRange[0] + suggestedRange[1]) / 2) : Math.round((lowAmt + highAmt) / 2);
+              if (!isRate && priceNum <= 0) return null; // sabit + fiyat yoksa öneri türetilemez
+              const belowMin = commissionNum > 0 && commissionNum < (isRate ? suggestedRange[0] : lowAmt);
+              const rangeText = isRate ? `%${suggestedRange[0]}–%${suggestedRange[1]}` : `${moneyIn(lowAmt, currency)}–${moneyIn(highAmt, currency)}`;
+              const applyText = isRate ? `%${mid}` : moneyIn(mid, currency);
+              return (
+                <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Önerilen komisyonu uygula", language)} onPress={() => setCommissionValue(String(mid))} style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: belowMin ? colors.goldSoft : colors.surfaceAlt, borderColor: belowMin ? colors.gold : colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 11, paddingVertical: 7 })}>
+                  <MaterialCommunityIcons name="lightbulb-on-outline" size={14} color={belowMin ? colors.goldInk : colors.primaryDark} />
+                  <Text style={{ color: belowMin ? colors.goldInk : colors.muted, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Bu kategoride önerilen", language)}: {rangeText}</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>· {applyText} {translateCopy("uygula", language)}</Text>
+                </Pressable>
+              );
+            })()}
+
             {/* Kademeli komisyon (yalnız %): ortağın kümülatif satışı arttıkça oran yükselir.
                 Edit'te vardı, CREATE'te YOKTU → satıcı önce yayınlayıp sonra düzenlemek zorundaydı (bulgu #4). */}
             {commissionType === "rate" ? (
@@ -1315,7 +1337,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             satıcı zayıf noktayı yayından ÖNCE görür, güçlü ilan yayınlar. Mevcut state'i okur. */}
         {schema && (images.length > 0 || String(values.title ?? "").trim().length > 0) ? (() => {
           const descStr = String(values.description ?? "").trim();
+          const titleStr = String(values.title ?? leafLabel).trim();
           const checks: Array<{ ok: boolean; good: string; tip: string }> = [
+            { ok: titleStr.length >= 20, good: "Açıklayıcı başlık", tip: "Başlığa marka/model/öne çıkan özellik ekle — aramada daha görünür olur" },
             { ok: images.length >= RECOMMENDED_PHOTOS, good: `${images.length} fotoğraf — güçlü görsel`, tip: `${RECOMMENDED_PHOTOS}+ fotoğraflı ilanlar belirgin şekilde daha çok ilgi görüyor` },
             { ok: descStr.length >= 40, good: "Açıklama dolu", tip: descStr ? "Açıklamayı biraz uzat — alıcı sorularını azaltır, daha hızlı satar" : "Açıklama ekle — ilanların daha hızlı satar" }
           ];
@@ -1396,7 +1420,7 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
   const charLen = charLimit ? String(value ?? "").length : 0;
   const selected = Array.isArray(value) ? value : [];
   return (
-    // data-field: "Devam"a basınca ilk EKSİK alana kaydırmak için hedef (web).
+    // data-field: "İlanı Yayınla"ya basınca ilk EKSİK alana kaydırmak için hedef (web).
     <View dataSet={{ field: field.key }} style={{ flexBasis: wide ? "100%" : 230, flexGrow: 1, gap: 6, minWidth: 0 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <Text style={{ color: invalid ? colors.accent : colors.muted, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} seçili` : ""}</Text>

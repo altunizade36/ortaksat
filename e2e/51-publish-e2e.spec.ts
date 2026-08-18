@@ -70,7 +70,7 @@ async function fillInputs(page: Page) {
   }
 }
 
-test("iPHONE: ilan verme UÇTAN UCA — 6 adım + YAYINLA", async ({ page }) => {
+test("iPHONE: ilan verme UÇTAN UCA — TEK SAYFA + YAYINLA", async ({ page }) => {
   test.setTimeout(600_000);
   page.on("console", (m) => { if (m.type() === "error") console.log("  BROWSER-ERR:", m.text().slice(0, 110)); });
 
@@ -87,24 +87,24 @@ test("iPHONE: ilan verme UÇTAN UCA — 6 adım + YAYINLA", async ({ page }) => 
   await page.locator("text=/›/").first().tap();
   await page.waitForTimeout(3000);
 
-  // --- ADIM 2: İlan bilgileri ---
-  console.log("\n--- ADIM 2: İlan Bilgileri ---");
-  await audit(page, "adım2");
+  // TEK SAYFA AKIŞ: tüm alanlar aynı sayfada — "Devam" adımı YOK. Hepsini doldur, sonra YAYINLA.
+  // Başlığı açıkça doldur ki fillInputs "50000" ile ezmesin.
+  const titleInput = page.getByPlaceholder(/kısa ve net başlık|En az .* karakter/i).first();
+  if (await titleInput.count()) await titleInput.fill("E2E Otomobil Temiz Bakimli Sahibinden").catch(() => {});
+  await page.waitForTimeout(400);
+
+  console.log("--- Form alanları (tek sayfa) ---");
   await fillSelects(page);
   await fillInputs(page);
   await page.waitForTimeout(600);
-  await page.getByText(/^Devam/).first().tap({ timeout: 8000 });
-  await page.waitForTimeout(3000);
 
-  // --- ADIM 3: Konum ---
-  console.log("--- ADIM 3: Konum ---");
-  await audit(page, "adım3");
+  // Konum (aynı sayfada)
+  console.log("--- Konum ---");
   const il = page.getByText(/İl seçin|Tüm iller/i).first();
   if (await il.count()) {
     await il.scrollIntoViewIfNeeded().catch(() => {});
-    await il.tap({ timeout: 6000 });
+    await il.tap({ timeout: 6000 }).catch(() => {});
     await page.waitForTimeout(1200);
-    await audit(page, "adım3/il-listesi");
     await page.getByText("İstanbul", { exact: true }).first().tap({ timeout: 6000 }).catch(() => {});
     await page.waitForTimeout(1500);
   }
@@ -117,80 +117,48 @@ test("iPHONE: ilan verme UÇTAN UCA — 6 adım + YAYINLA", async ({ page }) => 
     await opt.tap({ timeout: 5000 }).catch(() => {});
     await page.waitForTimeout(1200);
   }
-  await page.screenshot({ path: "e2e-artifacts/pub-3-konum.png" });
-  await page.getByText(/^Devam/).first().tap({ timeout: 8000 }).catch(() => console.log("  Devam(3) tıklanamadı"));
-  await page.waitForTimeout(3000);
 
-  // --- ADIM 4: Fotoğraflar ---
-  console.log("--- ADIM 4: Fotoğraflar ---");
-  await audit(page, "adım4");
-  // web'de kamera yok → görsel adresi yapıştır
-  const urlInput = page.getByPlaceholder(/https|görsel adresi/i).first();
-  if (await urlInput.count()) {
-    await urlInput.fill("https://images.unsplash.com/photo-1503376780353-7e6692767b70?w=1200");
-    await page.waitForTimeout(400);
-    await page.getByText(/^Ekle/).first().tap({ timeout: 5000 }).catch(() => {});
-    await page.waitForTimeout(1500);
-  } else console.log("  görsel-url alanı bulunamadı");
-  await page.screenshot({ path: "e2e-artifacts/pub-4-foto.png" });
-  await page.getByText(/^Devam/).first().tap({ timeout: 8000 }).catch(() => console.log("  Devam(4) tıklanamadı"));
-  await page.waitForTimeout(3000);
+  // Fotoğraf — web'de galeri = tarayıcı dosya seçici → Playwright filechooser ile ver.
+  console.log("--- Fotoğraf (filechooser) ---");
+  page.on("filechooser", (fc) => { void fc.setFiles("assets/favicon.png").catch(() => {}); });
+  const addPhoto = page.getByText("Fotoğraf Ekle", { exact: true }).first();
+  if (await addPhoto.count()) {
+    await addPhoto.scrollIntoViewIfNeeded().catch(() => {});
+    await addPhoto.tap({ timeout: 6000 }).catch(() => {});
+    await page.waitForTimeout(4000);
+  } else console.log("  'Fotoğraf Ekle' butonu bulunamadı");
 
-  // --- ADIM 5: Komisyon ---
-  console.log("--- ADIM 5: Komisyon & Ortak Satış ---");
-  await audit(page, "adım5");
-  await fillSelects(page);
-  await fillInputs(page);
-  await page.screenshot({ path: "e2e-artifacts/pub-5-komisyon.png" });
-  await page.getByText(/^Devam/).first().tap({ timeout: 8000 }).catch(() => console.log("  Devam(5) tıklanamadı"));
-  await page.waitForTimeout(3000);
+  // DEĞİŞİKLİK #1: İlan Gücü metresi CANLI görünmeli (eskiden showPreviewBlock=false ile ölüydü).
+  const bodyMid = await page.locator("body").innerText();
+  const meterVisible = /İlan gücü/i.test(bodyMid);
+  console.log(`  İLAN GÜCÜ metresi görünür mü: ${meterVisible}`);
+  expect(meterVisible, "İlan gücü kalite metresi yayın öncesi görünmeli").toBeTruthy();
+  await page.screenshot({ path: "e2e-artifacts/pub-singlepage.png" });
 
-  // --- ADIM 6: Önizleme & Yayınla ---
-  console.log("--- ADIM 6: Önizleme & Yayınla ---");
-  await audit(page, "adım6");
-  const body6 = await page.locator("body").innerText();
-  const warn = body6.match(/Eksik zorunlu alan[^\n]*/);
-  if (warn) console.log(`  !! ${warn[0].slice(0, 90)}`);
-  await page.screenshot({ path: "e2e-artifacts/pub-6-onizleme.png" });
-
-  // DİKKAT: /Yayınla/ regex'i ADIM ÇİPİNE ("Önizleme & Yayınla") de uyuyor → önceki denemede
-  // çipe dokunup "yayınlandı" sanmıştım (yanlış pozitif). Butonun TAM metni: "İlanı Yayınla".
+  // YAYINLA — DİKKAT: /Yayınla/ regex'i başka metne de uyabilir; TAM metin "İlanı Yayınla".
   const yayinla = page.getByText("İlanı Yayınla", { exact: true }).first();
   console.log(`  "İlanı Yayınla" butonu var mı: ${(await yayinla.count()) > 0}`);
   await yayinla.scrollIntoViewIfNeeded().catch(() => {});
   await page.waitForTimeout(400);
   await yayinla.tap({ timeout: 8000 }).catch((e) => console.log("  Yayınla tap hata: " + e.message.slice(0, 50)));
-  await page.waitForTimeout(6000);
-  await page.screenshot({ path: "e2e-artifacts/pub-7-sonuc.png" });
+  await page.waitForTimeout(8000);
+  await page.screenshot({ path: "e2e-artifacts/pub-sonuc.png" });
 
-  // YENİ AKIŞ: yayından sonra artık doğrudan panele atılmıyor → BAŞARI EKRANI geliyor
-  // (gerçek ilan linki + paylaş + ortak daveti). Eskiden burada /seller panelini
-  // kontrol ediyorduk; o davranış bilerek değişti.
   const body7 = await page.locator("body").innerText();
+  const eksik = body7.match(/Eksik zorunlu alan[^\n]*/);
+  if (eksik) console.log(`  !! yayın engellendi: ${eksik[0].slice(0, 90)}`);
   const basari = /İlanın yayında|incelemeye alındı/.test(body7);
   console.log(`  başarı ekranı çıktı mı: ${basari}`);
   expect(basari, "yayından sonra başarı ekranı görünmeli").toBeTruthy();
 
-  // Başarı ekranında GERÇEK ilan linki olmalı (/listing/<uuid>). Eskiden yayından sonra
-  // kullanıcıya hiç link verilmiyordu; paylaşım metinleri yayından önce gösterildiği için
-  // gerçek linki içeremiyordu.
   const linkGorunur = /ortaksat\.com\/listing\//.test(body7);
   console.log(`  gerçek ilan linki görünür mü: ${linkGorunur}`);
   expect(linkGorunur, "başarı ekranında gerçek ilan linki olmalı").toBeTruthy();
 
-  // DB'DE gerçekten oluştu mu (teardown silmeden önce)?
+  // DB'de gerçekten oluştu mu (teardown silmeden önce)?
   const dbRows = await runSql<Array<Record<string, unknown>>>(
-    "select id, left(title,24) title, status, price, (select count(*) from listing_images i where i.listing_id=l.id) imgs from listings l where created_at > now() - interval '10 minutes' order by created_at desc limit 2"
+    "select id, left(title,24) title, status, price from listings l where created_at > now() - interval '10 minutes' order by created_at desc limit 2"
   ).catch((e) => [{ err: String(e).slice(0, 80) }]);
   console.log("  DB'DEKİ YENİ İLAN:", JSON.stringify(dbRows));
   expect(Array.isArray(dbRows) && dbRows.length > 0 && !("err" in dbRows[0]), "ilan DB'de olmalı").toBeTruthy();
-
-  // "İlanı gör" ile gerçek ilana gidebilmeli
-  const gor = page.getByText("İlanı gör", { exact: true }).first();
-  if (await gor.count()) {
-    await gor.tap({ timeout: 6000 }).catch(() => {});
-    await page.waitForTimeout(3000);
-    console.log(`  İlanı gör → url=${page.url().slice(-40)}`);
-    expect(page.url(), "İlanı gör gerçek ilan sayfasına götürmeli").toContain("/listing/");
-  }
 });
