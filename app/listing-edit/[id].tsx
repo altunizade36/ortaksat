@@ -454,7 +454,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
                   </Pressable>
                 </View>
               ))}
-              {adAssets.length < 4 ? (
+              {adAssets.length < 14 ? (
                 <Pressable onPress={() => void pickAdAssets()} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderStyle: "dashed", borderWidth: 1.5, gap: 3, height: 84, justifyContent: "center", width: 84 }}>
                   <MaterialCommunityIcons name="image-plus" size={22} color={colors.primary} />
                   <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{translateCopy("Ekle", language)}</Text>

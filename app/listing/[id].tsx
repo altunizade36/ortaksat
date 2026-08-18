@@ -364,6 +364,20 @@ export default function ListingDetailScreen() {
   // değilse gösterilir. partnerable + non-owner + non-demo şart. Aksi halde yalnız
   // "Satın Al" (tam genişlik) çıkar.
   const canJoinNow = partnerable && !isOwner && !isDemo && partnership?.status !== "active" && partnership?.status !== "pending" && partnership?.status !== "blocked" && !(isInviteMode && !validInvite);
+  // İlan MÜSAİT DEĞİLSE (satıldı/duraklatıldı/arşiv/süresi doldu/tükendi) satın alma/ortaklık/teklif
+  // AKSİYONLARI kapatılır + üstte durum bandı. Feed status='active' filtreler ama doğrudan/referans/
+  // favori/SEO/son-gezdiklerin linki HER statüye ulaşabiliyordu → müsait olmayan ilanda çalışan CTA'lar
+  // (denetim bulgusu #1: en yüksek-niyetli referans trafiğinde güven hatası).
+  const outOfStock = !isDemand && currentListing.status === "active" && currentListing.stockCount <= 0;
+  const listingUnavailable = !isOwner && !isDemo && (currentListing.status !== "active" || outOfStock);
+  const unavailableLabel =
+    currentListing.status === "sold" ? translateCopy("Bu ürün satıldı", language)
+    : outOfStock ? translateCopy("Tükendi", language)
+    : currentListing.status === "paused" ? translateCopy("İlan şu an yayında değil (duraklatıldı)", language)
+    : currentListing.status === "expired" ? translateCopy("İlanın süresi doldu", language)
+    : currentListing.status === "archived" ? translateCopy("İlan yayından kaldırıldı", language)
+    : currentListing.status === "pending_review" ? translateCopy("İlan incelemede — henüz yayında değil", language)
+    : translateCopy("İlan şu an yayında değil", language);
   const reviewableSale = sales.find((sale) => sale.listingId === currentListing.id && canReviewSale(sale.id));
   const relatedCardWidth = Math.max(148, Math.min(176, Math.floor((width - 34) / 2)));
   const sellerOtherListings = listings
@@ -383,6 +397,7 @@ export default function ListingDetailScreen() {
 
   function handleJoin() {
     if (isDemo) return demoBlocked();
+    if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık ortaklığa/satışa açık değil. Benzer ürünlere göz atabilirsin.", language)); return; }
     // Anonim kullanıcı: alert'te tıkanmak yerine girişe yönlendir (dönüşte bu ilana gelir).
     if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; }
     // FORM YOK: ortak ol'a basınca doğrudan başvuru gider (davetli/açık → anında aktif,
@@ -433,6 +448,7 @@ export default function ListingDetailScreen() {
 
   async function handleContact() {
     if (isDemo) return demoBlocked();
+    if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık satışa açık değil. Benzer ürünlere göz atabilirsin.", language)); return; }
     if (!owner) return;
     // İletişimden önce (varsa) ortağa atıf-lead'i düş — kanal kaynağı iletişim yöntemine göre.
     attributeReferralLead(currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "web");
@@ -572,7 +588,7 @@ export default function ListingDetailScreen() {
   });
 
   // Mobil sabit alt aksiyon çubuğu görünürse içerik onun arkasına gizlenmesin diye ekstra alt boşluk.
-  const showMobileActionBar = !isWideWeb && !isDemo;
+  const showMobileActionBar = !isWideWeb && !isDemo && !listingUnavailable;
   return (
     <View style={{ flex: 1 }}>
     <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: (showMobileActionBar ? 132 : 96) + insets.bottom }}>
@@ -705,6 +721,17 @@ export default function ListingDetailScreen() {
           </View>
 
           <Text selectable accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 23, fontWeight: "900", lineHeight: 29 }}>{currentListing.title}</Text>
+
+          {/* Müsait değil durum bandı — satın alma/ortaklık/teklif kapalı (aksiyon handler'ları da guard'lı). */}
+          {listingUnavailable ? (
+            <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, padding: 12 }}>
+              <MaterialCommunityIcons name={currentListing.status === "sold" ? "check-decagram" : "close-circle-outline"} size={22} color={colors.accent} />
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text style={{ color: colors.accent, fontSize: 14.5, fontWeight: "900" }}>{unavailableLabel}</Text>
+                <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Bu ilanda satın alma, ortaklık ve teklif kapalı. Aşağıdaki benzer ürünlere göz atabilirsin.", language)}</Text>
+              </View>
+            </View>
+          ) : null}
 
           <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
             {owner?.rating ? (
@@ -1118,7 +1145,7 @@ export default function ListingDetailScreen() {
                   ) : null}
                 </View>
               ) : (
-                <PrimaryButton tone="secondary" icon="handshake-outline" onPress={() => { if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; } setOfferAmount(""); setOfferNote(""); setOfferErr(null); setOfferOpen(true); }}>{translateCopy("Teklif Ver", language)}</PrimaryButton>
+                <PrimaryButton tone="secondary" icon="handshake-outline" onPress={() => { if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık satışa açık değil.", language)); return; } if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: `/listing/${currentListing.id}` } }); return; } setOfferAmount(""); setOfferNote(""); setOfferErr(null); setOfferOpen(true); }}>{translateCopy("Teklif Ver", language)}</PrimaryButton>
               )}
               {/* İletişim butonu: normal sat/ortak ilanda ana "Satın Al" bu akışı (handleContact)
                   zaten çağırır; yalnız talep (arayan) ilanında burada ayrı gösterilir (Satın Al yok). */}
