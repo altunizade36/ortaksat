@@ -359,9 +359,11 @@ export default function ListingDetailScreen() {
   const isOwner = currentListing.ownerId === currentUser.id;
   const isReviewAuthed = backendMode === "supabase" && !!currentUser?.id && currentUser.id.includes("-");
   const isDemo = Boolean(currentListing.demo);
-  // Bu ilandaki KENDİ son teklifim (geri çekilenler hariç → yeniden teklif verebilsin).
+  // Bu ilandaki KENDİ son teklifim. Geri çekilen VE reddedilen hariç → "Teklif Ver" butonu
+  // geri gelir (eskiden reddedilen teklif kartı "yeni teklif verebilirsin" diyordu ama BUTON
+  // YOKTU → alıcı ölü-uçta kalıyordu). Reddedilen teklif geçmişi /offers ekranında durur.
   const myOffer = offers
-    .filter((o) => o.listingId === currentListing.id && o.buyerId === currentUser.id && o.status !== "withdrawn")
+    .filter((o) => o.listingId === currentListing.id && o.buyerId === currentUser.id && o.status !== "withdrawn" && o.status !== "rejected")
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt))[0];
   function demoBlocked() {
     Alert.alert(translateCopy("Örnek ilan", language), translateCopy("Bu bir örnek (vitrin) ilandır; yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık bu ilanda kapalıdır.", language));

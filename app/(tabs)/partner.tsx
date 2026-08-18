@@ -96,7 +96,11 @@ function PartnerScreenInner() {
   const params = useLocalSearchParams<{ focus?: string; tab?: string }>();
   const focusId = Array.isArray(params.focus) ? params.focus[0] : params.focus;
   const tabParam = Array.isArray(params.tab) ? params.tab[0] : params.tab;
-  useEffect(() => { if (focusId) setTab("active"); }, [focusId]);
+  // ?focus geldiğinde odaklı ortaklığın DURUMUNA göre sekme seç: aktifse "Aktif ortaklıklar",
+  // değilse (reddedilen/bekleyen/ayrılınan…) "Başvurduğum ilanlar". Eskiden HEP "active" → masaüstünde
+  // "reddedildi" bildirimi aktif sekmeye düşüp red satırı GÖRÜNMÜYORDU (red nedeni + tekrar-başvur erişilmez).
+  const focusIsActive = focusId ? partnerships.some((p) => p.partnerId === currentUser.id && p.listingId === focusId && p.status === "active") : false;
+  useEffect(() => { if (focusId) setTab(focusIsActive ? "active" : "pending"); }, [focusId, focusIsActive]);
   useEffect(() => {
     if (tabParam && ["all", "pending", "active", "earning", "links"].includes(tabParam)) setTab(tabParam as typeof tab);
   }, [tabParam]);
@@ -117,6 +121,11 @@ function PartnerScreenInner() {
   }, [idsKey]);
   const activePartnerships = myPartnerships.filter((item) => item.status === "active").slice().sort(focusFirst);
   const pendingPartnerships = myPartnerships.filter((item) => item.status === "pending");
+  // Başvuru SONUÇLARI (reddedilen/ayrılınan/tamamlanan/engellenen): masaüstünde HİÇBİR sekme
+  // göstermiyordu → red bildirimi ölü-uçtu. "Başvurduğum ilanlar" sekmesinde beklemedekilerin
+  // altında gösterilir (renderPartnershipCard red nedenini + uygunsa "Tekrar başvur"ı zaten çizer).
+  const pastPartnerships = myPartnerships.filter((item) => !["active", "pending"].includes(item.status)).slice().sort(focusFirst);
+  const applicationPartnerships = [...pendingPartnerships, ...pastPartnerships];
   const mySales = sales.filter((sale) => myPartnerships.some((partnership) => partnership.id === sale.partnershipId));
   const waiting = mySales.filter((sale) => sale.status === "pending" || sale.status === "return_pending" || sale.status === "disputed").reduce((sum, sale) => sum + sale.commissionAmount, 0);
   const approved = mySales.filter((sale) => sale.status === "approved" || sale.status === "seller_paid").reduce((sum, sale) => sum + sale.commissionAmount, 0);
@@ -397,7 +406,7 @@ function PartnerScreenInner() {
 
     const tabs: Array<{ key: typeof tab; label: string; count?: number }> = [
       { key: "all", label: translateCopy("Tüm fırsatlar", language) },
-      { key: "pending", label: translateCopy("Başvurduğum ilanlar", language), count: pendingPartnerships.length },
+      { key: "pending", label: translateCopy("Başvurduğum ilanlar", language), count: applicationPartnerships.length },
       { key: "active", label: translateCopy("Aktif ortaklıklar", language), count: activePartnerships.length },
       { key: "earning", label: translateCopy("Kazançlarım", language) },
       { key: "links", label: translateCopy("Ortak ürünlerim", language) }
@@ -621,7 +630,7 @@ function PartnerScreenInner() {
                         );
                       })}
                     </>
-                    : (tab === "active" ? activePartnerships : pendingPartnerships).map(renderPartnershipCard))
+                    : (tab === "active" ? activePartnerships : applicationPartnerships).map(renderPartnershipCard))
                 )}
               </View>
             )}

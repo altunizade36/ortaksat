@@ -168,6 +168,13 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     if (meta._leaf) builtAttrs._leaf = meta._leaf as string;
     if (meta._root) builtAttrs._root = meta._root as string;
     if (formKey) builtAttrs._formKey = formKey;
+    // Form'un YÖNETMEDİĞİ meta anahtarlarını (_ ile başlayan) koru. Eskiden yalnız _leaf/_root/
+    // _formKey geri ekleniyordu → düzenleme (ör. fiyat) _urgentUntil (Acil rozeti) + _partnerRegion
+    // + _maxPartners + _commissionCondition'ı KALICI SİLİYORDU. attrValues zaten _-anahtarlarını
+    // dışlar → burada üzerine yazmadan taşı.
+    for (const [k, v] of Object.entries(meta)) {
+      if (k.startsWith("_") && !(k in builtAttrs)) builtAttrs[k] = v as string | number | boolean | string[];
+    }
     const shareTemplates = buildShareTemplates({
       title,
       price: parsedPrice,
