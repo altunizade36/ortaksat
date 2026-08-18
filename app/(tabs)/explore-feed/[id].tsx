@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, NativeScrollEvent, NativeSyntheticEvent, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 import { shareOrCopy } from "@/lib/share";
 import { useVideoPlayer, VideoView } from "expo-video";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -134,7 +135,7 @@ export default function ExploreFeedScreen() {
     const url = productUrl(listing);
     const message = `${listing.title}\n${money(listing.price)}\n${translateCopy("OrtakSat'ta gör:", language)} ${url}`;
     const r = await shareOrCopy({ title: listing.title, message, url });
-    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Ürünü istediğin yerde paylaşabilirsin.", language));
+    if (r === "copied") showToast(translateCopy("Bağlantı kopyalandı", language));
   }
 
   function submitComment(listing: Listing) {

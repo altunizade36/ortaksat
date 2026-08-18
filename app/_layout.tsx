@@ -16,6 +16,7 @@ import { PushRegistrar } from "@/components/push-registrar";
 import { InviteCapture } from "@/components/invite-capture";
 import { MetaPixelRouter } from "@/components/meta-pixel-router";
 import { ErrorToast } from "@/components/error-toast";
+import { ToastHost } from "@/components/toast-host";
 import { AlertHost } from "@/components/alert-host";
 import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
@@ -117,6 +118,7 @@ function RootStack() {
       <InviteCapture />{/* Y8: giriş sonrası saklanan davet kodunu yakalar */}
       <MetaPixelRouter />{/* SPA gezinmesinde Meta Pixel PageView (web + ID varsa) */}
       <ErrorToast />
+      <ToastHost />{/* hafif başarı/bilgi toast'ı (showToast) — bloklamayan geri bildirim */}
       <AlertHost />
     </View>
   );

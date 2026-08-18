@@ -6,6 +6,7 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 
 import { AttributeFields } from "@/components/attribute-fields";
 import { colors } from "@/components/colors";
@@ -259,7 +260,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       return;
     }
 
-    Alert.alert(translateCopy("İlan güncellendi", language), translateCopy("Satıcı panelindeki ilan bilgileri yenilendi.", language));
+    showToast(translateCopy("İlan güncellendi", language));
     router.back();
   }
 

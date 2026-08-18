@@ -10,7 +10,7 @@ import { AuthRequired } from "@/components/auth-gate";
 import { Card, Metric, PressLink, PrimaryButton, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { money } from "@/lib/format";
-import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 import { shareOrCopy } from "@/lib/share";
 import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -67,7 +67,7 @@ function ProfileScreenInner() {
       message: `${currentUser.name} — OrtakSat mağazama göz at:`,
       url: `https://www.ortaksat.com/store/${currentUser.id}`
     });
-    if (res === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Mağaza bağlantın panoya kopyalandı; istediğin yere yapıştırabilirsin.", language));
+    if (res === "copied") showToast(translateCopy("Mağaza bağlantın kopyalandı", language));
   }
 
   if (isWideWeb) {

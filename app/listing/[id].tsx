@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 import { openUrlSafe } from "@/lib/link";
 import { shareOrCopy } from "@/lib/share";
 import { parseTrPrice } from "@/lib/validation";
@@ -419,14 +420,14 @@ export default function ListingDetailScreen() {
       return;
     }
     haptic.success();
-    Alert.alert(translateCopy(result.status === "active" ? "Ortaklık aktif" : "Talep gönderildi", language), translateCopy(result.status === "active" ? "Artık ürünü kendi yönteminle tanıtabilirsin; sattığında komisyonunu alırsın." : "Satıcı kabul edince ortak olursun.", language));
+    showToast(translateCopy(result.status === "active" ? "Ortaklık aktif! Ürünü tanıtmaya başlayabilirsin." : "Talep gönderildi — satıcı onaylayınca ortak olursun.", language));
   }
 
   async function handleShare() {
     // MODEL: referans/takip YOK → her zaman DÜZ ürün sayfası linki paylaşılır.
     const url = productUrl(currentListing);
     const r = await shareOrCopy({ title: currentListing.title, message: `${currentListing.title}\n${moneyIn(currentListing.price, currentListing.currency)}\n${url}`, url });
-    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Ürünü istediğin yerde paylaşabilirsin.", language));
+    if (r === "copied") showToast(translateCopy("Bağlantı kopyalandı", language));
   }
 
 
