@@ -160,6 +160,7 @@ function SellerScreenInner() {
   // Yanıt bekleyen teklifler (en yenisi üstte) — satıcının en aksiyon-gerektiren işi.
   const [counterFor, setCounterFor] = useState<string | null>(null);
   const [counterAmount, setCounterAmount] = useState("");
+  const [counterErr, setCounterErr] = useState<string | null>(null);
   const pendingOffers = offers
     .filter((o) => o.sellerId === currentUser.id && o.status === "pending")
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -451,7 +452,14 @@ function SellerScreenInner() {
                     </Pressable>
                     <Pressable
                       accessibilityRole="button"
-                      onPress={() => void sellerRespondOffer(o.id, "rejected")}
+                      onPress={() => Alert.alert(
+                        translateCopy("Teklifi reddet", language),
+                        translateCopy("Bu teklifi reddediyorsun. Alıcı bilgilendirilecek; dilerse yeni teklif verebilir.", language),
+                        [
+                          { text: translateCopy("Vazgeç", language), style: "cancel" },
+                          { text: translateCopy("Reddet", language), style: "destructive", onPress: () => void sellerRespondOffer(o.id, "rejected") }
+                        ]
+                      )}
                       style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
                     >
                       <MaterialCommunityIcons name="close" size={15} color={colors.muted} />
@@ -459,7 +467,7 @@ function SellerScreenInner() {
                     </Pressable>
                     <Pressable
                       accessibilityRole="button"
-                      onPress={() => { setCounterFor(o.id); setCounterAmount(""); }}
+                      onPress={() => { setCounterFor(o.id); setCounterAmount(""); setCounterErr(null); }}
                       style={({ pressed }) => ({ alignItems: "center", borderColor: colors.primary, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
                     >
                       <MaterialCommunityIcons name="swap-horizontal" size={15} color={colors.primaryDark} />
@@ -480,28 +488,31 @@ function SellerScreenInner() {
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                         <TextInput
                           value={counterAmount}
-                          onChangeText={(t) => setCounterAmount(t.replace(/[^0-9.,]/g, ""))}
+                          onChangeText={(t) => { setCounterAmount(t.replace(/[^0-9.,]/g, "")); if (counterErr) setCounterErr(null); }}
                           keyboardType="numeric"
                           autoFocus
                           placeholder={l ? String(l.price) : "0"}
                           placeholderTextColor={colors.subtle}
-                          style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 15, fontWeight: "800", minHeight: 42, paddingHorizontal: 10 }}
+                          style={{ backgroundColor: colors.surface, borderColor: counterErr ? colors.accent : colors.line, borderRadius: 9, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 15, fontWeight: "800", minHeight: 42, paddingHorizontal: 10 }}
                         />
                         <Pressable
                           accessibilityRole="button"
                           onPress={() => {
                             const amt = parseTrPrice(counterAmount);
-                            if (!(amt > 0)) return;
+                            // Boş/0 tutarda sessizce dönme (buton "ölü" görünüyordu) → satır-içi hata göster.
+                            if (!(amt > 0)) { setCounterErr(translateCopy("Geçerli bir tutar gir.", language)); return; }
+                            setCounterErr(null);
                             void sellerRespondOffer(o.id, "countered", amt).then(() => setCounterFor(null));
                           }}
                           style={({ pressed }) => ({ backgroundColor: colors.primary, borderRadius: 9, opacity: pressed ? 0.85 : 1, paddingHorizontal: 16, paddingVertical: 11 })}
                         >
                           <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Gönder", language)}</Text>
                         </Pressable>
-                        <Pressable accessibilityRole="button" onPress={() => setCounterFor(null)} hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, padding: 6 })}>
+                        <Pressable accessibilityRole="button" onPress={() => { setCounterFor(null); setCounterErr(null); }} hitSlop={6} style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, padding: 6 })}>
                           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text>
                         </Pressable>
                       </View>
+                      {counterErr ? <Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "800" }}>{counterErr}</Text> : null}
                     </View>
                   ) : null}
                 </View>
@@ -918,6 +929,9 @@ function SellerScreenInner() {
               .map((lead) => {
                 const partnership = partnerships.find((item) => item.id === lead.partnershipId);
                 const partner = partnership ? findUser(partnership.partnerId) : undefined;
+                // Satışa dönmüş lead'de durum butonları (Arandı/İlgileniyor/Kayıp) gizlenir:
+                // "Kayıp" yanlış etiketler + dedup slotunu boşaltır (bkz updateLeadStatus kilidi). Mesaj kalır.
+                const isConverted = lead.status === "converted" || hasSaleForLead(lead.id);
                 return (
                   <View key={lead.id} style={{ backgroundColor: lead.status === "new" ? colors.warningSoft : colors.surfaceAlt, borderRadius: 8, gap: 8, padding: 12 }}>
                     <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>
@@ -930,18 +944,22 @@ function SellerScreenInner() {
                       <StatusPill label={lead.status === "converted" ? "Satışa döndü" : lead.status === "interested" ? "İlgileniyor" : lead.status === "contacted" ? "Arandı" : lead.status === "lost" ? "Kayıp" : "Yeni"} tone={lead.status === "converted" ? "success" : "info"} />
                     </View>
                     <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 19 }}>{lead.note}</Text>
+                    {!isConverted ? (
+                      <View style={{ flexDirection: "row", gap: 8 }}>
+                        <View style={{ flex: 1 }}>
+                          <PrimaryButton tone="secondary" onPress={() => updateLeadStatus(lead.id, "contacted")}>Arandı</PrimaryButton>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                          <PrimaryButton tone="secondary" onPress={() => updateLeadStatus(lead.id, "interested")}>İlgileniyor</PrimaryButton>
+                        </View>
+                      </View>
+                    ) : null}
                     <View style={{ flexDirection: "row", gap: 8 }}>
-                      <View style={{ flex: 1 }}>
-                        <PrimaryButton tone="secondary" onPress={() => updateLeadStatus(lead.id, "contacted")}>Arandı</PrimaryButton>
-                      </View>
-                      <View style={{ flex: 1 }}>
-                        <PrimaryButton tone="secondary" onPress={() => updateLeadStatus(lead.id, "interested")}>İlgileniyor</PrimaryButton>
-                      </View>
-                    </View>
-                    <View style={{ flexDirection: "row", gap: 8 }}>
-                      <View style={{ flex: 1 }}>
-                        <PrimaryButton tone="secondary" onPress={() => updateLeadStatus(lead.id, "lost")}>Kayıp</PrimaryButton>
-                      </View>
+                      {!isConverted ? (
+                        <View style={{ flex: 1 }}>
+                          <PrimaryButton tone="secondary" onPress={() => updateLeadStatus(lead.id, "lost")}>Kayıp</PrimaryButton>
+                        </View>
+                      ) : null}
                       <View style={{ flex: 1 }}>
                         <PrimaryButton tone="secondary" onPress={() => openConversation(listing.id, partnership?.partnerId, `${lead.buyerName} talebi hakkında konuşalım. Kaynak: ${sourceLabels[lead.source]}, durum: ${lead.status}.`)}>Mesaj</PrimaryButton>
                       </View>

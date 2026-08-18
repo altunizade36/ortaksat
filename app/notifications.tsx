@@ -101,6 +101,9 @@ function NotificationsScreenInner() {
     if (partnership && partnership.partnerId === currentUser.id) return `/(tabs)/partner?focus=${meta.listingId}` as Href;
     // Teklif bildirimi + alıcı (ilan sahibi değil) → amaca-özel /offers ekranı (kabul/karşı-teklif orada).
     if (type === "offer") return "/offers" as Href;
+    // Kaldırılmış ilanın 'system' bildirimi (remove_listing_rpc) listingId taşır ama ilan artık
+    // YOK → /listing/[id] 404 verir. İlan store'da yoksa navigasyon yapma (yalnız okundu işaretlenir).
+    if (type === "system" && !listing) return null;
     return { pathname: "/listing/[id]", params: { id: meta.listingId } } as unknown as Href;
   };
   const myNotifications = notifications.filter((notification) => notification.userId === currentUser.id);

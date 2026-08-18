@@ -1114,8 +1114,10 @@ export default function ListingDetailScreen() {
             <View style={{ gap: 10 }}>
               <SafetyNote />
               {/* TEKLİF VER — eskiden teklif yalnız sohbete serbest metin olarak
-                  yazılabiliyordu; satıcı takip edemiyor, kabul/ret edemiyordu. */}
-              {myOffer ? (
+                  yazılabiliyordu; satıcı takip edemiyor, kabul/ret edemiyordu.
+                  TALEP (arayan) ilanında GÖSTERİLMEZ: satılık ürün yok → "Teklif Ver"
+                  arayan kişiye satın-alma teklifi göndermek anlamsız (yalnız iletişim/ortak kalır). */}
+              {isDemand ? null : myOffer ? (
                 <View style={{ backgroundColor: myOffer.status === "accepted" ? colors.successSoft : myOffer.status === "rejected" ? colors.accentSoft : colors.goldSoft, borderColor: myOffer.status === "accepted" ? colors.success : myOffer.status === "rejected" ? colors.accent : colors.gold, borderRadius: 10, borderWidth: 1, gap: 4, padding: 12 }}>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
                     <MaterialCommunityIcons name="handshake" size={16} color={myOffer.status === "accepted" ? colors.success : myOffer.status === "rejected" ? colors.accent : colors.goldInk} />

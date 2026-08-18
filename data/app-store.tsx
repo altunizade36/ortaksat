@@ -2256,8 +2256,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const leadPartnership = lead?.partnershipId ? partnerships.find((p) => p.id === lead.partnershipId) : undefined;
         const canManage = !!listing && (listing.ownerId === currentUser.id || leadPartnership?.partnerId === currentUser.id);
         if (!lead || !listing || !canManage) return;
+        // Satışa DÖNMÜŞ lead'in durumu değiştirilemez: 'converted'ı 'lost' yapmak hem yanlış
+        // etiketler ("Kayıp") hem de (listing,phone) dedup slotunu boşaltıp aynı alıcıya mükerrer
+        // lead açılmasına izin verir. (Buton seller.tsx'te de gizlenir — burası sunucu-taraf kilit.)
+        if (lead.status === "converted" || sales.some((s) => s.leadId === leadId)) {
+          setSyncError("Bu müşteri satışa döndü; durumu değiştirilemez.");
+          return;
+        }
+        const prevStatus = lead.status;
         setLeads((items) => items.map((item) => (item.id === leadId ? { ...item, status } : item)));
-        if (liveUser && lead) void updateLeadStatusLive({ ...lead, status });
+        // Sunucu yazımı başarısızsa optimistik değişikliği GERİ AL + hata göster (eskiden
+        // fire-and-forget'ti → UI yeni durumu gösterip DB eskide kalıyor, yenilemede sessiz sapıyordu).
+        if (liveUser) persistCritical(updateLeadStatusLive({ ...lead, status }), () => {
+          setLeads((items) => items.map((item) => (item.id === leadId ? { ...item, status: prevStatus } : item)));
+        }, "Müşteri durumu güncellenemedi. Bağlantını kontrol edip tekrar dene.");
       },
       updateListingStatus(listingId, status) {
         const listing = listings.find((item) => item.id === listingId);

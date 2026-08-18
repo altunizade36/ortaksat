@@ -370,7 +370,7 @@ function ProfileEditScreenInner() {
                     {isImageAvatar(avatar.trim()) ? <Image source={{ uri: avatar.trim() }} contentFit="cover" style={{ height: 80, width: 80 }} /> : <Text style={{ color: "#FFFFFF", fontSize: 26, fontWeight: "900" }}>{avatar.trim() || "OS"}</Text>}
                   </View>
                   <View style={{ gap: 8 }}>
-                    <Pressable onPress={() => void pickAvatar()} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 10 }}>
+                    <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Fotoğraf yükle", language)} onPress={() => void pickAvatar()} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 16, paddingVertical: 10 }}>
                       <MaterialCommunityIcons name="image-plus" size={17} color={colors.primaryDark} />
                       <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Fotoğraf yükle", language)}</Text>
                     </Pressable>
@@ -753,7 +753,7 @@ function ToggleRow({ busy, desc, icon, label, onValueChange, value }: { busy?: b
         <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy(label, language)}</Text>
         <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy(desc, language)}</Text>
       </View>
-      <Switch value={value} onValueChange={onValueChange} disabled={busy} trackColor={{ false: colors.line, true: colors.primary }} thumbColor="#FFFFFF" ios_backgroundColor={colors.line} />
+      <Switch value={value} onValueChange={onValueChange} disabled={busy} accessibilityRole="switch" accessibilityLabel={translateCopy(label, language)} accessibilityState={{ checked: value, disabled: !!busy }} trackColor={{ false: colors.line, true: colors.primary }} thumbColor="#FFFFFF" ios_backgroundColor={colors.line} />
     </View>
   );
 }

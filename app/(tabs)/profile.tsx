@@ -444,7 +444,7 @@ function MenuRow({ detail, icon, label, value, href }: { detail: string; icon: k
     </View>
   );
   if (!href) return inner;
-  return <Link href={href} asChild><Pressable>{inner}</Pressable></Link>;
+  return <Link href={href} asChild><Pressable accessibilityRole="link" accessibilityLabel={`${translateCopy(label, language)}${value ? ` — ${value}` : ""}`}>{inner}</Pressable></Link>;
 }
 
 function Shortcut({ href, icon, label }: { href: Href; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string }) {

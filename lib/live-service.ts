@@ -848,10 +848,11 @@ export async function insertReferralLead(input: {
   return true;
 }
 
-export async function updateLeadStatusLive(lead: Lead) {
-  if (!supabase) return;
+export async function updateLeadStatusLive(lead: Lead): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase.from("leads").update({ status: lead.status }).eq("id", lead.id);
-  if (error) console.warn("Supabase lead update failed", error);
+  if (error) { console.warn("Supabase lead update failed", error); return false; }
+  return true;
 }
 
 // Atomik: order + commission + stok düşümü + lead-dönüşümü TEK RPC/transaction'da.
