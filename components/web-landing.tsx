@@ -68,6 +68,21 @@ export function WebFooter() {
       ]
     },
     {
+      // SEO: her sayfada render olan footer, ~1496 kategori hub'ına site-geneli iç-link/otorite
+      // akışının EN YÜKSEK kaldıraçlı tek noktası. Yüksek-hacimli, index,follow kökler/alt-hub'lar.
+      heading: "Popüler Kategoriler",
+      links: [
+        { label: "Emlak", href: "/kategori/emlak" as Href },
+        { label: "Konut", href: "/kategori/konut" as Href },
+        { label: "Vasıta", href: "/kategori/vasita" as Href },
+        { label: "Otomobil", href: "/kategori/otomobil" as Href },
+        { label: "Cep Telefonu", href: "/kategori/cep-telefonu" as Href },
+        { label: "Beyaz Eşya", href: "/kategori/beyaz-esya" as Href },
+        { label: "Mobilya", href: "/kategori/mobilya" as Href },
+        { label: "Tüm Kategoriler", href: "/kategoriler" as Href }
+      ]
+    },
+    {
       heading: "Kazan",
       links: [
         { label: "Ortak Ol", href: "/partner" },

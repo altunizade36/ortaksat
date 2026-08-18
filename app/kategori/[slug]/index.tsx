@@ -361,6 +361,41 @@ export default function CategoryLandingScreen() {
           </View>
         ) : null}
 
+        {/* SEO YATAY İÇ-LİNK AĞI: kardeş kategoriler. Hub'lar eskiden yalnız yukarı (breadcrumb) +
+            aşağı (alt-kategori) link veriyordu, YAN'a hiç → ~45 yüksek-hacimli alt-hub çok-hop
+            uzaktı. Kardeş rayı otoriteyi dallar arası yayar + tık-derinliğini düşürür. */}
+        {trail && trail.length >= 2 ? (() => {
+          const siblings = (trail[trail.length - 2].children ?? []).filter((s) => s.slug !== node.slug);
+          return siblings.length > 0 ? (
+            <View style={{ gap: 6 }}>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("İlgili kategoriler", language)}</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                {siblings.map((s) => (
+                  <Link key={s.key} href={catHref(s.slug)} asChild>
+                    <Pressable style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                      <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{translateCopy(s.label, language)}</Text>
+                    </Pressable>
+                  </Link>
+                ))}
+              </View>
+            </View>
+          ) : null;
+        })() : null}
+
+        {/* SEO: tüm ana kategoriler rayı — HER hub'dan 11 köke crawl/otorite yolu (mesh'i kapatır). */}
+        <View style={{ gap: 6 }}>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm kategoriler", language)}</Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {CATEGORY_TREE.map((r) => (
+              <Link key={r.key} href={catHref(r.slug)} asChild>
+                <Pressable style={{ backgroundColor: r.slug === (ancestors[0]?.slug ?? node.slug) ? colors.primarySoft : colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+                  <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{translateCopy(r.label, language)}</Text>
+                </Pressable>
+              </Link>
+            ))}
+          </View>
+        </View>
+
         {/* Sıralama + hızlı filtreler */}
         <View style={{ gap: 8 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
