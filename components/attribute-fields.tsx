@@ -37,7 +37,8 @@ export function AttributeFields({ fields, values, onChange, schemaKey }: { field
 function AField({ field, value, onChange }: { field: FieldDef; value: AttrValue | undefined; onChange: (v: AttrValue) => void }) {
   const { language } = useLanguage();
   const wide = field.type === "textarea" || field.type === "multiselect";
-  const selected = Array.isArray(value) ? value : [];
+  // Eski tek-değerli (select) veri artık multiselect alanında: "M" → ["M"] (seçili görünür, veri kaybı yok).
+  const selected = Array.isArray(value) ? value : (typeof value === "string" && value.trim() ? [value] : []);
   return (
     <View style={{ flexBasis: wide ? "100%" : 220, flexGrow: 1, gap: 6, minWidth: 0 }}>
       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>

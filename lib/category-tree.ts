@@ -360,6 +360,12 @@ const F = {
   cinsiyet: { key: "gender", label: "Cinsiyet", type: "select", options: ["Kadın", "Erkek", "Unisex", "Kız Çocuk", "Erkek Çocuk", "Bebek"] } as FieldDef,
   materyal: { key: "material", label: "Materyal", type: "text", placeholder: "ör. deri, pamuk, ahşap" } as FieldDef,
   renkSelect: { key: "color", label: "Renk", type: "select", options: ["Siyah", "Beyaz", "Gri", "Mavi", "Kırmızı", "Yeşil", "Sarı", "Turuncu", "Mor", "Pembe", "Kahverengi", "Bej", "Lacivert", "Çok Renkli", "Diğer"] } as FieldDef,
+  // ÇOKLU beden/numara/renk (giyim & ayakkabı): tek ürün birden çok bedende/renkte stokta olabilir.
+  // Aynı key'ler (size/shoeSize/color) → describeAttributes çip olarak "mevcut bedenler", filtre have.some(array)
+  // ile çalışır. Eski tek-değerli veri düzenlemede [value]'ye toparlanır (attribute-fields coerce).
+  bedenMulti: { key: "size", label: "Mevcut bedenler", type: "multiselect", options: ["XS", "S", "M", "L", "XL", "XXL", "3XL", "34", "36", "38", "40", "42", "44", "46", "48", "Standart"] } as FieldDef,
+  numaraMulti: { key: "shoeSize", label: "Mevcut numaralar (EU)", type: "multiselect", options: ["35", "36", "37", "38", "39", "40", "41", "42", "43", "44", "45", "46"] } as FieldDef,
+  renkMulti: { key: "color", label: "Mevcut renkler", type: "multiselect", options: ["Siyah", "Beyaz", "Gri", "Mavi", "Kırmızı", "Yeşil", "Sarı", "Turuncu", "Mor", "Pembe", "Kahverengi", "Bej", "Lacivert", "Çok Renkli", "Diğer"] } as FieldDef,
   yasGrubu: { key: "ageGroup", label: "Yaş grubu", type: "select", options: ["0-6 ay", "6-12 ay", "1-2 yaş", "2-4 yaş", "4-6 yaş", "6+ yaş"] } as FieldDef,
   boyut: { key: "dimensions", label: "Ölçüler (En×Boy×Yükseklik)", type: "text", placeholder: "ör. 200×90×85 cm" } as FieldDef
 };
@@ -1342,7 +1348,7 @@ export const formSchemas: Record<string, FormSchema> = {
     title: "Giyim bilgileri",
     fields: [F.title,
       { ...F.markaSerbest, group: "Temel Bilgiler" }, { ...F.durum, group: "Temel Bilgiler" },
-      { ...F.beden, group: "Beden & Renk" }, { ...F.renkSelect, group: "Beden & Renk" }, { ...F.cinsiyet, group: "Beden & Renk" },
+      { ...F.bedenMulti, group: "Beden & Renk" }, { ...F.renkMulti, group: "Beden & Renk" }, { ...F.cinsiyet, group: "Beden & Renk" },
       { ...MODA_SEZON, group: "Ürün Detayı" }, { ...MODA_DESEN, group: "Ürün Detayı" }, { ...MODA_KESIM, group: "Ürün Detayı" }, { ...F.materyal, group: "Ürün Detayı" },
       { ...F.stok, group: "Satış & Teslimat" }, { ...F.kargo, group: "Satış & Teslimat" }, { ...F.pazarlik, group: "Satış & Teslimat" }, { ...F.takas, group: "Satış & Teslimat" },
       F.price, GENEL_ETIKET_FIELD, F.desc]
@@ -1350,7 +1356,7 @@ export const formSchemas: Record<string, FormSchema> = {
   ayakkabi: {
     key: "ayakkabi",
     title: "Ayakkabı & çanta bilgileri",
-    fields: [F.title, F.markaSerbest, F.durum, F.numara, F.renkSelect, F.cinsiyet, F.materyal, F.stok, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
+    fields: [F.title, F.markaSerbest, F.durum, F.numaraMulti, F.renkMulti, F.cinsiyet, F.materyal, F.stok, F.price, F.kargo, F.pazarlik, F.takas, F.desc]
   },
   mobilya: {
     key: "mobilya",
