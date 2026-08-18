@@ -206,6 +206,14 @@ export default function ExploreScreen() {
     { key: "hot", label: t("trend"), icon: "fire" },
     { key: "new", label: t("newest"), icon: "clock-outline" }
   ];
+  // Aktif filtre çipi ekran dışındaysa (Trend/Yeni yatay-kaydırmada sağda kalır — özellikle
+  // ?tab=hot derin-linkinde) ona kaydır → hangi filtrenin aktif olduğu tek bakışta görünür.
+  const feedScrollRef = useRef<ScrollView>(null);
+  const chipX = useRef<Record<string, number>>({});
+  useEffect(() => {
+    const x = chipX.current[filter];
+    if (x != null) feedScrollRef.current?.scrollTo({ x: Math.max(0, x - 12), animated: true });
+  }, [filter]);
   const isWideWeb = useIsWideWeb();
   const insets = useSafeAreaInsets();
   // Hidrasyon güvenliği: SSG'de genişlik bilinmez → isWideWeb dalı sunucu/istemci
@@ -1235,10 +1243,11 @@ export default function ExploreScreen() {
           </View>
         ) : null}
 
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+        <ScrollView ref={feedScrollRef} horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
           {feedFilters.map((item) => (
             <Pressable
               key={item.key}
+              onLayout={(e) => { const x = e.nativeEvent.layout.x; chipX.current[item.key] = x; if (item.key === filter) feedScrollRef.current?.scrollTo({ x: Math.max(0, x - 12), animated: false }); }}
               onPress={() => setFilter(item.key)}
               style={({ pressed }) => ({
                 alignItems: "center",
