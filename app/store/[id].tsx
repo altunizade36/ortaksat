@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 
 import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";
@@ -280,7 +281,7 @@ export default function StoreScreen() {
       message: `${seller.name} — OrtakSat mağazasına göz at:`,
       url: `https://www.ortaksat.com/store/${seller.id}`
     });
-    if (res === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Profil bağlantısı panoya kopyalandı; istediğin yere yapıştırabilirsin.", language));
+    if (res === "copied") showToast(translateCopy("Mağaza bağlantısı kopyalandı", language));
   }
 
   const memberLabel = memberSinceLabel(seller.createdAt, language);

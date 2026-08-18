@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Pressable, ScrollView, Text, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 
 import { colors } from "@/components/colors";
 import { Seo } from "@/components/seo";
@@ -41,7 +42,8 @@ export default function TrustScreen() {
 
   async function setStatus(report: Report, status: ModerationStatus) {
     const ok = await updateReportStatus(report.id, status);
-    Alert.alert(translateCopy(ok ? "Güncellendi" : "Yetki gerekli", language), translateCopy(ok ? "Moderasyon kaydı güncellendi." : "Bu işlem için moderatör yetkisi gerekir.", language));
+    if (ok) showToast(translateCopy("Moderasyon kaydı güncellendi", language));
+    else Alert.alert(translateCopy("Yetki gerekli", language), translateCopy("Bu işlem için moderatör yetkisi gerekir.", language));
   }
 
   // Güven dağılımı + sinyaller — İKİ düzende de kullanılır → split ÖNCESİ hesaplanır (mobil parite).

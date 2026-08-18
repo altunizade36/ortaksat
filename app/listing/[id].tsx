@@ -501,7 +501,7 @@ export default function ListingDetailScreen() {
       return;
     }
     setReviewComment("");
-    Alert.alert(translateCopy("Yorum eklendi", language), translateCopy("Puan ve yorum güven alanında görünecek.", language));
+    showToast(translateCopy("Yorum eklendi — güven alanında görünecek", language));
   }
 
   async function submitReport() {
@@ -509,7 +509,8 @@ export default function ListingDetailScreen() {
     const details = `${currentListing.title} — ${reportReason}${reportDetail.trim() ? ` · ${reportDetail.trim()}` : ""}`;
     const ok = await reportListing(currentListing.id, reportReason, details);
     setReportOpen(false); setReportReason(""); setReportDetail("");
-    Alert.alert(translateCopy(ok ? "Bildirim alındı" : "Giriş gerekli", language), translateCopy(ok ? "Moderasyon ekibi bu ilanı inceleyecek. Teşekkürler." : "İlan bildirmek için e-posta ile giriş yapmalısın.", language));
+    if (ok) showToast(translateCopy("Bildirim alındı — moderasyon inceleyecek", language));
+    else Alert.alert(translateCopy("Giriş gerekli", language), translateCopy("İlan bildirmek için e-posta ile giriş yapmalısın.", language));
   }
 
   const metaDesc = `${currentListing.title} — ${moneyIn(currentListing.price, currentListing.currency)}. ${currentListing.description}`.replace(/\s+/g, " ").slice(0, 160);
@@ -1402,7 +1403,7 @@ export default function ListingDetailScreen() {
                       setOfferBusy(false);
                       if (!res.ok) { setOfferErr(res.error ?? translateCopy("Teklif gönderilemedi.", language)); return; }
                       setOfferOpen(false);
-                      Alert.alert(translateCopy("Teklifin gönderildi", language), translateCopy("Satıcı yanıtlayınca bildirim alacaksın.", language));
+                      showToast(translateCopy("Teklifin gönderildi — satıcı yanıtlayınca haber alacaksın", language));
                     })
                     .catch(() => { setOfferBusy(false); setOfferErr(translateCopy("Teklif gönderilemedi.", language)); });
                 }}

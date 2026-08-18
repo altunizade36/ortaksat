@@ -6,6 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 import { Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 import { openUrlSafe } from "@/lib/link";
 import { shareOrCopy } from "@/lib/share";
 
@@ -286,7 +287,7 @@ function PartnerScreenInner() {
     const url = productUrl(listing);
     const pitch = listing.salesPitch?.[0] ? `\n${listing.salesPitch[0]}` : "";
     const r = await shareOrCopy({ title: listing.title, message: `${listing.title} — ${money(listing.price)}${pitch}\n${url}`, url });
-    if (r === "copied") Alert.alert(translateCopy("Bağlantı kopyalandı", language), translateCopy("Ürünü istediğin yerde paylaşabilirsin.", language));
+    if (r === "copied") showToast(translateCopy("Bağlantı kopyalandı", language));
   }
   // Eski imza korunur (çağrı yerleri); refCode YOK SAYILIR (link/takip modeli kaldırıldı).
   async function sharePartnership(listingId: string, _refCode?: string) {

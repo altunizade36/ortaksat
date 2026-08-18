@@ -3,6 +3,7 @@ import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 
 import { Link } from "expo-router";
 
@@ -73,7 +74,7 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       const ok = await resetPasswordWithEmail(cleanEmail);
-      if (ok) { setResetSent(true); Alert.alert(translateCopy("Kod gönderildi", language), translateCopy("E-postana 6 haneli şifre sıfırlama kodu gönderdik. Kodu ve yeni şifreni aşağıya gir.", language)); }
+      if (ok) { setResetSent(true); showToast(translateCopy("Kod e-postana gönderildi", language)); }
       else { const m = authError ?? translateCopy("Geçerli bir e-posta gir ve tekrar dene.", language); setFormError(m); Alert.alert(translateCopy("Gönderilemedi", language), translateCopy(m, language)); }
     } catch {
       const m = translateCopy("Bağlantı hatası. Lütfen tekrar dene.", language);
@@ -88,7 +89,7 @@ export default function AuthScreen() {
     setLoading(true);
     try {
       const ok = await resetPasswordWithCode(cleanEmail, resetCode, newPassword);
-      if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); Alert.alert(translateCopy("Şifren güncellendi", language), translateCopy("Yeni şifrenle giriş yapabilirsin.", language)); }
+      if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); showToast(translateCopy("Şifren güncellendi — yeni şifrenle giriş yap", language)); }
       else { const m = authError ?? translateCopy("Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa.", language); setFormError(m); Alert.alert(translateCopy("Güncellenemedi", language), translateCopy(m, language)); }
     } catch {
       const m = translateCopy("Bağlantı hatası. Lütfen tekrar dene.", language);
@@ -119,7 +120,8 @@ export default function AuthScreen() {
   async function resendCode() {
     if (!pendingVerifyEmail) return;
     const ok = await resendEmailCode(pendingVerifyEmail);
-    Alert.alert(translateCopy(ok ? "Kod gönderildi" : "Gönderilemedi", language), translateCopy(ok ? "Yeni doğrulama kodu e-postana gönderildi." : (authError ?? "Kod gönderilemedi, biraz sonra tekrar dene."), language));
+    if (ok) showToast(translateCopy("Yeni doğrulama kodu e-postana gönderildi", language));
+    else Alert.alert(translateCopy("Gönderilemedi", language), translateCopy(authError ?? "Kod gönderilemedi, biraz sonra tekrar dene.", language));
   }
 
   const cleanEmail = email.trim().toLowerCase();

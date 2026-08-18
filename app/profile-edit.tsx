@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 
 import { colors } from "@/components/colors";
 import { categoryTree } from "@/lib/category-tree";
@@ -86,7 +87,7 @@ function ProfileEditScreenInner() {
     setSigningOutAll(true);
     const ok = await signOutAllDevices();
     setSigningOutAll(false);
-    if (ok) { Alert.alert(translateCopy("Tüm cihazlardan çıkıldı", language), translateCopy("Tüm oturumların kapatıldı. Tekrar giriş yapman gerekir.", language)); router.replace("/auth"); }
+    if (ok) { showToast(translateCopy("Tüm cihazlardan çıkıldı", language)); router.replace("/auth"); }
     else Alert.alert(translateCopy("İşlem tamamlanamadı", language), translateCopy("Oturumlar kapatılamadı, tekrar dene.", language));
   }
 
@@ -104,7 +105,7 @@ function ProfileEditScreenInner() {
     if (!res.ok) { const t = res.error ?? translateCopy("Şifre güncellenemedi.", language); setPwMsg({ tone: "err", text: t }); Alert.alert(translateCopy("Güncellenemedi", language), t); return; }
     setPwCurrent(""); setPwNew(""); setPwNew2("");
     setPwMsg({ tone: "ok", text: translateCopy("Şifren güncellendi. Bir sonraki girişte yeni şifreni kullan.", language) });
-    Alert.alert(translateCopy("Şifre güncellendi", language), translateCopy("Yeni şifren kaydedildi. Bir sonraki girişte bunu kullan.", language));
+    showToast(translateCopy("Şifren güncellendi", language));
   }
 
   async function saveStore() {
@@ -113,7 +114,8 @@ function ProfileEditScreenInner() {
     // arasında Platform DIŞINDA, doğrudan yapılır. Burada yalnız mağaza adı güncellenir.
     const ok = await updateProfile({ name: storeName.trim() || name, phone, avatar, bio, expertiseCategories: expertise });
     setStoreSaving(false);
-    Alert.alert(ok ? translateCopy("Kaydedildi", language) : translateCopy("Kaydedilemedi", language), ok ? translateCopy("Mağaza bilgilerin güncellendi.", language) : (authError ?? translateCopy("Bir sorun oluştu.", language)));
+    if (ok) showToast(translateCopy("Mağaza bilgilerin güncellendi", language));
+    else Alert.alert(translateCopy("Kaydedilemedi", language), authError ?? translateCopy("Bir sorun oluştu.", language));
   }
 
   function startVerification(label: string) {
@@ -218,7 +220,7 @@ function ProfileEditScreenInner() {
       return;
     }
 
-    Alert.alert(translateCopy("Profil güncellendi", language), translateCopy(isLiveAccount ? "Değişiklikler canlı profiline kaydedildi." : "Ön izleme profili güncellendi.", language));
+    showToast(translateCopy("Profil güncellendi", language));
     router.back();
   }
 

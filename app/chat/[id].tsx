@@ -9,6 +9,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 import { openUrlSafe } from "@/lib/link";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { EmptyState } from "@/components/ui";
@@ -266,7 +267,7 @@ function ChatScreenInner() {
               onPress={() => {
                 Alert.alert(translateCopy("Kullanıcıyı bildir", language), translateCopy("Bu kullanıcıyı uygunsuz davranış için ekibimize bildirmek istiyor musun?", language), [
                   { text: translateCopy("Vazgeç", language), style: "cancel" },
-                  { text: translateCopy("Bildir", language), style: "destructive", onPress: () => { void (async () => { const ok = await reportUser(otherId, translateCopy("Kullanıcı bildirimi", language), translateCopy("Mesajlaşmadan bildirildi.", language)); Alert.alert(translateCopy(ok ? "Bildirim alındı" : "Bildirilemedi", language), translateCopy(ok ? "Ekibimiz inceleyecek. Teşekkürler." : "Lütfen tekrar dene.", language)); })(); } }
+                  { text: translateCopy("Bildir", language), style: "destructive", onPress: () => { void (async () => { const ok = await reportUser(otherId, translateCopy("Kullanıcı bildirimi", language), translateCopy("Mesajlaşmadan bildirildi.", language)); if (ok) showToast(translateCopy("Bildirim alındı — ekibimiz inceleyecek", language)); else Alert.alert(translateCopy("Bildirilemedi", language), translateCopy("Lütfen tekrar dene.", language)); })(); } }
                 ]);
               }}
               style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 38, justifyContent: "center", opacity: pressed ? 0.7 : 1, width: 38 })}

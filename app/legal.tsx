@@ -4,6 +4,7 @@ import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
+import { showToast } from "@/lib/toast";
 
 import { Accordion } from "@/components/accordion";
 import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
@@ -45,22 +46,20 @@ export default function LegalScreen() {
       recordLegalConsent("kvkk"),
       recordLegalConsent("seller_rules")
     ]);
-    Alert.alert(
-      translateCopy(results.every(Boolean) ? "Rıza kaydedildi" : "Giriş gerekli", language),
-      translateCopy(results.every(Boolean)
-        ? "Yasal metin onayların canlı hesaba kaydedildi."
-        : "Rıza kaydı için e-posta ile giriş yapmalısın.", language)
-    );
+    if (results.every(Boolean)) showToast(translateCopy("Rıza kaydedildi — onayların canlı hesabına işlendi", language));
+    else Alert.alert(translateCopy("Giriş gerekli", language), translateCopy("Rıza kaydı için e-posta ile giriş yapmalısın.", language));
   }
 
   async function sendSupport() {
     const ok = await createSupportTicket(subject, message);
-    Alert.alert(translateCopy(ok ? "Destek talebi alındı" : "Gönderilemedi", language), translateCopy(ok ? "Talebin destek kuyruğuna eklendi." : "Canlı hesapla giriş yapıp konu ve mesaj yazmalısın.", language));
+    if (ok) showToast(translateCopy("Destek talebin alındı — kuyruğa eklendi", language));
+    else Alert.alert(translateCopy("Gönderilemedi", language), translateCopy("Canlı hesapla giriş yapıp konu ve mesaj yazmalısın.", language));
   }
 
   async function requestDeletion() {
     const ok = await requestAccountDeletion(deleteReason);
-    Alert.alert(translateCopy(ok ? "Silme talebi alındı" : "Talep açılamadı", language), translateCopy(ok ? "Hesap silme talebin kayıt altına alındı." : "Bu işlem için canlı hesapla giriş yapmalısın.", language));
+    if (ok) showToast(translateCopy("Silme talebin kayıt altına alındı", language));
+    else Alert.alert(translateCopy("Talep açılamadı", language), translateCopy("Bu işlem için canlı hesapla giriş yapmalısın.", language));
   }
 
   if (isWideWeb) {
