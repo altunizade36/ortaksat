@@ -330,7 +330,7 @@ export default function ListingDetailScreen() {
         <View style={{ alignItems: "center", gap: 18, maxWidth: 440, width: "100%" }}>
           <EmptyState title={translateCopy("İlan bulunamadı", language)} body={translateCopy("Bu ilan kaldırılmış, satılmış ya da bağlantı artık geçerli değil. Benzer ürünler için ilanları keşfedebilirsin.", language)} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
-            <PrimaryButton href="/explore" icon="storefront-search-outline">{translateCopy("İlanları keşfet", language)}</PrimaryButton>
+            <PrimaryButton href="/explore" icon="storefront-outline">{translateCopy("İlanları keşfet", language)}</PrimaryButton>
             <PrimaryButton href="/" tone="secondary" icon="home-outline">{translateCopy("Ana sayfa", language)}</PrimaryButton>
           </View>
         </View>
