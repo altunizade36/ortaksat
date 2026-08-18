@@ -452,20 +452,26 @@ export async function loadOwnListings(userId: string): Promise<Listing[]> {
     .limit(500);
   if (error || !data) return [];
   const listings = (data as PublicListingCardRow[]).map(mapListing);
-  // external_id (SKU) public view'de YOK (satıcıya özel, herkese açılmaz) → sahibinin
-  // kendi ilanları için listings tablosundan ayrıca çek + birleştir (RLS: owner=self).
-  // Böylece satıcı panosunda toplu-yüklü ilanların ürün kodu görünür ve aranabilir.
-  const { data: skuRows } = await supabase
+  // external_id (SKU) + rejection_reason (red sebebi) + address_visibility (gizlilik) + location_note
+  // public view'de YOK (satıcıya özel) → sahibinin kendi ilanları için listings tablosundan çek + birleştir
+  // (RLS: owner=self). FIX'ler: (a) rejection_reason → satıcı panosunda GERÇEK red sebebini görür (eskiden
+  // hep "İncelemede uygun bulunmadı" jenerik); (b) address_visibility → edit'te seçili gizlilik KORUNUR
+  // (eskiden undefined → hep 'neighborhood'a düşüp gizlilik SESSİZCE downgrade oluyordu); denetim #7/#8.
+  const { data: ownRows } = await supabase
     .from("listings")
-    .select("id, external_id")
+    .select("id, external_id, rejection_reason, address_visibility, location_note")
     .eq("owner_id", userId)
-    .not("external_id", "is", null)
-    .limit(500);
-  if (skuRows && skuRows.length) {
-    const skuMap = new Map(
-      (skuRows as Array<{ id: string; external_id: string | null }>).filter((r) => r.external_id).map((r) => [r.id, r.external_id as string])
-    );
-    for (const l of listings) { const sku = skuMap.get(l.id); if (sku) l.externalId = sku; }
+    .limit(1000);
+  if (ownRows && ownRows.length) {
+    const byId = new Map((ownRows as Array<{ id: string; external_id: string | null; rejection_reason: string | null; address_visibility: string | null; location_note: string | null }>).map((r) => [r.id, r]));
+    for (const l of listings) {
+      const row = byId.get(l.id);
+      if (!row) continue;
+      if (row.external_id) l.externalId = row.external_id;
+      if (row.rejection_reason) l.rejectionReason = row.rejection_reason;
+      if (row.address_visibility) l.addressVisibility = row.address_visibility as Listing["addressVisibility"];
+      if (row.location_note) l.locationNote = row.location_note;
+    }
   }
   return listings;
 }
