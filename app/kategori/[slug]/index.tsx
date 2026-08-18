@@ -13,7 +13,7 @@ import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { EmptyState } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
-import { categoryTree as CATEGORY_TREE, getFormSchema, resolveFormKey, type CategoryNode } from "@/lib/category-tree";
+import { categoryTree as CATEGORY_TREE, getFormSchema, resolveFormKey, AMBIGUOUS_LABELS, type CategoryNode } from "@/lib/category-tree";
 import { getCategoryIcon } from "@/lib/categories";
 import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, findProvince } from "@/lib/cities";
 import { commissionAmount } from "@/lib/format";
@@ -49,9 +49,10 @@ function findTrail(nodes: CategoryNode[], slug: string): CategoryNode[] | undefi
 const catHref = (slug: string): Href => ({ pathname: "/kategori/[slug]", params: { slug } }) as unknown as Href;
 const cityHref = (slug: string, sehir: string): Href => ({ pathname: "/kategori/[slug]/[sehir]", params: { slug, sehir } }) as unknown as Href;
 
-// Jenerik ilan-tipi etiketleri: aynı ad birçok üst kategoride tekrar eder → başlık/H1
-// benzersizliği için EBEVEYN bağlamı eklenir ("Satılık İş Yeri", "Kiralık Bina").
-const GENERIC_TYPE_LABELS = new Set(["Satılık", "Kiralık", "Devren Satılık", "Devren Kiralık", "Devren", "Kat Karşılığı Satılık"]);
+// Sıfat-benzeri ilan-tipi etiketleri EBEVEYNDEN ÖNCE gelir ("Satılık İş Yeri", "Diğer Konut");
+// diğer mükerrer etiketler (marka vb.) EBEVEYNDEN SONRA ("Otomobil BMW"). Mükerrer olup olmadığı
+// AMBIGUOUS_LABELS'tan gelir (ağaçtan türetilir); bu set yalnız KELİME SIRASINI belirler.
+const MODIFIER_LABELS = new Set(["Satılık", "Kiralık", "Devren Satılık", "Devren Kiralık", "Devren", "Kat Karşılığı Satılık", "Diğer"]);
 
 // Statik export: üst + alt kategori hub sayfalarını build'de kendi H1/içeriğiyle
 // önceden üret (SEO). Marka/model gibi derin slug'lar [slug] fallback ile çalışır.
@@ -243,8 +244,10 @@ export default function CategoryLandingScreen() {
   // AYNI "Satılık ilanları" başlığını alır (mükerrer title = SEO zararı). Jenerik tipte
   // EBEVEYN eklenir, doğal TR sırasıyla: "Satılık İş Yeri" ("satılık işyeri" aramasıyla uyumlu).
   const parentLabel = trail && trail.length >= 2 ? trail[trail.length - 2].label : "";
-  const isGenericType = node ? GENERIC_TYPE_LABELS.has(node.label) : false;
-  const ctxName = node ? (isGenericType && parentLabel ? `${node.label} ${parentLabel}` : node.label) : "";
+  // Mükerrer etikette (AMBIGUOUS_LABELS: Diğer, paylaşılan marka, Satılık/Kiralık…) ebeveyn bağlamı ekle.
+  const needsCtx = Boolean(node && parentLabel && AMBIGUOUS_LABELS.has(node.label));
+  const modifierFirst = node ? MODIFIER_LABELS.has(node.label) : false;
+  const ctxName = node ? (needsCtx ? (modifierFirst ? `${node.label} ${parentLabel}` : `${parentLabel} ${node.label}`) : node.label) : "";
   const title = node ? `${ctxName} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
   // SEO açıklaması: SABİT/evergreen — ilan SAYISI YAZMA. SSG bake'te sayı 0'dır ve
   // "0 ortak satış ilanı" arama sonucunda sayfayı boş/değersiz gösterirdi.
@@ -340,7 +343,7 @@ export default function CategoryLandingScreen() {
             <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={26} color={colors.primaryDark} />
           </View>
           <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
-            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{isGenericType && parentLabel ? `${translateCopy(node.label, language)} ${translateCopy(parentLabel, language)}` : translateCopy(node.label, language)} ilanları</Text>
+            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{needsCtx ? (modifierFirst ? `${translateCopy(node.label, language)} ${translateCopy(parentLabel, language)}` : `${translateCopy(parentLabel, language)} ${translateCopy(node.label, language)}`) : translateCopy(node.label, language)} ilanları</Text>
             <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{items.length} ortak satış ilanı · komisyonlu ürünleri keşfet</Text>
           </View>
         </View>

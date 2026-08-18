@@ -2419,6 +2419,19 @@ function uniquifySlugs(roots: CategoryNode[]): void {
 }
 uniquifySlugs(categoryTree);
 
+// AĞAÇTA BİRDEN ÇOK DÜĞÜMDE GEÇEN ETİKETLER — slug'lar artık benzersiz ama BAŞLIK hâlâ
+// salt etiketse mükerrer <title> üretir (ör. "Diğer" 489 dalda; paylaşılan markalar
+// Otomobil+Motosiklet+Ticari). Kategori sayfası bu etiketlerde EBEVEYN bağlamı ekler
+// ("Satılık İş Yeri", "Otomobil BMW", "Diğer Konut") → benzersiz + arama-uyumlu title/H1.
+export const AMBIGUOUS_LABELS: Set<string> = (() => {
+  const count = new Map<string, number>();
+  const walk = (ns: CategoryNode[]) => { for (const n of ns) { count.set(n.label, (count.get(n.label) ?? 0) + 1); if (n.children) walk(n.children); } };
+  walk(categoryTree);
+  const set = new Set<string>();
+  for (const [label, c] of count) if (c > 1) set.add(label);
+  return set;
+})();
+
 
 // ---- lookups & helpers ---------------------------------------------------
 // Admin panelden gizlenen kategoriler (üst veya alt, key ile). Store DB'den yükleyip
