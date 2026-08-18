@@ -248,7 +248,15 @@ export default function CategoryLandingScreen() {
   const needsCtx = Boolean(node && parentLabel && AMBIGUOUS_LABELS.has(node.label));
   const modifierFirst = node ? MODIFIER_LABELS.has(node.label) : false;
   const ctxName = node ? (needsCtx ? (modifierFirst ? `${node.label} ${parentLabel}` : `${parentLabel} ${node.label}`) : node.label) : "";
-  const title = node ? `${ctxName} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
+  // Kök-duyarlı niyet modifikatörü (arama-sorgusu ifadesiyle eşleş): net (ambiguous olmayan, zaten
+  // niyet içermeyen) hub'larda "Satılık & Kiralık {emlak}" / "Satılık {vasıta}". seo-static.catTitleFor
+  // ile AYNI mantık (crawler + runtime başlık tutarlı). Redundancy/garabet için !needsCtx guard'ı.
+  const rootSlug = trail?.[0]?.slug ?? "";
+  const alreadyIntent = /satılık|kiralık|devren|ikinci el|sıfır|yedek/.test(ctxName.toLocaleLowerCase("tr-TR"));
+  const intentPrefix = node && !needsCtx && !alreadyIntent
+    ? (rootSlug === "emlak" ? "Satılık & Kiralık " : rootSlug === "vasita" ? "Satılık " : "")
+    : "";
+  const title = node ? `${intentPrefix}${ctxName} ilanları — Ortak satış | OrtakSat` : "Kategori — OrtakSat";
   // SEO açıklaması: SABİT/evergreen — ilan SAYISI YAZMA. SSG bake'te sayı 0'dır ve
   // "0 ortak satış ilanı" arama sonucunda sayfayı boş/değersiz gösterirdi.
   const desc = node
@@ -343,7 +351,7 @@ export default function CategoryLandingScreen() {
             <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={26} color={colors.primaryDark} />
           </View>
           <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
-            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{needsCtx ? (modifierFirst ? `${translateCopy(node.label, language)} ${translateCopy(parentLabel, language)}` : `${translateCopy(parentLabel, language)} ${translateCopy(node.label, language)}`) : translateCopy(node.label, language)} ilanları</Text>
+            <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: 24, fontWeight: "900" }}>{intentPrefix}{needsCtx ? (modifierFirst ? `${translateCopy(node.label, language)} ${translateCopy(parentLabel, language)}` : `${translateCopy(parentLabel, language)} ${translateCopy(node.label, language)}`) : translateCopy(node.label, language)} ilanları</Text>
             <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{items.length} ortak satış ilanı · komisyonlu ürünleri keşfet</Text>
           </View>
         </View>

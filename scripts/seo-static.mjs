@@ -13,11 +13,63 @@
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+import vm from "node:vm";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DIST = path.join(__dirname, "..", "dist-web");
 const BASE = "https://www.ortaksat.com";
 const OG_IMG = `${BASE}/og-cover.png`;
+
+// category-tree.ts'i yükle (typescript+vm) → kategori hub başlıklarını GERÇEK etiketlerle
+// (Türkçe diakritik: "İş Yeri", "Dizüstü", "Beyaz Eşya" — slug türevi "Is Yeri" DEĞİL) + kök-duyarlı
+// niyet modifikatörüyle ("Satılık & Kiralık Konut", "Satılık Otomobil") üret. Yüklenemezse slug'a düşer.
+const MODIFIER_LABELS = new Set(["Satılık", "Kiralık", "Devren Satılık", "Devren Kiralık", "Devren", "Kat Karşılığı Satılık", "Diğer"]);
+const TRAIL_BY_SLUG = new Map();
+let AMBIGUOUS_LABELS = new Set();
+(function loadCategoryTree() {
+  try {
+    const require = createRequire(import.meta.url);
+    const ts = require("typescript");
+    const src = fs.readFileSync(path.join(__dirname, "..", "lib", "category-tree.ts"), "utf8");
+    const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
+    const mod = { exports: {} };
+    const sandbox = { module: mod, exports: mod.exports, require, console };
+    vm.createContext(sandbox);
+    new vm.Script(js).runInContext(sandbox);
+    AMBIGUOUS_LABELS = mod.exports.AMBIGUOUS_LABELS instanceof Set ? mod.exports.AMBIGUOUS_LABELS : new Set();
+    (function walk(nodes, trail) {
+      for (const n of nodes) {
+        const t = [...trail, n];
+        if (!TRAIL_BY_SLUG.has(n.slug)) TRAIL_BY_SLUG.set(n.slug, t);
+        if (n.children) walk(n.children, t);
+      }
+    })(mod.exports.categoryTree || [], []);
+  } catch (err) {
+    console.warn(`seo-static: category-tree yüklenemedi (${err?.message ?? err}) — slug-türevi etiketlere düşülüyor.`);
+  }
+})();
+
+// Bir kategori slug'ı için GERÇEK-etiketli + kök-duyarlı niyet modifikatörlü başlık + temiz etiket.
+// Niyet ("Satılık & Kiralık"/"Satılık") YALNIZ net (ambiguous olmayan, zaten niyet-içermeyen) hub'larda
+// → "Satılık Satılık"/"Satılık Vasıta Motosiklet" gibi çakışma/garabet önlenir (7467 slug'da 0 redundant).
+function catTitleFor(slug) {
+  const trail = TRAIL_BY_SLUG.get(slug);
+  if (!trail || !trail.length) { const l = slugToLabel(slug); return { label: l, title: `${l} ilanları — Ortak satış | OrtakSat` }; }
+  const node = trail[trail.length - 1];
+  const parentLabel = trail.length >= 2 ? trail[trail.length - 2].label : "";
+  const needsCtx = Boolean(parentLabel && AMBIGUOUS_LABELS.has(node.label));
+  const modifierFirst = MODIFIER_LABELS.has(node.label);
+  const label = needsCtx ? (modifierFirst ? `${node.label} ${parentLabel}` : `${parentLabel} ${node.label}`) : node.label;
+  const rootSlug = trail[0]?.slug ?? "";
+  const alreadyIntent = /satılık|kiralık|devren|ikinci el|sıfır|yedek/.test(label.toLocaleLowerCase("tr-TR"));
+  let prefix = "";
+  if (!needsCtx && !alreadyIntent) {
+    if (rootSlug === "emlak") prefix = "Satılık & Kiralık ";
+    else if (rootSlug === "vasita") prefix = "Satılık ";
+  }
+  return { label, title: `${prefix}${label} ilanları — Ortak satış | OrtakSat` };
+}
 
 // Her rota: dosya adı → { title, description, canonical, noindex?, jsonld? }
 // Başlıklar benzersiz + anahtar-kelime odaklı; açıklamalar 150-165 karakter.
@@ -366,11 +418,10 @@ function slugToLabel(slug) {
 }
 
 function patchCategoryHub(fp, slug) {
-  const html = fs.readFileSync(fp, "utf8");
-  const rhTitle = extractRh(html, RH_TITLE);
-  const label = rhTitle ? rhTitle.replace(/ ilanları — Ortak satış \| OrtakSat$/, "").trim() : slugToLabel(slug);
-  const title = rhTitle || `${label} ilanları — Ortak satış | OrtakSat`;
-  const description = extractRh(html, RH_DESC) || `${label} kategorisindeki ortak satış ilanlarını keşfet. Komisyonlu ürünleri incele, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
+  // Başlık/etiket ARTIK category-tree'den (gerçek Türkçe etiket + niyet modifikatörü). expo-router/head
+  // statik export'a YAZMADIĞI için eski rhTitle hep boştu → slug-türevi bozuk-Türkçe başlık kullanılıyordu.
+  const { label, title } = catTitleFor(slug);
+  const description = `${label} kategorisindeki ortak satış ilanlarını keşfet. Komisyonlu ürünleri incele, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
   const url = `${BASE}/kategori/${slug}`;
   const crumbs = [
     { name: "Ana Sayfa", url: `${BASE}/` },
@@ -381,13 +432,10 @@ function patchCategoryHub(fp, slug) {
 }
 
 function patchCityPage(fp, slug, citySlug) {
-  const html = fs.readFileSync(fp, "utf8");
-  const rhTitle = extractRh(html, RH_TITLE);
-  let city = slugToLabel(citySlug), label = slugToLabel(slug);
-  const m = rhTitle && rhTitle.match(/^(.*?)['’]da Komisyonla (.*?) İlanları \| OrtakSat$/);
-  if (m) { city = m[1]; label = m[2]; }
-  const title = rhTitle || `${city}'da Komisyonla ${label} İlanları | OrtakSat`;
-  const description = extractRh(html, RH_DESC) || `${city}'da komisyonlu ${label.toLocaleLowerCase("tr-TR")} ürünlerini keşfet. ${city} için ${label} kategorisindeki ortak satış ilanlarını incele, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
+  const city = slugToLabel(citySlug);
+  const label = catTitleFor(slug).label; // gerçek Türkçe kategori etiketi (slug-türevi bozuk-Türkçe değil)
+  const title = `${city}'da Komisyonla ${label} İlanları | OrtakSat`;
+  const description = `${city}'da komisyonlu ${label.toLocaleLowerCase("tr-TR")} ürünlerini keşfet. ${city} için ${label} kategorisindeki ortak satış ilanlarını incele, ortak ol ve kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
   const url = `${BASE}/kategori/${slug}/${citySlug}`;
   const crumbs = [
     { name: "Ana Sayfa", url: `${BASE}/` },

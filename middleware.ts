@@ -79,6 +79,12 @@ async function listingResponse(id: string): Promise<Response | undefined> {
   // Product + Offer JSON-LD (Google fiyat/stok zengin sonucu) + BreadcrumbList.
   // Google merchant-listing önerileri: sku (ilan id), brand (attributes'tan), offers.priceValidUntil.
   const brand = typeof l.attributes?.brand === "string" && l.attributes.brand.trim() ? l.attributes.brand.trim() : "";
+  // Ürün durumu (Sıfır/İkinci El/Yenilenmiş) → schema.org itemCondition. Google Ürün/Shopping'in
+  // 'ikinci el'/'sıfır' filtresini besler (Sahibinden-tarzı pazarda dominant sorgu). GERÇEK veri:
+  // yalnız bilinen değerler eşlenir, yoksa hiç eklenmez (sahte-veri yasağı).
+  const condRaw = typeof l.attributes?.condition === "string" ? l.attributes.condition.trim() : "";
+  const CONDITION_MAP: Record<string, string> = { "Sıfır": "NewCondition", "İkinci El": "UsedCondition", "Yenilenmiş": "RefurbishedCondition" };
+  const itemCondition = CONDITION_MAP[condRaw] ? `https://schema.org/${CONDITION_MAP[condRaw]}` : "";
   const priceValidUntil = new Date(Date.now() + 30 * 86400000).toISOString().slice(0, 10);
   // validFrom = ilanın yayın tarihi (fiyat o tarihten geçerli). GSC "validFrom eksik" uyarısını karşılar.
   const validFrom = (typeof l.created_at === "string" && l.created_at ? l.created_at : new Date().toISOString()).slice(0, 10);
@@ -98,6 +104,7 @@ async function listingResponse(id: string): Promise<Response | undefined> {
       priceValidUntil,
       validFrom,
       availability: inStock ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
+      ...(itemCondition ? { itemCondition } : {}),
       url,
       // OrtakSat SATICI/ödeme tarafı DEĞİL (aracı platform) — Offer yalnız ilan FİYATINI belirtir,
       // platform işlem/ödeme İDDİA ETMEZ. shippingDetails/gtin bilinçli EKLENMEZ (kargo/ödeme yapmıyoruz;
