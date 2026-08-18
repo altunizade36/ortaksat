@@ -85,10 +85,19 @@ function NotificationsScreenInner() {
         .sort((a, b) => (b.lastMessageAt ?? "").localeCompare(a.lastMessageAt ?? ""))[0];
       if (convo) return { pathname: "/chat/[id]", params: { id: convo.id } } as unknown as Href;
     }
+    // Ortak-aranıyor (talep) başvuru bildirimleri request_id taşır, listingId taşımaz →
+    // eskiden meta çözülemeyip dokununca hiçbir yere GİTMİYORDU. Talep panosuna indir.
+    if (type === "application" && meta?.requestId) return "/ortak-araniyor" as Href;
     if (!meta?.listingId) return null;
     const listing = listings.find((l) => l.id === meta.listingId);
     const partnership = meta.partnershipId ? partnerships.find((p) => p.id === meta.partnershipId) : undefined;
-    if (listing && listing.ownerId === currentUser.id) return `/(tabs)/seller?focus=${meta.listingId}` as Href;
+    if (listing && listing.ownerId === currentUser.id) {
+      // Satıcıya gelen TEKLİF → doğrudan Teklifler sekmesi (özet sekmesinde kalmasın, teklifi bulsun).
+      if (type === "offer") return `/(tabs)/seller?focus=${meta.listingId}&tab=teklifler` as Href;
+      // Satıcıya gelen SORU → ilan detayındaki Soru-Cevap başlığı (satıcı orada yanıtlar).
+      if (type === "question") return { pathname: "/listing/[id]", params: { id: meta.listingId } } as unknown as Href;
+      return `/(tabs)/seller?focus=${meta.listingId}` as Href;
+    }
     if (partnership && partnership.partnerId === currentUser.id) return `/(tabs)/partner?focus=${meta.listingId}` as Href;
     // Teklif bildirimi + alıcı (ilan sahibi değil) → amaca-özel /offers ekranı (kabul/karşı-teklif orada).
     if (type === "offer") return "/offers" as Href;
@@ -103,12 +112,14 @@ function NotificationsScreenInner() {
   const [prefs, setPrefs] = useState<Record<string, boolean>>({ push: p0.notif_push !== false, email: currentUser.emailNotifications !== false, sms: p0.notif_sms === true, whatsapp: p0.notif_whatsapp !== false });
   // "email" gerçek bir sunucu tercihidir (profiles.email_notifications → e-posta
   // tetikleyicisi onu okur); diğerleri JSONB preferences'ta tutulur.
-  const togglePref = (key: string) => setPrefs((s) => {
-    const v = !s[key];
-    if (key === "email") void setEmailNotifications(v);
-    else void savePreferences({ [`notif_${key}`]: v });
-    return { ...s, [key]: v };
-  });
+  const togglePref = (key: string) => {
+    const v = !prefs[key];
+    setPrefs((s) => ({ ...s, [key]: v }));
+    // Sunucu kaydı başarısızsa yerel anahtarı GERİ AL (eskiden UI yeni değeri gösterirken DB
+    // eski değerde kalıyordu — profil-düzenle e-posta anahtarı zaten böyle geri alıyordu, parite).
+    const p = key === "email" ? setEmailNotifications(v) : savePreferences({ [`notif_${key}`]: v });
+    void p.then((ok) => { if (!ok) setPrefs((s) => ({ ...s, [key]: !v })); });
+  };
   // Tür bazında sustur — kalıcı tercih; susturulan tür listeden gizlenir.
   const [mutes, setMutes] = useState<Record<string, boolean>>(() => {
     const m: Record<string, boolean> = {};
@@ -363,9 +374,17 @@ function NotificationsScreenInner() {
             </Text>
           </View>
         </View>
-        <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
+        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 4 }}>
           <StatusPill label={`${unreadCount} ${translateCopy("okunmamış", language)}`} tone={unreadCount ? "warning" : "success"} />
           <StatusPill label={`${myNotifications.length} ${translateCopy("toplam", language)}`} />
+          {/* Mobilde "tümünü okundu işaretle" YOKTU (yalnız masaüstünde) → kullanıcı okunmamış
+              rozetini temizlemek için tek tek açmak zorundaydı. Masaüstü davranışıyla parite. */}
+          {unreadCount > 0 ? (
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Tümünü okundu işaretle", language)} onPress={() => myNotifications.filter((n) => !n.read).forEach((n) => markNotificationRead(n.id))} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 12, paddingVertical: 7 }}>
+              <MaterialCommunityIcons name="check-all" size={16} color={colors.primaryDark} />
+              <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Tümünü okundu işaretle", language)}</Text>
+            </Pressable>
+          ) : null}
         </View>
       </Card>
 

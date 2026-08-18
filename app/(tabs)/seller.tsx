@@ -121,11 +121,17 @@ function SellerScreenInner() {
 
   // Bildirim derin-linki (?focus=<listingId>): ilgili ilanın talep/ödeme yönetimini aç,
   // filtreleri temizle ve listede en üste al.
-  const params = useLocalSearchParams<{ focus?: string }>();
+  const params = useLocalSearchParams<{ focus?: string; tab?: string }>();
   const focusId = Array.isArray(params.focus) ? params.focus[0] : params.focus;
+  const tabParam = Array.isArray(params.tab) ? params.tab[0] : params.tab;
   useEffect(() => {
     if (focusId) { setExpandedId(focusId); setFilter("all"); setQuery(""); }
   }, [focusId]);
+  // Bildirim derin-linki sekme hedefi (?tab=teklifler): satıcıya gelen TEKLİF bildirimi doğrudan
+  // Teklifler sekmesini açsın (eskiden özet sekmesinde kalıyor, satıcı teklifi elle arıyordu).
+  useEffect(() => {
+    if (tabParam === "teklifler" || tabParam === "ilanlar") setPanelTab(tabParam);
+  }, [tabParam]);
 
   const myListings = listings.filter((listing) => listing.ownerId === currentUser.id && listing.status !== "rejected" && listing.status !== "archived");
   // Reddedilen ilanlar myListings'ten çıkarılır ama SATICI onları görmeli (eskiden sessizce

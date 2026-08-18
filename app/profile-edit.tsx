@@ -209,6 +209,13 @@ function ProfileEditScreenInner() {
       Alert.alert(translateCopy("Ad gerekli", language), translateCopy("Profil adını boş bırakamazsın.", language));
       return;
     }
+    // Telefon biçim doğrulaması: eskiden "abc" gibi geçersiz metin de kaydediliyor + telefon-doğrulamayı
+    // sessizce düşürüyordu. Boş bırakılabilir; doluysa makul rakam adedi (TR/uluslararası) beklenir.
+    const phoneDigits = phone.replace(/\D/g, "");
+    if (phone.trim() && (phoneDigits.length < 10 || phoneDigits.length > 13)) {
+      Alert.alert(translateCopy("Geçersiz telefon", language), translateCopy("Lütfen geçerli bir telefon numarası gir (ör. 05XX XXX XX XX).", language));
+      return;
+    }
 
     setSaving(true);
     // Kullanıcı YENİ (yerel) bir foto seçtiyse: uploadProfileAvatar başarısızlıkta yerel uri'yi
@@ -405,7 +412,7 @@ function ProfileEditScreenInner() {
                       <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Şu an bu cihazda giriş yapılı. Güvenlik için ortak cihazlarda işin bitince “Çıkış Yap” ile oturumunu kapat. Şüpheli bir durumda şifreni hemen değiştir.", language)}</Text>
                     </View>
                   </View>
-                  <Pressable onPress={() => void signOut()} style={{ alignItems: "center", alignSelf: "flex-start", borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 10 }}>
+                  <Pressable onPress={() => Alert.alert(translateCopy("Çıkış yap", language), translateCopy("Bu cihazdan çıkış yapmak istediğine emin misin?", language), [{ text: translateCopy("Vazgeç", language), style: "cancel" }, { text: translateCopy("Çıkış yap", language), style: "destructive", onPress: () => void signOut() }])} style={{ alignItems: "center", alignSelf: "flex-start", borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 10 }}>
                     <MaterialCommunityIcons name="logout" size={16} color={colors.accent} />
                     <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>{translateCopy("Bu cihazdan çıkış yap", language)}</Text>
                   </Pressable>

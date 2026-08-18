@@ -3,6 +3,7 @@ import { Image } from "expo-image";
 import { Link, type Href } from "expo-router";
 import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
+import { Alert } from "@/lib/alert";
 import { colors } from "@/components/colors";
 import { PartnerTier } from "@/components/partner-tier";
 import { ProfileStrength } from "@/components/profile-strength";
@@ -296,7 +297,7 @@ function ProfileScreenInner() {
             <PrimaryButton href="/profile-edit" icon="account-edit-outline" tone="soft">{t("editProfile")}</PrimaryButton>
           </View>
           <View style={{ flex: 1 }}>
-            {isLiveAccount ? <PrimaryButton tone="secondary" onPress={() => void signOut()}>{t("signOut")}</PrimaryButton> : <PrimaryButton href="/auth">{t("signInRegister")}</PrimaryButton>}
+            {isLiveAccount ? <PrimaryButton tone="secondary" onPress={() => Alert.alert(translateCopy("Çıkış yap", language), translateCopy("Bu cihazdan çıkış yapmak istediğine emin misin?", language), [{ text: translateCopy("Vazgeç", language), style: "cancel" }, { text: translateCopy("Çıkış yap", language), style: "destructive", onPress: () => void signOut() }])}>{t("signOut")}</PrimaryButton> : <PrimaryButton href="/auth">{t("signInRegister")}</PrimaryButton>}
           </View>
         </View>
       </Card>
