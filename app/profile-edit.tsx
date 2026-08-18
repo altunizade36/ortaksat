@@ -30,7 +30,7 @@ function isImageAvatar(value: string) {
 }
 
 function ProfileEditScreenInner() {
-  const { language, setLanguage } = useLanguage();
+  const { language } = useLanguage();
   const router = useRouter();
   const { authError, backendMode, currentUser, updateProfile, savePreferences, setEmailNotifications, requestAccountDeletion, requestVerification, signOut, signOutAllDevices } = useStore();
   // Gerçek e-posta bildirim aç/kapa (eskiden ayarlar sadece statik metin gösteriyordu; toggle YOKTU).
@@ -432,13 +432,8 @@ function ProfileEditScreenInner() {
                   <MaterialCommunityIcons name="bell-ring-outline" size={18} color={colors.muted} style={{ marginTop: 1 }} />
                   <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Önemli hareketler ayrıca uygulama içinde anlık bildirim olarak da gösterilir. SMS/WhatsApp yakında.", language)}</Text>
                 </View>
-                <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 14 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Uygulama dili", language)}</Text>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <LangChip active={language === "tr"} label="Türkçe" onPress={() => void setLanguage("tr")} />
-                    <LangChip active={language === "en"} label="English" onPress={() => void setLanguage("en")} />
-                  </View>
-                </View>
+                {/* Dil seçici GİZLİ: uygulama şimdilik yalnız Türkçe (i18n açılışta "tr" sabit,
+                    tercih kalıcı okunmuyordu → düğme ölüydü). EN çeviri kodda hazır; açılınca geri gelir. */}
               </View>
             ) : null}
 
@@ -623,13 +618,7 @@ function ProfileEditScreenInner() {
           <SectionTitle title={translateCopy("Bildirim & Uygulama", language)} />
           <ToggleRow icon="email-outline" label="E-posta bildirimleri" desc="Talep, satış, komisyon ve mesaj olayları e-postana düşer." value={emailNotif} busy={emailBusy} onValueChange={toggleEmailNotif} />
           <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Önemli hareketler ayrıca uygulama içinde anlık bildirim olarak da gösterilir. SMS/WhatsApp yakında.", language)}</Text>
-          <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 12 }}>
-            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "900" }}>{translateCopy("Uygulama dili", language)}</Text>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <LangChip active={language === "tr"} label="Türkçe" onPress={() => void setLanguage("tr")} />
-              <LangChip active={language === "en"} label="English" onPress={() => void setLanguage("en")} />
-            </View>
-          </View>
+          {/* Dil seçici GİZLİ: uygulama şimdilik yalnız Türkçe (yukarıdaki masaüstü nota bakınız). */}
         </Card>
 
         <Card>
@@ -766,16 +755,6 @@ function ToggleRow({ busy, desc, icon, label, onValueChange, value }: { busy?: b
       </View>
       <Switch value={value} onValueChange={onValueChange} disabled={busy} trackColor={{ false: colors.line, true: colors.primary }} thumbColor="#FFFFFF" ios_backgroundColor={colors.line} />
     </View>
-  );
-}
-
-/** Dil seçim çipi (TR/EN). */
-function LangChip({ active, label, onPress }: { active: boolean; label: string; onPress: () => void }) {
-  return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected: active }} accessibilityLabel={label} style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.8 : 1, paddingHorizontal: 16, paddingVertical: 9 })}>
-      {active ? <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" /> : null}
-      <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>{label}</Text>
-    </Pressable>
   );
 }
 
