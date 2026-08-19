@@ -51,11 +51,12 @@ function scanChatRisk(text: string) {
 }
 
 export default function ChatScreen() {
-  const { isAuthenticated } = useStore();
+  const { isAuthenticated, authReady } = useStore();
   const { language } = useLanguage();
   const mounted = useMounted();
   // SSG (giriş yok) → client (giriş var) uyuşmazlığını (#418) mount-gate ile giderir.
   if (!mounted) return <ScreenSkeleton />;
+  if (!authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!isAuthenticated) {
     return <AuthRequired title={translateCopy("Mesajlarını görmek için giriş yap", language)} body={translateCopy("Konuşmaların yalnızca sana özeldir; görmek için ücretsiz bir hesapla giriş yapman gerekir.", language)} />;
   }

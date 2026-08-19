@@ -18,9 +18,10 @@ import { useStore } from "@/lib/use-store";
 
 export default function FollowingScreen() {
   const { language } = useLanguage();
-  const { isAuthenticated } = useStore();
+  const { isAuthenticated, authReady } = useStore();
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />;
+  if (!authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!isAuthenticated) {
     return (
       <AuthRequired

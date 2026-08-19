@@ -836,6 +836,7 @@ export default function ProfileEditScreen() {
   const auth = useStore();
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
+  if (!auth.authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Ayarlar için giriş yapın", language)} />;
   return <ProfileEditScreenInner />;
 }

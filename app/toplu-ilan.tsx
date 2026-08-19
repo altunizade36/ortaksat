@@ -717,9 +717,10 @@ function BulkUploadInner() {
 
 export default function BulkUploadScreen() {
   const { language } = useLanguage();
-  const { isAuthenticated } = useStore();
+  const { isAuthenticated, authReady } = useStore();
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
+  if (!authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!isAuthenticated) return <AuthRequired title={translateCopy("Toplu ilan için giriş yapın", language)} />;
   return <BulkUploadInner />;
 }

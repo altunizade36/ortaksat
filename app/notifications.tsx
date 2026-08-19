@@ -50,9 +50,10 @@ type DeskNotif = { id: string; type: NotificationType; title: string; body: stri
 
 export default function NotificationsScreen() {
   const { language } = useLanguage();
-  const { isAuthenticated, accountLoaded } = useStore();
+  const { isAuthenticated, authReady, accountLoaded } = useStore();
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
+  if (!authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!isAuthenticated) {
     return <AuthRequired title={translateCopy("Bildirimlerin için giriş yap", language)} body={translateCopy("Başvuru, satış ve mesaj bildirimlerin hesabına özeldir; görmek için giriş yapman gerekir.", language)} />;
   }

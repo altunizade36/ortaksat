@@ -1960,6 +1960,7 @@ export default function AdminScreen() {
   const auth = useStore();
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
+  if (!auth.authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!auth.isAuthenticated) return <AuthRequired title="Yönetim paneli için giriş yapın" />;
   const role = auth.currentUser.role;
   const isStaff = role === "admin" || role === "moderator" || role === "super_admin";

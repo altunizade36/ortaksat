@@ -434,6 +434,9 @@ export default function FavoritesScreen() {
   const auth = useStore();
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate: SSG↔istemci-ilk render eşitlenir (#418)
+  // Oturum GERİ-YÜKLENENE kadar bekle: aksi halde girişli kullanıcı yenilemede getSession çözülene
+  // dek isAuthenticated=false → "Giriş yap" ekranı FLAŞ eder. authReady demo modda zaten true.
+  if (!auth.authReady) return <ScreenSkeleton />;
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Favorilerin için giriş yapın", language)} />;
   // Store ilk yüklemesi bitmeden "Favori yok" YALANINI flaşlama (favoriler pazaryeri
   // ilanlarına göre çözülür; ilanlar/hesap gelmeden boş görünür).

@@ -86,6 +86,16 @@ export default function AuthScreen() {
   async function doResetWithCode() {
     if (loading) return;
     setFormError(null);
+    // Sıfırlama, KAYIT ile AYNI güç kuralını zorlar (eskiden sunucu ≥6 istiyor, kayıt ≥8+karmaşıklık
+    // → çelişkili ölü-uç: istemci "6 yeterli" derken sunucu reddediyordu).
+    const strength = passwordStrength(newPassword);
+    if (!strength.ok) {
+      const missing = strength.checks.filter((c) => !c.ok).map((c) => c.label.toLocaleLowerCase("tr-TR")).join(", ");
+      const msg = `Yeni şifre yeterince güçlü değil. Şu kuralları da karşıla: ${missing}.`;
+      setFormError(msg);
+      Alert.alert(translateCopy("Şifre yeterince güçlü değil", language), `Şu kuralları da karşıla: ${missing}.`);
+      return;
+    }
     setLoading(true);
     try {
       const ok = await resetPasswordWithCode(cleanEmail, resetCode, newPassword);
@@ -175,6 +185,7 @@ export default function AuthScreen() {
   }
 
   async function login() {
+    if (loading) return; // çift-dokunuş koruması (reset/verify handler'larıyla parite)
     setFormError(null);
     if (!cleanEmail || password.length < 1) {
       const msg = !cleanEmail
@@ -204,6 +215,7 @@ export default function AuthScreen() {
   }
 
   async function register() {
+    if (loading) return; // çift-dokunuş koruması → iki signUp çağrısı + "zaten hesap var" flaşı önlenir
     setFormError(null);
     if (!firstName.trim() || !lastName.trim() || !cleanEmail) {
       // Yalnızca GERÇEKTEN eksik alanları söyle (eskiden e-posta dolu olsa bile

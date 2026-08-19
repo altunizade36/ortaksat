@@ -29,9 +29,10 @@ function roleLabel(role: string | undefined, language: "tr" | "en"): string | nu
 
 export default function BlockedUsersScreen() {
   const { language } = useLanguage();
-  const { isAuthenticated } = useStore();
+  const { isAuthenticated, authReady } = useStore();
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />;
+  if (!authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!isAuthenticated) {
     return (
       <AuthRequired

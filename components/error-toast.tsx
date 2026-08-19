@@ -1,4 +1,4 @@
-import { useRouter } from "expo-router";
+import { useRouter, usePathname } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { Animated, Platform, Pressable, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -29,8 +29,18 @@ export function ErrorToast() {
   const hideTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // "Giriş gerekli" aksiyonları (anon favori vb.) için global yönlendirmeyi bağla.
+  // O anki yolu ref'te tut → /auth'a redirect param'ıyla git → giriş sonrası kullanıcı geldiği
+  // sayfaya (ör. ilan) DÖNER (eskiden favori-promptu redirect'siz gidip /hosgeldin'e düşürüyordu;
+  // iletişim/teklif butonlarıyla parite). safeRedirect zaten yalnız iç "/…" yolları kabul eder.
+  const pathname = usePathname();
+  const pathRef = useRef(pathname);
+  pathRef.current = pathname;
   useEffect(() => {
-    registerAuthPrompt(() => router.push("/auth"));
+    registerAuthPrompt(() => {
+      const p = pathRef.current;
+      const redirect = p && p.startsWith("/") && p !== "/auth" ? p : undefined;
+      router.push(redirect ? ({ pathname: "/auth", params: { redirect } } as Parameters<typeof router.push>[0]) : "/auth");
+    });
     return () => registerAuthPrompt(null);
   }, [router]);
 

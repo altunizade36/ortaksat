@@ -470,6 +470,7 @@ export default function EarningsScreen() {
   const mounted = useMounted();
   // SSG (giriş yok) → client (giriş var) uyuşmazlığını (#418) mount-gate ile giderir.
   if (!mounted) return <ScreenSkeleton />;
+  if (!auth.authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Kazançlarını görmek için giriş yapın", language)} />;
   return <EarningsScreenInner />;
 }

@@ -208,6 +208,7 @@ export default function OffersScreen() {
   const auth = useStore();
   const mounted = useMounted();
   if (!mounted) return <ScreenSkeleton />; // hidrasyon-gate (#418)
+  if (!auth.authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Tekliflerin için giriş yapın", language)} />;
   return <OffersInner />;
 }
