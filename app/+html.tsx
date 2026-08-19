@@ -241,6 +241,17 @@ const orgJsonLd = JSON.stringify({
 
 const responsiveShell = `
 :root { color-scheme: light; }
+/* CLS KORUMASI: Inter yüklenene kadar bu metrik-EŞLENMİŞ yedek çizilir (Arial tabanı, size-adjust/
+   override'lar Inter metriklerine ayarlı) → Inter display=swap ile gelince yazı metrikleri DEĞİŞMEZ
+   → reflow/layout-shift OLMAZ (ana sayfa CLS 0.108 → ~good). Inter yine gösterilir (design korunur). */
+@font-face {
+  font-family: 'InterFallback';
+  src: local('Arial');
+  ascent-override: 90.20%;
+  descent-override: 22.48%;
+  line-gap-override: 0.00%;
+  size-adjust: 107.40%;
+}
 * { -webkit-tap-highlight-color: transparent; }
 html, body { margin: 0; padding: 0; }
 /* iOS Safari yatay/dikey döndürmede metni şişirmesin; app gibi sabit kalsın. */
@@ -315,7 +326,7 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 html.app-ready #boot-splash { opacity: 0; pointer-events: none; }
 
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', 'InterFallback', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
