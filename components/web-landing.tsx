@@ -86,6 +86,7 @@ export function WebFooter() {
       heading: "Kazan",
       links: [
         { label: "Ortak Ol", href: "/partner" },
+        { label: "Ortak Satış Nedir?", href: "/ortak-satis-nedir" as Href },
         { label: "Nasıl Çalışır?", href: "/nasil-calisir" }
       ]
     },

@@ -106,6 +106,24 @@ const ROUTES = {
       "OrtakSat satış ortaklarını keşfet: kategori ve performansa göre filtrele, güvendiğin ortağın önerdiği komisyonlu ürünleri incele. Ortak ol, birlikte kazanın.",
     canonical: "/ortaklar"
   },
+  // PILLAR / cornerstone — niş bilgi head-term'leri ("ortak satış nedir" vb) + FAQ zengin sonucu.
+  "ortak-satis-nedir.html": {
+    title: "Ortak Satış Nedir? Komisyonla Satış ve Satış Ortaklığı Rehberi | OrtakSat",
+    description:
+      "Ortak satış nedir, nasıl çalışır ve komisyonla satış nasıl yapılır? Satıcı, ortak ve alıcı için sermayesiz, risksiz ortak satış modelini adım adım öğren. OrtakSat aracı platformdur.",
+    canonical: "/ortak-satis-nedir",
+    jsonld: JSON.stringify({
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      mainEntity: [
+        ["Ortak satış nedir?", "Ortak satış, bir satıcının ürününü kendi takipçisi veya çevresiyle tanıtan 'ortaklar' aracılığıyla sattığı modeldir. Satış gerçekleşince ortak, satıcının önceden belirlediği komisyonu kazanır. Sermaye, stok veya ön ödeme gerektirmez."],
+        ["Ortak satış ile bayilik/dropshipping aynı şey mi?", "Hayır. Bayilikte ürünü satın alıp yeniden satarsın; dropshipping'de siparişi sen yönetirsin. Ortak satışta ise ürün ve satış satıcıda kalır — sen yalnızca tanıtır, yönlendirir ve satış olunca komisyon alırsın. Risk ve maliyet yok."],
+        ["Komisyonla satış nasıl yapılır?", "Satıcı ilanını açar ve komisyon oranını (yüzde ya da sabit tutar) belirler. Ortak, ürünü Instagram, TikTok, WhatsApp veya kendi yöntemiyle tanıtır. Alıcı satıcıyla iletişime geçip satın alır; satış onaylanınca ortak komisyonunu satıcıdan alır."],
+        ["OrtakSat para veya kargo işine karışıyor mu?", "Hayır. OrtakSat aracı bir ilan ve eşleşme platformudur; para tutmaz, ödeme almaz, kargo yapmaz. Ödeme ve teslimat her zaman alıcı ile satıcı arasında yapılır."],
+        ["Ortak olmak için ne gerekir?", "Ücretsiz bir hesap yeterli. Beğendiğin ürüne 'Ortak Ol' talebi gönderirsin; satıcı kabul edince paylaşıma başlarsın. Zorunlu link, minimum takipçi veya aidat yoktur."]
+      ].map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } }))
+    })
+  },
   "create.html": {
     title: "Ücretsiz ilan ver — Komisyonunu belirle, ortakların sattırsın | OrtakSat",
     description:
