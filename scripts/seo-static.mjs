@@ -348,7 +348,8 @@ function extractRh(html, re) {
 
 // Bir dinamik sayfanın TÜM SEO head'ini yeniden yaz: dublike title/desc/og temizle,
 // tek temiz set + canonical + robots(index) + JSON-LD dizisi enjekte et.
-function rewriteSeoHead(fp, { title, description, canonicalUrl, jsonld, noindex }) {
+function rewriteSeoHead(fp, { title, description, canonicalUrl, jsonld, noindex, ogImage }) {
+  const shareImg = ogImage || OG_IMG; // sayfaya özel görsel varsa onu, yoksa marka OG kartı
   if (!fs.existsSync(fp)) return false;
   let html = fs.readFileSync(fp, "utf8");
 
@@ -356,7 +357,7 @@ function rewriteSeoHead(fp, { title, description, canonicalUrl, jsonld, noindex 
   html = html.replace(/<title\b[^>]*>[\s\S]*?<\/title>/gi, "");
   html = html.replace(/<meta\b[^>]*\bname="description"[^>]*>/gi, "");
   html = html.replace(/<meta\b[^>]*\bname="robots"[^>]*>/gi, "");
-  html = html.replace(/<meta\b[^>]*\bproperty="og:(?:title|description|url)"[^>]*>/gi, "");
+  html = html.replace(/<meta\b[^>]*\bproperty="og:(?:title|description|url|image)"[^>]*>/gi, "");
   html = html.replace(/<meta\b[^>]*\bname="twitter:(?:title|description|image|card)"[^>]*>/gi, "");
   html = html.replace(/<link\b[^>]*\brel="canonical"[^>]*>/gi, "");
 
@@ -369,10 +370,11 @@ function rewriteSeoHead(fp, { title, description, canonicalUrl, jsonld, noindex 
     `<meta property="og:title" content="${escAttr(title)}"/>`,
     `<meta property="og:description" content="${escAttr(description)}"/>`,
     `<meta property="og:url" content="${escAttr(canonicalUrl)}"/>`,
+    `<meta property="og:image" content="${escAttr(shareImg)}"/>`,
     `<meta name="twitter:card" content="summary_large_image"/>`,
     `<meta name="twitter:title" content="${escAttr(title)}"/>`,
     `<meta name="twitter:description" content="${escAttr(description)}"/>`,
-    `<meta name="twitter:image" content="${escAttr(OG_IMG)}"/>`,
+    `<meta name="twitter:image" content="${escAttr(shareImg)}"/>`,
     ...jsonld.map((j) => `<script type="application/ld+json">${j}</script>`)
   ].join("");
 
@@ -493,7 +495,9 @@ export function patchSeo() {
   for (const p of blogPosts()) {
     const fp = path.join(DIST, "blog", `${p.slug}.html`);
     const title = `${p.title} | OrtakSat Blog`;
-    if (rewriteSeoHead(fp, { title, description: p.excerpt, canonicalUrl: `${BASE}/blog/${p.slug}`, jsonld: [blogArticleLd(p)] })) blogN++;
+    // Blog paylaşımında GENERIC değil GERÇEK yazı görseli (paylaşım CTR'si + link-değeri).
+    const ogImage = p.imageId ? `https://images.unsplash.com/photo-${p.imageId}?w=1200&q=80&auto=format&fit=crop` : OG_IMG;
+    if (rewriteSeoHead(fp, { title, description: p.excerpt, canonicalUrl: `${BASE}/blog/${p.slug}`, jsonld: [blogArticleLd(p)], ogImage })) blogN++;
   }
 
   const dyn = patchDynamicSeo();

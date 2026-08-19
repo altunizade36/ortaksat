@@ -329,7 +329,7 @@ export default function CategoryLandingScreen() {
   const introOpener = rootSlug === "emlak"
     ? `${ctxName} kategorisinde satılık ve kiralık ilanlarını konuma${facetPhrase ? `, ${facetPhrase}` : ""} ve fiyata göre inceleyebilirsin.`
     : rootSlug === "vasita"
-      ? `${ctxName} kategorisinde sıfır ve ikinci el araçları marka, model, yıl${facetPhrase ? `, ${facetPhrase}` : ""} gibi ölçütlerle karşılaştırabilirsin.`
+      ? `${ctxName} kategorisinde sıfır ve ikinci el araçları marka, model${facetPhrase ? `, ${facetPhrase}` : ""} gibi ölçütlerle karşılaştırabilirsin.`
       : (rootSlug === "ustalar-ve-hizmetler" || rootSlug === "ozel-ders-ve-egitim" || rootSlug === "is-ilanlari")
         ? `${ctxName} alanındaki ilanları inceleyip ilgili kişilere OrtakSat üzerinden ulaşabilir, ortak satışla kazanç sağlayabilirsin.`
         : `${ctxName} kategorisinde ikinci el ve sıfır ürünleri${facetPhrase ? ` ${facetPhrase} gibi özelliklere göre` : ""} inceleyip fiyat karşılaştırabilirsin.`;
