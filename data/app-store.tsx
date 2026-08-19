@@ -723,12 +723,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
         if (user.app_metadata?.provider === "google") void recordGoogleConsentOnce(user.id);
-        void loadProfile(user.id, user.phone, user.user_metadata?.full_name).catch((e) => console.warn("loadProfile failed", e));
+        // authReady'yi loadProfile BİTİNCE (authUser set olduktan sonra) işaretle. Eskiden aşağıda
+        // KOŞULSUZ set ediliyordu → loadProfile async olduğundan authReady=true olurken authUser
+        // henüz null → korumalı ekranlar (favoriler/mesajlar…) yenilemede AuthRequired FLAŞ ediyordu.
+        void loadProfile(user.id, user.phone, user.user_metadata?.full_name)
+          .catch((e) => console.warn("loadProfile failed", e))
+          .finally(() => { if (mounted) setAuthReady(true); });
       } else if (mounted) {
         setAuthUser(null);
         setEmailVerified(false);
+        setAuthReady(true);
       }
-      if (mounted) setAuthReady(true);
     }).catch((e) => {
       // Ağ reddinde (getSession fetch timeout/kopuk) authReady askıda kalmasın → UI kilitlenmesin.
       console.warn("getSession failed", e);
@@ -740,7 +745,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
       if (user) {
         setEmailVerified(Boolean(user.email_confirmed_at));
         if (user.app_metadata?.provider === "google") void recordGoogleConsentOnce(user.id);
-        void loadProfile(user.id, user.phone, user.user_metadata?.full_name).catch((e) => console.warn("loadProfile failed", e));
+        // authReady loadProfile bitince (authUser set) → AuthRequired flaşı olmaz (getSession ile aynı).
+        void loadProfile(user.id, user.phone, user.user_metadata?.full_name)
+          .catch((e) => console.warn("loadProfile failed", e))
+          .finally(() => setAuthReady(true));
       } else {
         setAuthUser(null);
         setEmailVerified(false);
@@ -750,8 +758,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // Oturum başka bir yolla kapandıysa (token süresi, başka sekmede çıkış) da
         // özel veriyi temizle → sonraki kullanıcıya sızmasın.
         resetPrivateState();
+        setAuthReady(true);
       }
-      setAuthReady(true);
     });
 
     return () => {
