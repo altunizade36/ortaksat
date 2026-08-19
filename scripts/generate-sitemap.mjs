@@ -72,6 +72,7 @@ const STATIC = [
   // (Referans için tutuldu: CITY_CATEGORY_PAGES)
   ["/create", "weekly", "0.8"],
   ["/partner", "weekly", "0.8"],
+  ["/ortaklar", "weekly", "0.7"],
   ["/ortak-kazanc", "weekly", "0.7"],
   ["/satici-ol", "weekly", "0.75"],
   ["/sosyal-medya-kazanc", "weekly", "0.75"],
@@ -114,7 +115,7 @@ async function fetchListings() {
     console.warn("Supabase env yok — yalnız statik sayfalar yazılıyor.");
     return [];
   }
-  const endpoint = `${url}/rest/v1/listing_public_cards?select=id,created_at&status=eq.active&demo=eq.false&order=created_at.desc&limit=45000`;
+  const endpoint = `${url}/rest/v1/listing_public_cards?select=id,created_at,owner_id&status=eq.active&demo=eq.false&order=created_at.desc&limit=45000`;
   try {
     const res = await fetch(endpoint, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
     if (!res.ok) {
@@ -127,6 +128,20 @@ async function fetchListings() {
     console.warn(`Listing çekilemedi (${err?.message ?? err}) — yalnız statik sayfalar.`);
     return [];
   }
+}
+
+// Aktif ortaklıkların partner_id'leri → /ortak/[id] vitrin sayfaları (middleware zengin OG + crawler
+// HTML servisliyor). RLS anon'a partnerships select vermezse boş döner (sorun değil; URL eklenmez).
+async function fetchPartners() {
+  const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
+  const key = process.env.EXPO_PUBLIC_SUPABASE_PUBLISHABLE_KEY || process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) return [];
+  try {
+    const res = await fetch(`${url}/rest/v1/partnerships?select=partner_id&status=eq.active&limit=45000`, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
+    if (!res.ok) return [];
+    const rows = await res.json();
+    return Array.isArray(rows) ? rows : [];
+  } catch { return []; }
 }
 
 // Build tarihi (kategori/info sayfaları lastmod'u — bunlar her build'de yeniden üretilir
@@ -196,6 +211,10 @@ async function main() {
   const categoryPairs = tree
     ? categorySlugsFromTree(tree)
     : CATEGORY_SLUGS_FALLBACK.map((s) => [s, "0.75"]);
+  const partnerRows = await fetchPartners();
+  // Aktif ilanı olan satıcılar → /store/[id]; aktif ortaklar → /ortak/[id] (middleware crawler HTML).
+  const sellerIds = Array.from(new Set(rows.map((r) => r.owner_id).filter(Boolean)));
+  const partnerIds = Array.from(new Set(partnerRows.map((r) => r.partner_id).filter(Boolean)));
 
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -203,14 +222,16 @@ async function main() {
     ...STATIC.map(([loc, cf, pr]) => urlTag(loc, cf, pr, BUILD_DATE)),
     ...categoryPairs.map(([slug, pr]) => urlTag(`/kategori/${slug}`, "daily", pr, BUILD_DATE)),
     ...posts.map((p) => urlTag(`/blog/${p.slug}`, "monthly", "0.55", p.date)),
+    ...sellerIds.map((sid) => urlTag(`/store/${sid}`, "weekly", "0.55", BUILD_DATE)),
+    ...partnerIds.map((pid) => urlTag(`/ortak/${pid}`, "weekly", "0.55", BUILD_DATE)),
     ...rows.map((r) => urlTag(`/listing/${r.id}`, "weekly", "0.7", r.created_at)),
     "</urlset>",
     ""
   ];
 
   writeFileSync(OUT, lines.join("\n"), "utf8");
-  const total = STATIC.length + categoryPairs.length + posts.length + rows.length;
-  console.log(`Sitemap yazıldı: ${OUT} — ${STATIC.length} statik + ${categoryPairs.length} kategori${tree ? " (ağaçtan)" : " (FALLBACK)"} + ${posts.length} blog + ${rows.length} ilan = ${total} URL`);
+  const total = STATIC.length + categoryPairs.length + posts.length + sellerIds.length + partnerIds.length + rows.length;
+  console.log(`Sitemap yazıldı: ${OUT} — ${STATIC.length} statik + ${categoryPairs.length} kategori${tree ? " (ağaçtan)" : " (FALLBACK)"} + ${posts.length} blog + ${sellerIds.length} mağaza + ${partnerIds.length} ortak + ${rows.length} ilan = ${total} URL`);
 }
 
 main().catch((err) => {

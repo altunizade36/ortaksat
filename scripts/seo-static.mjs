@@ -92,6 +92,20 @@ const ROUTES = {
       "OrtakSat'taki tüm kategorileri keşfet: emlak, vasıta, elektronik, moda, ev & yaşam, anne & bebek, spor ve daha fazlası. İlan ver ya da ortak ol, kazan.",
     canonical: "/kategoriler"
   },
+  // /ortaklar dizini — export yolu belirsiz (folder-index) → iki olası dosya adı da tanımlı, patch()
+  // var olanı yamalar, olmayan sessizce atlanır.
+  "ortaklar.html": {
+    title: "Ortaklar — Ürün paylaşıp komisyon kazanan satış ortakları | OrtakSat",
+    description:
+      "OrtakSat satış ortaklarını keşfet: kategori ve performansa göre filtrele, güvendiğin ortağın önerdiği komisyonlu ürünleri incele. Ortak ol, birlikte kazanın.",
+    canonical: "/ortaklar"
+  },
+  "ortaklar/index.html": {
+    title: "Ortaklar — Ürün paylaşıp komisyon kazanan satış ortakları | OrtakSat",
+    description:
+      "OrtakSat satış ortaklarını keşfet: kategori ve performansa göre filtrele, güvendiğin ortağın önerdiği komisyonlu ürünleri incele. Ortak ol, birlikte kazanın.",
+    canonical: "/ortaklar"
+  },
   "create.html": {
     title: "Ücretsiz ilan ver — Komisyonunu belirle, ortakların sattırsın | OrtakSat",
     description:

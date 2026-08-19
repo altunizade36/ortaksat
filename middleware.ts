@@ -12,7 +12,7 @@ import categoryMap from "./data/category-og-map.json";
 // CollectionPage + FAQPage JSON-LD; bkz scripts/seo-static.mjs). Middleware Googlebot'a
 // bunları ZAYIF/minimal HTML ile eziyordu → statik zengin HTML'i görsün diye kaldırıldı.
 // İlan (/listing) ve mağaza (/store) DİNAMİKTİR (statik içerik yok) → middleware şart.
-export const config = { matcher: ["/listing/:id*", "/store/:id*"] };
+export const config = { matcher: ["/listing/:id*", "/store/:id*", "/ortak/:id*"] };
 
 const SUPABASE_URL = process.env.EXPO_PUBLIC_SUPABASE_URL || "https://akyzzdwbzgsnhdircuce.supabase.co";
 const SUPABASE_KEY =
@@ -170,6 +170,46 @@ async function listingResponse(id: string): Promise<Response | undefined> {
   return page(title, desc, image, url, "product", `${priceOg}${ld(product)}${ld(breadcrumb)}`, body);
 }
 
+// --- Ortak vitrini + mağaza için paylaşılan yardımcılar (gerçek indekslenebilir içerik) ---
+type CrawlCard = { id: string; title: string; price: number; image_url: string | null; currency?: string | null };
+
+async function fetchCards(query: string): Promise<CrawlCard[]> {
+  const res = await fetch(query, { headers: { apikey: SUPABASE_KEY, authorization: `Bearer ${SUPABASE_KEY}` } });
+  if (!res.ok) return [];
+  const j = await res.json();
+  return Array.isArray(j) ? (j as CrawlCard[]) : [];
+}
+// SECURITY DEFINER RPC'yi REST üzerinden çağır (anon-key ile; showcase RPC'leri herkese açık).
+async function rpcJson(fn: string, args: Record<string, unknown>): Promise<Array<Record<string, unknown>>> {
+  const res = await fetch(`${SUPABASE_URL}/rest/v1/rpc/${fn}`, {
+    method: "POST",
+    headers: { apikey: SUPABASE_KEY, authorization: `Bearer ${SUPABASE_KEY}`, "content-type": "application/json" },
+    body: JSON.stringify(args)
+  });
+  if (!res.ok) return [];
+  const j = await res.json();
+  return Array.isArray(j) ? (j as Array<Record<string, unknown>>) : [];
+}
+function cardsItemList(cards: CrawlCard[], name: string) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    name,
+    numberOfItems: cards.length,
+    itemListElement: cards.slice(0, 24).map((c, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      url: `https://www.ortaksat.com/listing/${c.id}`,
+      name: c.title,
+      image: c.image_url || OG_COVER
+    }))
+  };
+}
+function cardsBody(cards: CrawlCard[]): string {
+  if (!cards.length) return "";
+  return `<ul>${cards.slice(0, 24).map((c) => `<li><a href="https://www.ortaksat.com/listing/${esc(c.id)}">${esc(c.title)} — ₺${esc(Number(c.price || 0).toLocaleString("tr-TR"))}</a></li>`).join("")}</ul>`;
+}
+
 async function storeResponse(id: string): Promise<Response | undefined> {
   if (!id || !SUPABASE_KEY) return;
   const api = `${SUPABASE_URL}/rest/v1/profiles?id=eq.${encodeURIComponent(id)}&select=full_name&limit=1`;
@@ -178,13 +218,36 @@ async function storeResponse(id: string): Promise<Response | undefined> {
   const rows = (await res.json()) as Array<{ full_name: string | null }>;
   const name = rows && rows[0] && rows[0].full_name;
   if (!name) return;
-  return page(
-    `${name} — OrtakSat mağazası`,
-    `${name} satıcısının OrtakSat mağazası. Komisyonlu ürünlerini keşfet, ortak ol ve birlikte kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`,
-    OG_COVER,
-    `https://www.ortaksat.com/store/${id}`,
-    "profile"
-  );
+  // Satıcının aktif ilanları → gerçek indekslenebilir gövde + ItemList (eskiden yalnız ad vardı).
+  const cards = await fetchCards(`${SUPABASE_URL}/rest/v1/listing_public_cards?owner_id=eq.${encodeURIComponent(id)}&status=eq.active&select=id,title,price,image_url,currency&order=created_at.desc&limit=24`);
+  const url = `https://www.ortaksat.com/store/${id}`;
+  const title = `${name} — OrtakSat mağazası`;
+  const desc = `${name} satıcısının OrtakSat mağazası — ${cards.length ? `${cards.length} aktif ilan. ` : ""}Komisyonlu ürünlerini keşfet, ortak ol ve birlikte kazan. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
+  const org = { "@context": "https://schema.org", "@type": "OnlineStore", name, url, image: OG_COVER };
+  const body = `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › ${esc(name)} mağazası</nav><h1>${esc(name)} — OrtakSat Mağazası</h1><p>${esc(desc)}</p>${cardsBody(cards)}<p><a href="${esc(url)}">Mağazayı OrtakSat'ta görüntüle →</a></p>`;
+  return page(title, desc, OG_COVER, url, "profile", `${ld(org)}${cards.length ? ld(cardsItemList(cards, `${name} ürünleri`)) : ""}`, body);
+}
+
+async function ortakResponse(id: string): Promise<Response | undefined> {
+  if (!id || !SUPABASE_KEY) return;
+  // Ortak vitrini herkese-açık SECURITY DEFINER RPC'lerden (partner_public_profile/shop). Eskiden
+  // /ortak/[id] yalnız iskelet + generic meta ile render oluyordu (crawler'da boş + jenerik önizleme).
+  const profRows = await rpcJson("partner_public_profile", { p_id: id });
+  const prof = profRows[0];
+  const name = prof && typeof prof.full_name === "string" ? prof.full_name : "";
+  if (!name) return;
+  const shopRows = await rpcJson("partner_public_shop", { p_id: id });
+  const ids = shopRows.map((r) => r.listing_id).filter((x): x is string => typeof x === "string" && !!x).slice(0, 24);
+  const cards = ids.length
+    ? await fetchCards(`${SUPABASE_URL}/rest/v1/listing_public_cards?id=in.(${ids.map(encodeURIComponent).join(",")})&select=id,title,price,image_url,currency&limit=24`)
+    : [];
+  const url = `https://www.ortaksat.com/ortak/${id}`;
+  const avatar = typeof prof.avatar_url === "string" && prof.avatar_url.startsWith("http") ? prof.avatar_url : OG_COVER;
+  const title = `${name} — OrtakSat ortak vitrini`;
+  const desc = `${name} adlı ortağın önerdiği ${cards.length ? `${cards.length} ` : ""}komisyonlu ürün. Beğen, ortak ol, birlikte kazanın. OrtakSat aracıdır; ödeme ve teslimat taraflar arasındadır.`;
+  const profileLd = { "@context": "https://schema.org", "@type": "ProfilePage", mainEntity: { "@type": "Person", name, url, ...(avatar !== OG_COVER ? { image: avatar } : {}) } };
+  const body = `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › <a href="https://www.ortaksat.com/ortaklar">Ortaklar</a> › ${esc(name)}</nav><h1>${esc(name)} — Ortak Vitrini</h1><p>${esc(desc)}</p>${cardsBody(cards)}<p><a href="${esc(url)}">Vitrini OrtakSat'ta görüntüle →</a></p>`;
+  return page(title, desc, avatar, url, "profile", `${ld(profileLd)}${cards.length ? ld(cardsItemList(cards, `${name} önerileri`)) : ""}`, body);
 }
 
 export default async function middleware(request: Request): Promise<Response | undefined> {
@@ -200,6 +263,9 @@ export default async function middleware(request: Request): Promise<Response | u
     }
     if (parts[0] === "store" && parts[1]) {
       return await storeResponse(parts[1]);
+    }
+    if (parts[0] === "ortak" && parts[1]) {
+      return await ortakResponse(parts[1]);
     }
     return;
   } catch {
