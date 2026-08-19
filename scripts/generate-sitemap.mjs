@@ -116,7 +116,7 @@ async function fetchListings() {
     console.warn("Supabase env yok — yalnız statik sayfalar yazılıyor.");
     return [];
   }
-  const endpoint = `${url}/rest/v1/listing_public_cards?select=id,created_at,owner_id&status=eq.active&demo=eq.false&order=created_at.desc&limit=45000`;
+  const endpoint = `${url}/rest/v1/listing_public_cards?select=id,created_at,owner_id,category,location&status=eq.active&demo=eq.false&order=created_at.desc&limit=45000`;
   try {
     const res = await fetch(endpoint, { headers: { apikey: key, Authorization: `Bearer ${key}` } });
     if (!res.ok) {
@@ -204,6 +204,55 @@ function categorySlugsFromTree(tree) {
   return out;
 }
 
+// lib/cities.ts'i (import'suz) yükle → listingInCity/SEO_CITY_SLUGS/CITY_CATEGORY_SLUGS.
+function loadCities() {
+  try {
+    const require = createRequire(import.meta.url);
+    const ts = require("typescript");
+    const src = readFileSync(join(__dirname, "..", "lib", "cities.ts"), "utf8");
+    const js = ts.transpileModule(src, { compilerOptions: { module: ts.ModuleKind.CommonJS, target: ts.ScriptTarget.ES2020 } }).outputText;
+    const mod = { exports: {} };
+    const sandbox = { module: mod, exports: mod.exports, require, console };
+    vm.createContext(sandbox);
+    new vm.Script(js).runInContext(sandbox);
+    const m = mod.exports;
+    return (typeof m.listingInCity === "function" && Array.isArray(m.SEO_CITY_SLUGS) && Array.isArray(m.CITY_CATEGORY_SLUGS)) ? m : null;
+  } catch (err) {
+    console.warn(`cities.ts yüklenemedi (${err?.message ?? err}) — şehir×kategori gate atlandı.`);
+    return null;
+  }
+}
+function buildNodeIndex(tree) {
+  const bySlug = new Map();
+  (function walk(nodes) { for (const n of nodes) { if (!bySlug.has(n.slug)) bySlug.set(n.slug, n); if (n.children) walk(n.children); } })(tree);
+  return bySlug;
+}
+function descendantLabels(node) {
+  const out = new Set();
+  (function rec(n) { out.add(n.label); for (const c of n.children ?? []) rec(c); })(node);
+  return out;
+}
+// Şehir×kategori kombolarını GERÇEK aktif-ilan sayısına göre değerlendir; eşik (3) üstü olanlar
+// indekslenebilir. Eşleşme app ile BİREBİR (category-label ∈ descendantLabels && listingInCity).
+// Envanter büyüdükçe OTOMATİK açılır (elle iş yok). Eşik altı sayfalar noindex kalır (thin-content).
+const CITY_INDEX_THRESHOLD = 3;
+function indexableCityCombos(rows, tree, cities) {
+  if (!tree || !cities) return [];
+  const bySlug = buildNodeIndex(tree);
+  const combos = [];
+  for (const catSlug of cities.CITY_CATEGORY_SLUGS) {
+    const node = bySlug.get(catSlug);
+    if (!node) continue;
+    const labels = descendantLabels(node);
+    for (const citySlugId of cities.SEO_CITY_SLUGS) {
+      let count = 0;
+      for (const r of rows) if (r.category && labels.has(r.category) && cities.listingInCity(r.location, citySlugId)) count++;
+      if (count >= CITY_INDEX_THRESHOLD) combos.push(`${catSlug}/${citySlugId}`);
+    }
+  }
+  return combos;
+}
+
 async function main() {
   loadDotEnv();
   const rows = await fetchListings();
@@ -216,6 +265,11 @@ async function main() {
   // Aktif ilanı olan satıcılar → /store/[id]; aktif ortaklar → /ortak/[id] (middleware crawler HTML).
   const sellerIds = Array.from(new Set(rows.map((r) => r.owner_id).filter(Boolean)));
   const partnerIds = Array.from(new Set(partnerRows.map((r) => r.partner_id).filter(Boolean)));
+  // Envanter-gate'li şehir×kategori sayfaları (≥3 gerçek ilan) → index + sitemap. JSON'u seo-static
+  // de okuyup noindex kararını verir (tek doğruluk kaynağı). Env/veri yoksa boş → hepsi noindex kalır.
+  const cities = loadCities();
+  const cityCombos = indexableCityCombos(rows, tree, cities);
+  writeFileSync(join(__dirname, "..", "lib", "indexable-city-pages.json"), JSON.stringify(cityCombos), "utf8");
 
   const lines = [
     '<?xml version="1.0" encoding="UTF-8"?>',
@@ -223,6 +277,7 @@ async function main() {
     ...STATIC.map(([loc, cf, pr]) => urlTag(loc, cf, pr, BUILD_DATE)),
     ...categoryPairs.map(([slug, pr]) => urlTag(`/kategori/${slug}`, "daily", pr, BUILD_DATE)),
     ...posts.map((p) => urlTag(`/blog/${p.slug}`, "monthly", "0.55", p.date)),
+    ...cityCombos.map((c) => urlTag(`/kategori/${c}`, "daily", "0.6", BUILD_DATE)),
     ...sellerIds.map((sid) => urlTag(`/store/${sid}`, "weekly", "0.55", BUILD_DATE)),
     ...partnerIds.map((pid) => urlTag(`/ortak/${pid}`, "weekly", "0.55", BUILD_DATE)),
     ...rows.map((r) => urlTag(`/listing/${r.id}`, "weekly", "0.7", r.created_at)),
@@ -231,8 +286,8 @@ async function main() {
   ];
 
   writeFileSync(OUT, lines.join("\n"), "utf8");
-  const total = STATIC.length + categoryPairs.length + posts.length + sellerIds.length + partnerIds.length + rows.length;
-  console.log(`Sitemap yazıldı: ${OUT} — ${STATIC.length} statik + ${categoryPairs.length} kategori${tree ? " (ağaçtan)" : " (FALLBACK)"} + ${posts.length} blog + ${sellerIds.length} mağaza + ${partnerIds.length} ortak + ${rows.length} ilan = ${total} URL`);
+  const total = STATIC.length + categoryPairs.length + posts.length + cityCombos.length + sellerIds.length + partnerIds.length + rows.length;
+  console.log(`Sitemap yazıldı: ${OUT} — ${STATIC.length} statik + ${categoryPairs.length} kategori${tree ? " (ağaçtan)" : " (FALLBACK)"} + ${posts.length} blog + ${cityCombos.length} şehir×kategori + ${sellerIds.length} mağaza + ${partnerIds.length} ortak + ${rows.length} ilan = ${total} URL`);
 }
 
 main().catch((err) => {

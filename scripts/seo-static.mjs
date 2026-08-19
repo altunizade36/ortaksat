@@ -71,6 +71,14 @@ function catTitleFor(slug) {
   return { label, title: `${prefix}${label} ilanları — Ortak satış | OrtakSat` };
 }
 
+// Envanter-gate'li şehir×kategori kombolarını (generate-sitemap üretir: ≥3 gerçek ilan) oku →
+// yalnız bunlar index; gerisi noindex (thin-content). Tek doğruluk kaynağı sitemap ile aynı JSON.
+let INDEXABLE_CITY = new Set();
+try {
+  const p = path.join(__dirname, "..", "lib", "indexable-city-pages.json");
+  if (fs.existsSync(p)) { const arr = JSON.parse(fs.readFileSync(p, "utf8")); if (Array.isArray(arr)) INDEXABLE_CITY = new Set(arr); }
+} catch { /* yoksa boş → hepsi noindex (güvenli varsayılan) */ }
+
 // Her rota: dosya adı → { title, description, canonical, noindex?, jsonld? }
 // Başlıklar benzersiz + anahtar-kelime odaklı; açıklamalar 150-165 karakter.
 const ROUTES = {
@@ -500,9 +508,10 @@ function patchCityPage(fp, slug, citySlug) {
     { name: label, url: `${BASE}/kategori/${slug}` },
     { name: `${city} ${label}`, url }
   ];
-  // Şehir×kategori sayfaları gerçek ilan olmadan ince/yinelenen içerik → noindex
-  // (yine de follow: kategori hub'ına link akışı korunur). İlan geldikçe kaldırılacak.
-  return rewriteSeoHead(fp, { title, description, canonicalUrl: url, jsonld: [breadcrumbLd(crumbs), collectionLd(title, description, url, crumbs)], noindex: true });
+  // Envanter-gate: ≥3 gerçek ilanı olan şehir×kategori kombosu index'lenir; gerisi noindex
+  // (ince/yinelenen içerik — yine de follow: hub'a link akışı korunur). Envanter büyüdükçe OTO-açılır.
+  const indexable = INDEXABLE_CITY.has(`${slug}/${citySlug}`);
+  return rewriteSeoHead(fp, { title, description, canonicalUrl: url, jsonld: [breadcrumbLd(crumbs), collectionLd(title, description, url, crumbs)], noindex: !indexable });
 }
 
 // Export yapısı: kategori/<slug>/index.html = HUB, kategori/<slug>/<sehir>.html = şehir.
