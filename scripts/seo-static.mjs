@@ -137,10 +137,33 @@ const ROUTES = {
     canonical: "/partner"
   },
   "ortak-kazanc.html": {
-    title: "Ortak kazancı nasıl işler? Referansla komisyon rehberi | OrtakSat",
+    title: "Komisyon Hesaplama & Ortak Kazanç Hesaplayıcı — Ne Kadar Kazanırsın? | OrtakSat",
     description:
-      "Ortak olarak nasıl para kazanırsın? Referans linki, komisyon oranı, ödeme takibi ve ipuçları. Takipçilerin veya çevrenle satış yaptır, komisyon al.",
-    canonical: "/ortak-kazanc"
+      "Ücretsiz komisyon ve ortak kazanç hesaplayıcı: takipçi sayını, aylık paylaşımını ve ortalama komisyonu gir, ortak satışla aylık tahmini kazancını gör. Sermaye ve stok gerekmez.",
+    canonical: "/ortak-kazanc",
+    jsonld: JSON.stringify([
+      {
+        "@context": "https://schema.org",
+        "@type": "WebApplication",
+        name: "OrtakSat Ortak Kazanç & Komisyon Hesaplayıcı",
+        url: "https://www.ortaksat.com/ortak-kazanc",
+        applicationCategory: "FinanceApplication",
+        operatingSystem: "Web",
+        offers: { "@type": "Offer", price: 0, priceCurrency: "TRY" },
+        description: "Takipçi sayını, aylık paylaşımını ve ortalama komisyonu gir; ortak satışla aylık tahmini kazancını ücretsiz hesapla."
+      },
+      {
+        "@context": "https://schema.org",
+        "@type": "HowTo",
+        name: "Ortak satış kazancı nasıl hesaplanır?",
+        step: [
+          { "@type": "HowToStep", name: "Takipçi sayını gir", text: "Ürünü tanıtacağın kitleyi (takipçi/çevre) belirle." },
+          { "@type": "HowToStep", name: "Aylık paylaşımını gir", text: "Ayda kaç ürün/paylaşım yapacağını seç." },
+          { "@type": "HowToStep", name: "Ortalama komisyonu gir", text: "Satış başına alacağın ortalama komisyonu (₺) belirle." },
+          { "@type": "HowToStep", name: "Sonucu gör", text: "Tahmini aylık kazancını anında gör. OrtakSat garanti vermez; komisyonu satıcı doğrudan öder." }
+        ]
+      }
+    ])
   },
   "satici-ol.html": {
     title: "Satıcı ol — Ürününü ortaklarla daha çok kişiye sattır | OrtakSat",
