@@ -96,15 +96,16 @@ export default function Root({ children }: PropsWithChildren) {
         <link rel="preconnect" href="https://akyzzdwbzgsnhdircuce.supabase.co" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://akyzzdwbzgsnhdircuce.supabase.co" />
 
-        {/* Crisp web typography — render'ı bloklamadan yükle (FCP hızlanır).
-            Sistem yazı tipiyle çizilir, Inter gelince yumuşakça geçer (display=swap).
+        {/* Crisp web typography — render'ı bloklamadan yükle (FCP hızlanır). display=OPTIONAL:
+            font geç yüklenirse SWAP YOK → CLS'i (yazı-metriği reflow'u) engeller (CWV/SEO). Inter
+            önbellekte/hızlı yüklenirse baştan kullanılır; ilk-yüklemede sistem yazı tipi (layout stabil).
             Stylesheet'i inline script async ekler; JS yoksa <noscript> devreye girer. */}
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
         <script dangerouslySetInnerHTML={{ __html: fontLoader }} />
         <noscript>
           <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap"
+            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=optional"
             rel="stylesheet"
           />
         </noscript>
@@ -199,7 +200,7 @@ const bootScript =
 const fontLoader =
   "(function(){var l=document.createElement('link');" +
   "l.rel='stylesheet';l.media='print';" +
-  "l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap';" +
+  "l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=optional';" +
   "l.onload=function(){l.media='all';};document.head.appendChild(l);})();";
 
 const orgJsonLd = JSON.stringify({
