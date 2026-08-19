@@ -277,8 +277,18 @@ export default function CategoryLandingScreen() {
     );
   }
 
+  // Kök-tipe göre DEĞİŞEN ek soru (thin-content'i azaltır: her kategorinin FAQ'ı farklılaşır).
+  const lowLabel = node.label.toLocaleLowerCase("tr-TR");
+  const extraFaq = rootSlug === "emlak"
+    ? { q: `${node.label} ilanlarında görüşme ve pazarlık nasıl yapılır?`, a: "İlgilenen alıcı, satıcıyla OrtakSat üzerinden mesajlaşarak fiyat, konum ve detayları görüşür. Tapu/teslim ve ödeme işlemleri taraflar arasında yapılır; OrtakSat aracıdır, para tutmaz." }
+    : rootSlug === "vasita"
+      ? { q: `İkinci el ${lowLabel} alırken nelere dikkat etmeliyim?`, a: "İlan detaylarını (yıl, kilometre, hasar/değişen, muayene) incele, satıcıyla iletişime geçip aracı yerinde gör. Ödeme ve devir işlemleri alıcı ile satıcı arasında yapılır." }
+      : (rootSlug === "ustalar-ve-hizmetler" || rootSlug === "ozel-ders-ve-egitim")
+        ? { q: `${node.label} için nasıl uzman/hizmet bulurum?`, a: "İlanları inceleyip ilgili kişiyle OrtakSat üzerinden iletişime geçer, detayları ve fiyatı konuşursun. Anlaşma ve ödeme taraflar arasında yapılır." }
+        : { q: `${node.label} ürünlerinde teslimat ve kargo nasıl olur?`, a: "Teslimat şeklini (kargo, elden teslim) satıcı ilanında belirtir. OrtakSat kargo veya ödeme yapmaz; alıcı ve satıcı teslimatı kendi arasında ayarlar." };
   const faq = [
     { q: `${node.label} ilanları OrtakSat'ta nasıl satılır?`, a: "İlanını ücretsiz eklersin ve komisyon oranını kendin belirlersin. Ortaklar ürününü kendi takipçisiyle paylaşır; satış olursa komisyonu anlaştığın kanaldan doğrudan ortağa ödersin. Ödeme ve teslimat alıcı ile satıcı arasında yapılır." },
+    extraFaq,
     { q: `${node.label} kategorisinde komisyon oranını kim belirler?`, a: "İlanı açan satıcı belirler — yüzde (%) veya sabit tutar (₺) olarak. Ortak, paylaşmadan önce kazancını ilanda net görür." },
     { q: `OrtakSat ${node.label.toLocaleLowerCase("tr-TR")} alım satımında ödeme veya kargo yapar mı?`, a: "Hayır. OrtakSat aracı bir ilan ve eşleşme platformudur; para tutmaz, kargo yapmaz. Ödeme ve teslimatı alıcı ile satıcı kendi arasında yapar." },
     { q: `${node.label} ürününü ortak olarak nasıl paylaşırım?`, a: "Ürüne 'Ortak Ol' talebi gönderirsin; satıcı kabul edince ortak olursun. Ürünü Instagram, TikTok veya WhatsApp'ta KENDİ yönteminle tanıtırsın. Sattığında anlaştığın komisyonu satıcıdan alırsın — zorunlu link veya takip yok." }
@@ -308,6 +318,23 @@ export default function CategoryLandingScreen() {
       image: l.image
     }))
   }) : null;
+
+  // SEO THIN-CONTENT KORUMASI: 1496 hub sitemap'e girdi; boilerplate near-duplicate iseler Google
+  // "crawled - not indexed" ile eleyebilir. GERÇEK şema verisinden (alt kategori + filtre alanları +
+  // kök tipi) kategoriye ÖZGÜ, farklılaşan tanıtım paragrafı üret (sahte veri YOK — hepsi gerçek).
+  const introFacets = Array.from(new Set([...numFields.map((f) => f.label), ...filterFields.slice(0, 4).map((f) => f.label)]))
+    .slice(0, 3).map((s) => s.toLocaleLowerCase("tr-TR"));
+  const introKids = (node.children ?? []).slice(0, 6).map((c) => c.label);
+  const facetPhrase = introFacets.length ? introFacets.join(", ") : "";
+  const introOpener = rootSlug === "emlak"
+    ? `${ctxName} kategorisinde satılık ve kiralık ilanlarını konuma${facetPhrase ? `, ${facetPhrase}` : ""} ve fiyata göre inceleyebilirsin.`
+    : rootSlug === "vasita"
+      ? `${ctxName} kategorisinde sıfır ve ikinci el araçları marka, model, yıl${facetPhrase ? `, ${facetPhrase}` : ""} gibi ölçütlerle karşılaştırabilirsin.`
+      : (rootSlug === "ustalar-ve-hizmetler" || rootSlug === "ozel-ders-ve-egitim" || rootSlug === "is-ilanlari")
+        ? `${ctxName} alanındaki ilanları inceleyip ilgili kişilere OrtakSat üzerinden ulaşabilir, ortak satışla kazanç sağlayabilirsin.`
+        : `${ctxName} kategorisinde ikinci el ve sıfır ürünleri${facetPhrase ? ` ${facetPhrase} gibi özelliklere göre` : ""} inceleyip fiyat karşılaştırabilirsin.`;
+  const introKidsLine = introKids.length ? ` Öne çıkan alt kategoriler: ${introKids.join(", ")}.` : "";
+  const introText = `${introOpener}${introKidsLine} OrtakSat aracı bir platformdur: komisyon oranını satıcı belirler, ödeme ve teslimat alıcı ile satıcı arasında yapılır. İlan vermek ve ortak olmak ücretsizdir.`;
 
   return (
     // MOBİL: WebContainer dar ekranda ŞEFFAF geçiş yapar (padding uygulamaz), ama kart
@@ -355,6 +382,9 @@ export default function CategoryLandingScreen() {
             <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{items.length} ortak satış ilanı · komisyonlu ürünleri keşfet</Text>
           </View>
         </View>
+
+        {/* SEO: kategoriye ÖZGÜ tanıtım (gerçek şema verisinden türetilir → thin-content/near-dup korur) */}
+        <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600", lineHeight: 21 }}>{introText}</Text>
 
         {/* Alt kategoriler (varsa) */}
         {node.children && node.children.length > 0 ? (
