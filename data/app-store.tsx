@@ -63,6 +63,7 @@ import {
   makeUuid,
   markConversationReadLive,
   markNotificationReadLive,
+  markAllNotificationsReadLive,
   updateLeadStatusLive,
   updateListingLive,
   updateListingStatusLive,
@@ -73,7 +74,7 @@ import {
   setPartnershipCommissionLive,
   updateReportStatusLive,
   updateProfileLive,
-  savePreferencesLive,
+  mergePreferencesLive,
   saveEmailNotificationsLive,
   recordLegalConsentLive,
   requestAccountDeletionLive,
@@ -290,7 +291,8 @@ type AppStore = {
   signOut: () => Promise<void>;
   signOutAllDevices: () => Promise<boolean>;
   updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio"> & { expertiseCategories?: string[]; city?: string;username?:string;districtId?:number|null;website?:string;instagram?:string }) => Promise<boolean>;
-  savePreferences: (preferences: Record<string, boolean | string | number>) => Promise<boolean>;
+  /** Yalnız DEĞİŞEN anahtarlar sunucuda birleştirilir (diğer tercihlere dokunulmaz); `null` değer anahtarı siler. */
+  savePreferences: (preferences: Record<string, boolean | string | number | null>) => Promise<boolean>;
   setEmailNotifications: (enabled: boolean) => Promise<boolean>;
   reportListing: (listingId: string, reason: string, details?: string, options?:{id?:string;attachments?:string[]}) => Promise<boolean>;
   reportUser: (reportedUserId: string, reason: string, details?: string, options?:{id?:string;attachments?:string[]}) => Promise<boolean>;
@@ -339,6 +341,8 @@ type AppStore = {
   retryMessage: (messageId: string) => void;
   markConversationRead: (conversationId: string) => void;
   markNotificationRead: (notificationId: string) => Promise<boolean>;
+  /** Kullanıcının tüm okunmamış bildirimlerini TEK istekle okundu yapar; başarısızsa geri alır ve false döner. */
+  markAllNotificationsRead: () => Promise<boolean>;
   refreshNotifications: () => Promise<void>;
   categorySuggestions: CategorySuggestion[];
   locationSuggestions: LocationSuggestion[];
@@ -483,6 +487,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const partnershipWrites=useRef(new Set<string>());
   favoriteAccount.current = authUser?.id;
   const notificationWrites = useRef(new Set<string>());
+  // Tercih kayıtları: sunucuya SIRAYLA gider (yanıtlar sıra dışı gelip yerel durumu eski bir sonuçla
+  // ezmesin); `preferenceWrites` = henüz yanıtı gelmemiş yamalar (sunucu sonucu uygulanırken üstüne bindirilir).
+  const preferenceQueue = useRef<Promise<unknown>>(Promise.resolve());
+  const preferenceWrites = useRef<Array<Record<string, boolean | string | number | null>>>([]);
   // Mesajlaşma: (ilan:alıcı) → bu oturumda açılan konuşma. `conversations` state'i bir sonraki
   // render'a kadar bayat olduğundan hızlı çift dokunuş İKİ konuşma açıyordu; ref anında görür.
   const pendingConversations = useRef(new Map<string, Conversation>());
@@ -611,6 +619,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
     setSales([]);
     setNotifications([]);
   };
+  // TEMBEL YAZIM güvencesi: konuşma satırı sunucuya ancak İLK MESAJLA yazılır; o ana kadar konuşma yalnız
+  // yereldedir. Konuşma listesi toptan değiştirildiğinde (ör. hesap verisi ilk kez yüklenirken) böyle bir
+  // konuşma state'ten düşerse kullanıcı içindeyken "Konuşma bulunamadı" görürdü → geri eklenir. Yalnız
+  // sunucuya YAZILMAMIŞ ve bu hesaba ait olanlar; yazılmış olan zaten sunucu listesinde gelir.
+  const conversationOwnerId = authUser?.id;
+  useEffect(() => {
+    if (!conversationOwnerId || !pendingConversations.current.size) return;
+    const lost = Array.from(pendingConversations.current.values()).filter((c) => !confirmedConversations.current.has(c.id) && c.participantIds.includes(conversationOwnerId) && !conversations.some((item) => item.id === c.id));
+    if (lost.length) setConversations((items) => [...lost.filter((c) => !items.some((item) => item.id === c.id)), ...items]);
+  }, [conversations, conversationOwnerId]);
   // Öneriler: canlıda boş başlar (gerçek kullanıcı önerileriyle dolar), önizlemede örnek.
   const [categorySuggestions, setCategorySuggestions] = useState<CategorySuggestion[]>(
     isSupabaseConfigured ? [] : [
@@ -1178,18 +1196,18 @@ export function StoreProvider({ children }: PropsWithChildren) {
         createdAt: now
       };
       if (!existing) {
+        // TEMBEL YAZIM: konuşma burada yalnız YERELDE açılır; sunucuya satır, İLK MESAJ gönderilirken
+        // yazılır (deliverMessage → writeConversation). Eskiden "Mesaj"a dokunup hiçbir şey yazmayan her
+        // ziyaretçi sunucuda boş bir konuşma satırı bırakıyordu (karşı tarafın hiç ihtiyaç duymadığı satır).
+        // Yerel konuşma, ilk mesajına ya da oturumun sonuna kadar yenilemede korunur (mergeServerConversations).
         pendingConversations.current.set(pendingKey, conversation);
         setConversations((items) => [conversation, ...items]);
-        if (liveUser) writeConversation(conversation, pendingKey);
       } else {
         // Konuşma yalnız pendingConversations'ta kalmış olabilir (state'ten düşmüş): geri ekle; yoksa
         // çağıran var olmayan bir konuşmaya yönlenir ve "Konuşma bulunamadı" görür — her denemede.
         if (!inState) setConversations((items) => (items.some((item) => item.id === existing.id) ? items : [existing, ...items]));
-        // Sunucuya yazımı daha önce BAŞARISIZ olduysa (çevrimdışı açılmış) yeniden dene.
-        const prior = conversationReady.current.get(existing.id);
-        if (liveUser && prior) void prior.then((serverId) => {
-          if (!serverId && conversationReady.current.get(existing.id) === prior) writeConversation(existing, pendingKey);
-        });
+        // Sunucuya yazımı daha önce BAŞARISIZ olduysa burada yeniden DENENMEZ: mesajsız yazım boş satır
+        // bırakırdı. Yeniden yazımı, gönderilen / "tekrar dene" ile yinelenen mesaj tetikler (deliverMessage).
       }
       if (body?.trim()) {
         if (!rateLimitSync("message_send")) { setSyncError("Çok hızlı mesaj gönderiyorsun. Lütfen biraz yavaşla."); return conversation; }
@@ -1263,9 +1281,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
       };
       if (!liveUser) { announce(message.conversationId); return; }
       const pendingWrite = conversationReady.current.get(message.conversationId);
+      // TEMBEL YAZIM: bu oturumda yerelde açılmış, sunucuya HİÇ yazılmamış konuşmanın satırı ilk mesajla
+      // birlikte (mesajdan ÖNCE) yazılır. Yazım başarısızsa mesaj "failed" kalır; "tekrar dene" aşağıdaki
+      // yeniden-yazım yolundan geçer.
+      const unwritten = pendingWrite || confirmedConversations.current.has(message.conversationId)
+        ? undefined
+        : Array.from(pendingConversations.current.entries()).find(([, c]) => c.id === message.conversationId);
       // Konuşma satırının ilk yazımı başarısız olduysa (ağ) mesajdan önce YENİDEN dene; yoksa
       // "tekrar dene" hiç var olmayan konuşmaya yazmaya çalışıp sonsuza dek başarısız olurdu.
-      const ready: Promise<string | null> = !pendingWrite ? Promise.resolve(message.conversationId) : pendingWrite.then((serverId) => {
+      const ready: Promise<string | null> = unwritten ? writeConversation(unwritten[1], unwritten[0]) : !pendingWrite ? Promise.resolve(message.conversationId) : pendingWrite.then((serverId) => {
         if (serverId) return serverId;
         const entry = Array.from(pendingConversations.current.entries()).find(([, c]) => c.id === message.conversationId);
         if (!entry) return null;
@@ -1326,6 +1350,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // Derin-link için metadata (ilan/ortaklık) — bildirim merkezi tıklanınca yönlendirir.
         ...(metadata ? { metadata } : {})
       };
+      // CANLI MOD: başka bir kullanıcıya gidecek bildirimleri (mesaj, ortaklık, satış, ödeme, talep,
+      // değerlendirme) SUNUCU tetikleyicileri üretir; istemcinin doğrudan yazdığı satır sunucuda
+      // sessizce düşer. Bu yüzden canlıda yalnız KENDİNE yazılan bildirim gönderilir/eklenir.
+      if (liveUser && userId !== currentUser.id) return;
       setNotifications((items) => [notification, ...items]);
       if (liveUser) void insertNotification(notification);
     }
@@ -1648,14 +1676,62 @@ export function StoreProvider({ children }: PropsWithChildren) {
         resetPrivateState();
         return true;
       },
+      // Tercih kaydı: sunucuya YALNIZ DEĞİŞEN anahtarlar gider (rpc merge_my_preferences sunucuda birleştirir;
+      // null = anahtarı sil) ve yerel durum sunucunun döndürdüğü TAM nesneden kurulur. Eskiden tüm JSON
+      // bayat olabilen yerel durumdan yazılıyordu → eşzamanlı iki kayıt birbirini eziyordu. Çağıran tam bir
+      // nesne verse de mevcut durumla karşılaştırılıp yalnız fark gönderilir. İyimser; hata → geri alınır.
       async savePreferences(preferences) {
-        const merged = { ...(currentUser.preferences ?? {}), ...preferences };
-        const updatedUser: User = { ...currentUser, preferences: merged };
-        const ok = liveUser ? await savePreferencesLive(currentUser.id, merged) : true;
-        if (!ok) { setAuthError("Tercihler kaydedilemedi."); return false; }
-        if(favoriteAccount.current!==currentUser.id)return false;
-        setUsers((items) => [updatedUser, ...items.filter((item) => item.id !== updatedUser.id)]);
-        if (authUser?.id === updatedUser.id) setAuthUser(updatedUser);
+        type Prefs = Record<string, boolean | string | number>;
+        const uid = currentUser.id;
+        // Oturumu olmayan (anon / ön izleme) hesapta tercih kaydı yok — eskiden de false dönerdi.
+        if (favoriteAccount.current !== uid) return false;
+        const before: Prefs = currentUser.preferences ?? {};
+        const patch: Record<string, boolean | string | number | null> = {};
+        for (const [key, value] of Object.entries(preferences)) {
+          if (value === undefined) continue;
+          if (value === null) { if (key in before) patch[key] = null; }
+          else if (before[key] !== value) patch[key] = value;
+        }
+        if (!Object.keys(patch).length) return true;
+        const overlay = (base: Prefs, patches: Array<typeof patch>): Prefs => {
+          const next = { ...base };
+          for (const item of patches) for (const [key, value] of Object.entries(item)) { if (value === null) delete next[key]; else next[key] = value; }
+          return next;
+        };
+        // İşlevsel güncelleme: art arda iki kayıt aynı (bayat) kullanıcı nesnesinden türeyip birbirini ezmesin.
+        const applyPreferences = (update: (prefs: Prefs) => Prefs) => {
+          setUsers((items) => {
+            const base = items.find((item) => item.id === uid) ?? currentUser;
+            return [{ ...base, preferences: update(base.preferences ?? {}) }, ...items.filter((item) => item.id !== uid)];
+          });
+          setAuthUser((user) => (user && user.id === uid ? { ...user, preferences: update(user.preferences ?? {}) } : user));
+        };
+        applyPreferences((prefs) => overlay(prefs, [patch]));
+        if (!liveUser) return true;
+        preferenceWrites.current.push(patch);
+        // Hesap arada değiştiyse yama gönderilmez (RPC kimliği oturumdan alır → başka hesaba yazılırdı).
+        const run = preferenceQueue.current.then(() => (favoriteAccount.current === uid ? mergePreferencesLive(uid, patch) : null));
+        preferenceQueue.current = run.catch(() => null);
+        const merged = await run.catch(() => null);
+        preferenceWrites.current = preferenceWrites.current.filter((item) => item !== patch);
+        if (favoriteAccount.current !== uid) return false;
+        if (!merged) {
+          // Geri al: yalnız BU kaydın anahtarları eski değerine döner (bekleyen başka bir kaydın dokunduğu anahtar hariç).
+          const pendingKeys = new Set(preferenceWrites.current.flatMap((item) => Object.keys(item)));
+          applyPreferences((prefs) => {
+            const next = { ...prefs };
+            for (const key of Object.keys(patch)) {
+              if (pendingKeys.has(key)) continue;
+              if (key in before) next[key] = before[key]; else delete next[key];
+            }
+            return next;
+          });
+          setAuthError("Tercihler kaydedilemedi.");
+          return false;
+        }
+        // Sunucunun birleşmiş nesnesi esastır; yanıtı henüz gelmemiş kayıtların iyimser değerleri üstüne bindirilir.
+        const settled = overlay(merged, preferenceWrites.current);
+        applyPreferences(() => settled);
         return true;
       },
       async setEmailNotifications(enabled) {
@@ -2561,6 +2637,20 @@ export function StoreProvider({ children }: PropsWithChildren) {
           if (!ok && favoriteAccount.current === currentUser.id) setNotifications(items => items.map(item => item.id === notificationId && item.userId === currentUser.id ? { ...item, read: false } : item));
           return ok;
         } finally { notificationWrites.current.delete(notificationId); }
+      },
+      // "Tümünü okundu işaretle": TEK istek (eskiden bildirim başına ayrı UPDATE → N istek). İyimser:
+      // satırlar hemen okundu görünür; sunucu reddederse YALNIZ bu çağrının çevirdiği satırlar geri alınır.
+      async markAllNotificationsRead() {
+        const uid = currentUser.id;
+        const ids = new Set(notifications.filter(item => item.userId === uid && !item.read && !notificationWrites.current.has(item.id)).map(item => item.id));
+        if (!ids.size) return true;
+        ids.forEach(id => notificationWrites.current.add(id)); // araya giren yenileme iyimser durumu ezmesin
+        setNotifications(items => items.map(item => ids.has(item.id) ? { ...item, read: true } : item));
+        try {
+          const ok = !liveUser || await markAllNotificationsReadLive(uid);
+          if (!ok && favoriteAccount.current === uid) setNotifications(items => items.map(item => ids.has(item.id) && item.userId === uid ? { ...item, read: false } : item));
+          return ok;
+        } finally { ids.forEach(id => notificationWrites.current.delete(id)); }
       },
       async refreshNotifications() {
         if (!liveUser) return;

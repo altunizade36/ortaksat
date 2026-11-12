@@ -244,7 +244,6 @@ revoke update, delete on public.account_deletion_requests from authenticated, an
 
 commit;
 
--- HENÜZ ZAMANLANMADI (sahibin onayı bekleniyor): 30 günü dolan talepleri her gece işleyen görev.
--- Onaylanınca Supabase SQL Editor'da tek satır olarak çalıştırılır:
+-- Gece görevi 2026-11-12'de sahibi tarafından SQL Editor'da zamanlandı (cron.job: process-account-deletions, '25 3 * * *'):
 --   select cron.schedule('process-account-deletions', '25 3 * * *', 'select private.process_account_deletions()');
--- O zamana kadar kalıcı silme yalnız yönetim panelinden ("Şimdi sil") yapılabilir.
+-- Depodaki dosyalar: supabase/functions/purge-account-files (yönetim paneli silme kuyruğu açılınca çağırır).

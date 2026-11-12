@@ -173,7 +173,7 @@ export function ListingVideoField({ value, onChange, userId, canUpload, disabled
             <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
               <MaterialCommunityIcons name={pending?.error ? "alert-circle-outline" : uploading ? "cloud-upload-outline" : "check-circle"} size={16} color={pending?.error ? colors.accent : colors.primary} />
               <Text testID="listing-video-state" style={{ color: pending?.error ? colors.accent : colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>
-                {pending?.error ? t("Video yüklenemedi") : uploading ? `${t("Yükleniyor…")} %${percent}` : t("Video eklendi")}
+                {pending?.error ? t("Video yüklenemedi") : uploading ? `${t("Yükleniyor…")} ${language === "en" ? `${percent}%` : `%${percent}`}` : t("Video eklendi")}
               </Text>
             </View>
             {meta ? <Text testID="listing-video-meta" style={{ color: colors.muted, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "700" }}>{meta}</Text> : null}

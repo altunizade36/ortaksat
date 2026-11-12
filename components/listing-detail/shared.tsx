@@ -16,6 +16,8 @@ import { Skeleton } from "@/components/skeleton";
 import { PressLink } from "@/components/ui";
 import { UserAvatar } from "@/components/user-avatar";
 import { VerificationBadges } from "@/components/verification-badges";
+import { categoryChipLabel } from "@/lib/categories";
+import { listingCategoryPath } from "@/lib/category-match";
 import { describeAttributes } from "@/lib/category-tree";
 import { commissionAmount, listingNo, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage, type AppLanguage } from "@/lib/i18n";
@@ -88,8 +90,12 @@ export function buildSummaryRows(listing: Listing, language: AppLanguage): { row
   const described = describeAttributes(listing.attributes).filter((r) => !/^(başlık|açıklama|fiyat)$/i.test(r.label));
   const rows: SummaryRow[] = described.filter((r) => !r.items).map((r) => ({ label: r.label, value: r.value }));
   const listingType = listing.attributes?.listingType ? String(listing.attributes.listingType) : "";
+  // Kategori TAM yoluyla yazılır (kök › … › yaprak): yalnız yaprak ("Bosch") hangi dalda olduğunu
+  // söylemiyordu. Web'deki breadcrumb ile aynı iz; native detayda breadcrumb olmadığı için tek kaynak budur.
+  const trail = listingCategoryPath(listing);
+  const categoryValue = trail.length ? trail.map((n) => translateCopy(categoryChipLabel(n.label), language)).join(" › ") : listing.category;
   const base: SummaryRow[] = [
-    { label: "Kategori", value: listing.category },
+    { label: "Kategori", value: categoryValue },
     ...(listingType ? [{ label: "İlan tipi", value: listingType }] : []),
     { label: "Stok", value: `${listing.stockCount} ${translateCopy("adet", language)}` },
     { label: "İade süresi", value: `${listing.returnWindowDays} ${translateCopy("gün", language)}` },

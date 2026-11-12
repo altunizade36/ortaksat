@@ -167,12 +167,25 @@ export async function answerQuestionLive(questionId: string, answer: string): Pr
   return { ok: true };
 }
 
-/** Kullanicinin tercih (bildirim/magaza ayarlari) JSONB kolonunu gunceller. */
-export async function savePreferencesLive(userId: string, preferences: Record<string, boolean | string | number>): Promise<boolean> {
-  if (!supabase) return false;
-  const { error } = await supabase.from("profiles").update({ preferences }).eq("id", userId);
-  if (error) { console.warn("Preferences update failed", error); return false; }
-  return true;
+/**
+ * Tercihleri (bildirim/mağaza ayarları JSONB kolonu) SUNUCUDA birleştirir — rpc `merge_my_preferences`:
+ * yalnız yamadaki anahtarlar değişir, `null` değer o anahtarı siler. Birleşmiş TAM tercih nesnesini
+ * döner; hata → null. Eskiden istemci tüm JSON'u (bayat olabilen) yerel durumdan yazıyordu → eşzamanlı
+ * iki kayıt birbirini eziyordu.
+ * RPC kimliği oturumdan (auth.uid()) alır; hesap arada değiştiyse yama BAŞKA hesaba yazılmasın diye
+ * çağrıdan hemen önce oturumun `userId`'ye ait olduğu doğrulanır.
+ */
+export async function mergePreferencesLive(userId: string, patch: Record<string, boolean | string | number | null>): Promise<Record<string, boolean | string | number> | null> {
+  if (!supabase) return null;
+  try {
+    const { data: auth } = await supabase.auth.getSession();
+    if (auth.session?.user?.id !== userId) return null;
+    const { data, error } = await supabase.rpc("merge_my_preferences", { p_patch: patch });
+    if (error) { console.warn("merge_my_preferences failed", error); return null; }
+    return data && typeof data === "object" && !Array.isArray(data) ? (data as Record<string, boolean | string | number>) : null;
+  } catch {
+    return null;
+  }
 }
 
 // IBAN/ödeme bilgisi TOPLANMAZ. OrtakSat para tutmaz; komisyon ödemesi ortak ile satıcı
@@ -1151,20 +1164,51 @@ export async function insertReview(review: Review): Promise<boolean> {
 
 // Bir kullanıcı HAKKINDA yazılmış (aldığı) yorumları getir — mağaza/profil
 // sayfasında ziyaretçilere gösterilir. reviews SELECT politikası herkese açık.
-export async function fetchReviewsForUser(userId: string): Promise<Review[]> {
-  if (!supabase || !userId) return [];
-  const { data, error } = await supabase
+export async function fetchReviewsForUser(userId: string, options: ReviewPageOptions = {}): Promise<Review[]> {
+  return (await fetchReviewPage({ userId }, options))?.rows ?? [];
+}
+
+export type ReviewPageOptions = {
+  /** Atlanacak satır sayısı (sayfalama). */
+  offset?: number;
+  /** Sayfa boyu (1–100; varsayılan 100 = eski davranış). */
+  limit?: number;
+  sort?: "recent" | "helpful" | "high" | "low";
+  /** Yalnız bu puandaki (1–5) yorumlar; 0/boş = hepsi. */
+  star?: number;
+  type?: "seller" | "partner" | "product";
+};
+export type ReviewPage = { rows: Review[]; total: number };
+
+/**
+ * Sayfalı yorum sorgusu (ilan ya da kullanıcı hakkında; silinmemişler). Sıralama ve süzgeç SUNUCUDA
+ * uygulanır ve sıra `id` ile sabitlenir → art arda sayfalar aynı satırı iki kez getirmez / atlamaz.
+ * `total` = süzgece uyan TÜM satırların sayısı. Hata → null (çağıran "tekrar dene" gösterebilsin;
+ * boş sayfayla karıştırılmasın). Canlı bağlantı yoksa boş sayfa döner.
+ */
+export async function fetchReviewPage(target: { listingId?: string; userId?: string }, options: ReviewPageOptions = {}): Promise<ReviewPage | null> {
+  if (!supabase || (!target.listingId && !target.userId)) return { rows: [], total: 0 };
+  const limit = Math.min(100, Math.max(1, Math.floor(options.limit ?? 100)));
+  const offset = Math.max(0, Math.floor(options.offset ?? 0));
+  let request = supabase
     .from("reviews")
-    .select("*, reviewer:profiles!reviews_reviewer_id_fkey(full_name, avatar_url)")
-    .eq("reviewed_user_id", userId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(100);
+    .select("*, reviewer:profiles!reviews_reviewer_id_fkey(full_name, avatar_url)", { count: "exact" })
+    .is("deleted_at", null);
+  if (target.listingId) request = request.eq("listing_id", target.listingId);
+  if (target.userId) request = request.eq("reviewed_user_id", target.userId);
+  if (options.type) request = request.eq("type", options.type);
+  if (options.star) request = request.eq("rating", options.star);
+  if (options.sort === "helpful") request = request.order("helpful_count", { ascending: false });
+  if (options.sort === "high" || options.sort === "low") request = request.order("rating", { ascending: options.sort === "low" });
+  const { data, error, count } = await request.order("created_at", { ascending: false }).order("id", { ascending: true }).range(offset, offset + limit - 1);
   if (error) {
-    console.warn("Supabase fetch user reviews failed", error);
-    return [];
+    // PGRST103: istenen aralık toplamın ötesinde (arada yorum silinmiş) → hata değil, liste bitti.
+    if (error.code === "PGRST103") return { rows: [], total: offset };
+    console.warn("Supabase fetch reviews failed", error);
+    return null;
   }
-  return (data ?? []).map(mapReviewRow);
+  const rows = (data ?? []).map(mapReviewRow);
+  return { rows, total: typeof count === "number" ? count : offset + rows.length };
 }
 
 // Yorum satırı → Review; yazar profilini FK-embed'den çözer (anon'da bile gerçek ad/avatar).
@@ -1193,20 +1237,8 @@ export function mapReviewRow(row: Record<string, any>): Review {
 // yalnız giriş yapanın KENDİ yorumunu gösteriyordu (başkalarınınki hiç çekilmiyordu, sosyal
 // kanıt çalışmıyordu + crawler'ın bastığı yıldızlar sayfada görünmüyordu). middleware SEO ile
 // AYNI kapsam (listing_id + silinmemiş) → görünür içerik ile işaretleme eşleşir.
-export async function fetchReviewsForListing(listingId: string): Promise<Review[]> {
-  if (!supabase || !listingId) return [];
-  const { data, error } = await supabase
-    .from("reviews")
-    .select("*, reviewer:profiles!reviews_reviewer_id_fkey(full_name, avatar_url)")
-    .eq("listing_id", listingId)
-    .is("deleted_at", null)
-    .order("created_at", { ascending: false })
-    .limit(100);
-  if (error) {
-    console.warn("Supabase fetch listing reviews failed", error);
-    return [];
-  }
-  return (data ?? []).map(mapReviewRow);
+export async function fetchReviewsForListing(listingId: string, options: ReviewPageOptions = {}): Promise<Review[]> {
+  return (await fetchReviewPage({ listingId }, options))?.rows ?? [];
 }
 
 // Satıcı yorumuna yanıt yazar/günceller (RPC: yalnız yorumun hakkında olduğu kişi).
@@ -1450,6 +1482,18 @@ export async function markNotificationReadLive(notification: Notification): Prom
   try {
     const { data, error } = await supabase.from("notifications").update({ read: true }).eq("id", notification.id).eq("user_id", notification.userId).select("id").maybeSingle();
     return !error && data?.id === notification.id;
+  } catch { return false; }
+}
+
+// Kullanıcının TÜM okunmamış bildirimlerini TEK istekle okundu yapar (eskiden bildirim başına ayrı
+// UPDATE atılıyordu → 80 okunmamışta 80 istek). RLS kullanıcıya yalnız kendi satırlarını güncelletir.
+// true = sunucu hata vermedi (okunmamış satır kalmamış olması da başarıdır).
+export async function markAllNotificationsReadLive(userId: string): Promise<boolean> {
+  if (!supabase || !uuidPattern.test(userId)) return false;
+  try {
+    const { error } = await supabase.from("notifications").update({ read: true }).eq("user_id", userId).eq("read", false);
+    if (error) console.warn("Supabase mark all notifications read failed", error);
+    return !error;
   } catch { return false; }
 }
 

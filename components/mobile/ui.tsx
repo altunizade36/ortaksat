@@ -24,6 +24,9 @@ export const mobile = {
   canvas: "#F6F9FF",
 };
 export type MobileIcon = keyof typeof Icon.glyphMap;
+/** İçerik sütunu üst sınırları (dp): geniş tablette (ör. 1180 dp yatay) içerik kenardan kenara yayılmasın.
+ * `page` = ızgara/iki bölmeli sayfa, `pane` = tek sohbet/okuma bölmesi, `column` = tek sütun (küçük tablet). */
+export const mobileContent = { page: 1040, pane: 760, column: 640 } as const;
 export function useMobileLayout() {
   const { width: nativeWidth, height } = useWindowDimensions();
   const contentWidth = useContentWidth();
@@ -33,9 +36,13 @@ export function useMobileLayout() {
   const width = Platform.OS === "web" ? (mounted ? contentWidth : 390) : nativeWidth;
   const insets = useSafeAreaInsets();
   const tablet = width >= 700;
-  // `wide` = küçük tabletler dahil (600 dp+). Göz atma ekranları sütun sayısını buna göre artırır;
-  // `tablet` (700 dp+) iki bölmeli düzenleri (ilan detayı, mesajlar) açtığı için eşiği değişmedi —
-  // 600 dp'de o bölmeler ~210-240 dp'ye sıkışırdı.
+  // `wide` = küçük tabletler dahil (600 dp+): göz atma ekranları sütun sayısını, ilan detayı / mesajlar /
+  // mağaza da 600-699 dp ARA düzenini buna göre seçer.
+  // `tablet` eşiği BİLEREK 700'de kaldı (600'e indirilmedi): 600 dp'de içerik 552 dp'ye düşer ve `tablet`e
+  // bağlı sabit düzenler sıkışır — profil ilan ızgarası ve ana sayfa 4 sütun (≈124 dp kart), kategori karosu
+  // 72 dp görselle ≈58 dp metin, ilan önizlemesi %25 hücre (≈121 dp), ilan verme formu satırda 3 alan
+  // (≈165 dp), ortaklık içeriği iki sütun (≈252 dp). Her birine ayrı "700+" koşulu yazmak aynı ikiliği
+  // geri getirirdi; bu yüzden eşik tek yerde durur, ara düzen isteyen ekran `wide` kullanır.
   const wide = width >= 600;
   const maxWidth = tablet ? Math.min(width - 48, 1180) : width;
   return { width, height, insets, tablet, wide, maxWidth, padding: tablet ? 24 : 16 };

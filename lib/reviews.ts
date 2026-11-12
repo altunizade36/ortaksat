@@ -6,8 +6,9 @@
  * yazılmıştı: mağaza kendi özetini, ilan detayı kendi formunu, mobil kendi listesini
  * taşıyordu. Buradaki yardımcılar hepsinin aynı sonucu göstermesini sağlar.
  */
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
+import { fetchReviewPage } from "@/lib/live-service";
 import { supabase } from "@/lib/supabase";
 import type { Review } from "@/lib/types";
 
@@ -90,13 +91,194 @@ export function reviewRelativeDate(value: string, language: "tr" | "en" = "tr", 
  */
 export async function fetchRatingStats(filter: { listingId?: string; userId?: string; type?: "seller" | "partner" | "product" }): Promise<RatingStats | null> {
   if (!supabase || (!filter.listingId && !filter.userId)) return null;
-  let request = supabase.from("reviews").select("rating").is("deleted_at", null);
-  if (filter.listingId) request = request.eq("listing_id", filter.listingId);
-  if (filter.userId) request = request.eq("reviewed_user_id", filter.userId);
-  if (filter.type) request = request.eq("type", filter.type);
-  const { data, error } = await request.limit(2000);
-  if (error) return null;
-  return ratingStats((data ?? []).map((row) => Number((row as { rating: number }).rating)));
+  // PostgREST tek yanıtta en fazla 1000 satır döner → daha çok yorumu olan satıcıda özet eksik
+  // kalmasın diye puanlar sayfa sayfa okunur (id sırasıyla; üst sınır RATING_MAX_PAGES sayfa).
+  const ratings: number[] = [];
+  for (let page = 0; page < RATING_MAX_PAGES; page++) {
+    let request = supabase.from("reviews").select("rating").is("deleted_at", null);
+    if (filter.listingId) request = request.eq("listing_id", filter.listingId);
+    if (filter.userId) request = request.eq("reviewed_user_id", filter.userId);
+    if (filter.type) request = request.eq("type", filter.type);
+    const { data, error } = await request.order("id", { ascending: true }).range(page * RATING_PAGE, (page + 1) * RATING_PAGE - 1);
+    if (error) return null;
+    for (const row of data ?? []) ratings.push(Number((row as { rating: number }).rating));
+    if ((data?.length ?? 0) < RATING_PAGE) break;
+  }
+  return ratingStats(ratings);
+}
+const RATING_PAGE = 1000;
+const RATING_MAX_PAGES = 20;
+
+/* ---------------------------------------------------------------------------
+ * Sayfalı yorum listesi (web: mağaza, ilan detayı, ortak vitrini).
+ *
+ * Eskiden bu ekranlar tek istekte en fazla 100 yorum çekiyor, fazlası HİÇ görünmüyordu; başlıktaki
+ * sayı ve özet de yalnız yüklenen satırlardan hesaplanıyordu. Artık liste sayfa sayfa gelir
+ * ("Daha fazla değerlendirme göster" ekler), sayı ve özet ise TÜM yorumlardan (fetchRatingStats).
+ * Sıralama / yıldız süzgeci değişince liste ilk sayfadan yeniden sorgulanır.
+ * ------------------------------------------------------------------------- */
+export const REVIEW_PAGE_SIZE = 20;
+
+export type PagedReviews = {
+  /** Sunucudan yüklenen satırlar (sunucu sırasıyla, kimliğe göre tekil). */
+  rows: Review[];
+  /** Süzgece uyan TÜM satırların sayısı; henüz bilinmiyorsa null. */
+  total: number | null;
+  /** TÜM yorumların özeti (yıldız süzgecinden bağımsız); alınamadıysa null. */
+  stats: RatingStats | null;
+  /** İlk sayfa yükleniyor (hedef / sıralama / süzgeç değişti ya da yeniden deneniyor). */
+  loading: boolean;
+  loadingMore: boolean;
+  /** Son sayfa isteği başarısız oldu (liste olduğu gibi kalır; yeniden denenebilir). */
+  error: boolean;
+  hasMore: boolean;
+  loadMore: () => void;
+  /** İlk sayfadan yeniden yükle (özet dahil). */
+  reload: () => void;
+  /** Başarısız isteği yinele: ilk sayfa düşmüşse baştan, sıradaki sayfa düşmüşse kaldığı yerden. */
+  retry: () => void;
+  patch: (id: string, change: Partial<Review>) => void;
+  remove: (id: string) => void;
+};
+
+/** Özeti yerelde düzeltir: `from` puanlı bir yorum çıkar, `to` puanlı bir yorum girer (0 = yok). */
+function shiftStats(stats: RatingStats | null, from: number, to: number): RatingStats | null {
+  if (!stats) return stats;
+  const dist = [...stats.dist] as RatingStats["dist"];
+  const out = clampRating(from);
+  const into = clampRating(to);
+  if (out) dist[out - 1] = Math.max(0, dist[out - 1] - 1);
+  if (into) dist[into - 1] += 1;
+  const count = dist.reduce((sum, n) => sum + n, 0);
+  const points = dist.reduce((sum, n, index) => sum + n * (index + 1), 0);
+  return { count, average: count ? Math.round((points / count) * 10) / 10 : 0, dist };
+}
+
+export function usePagedReviews(
+  target: { listingId?: string; userId?: string; type?: "seller" | "partner" | "product" },
+  options: {
+    sort?: ReviewSort;
+    star?: number;
+    pageSize?: number;
+    /** Değişince özet yeniden çekilir (ör. oturumda yeni yorum yazıldı). */
+    refreshKey?: string | number;
+  } = {}
+): PagedReviews {
+  const { listingId, userId, type } = target;
+  const sort = options.sort ?? "recent";
+  const star = options.star ?? 0;
+  const pageSize = options.pageSize ?? REVIEW_PAGE_SIZE;
+  const refreshKey = options.refreshKey;
+  const [rows, setRows] = useState<Review[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [stats, setStats] = useState<RatingStats | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState(false);
+  // Sunucudan tüketilen satır sayısı = sıradaki sayfanın başlangıcı (yerelde silinen satır düşülür).
+  const [consumed, setConsumed] = useState(0);
+  const [tick, setTick] = useState(0);
+  const [statsTick, setStatsTick] = useState(0);
+  const generation = useRef(0);
+  const busy = useRef(false);
+  // İlk sayfa isteği düştü: eldeki satırlar (varsa) ÖNCEKİ sıralamaya aittir → üstüne sayfa eklenmez.
+  const firstFailed = useRef(false);
+  const consumedRef = useRef(0);
+  const rowsRef = useRef(rows);
+  rowsRef.current = rows;
+
+  // Başka ilana / kullanıcıya geçildi: öncekinin satırları ve özeti bir an bile görünmesin.
+  useEffect(() => {
+    setRows((old) => (old.length ? [] : old));
+    setTotal(null);
+    setStats(null);
+  }, [listingId, userId, type]);
+
+  useEffect(() => {
+    const n = ++generation.current;
+    busy.current = true;
+    firstFailed.current = false;
+    setLoading(true);
+    setLoadingMore(false);
+    setError(false);
+    const done = (page: Awaited<ReturnType<typeof fetchReviewPage>>) => {
+      if (n !== generation.current) return;
+      busy.current = false;
+      setLoading(false);
+      if (!page) { firstFailed.current = true; setError(true); return; }
+      consumedRef.current = page.rows.length;
+      setConsumed(page.rows.length);
+      setRows(page.rows);
+      setTotal(page.total);
+    };
+    void fetchReviewPage({ listingId, userId }, { offset: 0, limit: pageSize, sort, star, type }).then(done, () => done(null));
+    return () => { generation.current++; busy.current = false; };
+  }, [listingId, userId, type, sort, star, pageSize, tick]);
+
+  useEffect(() => {
+    let alive = true;
+    // Başarısız yenileme eldeki (doğru) özeti silmesin; hedef değişince özet zaten sıfırlanır.
+    void fetchRatingStats({ listingId, userId, type }).then((next) => { if (alive && next) setStats(next); }, () => {});
+    return () => { alive = false; };
+  }, [listingId, userId, type, tick, statsTick, refreshKey]);
+
+  const loadMore = useCallback(() => {
+    if (busy.current || firstFailed.current) return;
+    const n = generation.current;
+    busy.current = true;
+    setLoadingMore(true);
+    setError(false);
+    const done = (page: Awaited<ReturnType<typeof fetchReviewPage>>) => {
+      if (n !== generation.current) return;
+      busy.current = false;
+      setLoadingMore(false);
+      if (!page) { setError(true); return; }
+      consumedRef.current += page.rows.length;
+      setConsumed(consumedRef.current);
+      // Arada yeni yorum eklendiyse sayfa bir satır kayar → aynı satır iki kez gelebilir; kimliğe göre ele.
+      setRows((old) => { const seen = new Set(old.map((r) => r.id)); return [...old, ...page.rows.filter((r) => !seen.has(r.id))]; });
+      // Boş sayfa = liste bitti (toplam, tüketilenden büyük kalıp düğmeyi sonsuza dek göstermesin).
+      setTotal(page.rows.length ? page.total : Math.min(page.total, consumedRef.current));
+    };
+    void fetchReviewPage({ listingId, userId }, { offset: consumedRef.current, limit: pageSize, sort, star, type }).then(done, () => done(null));
+  }, [listingId, userId, type, sort, star, pageSize]);
+
+  const reload = useCallback(() => setTick((v) => v + 1), []);
+  const retry = useCallback(() => { if (firstFailed.current) setTick((v) => v + 1); else loadMore(); }, [loadMore]);
+
+  const patch = useCallback((id: string, change: Partial<Review>) => {
+    const current = rowsRef.current.find((r) => r.id === id);
+    const nextRating = change.rating;
+    if (current && nextRating !== undefined && nextRating !== current.rating) setStats((s) => shiftStats(s, current.rating, nextRating));
+    setRows((old) => old.map((r) => (r.id === id ? { ...r, ...change } : r)));
+    if (nextRating !== undefined) setStatsTick((v) => v + 1);
+  }, []);
+
+  const remove = useCallback((id: string) => {
+    const current = rowsRef.current.find((r) => r.id === id);
+    if (current) {
+      consumedRef.current = Math.max(0, consumedRef.current - 1);
+      setConsumed(consumedRef.current);
+      setTotal((t) => (t === null ? t : Math.max(0, t - 1)));
+      setStats((s) => shiftStats(s, current.rating, 0));
+      setRows((old) => old.filter((r) => r.id !== id));
+    }
+    setStatsTick((v) => v + 1);
+  }, []);
+
+  return { rows, total, stats, loading, loadingMore, error, hasMore: total !== null && consumed < total, loadMore, reload, retry, patch, remove };
+}
+
+/**
+ * Başlıktaki sayı + özet için doğru kaynak. `shown` = ekrandaki liste (yüklenen sayfalar + oturumda
+ * yazılıp henüz sunucu listesinde olmayan kendi yorumun).
+ *  • Daha sayfa varsa: sayı ve özet SUNUCUDAN (tüm yorumlar) — yalnız yüklenen sayfadan hesaplanmaz.
+ *  • Hepsi yüklüyse: ekrandaki liste esastır (yeni yazılan yorum, özet yenilenmeden de sayılır).
+ */
+export function summarizeReviews(paged: Pick<PagedReviews, "stats" | "total" | "hasMore">, shown: Array<Pick<Review, "rating">>): { count: number; stats: RatingStats | null } {
+  const local = ratingStats(shown.map((r) => r.rating));
+  const stats = paged.hasMore ? paged.stats : paged.stats && paged.stats.count >= local.count ? paged.stats : local;
+  return { count: Math.max(stats?.count ?? 0, paged.total ?? 0, shown.length), stats: stats && stats.count > 0 ? stats : null };
 }
 
 /* ---------------------------------------------------------------------------

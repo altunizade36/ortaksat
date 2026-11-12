@@ -332,7 +332,7 @@ function BulkUploadInner() {
       // Başlık: YENİ ilanda zorunlu; GÜNCELLEMEDE boşsa mevcut korunur (kısmi güncelleme).
       if (mode === "new" || title) {
         const v = validateListing({ title, description: description || "Toplu yükleme ürünü.", price });
-        v.errors.forEach((e) => { if (e.field !== "description" && e.field !== "price") errors.push(e.message); });
+        v.errors.forEach((e) => { if (e.field !== "description" && e.field !== "price") errors.push(translateCopy(e.message, language)); });
       }
       // Kategori/İl: YENİ ilanda zorunlu; GÜNCELLEMEDE yalnız dolu ama eşleşmezse hatadır.
       if (mode === "new") {
@@ -372,7 +372,8 @@ function BulkUploadInner() {
     if (result.canceled) return;
     const uris = result.assets.map((a) => a.uri).filter(Boolean);
     setBulkImages(uris);
-    setNotice(translateCopy(`${uris.length} fotoğraf seçildi — satırlara sırayla atanacak (görsel_url boş olanlara). "Ayrıştır"a tekrar bas.`, language));
+    // Sayı çevrilmez; sabit kısım sözlükten geçer (sayı metnin içindeyken anahtar hiç eşleşmiyordu).
+    setNotice(`${uris.length} ${translateCopy("fotoğraf seçildi — satırlara sırayla atanacak (görsel_url boş olanlara). \"Ayrıştır\"a tekrar bas.", language)}`);
   }
 
   // DOSYADAN YÜKLE (web) — .csv seç → metni oku → yapıştırma alanına doldur.

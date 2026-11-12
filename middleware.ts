@@ -154,19 +154,32 @@ async function listingResponse(id: string): Promise<Response | undefined> {
     }
   }
 
-  const catSlug = l.category ? CAT_NAME_TO_SLUG[l.category] : undefined;
-  const crumbEls: Array<Record<string, unknown>> = [{ "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://www.ortaksat.com/" }];
-  if (catSlug && l.category) crumbEls.push({ "@type": "ListItem", position: 2, name: l.category, item: `https://www.ortaksat.com/kategori/${catSlug}` });
-  crumbEls.push({ "@type": "ListItem", position: crumbEls.length + 1, name: listingTitle, item: url });
+  // KATEGORİ İZİ (uygulamadaki görünür breadcrumb ile aynı): Ana Sayfa › kök › … › yaprak › ilan.
+  // İlanın KAYITLI yolu (attributes._path = kökten yaprağa slug dizisi) kullanılır; eskiden yalnız yaprak
+  // etiketi vardı ve "Bosch" gibi çok dallı etiketler ad→slug haritasındaki İLK dala bağlanıyordu.
+  // Ad haritasında olmayan (derin marka/model) ARA düğüm atlanır; yaprağın adı ilanın kendi kategorisidir.
+  const savedPath = Array.isArray(l.attributes?._path)
+    ? (l.attributes._path as unknown[]).filter((s): s is string => typeof s === "string" && /^[a-z0-9-]+$/.test(s))
+    : [];
+  const catCrumbs: Array<{ name: string; slug: string }> = [];
+  savedPath.forEach((slug, i) => {
+    const name = CATEGORY_MAP[slug] || (i === savedPath.length - 1 ? l.category || "" : "");
+    if (name) catCrumbs.push({ name, slug });
+  });
+  // `_path`'i olmayan eski kayıt: önceki davranış (yaprak etiketinden tek kategori öğesi).
+  if (!catCrumbs.length && l.category && CAT_NAME_TO_SLUG[l.category]) catCrumbs.push({ name: l.category, slug: CAT_NAME_TO_SLUG[l.category] });
+  const crumbEls: Array<Record<string, unknown>> = [
+    { name: "Ana Sayfa", item: "https://www.ortaksat.com/" },
+    ...catCrumbs.map((c) => ({ name: c.name, item: `https://www.ortaksat.com/kategori/${c.slug}` })),
+    { name: listingTitle, item: url }
+  ].map((entry, i) => ({ "@type": "ListItem", position: i + 1, ...entry }));
   const breadcrumb = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: crumbEls };
 
   // Facebook/Pinterest ürün kartı fiyat etiketleri.
   const priceOg = `<meta property="product:price:amount" content="${Number(l.price || 0)}" /><meta property="product:price:currency" content="${esc(currency)}" /><meta property="og:price:amount" content="${Number(l.price || 0)}" /><meta property="og:price:currency" content="${esc(currency)}" /><meta property="product:availability" content="${inStock ? "in stock" : "out of stock"}" />`;
 
   // Gerçek indekslenebilir gövde (JS render'a bağlı kalmadan içerik). Crawler bunu okur.
-  const crumbHtml = catSlug && l.category
-    ? `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › <a href="https://www.ortaksat.com/kategori/${esc(catSlug)}">${esc(l.category)}</a> › ${esc(listingTitle)}</nav>`
-    : `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › ${esc(listingTitle)}</nav>`;
+  const crumbHtml = `<nav><a href="https://www.ortaksat.com/">Ana Sayfa</a> › ${catCrumbs.map((c) => `<a href="https://www.ortaksat.com/kategori/${esc(c.slug)}">${esc(c.name)}</a> › `).join("")}${esc(listingTitle)}</nav>`;
   const body = `${crumbHtml}<h1>${esc(listingTitle)}</h1><p><strong>₺${esc(priceStr)}</strong>${commTl > 0 ? ` · Ortak ol, ₺${esc(commTl.toLocaleString("tr-TR"))} komisyon kazan` : ""}${inStock ? "" : " · Stokta yok"}</p><p>${esc((l.description || "").replace(/\s+/g, " ").slice(0, 400))}</p>${image !== OG_COVER ? `<img src="${esc(image)}" alt="${esc(listingTitle)}" width="600" />` : ""}<p><a href="${esc(url)}">İlanı OrtakSat'ta görüntüle →</a></p>`;
 
   return page(title, desc, image, url, "product", `${priceOg}${ld(product)}${ld(breadcrumb)}`, body);

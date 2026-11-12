@@ -239,12 +239,13 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   // Anlık moderasyon uyarısı (kullanıcı yazarken): yasaklı = kırmızı, dikkatli = sarı.
   const liveModeration = useMemo(() => {
     const kw = scanTextLocal(`${String(values.title ?? "")} ${String(values.description ?? "")}`);
-    if (kw.verdict === "block") return { level: "block" as const, msg: `Yasaklı ifade tespit edildi: "${kw.matched}". Bu içerikle ilan yayınlanamaz.` };
+    // Değişken kısım (eşleşen ifade) çevrilmez; sabit parçalar sözlükten geçer (Türkçede çıktı aynıdır).
+    if (kw.verdict === "block") return { level: "block" as const, msg: `${translateCopy("Yasaklı ifade tespit edildi:", language)} "${kw.matched}". ${translateCopy("Bu içerikle ilan yayınlanamaz.", language)}` };
     const cat = categoryRisk(path.map((p) => p.label));
-    if (kw.verdict === "review") return { level: "review" as const, msg: `"${kw.matched}" ifadesi dikkat gerektirebilir; ilan yönetici onayına düşebilir.` };
+    if (kw.verdict === "review") return { level: "review" as const, msg: `"${kw.matched}" ${translateCopy("ifadesi dikkat gerektirebilir; ilan yönetici onayına düşebilir.", language)}` };
     if (cat === "review") return { level: "review" as const, msg: translateCopy("Bu kategori, güvenlik gereği yayından önce yönetici onayına düşer.", language) };
     return null;
-  }, [values.title, values.description, path]);
+  }, [values.title, values.description, path, language]);
 
   const setV = (k: string, v: string | boolean | string[]) => setValues((s) => ({ ...s, [k]: v, ...(k === "brand" && s.brand !== v ? { model: "" } : {}) }));
   // Form değerlerinin ait olduğu SON tam kategori şeması (ara seviyeler formu sıfırlamasın).
@@ -659,7 +660,8 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     const titleValue = String(values.title ?? "");
     const titleError = validateListingTitle(titleValue).error;
     if (titleError) formIssues.push({ key: "title", message: titleValue.trim() ? titleError : "İlan başlığını yaz." });
-    for (const f of missingFields) if (f.key !== "title") formIssues.push({ key: f.key, message: `${f.label} alanını doldur.` });
+    // Alan adı (şema verisi) aynen kalır; sabit kısım sözlükten çevrilir — Türkçede çıktı birebir aynıdır.
+    for (const f of missingFields) if (f.key !== "title") formIssues.push({ key: f.key, message: `${f.label} ${translateCopy("alanını doldur.", language)}` });
     for (const f of schema.fields) {
       if (f.type !== "number") continue;
       const text = typeof values[f.key] === "string" ? String(values[f.key]).trim() : "";
@@ -668,7 +670,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
         const parsed = parseListingMoney(text);
         if (!Number.isFinite(parsed)) formIssues.push({ key: f.key, message: LISTING_MONEY_ERROR });
         else if (parsed > LIMITS.price.max) formIssues.push({ key: f.key, message: "Fiyat çok yüksek görünüyor." });
-      } else if (!/^[\d.,\s]+$/.test(text)) formIssues.push({ key: f.key, message: `${f.label}: yalnızca rakam gir.` });
+      } else if (!/^[\d.,\s]+$/.test(text)) formIssues.push({ key: f.key, message: `${f.label}: ${translateCopy("yalnızca rakam gir.", language)}` });
     }
     const descriptionText = String(values.description ?? "").trim();
     if (descriptionText && descriptionText.length < LIMITS.description.min) formIssues.push({ key: "description", message: `Açıklama en az ${LIMITS.description.min} karakter olmalı.` });
@@ -763,7 +765,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       return true;
     });
     if (errs.length) {
-      setError(errs[0].message);
+      setError(translateCopy(errs[0].message, language));
       return;
     }
     // Savunmacı yayın-anı kontrolü: adım-navigasyonu atlansa/draft bozulsa bile
@@ -786,7 +788,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           setError(translateCopy("Taslak cihazına kaydedilemedi. Bilgilerin formda duruyor; girişe geçmeden önce tekrar dene.", language));
           return;
         }
-        setNotice("İlanını yayınlamak için ücretsiz hesabını oluştur — bilgilerin korunuyor.");
+        setNotice(translateCopy("İlanını yayınlamak için ücretsiz hesabını oluştur — bilgilerin korunuyor.", language));
         router.push("/auth?redirect=/create&mode=register");
         return;
       }
@@ -794,7 +796,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       // Hız sınırı (spam/bot ilan yağmurunu engeller).
       const rl = await rateLimit("listing_create");
       if (!rl.allowed) {
-        setError(rl.reason ?? translateCopy("Çok sık denediniz, lütfen sonra tekrar deneyin.", language));
+        setError(translateCopy(rl.reason ?? "Çok sık denediniz, lütfen sonra tekrar deneyin.", language));
         return;
       }
 
@@ -1480,7 +1482,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                 <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Önerilen komisyonu uygula", language)} onPress={() => setCommissionValue(String(mid))} style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: belowMin ? colors.goldSoft : colors.surfaceAlt, borderColor: belowMin ? colors.gold : colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 11, paddingVertical: 7 })}>
                   <MaterialCommunityIcons name="lightbulb-on-outline" size={14} color={belowMin ? colors.goldInk : colors.primaryDark} />
                   <Text style={{ color: belowMin ? colors.goldInk : colors.muted, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Bu kategoride önerilen", language)}: {rangeText}</Text>
-                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>· {applyText} {translateCopy("uygula", language)}</Text>
+                  <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>· {language === "en" ? `${translateCopy("uygula", language)} ${applyText}` : `${applyText} ${translateCopy("uygula", language)}`}</Text>
                 </Pressable>
               );
             })()}
@@ -1633,11 +1635,11 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           const titleStr = String(values.title ?? leafLabel).trim();
           const checks: Array<{ ok: boolean; good: string; tip: string }> = [
             { ok: titleStr.length >= 20, good: "Açıklayıcı başlık", tip: "Başlığa marka/model/öne çıkan özellik ekle — aramada daha görünür olur" },
-            { ok: images.length >= RECOMMENDED_PHOTOS, good: `${images.length} fotoğraf — güçlü görsel`, tip: `${RECOMMENDED_PHOTOS}+ fotoğraflı ilanlar belirgin şekilde daha çok ilgi görüyor` },
+            { ok: images.length >= RECOMMENDED_PHOTOS, good: `${images.length} ${translateCopy("fotoğraf — güçlü görsel", language)}`, tip: `${RECOMMENDED_PHOTOS}+ fotoğraflı ilanlar belirgin şekilde daha çok ilgi görüyor` },
             { ok: descStr.length >= 40, good: "Açıklama dolu", tip: descStr ? "Açıklamayı biraz uzat — alıcı sorularını azaltır, daha hızlı satar" : "Açıklama ekle — ilanların daha hızlı satar" }
           ];
-          if (priceHint) checks.push({ ok: !priceHint.tooLow, good: "Fiyat piyasayla uyumlu", tip: `Fiyatın piyasa medyanının (${moneyIn(priceHint.median, currency)}) çok altında — doğru mu?` });
-          if (partnershipMode !== "none" && commissionType === "rate" && commissionNum > 0) checks.push({ ok: commissionNum >= suggestedRange[0], good: "Cazip komisyon", tip: `Komisyon önerilen %${suggestedRange[0]}–%${suggestedRange[1]} aralığının altında — ortaklar daha az ilgilenebilir` });
+          if (priceHint) checks.push({ ok: !priceHint.tooLow, good: "Fiyat piyasayla uyumlu", tip: `${translateCopy("Fiyatın piyasa medyanının", language)} (${moneyIn(priceHint.median, currency)}) ${translateCopy("çok altında — doğru mu?", language)}` });
+          if (partnershipMode !== "none" && commissionType === "rate" && commissionNum > 0) checks.push({ ok: commissionNum >= suggestedRange[0], good: "Cazip komisyon", tip: `${translateCopy("Komisyon önerilen", language)} %${suggestedRange[0]}–%${suggestedRange[1]} ${translateCopy("aralığının altında — ortaklar daha az ilgilenebilir", language)}` });
           const strong = checks.filter((c) => c.ok).length;
           const ratio = strong / checks.length;
           const lvl = ratio >= 1 ? { lbl: "Güçlü", col: colors.success, soft: colors.successSoft } : ratio >= 0.5 ? { lbl: "İyi", col: colors.primaryDark, soft: colors.primarySoft } : { lbl: "İyileştirilebilir", col: colors.goldInk, soft: colors.goldSoft };
@@ -1726,7 +1728,7 @@ function DField({ field, value, onChange, invalid, errorText }: { field: FieldDe
     // data-field: "İlanı Yayınla"ya basınca ilk EKSİK alana kaydırmak için hedef (web).
     <View dataSet={{ field: field.key }} style={{ flexBasis: wide ? "100%" : 230, flexGrow: 1, gap: 6, minWidth: 0 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text style={{ color: invalid || shownError ? colors.accent : colors.muted, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} seçili` : ""}</Text>
+        <Text style={{ color: invalid || shownError ? colors.accent : colors.muted, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} ${translateCopy("seçili", language)}` : ""}</Text>
         {charLimit ? <Text style={{ color: charLen > charLimit.max || (charLen > 0 && charLen < charLimit.min) ? colors.accent : colors.subtle, fontSize: 11, fontWeight: "700" }}>{charLen}/{charLimit.max}</Text> : null}
       </View>
       {field.type === "multiselect" ? (

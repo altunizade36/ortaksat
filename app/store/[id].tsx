@@ -16,8 +16,8 @@ import { JsonLd } from "@/components/json-ld";
 import { ListingCard } from "@/components/listing-card";
 import { ReviewCard } from "@/components/review-card";
 import { RatingSummary } from "@/components/reviews/rating-summary";
-import { ReviewSortBar } from "@/components/reviews/review-filters";
-import { ratingStats, sortReviews, type ReviewSort } from "@/lib/reviews";
+import { ReviewLoadMore, ReviewSortBar } from "@/components/reviews/review-filters";
+import { sortReviews, summarizeReviews, usePagedReviews, type RatingStats, type ReviewSort } from "@/lib/reviews";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { ErrorScreen } from "@/components/error-boundary";
 import { WebFooter } from "@/components/web-landing";
@@ -29,7 +29,6 @@ import { openUrlSafe } from "@/lib/link";
 import { shareOrCopy } from "@/lib/share";
 import { responsiveGrid, useIsWideWeb } from "@/lib/layout";
 import { displayText } from "@/lib/text";
-import { fetchReviewsForUser } from "@/lib/live-service";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { Listing, Review, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -38,6 +37,7 @@ import { MobileSellerStore } from "@/components/mobile/seller-store";
 
 type StoreFilter = "active" | "all" | "partner";
 type ProfileTab = "about" | "listings" | "partnerships" | "policies" | "reviews" | "badges";
+const NO_REVIEW_STATS: RatingStats = { count: 0, average: 0, dist: [0, 0, 0, 0, 0] };
 
 /** "Üye olma tarihi" güven sinyali — createdAt "YYYY-MM-DD" → dilbilgisel olarak güvenli
  * "{yıl} yılından beri üye" / "Member since {yıl}". TR ek-uyumu tuzağını "yılından beri"
@@ -169,29 +169,30 @@ function StoreScreenLegacy() {
   // Bu kullanıcı HAKKINDA yazılmış yorumları canlıdan getir (global store yalnız
   // giriş yapan kullanıcının YAZDIĞI yorumları tutuyor). Böylece ziyaretçi de
   // satıcının aldığı gerçek değerlendirmeleri görür.
-  const [fetchedReviews, setFetchedReviews] = useState<Review[]>([]);
+  // SAYFALI: liste 20'şer gelir ("Daha fazla değerlendirme göster" ekler); sıralama SUNUCUDA uygulanır
+  // ve değişince ilk sayfadan yeniden sorgulanır. Eskiden tek istekte en fazla 100 yorum çekiliyordu.
   const [reviewSort, setReviewSort] = useState<ReviewSort>("recent");
-  const [reviewsLoaded, setReviewsLoaded] = useState(false);
+  // Store'daki (oturumda yazılan) bu satıcıya ait yorumlar — sunucu listesine henüz düşmemiş olabilir.
+  const localSellerReviews = useMemo(() => reviews.filter((r) => r.reviewedUserId === id), [reviews, id]);
+  const reviewPager = usePagedReviews({ userId: id }, { sort: reviewSort, refreshKey: localSellerReviews.length });
+  const reviewsLoaded = !reviewPager.loading;
   // ReviewCard yanıt/oy sonrası kaynağı günceller → tab değişip geri gelince (remount) stale
   // prop yerine güncel değer seed'lenir (eskiden yanıt/oy görünüşte kayboluyordu).
-  const patchReview = (rid: string, patch: Partial<Review>) => setFetchedReviews((rs) => rs.map((r) => (r.id === rid ? { ...r, ...patch } : r)));
-  const removeFetched = (rid: string) => setFetchedReviews((rs) => rs.filter((r) => r.id !== rid));
-  useEffect(() => {
-    let alive = true;
-    setReviewsLoaded(false);
-    if (id) void fetchReviewsForUser(id).then((r) => { if (alive) { setFetchedReviews(r); setReviewsLoaded(true); } });
-    return () => { alive = false; };
-  }, [id]);
+  const patchReview = reviewPager.patch;
+  const removeFetched = reviewPager.remove;
   const reviewsAboutSeller = useMemo(() => {
     const map = new Map<string, Review>();
-    for (const r of reviews) if (r.reviewedUserId === id) map.set(r.id, r);
-    for (const r of fetchedReviews) map.set(r.id, r);
+    for (const r of localSellerReviews) map.set(r.id, r);
+    for (const r of reviewPager.rows) map.set(r.id, r);
     return sortReviews(Array.from(map.values()), reviewSort);
-  }, [reviews, fetchedReviews, id, reviewSort]);
-  // Özet (ortalama + adet + dağılım) GÖSTERİLEN yorumlardan hesaplanır → başlıktaki puan, özet ve
-  // liste birbirini tutar. Eskiden başlık profildeki saklı `rating`'i basıyordu: yorumu olmayan
-  // satıcıda "0.0 puan", son yorum silindikten sonra da eski puan görünüyordu.
-  const reviewStats = useMemo(() => ratingStats(reviewsAboutSeller.map((r) => r.rating)), [reviewsAboutSeller]);
+  }, [localSellerReviews, reviewPager.rows, reviewSort]);
+  // Özet (ortalama + adet + dağılım) ve başlıktaki sayı TÜM yorumlardan gelir (yalnız yüklenen
+  // sayfadan değil) → başlıktaki puan, özet ve sayı birbirini tutar. Eskiden başlık profildeki saklı
+  // `rating`'i basıyordu: yorumu olmayan satıcıda "0.0 puan", son yorum silindikten sonra da eski puan görünüyordu.
+  const { stats: pagerStats, total: pagerTotal, hasMore: pagerHasMore } = reviewPager;
+  const reviewSummary = useMemo(() => summarizeReviews({ stats: pagerStats, total: pagerTotal, hasMore: pagerHasMore }, reviewsAboutSeller), [pagerStats, pagerTotal, pagerHasMore, reviewsAboutSeller]);
+  const reviewStats = reviewSummary.stats ?? NO_REVIEW_STATS;
+  const reviewCount = reviewSummary.count;
   // Yorumlar yüklenene kadar profildeki puan gösterilir (titreme olmasın); yüklendikten sonra yorum yoksa puan YOK ("—").
   const ratingValue = reviewStats.count ? reviewStats.average : !reviewsLoaded && (seller?.rating ?? 0) > 0 ? Number(seller?.rating) : null;
   const ratingText = ratingValue == null ? "—" : ratingValue.toFixed(1);
@@ -199,10 +200,8 @@ function StoreScreenLegacy() {
   async function refresh() {
     setRefreshing(true);
     try {
-      await Promise.all([
-        refreshMarketplace(),
-        id ? fetchReviewsForUser(id).then((r) => setFetchedReviews(r)) : Promise.resolve()
-      ]);
+      reviewPager.reload(); // yorumlar + özet ilk sayfadan yeniden
+      await refreshMarketplace();
     } catch {
       // sessiz
     } finally {
@@ -325,7 +324,7 @@ function StoreScreenLegacy() {
       { key: "listings", label: translateCopy("İlanları", language), count: activeListings.length },
       { key: "partnerships", label: translateCopy("Ortaklıkları", language), count: sellerPartnerships.length },
       { key: "policies", label: translateCopy("Politikalar", language) },
-      { key: "reviews", label: translateCopy("Yorumlar", language), count: reviewsAboutSeller.length },
+      { key: "reviews", label: translateCopy("Yorumlar", language), count: reviewCount },
       { key: "badges", label: translateCopy("Rozetler", language), count: badges.filter((b) => b.on).length }
     ];
 
@@ -361,7 +360,7 @@ function StoreScreenLegacy() {
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                     <MaterialCommunityIcons name="star" size={15} color={colors.gold} />
                     <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{ratingText}</Text>
-                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>({reviewsAboutSeller.length} {translateCopy("yorum", language)})</Text>
+                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>({reviewCount} {translateCopy("yorum", language)})</Text>
                   </View>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                     <MaterialCommunityIcons name="cart-check" size={15} color={colors.muted} />
@@ -548,12 +547,13 @@ function StoreScreenLegacy() {
               {tab === "reviews" ? (
                 <View style={{ gap: 12 }}>
                   {reviewStats.count > 0 ? <RatingSummary stats={reviewStats} language={language} /> : null}
-                  {reviewsAboutSeller.length > 1 ? <ReviewSortBar value={reviewSort} onChange={setReviewSort} language={language} /> : null}
+                  {reviewCount > 1 ? <ReviewSortBar value={reviewSort} onChange={setReviewSort} language={language} /> : null}
                   {reviewsAboutSeller.length === 0 ? (
-                    <EmptyState title={translateCopy("Henüz değerlendirme yok", language)} body={translateCopy("Değerlendirmeler yalnızca tamamlanmış bir satışın taraflarınca yazılabilir.", language)} />
+                    reviewPager.loading || reviewPager.error ? null : <EmptyState title={translateCopy("Henüz değerlendirme yok", language)} body={translateCopy("Değerlendirmeler yalnızca tamamlanmış bir satışın taraflarınca yazılabilir.", language)} />
                   ) : reviewsAboutSeller.map((r) => (
                     <ReviewCard key={r.id} review={r} reviewerName={r.reviewerName ?? findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} onRemove={removeFetched} isMine={r.reviewerId === currentUser.id} onEdit={editReview} onDelete={deleteReview} onReport={reportReview} language={language} />
                   ))}
+                  <ReviewLoadMore hasMore={reviewPager.hasMore} loading={reviewPager.loading || reviewPager.loadingMore} error={reviewPager.error} onLoadMore={reviewPager.loadMore} onRetry={reviewPager.retry} language={language} />
                 </View>
               ) : null}
 
@@ -836,12 +836,12 @@ function StoreScreenLegacy() {
       {/* Yorumlar (mobil) — güven sinyali masaüstündeki gibi görünür. */}
       <View style={{ gap: 10, marginTop: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>
-          {translateCopy("Satıcı yorumları", language)} {reviewsAboutSeller.length ? `(${reviewsAboutSeller.length})` : ""}
+          {translateCopy("Satıcı yorumları", language)} {reviewCount ? `(${reviewCount})` : ""}
         </Text>
         {reviewStats.count > 0 ? <RatingSummary stats={reviewStats} language={language} /> : null}
-        {reviewsAboutSeller.length > 1 ? <ReviewSortBar value={reviewSort} onChange={setReviewSort} language={language} /> : null}
+        {reviewCount > 1 ? <ReviewSortBar value={reviewSort} onChange={setReviewSort} language={language} /> : null}
         {reviewsAboutSeller.length === 0 ? (
-          <EmptyState title={translateCopy("Henüz değerlendirme yok", language)} body={translateCopy("Değerlendirmeler yalnızca tamamlanmış bir satışın taraflarınca yazılabilir.", language)} />
+          reviewPager.loading || reviewPager.error ? null : <EmptyState title={translateCopy("Henüz değerlendirme yok", language)} body={translateCopy("Değerlendirmeler yalnızca tamamlanmış bir satışın taraflarınca yazılabilir.", language)} />
         ) : (
           // Mobilde de paylaşılan ReviewCard: satıcı yanıtı + faydalı oyu masaüstüyle eşit (eskiden
           // mobil satır bunları HİÇ göstermiyordu → satıcı yanıtları mobil ziyaretçiye görünmezdi).
@@ -849,6 +849,7 @@ function StoreScreenLegacy() {
             <ReviewCard key={r.id} review={r} reviewerName={r.reviewerName ?? findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} onRemove={removeFetched} isMine={r.reviewerId === currentUser.id} onEdit={editReview} onDelete={deleteReview} onReport={reportReview} language={language} />
           ))
         )}
+        <ReviewLoadMore hasMore={reviewPager.hasMore} loading={reviewPager.loading || reviewPager.loadingMore} error={reviewPager.error} onLoadMore={reviewPager.loadMore} onRetry={reviewPager.retry} language={language} />
       </View>
     </ScrollView>
     </KeyboardAvoidingView>

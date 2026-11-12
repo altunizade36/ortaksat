@@ -47,8 +47,9 @@ export function MobileNotifications() {
     if (allLock.current) return;
     allLock.current = true; setReadingAll(true);
     try {
-      const results = await Promise.all(items.filter(n => !n.read).map(n => store.markNotificationRead(n.id)));
-      if (results.some(ok => !ok)) showToast("Bazı bildirimler okundu işaretlenemedi. Tekrar deneyebilirsin.");
+      // TEK istek (eskiden bildirim başına ayrı istek atılıyordu). Başarısızsa store iyimser durumu geri alır.
+      const ok = await store.markAllNotificationsRead().catch(() => false);
+      if (!ok) showToast("Bildirimler okundu işaretlenemedi. Tekrar deneyebilirsin.");
     } finally { allLock.current = false; setReadingAll(false); }
   }
   return <><MobileScreen title="Bildirimler" right={<IconButton name="cog-outline" label="Bildirim ayarları" onPress={() => router.push("/notification-settings")} />} bottom={<MobileBottomNav />}>

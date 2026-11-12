@@ -7,6 +7,7 @@ import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
 import { ReviewCard } from "@/components/review-card";
 import { RatingSummary } from "@/components/reviews/rating-summary";
+import { ReviewLoadMore } from "@/components/reviews/review-filters";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { Seo } from "@/components/seo";
 import { tierFromCount } from "@/components/partner-tier";
@@ -16,11 +17,9 @@ import { WebFooter } from "@/components/web-landing";
 import { PAGE_MAX_WIDTH } from "@/components/web-container";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb, useMounted } from "@/lib/layout";
-import { fetchReviewsForUser } from "@/lib/live-service";
 import { saveRefAttribution } from "@/lib/referral";
-import { ratingStats } from "@/lib/reviews";
+import { summarizeReviews, usePagedReviews } from "@/lib/reviews";
 import { loadMyFavoritePartnerIds, loadPartnerShopLive, togglePartnerFavorite, type PartnerShopItem, type PartnerShopProfile } from "@/lib/supabase-data";
-import type { Review } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 export default function PartnerShopScreen() {
@@ -42,14 +41,13 @@ function Inner() {
   const [favCount, setFavCount] = useState(0);
   const isOwnShop = Boolean(currentUser?.id && currentUser.id === partnerId);
   // Ortak olarak aldığı değerlendirmeler (satıcıların, tamamlanmış satış sonrası yazdığı). Yoksa bölüm hiç çizilmez.
-  const [partnerReviews, setPartnerReviews] = useState<Review[]>([]);
-  useEffect(() => {
-    let alive = true;
-    setPartnerReviews([]);
-    if (partnerId) void fetchReviewsForUser(partnerId).then((rows) => { if (alive) setPartnerReviews(rows.filter((r) => r.type === "partner")); }).catch(() => {});
-    return () => { alive = false; };
-  }, [partnerId]);
-  const partnerReviewStats = useMemo(() => ratingStats(partnerReviews.map((r) => r.rating)), [partnerReviews]);
+  // SAYFALI (20'şer; "Daha fazla değerlendirme göster" ekler). Tür süzgeci SUNUCUDA uygulanır; başlıktaki
+  // sayı ve özet TÜM ortak değerlendirmelerinden gelir. Eskiden kullanıcının ilk 100 yorumu çekilip
+  // istemcide süzülüyordu → çok yorumu olan ortakta ortak değerlendirmeleri eksik/boş çıkabiliyordu.
+  const reviewPager = usePagedReviews({ userId: partnerId, type: "partner" });
+  const partnerReviews = reviewPager.rows;
+  const { stats: pagerStats, total: pagerTotal, hasMore: pagerHasMore } = reviewPager;
+  const partnerReviewSummary = useMemo(() => summarizeReviews({ stats: pagerStats, total: pagerTotal, hasMore: pagerHasMore }, partnerReviews), [pagerStats, pagerTotal, pagerHasMore, partnerReviews]);
 
   useEffect(() => {
     let alive = true;
@@ -214,8 +212,8 @@ function Inner() {
         {/* Ortak değerlendirmeleri — mağaza sayfasıyla AYNI özet + kart; hiç yoksa gizli */}
         {partnerReviews.length > 0 ? (
           <View style={{ gap: 12, marginTop: 24 }}>
-            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Ortak değerlendirmeleri", language)} · {partnerReviews.length}</Text>
-            <RatingSummary stats={partnerReviewStats} language={language} />
+            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Ortak değerlendirmeleri", language)} · {partnerReviewSummary.count}</Text>
+            {partnerReviewSummary.stats ? <RatingSummary stats={partnerReviewSummary.stats} language={language} /> : null}
             {partnerReviews.map((r) => (
               <ReviewCard
                 key={r.id}
@@ -227,11 +225,12 @@ function Inner() {
                 onEdit={editReview}
                 onDelete={deleteReview}
                 onReport={reportReview}
-                onPatch={(rid, patch) => setPartnerReviews((rows) => rows.map((x) => (x.id === rid ? { ...x, ...patch } : x)))}
-                onRemove={(rid) => setPartnerReviews((rows) => rows.filter((x) => x.id !== rid))}
+                onPatch={reviewPager.patch}
+                onRemove={reviewPager.remove}
                 language={language}
               />
             ))}
+            <ReviewLoadMore hasMore={reviewPager.hasMore} loading={reviewPager.loadingMore} error={reviewPager.error} onLoadMore={reviewPager.loadMore} onRetry={reviewPager.retry} language={language} />
           </View>
         ) : null}
       </View>

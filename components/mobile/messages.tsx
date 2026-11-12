@@ -27,7 +27,7 @@ import { moneyIn, localToday } from "@/lib/format";
 import { searchKey } from "@/lib/locale";
 import { showToast } from "@/lib/toast";
 import { colors } from "@/components/colors";
-import { MobileButton, MobileCard, MobileChip, MobileScreen, IconButton, mobile, ms, useMobileLayout } from "./ui";
+import { MobileButton, MobileCard, MobileChip, MobileScreen, IconButton, mobile, mobileContent, ms, useMobileLayout } from "./ui";
 
 // createdAt = msgStamp() → YEREL "YYYY-MM-DD HH:MM:SS" (ISO değil). `new Date(...)` bu biçimi
 // her JS motorunda ayrıştırmaz (Invalid Date → "NaN-NaN-NaN" gün anahtarı, "Invalid Date" başlığı);
@@ -42,7 +42,14 @@ function day(value: string) { return dayKey(value) === localToday() ? "Bugün" :
 export function MobileMessages() {
   const store = useStore();
   const router = useRouter();
-  const { tablet } = useMobileLayout();
+  const { tablet, wide, maxWidth, height } = useMobileLayout();
+  // İKİ BÖLME (liste | sohbet) yalnız ikisi de rahat sığınca açılır: liste en az 280 dp, sohbet en az 380 dp,
+  // pencere en az 480 dp yüksek (yatay telefonda başlık + ilan şeridi + yazma alanı mesajlara yer bırakmaz).
+  // Eskiden 700 dp'de liste %36 = ≈235 dp'ye sıkışıyordu. Sığmıyorsa (küçük tablet, dar pencere) TEK bölme:
+  // liste ortalı ve ≤640 dp, sohbet ayrı ekranda açılır. Geniş tablette toplam ≤1040 dp (kenardan kenara değil).
+  const paneWidth = Math.min(maxWidth, mobileContent.page);
+  const listWidth = Math.max(280, Math.min(380, Math.round(paneWidth * 0.36)));
+  const split = tablet && height >= 480 && paneWidth - listWidth >= 380;
   const [query,setQuery] = useState("");
   const [group,setGroup] = useState("all");
   const [active,setActive] = useState<string | null>(null);
@@ -59,19 +66,19 @@ export function MobileMessages() {
   const matching = all.filter((c) => (!query || c.search.includes(searchKey(query))) && (group === "all" || conversationGroup(c,store.currentUser.id) === group));
   const visible = matching.filter((c) => !unread || c.count > 0);
   const selected = matching.find((c) => c.id === active);
-  useEffect(() => { if (tablet && !active && !unread && group === "all" && !query && all[0]) setActive(all[0].id); }, [tablet,active,unread,group,query,all]);
+  useEffect(() => { if (split && !active && !unread && group === "all" && !query && all[0]) setActive(all[0].id); }, [split,active,unread,group,query,all]);
   const count = all.reduce((sum,c) => sum+c.count,0);
-  return <MobileScreen title="Mesajlar" back={false} right={<View style={ms.row}>{count > 0 ? <Text style={{ color: mobile.teal, fontSize: 12, fontWeight: "700" }}>{count}</Text> : null}<IconButton name="email-mark-as-unread" label="Okunmamış" color={unread ? mobile.teal : mobile.muted} onPress={() => { setActive(null);setUnread((v) => !v); }} /><IconButton name="plus" label="Yeni görüşme için ilan bul" onPress={() => router.push("/explore")} /></View>} scroll={false}>
+  return <MobileScreen title="Mesajlar" back={false} right={<View style={ms.row}>{count > 0 ? <Text style={{ color: mobile.teal, fontSize: 12, fontWeight: "700" }}>{count}</Text> : null}<IconButton name="email-mark-as-unread" label="Okunmamış" color={unread ? mobile.teal : mobile.muted} onPress={() => { setActive(null);setUnread((v) => !v); }} /><IconButton name="plus" label="Yeni görüşme için ilan bul" onPress={() => router.push("/explore")} /></View>} scroll={false} contentStyle={split ? { maxWidth: paneWidth } : wide ? { maxWidth: mobileContent.column } : undefined}>
     {!store.authReady || store.isAuthenticated && !store.accountLoaded ? <Text style={[ms.muted,{padding:20}]}>Mesajlar yükleniyor…</Text> : !store.isAuthenticated ? <View style={{ padding:20 }}><Text style={ms.section}>Mesajların burada</Text><Text style={[ms.muted,{marginVertical:10}]}>İlanlarla ilgili görüşmelerini ve ortaklık mesajlarını tek yerde takip et.</Text><MobileButton onPress={() => router.push({pathname:"/auth",params:{redirect:"/messages"}})}>Giriş yap</MobileButton></View> : <View testID="native-inbox" style={{ flex:1, flexDirection:"row", minHeight:0 }}>
-      <View style={{ width:tablet?"36%":"100%",borderRightWidth:tablet?1:0,borderColor:mobile.line }}>
+      <View style={{ width:split?listWidth:"100%",borderRightWidth:split?1:0,borderColor:mobile.line }}>
         <View style={{ padding:12,gap:10 }}><View style={[ms.input,ms.row,{borderRadius:22}]}><Icon name="magnify" size={18} color={mobile.muted}/><TextInput accessibilityLabel="Kişi veya ilan ara" value={query} onChangeText={setQuery} placeholder="Kişi veya ilan ara…" placeholderTextColor={mobile.muted} style={{ flex:1,minWidth:0,padding:0,fontSize:13,color:mobile.ink }}/></View>
           <HorizontalScroll showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6}}>{[["all","Tümü"],["buyers","Alıcı"],["sellers","Satıcı"],["partner","Ortaklık"]].map(([key,label]) => <Pressable key={key} accessibilityRole="button" accessibilityLabel={label} accessibilityState={{selected:group===key}} onPress={() => {setActive(null);setGroup(key);}} style={{ minHeight:36,paddingHorizontal:13,borderRadius:20,backgroundColor:group===key?mobile.teal:colors.surfaceAlt,alignItems:"center",justifyContent:"center" }}><Text style={{fontSize:12,fontWeight:"600",color:group===key?"white":mobile.ink}}>{label}</Text></Pressable>)}</HorizontalScroll>
         </View>
-        <ScrollView keyboardShouldPersistTaps="handled" style={{flex:1}} contentContainerStyle={{flexGrow:1}}>{visible.map((c) => <Pressable key={c.id} testID="native-conversation-row" accessibilityRole="button" accessibilityLabel={`${c.other?.name || "Kullanıcı"} ile sohbet`} onPress={() => tablet ? setActive(c.id) : router.push(`/chat/${c.id}` as never)} style={{ flexDirection:"row",gap:10,paddingHorizontal:12,paddingVertical:12,minHeight:80,backgroundColor:selected?.id===c.id?mobile.tealSoft:"white",borderBottomWidth:1,borderColor:mobile.line }}>
+        <ScrollView keyboardShouldPersistTaps="handled" style={{flex:1}} contentContainerStyle={{flexGrow:1}}>{visible.map((c) => <Pressable key={c.id} testID="native-conversation-row" accessibilityRole="button" accessibilityLabel={`${c.other?.name || "Kullanıcı"} ile sohbet`} onPress={() => split ? setActive(c.id) : router.push(`/chat/${c.id}` as never)} style={{ flexDirection:"row",gap:10,paddingHorizontal:12,paddingVertical:12,minHeight:80,backgroundColor:split&&selected?.id===c.id?mobile.tealSoft:"white",borderBottomWidth:1,borderColor:mobile.line }}>
           <UserAvatar uri={c.other?.avatar} size={43}/><View style={{flex:1,minWidth:0,gap:3}}><View style={[ms.row,{justifyContent:"space-between"}]}><Text numberOfLines={1} style={{flex:1,fontSize:13,fontWeight:"700",color:mobile.ink}}>{c.other?.name || "OrtakSat kullanıcısı"}</Text><Text style={{fontSize:10,color:mobile.muted}}>{c.last ? dayKey(c.last.createdAt)===localToday()?time(c.last.createdAt):isYesterday(c.last.createdAt)?"Dün":dayLabel(c.last.createdAt,MONTHS_SHORT):""}</Text></View><Text numberOfLines={1} style={{fontSize:11,color:c.partnerId?mobile.teal:mobile.ink}}>{c.partnerId?"Ortaklık · ":""}{displayListingTitle(c.listing?.title || "İlan görüşmesi")}</Text><View style={ms.row}><Text numberOfLines={1} style={{flex:1,fontSize:12,color:c.count>0?mobile.ink:mobile.muted,fontWeight:c.count>0?"700":"400"}}>{c.last ? `${c.last.senderId === store.currentUser.id ? "Sen: " : ""}${c.last.body || (c.last.attachmentUrl ? (c.last.attachmentType === "file" ? c.last.attachmentName || "Dosya eki" : "Fotoğraf") : "")}` : "Henüz mesaj yok"}</Text>{c.count>0?<Text style={{fontSize:10,fontWeight:"700",color:"white",backgroundColor:mobile.teal,borderRadius:10,overflow:"hidden",paddingHorizontal:6,paddingVertical:2}}>{c.count>99?"99+":c.count}</Text>:null}</View></View>
         </Pressable>)}{!visible.length?<View style={{padding:22,gap:8}}><Icon name="message-text-outline" size={28} color={mobile.teal}/><Text style={ms.section}>{query||unread||group!=="all"?"Bu görünümde konuşma yok":"Henüz mesajın yok"}</Text><Text style={ms.muted}>{query||unread||group!=="all"?"Aramayı veya filtreyi değiştirerek tekrar dene.":"Bir ilanın detayından mesaj göndererek görüşme başlatabilirsin."}</Text></View>:null}</ScrollView>
       </View>
-      {tablet?<View style={{flex:1,minWidth:0}}>{selected?<MobileConversation key={selected.id} id={selected.id} embedded/>:<View style={{padding:24}}><Text style={ms.muted}>Görüntülemek için bir konuşma seç.</Text></View>}</View>:null}
+      {split?<View style={{flex:1,minWidth:0}}>{selected?<MobileConversation key={selected.id} id={selected.id} embedded/>:<View style={{padding:24}}><Text style={ms.muted}>Görüntülemek için bir konuşma seç.</Text></View>}</View>:null}
     </View>}
   </MobileScreen>;
 }
@@ -79,7 +86,7 @@ export function MobileMessages() {
 export function MobileConversation({ id, embedded = false }: { id: string; embedded?: boolean }) {
   const store = useStore();
   const router = useRouter();
-  const { insets } = useMobileLayout();
+  const { insets, wide } = useMobileLayout();
   const [body, setBody] = useState("");
   const [blockOpen,setBlockOpen]=useState(false);
   const [menu, setMenu] = useState(false);
@@ -169,5 +176,7 @@ export function MobileConversation({ id, embedded = false }: { id: string; embed
     <Modal visible={!!lightbox} onRequestClose={() => setLightbox(null)}><View style={{ flex: 1, paddingTop: insets.top, backgroundColor: "#0A1119" }}><IconButton name="close" label="Fotoğrafı kapat" color="white" onPress={() => setLightbox(null)} /><SafeRemoteImage full uri={lightbox} contentFit="contain" style={{ flex: 1, backgroundColor: "#0A1119" }} /></View></Modal>
   </>;
   if (embedded) return <View style={{ flex: 1 }}>{content}</View>;
-  return <MobileScreen scroll={false} contentStyle={{ paddingTop: insets.top }}>{!store.authReady ? <Text style={[ms.muted, { padding: 22 }]}>Hesabın yükleniyor…</Text> : !store.isAuthenticated ? <View style={{ padding: 20 }}><MobileButton onPress={() => router.push({ pathname: "/auth", params: { redirect: `/chat/${id}` } } as never)}>Sohbet için giriş yap</MobileButton></View> : !conversation || !conversation.participantIds.includes(store.currentUser.id) ? <View style={{ padding: 20, gap: 10 }}>{store.accountLoaded ? <><Text style={ms.section}>Konuşma bulunamadı</Text><Text style={ms.muted}>Bu konuşma silinmiş olabilir veya erişimin olmayabilir.</Text></> : <Text style={ms.muted}>Sohbet yükleniyor…</Text>}<MobileButton secondary onPress={() => { if (router.canGoBack()) router.back(); else router.replace("/messages"); }}>Mesajlara dön</MobileButton></View> : content}</MobileScreen>;
+  // Tek başına sohbet (telefon / tek bölmeli tablet): 600 dp+ ekranda ≤760 dp ortalı sütun — balonlar
+  // 1100 dp'lik satırlara yayılmaz.
+  return <MobileScreen scroll={false} contentStyle={[{ paddingTop: insets.top }, wide && { maxWidth: mobileContent.pane }]}>{!store.authReady ? <Text style={[ms.muted, { padding: 22 }]}>Hesabın yükleniyor…</Text> : !store.isAuthenticated ? <View style={{ padding: 20 }}><MobileButton onPress={() => router.push({ pathname: "/auth", params: { redirect: `/chat/${id}` } } as never)}>Sohbet için giriş yap</MobileButton></View> : !conversation || !conversation.participantIds.includes(store.currentUser.id) ? <View style={{ padding: 20, gap: 10 }}>{store.accountLoaded ? <><Text style={ms.section}>Konuşma bulunamadı</Text><Text style={ms.muted}>Bu konuşma silinmiş olabilir veya erişimin olmayabilir.</Text></> : <Text style={ms.muted}>Sohbet yükleniyor…</Text>}<MobileButton secondary onPress={() => { if (router.canGoBack()) router.back(); else router.replace("/messages"); }}>Mesajlara dön</MobileButton></View> : content}</MobileScreen>;
 }

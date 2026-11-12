@@ -7,7 +7,7 @@ import { MobileListingDetail } from "@/components/mobile/listing-detail";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { Fragment, useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
 
 import { Alert } from "@/lib/alert";
@@ -16,14 +16,16 @@ import { openUrlSafe } from "@/lib/link";
 import { shareOrCopy } from "@/lib/share";
 import { parseTrPrice } from "@/lib/validation";
 
-import { findCategorySlug } from "@/lib/category-tree";
+import { categoryChipLabel } from "@/lib/categories";
+import { listingCategoryPath } from "@/lib/category-match";
 import { useCompare } from "@/lib/compare";
 import { Accordion } from "@/components/accordion";
 import { AgreementCard } from "@/components/agreement-card";
 import { colors } from "@/components/colors";
 import { RatingSummary } from "@/components/reviews/rating-summary";
 import { SaleReviewForm } from "@/components/reviews/sale-review-form";
-import { ratingStats } from "@/lib/reviews";
+import { ReviewLoadMore } from "@/components/reviews/review-filters";
+import { summarizeReviews, usePagedReviews } from "@/lib/reviews";
 import { ReviewCard } from "@/components/review-card";
 import { JsonLd } from "@/components/json-ld";
 import { LegalDisclaimerCollapsible } from "@/components/legal-disclaimer";
@@ -46,7 +48,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useContentWidth, useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
-import { fetchReviewsForListing, insertReferralLead, logReferralClick, recordListingView, resolveReferralLink } from "@/lib/live-service";
+import { insertReferralLead, logReferralClick, recordListingView, resolveReferralLink } from "@/lib/live-service";
 import { getRefAttribution, saveRefAttribution } from "@/lib/referral";
 import { metaTrack } from "@/lib/meta-pixel";
 import { isSupabaseConfigured } from "@/lib/supabase";
@@ -113,12 +115,13 @@ export default function ListingDetailScreen() {
   const [revealedPhone, setRevealedPhone] = useState<string | null>(null);
   // İLANIN yorumları (herkese açık) — eskiden yalnız store'daki (giriş yapanın KENDİ) yorumu
   // gösteriliyordu; başkalarınınki hiç çekilmiyordu. Artık DB'den çekilir (middleware SEO ile aynı kapsam).
-  const [fetchedReviews, setFetchedReviews] = useState<Awaited<ReturnType<typeof fetchReviewsForListing>>>([]);
-  useEffect(() => {
-    let alive = true;
-    if (id) void fetchReviewsForListing(String(id)).then((r) => { if (alive) setFetchedReviews(r); }).catch(() => {});
-    return () => { alive = false; };
-  }, [id, retryTick]);
+  // SAYFALI: 20'şer gelir ("Daha fazla değerlendirme göster" ekler); başlıktaki sayı ve özet TÜM
+  // yorumlardan hesaplanır (eskiden tek istekte en fazla 100 yorum çekiliyordu).
+  const localReviewCount = reviews.reduce((n, r) => (r.listingId === id ? n + 1 : n), 0);
+  const reviewPager = usePagedReviews({ listingId: id ? String(id) : undefined }, { refreshKey: localReviewCount });
+  const fetchedReviews = reviewPager.rows;
+  const reloadReviews = reviewPager.reload;
+  useEffect(() => { if (retryTick > 0) reloadReviews(); }, [retryTick, reloadReviews]);
   const [revealingPhone, setRevealingPhone] = useState(false);
   const mobileContactLock = useRef(false);
   const [message, setMessage] = useState("");
@@ -315,6 +318,9 @@ export default function ListingDetailScreen() {
     }
     return [...byId.values()].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
   }, [fetchedReviews, reviews, id, currentUser.id]);
+  // Başlıktaki sayı + özet: TÜM yorumlardan (yalnız yüklenen sayfadan değil). Bu da erken-return'den ÖNCE.
+  const { stats: pagerStats, total: pagerTotal, hasMore: pagerHasMore } = reviewPager;
+  const listingReviewSummary = useMemo(() => summarizeReviews({ stats: pagerStats, total: pagerTotal, hasMore: pagerHasMore }, listingReviews), [pagerStats, pagerTotal, pagerHasMore, listingReviews]);
 
   // Galeri yüksekliği: dar ekranda görünür alanın %40'ını aşmaz; geniş ekranda sütuna oranlı.
   const shellWidth = Math.min(contentWidth, 1280);
@@ -559,10 +565,13 @@ export default function ListingDetailScreen() {
       if (isDemo) return {};
       const rated = listingReviews.filter((r) => r.rating >= 1 && r.rating <= 5);
       if (rated.length === 0) return {};
-      const avg = rated.reduce((s, r) => s + r.rating, 0) / rated.length;
+      // Yorumlar sayfalı yüklenir: sayı ve ortalama, yüklenen sayfadan değil TÜM yorumların özetinden gelir.
+      const all = listingReviewSummary.stats;
+      const avg = all && all.count >= rated.length ? all.average : rated.reduce((s, r) => s + r.rating, 0) / rated.length;
+      const reviewCount = all && all.count >= rated.length ? all.count : rated.length;
       const withText = rated.filter((r) => r.comment && r.comment.trim()).slice(0, 3);
       return {
-        aggregateRating: { "@type": "AggregateRating", ratingValue: Number(avg.toFixed(1)), reviewCount: rated.length, bestRating: 5, worstRating: 1 },
+        aggregateRating: { "@type": "AggregateRating", ratingValue: Number(avg.toFixed(1)), reviewCount, bestRating: 5, worstRating: 1 },
         ...(withText.length > 0
           ? {
               review: withText.map((r) => ({
@@ -604,17 +613,21 @@ export default function ListingDetailScreen() {
     }
   });
 
-  // BreadcrumbList — Google arama sonucunda breadcrumb zengin-sonucu (Ana Sayfa ›
-  // Kategori › Ürün). Görünür breadcrumb ile aynı kategori slug'ını kullanır.
-  const bcCatSlug = findCategorySlug(currentListing.category);
+  // KATEGORİ İZİ: Ana Sayfa › kök › … › yaprak. İlanın KAYITLI yolundan (attributes._path) çözülür.
+  // Eskiden yalnız yaprak etiketi vardı ("Ana Sayfa › Bosch") ve bağlantı etiketin ağaçtaki İLK
+  // eşleşmesine gidiyordu (bulaşık makinesi ilanı → Buzdolabı › Bosch sayfası). Kod ağacından saf
+  // hesap (hook değil) → statik çıktı ile ilk istemci render'ı aynıdır.
+  const categoryCrumbs = listingCategoryPath(currentListing).map((n) => ({ slug: n.slug, name: n.label, label: categoryChipLabel(n.label) }));
+  // BreadcrumbList — görünür iz ile AYNI öğeler (+ son öğe: ilanın kendisi), mutlak URL'lerle. Ad olarak
+  // kategorinin TAM adı yazılır (görünür izde uzun kök adı kısalır); middleware.ts crawler çıktısıyla aynı.
   const breadcrumbLd = JSON.stringify({
     "@context": "https://schema.org",
     "@type": "BreadcrumbList",
     itemListElement: [
-      { "@type": "ListItem", position: 1, name: "Ana Sayfa", item: "https://www.ortaksat.com/" },
-      ...(bcCatSlug ? [{ "@type": "ListItem", position: 2, name: currentListing.category, item: `https://www.ortaksat.com/kategori/${bcCatSlug}` }] : []),
-      { "@type": "ListItem", position: bcCatSlug ? 3 : 2, name: currentTitle, item: metaUrl }
-    ]
+      { name: "Ana Sayfa", item: "https://www.ortaksat.com/" },
+      ...categoryCrumbs.map((c) => ({ name: c.name, item: `https://www.ortaksat.com/kategori/${c.slug}` })),
+      { name: currentTitle, item: metaUrl }
+    ].map((entry, i) => ({ "@type": "ListItem", position: i + 1, ...entry }))
   });
 
   // Mobil sabit alt aksiyon çubuğu görünürse içerik onun arkasına gizlenmesin diye ekstra alt boşluk.
@@ -672,8 +685,18 @@ export default function ListingDetailScreen() {
   const imgAlt = `${currentTitle}${currentListing.category ? ` — ${currentListing.category}` : ""}${currentListing.location ? `, ${currentListing.location}` : ""} · OrtakSat ortak satış ilanı`;
   const urgentUntil = currentListing.attributes?._urgentUntil ? Date.parse(String(currentListing.attributes._urgentUntil)) : 0;
   const urgentDaysLeft = urgentUntil && urgentUntil > Date.now() ? Math.max(1, Math.ceil((urgentUntil - Date.now()) / 86400000)) : 0;
-  const catSlug = findCategorySlug(currentListing.category);
-  const catHref = catSlug ? ({ pathname: "/kategori/[slug]", params: { slug: catSlug } } as unknown as Href) : ("/kategoriler" as Href);
+  // Görünür iz TEK SATIR: dar ekranda ORTA kategoriler "…" olur (… en yakın gizli üst kategoriye gider) ve
+  // ürün başlığı yazılmaz (hemen altındaki başlık kartında var); geniş ekranda tam iz + başlık.
+  // Ağaçta yeri bulunamayan ilanda (yönetici-eklentisi kategori) etiket "Kategoriler"e bağlanır.
+  const crumbHref = (slug: string) => ({ pathname: "/kategori/[slug]", params: { slug } }) as unknown as Href;
+  const fallbackCrumb = !categoryCrumbs.length && currentListing.category ? { key: "category", label: currentListing.category, href: "/kategoriler" as Href, collapsed: "" } : null;
+  const collapsedCrumbs = !isWideWeb && categoryCrumbs.length > 2 ? categoryCrumbs.slice(1, -1) : [];
+  const shownCrumbs = fallbackCrumb ? [fallbackCrumb] : categoryCrumbs.flatMap((c) => {
+    const hidden = collapsedCrumbs.includes(c);
+    if (hidden && c !== collapsedCrumbs[collapsedCrumbs.length - 1]) return [];
+    return [{ key: c.slug, label: c.label, href: crumbHref(c.slug), collapsed: hidden ? collapsedCrumbs.map((x) => translateCopy(x.label, language)).join(" › ") : "" }];
+  });
+  const crumbShowsTitle = isWideWeb || shownCrumbs.length < 2;
   const goToMedia = (i: number) => setActiveImage(Math.max(0, Math.min(mediaCount - 1, i)));
   const swipeHandlers = {
     onTouchStart: (e: unknown) => { swipeStartX.current = touchPageX(e); inlineSwiped.current = false; },
@@ -1049,17 +1072,28 @@ export default function ListingDetailScreen() {
       <JsonLd id="product" json={productLd} />
       <JsonLd id="breadcrumb" json={breadcrumbLd} />
       <WebContainer max={1280} padding={isWideWeb ? 20 : 0} style={{ gap: isWideWeb ? 8 : 0 }}>
-      {/* Breadcrumb: Ana Sayfa › Kategori › Ürün — tek satır; ORTA öğe kısalır, düzeni itmez. */}
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 4, minHeight: 30, paddingHorizontal: isWideWeb ? 0 : detail.gutter }}>
+      {/* Breadcrumb: Ana Sayfa › kök › … › yaprak (› Ürün) — TEK satır; kategoriler kısalır, düzeni itmez. */}
+      <View testID="listing-breadcrumb" role="navigation" style={{ alignItems: "center", flexDirection: "row", gap: 4, minHeight: 30, overflow: "hidden", paddingHorizontal: isWideWeb ? 0 : detail.gutter }}>
         <PressLink href="/" hitSlop={6} accessibilityLabel={translateCopy("Ana sayfa", language)} style={{ flexShrink: 0, justifyContent: "center", minHeight: 30 }}>
           <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy("Ana Sayfa", language)}</Text>
         </PressLink>
-        <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-        <PressLink href={catHref} hitSlop={6} accessibilityLabel={`${translateCopy(currentListing.category, language)} ${translateCopy("kategorisi", language)}`} style={{ flexShrink: 1, justifyContent: "center", maxWidth: "46%", minHeight: 30, minWidth: 0 }}>
-          <Text numberOfLines={1} ellipsizeMode="tail" style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy(currentListing.category, language)}</Text>
-        </PressLink>
-        <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700", minWidth: 0 }}>{currentTitle}</Text>
+        {shownCrumbs.map((c, i) => {
+          const current = !crumbShowsTitle && i === shownCrumbs.length - 1;
+          return (
+            <Fragment key={c.key}>
+              <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
+              <PressLink href={c.href} hitSlop={6} accessibilityLabel={`${c.collapsed || translateCopy(c.label, language)} ${translateCopy("kategorisi", language)}`} style={{ flexShrink: c.collapsed ? 0 : 1, justifyContent: "center", maxWidth: isWideWeb ? 240 : undefined, minHeight: 30, minWidth: c.collapsed ? 16 : 0 }}>
+                <Text numberOfLines={1} ellipsizeMode="tail" style={{ color: current ? colors.ink : colors.muted, fontSize: 12, fontWeight: current ? "700" : "600", textAlign: c.collapsed ? "center" : undefined }}>{c.collapsed ? "…" : translateCopy(c.label, language)}</Text>
+              </PressLink>
+            </Fragment>
+          );
+        })}
+        {crumbShowsTitle ? (
+          <>
+            <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
+            <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700", minWidth: 0 }}>{currentTitle}</Text>
+          </>
+        ) : null}
       </View>
 
       {isWideWeb ? (
@@ -1110,16 +1144,16 @@ export default function ListingDetailScreen() {
           title="Son gezdiklerin"
         />
 
-        <DetailSection title="Yorumlar" icon="star-outline" testID="listing-section-reviews" right={<Text style={{ color: colors.muted, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "700" }}>{listingReviews.length}</Text>}>
+        <DetailSection title="Yorumlar" icon="star-outline" testID="listing-section-reviews" right={<Text style={{ color: colors.muted, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "700" }}>{listingReviewSummary.count}</Text>}>
           {/* Satış sonrası yorum formu — paylaşılan bileşen (puan boş başlar, çift-gönderim kilidi, min. uzunluk). */}
           {reviewableSale ? (
             <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, paddingBottom: 12 }}>
               <SaleReviewForm saleId={reviewableSale.id} title={translateCopy("Satış sonrası yorum hakkın var", language)} createSaleReview={createSaleReview} />
             </View>
           ) : null}
-          {listingReviews.length > 0 ? (
-            <RatingSummary stats={ratingStats(listingReviews.map((r) => r.rating))} language={language} />
-          ) : (
+          {listingReviewSummary.stats ? (
+            <RatingSummary stats={listingReviewSummary.stats} language={language} />
+          ) : listingReviews.length > 0 || reviewPager.loading || reviewPager.error ? null : (
             <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>
               {translateCopy("Henüz değerlendirme yok", language)}
             </Text>
@@ -1137,11 +1171,12 @@ export default function ListingDetailScreen() {
               onEdit={editReview}
               onDelete={deleteReview}
               onReport={reportReview}
-              onPatch={(rid, patch) => setFetchedReviews((rs) => rs.map((r) => (r.id === rid ? { ...r, ...patch } : r)))}
-              onRemove={(rid) => setFetchedReviews((rs) => rs.filter((r) => r.id !== rid))}
+              onPatch={reviewPager.patch}
+              onRemove={reviewPager.remove}
               language={language}
             />
           ))}
+          <ReviewLoadMore hasMore={reviewPager.hasMore} loading={reviewPager.loading || reviewPager.loadingMore} error={reviewPager.error} onLoadMore={reviewPager.loadMore} onRetry={reviewPager.retry} language={language} />
         </DetailSection>
         <View testID="listing-detail-end" />
       </View>

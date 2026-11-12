@@ -75,7 +75,7 @@ function NotificationsScreenLegacy() {
 
 function NotificationsScreenInner() {
   const { language } = useLanguage();
-  const { conversations, currentUser, listings, markNotificationRead, notifications, partnerships, refreshNotifications, savePreferences, setEmailNotifications } = useStore();
+  const { conversations, currentUser, listings, markAllNotificationsRead, markNotificationRead, notifications, partnerships, refreshNotifications, savePreferences, setEmailNotifications } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(async () => { try { await refreshNotifications(); } catch { showToast(translateCopy("Bildirimler yenilenemedi. Tekrar deneyebilirsin.", language)); } });
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
@@ -118,8 +118,8 @@ function NotificationsScreenInner() {
   // "email" gerçek bir sunucu tercihidir (profiles.email_notifications → e-posta tetikleyicisi
   // onu okur). "push" = `notify_all_off` (uygulama-içi üretim + push bunu okur).
   const togglePref = (key: string) => {
-    // Tercihler TEK bir JSON alanında tutulur ve her kayıt tüm alanı yazar → iki kayıt aynı anda
-    // giderse sonuncusu öncekini ezer. Bir kayıt bitmeden yenisi başlatılmaz.
+    // Tercih kaydı artık sunucuda anahtar bazında birleştirilir (store.savePreferences yalnız değişen
+    // anahtarı yollar) → eşzamanlı kayıtlar birbirini ezmez. Kilit yalnız çift dokunuşu yutmak için duruyor.
     if (saving.current) return;
     const v = !prefs[key];
     setPending((s) => ({ ...s, [key]: v }));
@@ -168,8 +168,9 @@ function NotificationsScreenInner() {
     if (allLock.current) return;
     allLock.current = true; setReadingAll(true);
     try {
-      const results = await Promise.all(visibleNotifications.filter(n => !n.read).map(n => markNotificationRead(n.id)));
-      if (results.some(ok => !ok)) showToast(translateCopy("Bazı bildirimler okundu işaretlenemedi. Tekrar deneyebilirsin.", language));
+      // TEK istek (eskiden bildirim başına ayrı istek atılıyordu). Başarısızsa store iyimser durumu geri alır.
+      const ok = await markAllNotificationsRead().catch(() => false);
+      if (!ok) showToast(translateCopy("Bildirimler okundu işaretlenemedi. Tekrar deneyebilirsin.", language));
     } finally { allLock.current = false; setReadingAll(false); }
   }
 

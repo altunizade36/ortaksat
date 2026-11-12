@@ -14,7 +14,7 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { getFormSchema, modelsForSchema, resolveFormKey, type CategoryNode } from "@/lib/category-tree";
-import { categoryTrail, inCategory } from "@/lib/mobile-catalog";
+import { categoryTrail, inCategory, relatedCategories } from "@/lib/mobile-catalog";
 import { fetchMobileCatalogue } from "@/lib/mobile-catalogue-service";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { useFavoriteFlag } from "@/lib/favorites-cache";
@@ -64,6 +64,9 @@ export function MobileCatalogue({ slug, tabbed = false }: { slug?: string; tabbe
   const savedCategory=restored.category;
   const trail = useMemo(() => (slug||savedCategory ? categoryTrail(categoryTree, slug||savedCategory) : []), [categoryTree, slug,savedCategory]);
   const node = trail[trail.length - 1];
+  // Aynı karo grubunun kardeş dalları (Elektronik ↔ Telefon & Aksesuar ↔ Bilgisayar & Oyun): tek düğüm üçünü
+  // birden kapsamadığı için listede "İlgili kategoriler" olarak tek dokunuşta açılır.
+  const related = useMemo(() => (node ? relatedCategories(categoryTree, node.slug) : []), [categoryTree, node]);
   const query = typeof params.q === "string" ? params.q : "";
   const label = node?.label || (query ? `“${query}” için ilanlar` : "İlanları Keşfet");
   const labelsKey = node?.slug ?? "";
@@ -178,6 +181,7 @@ export function MobileCatalogue({ slug, tabbed = false }: { slug?: string; tabbe
   return <>
     <MobileScreen onBack={goBack} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} tintColor={mobile.teal} colors={[mobile.teal]} />} onEndReached={reachEnd} title={label} right={<IconButton name="heart-outline" label="Favoriler" onPress={() => router.push("/favorites")} />} bottom={tabbed ? undefined : <MobileBottomNav />} contentStyle={{ paddingHorizontal: 12 }}>
       {trail.length > 1 && <Text testID="category-breadcrumb" numberOfLines={1} accessibilityLabel={trail.map(n => n.label).join(" / ")} style={[ms.muted, { fontSize: 11, marginBottom: 6 }]}>{trail.map(n => n.label).join(" / ")}</Text>}
+      {related.length > 0 && <HorizontalScroll testID="category-related" showsHorizontalScrollIndicator={false} contentContainerStyle={{ alignItems: "center", gap: 6, paddingBottom: 10 }}><Text style={[ms.muted, { fontSize: 11 }]}>İlgili kategoriler:</Text>{related.map(n => <MobileChip key={n.slug} label={n.label} onPress={() => chooseCategory(categoryTrail(categoryTree, n.slug))} />)}</HorizontalScroll>}
       <View style={[ms.row, { borderWidth: 1, borderColor: mobile.line, borderRadius: 12, backgroundColor: "white", paddingLeft: 10, marginBottom: 12 }]}>
         <Icon name="magnify" size={21} color={mobile.muted} />
         <TextInput accessibilityLabel="İlanlarda ara" placeholder={node ? `${node.label} içinde ara...` : "Ürün, marka veya ilan ara..."} value={searchDraft} onChangeText={setSearchDraft} maxLength={120} returnKeyType="search" onSubmitEditing={event => search(event.nativeEvent.text)} style={{ flex: 1, minWidth: 0, height: 44, color: mobile.ink, fontSize: 13 }} />

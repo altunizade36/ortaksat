@@ -25,6 +25,10 @@ let activeLanguage: "tr" | "en" = deviceLanguage;
 export function setActiveLanguage(lang: "tr" | "en") {
   activeLanguage = lang;
 }
+/** React bağlamı olmayan yardımcılar (ör. lib/listing-video) seçili dili buradan okur. */
+export function getActiveLanguage(): "tr" | "en" {
+  return activeLanguage;
+}
 
 /**
  * Fixed "now" reference for deterministic relative-time rendering (e.g. the

@@ -18,6 +18,7 @@ import { downloadCsv } from "@/lib/csv-export";
 import { getDistrict, getProvince } from "@/lib/locations";
 import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
+import { purgeDeletedAccountFiles } from "@/lib/account-purge";
 import { adminBroadcastLive, adminResolveAccountDeletionLive, fetchAdminAccountDeletionsLive, type AdminAccountDeletion, adminClosePartnerRequest, adminDeleteQuestion, adminModerateReview, adminSetPartnershipStatus, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminPartnerships, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminPartnershipRow, type AdminSiteRecords } from "@/lib/live-service";
 import { showToast } from "@/lib/toast";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
@@ -331,14 +332,20 @@ function AdminScreenInner() {
   }, [section]);
   const reloadAdminPartnerships = () => { void fetchAdminPartnerships().then(setAdminPartnerships).catch(() => {}); };
   // "Hesap silme talepleri" kuyruğu (staff RPC) — Kullanıcılar bölümü açılınca çekilir. null = yükleniyor.
-  // Gece işi kurulana kadar kalıcı silme BURADAN yapılır ("Şimdi sil" yalnız admin/super_admin).
+  // 30 günü dolan talepleri gece işi (cron: process-account-deletions) işler; "Şimdi sil" erken silme içindir (yalnız admin/super_admin).
   const [accountDeletions, setAccountDeletions] = useState<AdminAccountDeletion[] | null>(null);
   const [accountDeletionsFailed, setAccountDeletionsFailed] = useState(false);
   const [deleteNowTarget, setDeleteNowTarget] = useState<AdminAccountDeletion | null>(null);
   const [deleteNowText, setDeleteNowText] = useState("");
   const reloadAccountDeletions = () => {
     void fetchAdminAccountDeletionsLive()
-      .then((rows) => { setAccountDeletionsFailed(rows === null); setAccountDeletions(rows ?? []); })
+      .then((rows) => {
+        setAccountDeletionsFailed(rows === null);
+        setAccountDeletions(rows ?? []);
+        // Kalıcı silinen (panelden ya da gece işiyle) hesapların depodaki dosyalarını arka planda temizle.
+        // Sunucu fonksiyonu yetkiyi ve hesabın gerçekten silinmiş olduğunu kendisi doğrular; yinelemesi zararsız.
+        for (const row of (rows ?? []).filter((r) => r.status === "completed").slice(0, 10)) void purgeDeletedAccountFiles(row.userId);
+      })
       .catch(() => { setAccountDeletionsFailed(true); setAccountDeletions([]); });
   };
   useEffect(() => {

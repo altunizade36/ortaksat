@@ -2,6 +2,8 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as ImagePicker from "expo-image-picker";
 import { Platform } from "react-native";
 
+import { translateCopy } from "@/lib/i18n";
+import { getActiveLanguage, localize } from "@/lib/locale";
 import { storageBody } from "@/lib/storage-body";
 import { supabase, supabaseConfig } from "@/lib/supabase";
 
@@ -81,8 +83,18 @@ export function formatVideoDuration(seconds?: number): string {
 export function formatVideoSize(bytes?: number): string {
   if (typeof bytes !== "number" || !Number.isFinite(bytes) || bytes <= 0) return "";
   const mb = bytes / (1024 * 1024);
-  return mb >= 0.1 ? `${mb.toFixed(1).replace(".", ",")} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
+  // Ondalık ayırıcı seçili dile göre: TR "26,0 MB", EN "26.0 MB".
+  return mb >= 0.1 ? `${mb.toFixed(1).replace(".", localize(",", "."))} MB` : `${Math.max(1, Math.round(bytes / 1024))} KB`;
 }
+
+/**
+ * Bu modülün ürettiği TÜM kullanıcı mesajları seçili dilde döner (Türkçede metin birebir aynıdır).
+ * Sabit parçalar sözlükten (lib/i18n-dict) çevrilir; değişken kısım (dosya türü / boyut / süre)
+ * çevrilmeden araya eklenir — bu yüzden değişkenli mesajlar TEK parça değil, parçalardan kurulur.
+ */
+const tr = (text: string) => translateCopy(text, getActiveLanguage());
+const ONLY_VIDEO_TYPES = "Yalnızca MP4, WebM veya MOV video yükleyebilirsin.";
+const UNSUPPORTED_TYPE = "Bu dosya türü desteklenmiyor. Yalnızca MP4, WebM veya MOV video yükleyebilirsin.";
 
 function extensionOf(name?: string): string {
   return (name ?? "").split(/[?#]/)[0].split(".").pop()?.toLowerCase() ?? "";
@@ -95,24 +107,35 @@ export function resolveListingVideoMime(mimeType?: string, fileName?: string): s
   return EXTENSION_MIME[extensionOf(fileName)] ?? "";
 }
 
-/** Sınır doğrulaması. Hata varsa sınırı VE dosyanın gerçek değerini söyleyen Türkçe mesaj; yoksa null. */
-export function validateListingVideo(candidate: Pick<ListingVideoCandidate, "mimeType" | "fileName" | "sizeBytes" | "durationSec">): string | null {
+/**
+ * Sınır doğrulamasının sonucu. `kind` dilden BAĞIMSIZDIR: çağıran, mesaj metnine bakmadan hangi kuralın
+ * çiğnendiğini bilir ("type" | "size" | "duration" = kullanıcıya aynen gösterilecek tür/sınır sorunu).
+ */
+type ListingVideoProblem = { kind: "type" | "empty" | "size" | "unreadable" | "duration"; message: string };
+
+function listingVideoProblem(candidate: Pick<ListingVideoCandidate, "mimeType" | "fileName" | "sizeBytes" | "durationSec">): ListingVideoProblem | null {
   if (!resolveListingVideoMime(candidate.mimeType, candidate.fileName)) {
-    const actual = (candidate.mimeType || "").trim() || (extensionOf(candidate.fileName) ? `.${extensionOf(candidate.fileName)}` : "bilinmeyen tür");
-    return `Bu dosya türü desteklenmiyor (${actual}). Yalnızca MP4, WebM veya MOV video yükleyebilirsin.`;
+    const actual = (candidate.mimeType || "").trim() || (extensionOf(candidate.fileName) ? `.${extensionOf(candidate.fileName)}` : tr("bilinmeyen tür"));
+    return { kind: "type", message: `${tr("Bu dosya türü desteklenmiyor")} (${actual}). ${tr(ONLY_VIDEO_TYPES)}` };
   }
   if (typeof candidate.sizeBytes === "number") {
-    if (candidate.sizeBytes <= 0) return "Video okunamadı: dosya boş görünüyor.";
-    if (candidate.sizeBytes > LISTING_VIDEO_LIMITS.maxBytes) return `Video en fazla 25 MB olabilir; seçtiğin dosya ${formatVideoSize(candidate.sizeBytes)}.`;
+    if (candidate.sizeBytes <= 0) return { kind: "empty", message: tr("Video okunamadı: dosya boş görünüyor.") };
+    if (candidate.sizeBytes > LISTING_VIDEO_LIMITS.maxBytes) return { kind: "size", message: `${tr("Video en fazla 25 MB olabilir; seçtiğin dosya")} ${formatVideoSize(candidate.sizeBytes)}.` };
   }
   if (typeof candidate.durationSec === "number") {
-    if (!Number.isFinite(candidate.durationSec) || candidate.durationSec <= 0) return VIDEO_UNREADABLE;
-    if (candidate.durationSec > LISTING_VIDEO_LIMITS.maxSeconds + DURATION_TOLERANCE) return `Video en fazla 30 saniye olabilir; seçtiğin video ${Math.round(candidate.durationSec)} saniye.`;
+    if (!Number.isFinite(candidate.durationSec) || candidate.durationSec <= 0) return { kind: "unreadable", message: tr(VIDEO_UNREADABLE) };
+    if (candidate.durationSec > LISTING_VIDEO_LIMITS.maxSeconds + DURATION_TOLERANCE) return { kind: "duration", message: `${tr("Video en fazla 30 saniye olabilir; seçtiğin video")} ${Math.round(candidate.durationSec)} ${tr("saniye")}.` };
   }
   return null;
 }
 
+/** Sınır doğrulaması. Hata varsa sınırı VE dosyanın gerçek değerini söyleyen (seçili dilde) mesaj; yoksa null. */
+export function validateListingVideo(candidate: Pick<ListingVideoCandidate, "mimeType" | "fileName" | "sizeBytes" | "durationSec">): string | null {
+  return listingVideoProblem(candidate)?.message ?? null;
+}
+
 export const VIDEO_UNREADABLE = "Video okunamadı. Dosya bozuk olabilir ya da biçimi bu cihazda açılamıyor; MP4 olarak kaydedip tekrar dene.";
+const unreadableError = () => new Error(tr(VIDEO_UNREADABLE));
 
 /** İlk baytlardan kapsayıcı ailesi: "webm" | "iso" (mp4/mov) | "" (tanınmadı). Uzantıya güvenmemek için. */
 async function sniffContainer(blob: Blob): Promise<"webm" | "iso" | ""> {
@@ -130,7 +153,7 @@ async function sniffContainer(blob: Blob): Promise<"webm" | "iso" | ""> {
 /** WEB: süre/boyut bilgisini bağımsız bir <video preload="metadata"> ile okur. Okunamazsa VIDEO_UNREADABLE fırlatır. */
 function probeWebVideo(blob: Blob, timeoutMs = 10000): Promise<{ durationSec: number; width: number; height: number }> {
   return new Promise((resolve, reject) => {
-    if (typeof document === "undefined") { reject(new Error(VIDEO_UNREADABLE)); return; }
+    if (typeof document === "undefined") { reject(unreadableError()); return; }
     const url = URL.createObjectURL(blob);
     const video = document.createElement("video");
     let settled = false;
@@ -144,7 +167,7 @@ function probeWebVideo(blob: Blob, timeoutMs = 10000): Promise<{ durationSec: nu
       URL.revokeObjectURL(url);
       if (error) reject(error); else resolve({ durationSec, width, height });
     };
-    const timer = setTimeout(() => finish(new Error(VIDEO_UNREADABLE)), timeoutMs);
+    const timer = setTimeout(() => finish(unreadableError()), timeoutMs);
     const readDuration = () => {
       const d = video.duration;
       if (Number.isFinite(d) && d > 0) finish(null, d);
@@ -155,11 +178,11 @@ function probeWebVideo(blob: Blob, timeoutMs = 10000): Promise<{ durationSec: nu
       // MediaRecorder çıktısı gibi bazı WebM dosyalarında süre başta Infinity gelir; sona sarınca gerçek süre oluşur.
       if (video.duration === Infinity) { try { video.currentTime = 1e7; } catch { /* yoksay */ } return; }
       readDuration();
-      if (!settled) finish(new Error(VIDEO_UNREADABLE));
+      if (!settled) finish(unreadableError());
     };
     video.ondurationchange = readDuration;
     video.ontimeupdate = readDuration;
-    video.onerror = () => finish(new Error(VIDEO_UNREADABLE));
+    video.onerror = () => finish(unreadableError());
     video.src = url;
   });
 }
@@ -174,7 +197,7 @@ export async function inspectWebVideoFile(file: File): Promise<ListingVideoCandi
   const early = validateListingVideo(base);
   if (early) throw new Error(early);
   const family = await sniffContainer(file);
-  if (!family) throw new Error(`Bu dosya geçerli bir video değil (${file.type || file.name}). Yalnızca MP4, WebM veya MOV video yükleyebilirsin.`);
+  if (!family) throw new Error(`${tr("Bu dosya geçerli bir video değil")} (${file.type || file.name}). ${tr(ONLY_VIDEO_TYPES)}`);
   const declared = resolveListingVideoMime(file.type, file.name);
   const mimeType = family === "webm" ? "video/webm" : declared === "video/webm" ? "video/mp4" : declared;
   const meta = await probeWebVideo(file);
@@ -215,11 +238,11 @@ export function chooseWebVideoFile(): Promise<File | null> {
  */
 export async function pickNativeListingVideo(): Promise<ListingVideoCandidate | null> {
   const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!permission.granted) throw new Error("Galeri izni verilmedi. Ayarlardan izin verip tekrar dene.");
+  if (!permission.granted) throw new Error(tr("Galeri izni verilmedi. Ayarlardan izin verip tekrar dene."));
   const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["videos"], allowsMultipleSelection: false, videoMaxDuration: LISTING_VIDEO_LIMITS.maxSeconds, quality: 1 });
   if (result.canceled || !result.assets?.[0]?.uri) return null;
   const asset = result.assets[0];
-  if (asset.type && asset.type !== "video") throw new Error("Bu dosya türü desteklenmiyor. Yalnızca MP4, WebM veya MOV video yükleyebilirsin.");
+  if (asset.type && asset.type !== "video") throw new Error(tr(UNSUPPORTED_TYPE));
   // expo-image-picker süreyi MİLİSANİYE verir.
   const durationSec = typeof asset.duration === "number" && asset.duration > 0 ? asset.duration / 1000 : undefined;
   const candidate: ListingVideoCandidate = {
@@ -232,7 +255,7 @@ export async function pickNativeListingVideo(): Promise<ListingVideoCandidate | 
     height: asset.height
   };
   // Süre bildirilmediyse sınır doğrulanamaz → güvenli tarafta kal, reddet.
-  if (durationSec === undefined) throw new Error(VIDEO_UNREADABLE);
+  if (durationSec === undefined) throw unreadableError();
   const problem = validateListingVideo(candidate);
   if (problem) throw new Error(problem);
   return candidate;
@@ -287,16 +310,16 @@ function xhrUpload(endpoint: string, token: string, apiKey: string, contentType:
  */
 export async function uploadListingVideo(source: string | Blob, userId: string, onProgress?: (fraction: number) => void, options: { mimeType?: string; fileName?: string; sizeBytes?: number } = {}): Promise<string> {
   if (typeof source === "string" && /^https?:\/\//i.test(source)) return source;
-  if (!supabase || !supabaseConfig.url || !supabaseConfig.key) throw new Error("Video yüklemek için canlı hesap gerekli.");
-  if (!uuidPattern.test(userId) || !source) throw new Error("Video için geçerli hesap ve dosya gerekli.");
+  if (!supabase || !supabaseConfig.url || !supabaseConfig.key) throw new Error(tr("Video yüklemek için canlı hesap gerekli."));
+  if (!uuidPattern.test(userId) || !source) throw new Error(tr("Video için geçerli hesap ve dosya gerekli."));
 
   let blob: Blob | null = typeof source === "string" ? null : source;
   const isNativeFile = Platform.OS !== "web" && typeof source === "string";
   if (!blob && !isNativeFile) {
-    try { blob = await (await fetch(source as string)).blob(); } catch { throw new Error(VIDEO_UNREADABLE); }
+    try { blob = await (await fetch(source as string)).blob(); } catch { throw unreadableError(); }
   }
   const mimeType = resolveListingVideoMime(options.mimeType || blob?.type, options.fileName || (typeof source === "string" ? source : undefined));
-  if (!mimeType) throw new Error("Bu dosya türü desteklenmiyor. Yalnızca MP4, WebM veya MOV video yükleyebilirsin.");
+  if (!mimeType) throw new Error(tr(UNSUPPORTED_TYPE));
   if (blob) {
     const problem = validateListingVideo({ mimeType, sizeBytes: blob.size });
     if (problem) throw new Error(problem);
@@ -304,7 +327,7 @@ export async function uploadListingVideo(source: string | Blob, userId: string, 
 
   const { data } = await supabase.auth.getSession();
   const token = data.session?.access_token;
-  if (!token || data.session?.user?.id !== userId) throw new Error("Oturumun sona ermiş görünüyor. Tekrar giriş yapıp videoyu yeniden ekle.");
+  if (!token || data.session?.user?.id !== userId) throw new Error(tr("Oturumun sona ermiş görünüyor. Tekrar giriş yapıp videoyu yeniden ekle."));
 
   const path = `${userId}/${makeId()}.${MIME_EXTENSION[mimeType]}`;
   const endpoint = `${supabaseConfig.url}/storage/v1/object/${LISTING_VIDEO_BUCKET}/${path}`;
@@ -321,20 +344,25 @@ export async function uploadListingVideo(source: string | Blob, userId: string, 
     }
   } catch (first) {
     const message = String((first as Error)?.message ?? "");
-    if (/storage 413|too large|exceeded/i.test(message)) throw new Error("Video en fazla 25 MB olabilir; dosyan bu sınırı aşıyor.");
-    if (/storage 415|mime/i.test(message)) throw new Error("Bu dosya türü desteklenmiyor. Yalnızca MP4, WebM veya MOV video yükleyebilirsin.");
-    if (!isNativeFile) { console.warn("Video yüklenemedi", message); throw new Error(UPLOAD_FAILED); }
+    if (/storage 413|too large|exceeded/i.test(message)) throw new Error(tr("Video en fazla 25 MB olabilir; dosyan bu sınırı aşıyor."));
+    if (/storage 415|mime/i.test(message)) throw new Error(tr(UNSUPPORTED_TYPE));
+    if (!isNativeFile) { console.warn("Video yüklenemedi", message); throw new Error(tr(UPLOAD_FAILED)); }
     // NATIVE yedek yol: fotoğraflarla aynı desen (dosyayı oku → ArrayBuffer → supabase-js).
+    // Tür/sınır sorunu kullanıcıya AYNEN gösterilir; diğer her hata genel "yüklenemedi" mesajına düşer.
+    // Ayrım mesaj metnine DEĞİL `kind` alanına bakar (mesaj seçili dilde üretildiği için metin eşleşmesi kırılırdı).
+    let surfaced: string | null = null;
     try {
       const fileBlob = await (await fetch(source as string)).blob();
-      const problem = validateListingVideo({ mimeType, sizeBytes: fileBlob.size });
-      if (problem) throw new Error(problem);
+      const problem = listingVideoProblem({ mimeType, sizeBytes: fileBlob.size });
+      if (problem) {
+        if (problem.kind === "type" || problem.kind === "size" || problem.kind === "duration") surfaced = problem.message;
+        throw new Error(problem.message);
+      }
       const { error } = await supabase.storage.from(LISTING_VIDEO_BUCKET).upload(path, await storageBody(fileBlob), { contentType: mimeType, upsert: false, cacheControl: "31536000" });
       if (error) throw error;
     } catch (second) {
       console.warn("Video yüklenemedi", message, second);
-      const text = String((second as Error)?.message ?? "");
-      throw new Error(/^Video en fazla|^Bu dosya türü/.test(text) ? text : UPLOAD_FAILED);
+      throw new Error(surfaced ?? tr(UPLOAD_FAILED));
     }
   }
   onProgress?.(1);

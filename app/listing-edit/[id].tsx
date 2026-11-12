@@ -254,9 +254,9 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       tiktokText
     });
 
-    if (!Number.isFinite(parsedPrice) || parsedPrice > 999_999_999_999) { Alert.alert("Fiyatı kontrol et", LISTING_MONEY_ERROR); return; }
+    if (!Number.isFinite(parsedPrice) || parsedPrice > 999_999_999_999) { Alert.alert(translateCopy("Fiyatı kontrol et", language), translateCopy(LISTING_MONEY_ERROR, language)); return; }
     const commissionError = partnershipMode !== "none" ? listingCommissionError(commissionType, commissionValue) : "";
-    if (commissionError) { Alert.alert("Komisyonu kontrol et", commissionError); return; }
+    if (commissionError) { Alert.alert(translateCopy("Komisyonu kontrol et", language), translateCopy(commissionError, language)); return; }
     // Kademeler (create ile parite): oran TR ondalığıyla da yazılabilir ("12,5"). Eskiden Number("12,5") = NaN → 0
     // oluyor ve kademe kaydederken SESSİZCE siliniyordu. Geçersiz satır artık kaydı durdurur; tamamen boş satır yok sayılır.
     const tierError = partnershipMode !== "none" && commissionType === "rate" && tiers.some((tr) => {
@@ -264,10 +264,10 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       const rate = parseListingRate(tr.rate);
       return !(rate > 0 && rate <= 90) || !/^\d+$/.test(tr.minSales.trim());
     });
-    if (tierError) { Alert.alert("Kademeleri kontrol et", "Kademelerde satış adedini tam sayı, oranı 1–90 arasında gir (ör. 5 satıştan sonra %12,5)."); return; }
-    if (!Number.isSafeInteger(parsedStock) || parsedStock < 0) { Alert.alert("Stok", "Stok sıfır veya daha büyük bir tam sayı olmalı."); return; }
+    if (tierError) { Alert.alert(translateCopy("Kademeleri kontrol et", language), translateCopy("Kademelerde satış adedini tam sayı, oranı 1–90 arasında gir (ör. 5 satıştan sonra %12,5).", language)); return; }
+    if (!Number.isSafeInteger(parsedStock) || parsedStock < 0) { Alert.alert(translateCopy("Stok", language), translateCopy("Stok sıfır veya daha büyük bir tam sayı olmalı.", language)); return; }
     const titleCheck = validateListingTitle(title);
-    if (titleCheck.error) { Alert.alert("Başlığı düzenleyin", titleCheck.error); return; }
+    if (titleCheck.error) { Alert.alert(translateCopy("Başlığı düzenleyin", language), translateCopy(titleCheck.error, language)); return; }
     if (
       !title.trim() ||
       !description.trim() ||
@@ -308,7 +308,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     setSaving(true);
     let uploadedImage=image.trim(),uploadedAssets=parsedAdAssets;
     try {if(isLiveAccount){uploadedImage=await uploadListingImage(image.trim()||fallbackImage,currentUser.id);uploadedAssets=await Promise.all(parsedAdAssets.map(uri=>uploadListingImage(uri,currentUser.id)));}}
-    catch {setSaving(false);Alert.alert("Fotoğraf yüklenemedi","İlan kaydedilmedi; görsellerini ve bağlantını kontrol ederek tekrar dene.");return;}
+    catch {setSaving(false);Alert.alert(translateCopy("Fotoğraf yüklenemedi", language),translateCopy("İlan kaydedilmedi; görsellerini ve bağlantını kontrol ederek tekrar dene.", language));return;}
     const ok = await updateListing(listing.id, {
       title: titleCheck.title,
       description: description.trim(),
@@ -445,7 +445,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
 
         {attrSchema ? (
           <Card>
-            <SectionTitle title={`Özellikler — ${attrSchema.title}`} action={translateCopy("Emlak / kategori detayları", language)} />
+            <SectionTitle title={`${translateCopy("Özellikler", language)} — ${translateCopy(attrSchema.title, language)}`} action={translateCopy("Emlak / kategori detayları", language)} />
             <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Bu kategorinin yapısal özellikleri (m², oda, imar, tapu, donatılar…). Doldurdukça ilan detayında ve filtrelerde görünür.", language)}</Text>
             <AttributeFields fields={attrSchema.fields} values={attrValues} onChange={setAttr} schemaKey={attrSchema.key} />
           </Card>

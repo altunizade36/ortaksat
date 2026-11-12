@@ -1,4 +1,4 @@
-import { Pressable, Text, View } from "react-native";
+import { ActivityIndicator, Pressable, Text, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { MaterialCommunityIcons } from "@/components/icons";
@@ -44,6 +44,47 @@ export function ReviewSortBar({ value, onChange, language = "tr" }: { value: Rev
   return (
     <View accessibilityLabel={translateCopy("Yorumları sırala", language)} style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
       {options.map((o) => <Chip key={o.key} label={o.label} selected={value === o.key} onPress={() => onChange(o.key)} />)}
+    </View>
+  );
+}
+
+/**
+ * Sayfalı yorum listesinin altı: "Daha fazla değerlendirme göster" (sıradaki sayfayı EKLER),
+ * yükleniyor durumu ve başarısız istek için "Tekrar dene". Gösterecek bir şey yoksa hiç çizilmez.
+ */
+export function ReviewLoadMore({ hasMore, loading, error, onLoadMore, onRetry, language = "tr" }: {
+  hasMore: boolean;
+  /** İlk sayfa ya da sıradaki sayfa yükleniyor. */
+  loading: boolean;
+  error: boolean;
+  onLoadMore: () => void;
+  /** Başarısız isteği yinele (verilmezse onLoadMore). */
+  onRetry?: () => void;
+  language?: "tr" | "en";
+}) {
+  if (loading) {
+    return (
+      <View testID="reviews-loading" accessibilityRole="progressbar" accessibilityLabel={translateCopy("Değerlendirmeler yükleniyor…", language)} style={{ alignItems: "center", flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 44 }}>
+        <ActivityIndicator size="small" color={colors.primary} />
+        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Değerlendirmeler yükleniyor…", language)}</Text>
+      </View>
+    );
+  }
+  if (!error && !hasMore) return null;
+  const label = translateCopy(error ? "Tekrar dene" : "Daha fazla değerlendirme göster", language);
+  return (
+    <View style={{ alignItems: "center", gap: 8 }}>
+      {error ? <Text accessibilityRole="alert" style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700", textAlign: "center" }}>{translateCopy("Değerlendirmeler yüklenemedi.", language)}</Text> : null}
+      <Pressable
+        testID={error ? "reviews-retry" : "reviews-load-more"}
+        accessibilityRole="button"
+        accessibilityLabel={label}
+        onPress={error ? onRetry ?? onLoadMore : onLoadMore}
+        style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", minHeight: 44, opacity: pressed ? 0.8 : 1, paddingHorizontal: 18 })}
+      >
+        <MaterialCommunityIcons name={error ? "refresh" : "chevron-down"} size={17} color={colors.primaryDark} />
+        <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{label}</Text>
+      </Pressable>
     </View>
   );
 }
