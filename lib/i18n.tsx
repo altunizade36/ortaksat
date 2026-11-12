@@ -10,6 +10,7 @@ import { setActiveLanguage } from "@/lib/locale";
 import { accountDict } from "@/lib/i18n-dict/account";
 import { catalogDict } from "@/lib/i18n-dict/catalog";
 import { deletionDict } from "@/lib/i18n-dict/deletion";
+import { consentDict } from "@/lib/i18n-dict/consent";
 import { categoriesDict } from "@/lib/i18n-dict/categories";
 import { componentsDict } from "@/lib/i18n-dict/components";
 import { components2Dict } from "@/lib/i18n-dict/components2";
@@ -1248,7 +1249,8 @@ function trToEnDict(): Record<string, string> {
     ...marketingDict,
     ...pass2Dict,
     ...extraDict,
-    ...deletionDict
+    ...deletionDict,
+    ...consentDict
   });
 }
 

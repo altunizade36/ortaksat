@@ -51,15 +51,17 @@ const SECTIONS: LegalSection[] = [
     ],
     bullets: [
       "Supabase — kimlik doğrulama, veritabanı ve dosya barındırma (sunucular AB / eu-west-1 bölgesinde).",
-      "Vercel — web ve API barındırma; ayrıca çerezsiz, kişi-tanımlamayan Web Analytics.",
+      "Vercel — web barındırma ve içerik dağıtımı (ABD merkezli; küresel uç sunucular). Ziyaret istatistikleri (Web Analytics, Speed Insights) yalnızca çerez tercihlerinde izin verirsen çalışır; çerez yerleştirmez.",
       "Resend — işlemsel/bildirim e-postalarının gönderimi.",
-      "Google — yalnızca 'Google ile giriş' seçilirse kimlik doğrulama."
+      "Google — yalnızca 'Google ile giriş' seçilirse kimlik doğrulama.",
+      "Meta (Facebook / Instagram) Pixel — yalnızca etkinleştirildiği dönemlerde ve yalnızca 'Pazarlama' iznini verirsen reklam ölçümü."
     ]
   },
   {
     heading: "Yurt Dışına Aktarım",
     paragraphs: [
-      "Barındırma altyapımız AB (eu-west-1) bölgesinde çalıştığından verileriniz yurt dışında işlenebilir. Aktarım, hizmetin sağlanması amacıyla ve uygun güvenlik önlemleriyle yapılır."
+      "Altyapı sağlayıcılarımızın sunucuları Türkiye dışında (başlıca Avrupa Birliği ve ABD) bulunduğundan verileriniz hizmetin sunulabilmesi için yurt dışına aktarılır. Bu aktarımlar KVKK'nın 9. maddesine tabidir: yeterlilik kararı bulunmayan ülkeler bakımından Kişisel Verileri Koruma Kurulu'nun ilan ettiği standart sözleşme gibi uygun güvencelerden birinin sağlanması gerekir. Süreklilik arz eden bu aktarımlar açık rızanıza dayandırılmaz.",
+      "Yazı tipimiz kendi alan adımızdan sunulur; sayfa yüklenirken IP adresiniz Google'a veya başka bir üçüncü tarafa iletilmez."
     ]
   },
   {
@@ -99,7 +101,7 @@ export default function GizlilikPolitikasi() {
     <LegalDoc
       title="Gizlilik Politikası"
       path="/gizlilik-politikasi"
-      updated="24 Ekim 2026"
+      updated="13 Kasım 2026"
       seoDescription="OrtakSat Gizlilik Politikası: hangi verileri topladığımız, nasıl kullandığımız, üçüncü taraf hizmetler ve KVKK kapsamındaki haklarınız."
       intro="Gizliliğiniz bizim için önemlidir. Bu politika, OrtakSat'ı kullanırken kişisel verilerinizin nasıl toplandığını, işlendiğini ve korunduğunu açıklar."
       sections={SECTIONS}

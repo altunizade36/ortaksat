@@ -46,6 +46,28 @@ const SECTIONS: LegalSection[] = [
     ]
   },
   {
+    heading: "Paylaşımın Reklam Olduğunu Belirtme",
+    paragraphs: [
+      "Komisyon karşılığında bir ilanı paylaşan ortak, paylaşımın reklam olduğunu açıkça belirtmek zorundadır: \"Reklam\" veya \"Tanıtım\" ibaresi ile satıcının ya da markanın adı birlikte ve ilk bakışta görünür biçimde yer almalıdır (örnek: \"#Reklam – @satıcıadı\"). Örtülü reklam yasaktır; ürünü tarafsız deneyim gibi sunmak, sağlık beyanında bulunmak veya kesin kazanç vaat etmek yasaktır.",
+      "Satıcı, ortağı bu kural hakkında bilgilendirmekle yükümlüdür. Komisyon gelirinin beyanı ve vergisi tarafların kendi sorumluluğundadır; OrtakSat ödemeye aracılık etmez ve vergi kesintisi yapmaz."
+    ]
+  },
+  {
+    heading: "Emlak, Vasıta ve İş İlanları",
+    paragraphs: [
+      "Taşınmaz ve ikinci el motorlu taşıt ilanlarını yalnızca malik, mevzuatın izin verdiği yakınları veya yetki belgesine sahip ve malik tarafından yetkilendirilmiş işletmeler verebilir. OrtakSat, mevzuatın öngördüğü kimlik ve yetki doğrulamasını isteyebilir; doğrulanamayan ilanları yayına almayabilir veya kaldırabilir ve doğrulama altyapısı devreye alınana kadar bu kategorilerde ilan kabulünü kısıtlayabilir.",
+      "İş ilanlarını yalnızca işverenler kendi açık pozisyonları için verebilir; iş arayandan hiçbir ad altında ücret istenemez. \"Yenilenmiş\" ibaresi yalnızca yetkili yenileme merkezinden geçmiş ürünler için kullanılabilir."
+    ]
+  },
+  {
+    heading: "Hukuka Aykırı İçerik Bildirimi (Uyar-Kaldır)",
+    paragraphs: [
+      "OrtakSat, kullanıcıların oluşturduğu içerikleri önceden kontrol etmekle yükümlü değildir; ancak hukuka aykırı içerikten haberdar edildiğinde gereğini yapar. Bir ilanı, profili, mesajı veya yorumu ilgili sayfadaki bildirim seçeneğiyle ya da destek@ortaksat.com adresine yazarak bildirebilirsiniz. Bildirimde içeriğin bağlantısını ve neden hukuka aykırı olduğunu belirtin.",
+      "Usulüne uygun bildirimler en geç 48 saat içinde incelenir; hukuka aykırılığı açık olan içerik yayından kaldırılır ve içerik sahibine gerekçe bildirilir. İçerik sahibi belgeleriyle itiraz edebilir.",
+      "Marka, tasarım veya telif hakkınızın ihlal edildiğini düşünüyorsanız hakkınızı gösteren belgeyle birlikte aynı adrese başvurun; şikâyete konu ilan en geç 48 saat içinde yayından kaldırılır, ilan sahibi belgeleriyle itiraz edebilir."
+    ]
+  },
+  {
     heading: "Ödeme, Teslimat ve Sorumluluk",
     paragraphs: [
       "Ödeme, teslimat, iade ve garanti dâhil tüm alışveriş süreci alıcı ile satıcı arasındadır ve tüm sorumluluk taraflara aittir. OrtakSat işlem taraflarının kimliğini, ürünlerin niteliğini veya işlemlerin tamamlanacağını garanti etmez. Güvenli alışveriş adımlarını uygulamanız önerilir."
@@ -88,7 +110,7 @@ export default function KullanimSartlari() {
     <LegalDoc
       title="Kullanım Şartları"
       path="/kullanim-sartlari"
-      updated="24 Ekim 2026"
+      updated="13 Kasım 2026"
       seoDescription="OrtakSat Kullanım Şartları: aracı platform modeli, kullanıcı yükümlülükleri, ortaklık/komisyon kuralları, sorumluluk ve uygulanacak hukuk."
       intro="OrtakSat'ı kullanmadan önce lütfen bu şartları okuyun. Platform aracı bir hizmettir; satış, ödeme ve teslimat kullanıcılar arasındaki anlaşmalardan ibarettir."
       sections={SECTIONS}

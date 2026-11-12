@@ -62,24 +62,34 @@ export async function logReferralClick(_listingId: string | undefined, partnersh
   if (error) console.warn("Referral click log failed", error);
 }
 
-// Y6: cihaz-stabil izleyici anahtarı (günlük-dedup için). Web'de localStorage'da kalıcı;
-// native/ortamda localStorage yoksa oturum-stabil rastgele anahtar (yine de dedup sağlar).
+// Y6: izleyici anahtarı — YALNIZ "aynı cihaz aynı ilanı günde bir kez saysın" (sayaç şişirmeyi önleme) içindir.
+// GİZLİLİK: anahtar HER GÜN yenilenir (değer "YYYY-AA-GG:rastgele"). Sunucu zaten günlük tekilleştirdiği için
+// işlev aynı kalır, ama cihazda günler boyu yaşayan kalıcı bir tanımlayıcı OLUŞMAZ (kimse günler arası izlenemez).
+// Eski kalıcı anahtar (tarihsiz) ilk okumada yenisiyle değiştirilir. localStorage yoksa oturumluk anahtar kullanılır.
 let _viewerKey: string | null = null;
+let _viewerKeyDay = "";
 function viewerKey(): string {
-  if (_viewerKey) return _viewerKey;
+  const today = new Date().toISOString().slice(0, 10);
+  if (_viewerKey && _viewerKeyDay === today) return _viewerKey;
   const gen = () =>
     (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function"
       ? globalThis.crypto.randomUUID()
       : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`);
+  _viewerKeyDay = today;
   try {
     if (typeof localStorage !== "undefined") {
-      let k = localStorage.getItem("ortaksat_vk");
-      if (!k) { k = gen(); localStorage.setItem("ortaksat_vk", k); }
-      _viewerKey = k;
-      return k;
+      const stored = localStorage.getItem("ortaksat_vk");
+      if (stored && stored.startsWith(today + ":") && stored.length > today.length + 8) {
+        _viewerKey = stored.slice(today.length + 1);
+        return _viewerKey;
+      }
+      const fresh = gen();
+      localStorage.setItem("ortaksat_vk", `${today}:${fresh}`);
+      _viewerKey = fresh;
+      return fresh;
     }
   } catch {
-    /* localStorage erişilemez → oturum-stabil anahtara düş */
+    /* localStorage erişilemez → oturumluk anahtara düş */
   }
   _viewerKey = gen();
   return _viewerKey;

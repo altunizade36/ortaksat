@@ -19,6 +19,7 @@ import { PresenceHeartbeat } from "@/components/presence-heartbeat";
 import { PushRegistrar } from "@/components/push-registrar";
 import { InviteCapture } from "@/components/invite-capture";
 import { MetaPixelRouter } from "@/components/meta-pixel-router";
+import { CookieConsent } from "@/components/cookie-consent";
 import { ErrorToast } from "@/components/error-toast";
 import { ToastHost } from "@/components/toast-host";
 import { AlertHost } from "@/components/alert-host";
@@ -132,10 +133,11 @@ function RootStack() {
       <PresenceHeartbeat />
       <PushRegistrar />
       <InviteCapture />{/* Y8: giriş sonrası saklanan davet kodunu yakalar */}
-      <MetaPixelRouter />{/* SPA gezinmesinde Meta Pixel PageView (web + ID varsa) */}
+      <MetaPixelRouter />{/* SPA gezinmesinde Meta Pixel PageView (web + ID varsa + pazarlama rızası verildiyse) */}
+      <CookieConsent />{/* web: çerez onay bandı + tercih paneli (KVKK); uygulamada çizilmez */}
       <AccountDeletionGate />{/* kendi silme talebi beklerken tam ekran bildirim (toast/alert bunun ÜSTÜNDE kalır) */}
       <ErrorToast />
-      <ToastHost />{/* hafif başarı/bilgi toast'ı (showToast) — bloklamayan geri bildirim */}
+      <ToastHost />{/* hafif başarı/bilgi toast'ı (showToast) — bloklamayan geri bildirim */}
       <AlertHost />
     </View>
   );

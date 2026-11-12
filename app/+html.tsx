@@ -68,49 +68,23 @@ export default function Root({ children }: PropsWithChildren) {
           }}
         />
 
-        {/* Analytics — Vercel Web Analytics + Speed Insights. Birinci taraf, çerezsiz,
-            KVKK/GDPR dostu. Vercel panelinde "Web Analytics" ve "Speed Insights"
-            açık olmalı (ücretsiz). window.va/si kuyruğu script yüklenene kadar tutar. */}
-        <script
-          dangerouslySetInnerHTML={{
-            __html:
-              "window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};" +
-              "window.si=window.si||function(){(window.siq=window.siq||[]).push(arguments);};"
-          }}
-        />
-        <script defer src="/_vercel/insights/script.js" />
-        <script defer src="/_vercel/speed-insights/script.js" />
-
-        {/* Meta (Facebook) Pixel — reklam dönüşüm takibi. ENV-KORUMALI: EXPO_PUBLIC_META_PIXEL_ID
-            set DEĞİLSE metaPixelScript "" olur → HİÇBİR ŞEY enjekte edilmez (site etkisiz).
-            ID Vercel env var'ına eklenip yeniden deploy edilince otomatik canlı olur. Base kod
-            init + ilk PageView'ı gönderir; SPA gezinme PageView'ı <MetaPixelRouter/> ile,
-            dönüşüm olayları lib/meta-pixel.ts ile. noscript img = JS kapalı tarayıcı fallback'i. */}
-        {metaPixelScript ? <script dangerouslySetInnerHTML={{ __html: metaPixelScript }} /> : null}
-        {metaPixelScript ? (
-          <noscript
-            dangerouslySetInnerHTML={{
-              __html: `<img height="1" width="1" style="display:none" src="https://www.facebook.com/tr?id=${META_PIXEL_ID}&ev=PageView&noscript=1" alt="" />`
-            }}
-          />
-        ) : null}
+        {/* RIZAYA BAĞLI BETİKLER — KVKK / Kurul Çerez Rehberi.
+            Analitik (Vercel Web Analytics + Speed Insights; çerezsiz) ve pazarlama (Meta Pixel; yalnız
+            EXPO_PUBLIC_META_PIXEL_ID tanımlıysa) betikleri belgeye DOĞRUDAN yazılmaz: aşağıdaki satır-içi betik,
+            kullanıcının kayıtlı tercihini (localStorage → ortaksat.cookieConsent.v1) okur ve yalnız izin verilen
+            kategorileri yükler. Tercih yoksa ya da "Reddet" seçildiyse HİÇBİRİ yüklenmez. Bant: components/cookie-consent.tsx.
+            <noscript> piksel görseli kaldırıldı: JS kapalıyken rıza alınamaz, izinsiz istek atılmamalı. */}
+        <script dangerouslySetInnerHTML={{ __html: consentScript }} />
 
         {/* İlk veri çağrısı gecikmesin: Supabase kaynağına erken bağlan. */}
         <link rel="preconnect" href="https://akyzzdwbzgsnhdircuce.supabase.co" crossOrigin="anonymous" />
         <link rel="dns-prefetch" href="https://akyzzdwbzgsnhdircuce.supabase.co" />
 
-        {/* Crisp web typography — render'ı bloklamadan yükle (FCP hızlanır).
-            Sistem yazı tipiyle çizilir, Inter gelince yumuşakça geçer (display=swap).
-            Stylesheet'i inline script async ekler; JS yoksa <noscript> devreye girer. */}
-        <link rel="preconnect" href="https://fonts.googleapis.com" />
-        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
-        <script dangerouslySetInnerHTML={{ __html: fontLoader }} />
-        <noscript>
-          <link
-            href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap"
-            rel="stylesheet"
-          />
-        </noscript>
+        {/* Yazı tipi (Inter) KENDİ ALAN ADIMIZDAN sunulur (/fonts/*.woff2; @font-face aşağıdaki stilde).
+            Eskiden fonts.googleapis.com'dan yükleniyordu: her ziyaretçinin IP adresi izin alınmadan Google'a
+            (yurt dışı) gidiyordu. Artık üçüncü tarafa istek yok; ayrıca bir DNS+TLS turu kazanılır.
+            Sistem yazı tipiyle çizilir, Inter gelince yumuşakça geçer (font-display: swap). */}
+        <link rel="preload" href="/fonts/inter-latin.woff2" as="font" type="font/woff2" crossOrigin="anonymous" />
 
         {/* Yapısal veri: kuruluş + site araması (Google sitelinks arama kutusu) */}
         <script type="application/ld+json" dangerouslySetInnerHTML={{ __html: orgJsonLd }} />
@@ -174,6 +148,23 @@ const metaPixelScript = /^\d{5,20}$/.test(META_PIXEL_ID)
     "(window,document,'script','https://connect.facebook.net/en_US/fbevents.js');" +
     "fbq('init'," + JSON.stringify(META_PIXEL_ID) + ");fbq('track','PageView');"
   : "";
+
+// RIZA KAPISI: tercih anahtarı ve sürümü lib/cookie-consent.ts ile AYNI olmalı (COOKIE_CONSENT_KEY / _VERSION).
+// window.__osConsent(c): c.analytics → Vercel betikleri, c.marketing → Meta Pixel; her kategori en çok bir kez yüklenir.
+// Sayfa açılışında kayıtlı tercih varsa uygulanır; bant "Kabul Et" / "Seçimimi Kaydet" ile aynı işlevi çağırır.
+const consentScript =
+  "(function(){var K='ortaksat.cookieConsent.v1',V=1,L={};" +
+  "function add(u){var s=document.createElement('script');s.defer=true;s.src=u;document.head.appendChild(s);}" +
+  "function apply(c){if(!c||c.v!==V)return;" +
+  "if(c.analytics===true&&!L.a){L.a=1;" +
+  "window.va=window.va||function(){(window.vaq=window.vaq||[]).push(arguments);};" +
+  "window.si=window.si||function(){(window.siq=window.siq||[]).push(arguments);};" +
+  "add('/_vercel/insights/script.js');add('/_vercel/speed-insights/script.js');}" +
+  (metaPixelScript ? "if(c.marketing===true&&!L.m){L.m=1;" + metaPixelScript + "}" : "") +
+  "}" +
+  "window.__osConsent=apply;" +
+  "try{var r=window.localStorage.getItem(K);if(r)apply(JSON.parse(r));}catch(e){}" +
+  "})();";
 // KRİTİK: PUBLIC_PROFILE_COLUMNS (lib/supabase-data.ts) ile BİREBİR aynı kolonlar olmalı.
 // Ayrışırsa prefetch ATLANMAZ — takePrefetched bu 13-kolonu döndürür, loadMarketplaceSnapshot
 // ERKEN döner ve taze 17-kolon fetch HİÇ çalışmaz → marketplace kullanıcılarında yeni alanlar
@@ -199,13 +190,6 @@ const bootScript =
   "var mo=new MutationObserver(function(){if(document.documentElement.classList.contains('app-ready')){mo.disconnect();done();}});" +
   "mo.observe(document.documentElement,{attributes:true,attributeFilter:['class']});" +
   "setTimeout(function(){mo.disconnect();done();},8000);})();";
-
-// Inter'i render-bloklamadan yükle: <link media="print"> ekle, yüklenince media='all'.
-const fontLoader =
-  "(function(){var l=document.createElement('link');" +
-  "l.rel='stylesheet';l.media='print';" +
-  "l.href='https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800;900&display=swap';" +
-  "l.onload=function(){l.media='all';};document.head.appendChild(l);})();";
 
 const orgJsonLd = JSON.stringify({
   "@context": "https://schema.org",
@@ -246,6 +230,25 @@ const orgJsonLd = JSON.stringify({
 
 const responsiveShell = `
 :root { color-scheme: light; }
+/* Inter — kendi alan adımızdan (public/fonts). Değişken yazı tipi: 400–900 tek dosyada.
+   İki alt küme: latin (temel) ve latin-ext (ğ, ş, İ, ı dahil genişletilmiş Latin); tarayıcı yalnız gerekeni indirir.
+   Inter, SIL Open Font License 1.1 ile lisanslıdır (kendi sunucundan dağıtım serbest). */
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url(/fonts/inter-latin-ext.woff2) format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C4, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: 'Inter';
+  font-style: normal;
+  font-weight: 400 900;
+  font-display: swap;
+  src: url(/fonts/inter-latin.woff2) format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
 /* CLS KORUMASI: Inter yüklenene kadar bu metrik-EŞLENMİŞ yedek çizilir (Arial tabanı, size-adjust/
    override'lar Inter metriklerine ayarlı) → Inter display=swap ile gelince yazı metrikleri DEĞİŞMEZ
    → reflow/layout-shift OLMAZ (ana sayfa CLS 0.108 → ~good). Inter yine gösterilir (design korunur). */

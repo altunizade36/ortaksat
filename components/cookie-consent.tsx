@@ -1,0 +1,189 @@
+import { Link, type Href } from "expo-router";
+import { useCallback, useEffect, useState } from "react";
+import { Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
+
+import { colors } from "@/components/colors";
+import { onOpenCookiePreferences, readCookieConsent, saveCookieConsent } from "@/lib/cookie-consent";
+import { translateCopy, useLanguage } from "@/lib/i18n";
+import { metaPixelEnabled } from "@/lib/meta-pixel";
+import { isMobileApp } from "@/lib/mobile-app";
+
+/**
+ * ÇEREZ ONAY BANDI + TERCİH PANELİ (yalnız web; uygulamada çerez yok).
+ *
+ * KVKK Kurulu Çerez Rehberi'ne göre:
+ *  - Zorunlu olmayan her şey varsayılan KAPALI; ön-işaretli seçenek yok.
+ *  - "Reddet" ile "Kabul Et" AYNI görünürlükte ve tek tıkla.
+ *  - Bant siteyi kilitlemez (çerez duvarı değil): kullanıcı seçim yapmadan da gezebilir; seçim yapılana
+ *    kadar analitik/pazarlama betikleri YÜKLENMEZ.
+ *  - Tercih, alt bilgideki "Çerez Tercihleri"nden her an değiştirilebilir / geri alınabilir.
+ *
+ * SSG/hidrasyon: bant yalnız mount SONRASI çizilir (sunucu HTML'inde yok) → #418 uyuşmazlığı ve LCP etkisi olmaz;
+ * position:fixed olduğu için düzen kaymaz (CLS 0).
+ */
+export function CookieConsent() {
+  const { language } = useLanguage();
+  const { width } = useWindowDimensions();
+  const tr = useCallback((value: string) => translateCopy(value, language), [language]);
+  const [mode, setMode] = useState<"hidden" | "banner" | "preferences">("hidden");
+  const [analytics, setAnalytics] = useState(false);
+  const [marketing, setMarketing] = useState(false);
+
+  useEffect(() => {
+    if (Platform.OS !== "web" || isMobileApp) return;
+    const stored = readCookieConsent();
+    if (!stored) setMode("banner");
+    return onOpenCookiePreferences(() => {
+      const current = readCookieConsent();
+      setAnalytics(current?.analytics === true);
+      setMarketing(current?.marketing === true);
+      setMode("preferences");
+    });
+  }, []);
+
+  if (Platform.OS !== "web" || isMobileApp || mode === "hidden") return null;
+
+  const decide = (choice: { analytics: boolean; marketing: boolean }) => {
+    saveCookieConsent({ analytics: choice.analytics, marketing: metaPixelEnabled ? choice.marketing : false });
+    setMode("hidden");
+  };
+  const narrow = width > 0 && width < 640;
+
+  return (
+    <View
+      testID="cookie-consent"
+      accessibilityRole={"dialog" as never}
+      accessibilityLabel={tr("Çerez tercihleri")}
+      style={{
+        position: "fixed" as never, bottom: narrow ? 8 : 16, left: narrow ? 8 : 16, right: narrow ? 8 : 16, zIndex: 9000,
+        alignItems: "center", pointerEvents: "box-none"
+      }}
+    >
+      <View style={{
+        backgroundColor: "#FFFFFF", borderColor: "#D5DFF5", borderRadius: 16, borderWidth: 1, maxWidth: 760, width: "100%",
+        padding: narrow ? 14 : 18, boxShadow: "0 12px 40px rgba(9,39,94,0.22)" as never, maxHeight: "86vh" as never
+      }}>
+        <ScrollView style={{ flexGrow: 0 }} contentContainerStyle={{ gap: 10 }} keyboardShouldPersistTaps="handled">
+          <Text accessibilityRole="header" style={{ color: "#09275E", fontSize: 16, fontWeight: "800" }}>
+            {mode === "banner" ? tr("Çerezler ve benzeri teknolojiler") : tr("Çerez tercihlerin")}
+          </Text>
+          <Text style={{ color: "#33425F", fontSize: 13.5, lineHeight: 20 }}>
+            {mode === "banner"
+              ? (metaPixelEnabled
+                ? tr("Sitenin çalışması için zorunlu kayıtları kullanırız. İzin verirsen kullanım istatistikleri ve reklam ölçümü için ek araçları da çalıştırırız; izin vermezsen hiçbiri yüklenmez.")
+                : tr("Sitenin çalışması için zorunlu kayıtları kullanırız. İzin verirsen kullanım istatistikleri için analitik araçlarını da çalıştırırız; izin vermezsen hiçbiri yüklenmez."))
+              : (metaPixelEnabled
+                ? tr("OrtakSat'ın çalışması için zorunlu olan oturum, güvenlik ve tercih kayıtlarını kullanırız; bunlar için izin gerekmez. İzin verirsen site kullanımını ölçen analitik araçlarını ve reklam ölçümü çerezlerini de çalıştırırız. İzin vermezsen bunlar hiç yüklenmez ve siteyi aynı şekilde kullanmaya devam edersin.")
+                : tr("OrtakSat'ın çalışması için zorunlu olan oturum, güvenlik ve tercih kayıtlarını kullanırız; bunlar için izin gerekmez. İzin verirsen site kullanımını ölçen analitik araçlarını da çalıştırırız. İzin vermezsen bunlar hiç yüklenmez ve siteyi aynı şekilde kullanmaya devam edersin."))}
+          </Text>
+
+          {mode === "preferences" ? (
+            <View style={{ gap: 8 }}>
+              <Category
+                title={tr("Zorunlu kayıtlar")}
+                description={tr("Giriş oturumun, güvenlik, dil seçimin ve bu çerez tercihin gibi sitenin çalışması için gerekli kayıtlar. Kapatılamaz.")}
+                fixedLabel={tr("Her zaman açık")}
+              />
+              <Category
+                title={tr("Analitik ölçüm")}
+                description={tr("Ziyaret ve sayfa hızı istatistikleri (Vercel Web Analytics ve Speed Insights). Çerez yerleştirmez ve seni kişisel olarak tanımlamaz; yalnız izin verirsen çalışır.")}
+                value={analytics}
+                onChange={setAnalytics}
+                onLabel={tr("İzin verildi")}
+                offLabel={tr("İzin verilmedi")}
+              />
+              {metaPixelEnabled ? (
+                <Category
+                  title={tr("Pazarlama ve reklam ölçümü")}
+                  description={tr("Reklamlarımızın etkisini ölçmek için Meta (Facebook / Instagram) Pixel. Cihazına çerez yerleştirir ve verileri yurt dışındaki Meta sunucularına iletir; yalnız açık rızanla çalışır.")}
+                  value={marketing}
+                  onChange={setMarketing}
+                  onLabel={tr("İzin verildi")}
+                  offLabel={tr("İzin verilmedi")}
+                />
+              ) : null}
+            </View>
+          ) : null}
+
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+            <PolicyLink href={"/cerez-politikasi" as Href} label={tr("Çerez Politikası")} />
+            <Text style={{ color: "#9AABD0", fontSize: 12.5, lineHeight: 28 }}>·</Text>
+            <PolicyLink href={"/kvkk" as Href} label={tr("KVKK Aydınlatma Metni")} />
+          </View>
+
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 2 }}>
+            {/* Üç düğme de bilinçli olarak AYNI renk, boyut ve puntoda (rehber: kabul / reddet / tercihler eşit görünürlükte olmalı). */}
+            <ChoiceButton label={tr("Reddet")} onPress={() => decide({ analytics: false, marketing: false })} testID="cookie-reject" narrow={narrow} />
+            <ChoiceButton label={tr("Kabul Et")} onPress={() => decide({ analytics: true, marketing: true })} testID="cookie-accept" narrow={narrow} />
+            {mode === "banner" ? (
+              <ChoiceButton label={tr("Tercihleri Yönet")} onPress={() => setMode("preferences")} testID="cookie-manage" narrow={narrow} />
+            ) : (
+              <ChoiceButton label={tr("Seçimimi Kaydet")} onPress={() => decide({ analytics, marketing })} testID="cookie-save" narrow={narrow} />
+            )}
+          </View>
+        </ScrollView>
+      </View>
+    </View>
+  );
+}
+
+function PolicyLink({ href, label }: { href: Href; label: string }) {
+  return (
+    <Link href={href} asChild>
+      <Pressable accessibilityRole="link" style={{ justifyContent: "center", minHeight: 28 }}>
+        <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "700", textDecorationLine: "underline" }}>{label}</Text>
+      </Pressable>
+    </Link>
+  );
+}
+
+function ChoiceButton({ label, onPress, subtle, testID, narrow }: { label: string; onPress: () => void; subtle?: boolean; testID: string; narrow: boolean }) {
+  return (
+    <Pressable
+      testID={testID}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      onPress={onPress}
+      style={{
+        alignItems: "center", justifyContent: "center", minHeight: 44, paddingHorizontal: 18, borderRadius: 12, borderWidth: 1.5,
+        flexGrow: 1, flexBasis: narrow ? "46%" : 0, minWidth: 0,
+        backgroundColor: subtle ? "#FFFFFF" : colors.primary, borderColor: subtle ? "#C5D3F2" : colors.primary
+      }}
+    >
+      <Text numberOfLines={1} style={{ color: subtle ? colors.primaryDark : "#FFFFFF", fontSize: 14, fontWeight: "800" }}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function Category(props: {
+  title: string; description: string; fixedLabel?: string;
+  value?: boolean; onChange?: (next: boolean) => void; onLabel?: string; offLabel?: string;
+}) {
+  const { title, description, fixedLabel, value, onChange, onLabel, offLabel } = props;
+  return (
+    <View style={{ backgroundColor: "#F5F8FF", borderColor: "#DCE5F8", borderRadius: 12, borderWidth: 1, padding: 12, gap: 6 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 10, justifyContent: "space-between" }}>
+        <Text style={{ color: "#09275E", flex: 1, fontSize: 14, fontWeight: "800", minWidth: 0 }}>{title}</Text>
+        {fixedLabel ? (
+          <Text style={{ color: "#4A5A7A", fontSize: 12, fontWeight: "700" }}>{fixedLabel}</Text>
+        ) : (
+          // RN-web Switch'in turkuaz topuz tuzağı yüzünden özel anahtar (marka mavisi).
+          <Pressable
+            accessibilityRole="switch"
+            accessibilityState={{ checked: value === true }}
+            aria-checked={value === true}
+            accessibilityLabel={`${title}: ${value ? onLabel : offLabel}`}
+            onPress={() => onChange?.(!value)}
+            style={{ alignItems: "center", flexDirection: "row", gap: 8, minHeight: 32 }}
+          >
+            <Text style={{ color: value ? colors.primaryDark : "#4A5A7A", fontSize: 12, fontWeight: "700" }}>{value ? onLabel : offLabel}</Text>
+            <View style={{ backgroundColor: value ? colors.primary : "#B8C4DC", borderRadius: 999, height: 24, justifyContent: "center", padding: 2, width: 44 }}>
+              <View style={{ alignSelf: value ? "flex-end" : "flex-start", backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} />
+            </View>
+          </Pressable>
+        )}
+      </View>
+      <Text style={{ color: "#33425F", fontSize: 12.5, lineHeight: 18 }}>{description}</Text>
+    </View>
+  );
+}
