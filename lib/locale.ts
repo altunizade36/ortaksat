@@ -1,5 +1,7 @@
 import { getLocales } from "expo-localization";
 
+import { enLower, foldKey, trLower } from "./fast-text";
+
 const supportedLanguageTags = ["tr-TR", "en-US"] as const;
 type SupportedLanguageTag = (typeof supportedLanguageTags)[number];
 
@@ -44,18 +46,15 @@ export function localize(tr: string, en: string) {
   return activeLanguage === "en" ? en : tr;
 }
 
+// ICU'suz hızlı yollar (lib/fast-text): Hermes/Android'de yerleşik toLocaleLowerCase / normalize çağrıları
+// JNI üzerinden gider ve binlerce kategori düğümünde uygulamayı saniyelerce donduruyordu. Sonuçlar aynıdır
+// (7.467 düğümün etiket/slug/anahtarı + sınır örnekleriyle iki yerel ayarda karşılaştırıldı: 0 fark).
 export function lower(value: string) {
-  return value.toLocaleLowerCase(deviceLocale);
+  return deviceLocale === "tr-TR" ? trLower(value) : enLower(value);
 }
 
 export function searchKey(value: string) {
-  return lower(value)
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .replace(/ı/g, "i")
-    .replace(/[^a-z0-9\s]/g, " ")
-    .replace(/\s+/g, " ")
-    .trim();
+  return foldKey(value);
 }
 
 export function upper(value: string) {

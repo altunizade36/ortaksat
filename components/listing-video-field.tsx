@@ -6,6 +6,7 @@ import { colors } from "@/components/colors";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import {
+  LISTING_VIDEO_ENABLED,
   LISTING_VIDEO_HELP,
   chooseWebVideoFile,
   deleteListingVideo,
@@ -157,6 +158,8 @@ export function ListingVideoField({ value, onChange, userId, canUpload, disabled
   const meta = shown ? [formatVideoDuration(shown.durationSec), formatVideoSize(shown.sizeBytes)].filter(Boolean).join(" · ") : "";
   const percent = pending ? Math.round(pending.progress * 100) : 0;
 
+  // Ürün kararıyla video şimdilik kapalı: alan çizilmez (hook'lar yukarıda, erken dönüş kuralı korunur).
+  if (!LISTING_VIDEO_ENABLED) return null;
   return (
     <View testID="listing-video-field" dataSet={{ field: "video" }} style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 10, minWidth: 0, paddingTop: 14 }}>
       <View style={{ gap: 3 }}>

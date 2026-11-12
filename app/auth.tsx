@@ -32,7 +32,9 @@ export default function AuthScreen() {
   const { authAttempt, authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signUpWithEmail } = useStore();
   const [mode, setMode] = useState<AuthMode>("login");
   useEffect(() => { if (params.mode === "register" || params.mode === "login" || params.mode === "reset") setMode(params.mode); }, [params.mode]);
-  const [emailFormOpen, setEmailFormOpen] = useState(Platform.OS === "web");
+  // E-posta + şifre alanları HER platformda doğrudan görünür (eskiden uygulamada önce "E-posta ile devam et"e
+  // basmak gerekiyordu; kullanıcı giriş alanlarını, "Şifremi unuttum"u ve hesap oluşturmayı bulamıyordu).
+  const [emailFormOpen, setEmailFormOpen] = useState(true);
   // Kayıt: Ad ve Soyad ayrı alanlar (e-ticaret standardı); birleştirilip saklanır.
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -177,14 +179,15 @@ export default function AuthScreen() {
   // seçenekleri" bağlantısıyla AYNI işi yapsın (seçeneklere dön). Eskiden geri tuşu tüm giriş
   // ekranını kapatıyor, giriş ekranı yığındaki tek ekransa uygulamadan çıkıyordu.
   useEffect(() => {
-    if (Platform.OS !== "android" || pendingVerifyEmail || !(emailFormOpen || mode === "reset")) return;
+    // Form artık hep açık: geri tuşu yalnız şifre sıfırlama adımında "girişe dön" yapar;
+    // giriş/kayıt sekmesindeyken sistemin olağan geri davranışı çalışır.
+    if (Platform.OS !== "android" || pendingVerifyEmail || mode !== "reset") return;
     const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
-      setEmailFormOpen(false);
-      if (mode === "reset") setMode("login");
+      setMode("login");
       return true;
     });
     return () => subscription.remove();
-  }, [emailFormOpen, mode, pendingVerifyEmail]);
+  }, [mode, pendingVerifyEmail]);
 
   // Giriş başarılı olunca: yeni üye ilk kez /hosgeldin rehberine (rol seçimi),
   // önceden görmüşse doğrudan ana sayfaya. Herhangi bir hata olursa güvenle "/".
@@ -470,20 +473,22 @@ export default function AuthScreen() {
       <PasswordStrengthMeter password={newPassword}/>
     </> : null}
     {formError || authError ? <Text accessibilityRole="alert" style={{ color: colors.accent, fontSize: 13, lineHeight: 19 }}>{formError || authError}</Text> : null}
-    <PrimaryButton disabled={loading} onPress={mode === "login" ? login : mode === "register" ? register : resetSent ? doResetWithCode : sendResetCode}>{translateCopy(loading ? "Lütfen bekle…" : mode === "login" ? "E-posta ile giriş yap" : mode === "register" ? "Kayıt ol" : resetSent ? "Kodu doğrula ve şifreyi güncelle" : "Sıfırlama kodu gönder", language)}</PrimaryButton>
+    <PrimaryButton disabled={loading} onPress={mode === "login" ? login : mode === "register" ? register : resetSent ? doResetWithCode : sendResetCode}>{translateCopy(loading ? "Lütfen bekle…" : mode === "login" ? (Platform.OS === "web" ? "E-posta ile giriş yap" : "Giriş Yap") : mode === "register" ? (Platform.OS === "web" ? "Kayıt ol" : "Hesap Oluştur") : resetSent ? "Kodu doğrula ve şifreyi güncelle" : "Sıfırlama kodu gönder", language)}</PrimaryButton>
     {mode === "reset" && resetSent ? <PrimaryButton disabled={loading} tone="secondary" onPress={sendResetCode}>{translateCopy("Kodu tekrar gönder", language)}</PrimaryButton> : null}
     {Platform.OS === "web" && mode !== "reset" ? <View style={{ gap: 10, borderTopWidth: 1, borderTopColor: colors.line, paddingTop: 16 }}>
       {mode === "login" ? legalChecks : null}
       <PrimaryButton tone="secondary" disabled={loading} onPress={loginWithGoogle}>Google ile devam et</PrimaryButton>
       {consentHint ? <Text accessibilityRole="alert" style={{ color: colors.accent, fontSize: 13 }}>Google ile devam etmek için yasal onay kutusunu işaretle.</Text> : null}
     </View> : null}
-    <View style={{ marginTop: 8 }}>{legalFooter}</View>
+    {/* Uygulamada aynı bağlantılar Google onay satırında zaten var → alt satır yalnız web'de. */}
+    {Platform.OS === "web" ? <View style={{ marginTop: 8 }}>{legalFooter}</View> : null}
   </>;
-  return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined} style={{ flex: 1 }}>
+  // Android: "height" davranışı klavye kapandıktan sonra altta boş bir şerit bırakıyordu (gerçek cihazda görüldü) → "padding".
+  return <KeyboardAvoidingView behavior={Platform.OS === "web" ? undefined : "padding"} style={{ flex: 1 }}>
     {seoHead}
     <MobileAuthLanding mode={mode === "register" ? "register" : "login"} onModeChange={setMode} onEmail={() => setEmailFormOpen(true)} onGoogle={loginWithGoogle} onSkip={() => mobileAccess.skip(skipTarget)} consent={legalChecks} accepted={acceptedAll} busy={loading} error={formError || authError}
-      form={emailFormOpen || mode === "reset" ? emailForm : undefined} formTitle={emailFormOpen || mode === "reset" ? mode === "register" ? "Hesabını oluştur" : mode === "reset" ? "Şifreni yenile" : "E-posta ile giriş yap" : undefined} showTabs={mode !== "reset"}
-      onBack={Platform.OS === "web" ? mode === "reset" ? () => setMode("login") : undefined : () => { setEmailFormOpen(false); if (mode === "reset") setMode("login"); }}/>
+      form={emailFormOpen || mode === "reset" ? emailForm : undefined} formTitle={mode === "reset" ? "Şifreni yenile" : Platform.OS === "web" && emailFormOpen ? mode === "register" ? "Hesabını oluştur" : "E-posta ile giriş yap" : undefined} showTabs={mode !== "reset"}
+      onBack={mode === "reset" ? () => setMode("login") : undefined}/>
     {legalModal}
   </KeyboardAvoidingView>;
 }

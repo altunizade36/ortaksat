@@ -7,9 +7,26 @@
 // "galaxy-s24-plus" ≠ "galaxy-s24". Oda sayıları da etkilenir ("1+1"→"1-plus-1") ama
 // içsel tutarlı (sabit-kodlu slug yok) ve gelecekteki tüm "+model"leri de korur.
 const TR_MAP: Record<string, string> = { "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u", "â": "a", "î": "i", "û": "u", "&": "ve", "+": "-plus-" };
+// Hermes (Android) toLocaleLowerCase'i JNI üzerinden ICU'ya götürür; bu dosya yüklenirken 7.467 düğüm
+// için çağrılınca açılış ve kategori ekranları saniyelerce donuyordu. ASCII + Türkçe harfler elle çevrilir
+// (sonuç toLocaleLowerCase("tr-TR") ile AYNI); başka alfabede yerleşik yola düşülür. Bu dosya derleme
+// betikleri tarafından tek başına yüklendiği için yardımcı burada, içe aktarmasız tanımlıdır.
+const TR_UPPER_TO_LOWER: Record<string, string> = { "İ": "i", "Ç": "ç", "Ğ": "ğ", "Ö": "ö", "Ş": "ş", "Ü": "ü", "\u00C2": "â", "\u00CE": "î", "\u00DB": "û" };
+function trLower(value: string): string {
+  let out = "";
+  for (let i = 0; i < value.length; i++) {
+    const code = value.charCodeAt(i);
+    if (code < 128) { out += code >= 65 && code <= 90 ? (code === 73 ? "ı" : String.fromCharCode(code + 32)) : value[i]; continue; }
+    const ch = value[i];
+    const mapped = TR_UPPER_TO_LOWER[ch];
+    if (mapped !== undefined) out += mapped;
+    else if ("çğıöşüâîû".indexOf(ch) >= 0) out += ch;
+    else return value.toLocaleLowerCase("tr-TR");
+  }
+  return out;
+}
 function sl(value: string) {
-  return value
-    .toLocaleLowerCase("tr-TR")
+  return trLower(value)
     .split("")
     .map((ch) => TR_MAP[ch] ?? ch)
     .join("")
@@ -2484,7 +2501,7 @@ export function topCategories(): CategoryNode[] {
 // Önce tam (normalize) eşleşme, sonra "içeren" eşleşme. path + node döner (formKey
 // çözümü ve kapak görseli için). Bulamazsa undefined.
 export function matchCategoryByName(name: string): { node: CategoryNode; path: CategoryNode[] } | undefined {
-  const norm = (s: string) => s.toLocaleLowerCase("tr-TR").replace(/\s+/g, " ").trim();
+  const norm = (s: string) => trLower(s).replace(/\s+/g, " ").trim();
   const target = norm(name);
   if (!target) return undefined;
   const flat: Array<{ node: CategoryNode; path: CategoryNode[] }> = [];
@@ -2720,7 +2737,7 @@ export type SuggestHit = { path: CategoryNode[]; labels: string[]; formKey: stri
 
 const TR_S: Record<string, string> = { "ç": "c", "ğ": "g", "ı": "i", "ö": "o", "ş": "s", "ü": "u", "â": "a" };
 function key(value: string) {
-  return value.toLocaleLowerCase("tr-TR").split("").map((c) => TR_S[c] ?? c).join("").replace(/[^a-z0-9\s]+/g, " ").replace(/\s+/g, " ").trim();
+  return trLower(value).split("").map((c) => TR_S[c] ?? c).join("").replace(/[^a-z0-9\s]+/g, " ").replace(/\s+/g, " ").trim();
 }
 
 // Manual hints so common product words land on the right path even if the word

@@ -3,6 +3,7 @@ import { clearOAuthConsent, prepareOAuthConsent, recordExplicitOAuthConsent } fr
 import { hasProfilePhoto } from "@/lib/profile-photo";
 ﻿import { createContext, PropsWithChildren, useEffect, useMemo, useRef, useState } from "react";
 import { Platform } from "react-native";
+import Constants from "expo-constants";
 import * as WebBrowser from "expo-web-browser";
 
 import {
@@ -1583,6 +1584,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
 
         if (!supabase) {
           setAuthError("Google ile giriş yalnızca canlı (Supabase) modda çalışır.");
+          return false;
+        }
+        // Expo Go deneme uygulaması `ortaksat://` şemasını TANIMAZ: Google dönüşü tarayıcıda boş bir sayfada kalır
+        // (gerçek cihaz testinde görüldü). Yalnız uygulamanın kendi derlemesinde çalışır → açık mesaj ver.
+        if (Platform.OS !== "web" && Constants.executionEnvironment === "storeClient") {
+          setAuthError("Google ile giriş Expo Go deneme uygulamasında çalışmaz; OrtakSat uygulamasının kendi kurulumunda çalışır. Şimdilik e-posta ile giriş yapabilirsin.");
           return false;
         }
         try { await prepareOAuthConsent(); }

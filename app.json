@@ -102,7 +102,7 @@
       [
         "expo-splash-screen",
         {
-          "image": "./assets/brand-head-blue.png",
+          "image": "./assets/splash/ring.png",
           "imageWidth": 220,
           "resizeMode": "contain",
           "backgroundColor": "#E5F0FF"
@@ -131,6 +131,22 @@
         "expo-secure-store",
         {
           "faceIDPermission": false
+        }
+      ],
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false
+        }
+      ],
+      "expo-asset",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "enableMinifyInReleaseBuilds": true,
+            "enableShrinkResourcesInReleaseBuilds": true
+          }
         }
       ]
     ],

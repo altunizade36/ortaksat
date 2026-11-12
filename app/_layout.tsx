@@ -1,3 +1,5 @@
+// İLK içe aktarma olmalı: uygulamada (Hermes) yerel-ayar çağrılarının hızlı yollarını diğer modüller çalışmadan kurar.
+import "@/lib/install-fast-intl";
 import { isMobileApp } from "@/lib/mobile-app";
 import { MobileDrawerProvider } from "@/components/mobile/drawer";
 import Head from "expo-router/head";
@@ -21,6 +23,8 @@ import { ErrorToast } from "@/components/error-toast";
 import { ToastHost } from "@/components/toast-host";
 import { AlertHost } from "@/components/alert-host";
 import { AccountDeletionGate } from "@/components/account-deletion-notice";
+import { StatusBarScrim } from "@/components/status-bar-scrim";
+import { IntroSplash } from "@/components/intro-splash";
 import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
@@ -45,10 +49,17 @@ export default function RootLayout() {
       <LanguageProvider>
         <StoreProvider>
           <MobileAccessProvider><MobileDrawerProvider><RootStack /></MobileDrawerProvider></MobileAccessProvider>
+          <IntroSplashHost />{/* uygulama: soğuk açılış animasyonu — oturum kontrol katmanı dahil HER ŞEYİN üstünde */}
         </StoreProvider>
       </LanguageProvider>
     </SafeAreaProvider>
   );
+}
+
+/** Açılış animasyonu: ilan verisi VE oturum kontrolü bitene kadar ekranda kalır, sonra eriyerek açılır. */
+function IntroSplashHost() {
+  const { authReady, marketplaceInitialLoading } = useStore();
+  return <IntroSplash ready={authReady && !marketplaceInitialLoading} />;
 }
 
 function RootStack() {
@@ -116,6 +127,7 @@ function RootStack() {
         <Stack.Screen name="listing-edit/[id]" options={{ presentation: "modal", title: t("editListing") }} />
         <Stack.Screen name="listing/[id]" options={{ headerLargeTitle: false, title: t("listingDetail") }} />
       </Stack>
+      <StatusBarScrim />{/* uygulama: kaydırılan içerik durum çubuğu simgelerinin altına girmesin */}
       <CompareBar />
       <PresenceHeartbeat />
       <PushRegistrar />
@@ -123,7 +135,7 @@ function RootStack() {
       <MetaPixelRouter />{/* SPA gezinmesinde Meta Pixel PageView (web + ID varsa) */}
       <AccountDeletionGate />{/* kendi silme talebi beklerken tam ekran bildirim (toast/alert bunun ÜSTÜNDE kalır) */}
       <ErrorToast />
-      <ToastHost />{/* hafif başarı/bilgi toast'ı (showToast) — bloklamayan geri bildirim */}
+      <ToastHost />{/* hafif başarı/bilgi toast'ı (showToast) — bloklamayan geri bildirim */}
       <AlertHost />
     </View>
   );

@@ -28,7 +28,7 @@ export function CompactFooter() {
       <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", justifyContent: "center", maxWidth: 860 }}>
         {links.map((link, index) => <View key={link.href as string} style={{ alignItems: "center", flexDirection: "row" }}>
           {index > 0 ? <Text importantForAccessibility="no" accessibilityElementsHidden style={{ color: "#9AABD0", fontSize: 11 }}>·</Text> : null}
-          <Link href={link.href} asChild><Pressable accessibilityRole="link" style={({ pressed }) => ({ justifyContent: "center", minHeight: 36, opacity: pressed ? 0.6 : 1, paddingHorizontal: 9 })}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{translateCopy(link.label, language)}</Text></Pressable></Link>
+          <Link href={link.href} asChild><Pressable accessibilityRole="link" style={{ justifyContent: "center", minHeight: 36, paddingHorizontal: 9 }}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{translateCopy(link.label, language)}</Text></Pressable></Link>
         </View>)}
       </View>
       <Text style={{ color: colors.muted, fontSize: 11, marginTop: 1, textAlign: "center" }}>© 2026 OrtakSat</Text>

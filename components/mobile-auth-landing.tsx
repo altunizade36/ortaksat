@@ -71,6 +71,8 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onSki
 
       <Image source={require("../assets/mobile/istanbul-marketplace.webp")} style={StyleSheet.absoluteFill} contentFit="cover" accessibilityLabel={tr("İstanbul manzarası önünde otomobil, ev eşyaları ve elektronik ürünler")} />
       <LinearGradient colors={["#E7F8FF80", "#FFFFFF00"]} style={StyleSheet.absoluteFill} />
+      {/* Form açıkken sahne kısalır: logo ve slogan fotoğrafın kalabalık kısmına denk gelir → okunurluk için açık örtü. */}
+      {form && Platform.OS !== "web" ? <View pointerEvents="none" style={[StyleSheet.absoluteFill, { backgroundColor: "#FFFFFFB8" }]} /> : null}
       <Pressable accessibilityRole="button" accessibilityLabel={tr("Geç")} disabled={busy} onPress={onSkip} style={[s.skip, { top: insets.top + 12 }]}><Text style={s.skipText}>{tr("Geç")}</Text><Icon name="chevron-right" size={23} color="#101827" /></Pressable>
       <View style={[s.intro, { paddingTop: insets.top + (tablet ? 70 : form ? 22 : compactNative ? 24 : 42) }]}>
         <MobileBrand size={Math.min(tablet ? 54 : 44, sceneWidth * 0.12)} />
@@ -88,7 +90,16 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onSki
       <Text accessibilityRole="header" style={s.title}>{tr(formTitle || (mode === "register" ? "Aramıza katıl" : "OrtakSat’a hoş geldin"))}</Text>
       <Text style={s.subtitle}>{tr(!showTabs ? "E-posta adresini gir; şifreni yenilemek için doğrulama kodu gönderelim." : mode === "register" ? "Ücretsiz hesabını oluştur. İlan ver veya satışa katkı sağlayarak komisyon kazan." : "İlanlarını ve ortaklıklarını tek hesaptan yönet.")}</Text>
       {showTabs && <View accessibilityRole="tablist" style={s.tabs}>{(["login", "register"] as const).map((tab) => <Pressable key={tab} accessibilityRole="tab" accessibilityState={{ selected: mode === tab }} disabled={busy} onPress={() => onModeChange(tab)} style={[s.tab, mode === tab && s.activeTab]}><Text style={[s.tabText, mode === tab && { color: "#002D92" }]}>{tr(tab === "login" ? "Giriş Yap" : "Hesap Oluştur")}</Text></Pressable>)}</View>}
-      {form ? <View style={{ gap: 14 }}>{form}</View> : <>
+      {form ? <>
+        <View style={{ gap: 14 }}>{form}</View>
+        {/* UYGULAMA: e-posta formunun ALTINDA Google ile devam (web'de aynı blok formun içinde çizilir). */}
+        {Platform.OS !== "web" && socialLogin && showTabs ? <View style={{ marginTop: 18 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 12, marginBottom: 14 }}><View style={{ backgroundColor: "#DCE6F5", flex: 1, height: 1 }} /><Text style={{ color: "#667085", fontSize: 12.5, fontWeight: "700" }}>{tr("veya")}</Text><View style={{ backgroundColor: "#DCE6F5", flex: 1, height: 1 }} /></View>
+          {/* Kayıt sekmesinde yasal onay kutusu formun içindedir; giriş sekmesinde Google için burada gösterilir. */}
+          {mode === "login" ? <View ref={consentRef} collapsable={false} style={{ marginBottom: 12 }}>{consent}</View> : null}
+          <Pressable accessibilityRole="button" accessibilityLabel={tr("Google ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text style={s.buttonText}>{tr(busy ? "Bağlanıyor…" : "Google ile devam et")}</Text></Pressable>
+        </View> : null}
+      </> : <>
       <Pressable accessibilityRole="button" accessibilityLabel={tr("E-posta ile devam et")} disabled={busy} onPress={onEmail} style={[s.button, s.email]}><Icon name="email" size={25} color="white" /><Text style={[s.buttonText, { color: "white" }]}>{tr("E-posta ile devam et")}</Text></Pressable>
       {/* Yasal onay kutusu yalnız sosyal giriş için gerekir (e-posta kaydı onayı kendi formunda alır). */}
       {socialLogin ? <>

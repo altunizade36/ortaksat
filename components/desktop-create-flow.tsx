@@ -1,5 +1,5 @@
 import { parseListingMoney, parseListingRate, listingCommissionError, LISTING_MONEY_ERROR } from "@/lib/listing-numbers";
-import { LISTING_DRAFT_PREFIX, LISTING_DRAFT_TTL_MS, deleteListingVideo, isListingVideoUrl, listingDraftKey, listingVideoExists, withListingVideo, type ListingVideoValue } from "@/lib/listing-video";
+import { LISTING_DRAFT_PREFIX, LISTING_DRAFT_TTL_MS, LISTING_VIDEO_ENABLED, deleteListingVideo, isListingVideoUrl, listingDraftKey, listingVideoExists, withListingVideo, type ListingVideoValue } from "@/lib/listing-video";
 import { ListingVideoField, type ListingVideoStatus } from "@/components/listing-video-field";
 import { categoryPathAttributes, isLeafCategoryPath, resolveCategoryPath, searchCategoryTree } from "@/lib/category-path";
 import { ListingLocationFields } from "@/components/listing-location-fields";
@@ -526,7 +526,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       const all = Array.from(files ?? ([] as unknown as FileList));
       const imgs = all.filter((f) => f.type.startsWith("image/"));
       // Fotoğraf alanına bırakılan video sessizce yutulmasın: nereye ekleneceğini söyle.
-      if (!imgs.length && all.some((f) => f.type.startsWith("video/"))) setPhotoError(translateCopy("Videoyu fotoğrafların altındaki Video bölümünden ekleyebilirsin.", language));
+      if (!imgs.length && all.some((f) => f.type.startsWith("video/"))) setPhotoError(translateCopy(LISTING_VIDEO_ENABLED ? "Videoyu fotoğrafların altındaki Video bölümünden ekleyebilirsin." : "Şu an yalnızca fotoğraf eklenebiliyor (JPG, PNG, WebP).", language));
       if (!imgs.length) return;
       addAssets(imgs.map((f) => ({ uri: URL.createObjectURL(f), fileSize: f.size })));
     };

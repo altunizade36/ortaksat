@@ -1,4 +1,5 @@
-import { useState } from "react";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useEffect, useState } from "react";
 import { Platform, Pressable, Switch, Text, View } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
@@ -6,6 +7,7 @@ import { colors } from "@/components/colors";
 import { UserAvatar } from "@/components/user-avatar";
 import { AuthRequired } from "@/components/auth-gate";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
+import { INTRO_SOUND_OFF_KEY } from "@/components/intro-splash";
 import { MobileBottomNav, MobileButton, MobileCard, MobileScreen, mobile, ms, type MobileIcon } from "@/components/mobile/ui";
 import { useStore } from "@/lib/use-store";
 import { useIsWideWeb } from "@/lib/layout";
@@ -29,6 +31,9 @@ function AccountSettings() {
   const wide = useIsWideWeb();
   const [busy, setBusy] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+  // Açılış sesi tercihi cihazda tutulur (girişsiz kullanıcı için de geçerli).
+  const [introSound, setIntroSound] = useState(true);
+  useEffect(() => { void AsyncStorage.getItem(INTRO_SOUND_OFF_KEY).then((value) => setIntroSound(value !== "1")).catch(() => {}); }, []);
   const advanced = (section: string) => router.push({ pathname: "/profile-edit", params: { view: "advanced", section } } as never);
   const row = (label: string, detail: string, icon: MobileIcon, action: () => void, danger = false, last = false) => <Pressable key={label} accessibilityRole="button" accessibilityLabel={label} onPress={action} style={[ms.row, { minHeight: 63, borderBottomWidth: last ? 0 : 1, borderColor: mobile.line }]}><Icon name={icon} size={23} color={danger ? colors.accent : mobile.ink} /><View style={{ flex: 1, gap: 3, minWidth: 0 }}><Text style={{ color: danger ? colors.accent : mobile.ink, fontWeight: "600", fontSize: 14 }}>{label}</Text><Text style={ms.muted}>{detail}</Text></View><Icon name="chevron-right" size={20} color={mobile.muted} /></Pressable>;
   async function email(next: boolean) { if (busy) return; setBusy(true); try { if (!await store.setEmailNotifications(next)) showToast("Bildirim tercihi kaydedilemedi. Tekrar dene."); } catch { showToast("Bildirim tercihi kaydedilemedi."); } finally { setBusy(false); } }
@@ -48,7 +53,7 @@ function AccountSettings() {
       {row("Doğrulama İşlemleri", user.verifiedIdentity ? "Kimliğin doğrulanmış durumda" : "Doğrulama durumunu ve başvurunu yönet", "shield-check-outline", () => advanced("verification"))}
       {row("Mağaza ve Uzmanlık", "Mağaza bilgileri ve uzmanlık alanları", "storefront-outline", () => advanced("store"), false, true)}
     </MobileCard>
-    <Text style={[ms.section, { marginVertical: 10 }]}>Bildirim Ayarları</Text><MobileCard><View style={[ms.row, { borderBottomWidth: 1, borderColor: mobile.line, minHeight: 63 }]}><Icon name="email-outline" size={23} color={mobile.ink} /><View style={{ flex: 1, gap: 3, minWidth: 0 }}><Text style={{ color: mobile.ink, fontWeight: "600", fontSize: 14 }}>E-posta Bildirimleri</Text><Text style={ms.muted}>Hesabının e-posta bildirim tercihi</Text></View><Switch accessibilityLabel="E-posta Bildirimleri" disabled={busy} value={user.emailNotifications ?? true} onValueChange={value => void email(value)} trackColor={{ false: colors.line, true: mobile.teal }} thumbColor="#FFFFFF" {...webSwitchProps} /></View>{row("Bildirim ve Uygulama Tercihleri", "Mesaj, ortaklık, ilan ve sistem bildirimleri", "bell-outline", () => router.push("/notification-settings" as never), false, true)}</MobileCard>
+    <Text style={[ms.section, { marginVertical: 10 }]}>Bildirim Ayarları</Text><MobileCard><View style={[ms.row, { borderBottomWidth: 1, borderColor: mobile.line, minHeight: 63 }]}><Icon name="email-outline" size={23} color={mobile.ink} /><View style={{ flex: 1, gap: 3, minWidth: 0 }}><Text style={{ color: mobile.ink, fontWeight: "600", fontSize: 14 }}>E-posta Bildirimleri</Text><Text style={ms.muted}>Hesabının e-posta bildirim tercihi</Text></View><Switch accessibilityLabel="E-posta Bildirimleri" disabled={busy} value={user.emailNotifications ?? true} onValueChange={value => void email(value)} trackColor={{ false: colors.line, true: mobile.teal }} thumbColor="#FFFFFF" {...webSwitchProps} /></View>{row("Bildirim ve Uygulama Tercihleri", "Mesaj, ortaklık, ilan ve sistem bildirimleri", "bell-outline", () => router.push("/notification-settings" as never), false, true)}{Platform.OS !== "web" ? <View style={[ms.row, { borderTopWidth: 1, borderColor: mobile.line, minHeight: 63 }]}><Icon name="music-note-outline" size={23} color={mobile.ink} /><View style={{ flex: 1, gap: 3, minWidth: 0 }}><Text style={{ color: mobile.ink, fontWeight: "600", fontSize: 14 }}>Açılış Sesi</Text><Text style={ms.muted}>Uygulama açılırken kısa melodi çalsın</Text></View><Switch accessibilityLabel="Açılış Sesi" value={introSound} onValueChange={(value) => { setIntroSound(value); void AsyncStorage.setItem(INTRO_SOUND_OFF_KEY, value ? "0" : "1").catch(() => {}); }} trackColor={{ false: colors.line, true: mobile.teal }} thumbColor="#FFFFFF" /></View> : null}</MobileCard>
     <Text style={[ms.section, { marginVertical: 10 }]}>Gizlilik ve Güvenlik</Text><MobileCard>
       {row("Engellediğim Kullanıcılar", `${store.blockedUserIds.length} engellenen kullanıcı`, "account-cancel-outline", () => router.push("/engellenenler"))}
       {row("Hesap Güvenliği", "Giriş geçmişi, şifre ve oturum işlemleri", "shield-lock-outline", () => router.push("/account-security" as never))}

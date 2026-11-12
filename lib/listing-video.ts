@@ -20,6 +20,13 @@ import { supabase, supabaseConfig } from "@/lib/supabase";
  * Sınırlar istemcide yüklemeden ÖNCE doğrulanır; kova da sunucuda 25 MB + MIME sınırı uygular.
  * Dönüştürme (transcode) yapılmaz.
  */
+/**
+ * İlan videosu ŞİMDİLİK KAPALI (2026-11-12, ürün kararı: yük binmesin / uygulama hafif kalsın).
+ * false iken ilan verme ve düzenleme ekranlarında video alanı hiç çizilmez; mevcut bir ilanın videosu
+ * (varsa) korunur ve detayda gösterilmeye devam eder. Yeniden açmak için true yapmak yeterlidir.
+ */
+export const LISTING_VIDEO_ENABLED = false;
+
 export const LISTING_VIDEO_LIMITS = { maxSeconds: 30, maxBytes: 25 * 1024 * 1024 } as const;
 export const LISTING_VIDEO_BUCKET = "listing-videos";
 export const LISTING_VIDEO_ACCEPT = "video/mp4,video/webm,video/quicktime";
