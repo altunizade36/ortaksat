@@ -164,7 +164,7 @@ export function IntroSplash({ ready }: { ready: boolean }) {
 async function playChime() {
   try {
     if ((await AsyncStorage.getItem(INTRO_SOUND_OFF_KEY)) === "1") return;
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    // Tembel yükleme: ses modülü yalnız açılışta, yalnız uygulamada gerekir (eski derlemede yoksa sessiz devam eder).
     const audio = require("expo-audio") as typeof import("expo-audio");
     // iOS: sessiz anahtarı açıksa çalma; başka uygulamanın müziğini kesme (karıştır).
     await audio.setAudioModeAsync({ playsInSilentMode: false, interruptionMode: "mixWithOthers" }).catch(() => {});
