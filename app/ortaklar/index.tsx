@@ -10,6 +10,7 @@ import { Seo } from "@/components/seo";
 import { Chip, EmptyState, LoadingBlock, PrimaryButton, SegButton, StatChip } from "@/components/ui";
 import { PAGE_MAX_WIDTH } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
+import { categoryChipLabel } from "@/lib/categories";
 import { categoryTree } from "@/lib/category-tree";
 import { TR_PROVINCES, citySlug } from "@/lib/cities";
 import { moneyIn } from "@/lib/format";
@@ -161,7 +162,7 @@ function Inner() {
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }} style={{ marginBottom: 14 }}>
             <Chip tone="primary" active={category === null} label="Tümü" onPress={() => setCategory(null)} />
             {TOP_CATEGORIES.map((c) => (
-              <Chip key={c} tone="primary" active={category === c} label={c} onPress={() => setCategory(category === c ? null : c)} />
+              <Chip key={c} tone="primary" active={category === c} label={categoryChipLabel(c)} onPress={() => setCategory(category === c ? null : c)} />
             ))}
           </ScrollView>
         ) : null}
@@ -243,21 +244,22 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
   const verified = entry.verifiedIdentity || entry.verifiedPhone;
   const initial = (entry.fullName || "?").slice(0, 1).toLocaleUpperCase("tr-TR");
   const chips = entry.expertiseCategories.slice(0, 3);
+  const narrow = width < 200; // 320-390px: 2 sütun → ad için yer aç
 
   return (
     <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, overflow: "hidden", width }}>
       <Link href={{ pathname: "/ortak/[id]", params: { id: entry.partnerId } }} asChild>
-        <Pressable style={{ gap: 10, padding: 14 }}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 11 }}>
-            <View style={{ alignItems: "center", backgroundColor: tier.tint, borderRadius: 999, height: 48, justifyContent: "center", width: 48 }}>
-              <Text style={{ color: tier.color, fontSize: 20, fontWeight: "900" }}>{initial}</Text>
+        <Pressable style={{ gap: 10, padding: narrow ? 11 : 14 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: narrow ? 8 : 11 }}>
+            <View style={{ alignItems: "center", backgroundColor: tier.tint, borderRadius: 999, height: narrow ? 36 : 48, justifyContent: "center", width: narrow ? 36 : 48 }}>
+              <Text style={{ color: tier.color, fontSize: narrow ? 16 : 20, fontWeight: "900" }}>{initial}</Text>
             </View>
             <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
-                <Text numberOfLines={1} style={{ color: colors.ink, flexShrink: 1, fontSize: 15, fontWeight: "900" }}>{entry.fullName || t("Ortak")}</Text>
+                <Text numberOfLines={2} style={{ color: colors.ink, flexShrink: 1, fontSize: narrow ? 14 : 15, fontWeight: "900", lineHeight: narrow ? 17 : 19 }}>{entry.fullName || t("Ortak")}</Text>
                 {verified ? <MaterialCommunityIcons name="check-decagram" size={15} color={colors.primary} /> : null}
               </View>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
+              <View style={{ alignItems: "center", columnGap: 5, flexDirection: "row", flexWrap: "wrap", rowGap: 1 }}>
                 <Text style={{ fontSize: 11 }}>{tier.emoji}</Text>
                 <Text style={{ color: tier.color, fontSize: 11, fontWeight: "900" }}>{t(tier.label)}</Text>
                 {entry.rating ? (
@@ -287,8 +289,8 @@ function PartnerCard({ entry, width, favorited, isSelf, onFav }: { entry: Partne
           {chips.length > 0 ? (
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
               {chips.map((c) => (
-                <View key={c} style={{ backgroundColor: colors.primarySoft, borderRadius: 999, maxWidth: "100%", paddingHorizontal: 8, paddingVertical: 3 }}>
-                  <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800" }}>{t(c)}</Text>
+                <View key={c} style={{ backgroundColor: colors.primarySoft, borderRadius: narrow ? 10 : 999, maxWidth: "100%", paddingHorizontal: 8, paddingVertical: 3 }}>
+                  <Text numberOfLines={narrow ? 2 : 1} style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "800", lineHeight: 14 }}>{t(categoryChipLabel(c))}</Text>
                 </View>
               ))}
               {entry.expertiseCategories.length > 3 ? (

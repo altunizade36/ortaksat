@@ -249,8 +249,8 @@ function DesktopActions() {
             <View>
               <MaterialCommunityIcons name={item.icon} size={22} color={colors.primaryDark} />
               {item.badge ? (
-                <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1, minWidth: 16, paddingHorizontal: 3, position: "absolute", right: -8, top: -6 }}>
-                  <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{item.badge > 9 ? "9+" : item.badge}</Text>
+                <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1, minWidth: 17, paddingHorizontal: 3, position: "absolute", right: -8, top: -6 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900", lineHeight: 13 }}>{item.badge > 9 ? "9+" : item.badge}</Text>
                 </View>
               ) : null}
             </View>

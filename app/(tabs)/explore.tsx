@@ -26,7 +26,7 @@ import { ListingCard } from "@/components/listing-card";
 import { PressLink } from "@/components/ui";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { listingCategories } from "@/lib/categories";
+import { categoryChipLabel, listingCategories } from "@/lib/categories";
 import { useCompare } from "@/lib/compare";
 import { getFormSchema, matchCategoryByName, resolveFormKey, topCategories, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
@@ -44,7 +44,7 @@ import { fetchListingsByCategory, searchListings } from "@/lib/supabase-data";
 import { displayText } from "@/lib/text";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
-import { catalogueCountLabel, catalogueRanges, useCatalogueFill, useServerCatalogue, type WebCatalogueSort } from "@/lib/web-catalogue";
+import { CATALOGUE_TOTAL_CAP, catalogueCountLabel, catalogueRanges, useCatalogueFill, useServerCatalogue, type WebCatalogueSort } from "@/lib/web-catalogue";
 
 type FeedFilter = "all" | "open" | "hot" | "new" | "commission";
 type SortMode = "recommended" | "priceAsc" | "priceDesc" | "commission" | "commissionRate" | "rating" | "new" | "mostViewed";
@@ -218,8 +218,7 @@ function ExploreScreenLegacy() {
   // ÖLÇEK (sunucu kataloğu): kategori / herhangi bir filtre / varsayılan-dışı sıralama / arama
   // etkinken sonuçlar ve GERÇEK toplam SUNUCUDAN (mobile_catalogue_page) gelir; "daha fazla"
   // sonraki sunucu sayfasını ister. Hiçbiri etkin değilken eski store akışı sürer. Sunucunun
-  // desteklemediği yalnız üç ölçüt (tam şehir metni, aynı alanda çoklu-VEYA facet, göreli Trend
-  // eşiği) yüklü sunucu sayfalarının ÜZERİNE yerelde uygulanır.
+  // tüm ölçütleri karşılar; yerleşmiş sunucu sayfasında yerel süzme/sıralama yapılmaz.
   // Supabase yoksa / RPC hata verirse srv.fallback → aşağıdaki yerel süzme aynen çalışır.
   const srvPriceParts = priceRange ? priceRange.split("-") : [];
   const srvRanges = catalogueRanges(catNums, numRange);
@@ -233,22 +232,22 @@ function ExploreScreenLegacy() {
     criteria: {
       trail: pathNodes, query: srvQuery, priceMin: Number(srvPriceParts[0]) || null, priceMax: srvPriceParts[1] ? Number(srvPriceParts[1]) : null,
       provinceId, districtId, attrs: attrFilters, ranges: srvRanges, instant: statusOpen || filter === "open", onlyFeatured, sort: srvSort,
-      minCommission, minRate, minRating, verified: onlyVerified, stock: stockFilter === "in" || stockFilter === "low" ? stockFilter : null, newerThanDays: filter === "new" ? 7 : undefined
+      minCommission, minRate, minRating, verified: onlyVerified, stock: stockFilter === "in" || stockFilter === "low" ? stockFilter : null, newerThanDays: filter === "new" ? 7 : undefined,
+      city, trend: filter === "hot"
     },
     pageSize: SERVER_PAGE
   });
-  // Sunucunun metin araması bitişik alt-metin eşleşmesidir (yazım hatası toleransı yok). Hiç
-  // sonuç dönmezse eski bulanık arama yolu (search_listings + yerel skor) devreye girer.
-  const srvEmptyQuery = Boolean(srvQuery) && srv.settled && srv.total === 0;
-  const useSrv = criteriaActive && srv.ready && !srvEmptyQuery;
+  // Sunucu araması kelime-bazlı + yazım hatası toleranslıdır; eski search_listings + yerel bulanık
+  // arama yolu yalnız geri-dönüşte (RPC hatası / Supabase yok) çalışır.
+  const useSrv = criteriaActive && srv.ready;
   // Sunucu sonucu geçerli ölçütlere aitse eşlenen süzmeler yerelde TEKRAR uygulanmaz; bayat
   // sonuçta (yeni ölçüt yüklenirken) hepsi yerelde uygulanır → anında geri bildirim.
   const srvFiltered = useSrv && srv.settled;
   const srvFallback = srv.fallback;
   const srvListings = srv.listings;
   const srvOwners = srv.owners;
-  const srvBusy = criteriaActive && !srvFallback && !srvEmptyQuery && (srv.loading || srv.loadingMore);
-  const legacySearch = !criteriaActive || srvFallback || srvEmptyQuery;
+  const srvBusy = criteriaActive && !srvFallback && (srv.loading || srv.loadingMore);
+  const legacySearch = !criteriaActive || srvFallback;
   const ownerOf = useCallback((id: string) => srvOwners[id] ?? findUser(id), [srvOwners, findUser]);
 
   useEffect(() => {
@@ -457,7 +456,7 @@ function ExploreScreenLegacy() {
   if (onlyFeatured) activeChips.push({ key: "feat", label: "Öne çıkan", onRemove: () => setOnlyFeatured(false) });
   if (stockFilter) activeChips.push({ key: "stock", label: stockFilter === "in" ? "Stokta var" : "Az stok", onRemove: () => setStockFilter("") });
   if (onlyVerified) activeChips.push({ key: "ver", label: "Onaylı satıcı", onRemove: () => setOnlyVerified(false) });
-  if (statusOpen) activeChips.push({ key: "open", label: "Ortak satışa açık", onRemove: () => setStatusOpen(false) });
+  if (statusOpen) activeChips.push({ key: "open", label: "Ortaklığa açık", onRemove: () => setStatusOpen(false) });
   if (catPath.length) activeChips.push({ key: "cat", label: catPath[catPath.length - 1], onRemove: clearCatFilter });
   if (sortMode !== "recommended") activeChips.push({ key: "sort", label: `Sırala: ${SORT_LABELS[sortMode]}`, onRemove: () => setSortMode("recommended") });
   // Kategori-özel facet (Yakıt=Dizel…) + sayısal aralık (Km 0–100000) seçimleri de
@@ -494,7 +493,7 @@ function ExploreScreenLegacy() {
     const maxHot = filter === "hot" ? baseListings.reduce((mx, l) => Math.max(mx, hotScore(l)), 0) : 0;
     const hotThreshold = maxHot * 0.5;
     const nonText = baseListings.filter((listing) => {
-      if (city && listing.location !== city) return false;
+      if (!srvFiltered && city && listing.location !== city) return false;
       // Yapısal id varsa kesin eşleşme; yoksa (eski ilan) serbest metne düş.
       // Alt-metin eşleştirmesi tek başına yanıltıcıydı (ör. "Van" ⊂ başka metinler).
       // Ortak yardımcı (lib/locations) — kategori ve ana sayfa da aynısını kullanır.
@@ -513,7 +512,8 @@ function ExploreScreenLegacy() {
       if (!srvFiltered && stockFilter === "low" && (listing.stockCount > 5 || listing.stockCount <= 0)) return false;
       if (!srvFiltered && statusOpen && listing.partnershipMode !== "open") return false;
       if (!srvFiltered && filter === "open" && listing.partnershipMode !== "open") return false;
-      if (filter === "hot" && hotScore(listing) < hotThreshold) return false;
+      // Trend: sunucu yolunda filters.trend (etkileşim > 0) + sort=popular; göreli eşik yalnız yerel yolda.
+      if (!srvFiltered && filter === "hot" && hotScore(listing) < hotThreshold) return false;
       if (!srvFiltered && filter === "new" && !isNewListing(listing.createdAt)) return false;
       // Kategori-özel filtre: seçili kategori + facet (attribute) + sayısal aralık.
       if (catLabelSet && !srvFiltered) {
@@ -524,8 +524,8 @@ function ExploreScreenLegacy() {
       }
       for (const key of Object.keys(attrFilters)) {
         const want = attrFilters[key];
-        // Sunucu yolunda tek-değerli facet sunucuda; aynı alanda çoklu (VEYA) seçim yerelde kalır.
-        if (srvFiltered && want.length <= 1) continue;
+        // Sunucu yolunda facet'ler sunucuda (attrs / attrsAny).
+        if (srvFiltered) continue;
         const have = listing.attributes?.[key];
         const ok = Array.isArray(have) ? have.some((v) => want.includes(String(v))) : want.includes(String(have ?? ""));
         if (!ok) return false;
@@ -651,9 +651,8 @@ function ExploreScreenLegacy() {
     const rates = activeListings.map(commissionRatePct).filter((r) => r > 0);
     return rates.length ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : 0;
   }, [activeListings]);
-  // Sunucu toplamı "gerçek toplam"dır; yalnız yerelde kalan üç ölçütten biri (tam şehir, Trend
-  // eşiği, aynı alanda çoklu facet) etkinse yüklü adet (+) gösterilir.
-  const srvExact = !city && filter !== "hot" && srv.local.attrKeys.length === 0;
+  // Sunucu toplamı gerçek toplamdır; yalnız sunucu üst sınırı aşılınca "100.000+" gösterilir.
+  const srvExact = srv.total <= CATALOGUE_TOTAL_CAP;
   const countLabel = useSrv ? catalogueCountLabel(srv, srvExact, activeListings.length) : String(activeListings.length);
   const srvMoreBusy = useSrv && srv.loadingMore && productVisible >= activeListings.length;
   const srvNotice = useSrv && srv.failed ? <RetryNotice message="Diğer ilanlar yüklenemedi. Mevcut sonuçlar korunuyor." onRetry={srv.retry} busy={srv.loadingMore} /> : null;
@@ -1438,8 +1437,8 @@ function ExploreScreenLegacy() {
             })().map((n) => {
               const on = catPath[0] === n.key;
               return (
-                <Pressable key={n.key} onPress={() => selectTop(n.key)} onLayout={(e) => { const x = e.nativeEvent.layout.x; catChipX.current[n.key] = x; }} accessibilityRole="button" accessibilityLabel={translateCopy(n.label, language)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, maxWidth: 178, minHeight: 44, paddingHorizontal: 13 }}>
-                  <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12, fontWeight: "800" }}>{translateCopy(n.label, language)}</Text>
+                <Pressable key={n.key} onPress={() => selectTop(n.key)} onLayout={(e) => { const x = e.nativeEvent.layout.x; catChipX.current[n.key] = x; }} accessibilityRole="button" accessibilityLabel={translateCopy(n.label, language)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 4, maxWidth: 220, minHeight: 44, paddingHorizontal: 13 }}>
+                  <Text numberOfLines={1} style={{ color: on ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12, fontWeight: "800" }}>{translateCopy(categoryChipLabel(n.label), language)}</Text>
                   <MaterialCommunityIcons name="chevron-right" size={13} color={on ? "#FFFFFF" : colors.subtle} />
                 </Pressable>
               );

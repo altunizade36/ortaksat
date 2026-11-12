@@ -38,7 +38,7 @@ export function HeaderActions() {
           {!compact ? (
             // 2-satır: küçük "ÜCRETSİZ" etiketi + "İlan Ver" — genişlik artmadan "ücretsiz" vurgusu.
             <View style={{ gap: 0 }}>
-              <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 7.5, fontWeight: "900", letterSpacing: 0.6, lineHeight: 9 }}>{translateCopy("ÜCRETSİZ", language)}</Text>
+              <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900", letterSpacing: 0.3, lineHeight: 12 }}>{translateCopy("ÜCRETSİZ", language)}</Text>
               <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900", lineHeight: 15 }}>{translateCopy("İlan Ver", language)}</Text>
             </View>
           ) : null}
@@ -105,14 +105,14 @@ function HeaderAction({
                 borderColor: "#FFFFFF",
                 borderRadius: 999,
                 borderWidth: 1,
-                minWidth: 15,
+                minWidth: 17,
                 paddingHorizontal: 3,
                 position: "absolute",
                 right: -3,
                 top: -4
               }}
             >
-              <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 8, fontWeight: "900", lineHeight: 11 }}>
+              <Text adjustsFontSizeToFit numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900", lineHeight: 13 }}>
                 {badge > 9 ? "9+" : badge}
               </Text>
             </View>

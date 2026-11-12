@@ -244,7 +244,7 @@ function FavoritesScreenInner() {
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
           <FavStat icon="heart" tint={colors.accentSoft} color={colors.accent} value={`${savedCount}`} title={translateCopy("Kaydedilen ilan", language)} sub={translateCopy("Toplam favori", language)} />
           <FavStat icon="percent" tint={colors.primarySoft} color={colors.primaryDark} value={`${highComm.length}`} title={translateCopy("Yüksek komisyon fırsatı", language)} sub={translateCopy("%15 ve üzeri komisyon", language)} />
-          <FavStat icon="handshake-outline" tint={colors.goldSoft} color={colors.gold} value={`${openCount}`} title={translateCopy("Ortak satışa açık", language)} sub={translateCopy("Hemen ortak olabileceğin ilan", language)} />
+          <FavStat icon="handshake-outline" tint={colors.goldSoft} color={colors.gold} value={`${openCount}`} title={translateCopy("Ortaklığa açık", language)} sub={translateCopy("Hemen ortak olabileceğin ilan", language)} />
         </View>
 
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderWidth: 1, borderRadius: 10, flexDirection: "row", gap: 10, paddingHorizontal: 12 }}>

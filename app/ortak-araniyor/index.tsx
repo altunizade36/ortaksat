@@ -9,6 +9,7 @@ import { Seo } from "@/components/seo";
 import { Chip, EmptyState, LoadingBlock, PrimaryButton, SegButton, StatChip } from "@/components/ui";
 import { PAGE_MAX_WIDTH } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
+import { categoryChipLabel } from "@/lib/categories";
 import { categoryTree } from "@/lib/category-tree";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
@@ -94,7 +95,7 @@ function Inner() {
         {mode === "feed" ? (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingVertical: 2 }} style={{ marginBottom: 12 }}>
             <Chip tone="primary" active={category === null} label={t("Tümü")} onPress={() => setCategory(null)} />
-            {TOP_CATEGORIES.map((c) => <Chip key={c} tone="primary" active={category === c} label={t(c)} onPress={() => setCategory(category === c ? null : c)} />)}
+            {TOP_CATEGORIES.map((c) => <Chip key={c} tone="primary" active={category === c} label={t(categoryChipLabel(c))} onPress={() => setCategory(category === c ? null : c)} />)}
           </ScrollView>
         ) : null}
 
@@ -159,7 +160,7 @@ function CreateForm({ onDone, onCancel }: { onDone: () => void; onCancel: () => 
       <View>
         <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>{t("Kategori")}</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7 }}>
-          {TOP_CATEGORIES.map((c) => <Chip key={c} tone="primary" active={cat === c} label={t(c)} onPress={() => setCat(cat === c ? null : c)} />)}
+          {TOP_CATEGORIES.map((c) => <Chip key={c} tone="primary" active={cat === c} label={t(categoryChipLabel(c))} onPress={() => setCat(cat === c ? null : c)} />)}
         </ScrollView>
       </View>
       <View style={{ flexDirection: "row", gap: 10 }}>

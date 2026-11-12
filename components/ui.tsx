@@ -138,12 +138,13 @@ export function PrimaryButton({ children, onPress, href, tone = "primary", icon,
 export function StatusPill({ label, tone = "info" }: { label: string; tone?: "info" | "success" | "warning" | "neutral" | "danger" }) {
   const { language } = useLanguage();
   const palette = {
-    info: [colors.info, colors.infoSoft],
-    success: [colors.success, colors.successSoft],
-    warning: [colors.warning, colors.warningSoft],
+    // Metin tonları açık zemin üstünde ≥4.5:1 (eski saf yeşil/turuncu metin ~2:1 kalıyordu).
+    info: [colors.primary, colors.primarySoft],
+    success: ["#166534", colors.successSoft],
+    warning: [colors.goldInk, colors.warningSoft],
     // pasif/nötr durumlar için gri; reddedildi/tükendi gibi olumsuzlar için kırmızı.
-    neutral: [colors.muted, colors.neutralSoft],
-    danger: [colors.accent, colors.accentSoft]
+    neutral: ["#475569", colors.neutralSoft],
+    danger: ["#B42318", colors.accentSoft]
   } as const;
   const [color, backgroundColor] = palette[tone];
 
@@ -227,7 +228,7 @@ export function SectionTitle({ title, action }: { title: string; action?: string
   );
 }
 
-// Filtre/segment çipi. tone: "dark" (varsayılan, mevcut çağıranlar) | "primary" (turkuaz).
+// Filtre/segment çipi. tone: "dark" (varsayılan, mevcut çağıranlar) | "primary" (marka mavisi).
 // icon opsiyonel. a11y (role/state/label) + hitSlop dahil (küçük dokunma hedefi telafisi).
 export function Chip({ label, active, onPress, tone = "dark", icon }: { label: string; active?: boolean; onPress?: () => void; tone?: "dark" | "primary"; icon?: keyof typeof MaterialCommunityIcons.glyphMap }) {
   const { language } = useLanguage();
@@ -276,18 +277,18 @@ export function SegButton({ active, icon, label, onPress, small }: { active: boo
       style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: small ? 36 : 40, opacity: pressed ? 0.8 : 1, paddingHorizontal: small ? 10 : 12, paddingVertical: small ? 6 : 8 })}
     >
       <MaterialCommunityIcons name={icon} size={small ? 13 : 15} color={active ? "#FFFFFF" : colors.muted} />
-      <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: small ? 11.5 : 12.5, fontWeight: "800" }}>{translateCopy(label, language)}</Text>
+      <Text style={{ color: active ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: small ? 11.5 : 12.5, fontWeight: "800" }}>{translateCopy(label, language)}</Text>
     </Pressable>
   );
 }
 
 // İkon+etiketli küçük istatistik/rozet pili (salt-gösterim). Tek kaynak.
 export function StatChip({ icon, label, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; tone?: "success" }) {
-  const c = tone === "success" ? colors.success : colors.muted;
+  const c = tone === "success" ? "#166534" : colors.muted;
   return (
-    <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 4 }}>
+    <View style={{ alignItems: "center", backgroundColor: tone === "success" ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 4, maxWidth: "100%", paddingHorizontal: 9, paddingVertical: 4 }}>
       <MaterialCommunityIcons name={icon} size={12} color={c} />
-      <Text style={{ color: tone === "success" ? colors.success : colors.ink, fontSize: 11, fontWeight: "800" }}>{label}</Text>
+      <Text numberOfLines={1} style={{ color: tone === "success" ? "#166534" : colors.ink, flexShrink: 1, fontSize: 11, fontWeight: "800" }}>{label}</Text>
     </View>
   );
 }

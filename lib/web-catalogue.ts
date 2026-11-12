@@ -11,8 +11,7 @@ import type { Listing, User } from "@/lib/types";
 /**
  * WEB sunucu-tarafı katalog (ölçek): Keşfet, masaüstü ana sayfa ve kategori sayfası filtre/
  * sıralama/arama ölçütlerini `mobile_catalogue_page` RPC'sine eşler. Sonuç ve TOPLAM sunucudan
- * gelir; RPC'nin desteklemediği üç ölçüt (tam şehir metni, aynı alanda çoklu-VEYA facet, göreli
- * "Trend" eşiği) sayfa tarafında yüklü sunucu sayfalarının üzerine yerelde uygulanır. Supabase yoksa ya da RPC hata verirse `fallback` true olur →
+ * gelir; tüm web ölçütleri sunucuda karşılanır (yerleşmiş sunucu sayfasında yerel süzme yok). Supabase yoksa ya da RPC hata verirse `fallback` true olur →
  * sayfa mevcut yerel süzmesine döner (sayfa hiçbir zaman bu yüzden boş kalmaz).
  */
 
@@ -23,7 +22,11 @@ export type WebCatalogueSort = "recommended" | "newest" | "priceAsc" | "priceDes
 type WebExtraFilters = {
   instant?: boolean; minCommission?: number; minRate?: number; commissionType?: "rate" | "fixed"; stock?: "in" | "low";
   featured?: boolean; createdAfter?: string; minRating?: number; verified?: boolean;
+  city?: string; trend?: boolean; attrsAny?: Record<string, string[]>;
 };
+
+/** Sunucu `total` değerini 100001'de keser; bunun üstü "100.000+" olarak gösterilir. */
+export const CATALOGUE_TOTAL_CAP = 100_000;
 
 export type WebCatalogueCriteria = {
   /** Kökten seçili düğüme kategori yolu; boş = kategori yok. */
@@ -50,6 +53,10 @@ export type WebCatalogueCriteria = {
   /** Satıcı puanı alt sınırı / yalnız doğrulanmış satıcı. */
   minRating?: number;
   verified?: boolean;
+  /** Tam konum metni (card.location = değer). */
+  city?: string;
+  /** Yalnız etkileşimi olan ilanlar (Trend); sort "popular" ile birlikte kullanılır. */
+  trend?: boolean;
   sort: WebCatalogueSort;
 };
 
@@ -59,8 +66,6 @@ export type WebCatalogueRequest = {
   filters: MobileFilters & WebExtraFilters;
   query: string;
   sort: string;
-  /** Sunucuya gönderilEMEYEN, sayfanın yerelde uygulamaya devam etmesi gereken parçalar. */
-  local: { attrKeys: string[] };
 };
 
 /** Web filtre girdisi: "100.000" (TR binlik) → 100000; "1,5" / "1.5" → 1.5; geçersiz → null. */
@@ -103,18 +108,21 @@ export function buildCatalogueRequest(c: WebCatalogueCriteria): WebCatalogueRequ
   if (c.stock === "in" || c.stock === "low") filters.stock = c.stock;
   if (c.onlyFeatured) filters.featured = true;
   if (c.verified) filters.verified = true;
+  if (c.trend) filters.trend = true;
+  if (c.city) filters.city = c.city;
   // Saat başına yuvarla: Date.now() her render'da değişirdi → anahtar değişir → sonsuz yeniden istek.
   const days = positive(c.newerThanDays);
   if (days) filters.createdAfter = new Date(Math.floor(Date.now() / 3_600_000) * 3_600_000 - days * 86_400_000).toISOString();
 
-  // Facet: tek değer → sunucu (tek elemanlı dizi; ilan değeri tekil de dizi de olsa eşleşir).
-  // Aynı alanda birden çok değer web'de VEYA'dır, sunucu dizi beklentisini VE'ler → yerelde kalır.
-  const localAttrKeys: string[] = [];
+  // Facet: tek değer → attrs (tek elemanlı dizi; ilan değeri tekil de dizi de olsa eşleşir).
+  // Aynı alanda birden çok değer web'de VEYA'dır → attrsAny (alan içinde VEYA, alanlar arası VE).
+  const attrsAny: Record<string, string[]> = {};
   for (const key of Object.keys(c.attrs ?? {}).sort()) {
     const values = (c.attrs?.[key] ?? []).filter(Boolean);
     if (values.length === 1) filters.attrs[key] = [values[0]];
-    else if (values.length > 1) localAttrKeys.push(key);
+    else if (values.length > 1) attrsAny[key] = values;
   }
+  if (Object.keys(attrsAny).length) filters.attrsAny = attrsAny;
   for (const key of Object.keys(c.ranges ?? {}).sort()) {
     const lo = webFilterNumber(c.ranges?.[key]?.min);
     const hi = webFilterNumber(c.ranges?.[key]?.max);
@@ -125,7 +133,7 @@ export function buildCatalogueRequest(c: WebCatalogueCriteria): WebCatalogueRequ
   const sort: string = c.sort;
   const query = (c.query ?? "").replace(/\s+/g, " ").trim().slice(0, 120);
   const key = JSON.stringify({ t: c.trail.map((n) => n.key), f: filters, q: query, s: sort });
-  return { key, trail: c.trail, filters, query, sort, local: { attrKeys: localAttrKeys } };
+  return { key, trail: c.trail, filters, query, sort };
 }
 
 type State = {
@@ -176,8 +184,6 @@ export type ServerCatalogue = {
   hasMore: boolean;
   loadMore: () => void;
   retry: () => void;
-  /** Geçerli isteğin yerelde kalan parçaları. */
-  local: WebCatalogueRequest["local"];
 };
 
 export function useServerCatalogue({ enabled, criteria, pageSize = 40 }: { enabled: boolean; criteria: WebCatalogueCriteria; pageSize?: number }): ServerCatalogue {
@@ -264,8 +270,7 @@ export function useServerCatalogue({ enabled, criteria, pageSize = 40 }: { enabl
     fallback,
     hasMore: !!key && !pending && state.hasMore,
     loadMore,
-    retry,
-    local: request.local
+    retry
   };
 }
 
@@ -291,5 +296,6 @@ export function useCatalogueFill(cat: ServerCatalogue, have: number, want: numbe
  * aksi halde yüklü+süzülmüş adet, devamı varsa "+" ile (gerçek toplam bilinemez).
  */
 export function catalogueCountLabel(cat: ServerCatalogue, exact: boolean, have: number): string {
+  if (cat.total > CATALOGUE_TOTAL_CAP) return `${groupThousands(CATALOGUE_TOTAL_CAP)}+`;
   return exact ? groupThousands(cat.total) : `${groupThousands(have)}${cat.hasMore ? "+" : ""}`;
 }

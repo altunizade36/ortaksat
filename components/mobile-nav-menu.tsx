@@ -50,8 +50,8 @@ export function MobileNavMenu() {
           {/* Okunmamış mesaj/bildirim rozeti: mobilde tek bakışta görünsün (masaüstü
               header ikonlarındaki rozetin karşılığı; hamburger'da saklı kalmasın). */}
           {badgeTotal > 0 ? (
-            <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1.5, height: 16, justifyContent: "center", minWidth: 16, paddingHorizontal: 3, position: "absolute", right: -5, top: -5 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{badgeTotal > 9 ? "9+" : badgeTotal}</Text>
+            <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: "#FFFFFF", borderRadius: 999, borderWidth: 1.5, height: 17, justifyContent: "center", minWidth: 17, paddingHorizontal: 3, position: "absolute", right: -5, top: -5 }}>
+              <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900", lineHeight: 13 }}>{badgeTotal > 9 ? "9+" : badgeTotal}</Text>
             </View>
           ) : null}
         </View>

@@ -745,11 +745,11 @@ export default function ListingDetailScreen() {
               {gallery.length ? <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} priority="high" style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 290, width: "100%" }} contentFit="cover" /> : <View style={{ height: isWideWeb ? 520 : 290, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center", gap: 12 }}><MaterialCommunityIcons name="image-off-outline" size={44} color={colors.muted} /><Text style={{ color: colors.muted }}>{translateCopy("Bu ilanda fotoğraf yok", language)}</Text></View>}
               {/* Kaynak filigranı — dosyaya gömülmez, yalnız görüntüleme katmanı (ürün bozulmaz). */}
               {!!gallery.length && <ImageWatermark size={isWideWeb ? 20 : 15} />}
-              {/* Ortaklığa AÇIK ilan rozeti (yeşil, sol üst) — kapalı/normal ilanda gösterilmez. */}
+              {/* Ortaklığa AÇIK ilan rozeti (marka mavisi, sol üst) — kapalı/normal ilanda gösterilmez. */}
               {partnerable ? (
                 <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 5, left: 12, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", top: 12 }}>
                   <MaterialCommunityIcons name="check-decagram" size={14} color="#FFFFFF" />
-                  <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "900", letterSpacing: 0.2 }}>{translateCopy("Ortaklığa Açık", language)}</Text>
+                  <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Ortaklığa açık", language)}</Text>
                 </View>
               ) : null}
               {!!gallery.length && <View testID="listing-web-counter" style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
@@ -776,7 +776,7 @@ export default function ListingDetailScreen() {
             ) : null}
             <View style={{ flexDirection: "row", gap: isWideWeb ? 8 : 6, padding: isWideWeb ? 12 : 8 }}>
               <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label={translateCopy("Beğen", language)} onPress={() => toggleFavorite(currentListing.id)} />
-              {!isDemo ? <IconButton active={inCompare} icon={inCompare ? "compare-remove" : "compare-horizontal"} label={translateCopy("Karşılaştır", language)} onPress={() => toggleCompare(currentListing.id)} /> : null}
+              {!isDemo ? <IconButton active={inCompare} icon={inCompare ? "compare-remove" : "compare-horizontal"} label={translateCopy(isWideWeb ? "Karşılaştır" : "Kıyasla", language)} onPress={() => toggleCompare(currentListing.id)} /> : null}
               <IconButton icon="share-variant-outline" label={translateCopy("Paylaş", language)} onPress={() => void handleShare()} />
               {!isOwner ? <IconButton icon="flag-outline" label={translateCopy("Bildir", language)} onPress={() => setReportOpen(true)} /> : null}
             </View>
@@ -789,8 +789,8 @@ export default function ListingDetailScreen() {
         {/* Satın alma / ortak kutusu — e-ticaret tarzı tek, net karar alanı */}
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatusPill label={translateCopy(currentListing.category, language)} />
-            {partnerable ? <StatusPill label={translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı", language)} tone={currentListing.partnershipMode === "open" ? "success" : "warning"} /> : null}
+            <StatusPill label={translateCopy(currentListing.category, language)} tone="neutral" />
+            {partnerable ? <StatusPill label={translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı", language)} tone="info" /> : null}
           </View>
 
           <Text selectable accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 22 : 20, fontWeight: "700", lineHeight: isWideWeb ? 28 : 26 }}>{currentTitle}</Text>
@@ -1190,11 +1190,11 @@ export default function ListingDetailScreen() {
             </View>
             <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
-                <Text numberOfLines={1} style={{ color: colors.ink, flexShrink: 1, fontSize: 14, fontWeight: "900" }}>{owner?.name ?? translateCopy("Satıcı", language)}</Text>
+                <Text numberOfLines={2} style={{ color: colors.ink, flexShrink: 1, fontSize: 14, fontWeight: "900", lineHeight: 18 }}>{owner?.name ?? translateCopy("Satıcı", language)}</Text>
                 {!isDemo && (owner?.verifiedPhone || owner?.verifiedIdentity) ? <MaterialCommunityIcons name="check-decagram" size={14} color={colors.primary} /> : null}
                 {!isDemo && owner?.rating ? <Text style={{ color: colors.gold, fontSize: 12, fontWeight: "800" }}>★ {owner.rating.toFixed(1)}</Text> : null}
               </View>
-              <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{isDemo ? translateCopy("Örnek vitrin satıcısı", language) : translateCopy("Doğrulanmış güven karnesi henüz yok", language)}</Text>
+              <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700", lineHeight: 15 }}>{isDemo ? translateCopy("Örnek vitrin satıcısı", language) : translateCopy("Doğrulanmış güven karnesi henüz yok", language)}</Text>
               {!isDemo ? (
                 <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 1 }}>
                   <MaterialCommunityIcons name="storefront-outline" size={11} color={colors.subtle} />
@@ -1575,7 +1575,7 @@ function RelatedListingsSection({
   return (
     <Card>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text selectable numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>{translateCopy(title, language)}</Text>
+        <Text selectable numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 17, fontWeight: "900", lineHeight: 22 }}>{translateCopy(title, language)}</Text>
         {actionHref && actionLabel ? <PrimaryButton href={actionHref} tone="secondary" icon="store-search-outline">{actionLabel}</PrimaryButton> : null}
       </View>
       {listings.length === 0 ? (

@@ -10,16 +10,18 @@ import { Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } fro
 
 import { Accordion } from "@/components/accordion";
 import { colors } from "@/components/colors";
+import { CompactFilterPanel, CompactFilterSection, FilterGroup, FilterOptionGrid, FilterToggleRow } from "@/components/compact-filter-panel";
 import { JsonLd } from "@/components/json-ld";
 import { ListingCard } from "@/components/listing-card";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
+import { OptionSheet } from "@/components/option-sheet";
 import { RetryNotice } from "@/components/retry-notice";
 import { EmptyState } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
 import { categoryTree as CATEGORY_TREE, getFormSchema, resolveFormKey, AMBIGUOUS_LABELS, type CategoryNode } from "@/lib/category-tree";
-import { getCategoryIcon } from "@/lib/categories";
+import { categoryChipLabel, getCategoryIcon } from "@/lib/categories";
 import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, findProvince } from "@/lib/cities";
 import { commissionAmount, groupThousands } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -29,7 +31,7 @@ import { fetchListingsByCategory, mapListing, type PublicListingCardRow } from "
 import LISTING_SEED_ROWS from "@/lib/listing-seed.json";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
-import { catalogueCountLabel, useCatalogueFill, useServerCatalogue } from "@/lib/web-catalogue";
+import { CATALOGUE_TOTAL_CAP, catalogueCountLabel, useCatalogueFill, useServerCatalogue } from "@/lib/web-catalogue";
 
 function descendantLabels(node: CategoryNode): string[] {
   const out = [node.label];
@@ -82,6 +84,12 @@ export async function generateStaticParams(): Promise<Array<{ slug: string }>> {
 
 const PAGE = 24;
 
+type SortMode = "featured" | "newest" | "priceAsc" | "priceDesc" | "commission";
+const SORT_OPTIONS: ReadonlyArray<readonly [SortMode, string]> = [["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["commission", "En çok kazandıran"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"]];
+const PRICE_BANDS: ReadonlyArray<readonly [number, number, string]> = [[0, 1000, "0–1.000 ₺"], [1000, 5000, "1.000–5.000 ₺"], [5000, 25000, "5.000–25.000 ₺"], [25000, 100000, "25.000–100.000 ₺"], [100000, Number.MAX_SAFE_INTEGER, "100.000 ₺+"]];
+// Dar ekran filtre paneli: iOS odak-zoom'u olmasın diye 16px.
+const rangeInputStyle = { backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, minHeight: 44, minWidth: 0, paddingHorizontal: 12 } as const;
+
 export default function CategoryLandingScreen() {
   const params = useLocalSearchParams<{ slug?: string }>();
   return isMobileApp ? <MobileCatalogue slug={String(params.slug || "")} /> : <CategoryLandingScreenLegacy />;
@@ -95,7 +103,10 @@ function CategoryLandingScreenLegacy() {
   const { width } = useWindowDimensions();
   const isWideWeb = useIsWideWeb();
   const [introExpanded, setIntroExpanded] = useState(false);
-  useEffect(() => setIntroExpanded(false), [slug]);
+  // Dar ekran: tek kontrol çubuğu (Sırala + Filtrele). Panel/sayfa yalnız dokununca açılır.
+  const [filterOpen, setFilterOpen] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
+  useEffect(() => { setIntroExpanded(false); setFilterOpen(false); setSortOpen(false); }, [slug]);
   // Hidrasyon güvenliği: SSG'de gerçek genişlik yok → cardWidth sunucu/istemci
   // arasında uyuşmayıp React #418 üretiyordu. Mount'a kadar sabit genişlik kullan
   // (içerik SEO için render edilmeye devam eder), sonra gerçek genişliğe geç.
@@ -109,7 +120,7 @@ function CategoryLandingScreenLegacy() {
   // (değişmez); mount sonrası server-ilanlar EKLENİR (sonsuz-kaydırma gibi, #418 güvenli).
   const [serverCat, setServerCat] = useState<{ listings: Listing[]; users: User[] }>({ listings: [], users: [] });
   const [visible, setVisible] = useState(PAGE);
-  const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
+  const [sortMode, setSortMode] = useState<SortMode>("featured");
   const [band, setBand] = useState<[number, number] | null>(null);
   const [onlyOpen, setOnlyOpen] = useState(false);
   // Konum filtresi (81 il + ilçe) — keşfetteki LocationSelector'ın aynısı; kategori
@@ -225,8 +236,8 @@ function CategoryLandingScreenLegacy() {
       const segs = nc.split(/\s*[-/>·|]\s*/).map((s) => s.trim()).filter((s) => s.length > 2);
       return segs.length > 1 && segs.some((s) => nlabels.has(s));
     };
-    // Sunucu yolunda: tek-değerli facet sunucuda; aynı alanda çoklu (VEYA) seçim yerelde kalır.
-    const activeAttrKeys = Object.keys(attrFilters).filter((key) => !srvFiltered || attrFilters[key].length > 1);
+    // Sunucu yolunda facet'ler sunucuda (attrs / attrsAny).
+    const activeAttrKeys = srvFiltered ? [] : Object.keys(attrFilters);
     // Bellek + sunucu-kategori ilanları (append-only, id ile tekilleştir). Bellek önce (öncelik).
     const seen = new Set<string>();
     let source: Listing[] = [];
@@ -280,8 +291,8 @@ function CategoryLandingScreenLegacy() {
     });
     return out;
   }, [listings, seedListings, serverCat.listings, node, band, onlyOpen, sortMode, attrFilters, numRange, numFields, loc.provinceId, loc.districtId, useSrv, srvFiltered, srv.listings]);
-  // Sunucu toplamı "gerçek toplam"dır; yalnız aynı alanda çoklu (VEYA) facet yerelde kalır → (+).
-  const srvExact = srv.local.attrKeys.length === 0;
+  // Sunucu toplamı gerçek toplamdır; yalnız sunucu üst sınırı aşılınca "100.000+" gösterilir.
+  const srvExact = srv.total <= CATALOGUE_TOTAL_CAP;
   const countLabel = useSrv ? catalogueCountLabel(srv, srvExact, items.length) : String(items.length);
   // "Daha fazla göster" visible'ı artırır; yüklü ilan yetmiyorsa sonraki sunucu sayfası çekilir.
   useCatalogueFill(srv, items.length, visible);
@@ -387,6 +398,42 @@ function CategoryLandingScreenLegacy() {
   const introKidsLine = introKids.length ? ` Öne çıkan alt kategoriler: ${introKids.join(", ")}.` : "";
   const introText = `${introOpener}${introKidsLine} OrtakSat aracı bir platformdur: komisyon oranını satıcı belirler, ödeme ve teslimat alıcı ile satıcı arasında yapılır. İlan vermek ve ortak olmak ücretsizdir.`;
 
+  // ── Dar ekran kontrol çubuğu için türetilenler (durum/sorgu mantığı DEĞİŞMEZ; yalnız sunum) ──
+  const sortLabel = translateCopy(SORT_OPTIONS.find(([k]) => k === sortMode)?.[1] ?? "Öne çıkanlar", language);
+  const locLabel = [getProvince(loc.provinceId)?.name, getDistrict(loc.districtId)?.name].filter(Boolean).join(" / ");
+  const attrSelectedCount = Object.values(attrFilters).reduce((a, v) => a + v.length, 0);
+  const applied: Array<{ key: string; label: string; onRemove: () => void }> = [];
+  if (band) applied.push({ key: "band", label: PRICE_BANDS.find(([mn, mx]) => mn === band[0] && mx === band[1])?.[2] ?? translateCopy("Fiyat", language), onRemove: () => setBand(null) });
+  if (onlyOpen) applied.push({ key: "open", label: translateCopy("Anında ortak", language), onRemove: () => setOnlyOpen(false) });
+  if (loc.provinceId != null) applied.push({ key: "loc", label: locLabel || translateCopy("Konum", language), onRemove: () => setLoc({}) });
+  for (const nf of numFields) {
+    const mn = (numRange[nf.key]?.min ?? "").trim();
+    const mx = (numRange[nf.key]?.max ?? "").trim();
+    if (mn || mx) applied.push({ key: `num:${nf.key}`, label: `${nf.label}: ${mn || "…"}–${mx || "…"}`, onRemove: () => setNumRange((s) => { const copy = { ...s }; delete copy[nf.key]; return copy; }) });
+  }
+  for (const [key, vals] of Object.entries(attrFilters)) for (const val of vals) applied.push({ key: `attr:${key}:${val}`, label: val, onRemove: () => toggleAttr(key, val) });
+  const activeFilterCount = applied.length;
+  const clearAllFilters = () => { setBand(null); setOnlyOpen(false); setLoc({}); setAttrFilters({}); setNumRange({}); };
+
+  // SEO iç-link rayları: geniş ekranda üstte (yatay ray), dar ekranda ilanların ALTINDA (sarmalı).
+  // İki yerleşim de aynı <a> linklerini basar → statik HTML'de linkler korunur.
+  const siblings = trail && trail.length >= 2 ? (trail[trail.length - 2].children ?? []).filter((s) => s.slug !== node.slug) : [];
+  const activeRootSlug = ancestors[0]?.slug ?? node.slug;
+  const siblingLinks = siblings.map((s) => (
+    <Link key={s.key} href={catHref(s.slug)} asChild>
+      <Pressable style={{ justifyContent: "center", minHeight: 44, maxWidth: 240, backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+        <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy(categoryChipLabel(s.label), language)}</Text>
+      </Pressable>
+    </Link>
+  ));
+  const rootLinks = CATEGORY_TREE.map((r) => (
+    <Link key={r.key} href={catHref(r.slug)} asChild>
+      <Pressable style={{ justifyContent: "center", minHeight: 44, maxWidth: 240, backgroundColor: r.slug === activeRootSlug ? colors.primarySoft : colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
+        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "600" }}>{translateCopy(categoryChipLabel(r.label), language)}</Text>
+      </Pressable>
+    </Link>
+  ));
+
   return (
     // MOBİL: WebContainer dar ekranda ŞEFFAF geçiş yapar (padding uygulamaz), ama kart
     // genişliği layoutWidth-24 ile (12+12 padding varmış gibi) hesaplanıyordu → kartlar
@@ -446,7 +493,7 @@ function CategoryLandingScreenLegacy() {
             {node.children.map((c) => (
               <Link key={c.key} href={{ pathname: "/kategori/[slug]", params: { slug: c.slug } } as unknown as Href} asChild>
                 <Pressable style={{ justifyContent: "center", minHeight: 44, maxWidth: 240, backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "600" }}>{translateCopy(c.label, language)}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "600" }}>{translateCopy(categoryChipLabel(c.label), language)}</Text>
                 </Pressable>
               </Link>
             ))}
@@ -456,42 +503,111 @@ function CategoryLandingScreenLegacy() {
         {/* SEO YATAY İÇ-LİNK AĞI: kardeş kategoriler. Hub'lar eskiden yalnız yukarı (breadcrumb) +
             aşağı (alt-kategori) link veriyordu, YAN'a hiç → ~45 yüksek-hacimli alt-hub çok-hop
             uzaktı. Kardeş rayı otoriteyi dallar arası yayar + tık-derinliğini düşürür. */}
-        {trail && trail.length >= 2 ? (() => {
-          const siblings = (trail[trail.length - 2].children ?? []).filter((s) => s.slug !== node.slug);
-          return siblings.length > 0 ? (
-            <View style={{ gap: 6 }}>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("İlgili kategoriler", language)}</Text>
-              <HorizontalScroll showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-                {siblings.map((s) => (
-                  <Link key={s.key} href={catHref(s.slug)} asChild>
-                    <Pressable style={{ justifyContent: "center", minHeight: 44, maxWidth: 240, backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-                      <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy(s.label, language)}</Text>
-                    </Pressable>
-                  </Link>
-                ))}
-              </HorizontalScroll>
+        {isWideWeb && siblingLinks.length > 0 ? (
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("İlgili kategoriler", language)}</Text>
+            <HorizontalScroll showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>{siblingLinks}</HorizontalScroll>
+          </View>
+        ) : null}
+
+        {/* SEO: tüm ana kategoriler rayı — HER hub'dan 11 köke crawl/otorite yolu (mesh'i kapatır).
+            Dar ekranda sayfanın altına ("Diğer kategoriler") iner → ilanlar ekranın üstünde kalır. */}
+        {isWideWeb ? (
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm kategoriler", language)}</Text>
+            <HorizontalScroll testID="category-roots" showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>{rootLinks}</HorizontalScroll>
+          </View>
+        ) : null}
+
+        {/* DAR EKRAN: tek kontrol çubuğu — Sırala + Filtrele; ayrıntılar panelde, ilanlar hemen altında. */}
+        {!isWideWeb ? (
+          <View testID="category-controls" style={{ gap: 8 }}>
+            <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+              <Pressable testID="category-sort" accessibilityRole="button" accessibilityLabel={`${translateCopy("Sırala", language)}: ${sortLabel}`} onPress={() => setSortOpen(true)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: "row", gap: 6, maxWidth: 320, minHeight: 48, minWidth: 0, paddingHorizontal: 12 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 14 }}>{translateCopy("Sırala", language)}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "700", lineHeight: 18 }}>{sortLabel}</Text>
+                </View>
+                <MaterialCommunityIcons name="chevron-down" size={18} color={colors.muted} />
+              </Pressable>
+              <Pressable testID="category-filter" accessibilityRole="button" accessibilityLabel={translateCopy("Filtrele", language)} accessibilityState={{ expanded: filterOpen }} onPress={() => setFilterOpen((v) => !v)} style={{ alignItems: "center", backgroundColor: filterOpen || activeFilterCount ? colors.primary : colors.surface, borderColor: filterOpen || activeFilterCount ? colors.primary : colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", minHeight: 48, paddingHorizontal: 16 }}>
+                <MaterialCommunityIcons name="tune-variant" size={17} color={filterOpen || activeFilterCount ? colors.surface : colors.ink} />
+                <Text style={{ color: filterOpen || activeFilterCount ? colors.surface : colors.ink, fontSize: 13.5, fontWeight: "700" }}>{translateCopy("Filtrele", language)}</Text>
+                {activeFilterCount ? <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: colors.primary, fontSize: 11, fontWeight: "700" }}>{activeFilterCount}</Text></View> : null}
+              </Pressable>
             </View>
-          ) : null;
-        })() : null}
 
-        {/* SEO: tüm ana kategoriler rayı — HER hub'dan 11 köke crawl/otorite yolu (mesh'i kapatır). */}
-        <View style={{ gap: 6 }}>
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm kategoriler", language)}</Text>
-          <HorizontalScroll testID="category-roots" showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
-            {CATEGORY_TREE.map((r) => (
-              <Link key={r.key} href={catHref(r.slug)} asChild>
-                <Pressable style={{ justifyContent: "center", minHeight: 44, maxWidth: 240, backgroundColor: r.slug === (ancestors[0]?.slug ?? node.slug) ? colors.primarySoft : colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "600" }}>{translateCopy(r.label, language)}</Text>
-                </Pressable>
-              </Link>
-            ))}
-          </HorizontalScroll>
-        </View>
+            {applied.length > 0 ? (
+              <HorizontalScroll testID="category-applied" showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+                {applied.map((chip) => (
+                  <Pressable key={chip.key} testID="category-chip-remove" accessibilityRole="button" accessibilityLabel={`${chip.label} — ${translateCopy("Kaldır", language)}`} onPress={chip.onRemove} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, maxWidth: 240, minHeight: 40, paddingLeft: 12, paddingRight: 8 }}>
+                    <Text numberOfLines={1} style={{ color: colors.primaryDark, flexShrink: 1, fontSize: 12.5, fontWeight: "700" }}>{chip.label}</Text>
+                    <MaterialCommunityIcons name="close" size={16} color={colors.primaryDark} />
+                  </Pressable>
+                ))}
+                {applied.length > 1 ? (
+                  <Pressable accessibilityRole="button" onPress={clearAllFilters} style={{ justifyContent: "center", minHeight: 40, paddingHorizontal: 8 }}>
+                    <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Temizle", language)}</Text>
+                  </Pressable>
+                ) : null}
+              </HorizontalScroll>
+            ) : null}
 
-        {/* Sıralama + hızlı filtreler */}
+            {filterOpen ? (
+              <CompactFilterPanel activeCount={activeFilterCount} onClear={clearAllFilters} onClose={() => setFilterOpen(false)} resultLabel={`${countLabel} ${translateCopy("sonucu göster", language)}`}>
+                <CompactFilterSection id="price" label="Fiyat" badge={band ? 1 : 0}>
+                  <FilterGroup title={translateCopy("Fiyat aralığı", language)}>
+                    <FilterOptionGrid options={PRICE_BANDS.map(([mn, mx, lbl]) => {
+                      const on = band?.[0] === mn && band?.[1] === mx;
+                      return { key: lbl, label: lbl, active: on, onPress: () => setBand(on ? null : [mn, mx]) };
+                    })} />
+                  </FilterGroup>
+                </CompactFilterSection>
+                <CompactFilterSection id="location" label="Konum" badge={loc.provinceId != null ? 1 : 0}>
+                  <FilterGroup title={translateCopy("Konum (İl / İlçe)", language)}>
+                    <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
+                    {loc.provinceId != null ? (
+                      <Pressable accessibilityRole="button" onPress={() => setLoc({})} style={{ alignSelf: "flex-start", justifyContent: "center", minHeight: 40 }}>
+                        <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "700" }}>{translateCopy("Konum filtresini temizle", language)}</Text>
+                      </Pressable>
+                    ) : null}
+                  </FilterGroup>
+                </CompactFilterSection>
+                <CompactFilterSection id="partnership" label="Ortaklık" badge={onlyOpen ? 1 : 0}>
+                  <FilterGroup title={translateCopy("Ortaklık", language)}>
+                    <FilterToggleRow active={onlyOpen} icon="flash-outline" label={translateCopy("Anında ortak", language)} onPress={() => setOnlyOpen((v) => !v)} />
+                    <Text style={{ color: colors.muted, fontSize: 12.5, lineHeight: 18 }}>{translateCopy("Yalnızca onay beklemeden ortak olabileceğin ilanları gösterir.", language)}</Text>
+                  </FilterGroup>
+                </CompactFilterSection>
+                {filterFields.length || numFields.length ? (
+                  <CompactFilterSection id="features" label="Özellikler" badge={attrSelectedCount + numActiveCount}>
+                    {numFields.map((nf, index) => (
+                      <FilterGroup key={nf.key} divided={index > 0} title={`${nf.label} aralığı`}>
+                        <View style={{ alignItems: "center", flexDirection: "row", gap: 8, minWidth: 0 }}>
+                          <TextInput accessibilityLabel={`${nf.label} — ${translateCopy("En az", language)}`} value={numRange[nf.key]?.min ?? ""} onChangeText={(v) => setNum(nf.key, "min", v)} keyboardType="numeric" inputMode="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={rangeInputStyle} />
+                          <View style={{ backgroundColor: colors.line, height: 1, width: 8 }} />
+                          <TextInput accessibilityLabel={`${nf.label} — ${translateCopy("En çok", language)}`} value={numRange[nf.key]?.max ?? ""} onChangeText={(v) => setNum(nf.key, "max", v)} keyboardType="numeric" inputMode="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={rangeInputStyle} />
+                        </View>
+                      </FilterGroup>
+                    ))}
+                    {filterFields.map((f, index) => (
+                      <FilterGroup key={f.key} divided={index > 0 || numFields.length > 0} title={f.label}>
+                        <FilterOptionGrid options={(f.options ?? []).map((opt) => ({ key: opt, label: opt, active: (attrFilters[f.key] ?? []).includes(opt), onPress: () => toggleAttr(f.key, opt) }))} />
+                      </FilterGroup>
+                    ))}
+                  </CompactFilterSection>
+                ) : null}
+              </CompactFilterPanel>
+            ) : null}
+            {sortOpen ? (
+              <OptionSheet visible title={translateCopy("Sırala", language)} options={SORT_OPTIONS.map(([, lbl]) => translateCopy(lbl, language))} value={sortLabel} allowClear={false} searchable={false} onClose={() => setSortOpen(false)} onSelect={(picked) => { const hit = SORT_OPTIONS.find(([, lbl]) => translateCopy(lbl, language) === picked); if (hit) setSortMode(hit[0]); }} />
+            ) : null}
+          </View>
+        ) : (
+        /* GENİŞ EKRAN: sıralama + hızlı filtreler (değişmedi) */
         <View style={{ gap: 8 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
-            {([["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["commission", "En çok kazandıran"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"]] as const).map(([k, lbl]) => {
+            {SORT_OPTIONS.map(([k, lbl]) => {
               const on = sortMode === k;
               return (
                 <Pressable key={k} onPress={() => setSortMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}>
@@ -505,7 +621,7 @@ function CategoryLandingScreenLegacy() {
               <MaterialCommunityIcons name="flash" size={13} color={onlyOpen ? colors.primaryDark : colors.muted} />
               <Text style={{ color: onlyOpen ? colors.primaryDark : colors.ink, fontSize: 12, fontWeight: "800" }}>{translateCopy("Anında ortak", language)}</Text>
             </Pressable>
-            {([[0, 1000, "0–1.000 ₺"], [1000, 5000, "1.000–5.000 ₺"], [5000, 25000, "5.000–25.000 ₺"], [25000, 100000, "25.000–100.000 ₺"], [100000, Number.MAX_SAFE_INTEGER, "100.000 ₺+"]] as const).map(([mn, mx, lbl]) => {
+            {PRICE_BANDS.map(([mn, mx, lbl]) => {
               const on = band?.[0] === mn && band?.[1] === mx;
               return (
                 <Pressable key={lbl} onPress={() => setBand(on ? null : [mn, mx])} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
@@ -564,6 +680,7 @@ function CategoryLandingScreenLegacy() {
             </Accordion>
           ) : null}
         </View>
+        )}
 
         {useSrv && srv.failed ? <RetryNotice message="Diğer ilanlar yüklenemedi. Mevcut sonuçlar korunuyor." onRetry={srv.retry} busy={srv.loadingMore} /> : null}
         {items.length === 0 && !useSrv && marketplaceLoadFailed && listings.length === 0 ? (
@@ -627,6 +744,20 @@ function CategoryLandingScreenLegacy() {
             ))}
           </View>
         </View>
+
+        {/* DAR EKRAN: iç-link rayları ilanların altında (üstteki kalabalığı azaltır, linkler korunur). */}
+        {!isWideWeb && siblingLinks.length > 0 ? (
+          <View style={{ gap: 8, marginTop: 4 }}>
+            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("İlgili kategoriler", language)}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{siblingLinks}</View>
+          </View>
+        ) : null}
+        {!isWideWeb ? (
+          <View testID="category-roots" style={{ gap: 8, marginTop: 4 }}>
+            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Diğer kategoriler", language)}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{rootLinks}</View>
+          </View>
+        ) : null}
 
         {/* SSS — benzersiz içerik + FAQPage zengin sonuç */}
         <View style={{ gap: 10, marginTop: 4 }}>

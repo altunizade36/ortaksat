@@ -310,7 +310,7 @@ export function ResponsiveLineArea(props: { points: Array<{ label: string; value
 }
 
 // ---- HUNİ (ortak-satış hunisi): daralan yatay barlar + adım-adım dönüşüm % ----
-export function FunnelChart({ data }: { data: Array<{ label: string; value: number; color?: string }> }) {
+export function FunnelChart({ data, showRate = true }: { data: Array<{ label: string; value: number; color?: string }>; showRate?: boolean }) {
   const max = Math.max(1, ...data.map((d) => d.value));
   return (
     <View style={{ gap: 11 }}>
@@ -327,7 +327,7 @@ export function FunnelChart({ data }: { data: Array<{ label: string; value: numb
                 <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{d.label}</Text>
               </View>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                {i > 0 ? (
+                {showRate && i > 0 ? (
                   <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 7, paddingVertical: 1 }}>
                     <Text style={{ color: colors.muted, fontSize: 10.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>%{rate}</Text>
                   </View>

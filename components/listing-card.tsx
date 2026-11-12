@@ -39,7 +39,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode, onCollecti
   // EN ÜST öncelikli "🔎 ARANIYOR" rozeti — bu ilan tipi diğer her şeyin önünde okunmalı.
   const isDemand = listing.attributes?._formKey === "arayan";
   const statusLabel = listing.status !== "active" ? translateCopy("İlan kapalı", language) : isDemand ? translateCopy("Aranıyor", language) : urgent ? translateCopy("Acil", language) : featured ? translateCopy("Öne çıkan", language) : isNew ? translateCopy("Yeni ilan", language) : "";
-  const statusTone: StatusTone = urgent ? "accent" : featured ? "gold" : "info";
+  const statusTone: StatusTone = listing.status !== "active" ? "dark" : isDemand ? "info" : urgent ? "accent" : featured ? "gold" : "info";
   const { has, toggle } = useCompare();
   const inCompare = has(listing.id);
   const { isFav, toggle: toggleFav } = useFavoriteFlag(listing.id);
@@ -62,7 +62,7 @@ function ListingCardBase({ listing, owner, width, priceNote, refCode, onCollecti
       <View testID="listing-card-body" style={{ height: LISTING_GRID_BODY_HEIGHT, gap: 1, padding: 4 }}>
         <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12, fontWeight: "700", lineHeight: 14, height: 28 }}>{displayListingTitle(listing.title)}</Text>
         <Text testID="listing-card-price" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.7} style={{ color: colors.primaryDark, fontSize: priceSize, lineHeight: 20, height: 20, fontWeight: "800", fontVariant: ["tabular-nums"] }}>{priceLabel}</Text>
-        <View style={{ flexDirection: "row", alignItems: "center", gap: 3, height: 12 }}><MaterialCommunityIcons name="map-marker-outline" size={11} color={colors.muted}/><Text numberOfLines={1} style={{ color: colors.muted, fontSize: 9.5, lineHeight: 12, flex: 1 }}>{displayText(listing.location) || translateCopy("Konum belirtilmemiş", language)}</Text></View>
+        <View style={{ flexDirection: "row", alignItems: "center", gap: 3, height: 12 }}><MaterialCommunityIcons name="map-marker-outline" size={11} color={colors.muted}/><Text numberOfLines={1} style={{ color: colors.muted, fontSize: 10, lineHeight: 12, flex: 1 }}>{displayText(listing.location) || translateCopy("Konum belirtilmemiş", language)}</Text></View>
         <ListingCommission listing={listing} compact availableWidth={width ? width - 18 : undefined}/>
       </View>
     </Pressable></Link>
@@ -86,12 +86,15 @@ function isNewListing(value: string) {
 }
 
 function StatusBadge({ label, tone }: { label: string; tone: StatusTone }) {
+  // Marka mavisi (yeni/aranıyor), AA kırmızı (acil), sarı zemin + koyu metin (öne çıkan/örnek).
+  // Eski turkuaz "success" tonu ve beyaz-üstü-sarı (kontrast ~2.9:1) kaldırıldı.
   const backgroundColor =
-    tone === "success" ? "rgba(14,165,183,0.96)" : tone === "accent" ? "rgba(239,68,68,0.96)" : tone === "info" ? "rgba(37,99,235,0.96)" : tone === "gold" ? "rgba(202,138,4,0.97)" : "rgba(15,23,42,0.78)";
+    tone === "accent" ? colors.accent : tone === "gold" ? colors.badgeGold : tone === "dark" ? "rgba(9,39,94,0.86)" : colors.primary;
+  const color = tone === "gold" ? colors.badgeInk : "#FFFFFF";
 
   return (
-    <View style={{ alignSelf: "flex-start", backgroundColor, borderRadius: 999, maxWidth: "100%", paddingHorizontal: 10, paddingVertical: 5 }}>
-      <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "900" }}>
+    <View style={{ alignSelf: "flex-start", backgroundColor, borderRadius: 999, maxWidth: "100%", paddingHorizontal: 9, paddingVertical: 4 }}>
+      <Text numberOfLines={1} style={{ color, fontSize: 11, fontWeight: "800", lineHeight: 14 }}>
         {label}
       </Text>
     </View>

@@ -746,9 +746,9 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
             </View>
             {/* "En popüler" rozeti — en çok ilanı olan kategori */}
             {hot ? (
-              <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: colors.surface, borderRadius: 999, borderWidth: 1.5, flexDirection: "row", gap: 2, paddingHorizontal: 5, paddingVertical: 1, position: "absolute", right: -4, top: -5 }}>
+              <View style={{ alignItems: "center", backgroundColor: colors.accent, borderColor: colors.surface, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 1, left: 2, maxWidth: boxSize - 4, paddingHorizontal: 4, paddingVertical: 1, position: "absolute", top: 2 }}>
                 <MaterialCommunityIcons name="fire" size={9} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{translateCopy("popüler", language)}</Text>
+                <Text numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: 10, fontWeight: "800", lineHeight: 13 }}>{translateCopy("Popüler", language)}</Text>
               </View>
             ) : null}
           </View>
@@ -783,7 +783,7 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
           {cats.map((node, i) => <Tile key={node.key} node={node} rank={i} />)}
         </View>
       ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingRight: 12 }}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 14, paddingRight: 12, paddingTop: 2 }}>
           {cats.map((node, i) => <Tile key={node.key} node={node} rank={i} />)}
         </ScrollView>
       )}

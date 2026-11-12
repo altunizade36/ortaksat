@@ -66,9 +66,9 @@ const Tile = memo(function Tile({ listing: l, size, large, eager, onOpen }: { li
         </View>
       ) : null}
       {commission ? (
-        <View pointerEvents="none" style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 3, left: 6, paddingHorizontal: large ? 8 : 6, paddingVertical: large ? 4 : 2, position: "absolute", top: 6 }}>
+        <View pointerEvents="none" style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 3, left: 6, maxWidth: size - 34, paddingHorizontal: large ? 9 : 7, paddingVertical: large ? 4 : 2, position: "absolute", top: 6 }}>
           <MaterialCommunityIcons name="handshake" size={large ? 13 : 10} color="#FFFFFF" />
-          <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: large ? 12 : 10, fontWeight: "900" }}>{commission}</Text>
+          <Text numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: large ? 12 : 10, fontWeight: "800" }}>{commission}</Text>
         </View>
       ) : null}
       <View pointerEvents="none" style={{ bottom: large ? 10 : 5, left: large ? 10 : 6, position: "absolute", right: large ? 10 : 6 }}>

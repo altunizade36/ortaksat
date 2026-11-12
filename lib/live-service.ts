@@ -188,8 +188,9 @@ export async function saveEmailNotificationsLive(userId: string, enabled: boolea
 /** E-bulten abonesi ekler (herkes; RLS public insert). */
 export async function subscribeNewsletterLive(email: string): Promise<{ ok: boolean; error?: string }> {
   if (!supabase) return { ok: false, error: "Canlı bağlantı yok." };
-  const { error } = await supabase.from("newsletter_subscribers").upsert({ email: email.toLowerCase().trim() }, { onConflict: "email" });
-  if (error) return { ok: false, error: error.message };
+  // Düz insert: anonim rolün UPDATE yetkisi yok (upsert reddedilir). Zaten kayıtlı e-posta (23505) başarı sayılır.
+  const { error } = await supabase.from("newsletter_subscribers").insert({ email: email.toLowerCase().trim() });
+  if (error && error.code !== "23505") return { ok: false, error: error.message };
   return { ok: true };
 }
 

@@ -348,10 +348,10 @@ body {
 
 /* Polished custom scrollbar on desktop */
 @media (min-width: 760px) {
-  * { scrollbar-width: thin; scrollbar-color: rgba(14,165,183,0.35) transparent; }
+  * { scrollbar-width: thin; scrollbar-color: rgba(6,69,201,0.35) transparent; }
   *::-webkit-scrollbar { width: 10px; height: 10px; }
-  *::-webkit-scrollbar-thumb { background: rgba(14,165,183,0.30); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
-  *::-webkit-scrollbar-thumb:hover { background: rgba(14,165,183,0.50); background-clip: content-box; }
+  *::-webkit-scrollbar-thumb { background: rgba(6,69,201,0.30); border-radius: 999px; border: 2px solid transparent; background-clip: content-box; }
+  *::-webkit-scrollbar-thumb:hover { background: rgba(6,69,201,0.50); background-clip: content-box; }
   *::-webkit-scrollbar-track { background: transparent; }
 }
 
@@ -412,14 +412,14 @@ input, textarea, [role="search"] { outline: none !important; }
 /* Fare ile tıklamada temiz (çerçeve yok); KLAVYE ile gezinmede (:focus-visible)
    erişilebilir turkuaz odak halkası — erişilebilirlik için görünür odak şart. */
 input:focus, textarea:focus { outline: none !important; box-shadow: none !important; }
-input:focus-visible, textarea:focus-visible { outline: none !important; box-shadow: 0 0 0 3px rgba(14,165,183,0.35) !important; }
-[role="search"]:focus-within { border-color: rgba(14,165,183,0.55) !important; box-shadow: 0 0 0 3px rgba(14,165,183,0.12) !important; }
+input:focus-visible, textarea:focus-visible { outline: none !important; box-shadow: 0 0 0 3px rgba(6,69,201,0.35) !important; }
+[role="search"]:focus-within { border-color: rgba(6,69,201,0.55) !important; box-shadow: 0 0 0 3px rgba(6,69,201,0.12) !important; }
 
 /* Make pressables feel interactive on web — premium turkuaz his */
 [role="button"], a { cursor: pointer; }
 [role="button"] { transition: transform .14s cubic-bezier(.2,.7,.3,1), filter .14s ease, box-shadow .18s ease; }
 @media (hover: hover) {
-  [role="button"]:hover { filter: brightness(1.035); box-shadow: 0 6px 18px rgba(14,165,183,0.16); }
+  [role="button"]:hover { filter: brightness(1.035); box-shadow: 0 6px 18px rgba(6,69,201,0.16); }
   [role="button"]:active { filter: brightness(0.98); box-shadow: none; }
 }
 
@@ -431,8 +431,8 @@ input:focus-visible, textarea:focus-visible { outline: none !important; box-shad
 @media (hover: hover) {
   [data-card]:hover {
     transform: translateY(-5px);
-    box-shadow: 0 16px 34px rgba(14,165,183,0.20) !important;
-    border-color: rgba(14,165,183,0.55) !important;
+    box-shadow: 0 16px 34px rgba(6,69,201,0.20) !important;
+    border-color: rgba(6,69,201,0.55) !important;
   }
   /* İlan ızgarasında kartın yukarı sıçraması komşu kartların çizgisini bozuyor.
      Sabit geometriyi koru; etkileşim geri bildirimi gölge ve kenarlıkla sürsün. */

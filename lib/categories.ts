@@ -396,6 +396,17 @@ export function getCategoryIcon(category: string): IconName {
   return "shape-outline";
 }
 
+// Çip/etiket için KISA kök-kategori adı. Yalnız GÖSTERİM: filtre anahtarı/slug tam adla kalır.
+// Uzun kök ad ("Yedek Parça, Aksesuar, Donanım & Tuning") dar çiplerde kelime ortasında kesiliyordu.
+const CATEGORY_CHIP_LABELS: Record<string, string> = {
+  "Yedek Parça, Aksesuar, Donanım & Tuning": "Yedek Parça & Aksesuar",
+  "Arayanlar / Talep İlanları": "Talep İlanları"
+};
+
+export function categoryChipLabel(category: string) {
+  return CATEGORY_CHIP_LABELS[category] ?? category;
+}
+
 export function getCategoryShortLabel(category: string) {
   return getCategory(category)?.shortLabel ?? category;
 }

@@ -1,10 +1,12 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { useEffect, useRef, useState } from "react";
-import { Pressable, Text, View } from "react-native";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { AppState, Pressable, Text, View } from "react-native";
 
-import { CAT, DonutChart, HBarChart, KpiDeltaTile, MultiLineChart } from "@/components/charts";
+import { ADMIN_CARD, ChartCard, KpiTile, LiveDot, NoData, RangeSwitch, SkeletonBlock, deltaOf } from "@/components/admin-kit";
+import { DonutChart, FunnelChart, HBarChart, MultiLineChart } from "@/components/charts";
 import { colors } from "@/components/colors";
 import { money } from "@/lib/format";
+import { fetchAdminMessageStats, fetchAdminOverview, type AdminOverview } from "@/lib/live-service";
 import { supabase } from "@/lib/supabase";
 
 type DayPoint = { day: string; active: number; signups: number; listings: number; gmv: number; commission: number };
@@ -45,220 +47,296 @@ export type AdminAnalytics = {
   top_categories: CatPoint[] | null;
 };
 
+export type AdminMsgStats = { conversations: number; messages: number; messages_24h: number; blocked_pairs: number };
+/** Canlı Panel kutularından gidilebilen bölümler (admin.tsx Section'ın alt kümesi). */
+export type AdminNavTarget = "users" | "listings" | "partnerships" | "complaints" | "messages" | "commissions" | "records" | "categories" | "locations";
+
+const REFRESH_MS = 30_000;
+// Grafik serileri — marka mavisi öncelikli, birbirinden ayrık sabit sıra.
+const SERIES = { a: colors.primary, b: colors.violet, c: colors.gold } as const;
+
+function clock(d: Date): string {
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`;
+}
+const sum = (xs: number[]) => xs.reduce((a, b) => a + (Number.isFinite(b) ? b : 0), 0);
 
 /**
- * Admin Canlı Panel — GERÇEK sunucu verisiyle (admin_live_analytics RPC). İstemci-cap'li
- * dizilerden DEĞİL: toplam kullanıcı/ilan/GMV/komisyon/ortaklık sunucu-gerçek. "Şu an aktif"
- * (son 5 dk presence) + bugün/hafta + 14 günlük trend + top kategoriler + moderasyon kuyruğu.
- * 15 sn'de bir tazelenir (sekme gizliyken duraklar).
+ * Admin Canlı Panel — GERÇEK sunucu verisi:
+ *   • admin_live_analytics RPC (toplamlar + 14 günlük günlük seri)
+ *   • admin_overview RPC (talep/lead toplamı, şikayet toplamı)
+ *   • admin_message_stats RPC (mesaj toplamı + son 24 saat)
+ * 30 sn'de bir tazelenir; sekme gizli / uygulama arka plandayken DURAKLAR. Dönem farkları
+ * (son 7 gün ↔ önceki 7 gün, bugün ↔ dün) sunucunun döndürdüğü günlük seriden hesaplanır;
+ * serisi olmayan metriklerde fark GÖSTERİLMEZ (uydurulmaz).
+ * Tüm RPC'ler sunucuda is_admin korumalıdır — yetkisiz çağrı hata döner, veri dönmez.
  */
-export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void }) {
+export function AdminActivity({ onData, onOverview, onMsgStats, onNavigate }: { onData?: (a: AdminAnalytics) => void; onOverview?: (o: AdminOverview) => void; onMsgStats?: (m: AdminMsgStats) => void; onNavigate?: (target: AdminNavTarget) => void }) {
   const [data, setData] = useState<AdminAnalytics | null>(null);
+  const [overview, setOverview] = useState<AdminOverview | null>(null);
+  const [msgStats, setMsgStats] = useState<AdminMsgStats | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [paused, setPaused] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<string>("");
-  const [lineW, setLineW] = useState(560); // çizgi grafiği responsive genişliği (onLayout ile ölçülür)
-  const [moneyW, setMoneyW] = useState(560); // para trendi grafik genişliği
+  const [range, setRange] = useState<7 | 14>(14);
+  const [lineW, setLineW] = useState(0);
+  const [moneyW, setMoneyW] = useState(0);
   const timer = useRef<ReturnType<typeof setInterval> | null>(null);
-  const onDataRef = useRef(onData);
-  onDataRef.current = onData;
+  const inFlight = useRef(false);
+  const alive = useRef(true);
+  const cbs = useRef({ onData, onOverview, onMsgStats });
+  cbs.current = { onData, onOverview, onMsgStats };
 
-  async function load() {
+  const load = useCallback(async (manual?: boolean) => {
+    if (inFlight.current) return; // üst üste istek yok (çift tık / interval çakışması)
     if (!supabase) { setError("Canlı bağlantı yok (önizleme modu)."); setLoading(false); return; }
+    inFlight.current = true;
+    if (manual) setRefreshing(true);
     try {
-      const { data: res, error: err } = await supabase.rpc("admin_live_analytics");
-      if (err) throw err;
-      const a = res as AdminAnalytics;
+      const [main, ov, ms] = await Promise.all([
+        supabase.rpc("admin_live_analytics"),
+        fetchAdminOverview().catch(() => null),
+        fetchAdminMessageStats().catch(() => null)
+      ]);
+      if (!alive.current) return;
+      if (main.error) throw main.error;
+      const a = main.data as AdminAnalytics | null;
+      if (!a || !Array.isArray(a.days)) throw new Error("Analitik yanıtı boş döndü.");
       setData(a);
-      onDataRef.current?.(a);
+      cbs.current.onData?.(a);
+      if (ov) { setOverview(ov); cbs.current.onOverview?.(ov); }
+      if (ms) { setMsgStats(ms); cbs.current.onMsgStats?.(ms); }
       setError(null);
-      const d = new Date();
-      setUpdatedAt(`${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}:${String(d.getSeconds()).padStart(2, "0")}`);
+      setUpdatedAt(clock(new Date()));
     } catch (e) {
-      setError((e as Error).message || "Analitik yüklenemedi.");
+      if (alive.current) setError((e as { message?: string })?.message || "Analitik yüklenemedi.");
     } finally {
-      setLoading(false);
+      inFlight.current = false;
+      if (alive.current) { setLoading(false); setRefreshing(false); }
     }
-  }
-
-  useEffect(() => {
-    void load();
-    // Sekme gizliyken poll etme (gereksiz RPC yükü). visibilitychange ile duraklat/sürdür.
-    const start = () => { if (!timer.current) timer.current = setInterval(() => void load(), 30_000); };
-    const stop = () => { if (timer.current) { clearInterval(timer.current); timer.current = null; } };
-    const onVis = () => { if (typeof document !== "undefined" && document.visibilityState === "hidden") stop(); else { void load(); start(); } };
-    start();
-    if (typeof document !== "undefined") document.addEventListener("visibilitychange", onVis);
-    return () => { stop(); if (typeof document !== "undefined") document.removeEventListener("visibilitychange", onVis); };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  if (loading && !data) {
-    return <View style={{ padding: 24 }}><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700" }}>Canlı panel yükleniyor…</Text></View>;
-  }
-  if (error && !data) {
+  useEffect(() => {
+    alive.current = true;
+    void load();
+    const start = () => { if (!timer.current) timer.current = setInterval(() => void load(), REFRESH_MS); setPaused(false); };
+    const stop = () => { if (timer.current) { clearInterval(timer.current); timer.current = null; } setPaused(true); };
+    const hasDoc = typeof document !== "undefined";
+    const onVis = () => { if (document.visibilityState === "hidden") stop(); else { void load(); start(); } };
+    start();
+    if (hasDoc) document.addEventListener("visibilitychange", onVis);
+    // Native: uygulama arka plana geçince durakla (web'de visibilitychange zaten kapsar).
+    const sub = hasDoc ? null : AppState.addEventListener("change", (s) => { if (s === "active") { void load(); start(); } else stop(); });
+    return () => {
+      alive.current = false;
+      if (timer.current) { clearInterval(timer.current); timer.current = null; }
+      if (hasDoc) document.removeEventListener("visibilitychange", onVis);
+      sub?.remove();
+    };
+  }, [load]);
+
+  const header = (
+    <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "space-between" }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+        <LiveDot tone={error ? "stale" : paused || loading ? "off" : "ok"} />
+        <View style={{ gap: 1 }}>
+          <Text style={{ color: colors.ink, fontSize: 18, fontWeight: "900", letterSpacing: -0.3 }}>Canlı Panel</Text>
+          <Text style={{ color: colors.muted, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "700" }}>
+            {updatedAt ? `Son güncelleme ${updatedAt}` : loading ? "Yükleniyor…" : "Henüz güncellenemedi"}{paused ? " · duraklatıldı" : " · 30 sn'de bir yenilenir"}
+          </Text>
+        </View>
+      </View>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Canlı paneli şimdi yenile"
+        disabled={refreshing || loading}
+        onPress={() => void load(true)}
+        style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, flexDirection: "row", gap: 6, minHeight: 40, opacity: refreshing || loading ? 0.55 : pressed ? 0.8 : 1, paddingHorizontal: 13 })}
+      >
+        <MaterialCommunityIcons name={refreshing ? "timer-sand" : "refresh"} size={16} color={colors.primary} />
+        <Text style={{ color: colors.primary, fontSize: 12.5, fontWeight: "900" }}>{refreshing ? "Yenileniyor…" : "Yenile"}</Text>
+      </Pressable>
+    </View>
+  );
+
+  if (!data) {
+    if (loading) {
+      return (
+        <View style={{ gap: 14 }} accessibilityLabel="Canlı panel yükleniyor">
+          {header}
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+            {Array.from({ length: 8 }).map((_, i) => <SkeletonBlock key={i} height={128} grow radius={16} />)}
+          </View>
+          <SkeletonBlock height={240} width="100%" radius={16} />
+        </View>
+      );
+    }
     return (
-      <View style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 12, borderWidth: 1, gap: 8, padding: 16 }}>
-        <Text style={{ color: colors.accent, fontSize: 14, fontWeight: "900" }}>Analitik yüklenemedi</Text>
-        <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "600" }}>{error}</Text>
-        <Pressable onPress={() => void load()} style={{ alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, paddingHorizontal: 16, paddingVertical: 9 }}>
-          <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>Tekrar dene</Text>
-        </Pressable>
+      <View style={{ gap: 14 }}>
+        {header}
+        <View style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 14, borderWidth: 1, gap: 8, padding: 16 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <MaterialCommunityIcons name="alert-circle-outline" size={18} color={colors.accent} />
+            <Text style={{ color: colors.accent, flex: 1, fontSize: 14, fontWeight: "900" }}>Canlı veri yüklenemedi</Text>
+          </View>
+          <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>{error ?? "Bilinmeyen hata."} Sayı gösterilmiyor — tahmini/örnek veri kullanılmaz.</Text>
+          <Pressable accessibilityRole="button" disabled={refreshing} onPress={() => void load(true)} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, justifyContent: "center", minHeight: 42, opacity: refreshing ? 0.6 : 1, paddingHorizontal: 18 }}>
+            <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{refreshing ? "Deneniyor…" : "Tekrar dene"}</Text>
+          </Pressable>
+        </View>
       </View>
     );
   }
-  if (!data) return null;
 
-  // Moderasyon kuyruğu (durum renkleri — ikon+etiket).
+  // ---- Dönem farkları: sunucunun 14 günlük günlük serisinden (uydurma yok) ----
+  const days = data.days;
+  // Bugün henüz bitmedi: yarım günü tam günlerle kıyaslamak sahte düşüş gösterir → yalnız TAMAMLANMIŞ günler.
+  const last7 = days.slice(-7, -1);
+  const prev7 = days.slice(-13, -7);
+  const canCompare = prev7.length === 6 && last7.length === 6;
+  const today = days[days.length - 1];
+  const yesterday = days[days.length - 2];
+  const cmp = (pick: (d: DayPoint) => number) => (canCompare ? deltaOf(sum(last7.map(pick)), sum(prev7.map(pick))) : undefined);
+  const WEEK = "son 6 tam gün ↔ önceki 6";
+
+  const go = (t: AdminNavTarget) => (onNavigate ? () => onNavigate(t) : undefined);
+  const pendingComm = Number.isFinite(data.commission_pending_amount) ? data.commission_pending_amount : Math.max(0, data.commission_amount - data.commission_paid_amount);
+
   const queue = [
-    { icon: "clipboard-clock-outline" as const, label: "İnceleme bekleyen", n: data.listings_pending, color: colors.warning, tint: colors.warningSoft },
-    { icon: "flag-outline" as const, label: "Açık şikayet", n: data.open_reports, color: colors.accent, tint: colors.accentSoft },
-    { icon: "shape-plus-outline" as const, label: "Kategori önerisi", n: data.cat_suggestions, color: colors.info, tint: colors.infoSoft },
-    { icon: "map-marker-plus-outline" as const, label: "Konum önerisi", n: data.loc_suggestions, color: colors.info, tint: colors.infoSoft }
+    { icon: "clipboard-clock-outline" as const, label: "İnceleme bekleyen ilan", n: data.listings_pending, to: "listings" as AdminNavTarget },
+    { icon: "flag-outline" as const, label: "Açık şikayet", n: data.open_reports, to: "complaints" as AdminNavTarget },
+    { icon: "handshake-outline" as const, label: "Ortaklık başvurusu", n: data.partnerships_pending, to: "partnerships" as AdminNavTarget },
+    { icon: "shape-plus-outline" as const, label: "Kategori önerisi", n: data.cat_suggestions, to: "categories" as AdminNavTarget },
+    { icon: "map-marker-plus-outline" as const, label: "Konum önerisi", n: data.loc_suggestions, to: "locations" as AdminNavTarget }
   ].filter((q) => q.n > 0);
 
-  const allZero = data.days.every((d) => d.active === 0 && d.signups === 0 && d.listings === 0) && data.live_now === 0;
-
-  // Grafik verileri (gerçek analitik)
-  const statusDonut = [
-    { label: "Yayında", value: data.listings_active, color: CAT[0] },
-    { label: "İncelemede", value: data.listings_pending, color: CAT[2] },
-    { label: "Duraklatılmış", value: data.listings_paused, color: CAT[7] },
-    { label: "Satıldı", value: data.listings_sold, color: CAT[3] }
-  ].filter((d) => d.value > 0);
-  // 14-gün trend — TEK ekseni paylaşan 3 seri (hepsi "sayı/gün"). Sunucu zaten
-  // günlük active+signups+listings döndürüyordu; eskiden yalnız `active` çiziliyordu.
-  const trendLabels = data.days.map((d) => d.day.slice(8, 10));
+  const shown = days.slice(-range);
+  const trendLabels = shown.map((d) => `${d.day.slice(8, 10)}.${d.day.slice(5, 7)}`);
   const trendSeries = [
-    { label: "Aktif kullanıcı", color: "#0F9D66", values: data.days.map((d) => d.active) },
-    { label: "Yeni kayıt", color: "#7C5CFC", values: data.days.map((d) => d.signups) },
-    { label: "Yeni ilan", color: "#E4572E", values: data.days.map((d) => d.listings) }
+    { label: "Aktif kullanıcı", color: SERIES.a, values: shown.map((d) => d.active) },
+    { label: "Yeni kayıt", color: SERIES.b, values: shown.map((d) => d.signups) },
+    { label: "Yeni ilan", color: SERIES.c, values: shown.map((d) => d.listings) }
   ];
-  const catBars = (data.top_categories ?? []).slice(0, 6).map((c) => ({ label: c.category, value: c.n }));
-  // PARA AKIŞI — GMV (satış değeri) + komisyon, ikisi de ₺ → TEK eksen (dataviz uyumlu).
+  const trendEmpty = shown.every((d) => d.active === 0 && d.signups === 0 && d.listings === 0);
   const moneySeries = [
-    { label: "GMV (satış değeri)", color: "#0F9D66", values: data.days.map((d) => d.gmv) },
-    { label: "Komisyon", color: "#E4572E", values: data.days.map((d) => d.commission) }
+    { label: "GMV (satış değeri)", color: SERIES.a, values: shown.map((d) => d.gmv) },
+    { label: "Komisyon", color: SERIES.c, values: shown.map((d) => d.commission) }
   ];
-  const commStatusData = (data.commission_status ?? []).filter((s) => s.amount > 0).map((s) => ({ label: commLabel(s.status), value: s.amount }));
-  const topEarners = (data.top_earners ?? []).filter((e) => e.amount > 0).map((e) => ({ label: e.name, value: e.amount }));
-  const hasMoney = data.gmv > 0 || data.commission_amount > 0;
+  const moneyEmpty = shown.every((d) => d.gmv === 0 && d.commission === 0);
+  const statusDonut = [
+    { label: "Yayında", value: data.listings_active, color: colors.primary },
+    { label: "İncelemede", value: data.listings_pending, color: colors.gold },
+    { label: "Duraklatılmış", value: data.listings_paused, color: colors.subtle },
+    { label: "Satıldı", value: data.listings_sold, color: colors.violet }
+  ].filter((d) => d.value > 0);
+  const catBars = (data.top_categories ?? []).slice(0, 8).map((c) => ({ label: c.category || "Kategori yok", value: c.n, color: colors.primary }));
+  const commStatusData = (data.commission_status ?? []).filter((s) => s.amount > 0).map((s) => ({ label: commLabel(s.status), value: s.amount, color: commColor(s.status) }));
+  const topEarners = (data.top_earners ?? []).filter((e) => e.amount > 0).map((e) => ({ label: e.name, value: e.amount, color: colors.primary }));
+  // Huni — tamamı sunucu toplamı. Talep toplamı admin_overview'dan; yoksa o adım gösterilmez.
+  const funnel = [
+    { label: "Aktif ilan", value: data.listings_active, color: colors.primaryDark },
+    { label: "Ortaklık (toplam)", value: data.partnerships_total, color: colors.primary },
+    ...(overview ? [{ label: "Talep (lead)", value: overview.leads_total, color: colors.info }] : []),
+    { label: "Sipariş", value: data.orders_total, color: colors.violet },
+    { label: "Ödenen komisyon kaydı", value: data.commissions_paid, color: colors.gold }
+  ];
+  const funnelEmpty = funnel.every((f) => f.value === 0);
 
   return (
     <View style={{ gap: 16 }}>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <View style={{ backgroundColor: colors.success, borderRadius: 999, height: 9, width: 9 }} />
-        <Text style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>Canlı Panel</Text>
-        <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 9, paddingVertical: 3 }}>
-          <MaterialCommunityIcons name="sync" size={12} color={colors.subtle} />
-          <Text style={{ color: colors.subtle, fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "800" }}>{updatedAt || "—"}</Text>
-        </View>
-      </View>
+      {header}
 
-      {/* Renkli KPI kartları — canlı kullanıcı */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-        <KpiDeltaTile label="Şu an aktif" value={data.live_now} live icon="access-point" tint={colors.primary} accent={colors.primaryDark} sub="Son 5 dakikada" />
-        <KpiDeltaTile label="Bugün aktif" value={data.active_today} icon="account-clock-outline" tint="#17B3B3" accent="#128F8F" sub="Günlük aktif kullanıcı" />
-        <KpiDeltaTile label="Toplam kayıtlı" value={data.total_users} icon="account-group" tint="#2C82F6" accent="#1E63C8" sub={`${fmt(data.confirmed_users)} doğrulanmış`} />
-        <KpiDeltaTile label="Bu hafta yeni" value={data.new_7d} delta={data.new_today} icon="account-plus-outline" tint={colors.violet} accent="#5E3FE0" sub={`Bugün +${fmt(data.new_today)}`} />
-      </View>
-      {/* Renkli KPI kartları — site geneli (sunucu-gerçek) */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-        <KpiDeltaTile label="Aktif ilan" value={data.listings_active} icon="storefront-outline" tint={colors.primary} accent={colors.primaryDark} sub={`${fmt(data.listings_total)} toplam · +${fmt(data.listings_new_7d)} bu hafta`} />
-        <KpiDeltaTile label="Toplam GMV" value={data.gmv} money icon="cash-multiple" tint="#E0A81E" accent="#B7791F" sub={`${fmt(data.orders_total)} sipariş — satış değeri`} />
-        <KpiDeltaTile label="Komisyon (₺)" value={data.commission_amount} money icon="receipt-text-outline" tint="#2C82F6" accent="#1E63C8" sub={`${money(data.commission_paid_amount)} ödendi`} />
-        <KpiDeltaTile label="Aktif ortaklık" value={data.partnerships_active} icon="handshake-outline" tint={colors.violet} accent="#5E3FE0" sub={`${fmt(data.partnerships_total)} toplam · ${fmt(data.partnerships_pending)} bekliyor`} />
-      </View>
-
-      {/* Moderasyon kuyruğu (yalnız iş varsa) */}
-      {queue.length > 0 ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 10, padding: 14 }}>
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "900", width: "100%" }}>Bekleyen işler</Text>
-          {queue.map((q) => (
-            <View key={q.label} style={{ alignItems: "center", backgroundColor: q.tint, borderRadius: 999, flexDirection: "row", gap: 6, paddingHorizontal: 11, paddingVertical: 6 }}>
-              <MaterialCommunityIcons name={q.icon} size={14} color={q.color} />
-              <Text style={{ color: q.color, fontSize: 12.5, fontWeight: "900" }}>{q.label}</Text>
-              <View style={{ backgroundColor: q.color, borderRadius: 999, minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900", textAlign: "center" }}>{q.n}</Text></View>
-            </View>
-          ))}
+      {error ? (
+        <View style={{ alignItems: "center", backgroundColor: colors.goldSoft, borderRadius: 12, flexDirection: "row", flexWrap: "wrap", gap: 10, padding: 12 }}>
+          <MaterialCommunityIcons name="alert-outline" size={17} color={colors.goldInk} />
+          <Text style={{ color: colors.goldInk, flex: 1, fontSize: 12.5, fontWeight: "700", minWidth: 180 }}>Son yenileme başarısız — aşağıdaki değerler {updatedAt || "önceki"} anına ait.</Text>
+          <Pressable accessibilityRole="button" disabled={refreshing} onPress={() => void load(true)} style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 9, justifyContent: "center", minHeight: 40, paddingHorizontal: 14 }}>
+            <Text style={{ color: colors.goldInk, fontSize: 12.5, fontWeight: "900" }}>Tekrar dene</Text>
+          </Pressable>
         </View>
       ) : null}
 
-      {/* Grafikler: 14-gün aktif trendi (çizgi+alan) + ilan durumu (donut) */}
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-        <View onLayout={(e) => setLineW(Math.max(240, Math.round(e.nativeEvent.layout.width) - 36))} style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 420, flexGrow: 2, gap: 12, minWidth: 300, padding: 18, shadowColor: "#001449", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
-          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>Son 14 gün — aktivite trendi</Text>
-          <MultiLineChart labels={trendLabels} series={trendSeries} width={lineW} />
-        </View>
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 300, flexGrow: 1, gap: 12, minWidth: 260, padding: 18, shadowColor: "#001449", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
-          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>İlan durumu</Text>
-          {statusDonut.length ? <DonutChart data={statusDonut} size={150} centerTop={fmt(data.listings_total)} centerBottom="toplam ilan" /> : <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Henüz ilan yok.</Text>}
-        </View>
+      {/* KPI — kullanıcı & içerik */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+        <KpiTile label="Şu an aktif" value={fmt(data.live_now)} live icon="access-point" sub="son 5 dakika" />
+        <KpiTile label="Bugün aktif" value={fmt(data.active_today)} icon="account-clock-outline" sub={yesterday ? `dün ${fmt(yesterday.active)}` : undefined} />
+        <KpiTile label="Toplam kullanıcı" value={fmt(data.total_users)} icon="account-group" delta={cmp((d) => d.signups)} deltaLabel={`yeni kayıt · ${WEEK}`} sub={`+${fmt(data.new_7d)} son 7 gün · bugün +${fmt(data.new_today)}`} onPress={go("users")} />
+        <KpiTile label="Aktif ilan" value={fmt(data.listings_active)} icon="storefront-outline" sub={`${fmt(data.listings_total)} toplam`} onPress={go("listings")} />
+        <KpiTile label="Yeni ilan (7 gün)" value={fmt(data.listings_new_7d)} icon="file-plus-outline" delta={cmp((d) => d.listings)} deltaLabel={WEEK} sub={`bugün +${fmt(today?.listings ?? 0)}`} onPress={go("listings")} />
+        <KpiTile label="Mesaj (24 saat)" value={msgStats ? fmt(msgStats.messages_24h) : null} icon="message-text-outline" sub={msgStats ? `${fmt(msgStats.messages)} toplam · ${fmt(msgStats.conversations)} görüşme` : undefined} onPress={go("messages")} />
+        <KpiTile label="Ortaklık başvurusu" value={fmt(data.partnerships_pending)} icon="handshake-outline" tone={data.partnerships_pending > 0 ? "warning" : "brand"} sub={`${fmt(data.partnerships_active)} aktif · ${fmt(data.partnerships_total)} toplam`} onPress={go("partnerships")} />
+        <KpiTile label="Talep (lead)" value={overview ? fmt(overview.leads_total) : null} icon="account-arrow-right-outline" sub="toplam kayıt" onPress={go("records")} />
+      </View>
+      {/* KPI — para akışı & güven. Platform para TUTMAZ; akan parayı izler. */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+        <KpiTile label="Sipariş" value={fmt(data.orders_total)} icon="cart-check" sub="toplam sipariş kaydı" onPress={go("commissions")} />
+        <KpiTile label="GMV (satış değeri)" value={money(data.gmv)} icon="cash-multiple" delta={cmp((d) => d.gmv)} deltaLabel={WEEK} sub={`son 7 gün ${money(data.gmv_7d)}`} onPress={go("commissions")} />
+        <KpiTile label="Bekleyen komisyon" value={money(pendingComm)} icon="cash-clock" tone={pendingComm > 0 ? "warning" : "brand"} sub="satıcı → ortak, ödenmemiş" onPress={go("commissions")} />
+        <KpiTile label="Ödenen komisyon" value={money(data.commission_paid_amount)} icon="cash-check" tone="success" sub={`${fmt(data.commissions_paid)} ödeme kaydı`} onPress={go("commissions")} />
+        <KpiTile label="Komisyon (7 gün)" value={money(data.commission_7d)} icon="receipt-text-outline" delta={cmp((d) => d.commission)} deltaLabel={WEEK} sub={`${money(data.commission_amount)} toplam`} onPress={go("commissions")} />
+        <KpiTile label="Açık şikayet" value={fmt(data.open_reports)} icon="flag-outline" tone={data.open_reports > 0 ? "danger" : "success"} sub={overview ? `${fmt(overview.reports_total)} toplam` : data.open_reports > 0 ? "işlem bekliyor" : "bekleyen yok"} onPress={go("complaints")} />
       </View>
 
-      {/* Top kategoriler (aktif ilan sayısına göre) */}
-      {catBars.length > 0 ? (
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 18, shadowColor: "#001449", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
-          <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>En çok ilan olan kategoriler</Text>
-          <HBarChart data={catBars} />
-        </View>
-      ) : null}
-
-      {/* PARA AKIŞI — GMV (satış değeri) + komisyon. Platform PARA TUTMAZ; ödeme satıcı↔ortak
-          arasında platform DIŞI yapılır. Bu bölüm sistemden AKAN parayı İZLER (gelir/kesinti YOK). */}
-      <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 14, padding: 18, shadowColor: "#001449", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
-        <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-          <MaterialCommunityIcons name="cash-multiple" size={18} color={colors.primaryDark} />
-          <Text style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>Para akışı</Text>
-          <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>platform para tutmaz — akan parayı izler</Text>
-        </View>
-        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-          <KpiDeltaTile label="GMV (satış değeri)" value={data.gmv} money icon="cash-multiple" tint="#E0A81E" accent="#B7791F" sub={`Son 7 gün +${money(data.gmv_7d)}`} />
-          <KpiDeltaTile label="Toplam komisyon" value={data.commission_amount} money icon="receipt-text-outline" tint="#2C82F6" accent="#1E63C8" sub={`Son 7 gün +${money(data.commission_7d)}`} />
-          <KpiDeltaTile label="Bekleyen komisyon" value={data.commission_pending_amount} money icon="cash-clock" tint={colors.warning} accent="#B7791F" sub="Satıcı→ortak, ödenmemiş" />
-          <KpiDeltaTile label="Ödenen komisyon" value={data.commission_paid_amount} money icon="cash-check" tint={colors.primary} accent={colors.primaryDark} sub={`${fmt(data.commissions_paid)} ödeme kaydı`} />
-        </View>
-        {hasMoney ? (
-          <>
-            <View onLayout={(e) => setMoneyW(Math.max(240, Math.round(e.nativeEvent.layout.width)))}>
-              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900", marginBottom: 8 }}>Son 14 gün — GMV &amp; komisyon (₺)</Text>
-              <MultiLineChart labels={trendLabels} series={moneySeries} width={moneyW} valueFmt={money} />
-            </View>
-            {commStatusData.length || topEarners.length ? (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-                {commStatusData.length ? (
-                  <View style={{ flex: 1, gap: 8, minWidth: 240 }}>
-                    <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Komisyon durumu (₺)</Text>
-                    <DonutChart data={commStatusData} size={140} centerTop={money(data.commission_amount)} centerBottom="komisyon" />
-                  </View>
-                ) : null}
-                {topEarners.length ? (
-                  <View style={{ flex: 1, gap: 8, minWidth: 240 }}>
-                    <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>En çok kazanan ortaklar</Text>
-                    <HBarChart data={topEarners} valueFmt={money} rank />
-                  </View>
-                ) : null}
-              </View>
-            ) : null}
-          </>
+      {/* Bekleyen işler — dokununca ilgili bölüme gider */}
+      <View style={{ ...ADMIN_CARD, gap: 10, padding: 14 }}>
+        <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>Bekleyen işler</Text>
+        {queue.length === 0 ? (
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <MaterialCommunityIcons name="check-circle-outline" size={17} color="#15803D" />
+            <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>Şu an işlem bekleyen kayıt yok.</Text>
+          </View>
         ) : (
-          <View style={{ backgroundColor: colors.infoSoft, borderRadius: 12, gap: 4, padding: 14 }}>
-            <Text style={{ color: colors.info, fontSize: 12.5, fontWeight: "900" }}>Henüz para akışı yok</Text>
-            <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "600", lineHeight: 18 }}>
-              Ortak satış tamamlandıkça GMV (satış değeri) + komisyon GERÇEK veriyle burada trend, durum dağılımı ve en çok kazanan ortaklar olarak canlanır. Sahte sayaç yok. Ödemeler satıcı ile ortak arasında, platform dışında yapılır.
-            </Text>
+          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+            {queue.map((q) => (
+              <Pressable key={q.label} accessibilityRole="button" accessibilityLabel={`${q.label}: ${q.n}`} disabled={!onNavigate} onPress={() => onNavigate?.(q.to)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, minHeight: 40, paddingHorizontal: 11 })}>
+                <MaterialCommunityIcons name={q.icon} size={15} color={colors.primaryDark} />
+                <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{q.label}</Text>
+                <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, justifyContent: "center", minWidth: 20, paddingHorizontal: 6, paddingVertical: 1 }}>
+                  <Text style={{ color: "#FFFFFF", fontSize: 11, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{q.n}</Text>
+                </View>
+              </Pressable>
+            ))}
           </View>
         )}
       </View>
 
-      {allZero ? (
-        <View style={{ backgroundColor: colors.infoSoft, borderRadius: 12, gap: 4, padding: 14 }}>
-          <Text style={{ color: colors.info, fontSize: 13, fontWeight: "900" }}>Henüz canlı aktivite yok</Text>
-          <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>
-            Bu alan GERÇEK sunucu verisiyle çalışır (sahte sayaç yok). Kullanıcılar siteye girip gezdikçe, ilan/satış oldukça değerler burada canlanır. Panel 30 saniyede bir kendini tazeler.
-          </Text>
-        </View>
-      ) : null}
+      {/* Aktivite trendi + ilan durumu */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+        <ChartCard title="Aktivite trendi" meta={`Son ${range} gün · günlük · sunucu verisi`} basis={420} grow={2} right={<RangeSwitch value={range} onChange={setRange} options={[{ key: 7, label: "7 gün" }, { key: 14, label: "14 gün" }]} />}>
+          <View onLayout={(e) => setLineW(Math.round(e.nativeEvent.layout.width))} style={{ width: "100%" }}>
+            {trendEmpty ? <NoData text={`Son ${range} günde kayıtlı aktivite yok.`} /> : lineW > 0 ? <MultiLineChart labels={trendLabels} series={trendSeries} width={lineW} /> : <View style={{ height: 200 }} />}
+          </View>
+        </ChartCard>
+        <ChartCard title="İlan durumu" meta="Tüm ilanlar · sunucu verisi" basis={280}>
+          {statusDonut.length ? <DonutChart data={statusDonut} size={150} centerTop={fmt(data.listings_total)} centerBottom="toplam ilan" /> : <NoData text="Henüz ilan yok." />}
+        </ChartCard>
+      </View>
+
+      {/* Huni + en çok ilan olan kategoriler */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+        <ChartCard title="Ortak satış hunisi" meta="İlan → ortaklık → talep → sipariş · sunucu toplamları" basis={320}>
+          {funnelEmpty ? <NoData text="Henüz huni verisi yok." /> : <FunnelChart data={funnel} showRate={false} />}
+        </ChartCard>
+        <ChartCard title="En çok ilan olan kategoriler" meta="Aktif ilan sayısına göre ilk 8 · sunucu verisi" basis={320}>
+          {catBars.length ? <HBarChart data={catBars} rank /> : <NoData text="Aktif ilan yok." />}
+        </ChartCard>
+      </View>
+
+      {/* Para akışı — GMV + komisyon. Ödeme satıcı ↔ ortak arasında platform DIŞI yapılır. */}
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+        <ChartCard title="Para akışı (₺)" meta={`Son ${range} gün · GMV = sipariş tutarı · platform para tutmaz`} basis={420} grow={2}>
+          <View onLayout={(e) => setMoneyW(Math.round(e.nativeEvent.layout.width))} style={{ width: "100%" }}>
+            {moneyEmpty ? <NoData text={`Son ${range} günde sipariş veya komisyon kaydı yok.`} /> : moneyW > 0 ? <MultiLineChart labels={trendLabels} series={moneySeries} width={moneyW} valueFmt={money} /> : <View style={{ height: 200 }} />}
+          </View>
+        </ChartCard>
+        <ChartCard title="Komisyon durumu (₺)" meta="Tutar dağılımı · sunucu verisi" basis={280}>
+          {commStatusData.length ? <DonutChart data={commStatusData} size={140} centerTop={money(data.commission_amount)} centerBottom="komisyon" /> : <NoData text="Henüz komisyon kaydı yok." />}
+        </ChartCard>
+      </View>
+      <ChartCard title="En çok kazanan ortaklar" meta="Kayıtlı komisyon tutarına göre ilk 6 · sunucu verisi">
+        {topEarners.length ? <HBarChart data={topEarners} valueFmt={money} rank /> : <NoData text="Henüz komisyon kazanan ortak yok." />}
+      </ChartCard>
     </View>
   );
 }
@@ -266,17 +344,25 @@ export function AdminActivity({ onData }: { onData?: (a: AdminAnalytics) => void
 // Komisyon durum kodlarını TR etikete çevir (donut/liste için).
 function commLabel(s: string): string {
   const m: Record<string, string> = {
-    recorded: "Kaydedildi", pending: "Bekliyor", approved: "Onaylandı", paid: "Ödendi",
-    disputed: "Anlaşmazlık", cancelled: "İptal", refunded: "İade", released: "Serbest"
+    recorded: "Kaydedildi", pending: "Bekliyor", approved: "Onaylandı", seller_paid: "Satıcı ödedi", paid: "Ödendi",
+    disputed: "Anlaşmazlık", cancelled: "İptal", refunded: "İade", released: "Serbest", return_pending: "İade süresi"
   };
   return m[s] ?? s;
 }
+// Durum → anlam rengi (yeşil yalnız gerçek başarı, kırmızı anlaşmazlık, altın bekleyen).
+function commColor(s: string): string {
+  if (s === "paid" || s === "released") return colors.success;
+  if (s === "disputed") return colors.accent;
+  if (s === "cancelled" || s === "refunded") return colors.subtle;
+  if (s === "approved") return colors.primary;
+  if (s === "seller_paid") return colors.violet;
+  return colors.gold;
+}
 
-// >=1000 sayıları kısalt (1.2B gibi), tabular hizalama için.
+// >=10.000 sayıları kısalt (12,5B gibi), tabular hizalama için.
 function fmt(n: number): string {
   if (!Number.isFinite(n)) return "0";
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(".0", "")}M`;
   if (n >= 10_000) return `${(n / 1000).toFixed(1).replace(".0", "")}B`;
   return new Intl.NumberFormat("tr-TR").format(n);
 }
-

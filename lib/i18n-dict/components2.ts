@@ -247,5 +247,10 @@ export const components2Dict: Record<string, string> = {
   "Güncelleme": "Updated",
   "Metnin sonuna ulaştın.": "You've reached the end of the text.",
   "Onaylamak için metni sonuna kadar kaydır.": "Scroll to the end of the text to approve.",
-  "Okudum, onaylıyorum": "I have read and approve"
+  "Okudum, onaylıyorum": "I have read and approve",
+  // etiket/rozet düzeni (kısa çip adları)
+  "Yedek Parça & Aksesuar": "Parts & Accessories",
+  "Talep İlanları": "Wanted Listings",
+  "Kıyasla": "Compare",
+  "Popüler": "Popular"
 };

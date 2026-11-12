@@ -9,6 +9,7 @@ import { colors } from "@/components/colors";
 import { JsonLd } from "@/components/json-ld";
 import { ListingCard } from "@/components/listing-card";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
+import { OptionSheet } from "@/components/option-sheet";
 import { EmptyState } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
@@ -45,6 +46,9 @@ const catHref = (slug: string): Href => ({ pathname: "/kategori/[slug]", params:
 
 const PAGE = 24;
 
+type SortMode = "featured" | "newest" | "priceAsc" | "priceDesc" | "commission";
+const SORT_OPTIONS: ReadonlyArray<readonly [SortMode, string]> = [["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["commission", "En çok kazandıran"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"]];
+
 // Statik export: 12 kategori × 12 şehir = 144 sayfayı build'de kendi H1/içeriğiyle
 // önceden üret (SEO). Listelenmeyen kombinasyonlar [sehir] fallback ile çalışır.
 export async function generateStaticParams(): Promise<Array<{ slug: string; sehir: string }>> {
@@ -66,7 +70,10 @@ export default function CityCategoryScreen() {
   const layoutWidth = mountedGate ? width : 1024;
   const { listings, categoryTree, findUser, marketplaceLoadFailed, retryMarketplace } = useStore();
   const [visible, setVisible] = useState(PAGE);
-  const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
+  const [sortMode, setSortMode] = useState<SortMode>("featured");
+  // Dar ekran: tanıtım metni 2 satıra katlanır; sıralama tek düğmeden açılır.
+  const [introExpanded, setIntroExpanded] = useState(false);
+  const [sortOpen, setSortOpen] = useState(false);
   const [onlyOpen, setOnlyOpen] = useState(false);
 
   const trail = useMemo(() => (slug ? findTrail(categoryTree, slug) : undefined), [categoryTree, slug]);
@@ -127,6 +134,26 @@ export default function CityCategoryScreen() {
     ]
   });
 
+  const sortLabel = translateCopy(SORT_OPTIONS.find(([k]) => k === sortMode)?.[1] ?? "Öne çıkanlar", language);
+  // Şehir iç-linkleri: geniş ekranda üstte yatay ray, dar ekranda ilanların altında (aynı <a> linkleri).
+  const cityLinks = (
+    <>
+      {otherCities.map((c) => (
+        <Link key={c} href={cityHref(node.slug, c)} asChild>
+          <Pressable style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, justifyContent: "center", minHeight: isWideWeb ? undefined : 40, paddingHorizontal: 12, paddingVertical: 7 }}>
+            <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{findProvince(c)}</Text>
+          </Pressable>
+        </Link>
+      ))}
+      <Link href={catHref(node.slug)} asChild>
+        <Pressable style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, minHeight: isWideWeb ? undefined : 40, paddingHorizontal: 12, paddingVertical: 7 }}>
+          <MaterialCommunityIcons name="map-marker-multiple" size={13} color={colors.primaryDark} />
+          <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm Türkiye", language)}</Text>
+        </Pressable>
+      </Link>
+    </>
+  );
+
   return (
     <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, paddingBottom: 40, paddingHorizontal: isWideWeb ? 0 : 12, paddingTop: 14 }}>
       <Head>
@@ -165,42 +192,50 @@ export default function CityCategoryScreen() {
             <MaterialCommunityIcons name={getCategoryIcon(node.label)} size={26} color={colors.primaryDark} />
           </View>
           <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
-            <Text style={{ color: colors.ink, fontSize: 23, fontWeight: "900" }}>{cityName}'da {node.label} İlanları</Text>
+            <Text style={{ color: colors.ink, fontSize: isWideWeb ? 23 : 20, lineHeight: isWideWeb ? 30 : 26, fontWeight: "900" }}>{cityName}'da {node.label} İlanları</Text>
             <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{items.length} ortak satış ilanı · komisyonla sattır, ortak ol kazan</Text>
           </View>
         </View>
 
-        {/* SEO tanıtım metni (benzersiz içerik) */}
-        <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 12, padding: 14 }}>
-          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 20 }}>
+        {/* SEO tanıtım metni (benzersiz içerik) — dar ekranda 2 satıra katlanır (metin DOM'da kalır). */}
+        <View style={isWideWeb ? { backgroundColor: colors.surfaceAlt, borderRadius: 12, padding: 14 } : null}>
+          <Text numberOfLines={isWideWeb || introExpanded ? undefined : 2} style={{ color: colors.muted, fontSize: 13, fontWeight: isWideWeb ? "600" : "400", lineHeight: 20 }}>
             {cityName}'da {node.label.toLocaleLowerCase("tr-TR")} satmak isteyen satıcılar OrtakSat'ta ürününü ücretsiz listeler, komisyon oranını kendi belirler. Ortaklar (sosyal medya kullanıcıları) ürünü kendi takipçisiyle paylaşır; satış olursa komisyon kazanır. Platform ücret almaz, kargo yapmaz — sadece {cityName}'daki satıcı, ortak ve alıcıyı buluşturur.
           </Text>
+          {!isWideWeb ? <Pressable accessibilityRole="button" accessibilityState={{ expanded: introExpanded }} onPress={() => setIntroExpanded((v) => !v)} style={{ alignSelf: "flex-start", justifyContent: "center", minHeight: 44 }}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "600" }}>{translateCopy(introExpanded ? "Daha az göster" : "Kategori hakkında", language)}</Text></Pressable> : null}
         </View>
 
-        {/* Şehir çipleri — diğer şehirlerde aynı kategori (iç bağlantı / SEO) */}
-        <View style={{ gap: 6 }}>
-          <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "800", textTransform: "uppercase" }}>Diğer şehirlerde {node.label}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
-            {otherCities.map((c) => (
-              <Link key={c} href={cityHref(node.slug, c)} asChild>
-                <Pressable style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7 }}>
-                  <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{findProvince(c)}</Text>
-                </Pressable>
-              </Link>
-            ))}
-            <Link href={catHref(node.slug)} asChild>
-              <Pressable style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 12, paddingVertical: 7 }}>
-                <MaterialCommunityIcons name="map-marker-multiple" size={13} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Tüm Türkiye", language)}</Text>
-              </Pressable>
-            </Link>
-          </ScrollView>
-        </View>
+        {/* Şehir çipleri — diğer şehirlerde aynı kategori (iç bağlantı / SEO). Dar ekranda aşağıda. */}
+        {isWideWeb ? (
+          <View style={{ gap: 6 }}>
+            <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "800", textTransform: "uppercase" }}>Diğer şehirlerde {node.label}</Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>{cityLinks}</ScrollView>
+          </View>
+        ) : null}
 
-        {/* Sıralama + hızlı filtre */}
+        {!isWideWeb ? (
+          /* DAR EKRAN: tek kontrol çubuğu — Sırala + Anında ortak; ilanlar hemen altında. */
+          <View testID="category-controls" style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
+            <Pressable testID="category-sort" accessibilityRole="button" accessibilityLabel={`${translateCopy("Sırala", language)}: ${sortLabel}`} onPress={() => setSortOpen(true)} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flex: 1, flexDirection: "row", gap: 4, maxWidth: 320, minHeight: 48, minWidth: 0, paddingHorizontal: 10 }}>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 14 }}>{translateCopy("Sırala", language)}</Text>
+                <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13.5, fontWeight: "700", lineHeight: 18 }}>{sortLabel}</Text>
+              </View>
+              <MaterialCommunityIcons name="chevron-down" size={18} color={colors.muted} />
+            </Pressable>
+            <Pressable testID="category-instant" accessibilityRole="checkbox" accessibilityLabel={translateCopy("Anında ortak", language)} accessibilityState={{ checked: onlyOpen }} onPress={() => setOnlyOpen((v) => !v)} style={{ alignItems: "center", backgroundColor: onlyOpen ? colors.primary : colors.surface, borderColor: onlyOpen ? colors.primary : colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 4, justifyContent: "center", minHeight: 48, paddingHorizontal: 10 }}>
+              <MaterialCommunityIcons name="flash-outline" size={17} color={onlyOpen ? colors.surface : colors.ink} />
+              <Text style={{ color: onlyOpen ? colors.surface : colors.ink, fontSize: 13.5, fontWeight: "700" }}>{translateCopy("Anında ortak", language)}</Text>
+            </Pressable>
+            {sortOpen ? (
+              <OptionSheet visible title={translateCopy("Sırala", language)} options={SORT_OPTIONS.map(([, lbl]) => translateCopy(lbl, language))} value={sortLabel} allowClear={false} searchable={false} onClose={() => setSortOpen(false)} onSelect={(picked) => { const hit = SORT_OPTIONS.find(([, lbl]) => translateCopy(lbl, language) === picked); if (hit) setSortMode(hit[0]); }} />
+            ) : null}
+          </View>
+        ) : (
+        /* GENİŞ EKRAN: sıralama + hızlı filtre (değişmedi) */
         <View style={{ gap: 8 }}>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 7, paddingRight: 12 }}>
-            {([["featured", "Öne çıkanlar"], ["newest", "En yeni"], ["commission", "En çok kazandıran"], ["priceAsc", "Fiyat ↑"], ["priceDesc", "Fiyat ↓"]] as const).map(([k, lbl]) => {
+            {SORT_OPTIONS.map(([k, lbl]) => {
               const on = sortMode === k;
               return (
                 <Pressable key={k} onPress={() => setSortMode(k)} style={{ backgroundColor: on ? colors.primary : colors.surface, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 13, paddingVertical: 8 }}>
@@ -214,6 +249,7 @@ export default function CityCategoryScreen() {
             </Pressable>
           </ScrollView>
         </View>
+        )}
 
         {items.length > 0 ? (
           <>
@@ -264,6 +300,14 @@ export default function CityCategoryScreen() {
                 <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardWidth} />
               ))}
             </View>
+          </View>
+        ) : null}
+
+        {/* DAR EKRAN: diğer şehir linkleri ilanların altında (iç bağlantı korunur). */}
+        {!isWideWeb ? (
+          <View style={{ gap: 8, marginTop: 6 }}>
+            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>Diğer şehirlerde {node.label}</Text>
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{cityLinks}</View>
           </View>
         ) : null}
       </WebContainer>

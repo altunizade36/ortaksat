@@ -1,23 +1,26 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useRouter } from "expo-router";
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
-import { Modal, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, useWindowDimensions, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
-import { AdminActivity, type AdminAnalytics } from "@/components/admin-activity";
+import { AdminActivity, type AdminAnalytics, type AdminMsgStats } from "@/components/admin-activity";
+import { ADMIN_CARD, ADMIN_INPUT, ActionButton, AdminWideCtx, ChartCard, NoData, Pager, RangeSwitch, bucketDates, usePager } from "@/components/admin-kit";
 import { AuthRequired } from "@/components/auth-gate";
-import { DonutChart, FunnelChart, HBarChart, ResponsiveLineArea, Treemap, money as fmtMoney } from "@/components/charts";
+import { DonutChart, HBarChart, MultiLineChart, ResponsiveLineArea, money as fmtMoney } from "@/components/charts";
 import { colors } from "@/components/colors";
-import { EmptyState } from "@/components/ui";
+import { EmptyState, PressLink } from "@/components/ui";
 import { money } from "@/lib/format";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
+import { listingRootNode } from "@/lib/category-match";
 import { downloadCsv } from "@/lib/csv-export";
 import { getDistrict, getProvince } from "@/lib/locations";
 import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import { adminBroadcastLive, adminClosePartnerRequest, adminDeleteQuestion, adminModerateReview, adminSetPartnershipStatus, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminPartnerships, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminPartnershipRow, type AdminSiteRecords } from "@/lib/live-service";
+import { showToast } from "@/lib/toast";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
@@ -84,18 +87,23 @@ function conversationRisk(bodies: string[]): string | null {
   return null;
 }
 
+// Açık yeşil zemin üstünde okunur koyu yeşil (colors.success #22C55E metin olarak AA'yı geçmez).
+const SUCCESS_INK = "#15803D";
+const PAGE_SIZE = 20;
+
 const PARTNERSHIP_TONE: Record<string, { tint: string; color: string; label: string }> = {
-  pending: { tint: "#FFF2CC", color: "#B8860B", label: "Bekliyor" },
-  active: { tint: "#DDF8E9", color: "#0A7A56", label: "Kabul edildi" },
-  approved: { tint: "#DDF8E9", color: "#0A7A56", label: "Kabul edildi" },
-  rejected: { tint: "#FCE8E8", color: "#C0392B", label: "Reddedildi" },
-  cancelled: { tint: "#EEF1F4", color: "#6B7280", label: "İptal" },
-  completed: { tint: "#DDF8E9", color: "#0A7A56", label: "Tamamlandı" }
+  pending: { tint: colors.goldSoft, color: colors.goldInk, label: "Bekliyor" },
+  active: { tint: colors.successSoft, color: SUCCESS_INK, label: "Kabul edildi" },
+  approved: { tint: colors.successSoft, color: SUCCESS_INK, label: "Kabul edildi" },
+  rejected: { tint: colors.accentSoft, color: colors.accent, label: "Reddedildi" },
+  cancelled: { tint: colors.surfaceAlt, color: colors.muted, label: "İptal" },
+  blocked: { tint: colors.accentSoft, color: colors.accent, label: "Engellendi" },
+  completed: { tint: colors.primarySoft, color: colors.primaryDark, label: "Tamamlandı" }
 };
 
 const STATUS_TONE: Record<SuggestionStatus, { tint: string; color: string; label: string }> = {
-  pending: { tint: colors.warningSoft, color: colors.warning, label: "İncelemede" },
-  approved: { tint: colors.successSoft, color: colors.success, label: "Onaylandı" },
+  pending: { tint: colors.goldSoft, color: colors.goldInk, label: "İncelemede" },
+  approved: { tint: colors.successSoft, color: SUCCESS_INK, label: "Onaylandı" },
   rejected: { tint: colors.accentSoft, color: colors.accent, label: "Reddedildi" }
 };
 
@@ -110,13 +118,12 @@ const ACTION_LABEL: Record<string, string> = {
   sale_recorded: "Satış kaydı", sale_confirmed: "Satış onaylandı",
   offer_created: "Teklif verildi", review_created: "Yorum yazıldı", lead_created: "Talep oluştu"
 };
-const REPORT_BARS = ["#0645C9", "#0F9D66", "#7C5CFC", "#E4572E", "#E0A81E", "#09275E"];
 const SALE_TONE: Record<SaleStatus, { tint: string; color: string; label: string }> = {
-  pending: { tint: colors.warningSoft, color: colors.warning, label: "Bekliyor" },
-  return_pending: { tint: colors.warningSoft, color: colors.warning, label: "İade süresi" },
-  approved: { tint: colors.infoSoft, color: colors.info, label: "Onaylandı" },
-  seller_paid: { tint: colors.goldSoft, color: colors.gold, label: "Onay bekliyor" },
-  paid: { tint: colors.successSoft, color: colors.success, label: "Tamamlandı" },
+  pending: { tint: colors.goldSoft, color: colors.goldInk, label: "Bekliyor" },
+  return_pending: { tint: colors.goldSoft, color: colors.goldInk, label: "İade süresi" },
+  approved: { tint: colors.primarySoft, color: colors.primary, label: "Onaylandı" },
+  seller_paid: { tint: colors.goldSoft, color: colors.goldInk, label: "Onay bekliyor" },
+  paid: { tint: colors.successSoft, color: SUCCESS_INK, label: "Tamamlandı" },
   cancelled: { tint: colors.surfaceAlt, color: colors.muted, label: "İptal" },
   disputed: { tint: colors.accentSoft, color: colors.accent, label: "İtiraz" }
 };
@@ -150,12 +157,12 @@ function AdminScreenInner() {
   const { height: viewportHeight } = useWindowDimensions();
   const router = useRouter();
   const {
-    listings, users, sales, partnerships, leads, conversations, messages, notifications,
+    listings, users, sales, partnerships, messages, notifications,
     categorySuggestions, locationSuggestions, setCategorySuggestionStatus, setLocationSuggestionStatus,
     updateListingStatus, setListingFeatured, deleteListing, findUser, signOut, currentUser, reports, updateReportStatus,
     updateSaleStatus,
     platformSettings, updatePlatformSetting, setAnnouncement, setUserRole, setUserStatus,
-    setUserVerification, adminNotifyUser, adminBroadcast,
+    setUserVerification, adminNotifyUser,
     blogPosts, contentPages, seoSettings, saveBlogPost, deleteBlogPost, saveContentPage, saveSeoSetting,
     categoryTree, extraCategories, saveCategory, deleteCategory, importCategories,
     hiddenCategories, toggleHiddenCategory, refreshMarketplace, refreshUserData
@@ -177,6 +184,37 @@ function AdminScreenInner() {
   const [msgFilter, setMsgFilter] = useState<"all" | "risky">("all");
   const [commFilter, setCommFilter] = useState<"all" | "pending" | "approved" | "seller_paid" | "paid" | "cancelled" | "disputed">("all");
   const [detailUserId, setDetailUserId] = useState<string | null>(null);
+  const [reportFilter, setReportFilter] = useState<"open" | "all" | "resolved" | "rejected">("open");
+  const [reportQuery, setReportQuery] = useState("");
+  const [partFilter, setPartFilter] = useState<"all" | "pending" | "active" | "rejected" | "cancelled">("all");
+  const [partQuery, setPartQuery] = useState("");
+  const [msgQuery, setMsgQuery] = useState("");
+  // Uçuştaki aksiyonlar (anahtar → meşgul). Aynı aksiyon bitmeden tekrar tetiklenemez.
+  const [busy, setBusy] = useState<Record<string, boolean>>({});
+  const busyRef = useRef<Record<string, boolean>>({});
+  const aliveRef = useRef(true);
+  useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; }; }, []);
+  /**
+   * Tek aksiyon koşucusu: çift gönderimi engeller, sonucu GÖRÜNÜR kılar.
+   * fn `false`/`null` dönerse ya da hata atarsa başarısızlık uyarısı; aksi halde başarı toast'ı.
+   * (Store'un void dönen aksiyonları iyimser uygulanır; kalıcı yazım hatasını store ayrıca bildirir.)
+   */
+  const run = async (key: string, fn: () => unknown, ok: string, fail = "İşlem tamamlanamadı. Lütfen tekrar dene.") => {
+    if (busyRef.current[key]) return;
+    busyRef.current[key] = true;
+    setBusy((b) => ({ ...b, [key]: true }));
+    try {
+      const res = await fn();
+      if (res === false || res === null) Alert.alert("İşlem başarısız", fail);
+      // Sonucu bilinmeyen (void, iyimser) aksiyonda başarı İDDİA EDİLMEZ: yazım hatasını store ayrıca bildirir.
+      else if (res !== undefined) showToast(ok);
+    } catch {
+      Alert.alert("İşlem başarısız", fail);
+    } finally {
+      delete busyRef.current[key];
+      if (aliveRef.current) setBusy((b) => { const n = { ...b }; delete n[key]; return n; });
+    }
+  };
   const uq = userQuery.trim().toLocaleLowerCase("tr-TR");
   const lq = listingQuery.trim().toLocaleLowerCase("tr-TR");
 
@@ -237,6 +275,12 @@ function AdminScreenInner() {
   }
   const [section, setSection] = useState<Section>("dashboard");
   const [adminNavOpen, setAdminNavOpen] = useState(false);
+  // Mobil bölüm sekmeleri: aktif sekme yatay şeritte görünür alana kaydırılır.
+  const tabsRef = useRef<ScrollView>(null);
+  const tabX = useRef<Record<string, number>>({});
+  useEffect(() => {
+    tabsRef.current?.scrollTo({ x: Math.max(0, (tabX.current[section] ?? 0) - 48), animated: true });
+  }, [section]);
   const [expandedCat, setExpandedCat] = useState<string | null>(null);
   const [audit, setAudit] = useState<{ logs: AuditEntry[]; rateHits: number } | null>(null);
   // Sunucu-gerçek analitik (AdminActivity 15sn'de bir çeker + onData ile buraya verir) → Dashboard/stats
@@ -251,7 +295,7 @@ function AdminScreenInner() {
   const [adminPartnerships, setAdminPartnerships] = useState<AdminPartnershipRow[] | null>(null);
   // Platform geneli mesaj moderasyonu (eski bölüm ADMİNİN KENDİ kutusunu gösteriyordu).
   const [modMessages, setModMessages] = useState<AdminMessageRow[]>([]);
-  const [msgStats, setMsgStats] = useState<{ conversations: number; messages: number; messages_24h: number; blocked_pairs: number } | null>(null);
+  const [msgStats, setMsgStats] = useState<AdminMsgStats | null>(null);
 
   useEffect(() => {
     fetchAdminAudit().then(setAudit).catch(() => setAudit(null));
@@ -278,9 +322,11 @@ function AdminScreenInner() {
   const reloadAdminPartnerships = () => { void fetchAdminPartnerships().then(setAdminPartnerships).catch(() => {}); };
   // Moderasyon aksiyonları — izleme değil KONTROL: aksiyon sonrası kayıtları tazele.
   const reloadRecords = () => { void fetchAdminSiteRecords().then(setSiteRecords).catch(() => {}); };
-  const modReview = (id: string, del: boolean) => confirmAction(del ? "Bu yorumu gizle (herkese kapat)?" : "Yorumu geri al (yayına aç)?", async () => { if (await adminModerateReview(id, del)) reloadRecords(); }, del ? "Gizle" : "Geri Al");
-  const delQuestion = (id: string) => confirmAction("Bu soruyu KALICI sil? (spam/uygunsuz)", async () => { if (await adminDeleteQuestion(id)) reloadRecords(); }, "Sil");
-  const closePR = (id: string) => confirmAction("Bu 'ortak aranıyor' talebini kapat?", async () => { if (await adminClosePartnerRequest(id)) reloadRecords(); }, "Kapat");
+  const modReview = (id: string, del: boolean) => confirmAction(del ? "Bu yorumu gizle (herkese kapat)?" : "Yorumu geri al (yayına aç)?", () => void run(`rev:${id}`, async () => { const ok = await adminModerateReview(id, del); if (ok) reloadRecords(); return ok; }, del ? "Yorum gizlendi" : "Yorum yayına alındı"), del ? "Gizle" : "Geri Al");
+  const delQuestion = (id: string) => confirmAction("Bu soruyu KALICI sil? (spam/uygunsuz)", () => void run(`q:${id}`, async () => { const ok = await adminDeleteQuestion(id); if (ok) reloadRecords(); return ok; }, "Soru silindi"), "Sil");
+  const closePR = (id: string) => confirmAction("Bu 'ortak aranıyor' talebini kapat?", () => void run(`pr:${id}`, async () => { const ok = await adminClosePartnerRequest(id); if (ok) reloadRecords(); return ok; }, "Talep kapatıldı"), "Kapat");
+  const setPartnership = (id: string, status: "active" | "rejected" | "cancelled", question: string, yes: string, okMsg: string) =>
+    confirmAction(question, () => void run(`ps:${id}`, async () => { const ok = await adminSetPartnershipStatus(id, status); if (ok) reloadAdminPartnerships(); return ok; }, okMsg), yes);
 
   // Manuel yenile: sunucu-gerçek admin verisi (overview/audit/mesaj) + market/hesap store'u tazelenir.
   // (Eskiden analytics yalnız dashboard'da 15sn yenilenir, overview/audit mount'ta bir kez çekilirdi → bayat.)
@@ -304,7 +350,6 @@ function AdminScreenInner() {
   const isAdmin = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
   const activeListings = listings.filter((l) => l.status === "active");
   const pendingReview = listings.filter((l) => l.status === "pending_review");
-  const totalCommission = sales.reduce((s, x) => s + x.commissionAmount, 0);
   const disputedSalesN = sales.filter((s) => s.status === "disputed").length;
   const buyerConfirmedN = sales.filter((s) => s.buyerConfirmedAt || s.buyerConfirmStatus === "confirmed").length;
   const buyerAwaitingN = sales.filter((s) => s.buyerConfirmToken && !s.buyerConfirmedAt && s.buyerConfirmStatus !== "confirmed" && s.buyerConfirmStatus !== "disputed").length;
@@ -335,13 +380,6 @@ function AdminScreenInner() {
     const max = arr[0]?.[1] ?? 1;
     return arr.map(([id, v]) => ({ label: findUser(id)?.name ?? "—", value: money(v), count: v, max }));
   }, [sales, partnerships, findUser]);
-  const catDist = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const l of listings) if (l.status === "active") { const c = l.category || "Diğer"; m.set(c, (m.get(c) ?? 0) + 1); }
-    const arr = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 8);
-    const max = arr[0]?.[1] ?? 1;
-    return arr.map(([c, n]) => ({ label: c, value: `${n}`, count: n, max }));
-  }, [listings]);
   const cityDist = useMemo(() => {
     const m = new Map<string, number>();
     for (const l of listings) if (l.status === "active") { const c = l.location || "—"; m.set(c, (m.get(c) ?? 0) + 1); }
@@ -350,17 +388,50 @@ function AdminScreenInner() {
     return arr.map(([c, n]) => ({ label: c, value: `${n}`, count: n, max }));
   }, [listings]);
 
-  const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : k === "listings" ? pendingReview.length : k === "complaints" ? pendingReports : k === "partnerships" ? pendingPartnerships : 0);
+  // ---- Kayıt listeleri: arama + filtre + sayfalama (hook'lar erken-return'den ÖNCE) ----
+  const usersPg = usePager(shownUsers, PAGE_SIZE, `${userFilter}|${uq}`);
+  const listingsPg = usePager(shownListings, PAGE_SIZE, `${listingFilter}|${lq}`);
+  const rq = reportQuery.trim().toLocaleLowerCase("tr-TR");
+  const shownReports = reports
+    .filter((r) => (reportFilter === "all" ? true : reportFilter === "open" ? isOpenReport(r) : r.status === reportFilter))
+    .filter((r) => {
+      if (!rq) return true;
+      const t = r.listingId ? listings.find((l) => l.id === r.listingId)?.title ?? "" : "";
+      const u = r.reportedUserId ? findUser(r.reportedUserId)?.name ?? "" : "";
+      return `${r.reason} ${r.details} ${t} ${u} ${findUser(r.reporterId)?.name ?? ""}`.toLocaleLowerCase("tr-TR").includes(rq);
+    })
+    .sort((a, b) => (isOpenReport(a) ? -1 : 1) - (isOpenReport(b) ? -1 : 1) || b.createdAt.localeCompare(a.createdAt));
+  const reportsPg = usePager(shownReports, PAGE_SIZE, `${reportFilter}|${rq}`);
+  const pq = partQuery.trim().toLocaleLowerCase("tr-TR");
+  const shownPartnerships = (adminPartnerships ?? [])
+    .filter((p) => (partFilter === "all" ? true : partFilter === "active" ? p.status === "active" || p.status === "approved" : p.status === partFilter))
+    .filter((p) => !pq || `${p.listingTitle ?? ""} ${p.ownerName ?? ""} ${p.partnerName ?? ""}`.toLocaleLowerCase("tr-TR").includes(pq));
+  const partsPg = usePager(shownPartnerships, PAGE_SIZE, `${partFilter}|${pq}`);
+  const shownSales = (commFilter === "all" ? sales : sales.filter((s) => s.status === commFilter)).slice().sort((a, b) => (a.status === "disputed" ? -1 : 0) - (b.status === "disputed" ? -1 : 0));
+  const salesPg = usePager(shownSales, PAGE_SIZE, commFilter);
+  const mq = msgQuery.trim().toLocaleLowerCase("tr-TR");
+  const msgRows = modMessages.map((m) => ({ m, risk: conversationRisk([m.body]) }));
+  const riskyMsgCount = msgRows.filter((x) => x.risk).length;
+  const shownMsgs = (msgFilter === "risky" ? msgRows.filter((x) => x.risk) : msgRows)
+    .filter(({ m }) => !mq || `${m.body} ${m.sender_name ?? ""} ${m.receiver_name ?? ""} ${m.listing_title ?? ""}`.toLocaleLowerCase("tr-TR").includes(mq));
+  const msgsPg = usePager(shownMsgs, PAGE_SIZE, `${msgFilter}|${mq}`);
+  const auditPg = usePager(audit?.logs ?? [], 25, "audit");
+
+  const navBadge = (k: Section) => (k === "categories" ? pendingCat : k === "locations" ? pendingLoc : k === "listings" ? (analytics?.listings_pending ?? pendingReview.length) : k === "complaints" ? (analytics?.open_reports ?? pendingReports) : k === "partnerships" ? (analytics?.partnerships_pending ?? pendingPartnerships) : 0);
   const activeNav = NAV.find((item) => item.key === section) ?? NAV[0];
   const activeMeta = SECTION_META[section];
-  const activeGroup = NAV_GROUPS.find((group) => group.items.some((item) => item.key === section)) ?? NAV_GROUPS[0];
 
   const selectSection = (next: Section) => {
     setSection(next);
     setAdminNavOpen(false);
   };
 
+  // Derinlemesine savunma: bu bileşen yalnız AdminScreen'in rol kapısından sonra render edilir;
+  // yine de rol düşerse (oturum değişimi) HİÇBİR yönetim verisi çizilmez. (Tüm hook'lar yukarıda.)
+  if (!isAdmin) return null;
+
   return (
+    <AdminWideCtx.Provider value={isWideWeb}>
     <View style={{ backgroundColor: colors.background, flex: 1, flexDirection: isWideWeb ? "row" : "column", minHeight: "100%" }}>
       {/* Sidebar */}
       {isWideWeb ? (
@@ -406,7 +477,7 @@ function AdminScreenInner() {
           </ScrollView>
           <View style={{ borderTopColor: "rgba(255,255,255,0.12)", borderTopWidth: 1, gap: 4, paddingHorizontal: 12, paddingBottom: 14, paddingTop: 10 }}>
             <Pressable onPress={() => void doRefresh()} disabled={refreshing} style={{ alignItems: "center", borderRadius: 10, flexDirection: "row", gap: 11, opacity: refreshing ? 0.6 : 1, paddingHorizontal: 12, paddingVertical: 10 }}>
-              <MaterialCommunityIcons name={refreshing ? "loading" : "refresh"} size={18} color="rgba(255,255,255,0.72)" />
+              <MaterialCommunityIcons name={refreshing ? "timer-sand" : "refresh"} size={18} color="rgba(255,255,255,0.72)" />
               <Text style={{ color: "rgba(255,255,255,0.82)", fontSize: 13.5, fontWeight: "700" }}>{refreshing ? "Yenileniyor…" : "Verileri Yenile"}</Text>
             </Pressable>
             <Link href="/" asChild>
@@ -422,38 +493,39 @@ function AdminScreenInner() {
           </View>
         </View>
       ) : (
-        <View style={{ backgroundColor: colors.primaryDark, gap: 8, paddingBottom: 9, paddingHorizontal: 12, paddingTop: 10 }}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+        <View style={{ backgroundColor: colors.primaryDark, gap: 8, paddingBottom: 8, paddingTop: 10 }}>
+          <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingHorizontal: 12 }}>
             <Pressable
               accessibilityLabel="Yönetim menüsünü aç"
               accessibilityRole="button"
               onPress={() => setAdminNavOpen(true)}
-              style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.12)", borderRadius: 11, height: 38, justifyContent: "center", width: 38 })}
+              style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? "rgba(255,255,255,0.2)" : "rgba(255,255,255,0.12)", borderRadius: 11, height: 42, justifyContent: "center", width: 42 })}
             >
-              <MaterialCommunityIcons name="menu" size={21} color="#FFFFFF" />
+              <MaterialCommunityIcons name="menu" size={22} color="#FFFFFF" />
             </Pressable>
             <View style={{ flex: 1, minWidth: 0 }}>
               <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.68)", fontSize: 9.5, fontWeight: "900", letterSpacing: 0.6 }}>ORTAKSAT YÖNETİM</Text>
               <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{activeMeta.title}</Text>
             </View>
-            <Pressable onPress={() => void doRefresh()} disabled={refreshing} accessibilityLabel="Verileri yenile" style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 11, height: 38, justifyContent: "center", opacity: refreshing ? 0.6 : 1, width: 38 }}>
-              <MaterialCommunityIcons name={refreshing ? "loading" : "refresh"} size={19} color="#FFFFFF" />
+            <Pressable onPress={() => void doRefresh()} disabled={refreshing} accessibilityRole="button" accessibilityLabel="Verileri yenile" style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 11, height: 42, justifyContent: "center", opacity: refreshing ? 0.6 : 1, width: 42 }}>
+              <MaterialCommunityIcons name={refreshing ? "timer-sand" : "refresh"} size={20} color="#FFFFFF" />
             </Pressable>
             <Link href="/" asChild>
-              <Pressable accessibilityLabel="Siteye dön" style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 11, height: 38, justifyContent: "center", width: 38 }}>
-                <MaterialCommunityIcons name="storefront-outline" size={19} color="#FFFFFF" />
+              <Pressable accessibilityLabel="Siteye dön" style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderRadius: 11, height: 42, justifyContent: "center", width: 42 }}>
+                <MaterialCommunityIcons name="storefront-outline" size={20} color="#FFFFFF" />
               </Pressable>
             </Link>
           </View>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
-            {activeGroup.items.map((n) => {
+          {/* Tüm bölümler tek yatay şeritte (kaydırılır) — menüyü açmadan bölüm değiştirilir. */}
+          <ScrollView ref={tabsRef} horizontal showsHorizontalScrollIndicator={false} accessibilityRole="tablist" contentContainerStyle={{ gap: 6, paddingHorizontal: 12 }}>
+            {NAV.map((n) => {
               const on = section === n.key;
               const badge = navBadge(n.key);
               return (
-                <Pressable key={n.key} onPress={() => selectSection(n.key)} style={{ alignItems: "center", backgroundColor: on ? "#FFFFFF" : "rgba(255,255,255,0.1)", borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
-                  <MaterialCommunityIcons name={n.icon} size={14} color={on ? colors.primaryDark : "#FFFFFF"} />
-                  <Text style={{ color: on ? colors.primaryDark : "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{n.label}</Text>
-                  {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 16, justifyContent: "center", minWidth: 16, paddingHorizontal: 4 }}><Text style={{ color: "#FFFFFF", fontSize: 9, fontWeight: "900" }}>{badge}</Text></View> : null}
+                <Pressable key={n.key} accessibilityRole="tab" accessibilityState={{ selected: on }} onLayout={(e) => { tabX.current[n.key] = e.nativeEvent.layout.x; }} onPress={() => selectSection(n.key)} style={{ alignItems: "center", backgroundColor: on ? "#FFFFFF" : "rgba(255,255,255,0.1)", borderRadius: 999, flexDirection: "row", gap: 6, minHeight: 40, paddingHorizontal: 13 }}>
+                  <MaterialCommunityIcons name={n.icon} size={15} color={on ? colors.primaryDark : "#FFFFFF"} />
+                  <Text style={{ color: on ? colors.primaryDark : "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>{n.label}</Text>
+                  {badge ? <View style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "900" }}>{badge}</Text></View> : null}
                 </Pressable>
               );
             })}
@@ -462,10 +534,10 @@ function AdminScreenInner() {
       )}
 
       {/* Content */}
-      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ alignSelf: "center", gap: 16, maxWidth: 1680, padding: isWideWeb ? 24 : 12, paddingBottom: 60, width: "100%" }}>
+      <ScrollView style={{ flex: 1 }} showsVerticalScrollIndicator={false} contentContainerStyle={{ alignSelf: "center", gap: 16, maxWidth: 1280, padding: isWideWeb ? 24 : 12, paddingBottom: 72, width: "100%" }}>
         {section !== "dashboard" ? (
-          <View style={{ alignItems: isWideWeb ? "center" : "flex-start", flexDirection: isWideWeb ? "row" : "column", gap: 10, justifyContent: "space-between" }}>
-            <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
+          <View style={{ alignItems: isWideWeb ? "center" : "stretch", flexDirection: isWideWeb ? "row" : "column", gap: 10, justifyContent: "space-between" }}>
+            <View style={{ flexGrow: isWideWeb ? 1 : 0, flexShrink: 1, gap: 3, minWidth: 0 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                 <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, height: 34, justifyContent: "center", width: 34 }}>
                   <MaterialCommunityIcons name={activeNav.icon} size={18} color={colors.primaryDark} />
@@ -474,29 +546,23 @@ function AdminScreenInner() {
               </View>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18, marginLeft: 42 }}>{activeMeta.description}</Text>
             </View>
-            <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingVertical: 7 }}>
-              <View style={{ backgroundColor: isAdmin ? colors.success : colors.warning, borderRadius: 999, height: 7, width: 7 }} />
-              <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>{isAdmin ? "Yetkili oturum" : "Önizleme"}</Text>
-            </View>
+            {isWideWeb ? (
+              <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 10, paddingVertical: 7 }}>
+                <View style={{ backgroundColor: colors.success, borderRadius: 999, height: 7, width: 7 }} />
+                <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "800" }}>Yetkili oturum</Text>
+              </View>
+            ) : null}
           </View>
         ) : null}
-        {!isAdmin ? (
-          <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 12, flexDirection: "row", gap: 10, padding: 12 }}>
-            <MaterialCommunityIcons name="information-outline" size={18} color={colors.warning} />
-            <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600" }}>Önizleme: bu panel canlıda yalnızca admin/moderatör rolündeki hesaplarda görünür. Demo amaçlı tüm içerik gösteriliyor.</Text>
-          </View>
-        ) : null}
-
         {section === "dashboard" ? (
           <View style={{ gap: 18 }}>
-          <AdminActivity onData={setAnalytics} />
-          <Dashboard
-            usersN={liveUsers.length} listingsN={listings.length} salesN={sales.length} commission={totalCommission}
-            activeN={activeListings.length} pendingN={pendingReview.length} reportsN={pendingReports} partnershipsN={pendingPartnerships} messagesN={messages.length}
-            disputedN={disputedSalesN} unpaidCommission={unpaidCommission} pendingCat={pendingCat} pendingLoc={pendingLoc}
-            listings={listings} users={users} sales={sales} partnerships={partnerships} reports={reports} findUser={findUser} notifications={notifications} leads={leads} setSection={setSection}
-            analytics={analytics}
-          />
+            <DashHero analytics={analytics} disputedN={disputedSalesN} name={currentUser.name} />
+            <AdminActivity onData={setAnalytics} onOverview={setOverview} onMsgStats={setMsgStats} onNavigate={setSection} />
+            <Dashboard
+              listings={listings} users={users} notifications={notifications}
+              pendingN={pendingReview.length} reportsN={pendingReports} pendingCat={pendingCat} pendingLoc={pendingLoc} disputedN={disputedSalesN}
+              setSection={setSection} analytics={analytics} overview={overview} findUser={findUser}
+            />
           </View>
         ) : null}
 
@@ -534,7 +600,7 @@ function AdminScreenInner() {
                       <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{du.name}</Text>
                       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{du.phone || "telefon yok"} · {du.role ?? "user"} · {du.status ?? "active"} · ⭐ {du.rating}</Text>
                     </View>
-                    <Pressable accessibilityRole="button" accessibilityLabel="Kapat" onPress={() => setDetailUserId(null)} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={20} color={colors.muted} /></Pressable>
+                    <Pressable accessibilityRole="button" accessibilityLabel="Kapat" onPress={() => setDetailUserId(null)} style={{ alignItems: "center", height: 40, justifyContent: "center", width: 40 }}><MaterialCommunityIcons name="close-circle" size={22} color={colors.muted} /></Pressable>
                   </View>
                   <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
                     <MiniStat label="İlan" value={`${uListings.length}`} />
@@ -564,24 +630,26 @@ function AdminScreenInner() {
                 </View>
               );
             })() : null}
+            {shownUsers.length === 0 ? <EmptyState icon="account-search-outline" title="Kullanıcı bulunamadı" body="Arama veya filtreye uyan kullanıcı yok." /> : null}
             <Table head={["KULLANICI", "ROL", "DURUM", "DOĞRULAMA", "İŞLEM"]} cols={[1.8, 1.5, 1, 1.1, 2]}>
-              {shownUsers.map((u) => {
+              {usersPg.slice.map((u) => {
                 const suspended = u.status === "suspended";
                 const isSelf = u.id === currentUser.id;
                 const roles: UserRole[] = ["user", "moderator", "admin"];
+                const roleName = (r: UserRole) => (r === "user" ? "Üye" : r === "moderator" ? "Moderatör" : "Admin");
                 return (
                   <Row key={u.id} cols={[1.8, 1.5, 1, 1, 1.8]} cells={[
-                    <Pressable onPress={() => setDetailUserId(detailUserId === u.id ? null : u.id)} style={{ gap: 1 }}>
-                      <Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{u.name}{isSelf ? " (sen)" : ""}</Text>
-                      <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "600" }}>Detay için tıkla · ⭐ {u.rating}</Text>
+                    <Pressable accessibilityRole="button" accessibilityLabel={`${u.name} detayını aç`} onPress={() => setDetailUserId(detailUserId === u.id ? null : u.id)} style={{ gap: 1, justifyContent: "center", minHeight: isWideWeb ? 0 : 40 }}>
+                      <Text numberOfLines={1} style={{ color: colors.primary, fontSize: 13, fontWeight: "800" }}>{u.name}{isSelf ? " (sen)" : ""}</Text>
+                      <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Detay için dokun · ⭐ {u.rating}</Text>
                     </Pressable>,
                     canManageUsers && !isSelf ? (
-                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 5 }}>
                         {roles.map((r) => {
                           const on = (u.role ?? "user") === r || (r === "user" && !["moderator", "admin", "super_admin"].includes(u.role ?? "user"));
                           return (
-                            <Pressable key={r} onPress={() => setUserRole(u.id, r)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderRadius: 7, paddingHorizontal: 8, paddingVertical: 4 }}>
-                              <Text style={{ color: on ? "#FFFFFF" : colors.muted, fontSize: 10.5, fontWeight: "800" }}>{r === "user" ? "Üye" : r === "moderator" ? "Mod" : "Admin"}</Text>
+                            <Pressable key={r} accessibilityRole="button" accessibilityState={{ selected: on }} disabled={on || !!busy[`role:${u.id}`]} onPress={() => confirmAction(`${u.name} kullanıcısının rolü "${roleName(r)}" yapılsın mı?${r !== "user" ? " Bu rol yönetim paneline erişim verir." : ""}`, () => void run(`role:${u.id}`, () => setUserRole(u.id, r), "Rol güncellendi"), "Rolü değiştir")} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 8, borderWidth: 1, justifyContent: "center", minHeight: isWideWeb ? 30 : 40, opacity: busy[`role:${u.id}`] ? 0.5 : 1, paddingHorizontal: 10 }}>
+                              <Text style={{ color: on ? "#FFFFFF" : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{r === "user" ? "Üye" : r === "moderator" ? "Mod" : "Admin"}</Text>
                             </Pressable>
                           );
                         })}
@@ -589,42 +657,36 @@ function AdminScreenInner() {
                     ) : (
                       <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{u.role === "admin" || u.role === "super_admin" ? "Admin" : u.role === "moderator" ? "Moderatör" : "Üye"}</Text>
                     ),
-                    <View style={{ alignSelf: "flex-start", backgroundColor: suspended ? colors.accentSoft : colors.successSoft, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: suspended ? colors.accent : colors.success, fontSize: 10, fontWeight: "900" }}>{suspended ? "Askıda" : "Aktif"}</Text></View>,
+                    <StatusBadge label={suspended ? "Askıda" : "Aktif"} tone={suspended ? "accent" : "success"} />,
                     canManageUsers && !isSelf ? (
                       <View style={{ flexDirection: "row", gap: 6 }}>
-                        <Pressable accessibilityRole="button" accessibilityLabel="Telefon doğrulamasını değiştir" onPress={() => setUserVerification(u.id, "verifiedPhone", !u.verifiedPhone)}>
-                          <MaterialCommunityIcons name="phone-check" size={17} color={u.verifiedPhone ? colors.success : colors.line} />
+                        <Pressable accessibilityRole="button" accessibilityLabel={u.verifiedPhone ? "Telefon doğrulamasını kaldır" : "Telefonu doğrulanmış işaretle"} onPress={() => void run(`vp:${u.id}`, () => setUserVerification(u.id, "verifiedPhone", !u.verifiedPhone), u.verifiedPhone ? "Telefon doğrulaması kaldırıldı" : "Telefon doğrulandı")} style={{ alignItems: "center", backgroundColor: u.verifiedPhone ? colors.successSoft : colors.surfaceAlt, borderRadius: 10, height: isWideWeb ? 32 : 40, justifyContent: "center", width: isWideWeb ? 32 : 40 }}>
+                          <MaterialCommunityIcons name="phone-check" size={18} color={u.verifiedPhone ? SUCCESS_INK : colors.subtle} />
                         </Pressable>
-                        <Pressable accessibilityRole="button" accessibilityLabel="Kimlik doğrulamasını değiştir" onPress={() => setUserVerification(u.id, "verifiedIdentity", !u.verifiedIdentity)}>
-                          <MaterialCommunityIcons name="card-account-details-outline" size={17} color={u.verifiedIdentity ? colors.success : colors.line} />
+                        <Pressable accessibilityRole="button" accessibilityLabel={u.verifiedIdentity ? "Kimlik doğrulamasını kaldır" : "Kimliği doğrulanmış işaretle"} onPress={() => void run(`vi:${u.id}`, () => setUserVerification(u.id, "verifiedIdentity", !u.verifiedIdentity), u.verifiedIdentity ? "Kimlik doğrulaması kaldırıldı" : "Kimlik doğrulandı")} style={{ alignItems: "center", backgroundColor: u.verifiedIdentity ? colors.successSoft : colors.surfaceAlt, borderRadius: 10, height: isWideWeb ? 32 : 40, justifyContent: "center", width: isWideWeb ? 32 : 40 }}>
+                          <MaterialCommunityIcons name="card-account-details-outline" size={18} color={u.verifiedIdentity ? SUCCESS_INK : colors.subtle} />
                         </Pressable>
                       </View>
                     ) : (
                       <View style={{ flexDirection: "row", gap: 4 }}>
-                        {u.verifiedPhone ? <MaterialCommunityIcons name="phone-check" size={15} color={colors.success} /> : null}
-                        {u.verifiedIdentity ? <MaterialCommunityIcons name="card-account-details-outline" size={15} color={colors.success} /> : null}
+                        {u.verifiedPhone ? <MaterialCommunityIcons name="phone-check" size={15} color={SUCCESS_INK} /> : null}
+                        {u.verifiedIdentity ? <MaterialCommunityIcons name="card-account-details-outline" size={15} color={SUCCESS_INK} /> : null}
                         {u.verifiedInstagram ? <MaterialCommunityIcons name="instagram" size={15} color={colors.violet} /> : null}
+                        {!u.verifiedPhone && !u.verifiedIdentity && !u.verifiedInstagram ? <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>—</Text> : null}
                       </View>
                     ),
                     canManageUsers && !isSelf ? (
-                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                        <Pressable onPress={() => setUserStatus(u.id, suspended ? "active" : "suspended")} style={{ alignItems: "center", backgroundColor: suspended ? colors.successSoft : colors.accentSoft, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
-                          <MaterialCommunityIcons name={suspended ? "account-check-outline" : "account-cancel-outline"} size={14} color={suspended ? colors.success : colors.accent} />
-                          <Text style={{ color: suspended ? colors.success : colors.accent, fontSize: 11, fontWeight: "800" }}>{suspended ? "Aktifleştir" : "Askıya al"}</Text>
-                        </Pressable>
-                        <Pressable onPress={() => promptNotify(u.id, u.name)} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 8, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 6 }}>
-                          <MaterialCommunityIcons name="bell-plus-outline" size={13} color={colors.primaryDark} />
-                          <Text style={{ color: colors.primaryDark, fontSize: 11, fontWeight: "800" }}>Bildirim</Text>
-                        </Pressable>
-                        <Pressable onPress={() => confirmAction(`${u.name} hesabı silinsin mi? Kullanıcı erişimi kapatılır.`, () => setUserStatus(u.id, "deleted"))} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6 }}>
-                          <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "800" }}>Sil</Text>
-                        </Pressable>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: isWideWeb ? "flex-end" : "flex-start" }}>
+                        <ActionButton tone={suspended ? "success" : "warning"} icon={suspended ? "account-check-outline" : "account-cancel-outline"} label={suspended ? "Aktifleştir" : "Askıya al"} busy={busy[`ust:${u.id}`]} onPress={() => confirmAction(`${u.name} ${suspended ? "yeniden aktifleştirilsin" : "askıya alınsın"} mı?${suspended ? "" : " Kullanıcı işlem yapamaz."}`, () => void run(`ust:${u.id}`, () => setUserStatus(u.id, suspended ? "active" : "suspended"), suspended ? "Kullanıcı aktifleştirildi" : "Kullanıcı askıya alındı"), suspended ? "Aktifleştir" : "Askıya al")} />
+                        <ActionButton tone="soft" icon="bell-plus-outline" label="Bildirim" onPress={() => promptNotify(u.id, u.name)} />
+                        <ActionButton tone="danger" icon="trash-can-outline" label="Sil" busy={busy[`ust:${u.id}`]} onPress={() => confirmAction(`${u.name} hesabı silinsin mi? Kullanıcı erişimi kapatılır.`, () => void run(`ust:${u.id}`, () => setUserStatus(u.id, "deleted"), "Hesap silindi"), "Hesabı sil")} />
                       </View>
                     ) : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>—</Text>
                   ]} />
                 );
               })}
             </Table>
+            <Pager {...usersPg} />
             {!canManageUsers ? <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", marginTop: 8 }}>Rol/durum değiştirme yalnızca admin hesaplarına açıktır (sen moderatörsün).</Text> : null}
           </Panel>
         ) : null}
@@ -633,27 +695,24 @@ function AdminScreenInner() {
           <View style={{ gap: 16 }}>
           {pendingReview.length > 0 ? (
             <Panel title="Moderasyon Kuyruğu" sub={`${pendingReview.length} ilan onay bekliyor`}>
-              <View style={{ flexDirection: "row", gap: 8, marginBottom: 10 }}>
-                <Pressable onPress={() => confirmAction(`Onay bekleyen ${pendingReview.length} ilanın TÜMÜ yayınlansın mı?`, () => pendingReview.forEach((l) => updateListingStatus(l.id, "active")))} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 8 }}>
-                  <MaterialCommunityIcons name="check-all" size={15} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>Tümünü onayla ({pendingReview.length})</Text>
-                </Pressable>
-                <Pressable onPress={() => confirmAction(`Onay bekleyen ${pendingReview.length} ilanın TÜMÜ reddedilsin mi? Bu işlem geri alınamaz.`, () => pendingReview.forEach((l) => updateListingStatus(l.id, "rejected")))} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 7 }}>
-                  <MaterialCommunityIcons name="close-box-multiple-outline" size={15} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Tümünü reddet</Text>
-                </Pressable>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 }}>
+                <ActionButton tone="primary" icon="check-all" label={`Tümünü onayla (${pendingReview.length})`} busy={busy["bulk"]} onPress={() => confirmAction(`Onay bekleyen ${pendingReview.length} ilanın TÜMÜ yayınlansın mı?`, () => void run("bulk", async () => (await Promise.all(pendingReview.map((l) => updateListingStatus(l.id, "active")))).every(Boolean), "Bekleyen ilanlar yayınlandı", "Bazı ilanlar yayınlanamadı. Listeyi kontrol et."), "Tümünü onayla")} />
+                <ActionButton tone="danger" icon="close-box-multiple-outline" label="Tümünü reddet" busy={busy["bulk"]} onPress={() => confirmAction(`Onay bekleyen ${pendingReview.length} ilanın TÜMÜ reddedilsin mi? Bu işlem geri alınamaz.`, () => void run("bulk", async () => (await Promise.all(pendingReview.map((l) => updateListingStatus(l.id, "rejected")))).every(Boolean), "Bekleyen ilanlar reddedildi", "Bazı ilanlar reddedilemedi. Listeyi kontrol et."), "Tümünü reddet")} />
               </View>
               <Table head={["İLAN", "KATEGORİ", "SAHİP", "İŞLEM"]} cols={[2.4, 1.3, 1.4, 1.6]}>
-                {pendingReview.map((l) => (
+                {pendingReview.slice(0, 50).map((l) => (
                   <Row key={l.id} cols={[2.4, 1.3, 1.4, 1.6]} cells={[
-                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
+                    <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{findUser(l.ownerId)?.name ?? "—"}</Text>,
-                    <View style={{ flexDirection: "row", gap: 8 }}>
-                      <Pressable onPress={() => updateListingStatus(l.id, "active")} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}><MaterialCommunityIcons name="check" size={14} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>Onayla</Text></Pressable>
-                      <Pressable onPress={() => updateListingStatus(l.id, "rejected")} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 6 }}><MaterialCommunityIcons name="close" size={14} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>Reddet</Text></Pressable>
+                    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+                      <ActionButton tone="primary" icon="check" label="Onayla" busy={busy[`ls:${l.id}`] || busy["bulk"]} onPress={() => void run(`ls:${l.id}`, () => updateListingStatus(l.id, "active"), "İlan yayınlandı", "İlan yayınlanamadı. Tekrar dene.")} />
+                      <ActionButton tone="neutral" icon="close" label="Reddet" busy={busy[`ls:${l.id}`] || busy["bulk"]} onPress={() => confirmAction(`"${l.title}" ilanı reddedilsin mi?`, () => void run(`ls:${l.id}`, () => updateListingStatus(l.id, "rejected"), "İlan reddedildi", "İlan reddedilemedi. Tekrar dene."), "Reddet")} />
                     </View>
                   ]} />
                 ))}
               </Table>
+              {pendingReview.length > 50 ? <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700", paddingTop: 8 }}>İlk 50 gösteriliyor · kalan {pendingReview.length - 50} ilan aşağıda "Onay bekleyen" filtresinde.</Text> : null}
             </Panel>
           ) : null}
           <Panel title="İlanlar" sub={`${fmtN(analytics?.listings_active ?? activeListings.length)} aktif · ${fmtN(analytics?.listings_pending ?? pendingReview.length)} incelemede · ${fmtN(analytics?.listings_total ?? listings.length)} toplam${analytics && analytics.listings_total > listings.length ? ` (${listings.length} yüklü örnek)` : ""}${lq ? ` · ${shownListings.length} sonuç` : ""}`}>
@@ -675,10 +734,11 @@ function AdminScreenInner() {
               />
             </View>
             <Table head={["İLAN", "KATEGORİ", "FİYAT", "SAHİP", "DURUM", "İŞLEM"]} cols={[2.2, 1.2, 1, 1.4, 1, 1.4]}>
-              {shownListings.map((l) => {
+              {listingsPg.slice.map((l) => {
                 const risk = computeListingRisk(l, listings, findUser(l.ownerId));
-                const riskColor = risk.level === "high" ? colors.accent : risk.level === "medium" ? colors.warning : colors.success;
+                const riskColor = risk.level === "high" ? colors.accent : risk.level === "medium" ? colors.goldInk : SUCCESS_INK;
                 const riskBg = risk.level === "high" ? colors.accentSoft : risk.level === "medium" ? colors.warningSoft : colors.successSoft;
+                const lk = `ls:${l.id}`;
                 return (
                 <Row key={l.id} cols={[2.2, 1.2, 1, 1.4, 1, 1.2]} cells={[
                   <View style={{ gap: 3, minWidth: 0, alignSelf: "stretch", overflow: "hidden" }}>
@@ -696,134 +756,138 @@ function AdminScreenInner() {
                   <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
                   <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{money(l.price)}</Text>,
                   <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{findUser(l.ownerId)?.name ?? "—"}</Text>,
-                  <View style={{ alignSelf: "flex-start", backgroundColor: l.status === "active" ? colors.successSoft : l.status === "rejected" ? colors.accentSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: l.status === "active" ? colors.success : l.status === "rejected" ? colors.accent : colors.muted, fontSize: 10.5, fontWeight: "900" }}>{l.status === "active" ? "Yayında" : l.status === "rejected" ? "Reddedildi" : l.status === "pending_review" ? "İncelemede" : l.status}</Text></View>,
-                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                    <Pressable onPress={() => updateListingStatus(l.id, l.status === "active" ? "paused" : "active")}><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "800" }}>{l.status === "active" ? "Kaldır" : "Yayınla"}</Text></Pressable>
-                    <Pressable onPress={() => setListingFeatured(l.id, !l.featured)}><Text style={{ color: l.featured ? colors.gold : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{l.featured ? "★ Öne çıkan" : "☆ Öne çıkar"}</Text></Pressable>
-                    {l.status !== "rejected" ? <Pressable onPress={() => updateListingStatus(l.id, "rejected")}><Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "800" }}>Reddet</Text></Pressable> : null}
-                    <Pressable onPress={() => confirmAction(`"${l.title}" ilanı kalıcı olarak silinsin mi? Bu işlem geri alınamaz.`, () => deleteListing(l.id))}><Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "900" }}>Kalıcı Sil</Text></Pressable>
+                  <StatusBadge label={listingStatusLabel(l.status)} tone={l.status === "active" ? "success" : l.status === "rejected" ? "accent" : l.status === "pending_review" ? "warning" : "neutral"} />,
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, justifyContent: isWideWeb ? "flex-end" : "flex-start" }}>
+                    <PressLink href={{ pathname: "/listing/[id]", params: { id: l.id } }} accessibilityLabel="İlanı aç" style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, height: isWideWeb ? 34 : 40, justifyContent: "center", width: isWideWeb ? 34 : 40 }}>
+                      <MaterialCommunityIcons name="open-in-new" size={16} color={colors.ink} />
+                    </PressLink>
+                    {l.status === "active"
+                      ? <ActionButton tone="neutral" icon="eye-off-outline" label="Kaldır" busy={busy[lk]} onPress={() => confirmAction(`"${l.title}" yayından kaldırılsın mı? (duraklatılır, silinmez)`, () => void run(lk, () => updateListingStatus(l.id, "paused"), "İlan yayından kaldırıldı", "İlan kaldırılamadı. Tekrar dene."), "Kaldır")} />
+                      : <ActionButton tone="primary" icon="eye-outline" label="Yayınla" busy={busy[lk]} onPress={() => void run(lk, () => updateListingStatus(l.id, "active"), "İlan yayınlandı", "İlan yayınlanamadı. Tekrar dene.")} />}
+                    <ActionButton tone={l.featured ? "warning" : "neutral"} icon={l.featured ? "star" : "star-outline"} label={l.featured ? "Öne çıkan" : "Öne çıkar"} busy={busy[`lf:${l.id}`]} onPress={() => void run(`lf:${l.id}`, () => setListingFeatured(l.id, !l.featured), l.featured ? "Öne çıkarma kaldırıldı" : "İlan öne çıkarıldı")} />
+                    {l.status !== "rejected" ? <ActionButton tone="warning" icon="close-circle-outline" label="Reddet" busy={busy[lk]} onPress={() => confirmAction(`"${l.title}" ilanı reddedilsin mi?`, () => void run(lk, () => updateListingStatus(l.id, "rejected"), "İlan reddedildi", "İlan reddedilemedi. Tekrar dene."), "Reddet")} /> : null}
+                    <ActionButton tone="danger" icon="trash-can-outline" label="Kalıcı sil" busy={busy[lk]} onPress={() => confirmAction(`"${l.title}" ilanı kalıcı olarak silinsin mi? Bu işlem geri alınamaz.`, () => void run(lk, () => deleteListing(l.id), "İlan silindi"), "Kalıcı sil")} />
                   </View>
                 ]} />
                 );
               })}
             </Table>
+            {shownListings.length === 0 ? <EmptyState icon="file-search-outline" title="İlan bulunamadı" body="Arama veya filtreye uyan ilan yok." /> : null}
+            <Pager {...listingsPg} />
           </Panel>
           </View>
         ) : null}
 
         {section === "partnerships" ? (
-          <Panel title="Ortak Satış Talepleri" sub={`${(adminPartnerships ?? []).filter((p) => p.status === "pending").length} bekliyor · ${fmtN(adminPartnerships ? adminPartnerships.length : (ovPartnershipsTotal ?? partnerships.length))} toplam (sunucu)`}>
-            {adminPartnerships === null ? <EmptyState title="Yükleniyor…" body="Platform geneli ortaklıklar çekiliyor." /> : adminPartnerships.length === 0 ? <EmptyState icon="handshake-outline" title="Ortak satış talebi yok" body="Bir kullanıcı bir ilana ortak satıcı olmak için başvurduğunda burada görünür." /> : null}
-            {adminPartnerships && adminPartnerships.length ? (
-            <Table head={["İLAN", "İLAN SAHİBİ", "ORTAK ADAYI", "KOMİSYON", "DURUM", "TARİH", "İŞLEM"]} cols={[1.9, 1.3, 1.3, 1, 1, 0.9, 1.4]}>
-              {adminPartnerships.map((p) => {
+          <Panel title="Ortak Satış Talepleri" sub={adminPartnerships === null ? "Yükleniyor…" : `${adminPartnerships.filter((p) => p.status === "pending").length} bekliyor · ${fmtN(adminPartnerships.length)} kayıt (sunucu)${ovPartnershipsTotal != null && ovPartnershipsTotal !== adminPartnerships.length ? ` · toplam ${fmtN(ovPartnershipsTotal)}` : ""}`}>
+            <AdminSearch value={partQuery} onChange={setPartQuery} placeholder="İlan, ilan sahibi veya ortak ara…" />
+            <FilterChips value={partFilter} onChange={setPartFilter} options={[
+              { key: "all", label: "Tümü", count: (adminPartnerships ?? []).length },
+              { key: "pending", label: "Bekleyen", count: (adminPartnerships ?? []).filter((p) => p.status === "pending").length },
+              { key: "active", label: "Aktif", count: (adminPartnerships ?? []).filter((p) => p.status === "active" || p.status === "approved").length },
+              { key: "rejected", label: "Reddedilen" },
+              { key: "cancelled", label: "İptal" }
+            ]} />
+            {adminPartnerships === null ? <EmptyState title="Yükleniyor…" body="Platform geneli ortaklıklar çekiliyor." /> : adminPartnerships.length === 0 ? <EmptyState icon="handshake-outline" title="Ortak satış talebi yok" body="Bir kullanıcı bir ilana ortak satıcı olmak için başvurduğunda burada görünür." /> : shownPartnerships.length === 0 ? <EmptyState icon="handshake-outline" title="Sonuç yok" body="Arama veya filtreye uyan ortaklık yok." /> : null}
+            {shownPartnerships.length ? (
+            <Table head={["İLAN", "İLAN SAHİBİ", "ORTAK ADAYI", "KOMİSYON", "DURUM", "TARİH", "İŞLEM"]} cols={[1.9, 1.3, 1.3, 1, 1, 0.9, 1.6]}>
+              {partsPg.slice.map((p) => {
                 const tone = PARTNERSHIP_TONE[p.status] ?? { tint: colors.surfaceAlt, color: colors.muted, label: p.status };
                 const comm = p.commissionType === "rate" ? `%${p.commissionValue}` : (p.commissionValue != null ? money(p.commissionValue) : "—");
+                const pk = `ps:${p.id}`;
                 return (
-                  <Row key={p.id} cols={[1.9, 1.3, 1.3, 1, 1, 0.9, 1.4]} cells={[
-                    <Link href={{ pathname: "/listing/[id]", params: { id: p.listingId } }} asChild>
-                      <Pressable><Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>{p.listingTitle ?? p.listingId.slice(0, 10)}</Text></Pressable>
-                    </Link>,
+                  <Row key={p.id} cols={[1.9, 1.3, 1.3, 1, 1, 0.9, 1.6]} cells={[
+                    <PressLink href={{ pathname: "/listing/[id]", params: { id: p.listingId } }} style={{ justifyContent: "center", minHeight: isWideWeb ? 0 : 40 }}>
+                      <Text numberOfLines={2} style={{ color: colors.primary, fontSize: 12.5, fontWeight: "800" }}>{p.listingTitle ?? p.listingId.slice(0, 10)}</Text>
+                    </PressLink>,
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{p.ownerName ?? "—"}</Text>,
                     <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{p.partnerName ?? "—"}</Text>,
                     <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{comm}</Text>,
                     <View style={{ alignSelf: "flex-start", backgroundColor: tone.tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: tone.color, fontSize: 10.5, fontWeight: "900" }}>{tone.label}</Text></View>,
-                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.createdAt.slice(0, 10)}</Text>,
+                    <Text style={{ color: colors.muted, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "600" }}>{p.createdAt.slice(0, 10)}</Text>,
                     p.status === "pending" ? (
-                      <View style={{ flexDirection: "row", gap: 8 }}>
-                        <Pressable onPress={() => confirmAction("Bu ortaklık başvurusu ONAYLANSIN mı?", async () => { if (await adminSetPartnershipStatus(p.id, "active")) reloadAdminPartnerships(); }, "Onayla")} accessibilityRole="button" accessibilityLabel="Ortaklığı onayla"><Text style={{ color: colors.primaryDark, fontSize: 11.5, fontWeight: "900" }}>Onayla</Text></Pressable>
-                        <Pressable onPress={() => confirmAction("Bu ortaklık başvurusu reddedilsin mi?", async () => { if (await adminSetPartnershipStatus(p.id, "rejected")) reloadAdminPartnerships(); }, "Reddet")} accessibilityRole="button" accessibilityLabel="Ortaklığı reddet"><Text style={{ color: colors.warning, fontSize: 11.5, fontWeight: "900" }}>Reddet</Text></Pressable>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: isWideWeb ? "flex-end" : "flex-start" }}>
+                        <ActionButton tone="primary" icon="check" label="Onayla" busy={busy[pk]} accessibilityLabel="Ortaklığı onayla" onPress={() => setPartnership(p.id, "active", "Bu ortaklık başvurusu ONAYLANSIN mı?", "Onayla", "Ortaklık onaylandı")} />
+                        <ActionButton tone="neutral" icon="close" label="Reddet" busy={busy[pk]} accessibilityLabel="Ortaklığı reddet" onPress={() => setPartnership(p.id, "rejected", "Bu ortaklık başvurusu reddedilsin mi?", "Reddet", "Başvuru reddedildi")} />
                       </View>
                     ) : p.status === "active" ? (
-                      <Pressable onPress={() => confirmAction("Bu aktif ortaklık sonlandırılsın mı? Paylaşım linki devre dışı kalır.", async () => { if (await adminSetPartnershipStatus(p.id, "cancelled")) reloadAdminPartnerships(); }, "Sonlandır")}><Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "800" }}>Sonlandır</Text></Pressable>
+                      <ActionButton tone="danger" icon="link-off" label="Sonlandır" busy={busy[pk]} onPress={() => setPartnership(p.id, "cancelled", "Bu aktif ortaklık sonlandırılsın mı? Paylaşım linki devre dışı kalır.", "Sonlandır", "Ortaklık sonlandırıldı")} />
                     ) : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>—</Text>
                   ]} />
                 );
               })}
             </Table>
             ) : null}
+            <Pager {...partsPg} />
           </Panel>
         ) : null}
 
         {section === "complaints" ? (
           <Panel title="Şikayetler" sub={`${fmtN(overview?.reports_open ?? pendingReports)} açık · ${fmtN(overview?.reports_total ?? reports.length)} toplam${overview ? " (sunucu)" : ""}`}>
-            {reports.length === 0 ? <EmptyState icon="flag-outline" title="Şikayet yok" body="Kullanıcılar ilan veya satıcı şikayet ettiğinde burada görünür ve buradan işlem yapabilirsin." /> : null}
-            {reports.slice().sort((a, b) => (isOpenReport(a) ? -1 : 1) - (isOpenReport(b) ? -1 : 1) || b.createdAt.localeCompare(a.createdAt)).map((r) => {
+            <AdminSearch value={reportQuery} onChange={setReportQuery} placeholder="Sebep, ilan, kullanıcı veya şikayet eden ara…" />
+            <FilterChips value={reportFilter} onChange={setReportFilter} options={[
+              { key: "open", label: "Bekleyen", count: pendingReports },
+              { key: "resolved", label: "Çözülen", count: reports.filter((r) => r.status === "resolved").length },
+              { key: "rejected", label: "Reddedilen", count: reports.filter((r) => r.status === "rejected").length },
+              { key: "all", label: "Tümü", count: reports.length }
+            ]} />
+            {reports.length === 0 ? <EmptyState icon="flag-outline" title="Şikayet yok" body="Kullanıcılar ilan veya satıcı şikayet ettiğinde burada görünür ve buradan işlem yapabilirsin." /> : shownReports.length === 0 ? <EmptyState icon="flag-outline" title={reportFilter === "open" ? "Bekleyen şikayet yok" : "Sonuç yok"} body={reportFilter === "open" ? "Tüm şikayetler işlenmiş. Geçmiş için filtreyi değiştir." : "Arama veya filtreye uyan şikayet yok."} /> : null}
+            {reportsPg.slice.map((r) => {
               const target = r.listingId ? listings.find((l) => l.id === r.listingId) : undefined;
               const reportedUser = r.reportedUserId ? findUser(r.reportedUserId) : undefined;
               // Şikayet edilen kullanıcı: doğrudan kullanıcı şikayeti ya da ilan sahibi.
               const actUser = reportedUser ?? (target ? findUser(target.ownerId) : undefined);
-              const tone = isOpenReport(r) ? { t: colors.warningSoft, c: colors.warning, l: "Bekliyor" } : r.status === "resolved" ? { t: colors.successSoft, c: colors.success, l: "Çözüldü" } : { t: colors.surfaceAlt, c: colors.muted, l: "Reddedildi" };
+              const rk = `rp:${r.id}`;
               return (
                 <View key={r.id} style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 7, paddingVertical: 13 }}>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                     <MaterialCommunityIcons name={r.listingId ? "file-alert-outline" : "account-alert-outline"} size={17} color={colors.accent} />
-                    <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>
+                    <Text numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900", minWidth: 0 }}>
                       {target ? target.title : reportedUser ? reportedUser.name : r.listingId ?? r.reportedUserId ?? "Şikayet"}
                     </Text>
-                    <View style={{ backgroundColor: tone.t, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 2 }}><Text style={{ color: tone.c, fontSize: 10.5, fontWeight: "900" }}>{tone.l}</Text></View>
+                    <StatusBadge label={isOpenReport(r) ? "Bekliyor" : r.status === "resolved" ? "Çözüldü" : "Reddedildi"} tone={isOpenReport(r) ? "warning" : r.status === "resolved" ? "success" : "neutral"} />
                   </View>
                   <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>Sebep: {r.reason}</Text>
-                  {r.details ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{r.details}</Text> : null}
+                  {r.details ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{r.details}</Text> : null}
                   <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>
                     Şikayet eden: {findUser(r.reporterId)?.name ?? r.reporterId.slice(0, 8)} · {r.createdAt}
                     {reportedUser && r.listingId ? ` · Satıcı: ${findUser(target?.ownerId ?? "")?.name ?? "—"}` : ""}
                   </Text>
-                  <View style={{ flexDirection: "row", gap: 8, marginTop: 2 }}>
+                  <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, marginTop: 2 }}>
                     {target ? (
-                      <Link href={{ pathname: "/listing/[id]", params: { id: target.id } }} asChild>
-                        <Pressable style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
-                          <MaterialCommunityIcons name="open-in-new" size={14} color={colors.ink} />
-                          <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>İlana git</Text>
-                        </Pressable>
-                      </Link>
+                      <PressLink href={{ pathname: "/listing/[id]", params: { id: target.id } }} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: isWideWeb ? 34 : 40, paddingHorizontal: 12 }}>
+                        <MaterialCommunityIcons name="open-in-new" size={15} color={colors.ink} />
+                        <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>İlana git</Text>
+                      </PressLink>
                     ) : null}
                     {target ? (
-                      <Pressable onPress={() => updateListingStatus(target.id, target.status === "active" ? "paused" : "active")} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
-                        <MaterialCommunityIcons name={target.status === "active" ? "eye-off-outline" : "eye-outline"} size={14} color={colors.ink} />
-                        <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{target.status === "active" ? "İlanı kaldır" : "Yayınla"}</Text>
-                      </Pressable>
+                      target.status === "active"
+                        ? <ActionButton tone="neutral" icon="eye-off-outline" label="İlanı kaldır" busy={busy[`ls:${target.id}`]} onPress={() => confirmAction(`"${target.title}" yayından kaldırılsın mı?`, () => void run(`ls:${target.id}`, () => updateListingStatus(target.id, "paused"), "İlan yayından kaldırıldı", "İlan kaldırılamadı. Tekrar dene."), "Kaldır")} />
+                        : <ActionButton tone="neutral" icon="eye-outline" label="Yayınla" busy={busy[`ls:${target.id}`]} onPress={() => void run(`ls:${target.id}`, () => updateListingStatus(target.id, "active"), "İlan yayınlandı", "İlan yayınlanamadı. Tekrar dene.")} />
                     ) : null}
                     {actUser && canManageUsers && actUser.id !== currentUser.id ? (
                       <>
-                        <Pressable onPress={() => confirmAction(`${actUser.name} kullanıcısı ${actUser.status === "suspended" ? "aktifleştirilsin" : "askıya alınsın"} mı?`, () => setUserStatus(actUser.id, actUser.status === "suspended" ? "active" : "suspended"))} style={{ alignItems: "center", backgroundColor: actUser.status === "suspended" ? colors.successSoft : colors.accentSoft, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
-                          <MaterialCommunityIcons name={actUser.status === "suspended" ? "account-check-outline" : "account-cancel-outline"} size={14} color={actUser.status === "suspended" ? colors.success : colors.accent} />
-                          <Text style={{ color: actUser.status === "suspended" ? colors.success : colors.accent, fontSize: 12, fontWeight: "800" }}>{actUser.status === "suspended" ? "Aktifleştir" : "Kullanıcıyı askıya al"}</Text>
-                        </Pressable>
-                        <Pressable onPress={() => promptNotify(actUser.id, actUser.name)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
-                          <MaterialCommunityIcons name="bell-outline" size={14} color={colors.ink} />
-                          <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>Kullanıcıyı uyar</Text>
-                        </Pressable>
+                        <ActionButton tone={actUser.status === "suspended" ? "success" : "danger"} icon={actUser.status === "suspended" ? "account-check-outline" : "account-cancel-outline"} label={actUser.status === "suspended" ? "Aktifleştir" : "Kullanıcıyı askıya al"} busy={busy[`ust:${actUser.id}`]} onPress={() => confirmAction(`${actUser.name} kullanıcısı ${actUser.status === "suspended" ? "aktifleştirilsin" : "askıya alınsın"} mı?`, () => void run(`ust:${actUser.id}`, () => setUserStatus(actUser.id, actUser.status === "suspended" ? "active" : "suspended"), actUser.status === "suspended" ? "Kullanıcı aktifleştirildi" : "Kullanıcı askıya alındı"), actUser.status === "suspended" ? "Aktifleştir" : "Askıya al")} />
+                        <ActionButton tone="soft" icon="bell-outline" label="Kullanıcıyı uyar" onPress={() => promptNotify(actUser.id, actUser.name)} />
                       </>
                     ) : null}
                     {isOpenReport(r) && r.reason.startsWith("DOĞRULAMA TALEBİ") && actUser && canManageUsers ? (
                       <>
-                        <Pressable onPress={() => { setUserVerification(actUser.id, "verifiedIdentity", true); void updateReportStatus(r.id, "resolved"); }} style={{ alignItems: "center", backgroundColor: colors.success, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
-                          <MaterialCommunityIcons name="check-decagram" size={14} color="#FFFFFF" />
-                          <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>Kimlik doğrula</Text>
-                        </Pressable>
-                        <Pressable onPress={() => { setUserVerification(actUser.id, "verifiedPhone", true); void updateReportStatus(r.id, "resolved"); }} style={{ alignItems: "center", backgroundColor: colors.info, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
-                          <MaterialCommunityIcons name="phone-check" size={14} color="#FFFFFF" />
-                          <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>Telefon doğrula</Text>
-                        </Pressable>
+                        <ActionButton tone="success" icon="check-decagram" label="Kimlik doğrula" busy={busy[rk]} onPress={() => void run(rk, () => { setUserVerification(actUser.id, "verifiedIdentity", true); return updateReportStatus(r.id, "resolved"); }, "Kimlik doğrulandı, talep kapatıldı", "Talep kapatılamadı. Tekrar dene.")} />
+                        <ActionButton tone="success" icon="phone-check" label="Telefon doğrula" busy={busy[rk]} onPress={() => void run(rk, () => { setUserVerification(actUser.id, "verifiedPhone", true); return updateReportStatus(r.id, "resolved"); }, "Telefon doğrulandı, talep kapatıldı", "Talep kapatılamadı. Tekrar dene.")} />
                       </>
                     ) : null}
                     {isOpenReport(r) ? (
                       <>
-                        <Pressable onPress={() => void updateReportStatus(r.id, "resolved")} style={{ alignItems: "center", backgroundColor: colors.success, borderRadius: 8, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
-                          <MaterialCommunityIcons name="check" size={14} color="#FFFFFF" />
-                          <Text style={{ color: "#FFFFFF", fontSize: 12, fontWeight: "800" }}>Çözüldü</Text>
-                        </Pressable>
-                        <Pressable onPress={() => void updateReportStatus(r.id, "rejected")} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 7 }}>
-                          <MaterialCommunityIcons name="close" size={14} color={colors.muted} />
-                          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>Reddet</Text>
-                        </Pressable>
+                        <ActionButton tone="primary" icon="check" label="Çözüldü" busy={busy[rk]} onPress={() => void run(rk, () => updateReportStatus(r.id, "resolved"), "Şikayet çözüldü olarak işaretlendi", "Şikayet güncellenemedi. Tekrar dene.")} />
+                        <ActionButton tone="neutral" icon="close" label="Reddet" busy={busy[rk]} onPress={() => confirmAction("Bu şikayet reddedilsin mi? (işlem yapılmadan kapatılır)", () => void run(rk, () => updateReportStatus(r.id, "rejected"), "Şikayet reddedildi", "Şikayet güncellenemedi. Tekrar dene."), "Reddet")} />
                       </>
                     ) : null}
                   </View>
                 </View>
               );
             })}
+            <Pager {...reportsPg} />
           </Panel>
         ) : null}
 
@@ -833,7 +897,7 @@ function AdminScreenInner() {
             <Panel title="Kategori Önerileri" sub={`${pendingCat} bekliyor`}>
               {categorySuggestions.length === 0 ? <EmptyState icon="shape-outline" title="Öneri yok" body="Henüz kategori önerisi gelmedi." /> : null}
               {categorySuggestions.map((s) => (
-                <SuggestionRow key={s.id} title={s.suggestedPath} note={s.note} meta={`${s.userName ?? "Kullanıcı"} · ${s.createdAt}`} status={s.status} onApprove={() => adoptCategorySuggestion(s.id, s.suggestedPath)} onReject={() => setCategorySuggestionStatus(s.id, "rejected")} />
+                <SuggestionRow key={s.id} title={s.suggestedPath} note={s.note} meta={`${s.userName ?? "Kullanıcı"} · ${s.createdAt}`} status={s.status} onApprove={() => void run(`cs:${s.id}`, () => adoptCategorySuggestion(s.id, s.suggestedPath), "Öneri onaylandı, kategori eklendi")} onReject={() => confirmAction("Bu kategori önerisi reddedilsin mi?", () => void run(`cs:${s.id}`, () => setCategorySuggestionStatus(s.id, "rejected"), "Öneri reddedildi"), "Reddet")} />
               ))}
             </Panel>
             <Panel title="Kategori Yapısı" sub={`${categoryTree.length} ana kategori`}>
@@ -843,17 +907,17 @@ function AdminScreenInner() {
                 return (
                   <View key={n.key} style={{ borderBottomColor: colors.line, borderBottomWidth: 1 }}>
                     <View style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 12 }}>
-                      <Pressable onPress={() => setExpandedCat(open ? null : n.key)} style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minWidth: 0 }}>
+                      <Pressable onPress={() => setExpandedCat(open ? null : n.key)} style={{ alignItems: "center", flex: 1, flexDirection: "row", gap: 10, minHeight: 40, minWidth: 0 }}>
                         <MaterialCommunityIcons name="folder-outline" size={18} color={hidden ? colors.subtle : colors.primaryDark} />
                         <Text style={{ color: hidden ? colors.muted : colors.ink, flex: 1, fontSize: 13.5, fontWeight: "800", textDecorationLine: hidden ? "line-through" : "none" }}>{n.label}</Text>
                         <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{n.children?.length ?? 0} alt</Text>
                       </Pressable>
                       {/* Gizle/Göster — gezinme yüzeylerinden (menü/keşfet/kategoriler) gizler; ilan verme etkilenmez. */}
-                      <Pressable onPress={() => toggleHiddenCategory(n.key)} accessibilityLabel={hidden ? "Kategoriyi göster" : "Kategoriyi gizle"} style={{ alignItems: "center", backgroundColor: hidden ? colors.warningSoft : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 10, paddingVertical: 5 }}>
-                        <MaterialCommunityIcons name={hidden ? "eye-off-outline" : "eye-outline"} size={14} color={hidden ? colors.warning : colors.muted} />
-                        <Text style={{ color: hidden ? colors.warning : colors.muted, fontSize: 11, fontWeight: "800" }}>{hidden ? "Gizli" : "Görünür"}</Text>
+                      <Pressable onPress={() => toggleHiddenCategory(n.key)} accessibilityLabel={hidden ? "Kategoriyi göster" : "Kategoriyi gizle"} accessibilityRole="button" style={{ alignItems: "center", backgroundColor: hidden ? colors.goldSoft : colors.surfaceAlt, borderRadius: 999, flexDirection: "row", gap: 4, minHeight: isWideWeb ? 30 : 40, paddingHorizontal: 12 }}>
+                        <MaterialCommunityIcons name={hidden ? "eye-off-outline" : "eye-outline"} size={14} color={hidden ? colors.goldInk : colors.muted} />
+                        <Text style={{ color: hidden ? colors.goldInk : colors.muted, fontSize: 11.5, fontWeight: "800" }}>{hidden ? "Gizli" : "Görünür"}</Text>
                       </Pressable>
-                      <Pressable onPress={() => setExpandedCat(open ? null : n.key)}><MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={18} color={colors.muted} /></Pressable>
+                      <Pressable accessibilityRole="button" accessibilityLabel={open ? "Alt kategorileri gizle" : "Alt kategorileri göster"} onPress={() => setExpandedCat(open ? null : n.key)} style={{ alignItems: "center", height: 40, justifyContent: "center", width: 36 }}><MaterialCommunityIcons name={open ? "chevron-up" : "chevron-down"} size={20} color={colors.muted} /></Pressable>
                     </View>
                     {open ? (
                       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6, paddingBottom: 12 }}>
@@ -873,47 +937,38 @@ function AdminScreenInner() {
           <Panel title="Konum Önerileri" sub={`${pendingLoc} bekliyor`}>
             {locationSuggestions.length === 0 ? <EmptyState icon="map-marker-outline" title="Öneri yok" body="Henüz konum/mahalle önerisi gelmedi." /> : null}
             {locationSuggestions.map((s) => (
-              <SuggestionRow key={s.id} title={`${s.suggestedName} (${s.type})`} note={[getProvince(s.provinceId)?.name, getDistrict(s.districtId)?.name].filter(Boolean).join(" / ") + (s.note ? ` — ${s.note}` : "")} meta={`${s.userName ?? "Kullanıcı"} · ${s.createdAt}`} status={s.status} onApprove={() => setLocationSuggestionStatus(s.id, "approved")} onReject={() => setLocationSuggestionStatus(s.id, "rejected")} />
+              <SuggestionRow key={s.id} title={`${s.suggestedName} (${s.type})`} note={[getProvince(s.provinceId)?.name, getDistrict(s.districtId)?.name].filter(Boolean).join(" / ") + (s.note ? ` — ${s.note}` : "")} meta={`${s.userName ?? "Kullanıcı"} · ${s.createdAt}`} status={s.status} onApprove={() => void run(`lsg:${s.id}`, () => setLocationSuggestionStatus(s.id, "approved"), "Konum önerisi onaylandı")} onReject={() => confirmAction("Bu konum önerisi reddedilsin mi?", () => void run(`lsg:${s.id}`, () => setLocationSuggestionStatus(s.id, "rejected"), "Öneri reddedildi"), "Reddet")} />
             ))}
           </Panel>
         ) : null}
 
         {section === "messages" ? (
-          (() => {
-            // DÜZELTİLDİ (P0): Bu bölüm eskiden hesap anlık görüntüsündeki `conversations`/
-            // `messages`i kullanıyordu — bunlar RLS/filtre gereği ADMİNİN KENDİ yazışmalarıydı.
-            // Yani "platform mesaj moderasyonu" aslında adminin kendi gelen kutusuydu
-            // (sahte güvenlik sinyali). Artık admin_recent_messages RPC'si ile PLATFORM
-            // GENELİNDEN okunuyor; sayılar da admin_message_stats'tan (gerçek).
-            const rows = modMessages.map((m) => ({ m, risk: conversationRisk([m.body]) }));
-            const riskyCount = rows.filter((x) => x.risk).length;
-            const shown = msgFilter === "risky" ? rows.filter((x) => x.risk) : rows;
-            return (
-              <Panel
-                title="Mesaj Moderasyonu"
-                sub={msgStats
-                  ? `${msgStats.conversations} görüşme · ${msgStats.messages} mesaj (24s: ${msgStats.messages_24h}) · ${msgStats.blocked_pairs} engel · son ${modMessages.length} mesajda ${riskyCount} riskli`
-                  : "Yükleniyor…"}
-              >
-                <FilterChips value={msgFilter} onChange={setMsgFilter} options={[{ key: "all", label: "Tümü", count: rows.length }, { key: "risky", label: "⚠ Riskli", count: riskyCount }]} />
-                {shown.length === 0 ? <EmptyState icon="message-text-outline" title="Mesaj yok" body={msgFilter === "risky" ? "Son mesajlarda riskli ifade bulunmuyor." : "Platformda henüz mesaj yok."} /> : null}
-                <Table head={["GÖNDEREN → ALICI", "İLAN", "MESAJ", "DURUM"]} cols={[1.4, 1.5, 1.8, 1]}>
-                  {shown.map(({ m, risk }) => (
-                    <Row key={m.id} cols={[1.4, 1.5, 1.8, 1]} cells={[
-                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{(m.sender_name ?? "—") + " → " + (m.receiver_name ?? "—")}</Text>,
-                      m.listing_id ? <Link href={{ pathname: "/listing/[id]", params: { id: m.listing_id } }} asChild><Pressable><Text numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{m.listing_title ?? "İlan"}</Text></Pressable></Link> : <Text style={{ color: colors.muted, fontSize: 12 }}>—</Text>,
-                      <Text numberOfLines={1} style={{ color: risk ? colors.accent : colors.muted, fontSize: 12, fontWeight: risk ? "700" : "600" }}>{m.body || "—"}</Text>,
-                      risk ? <View style={{ alignSelf: "flex-start", backgroundColor: colors.accentSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="alert" size={11} color={colors.accent} /><Text style={{ color: colors.accent, fontSize: 10, fontWeight: "900" }}>{risk}</Text></View> : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Normal</Text>
-                    ]} />
-                  ))}
-                </Table>
-              </Panel>
-            );
-          })()
+          // Platform GENELİ mesajlar (admin_recent_messages RPC) — adminin kendi kutusu DEĞİL.
+          // Sayılar admin_message_stats'tan (gerçek). Arama, yüklenen son mesajlar içinde çalışır.
+          <Panel
+            title="Mesaj Moderasyonu"
+            sub={msgStats
+              ? `${fmtN(msgStats.conversations)} görüşme · ${fmtN(msgStats.messages)} mesaj (24s: ${fmtN(msgStats.messages_24h)}) · ${fmtN(msgStats.blocked_pairs)} engel · son ${modMessages.length} mesajda ${riskyMsgCount} riskli`
+              : `Son ${modMessages.length} mesaj · ${riskyMsgCount} riskli`}
+          >
+            <AdminSearch value={msgQuery} onChange={setMsgQuery} placeholder="Mesaj, gönderen, alıcı veya ilan ara (son 100 mesaj)…" />
+            <FilterChips value={msgFilter} onChange={setMsgFilter} options={[{ key: "all", label: "Tümü", count: msgRows.length }, { key: "risky", label: "Riskli", count: riskyMsgCount }]} />
+            {shownMsgs.length === 0 ? <EmptyState icon="message-text-outline" title="Mesaj yok" body={mq ? "Aramaya uyan mesaj yok." : msgFilter === "risky" ? "Son mesajlarda riskli ifade bulunmuyor." : "Platformda henüz mesaj yok."} /> : null}
+            <Table head={["GÖNDEREN → ALICI", "İLAN", "MESAJ", "DURUM"]} cols={[1.4, 1.5, 1.8, 1]}>
+              {msgsPg.slice.map(({ m, risk }) => (
+                <Row key={m.id} cols={[1.4, 1.5, 1.8, 1]} cells={[
+                  <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{(m.sender_name ?? "—") + " → " + (m.receiver_name ?? "—")}</Text>,
+                  m.listing_id ? <PressLink href={{ pathname: "/listing/[id]", params: { id: m.listing_id } }} style={{ justifyContent: "center", minHeight: isWideWeb ? 0 : 40 }}><Text numberOfLines={1} style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }}>{m.listing_title ?? "İlan"}</Text></PressLink> : <Text style={{ color: colors.muted, fontSize: 12 }}>—</Text>,
+                  <Text numberOfLines={isWideWeb ? 1 : 4} style={{ color: risk ? colors.accent : colors.muted, fontSize: 12, fontWeight: risk ? "700" : "600", lineHeight: 17 }}>{m.body || "—"}</Text>,
+                  risk ? <View style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.accentSoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="alert" size={11} color={colors.accent} /><Text style={{ color: colors.accent, fontSize: 10.5, fontWeight: "900" }}>{risk}</Text></View> : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>Normal</Text>
+                ]} />
+              ))}
+            </Table>
+            <Pager {...msgsPg} />
+          </Panel>
         ) : null}
 
         {section === "commissions" ? (() => {
-          const shownSales = commFilter === "all" ? sales : sales.filter((s) => s.status === commFilter);
           const totalShown = shownSales.reduce((a, s) => a + s.commissionAmount, 0);
           return (
           <Panel title="Komisyon Kayıtları" sub={`${shownSales.length} kayıt · toplam ${money(totalShown)} — OrtakSat para tutmaz; bu kayıtlar taraflar arası komisyon takibidir.`}>
@@ -923,7 +978,7 @@ function AdminScreenInner() {
                   const on = commFilter === k;
                   const c = k === "all" ? sales.length : sales.filter((s) => s.status === k).length;
                   return (
-                    <Pressable key={k} onPress={() => setCommFilter(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 11, paddingVertical: 6 }}>
+                    <Pressable key={k} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => setCommFilter(k)} style={{ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, justifyContent: "center", minHeight: isWideWeb ? 32 : 40, paddingHorizontal: 12 }}>
                       <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11.5, fontWeight: "800" }}>{lbl} · {c}</Text>
                     </Pressable>
                   );
@@ -947,11 +1002,11 @@ function AdminScreenInner() {
             ) : null}
             {shownSales.length === 0 ? <EmptyState icon="cash-multiple" title="Kayıt yok" body="Bu filtreye uygun komisyon kaydı bulunmuyor." /> : null}
             <Table head={["İLAN", "KOMİSYON", "ORTAKLIK", "ALICI ONAYI", "DURUM", "ARABULUCULUK"]} cols={[2, 1, 1.2, 1, 1, 1.4]}>
-              {[...shownSales].sort((a, b) => (a.status === "disputed" ? -1 : 0) - (b.status === "disputed" ? -1 : 0)).map((s) => {
+              {salesPg.slice.map((s) => {
                 const listing = listings.find((l) => l.id === s.listingId);
                 const p = partnerships.find((x) => x.id === s.partnershipId);
                 const buyer = s.buyerConfirmedAt || s.buyerConfirmStatus === "confirmed"
-                  ? { label: "Onaylı ✓", color: colors.success }
+                  ? { label: "Onaylı ✓", color: SUCCESS_INK }
                   : s.buyerConfirmStatus === "disputed"
                     ? { label: "İtiraz", color: colors.accent }
                     : s.buyerConfirmToken
@@ -965,15 +1020,16 @@ function AdminScreenInner() {
                     <Text numberOfLines={1} style={{ color: buyer.color, fontSize: 11.5, fontWeight: "800" }}>{buyer.label}</Text>,
                     <View style={{ alignSelf: "flex-start", backgroundColor: SALE_TONE[s.status].tint, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: SALE_TONE[s.status].color, fontSize: 10.5, fontWeight: "900" }}>{SALE_TONE[s.status].label}</Text></View>,
                     s.status === "disputed" ? (
-                      <View style={{ flexDirection: "row", gap: 10 }}>
-                        <Pressable onPress={() => confirmAction("Anlaşmazlık çözülüp komisyon ONAYLANSIN mı?", () => updateSaleStatus(s.id, "approved"))} accessibilityRole="button" accessibilityLabel="Anlaşmazlığı çöz ve onayla"><Text style={{ color: colors.success, fontSize: 11.5, fontWeight: "900" }}>Çöz · Onayla</Text></Pressable>
-                        <Pressable onPress={() => confirmAction("Bu komisyon kaydı İPTAL edilsin mi?", () => updateSaleStatus(s.id, "cancelled"))} accessibilityRole="button" accessibilityLabel="Komisyonu iptal et"><Text style={{ color: colors.accent, fontSize: 11.5, fontWeight: "900" }}>İptal</Text></Pressable>
+                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: isWideWeb ? "flex-end" : "flex-start" }}>
+                        <ActionButton tone="primary" icon="check" label="Çöz · Onayla" busy={busy[`sale:${s.id}`]} accessibilityLabel="Anlaşmazlığı çöz ve onayla" onPress={() => confirmAction("Anlaşmazlık çözülüp komisyon ONAYLANSIN mı?", () => void run(`sale:${s.id}`, () => updateSaleStatus(s.id, "approved"), "Anlaşmazlık çözüldü, komisyon onaylandı"), "Onayla")} />
+                        <ActionButton tone="danger" icon="close" label="İptal" busy={busy[`sale:${s.id}`]} accessibilityLabel="Komisyonu iptal et" onPress={() => confirmAction("Bu komisyon kaydı İPTAL edilsin mi?", () => void run(`sale:${s.id}`, () => updateSaleStatus(s.id, "cancelled"), "Komisyon kaydı iptal edildi"), "İptal et")} />
                       </View>
                     ) : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>—</Text>
                   ]} />
                 );
               })}
             </Table>
+            <Pager {...salesPg} />
           </Panel>
           );
         })() : null}
@@ -1011,9 +1067,7 @@ function AdminScreenInner() {
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{String(r.listingId).slice(0, 8)}…</Text>,
                       <Text style={{ color: colors.gold, fontSize: 12.5, fontWeight: "800" }}>{"★".repeat(Math.max(0, Math.min(5, Math.round(r.rating))))}</Text>,
                       <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12, fontWeight: "600" }}>{r.comment || "—"}</Text>,
-                      <Pressable onPress={() => modReview(r.id, !r.deleted)} style={{ alignSelf: "flex-start", backgroundColor: r.deleted ? colors.successSoft : colors.accentSoft, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
-                        <Text style={{ color: r.deleted ? colors.success : colors.accent, fontSize: 11, fontWeight: "800" }}>{r.deleted ? "Geri Al" : "Gizle"}</Text>
-                      </Pressable>
+                      <View style={{ alignSelf: "flex-start" }}><ActionButton tone={r.deleted ? "success" : "danger"} icon={r.deleted ? "eye-outline" : "eye-off-outline"} label={r.deleted ? "Geri al" : "Gizle"} busy={busy[`rev:${r.id}`]} onPress={() => modReview(r.id, !r.deleted)} /></View>
                     ]} />
                   ))}
                 </Table>
@@ -1028,9 +1082,7 @@ function AdminScreenInner() {
                       <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700" }}>{q.askerName || "—"}</Text>,
                       <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12, fontWeight: "600" }}>{q.question}</Text>,
                       <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{q.answer || "yanıtsız"}</Text>,
-                      <Pressable onPress={() => delQuestion(q.id)} style={{ alignSelf: "flex-start", backgroundColor: colors.accentSoft, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
-                        <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "800" }}>Sil</Text>
-                      </Pressable>
+                      <View style={{ alignSelf: "flex-start" }}><ActionButton tone="danger" icon="trash-can-outline" label="Sil" busy={busy[`q:${q.id}`]} onPress={() => delQuestion(q.id)} /></View>
                     ]} />
                   ))}
                 </Table>
@@ -1061,9 +1113,7 @@ function AdminScreenInner() {
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.category || "—"}</Text>,
                       <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{p.commissionHint || "—"}</Text>,
                       p.status === "closed" ? <StatusBadge label="Kapalı" tone="neutral" /> : (
-                        <Pressable onPress={() => closePR(p.id)} style={{ alignSelf: "flex-start", backgroundColor: colors.warningSoft, borderRadius: 8, paddingHorizontal: 9, paddingVertical: 5 }}>
-                          <Text style={{ color: colors.warning, fontSize: 11, fontWeight: "800" }}>Kapat</Text>
-                        </Pressable>
+                        <View style={{ alignSelf: "flex-start" }}><ActionButton tone="warning" icon="close-circle-outline" label="Kapat" busy={busy[`pr:${p.id}`]} onPress={() => closePR(p.id)} /></View>
                       )
                     ]} />
                   ))}
@@ -1076,39 +1126,36 @@ function AdminScreenInner() {
         {section === "stats" ? (
           <View style={{ gap: 16 }}>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-              <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={fmtN(analytics?.total_users ?? users.length)} title="Kullanıcı" />
-              <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={fmtN(analytics?.listings_active ?? activeListings.length)} title="Aktif ilan" />
-              <Stat icon="handshake" tint={colors.violetSoft} color={colors.violet} value={fmtN(analytics?.partnerships_total ?? partnerships.length)} title="Ortaklık" />
-              <Stat icon="cart-check" tint={colors.successSoft} color={colors.success} value={fmtN(analytics?.commissions_total ?? sales.length)} title="Komisyon kaydı" />
-              <Stat icon="account-clock" tint={colors.goldSoft} color={colors.gold} value={`${leads.length}`} title="Talep (yüklü)" />
-              <Stat icon="cash-multiple" tint={colors.successSoft} color={colors.success} value={money(analytics ? analytics.gmv : totalCommission)} title="Toplam GMV" />
-              <Stat icon="check-decagram" tint={colors.primarySoft} color={colors.primaryDark} value={`${users.filter((u) => u.verifiedPhone || u.verifiedIdentity).length}`} title="Doğrulanmış (yüklü)" />
-              <Stat icon="star" tint={colors.goldSoft} color={colors.gold} value={`${listings.filter((l) => l.featured).length}`} title="Öne çıkan (yüklü)" />
-              <Stat icon="map-marker" tint={colors.infoSoft} color={colors.info} value={`${new Set(activeListings.map((l) => l.location)).size}`} title="Şehir (yüklü)" />
-              <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(analytics ? Math.max(0, analytics.commission_amount - analytics.commission_paid_amount) : unpaidCommission)} title="Bekleyen komisyon" />
-              <Stat icon="account-check" tint={colors.successSoft} color={colors.success} value={`${buyerConfirmedN}`} title="Alıcı onaylı satış" />
-              <Stat icon="account-clock-outline" tint={colors.goldSoft} color={colors.gold} value={`${buyerAwaitingN}`} title="Alıcı onayı bekleyen" />
+              <Stat icon="account-group" tint={colors.primarySoft} color={colors.primary} value={fmtN(analytics?.total_users ?? users.length)} title="Kullanıcı" />
+              <Stat icon="file-document" tint={colors.primarySoft} color={colors.primary} value={fmtN(analytics?.listings_active ?? activeListings.length)} title="Aktif ilan" />
+              <Stat icon="handshake" tint={colors.primarySoft} color={colors.primary} value={fmtN(analytics?.partnerships_total ?? partnerships.length)} title="Ortaklık" />
+              <Stat icon="cart-check" tint={colors.primarySoft} color={colors.primary} value={fmtN(analytics?.commissions_total ?? sales.length)} title="Komisyon kaydı" />
+              <Stat icon="account-clock" tint={colors.primarySoft} color={colors.primary} value={overview ? fmtN(overview.leads_total) : "—"} title="Talep (lead)" helper={overview ? "sunucu toplamı" : "veri yok"} />
+              <Stat icon="cash-multiple" tint={colors.primarySoft} color={colors.primary} value={analytics ? money(analytics.gmv) : overview ? money(overview.gmv) : "—"} title="Toplam GMV" helper="sipariş tutarı (sunucu)" />
+              <Stat icon="check-decagram" tint={colors.primarySoft} color={colors.primary} value={`${users.filter((u) => u.verifiedPhone || u.verifiedIdentity).length}`} title="Doğrulanmış (yüklü)" />
+              <Stat icon="star" tint={colors.primarySoft} color={colors.primary} value={`${listings.filter((l) => l.featured).length}`} title="Öne çıkan (yüklü)" />
+              <Stat icon="map-marker" tint={colors.primarySoft} color={colors.primary} value={`${new Set(activeListings.map((l) => l.location)).size}`} title="Şehir (yüklü)" />
+              <Stat icon="cash-clock" tint={colors.goldSoft} color={colors.goldInk} value={money(analytics ? Math.max(0, analytics.commission_amount - analytics.commission_paid_amount) : unpaidCommission)} title="Bekleyen komisyon" />
+              <Stat icon="account-check" tint={colors.successSoft} color={SUCCESS_INK} value={`${buyerConfirmedN}`} title="Alıcı onaylı satış" />
+              <Stat icon="account-clock-outline" tint={colors.primarySoft} color={colors.primary} value={`${buyerAwaitingN}`} title="Alıcı onayı bekleyen" />
             </View>
-            <Panel title="Aylık İlan Trendi" sub="Son 12 ay — yüklü kayıtlardan (sunucu-toplam için Canlı Panel)">
+            <LoadedTrend listings={listings} users={users} listingsTotal={analytics?.listings_total ?? overview?.listings_total ?? null} />
+            <Panel title="Aylık İlan Trendi" sub="Son 12 ay — yüklü kayıtlardan (sunucu toplamları için Canlı Panel)">
               <ResponsiveLineArea points={chartData.map((v, i) => ({ label: chartLabels[i] ?? `${i + 1}`, value: v }))} color={colors.primary} height={210} />
             </Panel>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-              <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
+              <View style={{ flexBasis: 300, flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
                 <Panel title="En Çok İlanı Olan Satıcılar" sub="Aktif ilan sayısına göre ilk 6">
                   {topSellers.length === 0 ? <EmptyState title="Veri yok" body="Henüz satıcı verisi yok." /> : <HBarChart rank data={topSellers.map((r) => ({ label: r.label, value: r.count }))} valueFmt={(n) => `${Math.round(n)} ilan`} />}
                 </Panel>
               </View>
-              <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
+              <View style={{ flexBasis: 300, flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
                 <Panel title="En Çok Kazanan Ortaklar" sub="Kayıtlı komisyona göre ilk 6">
                   {topPartners.length === 0 ? <EmptyState title="Veri yok" body="Henüz komisyon kaydı yok." /> : <HBarChart rank data={topPartners.map((r) => ({ label: r.label, value: r.count }))} valueFmt={fmtMoney} />}
                 </Panel>
               </View>
-              <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
-                <Panel title="Kategori Dağılımı" sub="Aktif ilana göre ilk 8 kategori">
-                  {catDist.length === 0 ? <EmptyState title="Veri yok" body="Aktif ilan yok." /> : <Treemap data={catDist.map((r) => ({ label: r.label, value: r.count }))} height={190} />}
-                </Panel>
-              </View>
-              <View style={{ flexBasis: 300, flexGrow: 1, minWidth: 0 }}>
+              <RootCategoryCard listings={listings} serverActive={analytics?.listings_active ?? overview?.listings?.active ?? null} />
+              <View style={{ flexBasis: 300, flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
                 <Panel title="Şehir Dağılımı" sub="Aktif ilana göre ilk 8 şehir">
                   {cityDist.length === 0 ? <EmptyState title="Veri yok" body="Aktif ilan yok." /> : <HBarChart rank data={cityDist.map((r) => ({ label: r.label, value: r.count }))} valueFmt={(n) => `${Math.round(n)}`} />}
                 </Panel>
@@ -1126,9 +1173,9 @@ function AdminScreenInner() {
           {canManageUsers ? (
             <Panel title="Duyuru Gönder" sub={overview ? `${Math.max(0, overview.users_total - 1)} kullanıcıya (askıya alınanlar hariç) — sunucu taraflı, sınırsız` : "Tüm kayıtlı kullanıcılara bildirim gönder"}>
               <View style={{ gap: 10 }}>
-                <TextInput value={bcTitle} onChangeText={setBcTitle} placeholder="Başlık (ör. Yeni özellik!)" placeholderTextColor={colors.muted} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 42, paddingHorizontal: 12 }} />
-                <TextInput value={bcBody} onChangeText={setBcBody} placeholder="Mesaj metni" placeholderTextColor={colors.muted} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 64, paddingHorizontal: 12, paddingVertical: 10 }} />
-                {bcResult ? <Text style={{ color: bcResult.startsWith("!") ? colors.accent : colors.success, fontSize: 12.5, fontWeight: "800" }}>{bcResult.replace(/^!/, "")}</Text> : null}
+                <TextInput value={bcTitle} onChangeText={setBcTitle} placeholder="Başlık (ör. Yeni özellik!)" placeholderTextColor={colors.muted} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 42, paddingHorizontal: 12 }} />
+                <TextInput value={bcBody} onChangeText={setBcBody} placeholder="Mesaj metni" placeholderTextColor={colors.muted} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 64, paddingHorizontal: 12, paddingVertical: 10 }} />
+                {bcResult ? <Text style={{ color: bcResult.startsWith("!") ? colors.accent : SUCCESS_INK, fontSize: 12.5, fontWeight: "800" }}>{bcResult.replace(/^!/, "")}</Text> : null}
                 <Pressable
                   disabled={!bcTitle.trim() || !bcBody.trim() || bcSending}
                   onPress={() => confirmAction(
@@ -1147,7 +1194,7 @@ function AdminScreenInner() {
                         .catch(() => { setBcSending(false); setBcResult("!Duyuru gönderilemedi. Tekrar dene."); });
                     }
                   )}
-                  style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: bcTitle.trim() && bcBody.trim() && !bcSending ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 18, paddingVertical: 11 }}
+                  style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: bcTitle.trim() && bcBody.trim() && !bcSending ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 7, minHeight: 42, paddingHorizontal: 18, paddingVertical: 11 }}
                 >
                   <MaterialCommunityIcons name="bullhorn-outline" size={16} color="#FFFFFF" />
                   <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>{bcSending ? "Gönderiliyor…" : "Tümüne gönder"}</Text>
@@ -1189,16 +1236,16 @@ function AdminScreenInner() {
           <View style={{ gap: 16 }}>
           <Panel title="Site Duyurusu" sub="Tüm sayfaların üstünde çıkan duyuru banner'ı">
             <View style={{ gap: 10 }}>
-              <TextInput value={annText} onChangeText={setAnnText} placeholder="Duyuru metni (ör. Bayrama özel: ilan vermek ücretsiz!)" placeholderTextColor={colors.muted} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 56, paddingHorizontal: 12, paddingVertical: 10 }} />
+              <TextInput value={annText} onChangeText={setAnnText} placeholder="Duyuru metni (ör. Bayrama özel: ilan vermek ücretsiz!)" placeholderTextColor={colors.muted} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 56, paddingHorizontal: 12, paddingVertical: 10 }} />
               <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-                <Pressable onPress={() => setAnnouncement(annText, true)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 10 }}>
+                <Pressable accessibilityRole="button" disabled={!annText.trim()} onPress={() => confirmAction("Duyuru tüm sayfaların üstünde YAYINLANSIN mı?", () => void run("ann", () => setAnnouncement(annText, true), "Duyuru yayınlandı"), "Yayınla")} style={{ opacity: annText.trim() ? 1 : 0.5, alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, minHeight: 42, paddingHorizontal: 16, paddingVertical: 10 }}>
                   <MaterialCommunityIcons name="bullhorn-outline" size={15} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Yayınla</Text>
                 </Pressable>
-                <Pressable onPress={() => setAnnouncement(annText, false)} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 9 }}>
+                <Pressable accessibilityRole="button" onPress={() => void run("ann", () => setAnnouncement(annText, false), "Duyuru kapatıldı")} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, minHeight: 42, paddingHorizontal: 16, paddingVertical: 9 }}>
                   <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Kapat</Text>
                 </Pressable>
                 <View style={{ alignItems: "center", backgroundColor: platformSettings.announcementActive ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 4 }}>
-                  <Text style={{ color: platformSettings.announcementActive ? colors.success : colors.muted, fontSize: 11, fontWeight: "900" }}>{platformSettings.announcementActive ? "YAYINDA" : "Kapalı"}</Text>
+                  <Text style={{ color: platformSettings.announcementActive ? SUCCESS_INK : colors.muted, fontSize: 11, fontWeight: "900" }}>{platformSettings.announcementActive ? "YAYINDA" : "Kapalı"}</Text>
                 </View>
               </View>
             </View>
@@ -1219,8 +1266,8 @@ function AdminScreenInner() {
               // yanlışlıkla dokunma tüm ziyaretçileri etkilerdi — o yönde onay iste.
               const toggle = () => {
                 const next = !on;
-                if (next === s.riskyAt) confirmAction(s.warn, () => updatePlatformSetting(s.key, next), "Evet, uygula");
-                else updatePlatformSetting(s.key, next);
+                if (next === s.riskyAt) confirmAction(s.warn, () => void run(`set:${s.key}`, () => updatePlatformSetting(s.key, next), "Ayar uygulandı"), "Evet, uygula");
+                else void run(`set:${s.key}`, () => updatePlatformSetting(s.key, next), "Ayar uygulandı");
               };
               return (
                 <View key={s.key} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 12, paddingVertical: 13 }}>
@@ -1228,8 +1275,8 @@ function AdminScreenInner() {
                     <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{s.label}</Text>
                     <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{s.desc}</Text>
                   </View>
-                  <Pressable accessibilityRole="switch" testID={`setting-${s.key}`} onPress={toggle} style={{ alignItems: on ? "flex-end" : "flex-start", backgroundColor: on ? colors.primary : colors.line, borderRadius: 999, height: 26, justifyContent: "center", paddingHorizontal: 3, width: 48 }}>
-                    <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 20, width: 20 }} />
+                  <Pressable accessibilityRole="switch" accessibilityLabel={s.label} accessibilityState={{ checked: !!on }} testID={`setting-${s.key}`} hitSlop={8} disabled={!!busy[`set:${s.key}`]} onPress={toggle} style={{ alignItems: on ? "flex-end" : "flex-start", backgroundColor: on ? colors.primary : colors.line, borderRadius: 999, height: 32, justifyContent: "center", opacity: busy[`set:${s.key}`] ? 0.5 : 1, paddingHorizontal: 3, width: 56 }}>
+                    <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 26, width: 26 }} />
                   </Pressable>
                 </View>
               );
@@ -1252,14 +1299,14 @@ function AdminScreenInner() {
                 const max = rows[0]?.[1] ?? 1;
                 return (
                   <View style={{ gap: 10 }}>
-                    {rows.map(([action, n], i) => (
+                    {rows.map(([action, n]) => (
                       <View key={action} style={{ gap: 5 }}>
                         <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between" }}>
                           <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{ACTION_LABEL[action] ?? action}</Text>
                           <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{n}</Text>
                         </View>
                         <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 8, overflow: "hidden" }}>
-                          <View style={{ backgroundColor: REPORT_BARS[i % REPORT_BARS.length], borderRadius: 999, height: "100%", width: `${Math.max(4, Math.round((n / max) * 100))}%` }} />
+                          <View style={{ backgroundColor: colors.primary, borderRadius: 999, height: "100%", width: `${Math.max(4, Math.round((n / max) * 100))}%` }} />
                         </View>
                       </View>
                     ))}
@@ -1274,16 +1321,17 @@ function AdminScreenInner() {
                 <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", paddingVertical: 8 }}>Henüz denetim kaydı yok. Kullanıcılar giriş yapıp işlem yaptıkça burada görünür.</Text>
               ) : (
                 <Table head={["ZAMAN", "AKSİYON", "TİP", "KAYIT"]} cols={[1.4, 1.6, 1, 1.6]}>
-                  {audit.logs.map((a) => (
+                  {auditPg.slice.map((a) => (
                     <Row key={a.id} cols={[1.4, 1.6, 1, 1.6]} cells={[
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{a.createdAt}</Text>,
-                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{a.action}</Text>,
+                      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "800" }}>{ACTION_LABEL[a.action] ?? a.action}</Text>,
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{a.entityType ?? "—"}</Text>,
                       <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{a.entityId ? a.entityId.slice(0, 12) : "—"}</Text>
                     ]} />
                   ))}
                 </Table>
               )}
+              {audit && audit.logs.length ? <Pager {...auditPg} /> : null}
             </Panel>
           </View>
         ) : null}
@@ -1293,7 +1341,7 @@ function AdminScreenInner() {
           gruplu, okunabilir ve rozetli bir çekmece içinde gösterir. */}
       <Modal visible={!isWideWeb && adminNavOpen} transparent animationType="fade" onRequestClose={() => setAdminNavOpen(false)}>
         <View style={{ flex: 1, flexDirection: "row" }}>
-          <View style={{ backgroundColor: colors.surface, flex: 1, maxWidth: 340, shadowColor: colors.primaryDark, shadowOffset: { width: 8, height: 0 }, shadowOpacity: 0.18, shadowRadius: 22 }}>
+          <View style={{ backgroundColor: colors.surface, maxWidth: 340, width: "86%", shadowColor: colors.primaryDark, shadowOffset: { width: 8, height: 0 }, shadowOpacity: 0.18, shadowRadius: 22 }}>
             <View style={{ backgroundColor: colors.primaryDark, gap: 12, paddingBottom: 14, paddingHorizontal: 16, paddingTop: 18 }}>
               <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
                 <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 11, height: 38, justifyContent: "center", width: 38 }}>
@@ -1303,13 +1351,13 @@ function AdminScreenInner() {
                   <Text style={{ color: "#FFFFFF", fontSize: 16, fontWeight: "900" }}>OrtakSat Yönetim</Text>
                   <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.68)", fontSize: 11, fontWeight: "700" }}>{currentUser.name || "Yönetici"} · {currentUser.role === "super_admin" ? "Süper Admin" : currentUser.role === "moderator" ? "Moderatör" : "Admin"}</Text>
                 </View>
-                <Pressable accessibilityLabel="Yönetim menüsünü kapat" onPress={() => setAdminNavOpen(false)} style={{ alignItems: "center", height: 38, justifyContent: "center", width: 38 }}>
+                <Pressable accessibilityRole="button" accessibilityLabel="Yönetim menüsünü kapat" onPress={() => setAdminNavOpen(false)} style={{ alignItems: "center", height: 44, justifyContent: "center", width: 44 }}>
                   <MaterialCommunityIcons name="close" size={23} color="#FFFFFF" />
                 </Pressable>
               </View>
               <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.1)", borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 10, paddingVertical: 8 }}>
-                <View style={{ backgroundColor: isAdmin ? colors.success : colors.warning, borderRadius: 999, height: 8, width: 8 }} />
-                <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>{isAdmin ? "Yetkili yönetim oturumu" : "Yalnızca önizleme"}</Text>
+                <View style={{ backgroundColor: colors.success, borderRadius: 999, height: 8, width: 8 }} />
+                <Text style={{ color: "#FFFFFF", fontSize: 11, fontWeight: "800" }}>Yetkili yönetim oturumu</Text>
               </View>
             </View>
             <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ gap: 4, padding: 12, paddingBottom: 30 }}>
@@ -1349,40 +1397,44 @@ function AdminScreenInner() {
       {/* Kullanıcıya bildirim gönder — her iki platformda çalışan gerçek metin kutusu
           (eskiden web'de window.prompt, NATIVE'de hiç girdi alınmadan sabit metin). */}
       <Modal visible={notifyTarget !== null} transparent animationType="fade" onRequestClose={() => setNotifyTarget(null)}>
-        <Pressable onPress={() => setNotifyTarget(null)} style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", flex: 1, justifyContent: "center", padding: 20 }}>
-          <Pressable onPress={() => undefined} style={{ backgroundColor: colors.surface, borderRadius: 16, gap: 12, maxWidth: 460, padding: 18, width: "100%" }}>
-            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{notifyTarget?.name} kullanıcısına bildirim</Text>
-            <TextInput
-              value={notifyText}
-              onChangeText={setNotifyText}
-              multiline
-              autoFocus
-              placeholder="Mesajın…"
-              placeholderTextColor={colors.subtle}
-              style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 90, padding: 12, textAlignVertical: "top" }}
-            />
-            <View style={{ flexDirection: "row", gap: 8, justifyContent: "flex-end" }}>
-              <Pressable onPress={() => setNotifyTarget(null)} style={{ borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 16, paddingVertical: 10 }}>
-                <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text>
-              </Pressable>
-              <Pressable
-                disabled={!notifyText.trim()}
-                onPress={() => {
-                  const t = notifyTarget;
-                  if (!t || !notifyText.trim()) return;
-                  adminNotifyUser(t.id, "OrtakSat Yönetimi", notifyText.trim());
-                  setNotifyTarget(null);
-                  setNotifyText("");
-                }}
-                style={{ backgroundColor: notifyText.trim() ? colors.primary : colors.line, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 10 }}
-              >
-                <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>Gönder</Text>
-              </Pressable>
-            </View>
+        {/* RN Modal ebeveynin KeyboardAvoidingView'ını miras almaz → kendi KAV'ı (gönder butonu klavye altında kalmasın). */}
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+          <Pressable accessibilityLabel="Kapat" onPress={() => setNotifyTarget(null)} style={{ alignItems: "center", backgroundColor: "rgba(9,39,94,0.5)", flex: 1, justifyContent: "center", padding: 16 }}>
+            <Pressable onPress={() => undefined} style={{ backgroundColor: colors.surface, borderRadius: 16, gap: 12, maxHeight: "90%", maxWidth: 460, padding: 16, width: "100%" }}>
+              <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{notifyTarget?.name} kullanıcısına bildirim</Text>
+              <TextInput
+                value={notifyText}
+                onChangeText={setNotifyText}
+                multiline
+                autoFocus
+                maxLength={500}
+                placeholder="Mesajın…"
+                placeholderTextColor={colors.subtle}
+                style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, maxHeight: 180, minHeight: 96, padding: 12, textAlignVertical: "top" }}
+              />
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
+                <ActionButton tone="neutral" label="Vazgeç" onPress={() => setNotifyTarget(null)} />
+                <ActionButton
+                  tone="primary"
+                  icon="send"
+                  label="Gönder"
+                  disabled={!notifyText.trim()}
+                  onPress={() => {
+                    const t = notifyTarget;
+                    if (!t || !notifyText.trim()) return;
+                    const body = notifyText.trim();
+                    setNotifyTarget(null);
+                    setNotifyText("");
+                    void run(`ntf:${t.id}`, () => adminNotifyUser(t.id, "OrtakSat Yönetimi", body), "Bildirim gönderildi");
+                  }}
+                />
+              </View>
+            </Pressable>
           </Pressable>
-        </Pressable>
+        </KeyboardAvoidingView>
       </Modal>
     </View>
+    </AdminWideCtx.Provider>
   );
 }
 
@@ -1400,173 +1452,175 @@ function confirmAction(message: string, onYes: () => void, yesLabel = "Evet") {
 }
 
 // ---- pieces --------------------------------------------------------------
-type DashProps = {
-  usersN: number; listingsN: number; salesN: number; commission: number;
-  activeN: number; pendingN: number; reportsN: number; partnershipsN: number; messagesN: number;
-  disputedN: number; unpaidCommission: number; pendingCat: number; pendingLoc: number;
-  listings: ReturnType<typeof useStore>["listings"]; users: ReturnType<typeof useStore>["users"]; findUser: ReturnType<typeof useStore>["findUser"];
-  sales: ReturnType<typeof useStore>["sales"]; partnerships: ReturnType<typeof useStore>["partnerships"]; reports: ReturnType<typeof useStore>["reports"];
-  notifications: ReturnType<typeof useStore>["notifications"]; leads: ReturnType<typeof useStore>["leads"];
-  setSection: (s: Section) => void;
-  analytics?: AdminAnalytics | null;
-};
-function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, reportsN, partnershipsN, messagesN, disputedN, unpaidCommission, pendingCat, pendingLoc, listings, users, sales, partnerships, reports, notifications, leads, setSection, analytics }: DashProps) {
-  // SUNUCU-GERÇEK toplamlar (admin_live_analytics RPC) — istemci-cap'li (≤1000) dizilerden DEĞİL.
-  // Böylece dashboard sayıları AdminActivity ile TUTARLI ve ölçekte DOĞRU. analytics yoksa (önizleme) prop'a düşer.
-  const totalUsers = analytics?.total_users ?? usersN;
-  const totalListings = analytics?.listings_total ?? listingsN;
-  const activeListings = analytics?.listings_active ?? activeN;
-  const gmvTotal = analytics ? analytics.gmv : commission; // GERÇEK GMV (orders); önizlemede istemci komisyonuna düşer
-  const commissionUnpaid = analytics ? Math.max(0, analytics.commission_amount - analytics.commission_paid_amount) : unpaidCommission;
-  const salesRecords = analytics?.commissions_total ?? salesN;
-  const pendingListings = analytics?.listings_pending ?? pendingN;
-  const openReports = analytics?.open_reports ?? reportsN;
-  const pendingPartners = analytics?.partnerships_pending ?? partnershipsN;
-  const catQ = analytics?.cat_suggestions ?? pendingCat;
-  const locQ = analytics?.loc_suggestions ?? pendingLoc;
-  const recentUsers = users.slice().filter((u) => u.status !== "deleted").slice(-5).reverse();
-  const recentListings = sortByDate(listings, "createdAt").slice(0, 6);
-  const chart = monthlyListingChart(listings);
-  const openWork = pendingListings + openReports + pendingPartners + disputedN + catQ + locQ;
-  const publishRate = totalListings ? Math.round((activeListings / totalListings) * 100) : 0;
-  const conversionRate = leads.length ? Math.round((salesN / leads.length) * 100) : 0;
-  const listingStatusData = listingStatusStats(listings);
-  const categoryData = topCategoryStats(listings, 7);
-  const saleStatusData = saleStatusStats(sales);
-  const funnelData = [
-    { label: "Yayındaki ilan", value: activeN, color: colors.primaryDark },
-    { label: "Ortaklık", value: partnerships.length, color: colors.violet },
-    { label: "Talep", value: leads.length, color: colors.info },
-    { label: "Satış kaydı", value: sales.length, color: colors.success }
+type StoreT = ReturnType<typeof useStore>;
+
+// Üst başlık: bölüm adı + açık iş sayısı. Sayı yalnız SUNUCU analitiğinden; yoksa "—".
+function DashHero({ analytics, disputedN, name }: { analytics: AdminAnalytics | null; disputedN: number; name?: string }) {
+  const wide = useContext(AdminWideCtx);
+  const openWork = analytics ? analytics.listings_pending + analytics.open_reports + analytics.partnerships_pending + analytics.cat_suggestions + analytics.loc_suggestions + disputedN : null;
+  return (
+    <View style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 18, flexDirection: "row", flexWrap: "wrap", gap: 14, justifyContent: "space-between", padding: wide ? 22 : 16 }}>
+      <View style={{ flexBasis: 220, flexGrow: 1, flexShrink: 1, gap: 4, minWidth: 0 }}>
+        <Text style={{ color: "#FFFFFF", fontSize: wide ? 26 : 21, fontWeight: "900", letterSpacing: -0.5 }}>Yönetim Merkezi</Text>
+        <Text style={{ color: "rgba(255,255,255,0.78)", fontSize: 13, fontWeight: "600", lineHeight: 19 }}>
+          {name ? `Hoş geldin ${name}. ` : ""}Canlı sayılar, bekleyen işler ve moderasyon tek ekranda.
+        </Text>
+      </View>
+      <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.18)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 10 }}>
+        <MaterialCommunityIcons name={openWork ? "alert-circle-outline" : "check-decagram-outline"} size={20} color="#FFFFFF" />
+        <View>
+          <Text style={{ color: "#FFFFFF", fontSize: 19, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.3 }}>{openWork == null ? "—" : fmtN(openWork)}</Text>
+          <Text style={{ color: "rgba(255,255,255,0.72)", fontSize: 11.5, fontWeight: "700" }}>açık iş</Text>
+        </View>
+      </View>
+    </View>
+  );
+}
+
+/**
+ * 30 / 90 / 365 günlük trend — istemciye YÜKLENMİŞ kayıtlardan (admin snapshot: ilanlar + kullanıcılar).
+ * Sunucu günlük serisi yalnız 14 gündür (Canlı Panel); daha uzun aralık için sunucu RPC'si yok,
+ * bu yüzden kapsam ("N / toplam yüklü") açıkça yazılır. Kayıt tarihi olmayan satırlar sayılmaz.
+ */
+function LoadedTrend({ listings, users, listingsTotal }: { listings: StoreT["listings"]; users: StoreT["users"]; listingsTotal: number | null }) {
+  const [range, setRange] = useState<30 | 90 | 365>(30);
+  const [w, setW] = useState(0);
+  const li = useMemo(() => bucketDates(listings.map((l) => l.createdAt), range), [listings, range]);
+  const us = useMemo(() => bucketDates(users.map((u) => u.createdAt), range), [users, range]);
+  const usersDated = useMemo(() => users.filter((u) => !!u.createdAt).length, [users]);
+  const series = [
+    { label: "Yeni ilan", color: colors.primary, values: li.values },
+    ...(usersDated > 0 ? [{ label: "Yeni kayıt", color: colors.violet, values: us.values }] : [])
   ];
-  const resolvedReports = reports.filter((r) => r.status === "resolved" || r.status === "rejected").length;
-  const reportResolutionRate = reports.length ? Math.round((resolvedReports / reports.length) * 100) : 100;
-  const latestActivity = [
-    ...notifications.map((n) => ({ icon: "bell-outline" as const, tone: colors.primary, title: n.title, meta: n.createdAt })),
-    ...leads.map((l) => ({ icon: "account-arrow-right-outline" as const, tone: colors.info, title: `Yeni talep: ${l.buyerName || "Alıcı"}`, meta: l.createdAt })),
-    ...recentListings.map((l) => ({ icon: "file-document-outline" as const, tone: l.status === "pending_review" ? colors.warning : colors.success, title: l.title, meta: `${listingStatusLabel(l.status)} · ${l.createdAt}` }))
-  ].slice(0, 7);
+  const empty = li.counted === 0 && us.counted === 0;
+  const partial = listingsTotal != null && listingsTotal > listings.length;
+  return (
+    <ChartCard
+      title="Uzun dönem trend"
+      meta={`${range <= 31 ? "Günlük" : "Haftalık"} · yüklü kayıtlardan: ${fmtN(listings.length)}${listingsTotal != null ? ` / ${fmtN(listingsTotal)}` : ""} ilan${usersDated > 0 ? ` · ${fmtN(usersDated)} kullanıcı` : " · kullanıcı kayıt tarihi yüklü değil"}${partial ? " · KISMİ" : ""}`}
+      right={<RangeSwitch value={range} onChange={setRange} options={[{ key: 30, label: "30 gün" }, { key: 90, label: "90 gün" }, { key: 365, label: "12 ay" }]} />}
+    >
+      <View onLayout={(e) => setW(Math.round(e.nativeEvent.layout.width))} style={{ width: "100%" }}>
+        {empty ? <NoData text="Bu aralıkta yüklü kayıt yok." /> : w > 0 ? <MultiLineChart labels={li.labels} series={series} width={w} /> : <View style={{ height: 200 }} />}
+      </View>
+    </ChartCard>
+  );
+}
+
+/** Aktif ilanların KÖK kategoriye göre dağılımı (listingRootNode) — yüklü ilanlardan; kapsam yazılır. */
+function RootCategoryCard({ listings, serverActive }: { listings: StoreT["listings"]; serverActive: number | null }) {
+  const { rows, n } = useMemo(() => {
+    const m = new Map<string, number>();
+    let count = 0;
+    for (const l of listings) {
+      if (l.status !== "active") continue;
+      count += 1;
+      const label = listingRootNode(l)?.label ?? "Kök eşleşmedi";
+      m.set(label, (m.get(label) ?? 0) + 1);
+    }
+    return { rows: [...m.entries()].sort((a, b) => b[1] - a[1]), n: count };
+  }, [listings]);
+  return (
+    <ChartCard title="Kök kategori dağılımı" meta={`Aktif ilan · ${fmtN(n)} yüklü${serverActive != null ? ` / ${fmtN(serverActive)} sunucu` : ""}${serverActive != null && serverActive > n ? " · KISMİ" : ""}`} basis={300}>
+      {rows.length === 0 ? <NoData text="Aktif ilan yok." /> : <HBarChart rank data={rows.map(([label, value]) => ({ label, value, color: colors.primary }))} valueFmt={(v) => `${fmtN(v)} · %${n ? Math.round((v / n) * 100) : 0}`} />}
+    </ChartCard>
+  );
+}
+
+type DashProps = {
+  listings: StoreT["listings"]; users: StoreT["users"]; notifications: StoreT["notifications"]; findUser: StoreT["findUser"];
+  pendingN: number; reportsN: number; pendingCat: number; pendingLoc: number; disputedN: number;
+  setSection: (s: Section) => void;
+  analytics: AdminAnalytics | null;
+  overview: AdminOverview | null;
+};
+function Dashboard({ listings, users, notifications, findUser, pendingN, reportsN, pendingCat, pendingLoc, disputedN, setSection, analytics, overview }: DashProps) {
+  // Oranlar SUNUCU toplamlarından (admin_live_analytics + admin_overview). Sunucu verisi yoksa "—".
+  const totalListings = analytics?.listings_total ?? overview?.listings_total ?? null;
+  const activeListings = analytics?.listings_active ?? overview?.listings?.active ?? null;
+  const publishRate = totalListings && activeListings != null ? Math.round((activeListings / totalListings) * 100) : null;
+  const leadsTotal = overview?.leads_total ?? null;
+  const ordersTotal = analytics?.orders_total ?? overview?.orders_total ?? null;
+  const conversion = leadsTotal && ordersTotal != null ? Math.round((ordersTotal / leadsTotal) * 100) : null;
+  const reportsTotal = overview?.reports_total ?? null;
+  const reportsOpen = analytics?.open_reports ?? overview?.reports_open ?? null;
+  const resolution = reportsTotal && reportsOpen != null ? Math.round(((reportsTotal - reportsOpen) / reportsTotal) * 100) : null;
+  const pendingComm = analytics ? (Number.isFinite(analytics.commission_pending_amount) ? analytics.commission_pending_amount : Math.max(0, analytics.commission_amount - analytics.commission_paid_amount)) : null;
+  const recentUsers = sortByDate(users.filter((u) => u.status !== "deleted" && !!u.createdAt), "createdAt").slice(0, 5);
+  const recentListings = sortByDate(listings, "createdAt").slice(0, 6);
+  const topSellers = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of listings) if (l.status === "active") m.set(l.ownerId, (m.get(l.ownerId) ?? 0) + 1);
+    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([id, c]) => ({ label: findUser(id)?.name ?? "—", value: c, color: colors.primary }));
+  }, [listings, findUser]);
+  const listingStatusData = listingStatusStats(listings);
   const priorities = [
-    { label: "Onay bekleyen ilan", value: pendingListings, icon: "clock-alert-outline" as const, tone: colors.warning, go: "listings" as Section, helper: "Yayına alınmayı bekliyor" },
-    { label: "Açık şikayet", value: openReports, icon: "flag-outline" as const, tone: colors.accent, go: "complaints" as Section, helper: "Kullanıcı güveni için öncelikli" },
-    { label: "Ortaklık talebi", value: pendingPartners, icon: "handshake-outline" as const, tone: colors.violet, go: "partnerships" as Section, helper: "Satıcı onayı bekliyor" },
-    { label: "Öneri kuyruğu", value: catQ + locQ, icon: "shape-plus" as const, tone: colors.info, go: catQ ? "categories" as Section : "locations" as Section, helper: "Kategori ve konum önerileri" }
+    { label: "Onay bekleyen ilan", value: pendingN, icon: "clock-alert-outline" as const, tone: colors.gold, go: "listings" as Section, helper: "Yayına alınmayı bekliyor" },
+    { label: "Açık şikayet", value: reportsN, icon: "flag-outline" as const, tone: colors.accent, go: "complaints" as Section, helper: "Kullanıcı güveni için öncelikli" },
+    { label: "Öneri kuyruğu", value: pendingCat + pendingLoc, icon: "shape-plus" as const, tone: colors.primary, go: pendingCat ? "categories" as Section : "locations" as Section, helper: "Kategori ve konum önerileri" }
   ];
 
   return (
-    <View style={{ gap: 18 }}>
-      <View style={{ backgroundColor: colors.primaryDark, borderRadius: 18, overflow: "hidden", shadowColor: "#001449", shadowOffset: { width: 0, height: 6 }, shadowOpacity: 0.18, shadowRadius: 20 }}>
-        <View style={{ gap: 18, padding: 22 }}>
-          <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16, justifyContent: "space-between" }}>
-            <View style={{ flex: 1, gap: 6, minWidth: 260 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 28, fontWeight: "900", letterSpacing: -0.6, lineHeight: 34 }}>Yönetim Merkezi</Text>
-              <Text style={{ color: "rgba(255,255,255,0.78)", fontSize: 13.5, fontWeight: "600", lineHeight: 20, maxWidth: 680 }}>
-                İlan onayı, kullanıcı güvenliği, ortaklık talepleri ve gelir kayıtlarını tek ekrandan izle. Öncelikli işler aşağıda otomatik öne çıkarılır.
-              </Text>
-            </View>
-            <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.18)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 10 }}>
-              <MaterialCommunityIcons name={openWork ? "alert-circle-outline" : "check-decagram-outline"} size={20} color="#FFFFFF" />
-              <View>
-                <Text style={{ color: "#FFFFFF", fontSize: 19, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.3 }}>{openWork}</Text>
-                <Text style={{ color: "rgba(255,255,255,0.72)", fontSize: 11.5, fontWeight: "700" }}>açık iş</Text>
-              </View>
-            </View>
-          </View>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-            <HeroMetric label="Yayın oranı" value={`%${publishRate}`} icon="chart-donut" />
-            <HeroMetric label="Toplam GMV" value={money(gmvTotal)} icon="cash-multiple" />
-            <HeroMetric label="Talep/satış dönüşümü" value={`%${conversionRate}`} icon="trending-up" />
-            <HeroMetric label="Mesaj hacmi" value={`${messagesN}`} icon="forum-outline" />
-          </View>
+    <View style={{ gap: 16 }}>
+      {/* Sunucu analitiği gelmediyse (hata) bekleyen işler yüklü kayıtlardan gösterilir. */}
+      {!analytics ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
+          {priorities.map((p) => <PriorityCard key={p.label} {...p} onPress={() => setSection(p.go)} />)}
         </View>
+      ) : null}
+
+      <LoadedTrend listings={listings} users={users} listingsTotal={totalListings} />
+
+      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
+        <RootCategoryCard listings={listings} serverActive={activeListings} />
+        <ChartCard title="En çok ilanı olan satıcılar" meta="Aktif ilan sayısına göre ilk 6 · yüklü ilanlardan" basis={300}>
+          {topSellers.length === 0 ? <NoData text="Henüz aktif ilanı olan satıcı yok." /> : <HBarChart rank data={topSellers} valueFmt={(v) => `${fmtN(v)} ilan`} />}
+        </ChartCard>
       </View>
 
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 12 }}>
-        {priorities.map((p) => <PriorityCard key={p.label} {...p} onPress={() => setSection(p.go)} />)}
-      </View>
-
-      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-        <Stat icon="account-group" tint={colors.infoSoft} color={colors.info} value={fmtN(totalUsers)} title="Toplam Kullanıcı" helper={analytics ? `${fmtN(analytics.new_7d)} bu hafta yeni` : `${recentUsers.length} son kayıt`} onPress={() => setSection("users")} />
-        <Stat icon="file-document" tint={colors.primarySoft} color={colors.primaryDark} value={fmtN(totalListings)} title="Toplam İlan" helper={`${fmtN(activeListings)} yayında`} onPress={() => setSection("listings")} />
-        <Stat icon="check-decagram" tint={colors.successSoft} color={colors.success} value={fmtN(activeListings)} title="Yayındaki İlan" helper={`%${publishRate} yayın oranı`} onPress={() => setSection("listings")} />
-        <Stat icon="message-text" tint={colors.primarySoft} color={colors.primaryDark} value={`${messagesN}`} title="Mesaj (yüklü)" helper={`${leads.length} talep kaydı`} onPress={() => setSection("messages")} />
-        <Stat icon="cart-check" tint={colors.successSoft} color={colors.success} value={fmtN(salesRecords)} title="Komisyon Kaydı" helper={analytics ? `${fmtN(analytics.commissions_paid)} ödendi` : `%${conversionRate} dönüşüm`} onPress={() => setSection("commissions")} />
-        <Stat icon="cash-clock" tint={colors.warningSoft} color={colors.warning} value={money(commissionUnpaid)} title="Bekleyen Komisyon" helper={`${disputedN} anlaşmazlık`} onPress={() => setSection("commissions")} />
-      </View>
+      <Panel title="Operasyon Sağlığı" sub="Sunucu toplamlarından hesaplanan oranlar">
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
+          <HealthCard label="Yayın oranı" value={publishRate == null ? "—" : `%${publishRate}`} detail={totalListings != null && activeListings != null ? `${fmtN(activeListings)}/${fmtN(totalListings)} ilan yayında` : "veri yok"} tone={publishRate == null ? "neutral" : publishRate >= 70 ? "success" : publishRate >= 40 ? "warning" : "accent"} />
+          <HealthCard label="Talep → sipariş" value={conversion == null ? "—" : `%${conversion}`} detail={leadsTotal != null && ordersTotal != null ? `${fmtN(ordersTotal)} sipariş / ${fmtN(leadsTotal)} talep` : "veri yok"} tone="neutral" />
+          <HealthCard label="Şikayet çözümü" value={resolution == null ? "—" : `%${resolution}`} detail={reportsTotal != null && reportsOpen != null ? `${fmtN(reportsTotal - reportsOpen)}/${fmtN(reportsTotal)} kayıt kapanmış` : reportsTotal === 0 ? "şikayet yok" : "veri yok"} tone={resolution == null ? "neutral" : resolution >= 85 ? "success" : resolution >= 55 ? "warning" : "accent"} />
+          <HealthCard label="Bekleyen komisyon" value={pendingComm == null ? "—" : money(pendingComm)} detail={`${disputedN} anlaşmazlık (yüklü kayıtlarda)`} tone={disputedN ? "accent" : pendingComm ? "warning" : pendingComm == null ? "neutral" : "success"} />
+        </View>
+      </Panel>
 
       <View style={{ alignItems: "flex-start", flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-        <View style={{ flex: 2, gap: 16, minWidth: 300 }}>
-          <Panel title="Aylık İlan Performansı" sub="Son 12 ay — gerçek ilan verisi">
-            <ResponsiveLineArea points={chart.data.map((v, i) => ({ label: chart.labels[i] ?? `${i + 1}`, value: v }))} color={colors.primary} height={210} />
-          </Panel>
-          <Panel title="Operasyon Sağlığı" sub="Günlük kontrol için kritik oranlar">
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
-              <HealthCard label="Yayın oranı" value={`%${publishRate}`} detail={`${fmtN(activeListings)}/${fmtN(totalListings)} ilan yayında`} tone={publishRate >= 70 ? "success" : publishRate >= 40 ? "warning" : "accent"} />
-              <HealthCard label="Açık iş yükü" value={`${openWork}`} detail="İnceleme bekleyen toplam kayıt" tone={openWork === 0 ? "success" : openWork < 5 ? "warning" : "accent"} />
-              <HealthCard label="Şikayet çözümü" value={`%${reportResolutionRate}`} detail={`${resolvedReports}/${reports.length || 0} kayıt kapanmış`} tone={reportResolutionRate >= 85 ? "success" : reportResolutionRate >= 55 ? "warning" : "accent"} />
-              <HealthCard label="Komisyon riski" value={money(commissionUnpaid)} detail={`${disputedN} anlaşmazlık var`} tone={disputedN ? "accent" : commissionUnpaid ? "warning" : "success"} />
-            </View>
-          </Panel>
-          <Panel title="Gerçek Veri Grafikleri" sub="İlan durumu, kategori yoğunluğu ve satış hunisi mevcut kayıtlardan hesaplanır">
-            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
-              <View style={{ flex: 1, gap: 8, minWidth: 260 }}>
-                <ChartHeading title="İlan Durumu" meta={`${fmtN(listings.length)} kayıt`} />
-                {listingStatusData.every((d) => d.value === 0) ? <EmptyState title="Veri yok" body="Henüz ilan yok." /> : <DonutChart data={listingStatusData} centerTop={fmtN(listings.length)} centerBottom="ilan" />}
-              </View>
-              <View style={{ flex: 1, gap: 8, minWidth: 260 }}>
-                <ChartHeading title="Kategori Dağılımı" meta={`ilk ${categoryData.length}`} />
-                {categoryData.length === 0 ? <EmptyState title="Veri yok" body="Kategori verisi yok." /> : <HBarChart data={categoryData} />}
-              </View>
-            </View>
-            <View style={{ gap: 8, marginTop: 14 }}>
-              <ChartHeading title="Ortak Satış Hunisi" meta="ilan → satış" />
-              <FunnelChart data={funnelData} />
-            </View>
-            <View style={{ gap: 8, marginTop: 14 }}>
-              <ChartHeading title="Komisyon/Satış Durumu" meta={`${fmtN(sales.length)} kayıt`} />
-              {saleStatusData.every((d) => d.value === 0) ? <EmptyState title="Veri yok" body="Henüz komisyon kaydı yok." /> : <DonutChart data={saleStatusData} centerTop={fmtN(sales.length)} centerBottom="kayıt" />}
-            </View>
-          </Panel>
+        <View style={{ flexBasis: 420, flexGrow: 2, flexShrink: 1, gap: 16, minWidth: 0 }}>
           <Panel title="Son Eklenen İlanlar" sub="En yeni kayıtlar ve yayın durumları">
             {recentListings.length === 0 ? <EmptyState title="İlan yok" body="Yeni ilanlar geldiğinde burada görünür." /> : (
               <Table head={["İLAN", "KATEGORİ", "FİYAT", "DURUM"]} cols={[2.2, 1.2, 1, 1]}>
                 {recentListings.map((l) => (
                   <Row key={l.id} cols={[2.2, 1.2, 1, 1]} cells={[
-                    <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text>,
+                    <PressLink href={{ pathname: "/listing/[id]", params: { id: l.id } }} style={{ justifyContent: "center" }}><Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{l.title}</Text></PressLink>,
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{l.category}</Text>,
-                    <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{money(l.price)}</Text>,
+                    <Text style={{ color: colors.ink, fontSize: 12.5, fontVariant: ["tabular-nums"], fontWeight: "700" }}>{money(l.price)}</Text>,
                     <StatusBadge label={listingStatusLabel(l.status)} tone={l.status === "active" ? "success" : l.status === "rejected" ? "accent" : l.status === "pending_review" ? "warning" : "neutral"} />
                   ]} />
                 ))}
               </Table>
             )}
+            <View style={{ alignSelf: "flex-start", paddingTop: 10 }}><ActionButton tone="soft" icon="file-document-outline" label="Tüm ilanları yönet" onPress={() => setSection("listings")} /></View>
+          </Panel>
+          <Panel title="Yüklü İlanların Durumu" sub={`${fmtN(listings.length)} yüklü kayıt${totalListings != null ? ` / ${fmtN(totalListings)} sunucu` : ""}`}>
+            {listingStatusData.every((d) => d.value === 0) ? <NoData text="Henüz ilan yok." /> : <DonutChart data={listingStatusData} size={150} centerTop={fmtN(listings.length)} centerBottom="yüklü ilan" />}
           </Panel>
         </View>
-        <View style={{ flex: 1, gap: 16, minWidth: 280 }}>
-          <Panel title="Son Aktiviteler" sub="Bildirim, talep ve ilan akışı">
-            {latestActivity.length === 0 ? <EmptyState title="Aktivite yok" body="Yeni bildirim veya talep geldiğinde burada görünür." /> : latestActivity.map((a, i) => (
-              <View key={`${a.title}-${i}`} style={{ alignItems: "flex-start", borderBottomColor: i === latestActivity.length - 1 ? "transparent" : colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 10 }}>
-                <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 999, height: 30, justifyContent: "center", width: 30 }}>
-                  <MaterialCommunityIcons name={a.icon} size={15} color={a.tone} />
-                </View>
-                <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
-                  <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800", lineHeight: 17 }}>{a.title}</Text>
-                  <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{a.meta}</Text>
-                </View>
-              </View>
-            ))}
-          </Panel>
+        <View style={{ flexBasis: 280, flexGrow: 1, flexShrink: 1, gap: 16, minWidth: 0 }}>
           <Panel title="Hızlı İşlemler" sub="Sık kullanılan yönetim ekranları">
             <View style={{ gap: 8 }}>
               {[
                 { label: "İlan onay kuyruğu", body: `${pendingN} bekleyen`, icon: "playlist-check" as const, go: "listings" as Section },
                 { label: "Şikayetleri incele", body: `${reportsN} açık kayıt`, icon: "shield-alert-outline" as const, go: "complaints" as Section },
-                { label: "Ortaklık talepleri", body: `${partnershipsN} başvuru`, icon: "handshake-outline" as const, go: "partnerships" as Section },
-                { label: "Raporlar ve grafikler", body: "Performans ekranı", icon: "chart-box-outline" as const, go: "reports" as Section }
+                { label: "Ortaklık talepleri", body: analytics ? `${analytics.partnerships_pending} başvuru` : "Başvuruları aç", icon: "handshake-outline" as const, go: "partnerships" as Section },
+                { label: "Komisyon kayıtları", body: `${disputedN} anlaşmazlık`, icon: "cash-multiple" as const, go: "commissions" as Section },
+                { label: "Raporlar ve denetim", body: "Aktivite ve denetim kaydı", icon: "chart-box-outline" as const, go: "reports" as Section }
               ].map((k) => (
-                <Pressable key={k.label} onPress={() => setSection(k.go)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, padding: 12 })}>
-                  <MaterialCommunityIcons name={k.icon} size={20} color={colors.primaryDark} />
-                  <View style={{ flex: 1, gap: 1 }}>
+                <Pressable key={k.label} accessibilityRole="button" onPress={() => setSection(k.go)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, minHeight: 52, padding: 12 })}>
+                  <MaterialCommunityIcons name={k.icon} size={20} color={colors.primary} />
+                  <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
                     <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "900" }}>{k.label}</Text>
                     <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{k.body}</Text>
                   </View>
@@ -1575,17 +1629,25 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
               ))}
             </View>
           </Panel>
-          <Panel title="Son Kayıt Olan Kullanıcılar" sub="Yeni hesaplar">
-            {recentUsers.length === 0 ? <EmptyState title="Kullanıcı yok" body="Yeni kullanıcılar burada listelenir." /> : recentUsers.map((u, i) => (
+          <Panel title="Son Kayıt Olan Kullanıcılar" sub="Kayıt tarihine göre (yüklü kayıtlar)">
+            {recentUsers.length === 0 ? <NoData text="Kayıt tarihi olan yüklü kullanıcı yok." /> : recentUsers.map((u, i) => (
               <View key={u.id} style={{ alignItems: "center", borderBottomColor: i === recentUsers.length - 1 ? "transparent" : colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 9 }}>
                 <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 32, justifyContent: "center", width: 32 }}>
-                  <MaterialCommunityIcons name="account" size={17} color={colors.primaryDark} />
+                  <MaterialCommunityIcons name="account" size={17} color={colors.primary} />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{u.name}</Text>
-                  <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{userRoleLabel(u.role)} · {u.listingCount ?? 0} ilan · ⭐ {u.rating}</Text>
+                  <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11, fontWeight: "600" }}>{userRoleLabel(u.role)} · {u.listingCount ?? 0} ilan · {(u.createdAt ?? "").slice(0, 10)}</Text>
                 </View>
                 <StatusBadge label={u.status === "suspended" ? "Askıda" : "Aktif"} tone={u.status === "suspended" ? "accent" : "success"} />
+              </View>
+            ))}
+          </Panel>
+          <Panel title="Bildirimlerin" sub="Yönetici hesabına düşen son bildirimler">
+            {notifications.length === 0 ? <NoData text="Bildirim yok." /> : notifications.slice(0, 5).map((n, i, arr) => (
+              <View key={n.id} style={{ borderBottomColor: i === arr.length - 1 ? "transparent" : colors.line, borderBottomWidth: 1, gap: 2, paddingVertical: 9 }}>
+                <Text numberOfLines={2} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800", lineHeight: 17 }}>{n.title}</Text>
+                <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{n.createdAt}</Text>
               </View>
             ))}
           </Panel>
@@ -1597,7 +1659,7 @@ function Dashboard({ usersN, listingsN, salesN, commission, activeN, pendingN, r
 
 function Stat({ icon, tint, color, value, title, helper, onPress }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; tint: string; color: string; value: string; title: string; helper?: string; onPress?: () => void }) {
   return (
-    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 166, flexGrow: 1, gap: 9, maxWidth: 300, minHeight: 106, minWidth: 0, padding: 15, shadowColor: colors.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, transform: [{ translateY: pressed && onPress ? -1 : 0 }] })}>
+    <Pressable onPress={onPress} disabled={!onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed && onPress ? colors.primary : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 140, flexGrow: 1, gap: 9, maxWidth: 320, minHeight: 106, minWidth: 0, padding: 14, shadowColor: colors.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.06, shadowRadius: 10, transform: [{ translateY: pressed && onPress ? -1 : 0 }] })}>
       <View style={{ alignItems: "flex-start", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
         <View style={{ alignItems: "center", backgroundColor: tint, borderRadius: 11, height: 40, justifyContent: "center", width: 40 }}>
           <MaterialCommunityIcons name={icon} size={20} color={color} />
@@ -1613,29 +1675,17 @@ function Stat({ icon, tint, color, value, title, helper, onPress }: { icon: keyo
   );
 }
 
-function HeroMetric({ label, value, icon }: { label: string; value: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }) {
-  return (
-    <View style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.1)", borderColor: "rgba(255,255,255,0.18)", borderRadius: 14, borderWidth: 1, flexDirection: "row", gap: 10, minWidth: 190, paddingHorizontal: 13, paddingVertical: 11 }}>
-      <MaterialCommunityIcons name={icon} size={19} color="#FFFFFF" />
-      <View style={{ flex: 1 }}>
-        <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 15.5, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.2 }}>{value}</Text>
-        <Text numberOfLines={1} style={{ color: "rgba(255,255,255,0.72)", fontSize: 11, fontWeight: "700" }}>{label}</Text>
-      </View>
-    </View>
-  );
-}
-
 function PriorityCard({ label, value, helper, icon, tone, onPress }: { label: string; value: number; helper: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; tone: string; onPress: () => void }) {
   const empty = value === 0;
   return (
-    <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed ? tone : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 260, flexGrow: 1, minWidth: 0, opacity: pressed ? 0.92 : 1, padding: 16, shadowColor: colors.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: empty ? 0.04 : 0.07, shadowRadius: 10, transform: [{ translateY: pressed ? -1 : 0 }] })}>
+    <Pressable onPress={onPress} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: pressed ? tone : colors.line, borderRadius: 16, borderWidth: 1, flexBasis: 240, flexGrow: 1, flexShrink: 1, minWidth: 0, opacity: pressed ? 0.92 : 1, padding: 16, shadowColor: colors.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: empty ? 0.04 : 0.07, shadowRadius: 10, transform: [{ translateY: pressed ? -1 : 0 }] })}>
       <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 12 }}>
-        <View style={{ alignItems: "center", backgroundColor: empty ? colors.successSoft : `${tone}22`, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
-          <MaterialCommunityIcons name={empty ? "check-circle-outline" : icon} size={21} color={empty ? colors.success : tone} />
+        <View style={{ alignItems: "center", backgroundColor: empty ? colors.successSoft : colors.surfaceAlt, borderRadius: 12, height: 42, justifyContent: "center", width: 42 }}>
+          <MaterialCommunityIcons name={empty ? "check-circle-outline" : icon} size={21} color={empty ? SUCCESS_INK : tone} />
         </View>
         <View style={{ flex: 1, gap: 4, minWidth: 0 }}>
           <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-            <Text style={{ color: empty ? colors.success : tone, fontSize: 22, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.4 }}>{value}</Text>
+            <Text style={{ color: empty ? SUCCESS_INK : tone, fontSize: 22, fontVariant: ["tabular-nums"], fontWeight: "900", letterSpacing: -0.4 }}>{value}</Text>
             <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{label}</Text>
           </View>
           <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{empty ? "Şu an işlem beklemiyor" : helper}</Text>
@@ -1646,21 +1696,23 @@ function PriorityCard({ label, value, helper, icon, tone, onPress }: { label: st
   );
 }
 
-function HealthCard({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: "success" | "warning" | "accent" }) {
+function HealthCard({ label, value, detail, tone }: { label: string; value: string; detail: string; tone: "success" | "warning" | "accent" | "neutral" }) {
   const palette = tone === "success"
-    ? { bg: colors.successSoft, fg: colors.success, icon: "check-circle-outline" as const }
+    ? { bg: colors.successSoft, fg: SUCCESS_INK, icon: "check-circle-outline" as const }
     : tone === "warning"
-      ? { bg: colors.warningSoft, fg: colors.warning, icon: "alert-circle-outline" as const }
-      : { bg: colors.accentSoft, fg: colors.accent, icon: "alert-octagon-outline" as const };
+      ? { bg: colors.goldSoft, fg: colors.goldInk, icon: "alert-circle-outline" as const }
+      : tone === "neutral"
+        ? { bg: colors.primarySoft, fg: colors.primary, icon: "chart-donut" as const }
+        : { bg: colors.accentSoft, fg: colors.accent, icon: "alert-octagon-outline" as const };
   return (
-    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 180, flexGrow: 1, gap: 9, minWidth: 0, padding: 13 }}>
+    <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 14, borderWidth: 1, flexBasis: 140, flexGrow: 1, flexShrink: 1, gap: 9, minWidth: 0, padding: 13 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
         <View style={{ alignItems: "center", backgroundColor: palette.bg, borderRadius: 999, height: 28, justifyContent: "center", width: 28 }}>
           <MaterialCommunityIcons name={palette.icon} size={15} color={palette.fg} />
         </View>
         <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "900" }}>{label}</Text>
       </View>
-      <Text style={{ color: palette.fg, fontSize: 20, fontWeight: "900" }}>{value}</Text>
+      <Text numberOfLines={1} style={{ color: tone === "neutral" ? colors.ink : palette.fg, fontSize: 20, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{value}</Text>
       <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{detail}</Text>
     </View>
   );
@@ -1668,21 +1720,12 @@ function HealthCard({ label, value, detail, tone }: { label: string; value: stri
 
 type ChartDatum = { label: string; value: number; color: string };
 
-function ChartHeading({ title, meta }: { title: string; meta?: string }) {
-  return (
-    <View style={{ alignItems: "center", flexDirection: "row", justifyContent: "space-between", gap: 8 }}>
-      <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{title}</Text>
-      {meta ? <Text style={{ color: colors.muted, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>{meta}</Text> : null}
-    </View>
-  );
-}
-
 function StatusBadge({ label, tone }: { label: string; tone: "success" | "warning" | "accent" | "neutral" }) {
-  const bg = tone === "success" ? colors.successSoft : tone === "warning" ? colors.warningSoft : tone === "accent" ? colors.accentSoft : colors.surfaceAlt;
-  const fg = tone === "success" ? colors.success : tone === "warning" ? colors.warning : tone === "accent" ? colors.accent : colors.muted;
+  const bg = tone === "success" ? colors.successSoft : tone === "warning" ? colors.goldSoft : tone === "accent" ? colors.accentSoft : colors.surfaceAlt;
+  const fg = tone === "success" ? SUCCESS_INK : tone === "warning" ? colors.goldInk : tone === "accent" ? colors.accent : colors.muted;
   return (
-    <View style={{ alignSelf: "flex-start", backgroundColor: bg, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}>
-      <Text style={{ color: fg, fontSize: 10.5, fontWeight: "900" }}>{label}</Text>
+    <View style={{ alignSelf: "flex-start", backgroundColor: bg, borderRadius: 999, paddingHorizontal: 9, paddingVertical: 3 }}>
+      <Text style={{ color: fg, fontSize: 11, fontWeight: "900" }}>{label}</Text>
     </View>
   );
 }
@@ -1734,22 +1777,6 @@ function listingStatusStats(listings: ReturnType<typeof useStore>["listings"]): 
   }));
 }
 
-function saleStatusStats(sales: ReturnType<typeof useStore>["sales"]): ChartDatum[] {
-  return Object.entries(countBy(sales, (s) => s.status)).map(([status, value]) => ({
-    label: SALE_TONE[status as SaleStatus]?.label ?? status,
-    value,
-    color: SALE_TONE[status as SaleStatus]?.color ?? colors.primaryDark
-  }));
-}
-
-function topCategoryStats(listings: ReturnType<typeof useStore>["listings"], limit: number): ChartDatum[] {
-  const palette = [colors.primaryDark, colors.info, colors.violet, colors.gold, colors.success, colors.accent, colors.warning];
-  return Object.entries(countBy(listings, (l) => l.category || "Kategori yok"))
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, limit)
-    .map(([label, value], i) => ({ label, value, color: palette[i % palette.length] }));
-}
-
 function countBy<T>(items: T[], getKey: (item: T) => string) {
   return items.reduce<Record<string, number>>((acc, item) => {
     const key = getKey(item);
@@ -1765,7 +1792,7 @@ function ExportButton({ label = "CSV indir", filename, headers, rows }: { label?
       accessibilityRole="button"
       accessibilityLabel={`${label} (${rows.length} satır)`}
       onPress={() => downloadCsv(filename, headers, rows)}
-      style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.8 : 1, paddingHorizontal: 12, paddingVertical: 7 })}
+      style={({ pressed }) => ({ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 40, opacity: pressed ? 0.8 : 1, paddingHorizontal: 13 })}
     >
       <MaterialCommunityIcons name="download-outline" size={15} color={colors.primaryDark} />
       <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{label} · {rows.length}</Text>
@@ -1775,8 +1802,9 @@ function ExportButton({ label = "CSV indir", filename, headers, rows }: { label?
 
 // Sıralı dağılım listesi (satıcı/ortak/kategori/şehir) — etiket + değer + oran çubuğu.
 function Panel({ title, sub, children }: { title: string; sub?: string; children: ReactNode }) {
+  const wide = useContext(AdminWideCtx);
   return (
-    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 18, shadowColor: colors.primaryDark, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.05, shadowRadius: 12 }}>
+    <View style={{ ...ADMIN_CARD, gap: 10, minWidth: 0, padding: wide ? 18 : 14 }}>
       <View style={{ gap: 2 }}>
         <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900", letterSpacing: -0.2 }}>{title}</Text>
         {sub ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{sub}</Text> : null}
@@ -1813,7 +1841,7 @@ function Row({ cols, cells }: { cols: number[]; cells: ReactNode[] }) {
       <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, gap: 9, paddingVertical: 13 }}>
         {cells.map((c, i) => (
           <View key={i} style={{ alignItems: "flex-start", flexDirection: "row", gap: 10 }}>
-            <Text style={{ color: colors.subtle, fontSize: 10, fontWeight: "900", letterSpacing: 0.5, marginTop: 2, textTransform: "uppercase", width: 74 }}>{head[i] ?? ""}</Text>
+            <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "900", letterSpacing: 0.4, marginTop: 3, textTransform: "uppercase", width: 82 }}>{head[i] ?? ""}</Text>
             <View style={{ flex: 1, minWidth: 0 }}>{c}</View>
           </View>
         ))}
@@ -1841,8 +1869,8 @@ function SuggestionRow({ title, note, meta, status, onApprove, onReject }: { tit
       <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{meta}</Text>
       {status === "pending" ? (
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <Pressable onPress={onApprove} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}><MaterialCommunityIcons name="check" size={15} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>Onayla</Text></Pressable>
-          <Pressable onPress={onReject} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, paddingHorizontal: 14, paddingVertical: 9 }}><MaterialCommunityIcons name="close" size={15} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Reddet</Text></Pressable>
+          <ActionButton tone="primary" icon="check" label="Onayla" onPress={onApprove} />
+          <ActionButton tone="neutral" icon="close" label="Reddet" onPress={onReject} />
         </View>
       ) : null}
     </View>
@@ -1850,12 +1878,13 @@ function SuggestionRow({ title, note, meta, status, onApprove, onReject }: { tit
 }
 
 function FilterChips<T extends string>({ value, onChange, options }: { value: T; onChange: (v: T) => void; options: Array<{ key: T; label: string; count?: number }> }) {
+  const wide = useContext(AdminWideCtx);
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 12 }}>
       {options.map((o) => {
         const on = value === o.key;
         return (
-          <Pressable key={o.key} onPress={() => onChange(o.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 6 }}>
+          <Pressable key={o.key} accessibilityRole="button" accessibilityState={{ selected: on }} onPress={() => onChange(o.key)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, minHeight: wide ? 32 : 40, paddingHorizontal: 13 }}>
             <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{o.label}</Text>
             {typeof o.count === "number" ? <View style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.25)" : colors.line, borderRadius: 999, justifyContent: "center", minWidth: 16, paddingHorizontal: 4 }}><Text style={{ color: on ? "#FFFFFF" : colors.muted, fontSize: 10, fontWeight: "900" }}>{o.count}</Text></View> : null}
           </Pressable>
@@ -1873,7 +1902,7 @@ function uuid() {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) return crypto.randomUUID();
   return `${Date.now()}-${Math.round(Math.random() * 1e9)}`;
 }
-const inputStyle = { backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 42, paddingHorizontal: 12 } as const;
+const inputStyle = ADMIN_INPUT;
 
 function BlogManager({ posts, onSave, onDelete, confirmAction }: { posts: DbBlogPost[]; onSave: (p: DbBlogPost) => void; onDelete: (id: string) => void; confirmAction: (m: string, cb: () => void) => void }) {
   const [edit, setEdit] = useState<DbBlogPost | null>(null);
@@ -1889,12 +1918,12 @@ function BlogManager({ posts, onSave, onDelete, confirmAction }: { posts: DbBlog
           <TextInput value={edit.excerpt} onChangeText={(t) => setEdit({ ...edit, excerpt: t })} placeholder="Özet" placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 56, paddingVertical: 10 }} />
           <TextInput value={edit.body.join("\n\n")} onChangeText={(t) => setEdit({ ...edit, body: t.split(/\n\n+/) })} placeholder="İçerik (paragrafları boş satırla ayır)" placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 160, paddingVertical: 10 }} />
           <View style={{ alignItems: "center", flexDirection: "row", gap: 12 }}>
-            <Pressable onPress={() => setEdit({ ...edit, featured: !edit.featured })} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}><MaterialCommunityIcons name={edit.featured ? "checkbox-marked" : "checkbox-blank-outline"} size={20} color={colors.primary} /><Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Öne çıkan</Text></Pressable>
-            <Pressable onPress={() => setEdit({ ...edit, status: edit.status === "published" ? "draft" : "published" })} style={{ alignItems: "center", backgroundColor: edit.status === "published" ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 5 }}><Text style={{ color: edit.status === "published" ? colors.success : colors.muted, fontSize: 12, fontWeight: "800" }}>{edit.status === "published" ? "Yayında" : "Taslak"}</Text></Pressable>
+            <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: edit.featured }} onPress={() => setEdit({ ...edit, featured: !edit.featured })} style={{ alignItems: "center", flexDirection: "row", gap: 6, minHeight: 40 }}><MaterialCommunityIcons name={edit.featured ? "checkbox-marked" : "checkbox-blank-outline"} size={20} color={colors.primary} /><Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>Öne çıkan</Text></Pressable>
+            <Pressable onPress={() => setEdit({ ...edit, status: edit.status === "published" ? "draft" : "published" })} style={{ alignItems: "center", backgroundColor: edit.status === "published" ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, justifyContent: "center", minHeight: 40, paddingHorizontal: 14 }}><Text style={{ color: edit.status === "published" ? SUCCESS_INK : colors.muted, fontSize: 12, fontWeight: "800" }}>{edit.status === "published" ? "Yayında" : "Taslak"}</Text></Pressable>
           </View>
           <View style={{ flexDirection: "row", gap: 10 }}>
-            <Pressable disabled={!edit.title.trim() || !edit.slug.trim()} onPress={() => { onSave(edit); setEdit(null); }} style={{ alignItems: "center", backgroundColor: edit.title.trim() && edit.slug.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="content-save-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kaydet</Text></Pressable>
-            <Pressable onPress={() => setEdit(null)} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 10 }}><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text></Pressable>
+            <Pressable disabled={!edit.title.trim() || !edit.slug.trim()} onPress={() => { onSave(edit); setEdit(null); showToast("Yazı kaydedildi"); }} style={{ alignItems: "center", backgroundColor: edit.title.trim() && edit.slug.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 6, minHeight: 42, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="content-save-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kaydet</Text></Pressable>
+            <Pressable onPress={() => setEdit(null)} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, minHeight: 42, paddingHorizontal: 18, paddingVertical: 10 }}><Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>Vazgeç</Text></Pressable>
           </View>
         </View>
       </Panel>
@@ -1902,17 +1931,17 @@ function BlogManager({ posts, onSave, onDelete, confirmAction }: { posts: DbBlog
   }
   return (
     <Panel title="Blog Yönetimi" sub={`${posts.length} yazı`}>
-      <Pressable onPress={() => setEdit(blank())} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, marginBottom: 12, paddingHorizontal: 16, paddingVertical: 10 }}><MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Yeni Yazı</Text></Pressable>
+      <Pressable onPress={() => setEdit(blank())} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, marginBottom: 12, minHeight: 42, paddingHorizontal: 16, paddingVertical: 10 }}><MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Yeni Yazı</Text></Pressable>
       {posts.length === 0 ? <EmptyState icon="post-outline" title="Blog yazısı yok" body="İlk yazıyı oluştur; ortaksat.com/blog'da yayınlanır." /> : null}
       <Table head={["BAŞLIK", "KATEGORİ", "DURUM", "İŞLEM"]} cols={[2.4, 1.2, 1, 1.4]}>
         {posts.map((p) => (
           <Row key={p.id} cols={[2.4, 1.2, 1, 1.4]} cells={[
             <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{p.title}</Text>,
             <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{p.category}</Text>,
-            <View style={{ alignSelf: "flex-start", backgroundColor: p.status === "published" ? colors.successSoft : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 8, paddingVertical: 2 }}><Text style={{ color: p.status === "published" ? colors.success : colors.muted, fontSize: 10, fontWeight: "900" }}>{p.status === "published" ? "Yayında" : "Taslak"}</Text></View>,
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <Pressable onPress={() => setEdit(p)}><Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>Düzenle</Text></Pressable>
-              <Pressable onPress={() => confirmAction(`"${p.title}" silinsin mi?`, () => onDelete(p.id))}><Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>Sil</Text></Pressable>
+            <StatusBadge label={p.status === "published" ? "Yayında" : "Taslak"} tone={p.status === "published" ? "success" : "neutral"} />,
+            <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+              <ActionButton tone="soft" icon="pencil-outline" label="Düzenle" onPress={() => setEdit(p)} />
+              <ActionButton tone="danger" icon="trash-can-outline" label="Sil" onPress={() => confirmAction(`"${p.title}" silinsin mi?`, () => { onDelete(p.id); showToast("Yazı silindi"); })} />
             </View>
           ]} />
         ))}
@@ -1961,6 +1990,7 @@ function CategoryManager({ extra, onSave, onDelete, onImport, confirmAction }: {
     const subcategories = subs.split(",").map((s) => s.trim()).filter(Boolean).map((l) => ({ label: l, slug: slugifyTr(l) }));
     onSave({ id: uuid(), key, label: label.trim(), slug: slugifyTr(label), image: image.trim(), subcategories, sortOrder: 999, isActive: true });
     setLabel(""); setImage(""); setSubs("");
+    showToast("Kategori eklendi");
   };
   return (
     <Panel title="Ekstra Kategoriler" sub="Kod ağacına ek ana kategoriler; kategori sayfası ve ilan verme akışında görünür">
@@ -1968,7 +1998,7 @@ function CategoryManager({ extra, onSave, onDelete, onImport, confirmAction }: {
         <TextInput value={label} onChangeText={setLabel} placeholder="Kategori adı (ör. Sanat & Koleksiyon)" placeholderTextColor={colors.muted} style={inputStyle} />
         <TextInput value={image} onChangeText={setImage} placeholder="Görsel URL (opsiyonel)" placeholderTextColor={colors.muted} style={inputStyle} />
         <TextInput value={subs} onChangeText={setSubs} placeholder="Alt kategoriler (virgülle: Tablo, Heykel, Antika)" placeholderTextColor={colors.muted} style={inputStyle} />
-        <Pressable disabled={!label.trim()} onPress={add} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: label.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 10 }}>
+        <Pressable disabled={!label.trim()} onPress={add} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: label.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 6, minHeight: 42, paddingHorizontal: 16, paddingVertical: 10 }}>
           <MaterialCommunityIcons name="plus" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kategori Ekle</Text>
         </Pressable>
       </View>
@@ -1977,22 +2007,22 @@ function CategoryManager({ extra, onSave, onDelete, onImport, confirmAction }: {
         <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>Bir JSON dizisi yapıştır (binlerce kategori). Örnek: {`[{"name":"Elektronik","subcategories":["Telefon","Bilgisayar"]},{"name":"Vasıta","subcategories":[{"name":"Otomobil"}]}]`}</Text>
         <TextInput value={importText} onChangeText={setImportText} placeholder='[{"name":"...","subcategories":["..."]}]' placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 120, paddingVertical: 10 }} />
         <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-          <Pressable disabled={!importText.trim()} onPress={doImport} style={{ alignItems: "center", backgroundColor: importText.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 16, paddingVertical: 10 }}>
+          <Pressable disabled={!importText.trim()} onPress={doImport} style={{ alignItems: "center", backgroundColor: importText.trim() ? colors.primary : colors.line, borderRadius: 10, flexDirection: "row", gap: 6, minHeight: 42, paddingHorizontal: 16, paddingVertical: 10 }}>
             <MaterialCommunityIcons name="upload-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>İçe Aktar</Text>
           </Pressable>
-          {importMsg ? <Text style={{ color: importMsg.startsWith("✓") ? colors.success : colors.accent, fontSize: 12, fontWeight: "700" }}>{importMsg}</Text> : null}
+          {importMsg ? <Text style={{ color: importMsg.startsWith("✓") ? SUCCESS_INK : colors.accent, fontSize: 12, fontWeight: "700" }}>{importMsg}</Text> : null}
         </View>
       </View>
       {extra.length === 0 ? <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>Henüz ekstra kategori yok. Yukarıdan ekleyebilirsin.</Text> : null}
       {extra.map((c) => (
-        <View key={c.id} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 10, paddingVertical: 11 }}>
-          <MaterialCommunityIcons name="shape-outline" size={17} color={colors.primaryDark} />
-          <View style={{ flex: 1 }}>
+        <View key={c.id} style={{ alignItems: "center", borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", flexWrap: "wrap", gap: 8, paddingVertical: 11 }}>
+          <MaterialCommunityIcons name="shape-outline" size={17} color={colors.primary} />
+          <View style={{ flexBasis: 140, flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
             <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{c.label}</Text>
             <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{c.subcategories.map((s) => s.label).join(", ") || "alt kategori yok"}</Text>
           </View>
-          <Pressable onPress={() => onSave({ ...c, isActive: !c.isActive })}><Text style={{ color: c.isActive ? colors.success : colors.muted, fontSize: 12, fontWeight: "800" }}>{c.isActive ? "Aktif" : "Gizli"}</Text></Pressable>
-          <Pressable onPress={() => confirmAction(`"${c.label}" kategorisi silinsin mi?`, () => onDelete(c.id))}><Text style={{ color: colors.accent, fontSize: 12, fontWeight: "800" }}>Sil</Text></Pressable>
+          <ActionButton tone={c.isActive ? "success" : "neutral"} icon={c.isActive ? "eye-outline" : "eye-off-outline"} label={c.isActive ? "Aktif" : "Gizli"} onPress={() => { onSave({ ...c, isActive: !c.isActive }); showToast(c.isActive ? "Kategori gizlendi" : "Kategori aktifleştirildi"); }} />
+          <ActionButton tone="danger" icon="trash-can-outline" label="Sil" onPress={() => confirmAction(`"${c.label}" kategorisi silinsin mi?`, () => { onDelete(c.id); showToast("Kategori silindi"); })} />
         </View>
       ))}
     </Panel>
@@ -2016,7 +2046,7 @@ function ContentManager({ pages, onSave }: { pages: DbContentPage[]; onSave: (p:
     <Panel title="Site İçerikleri" sub="Bilgi sayfalarını düzenle (Supabase'e kaydedilir)">
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 12 }}>
         {CONTENT_SLUGS.map((c) => (
-          <Pressable key={c.slug} onPress={() => load(c.slug)} style={{ backgroundColor: slug === c.slug ? colors.primary : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ color: slug === c.slug ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{c.label}</Text></Pressable>
+          <Pressable key={c.slug} onPress={() => load(c.slug)} style={{ backgroundColor: slug === c.slug ? colors.primary : colors.surfaceAlt, borderRadius: 999, justifyContent: "center", minHeight: 40, paddingHorizontal: 14 }}><Text style={{ color: slug === c.slug ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{c.label}</Text></Pressable>
         ))}
       </View>
       <View style={{ gap: 10 }}>
@@ -2024,7 +2054,7 @@ function ContentManager({ pages, onSave }: { pages: DbContentPage[]; onSave: (p:
         <TextInput value={draft.body} onChangeText={(t) => setDraft({ ...draft, body: t })} placeholder="Sayfa içeriği" placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 200, paddingVertical: 10 }} />
         <TextInput value={draft.seoTitle} onChangeText={(t) => setDraft({ ...draft, seoTitle: t })} placeholder="SEO başlığı (meta title)" placeholderTextColor={colors.muted} style={inputStyle} />
         <TextInput value={draft.seoDescription} onChangeText={(t) => setDraft({ ...draft, seoDescription: t })} placeholder="SEO açıklaması (meta description)" placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 56, paddingVertical: 10 }} />
-        <Pressable onPress={() => onSave({ ...draft, slug })} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="content-save-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kaydet</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => { onSave({ ...draft, slug }); showToast("Sayfa kaydedildi"); }} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, minHeight: 42, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="content-save-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kaydet</Text></Pressable>
       </View>
     </Panel>
   );
@@ -2040,15 +2070,15 @@ function SeoManager({ settings, onSave }: { settings: DbSeoSetting[]; onSave: (s
     <Panel title="SEO Yönetimi" sub="Sayfa bazlı meta etiketleri (Supabase'e kaydedilir)">
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 12 }}>
         {SEO_PATHS.map((p) => (
-          <Pressable key={p} onPress={() => load(p)} style={{ backgroundColor: path === p ? colors.primary : colors.surfaceAlt, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}><Text style={{ color: path === p ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{p}</Text></Pressable>
+          <Pressable key={p} onPress={() => load(p)} style={{ backgroundColor: path === p ? colors.primary : colors.surfaceAlt, borderRadius: 999, justifyContent: "center", minHeight: 40, paddingHorizontal: 14 }}><Text style={{ color: path === p ? "#FFFFFF" : colors.ink, fontSize: 12, fontWeight: "800" }}>{p}</Text></Pressable>
         ))}
       </View>
       <View style={{ gap: 10 }}>
         <TextInput value={draft.metaTitle} onChangeText={(t) => setDraft({ ...draft, metaTitle: t })} placeholder="Meta title" placeholderTextColor={colors.muted} style={inputStyle} />
         <TextInput value={draft.metaDescription} onChangeText={(t) => setDraft({ ...draft, metaDescription: t })} placeholder="Meta description" placeholderTextColor={colors.muted} multiline style={{ ...inputStyle, minHeight: 56, paddingVertical: 10 }} />
         <TextInput value={draft.ogImage} onChangeText={(t) => setDraft({ ...draft, ogImage: t })} placeholder="OG image URL" placeholderTextColor={colors.muted} style={inputStyle} />
-        <Pressable onPress={() => setDraft({ ...draft, noindex: !draft.noindex })} style={{ alignItems: "center", flexDirection: "row", gap: 6 }}><MaterialCommunityIcons name={draft.noindex ? "checkbox-marked" : "checkbox-blank-outline"} size={20} color={colors.primary} /><Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>noindex (arama motorlarına kapat)</Text></Pressable>
-        <Pressable onPress={() => onSave({ ...draft, path })} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="content-save-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kaydet</Text></Pressable>
+        <Pressable accessibilityRole="checkbox" accessibilityState={{ checked: draft.noindex }} onPress={() => setDraft({ ...draft, noindex: !draft.noindex })} style={{ alignItems: "center", flexDirection: "row", gap: 6, minHeight: 40 }}><MaterialCommunityIcons name={draft.noindex ? "checkbox-marked" : "checkbox-blank-outline"} size={20} color={colors.primary} /><Text style={{ color: colors.ink, fontSize: 13, fontWeight: "700" }}>noindex (arama motorlarına kapat)</Text></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => { onSave({ ...draft, path }); showToast("SEO ayarı kaydedildi"); }} style={{ alignItems: "center", alignSelf: "flex-start", backgroundColor: colors.primary, borderRadius: 10, flexDirection: "row", gap: 6, minHeight: 42, paddingHorizontal: 18, paddingVertical: 11 }}><MaterialCommunityIcons name="content-save-outline" size={16} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "800" }}>Kaydet</Text></Pressable>
       </View>
     </Panel>
   );
@@ -2067,7 +2097,7 @@ function AdminSearch({ value, onChange, placeholder }: { value: string; onChange
   return (
     <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, marginBottom: 12, paddingHorizontal: 12 }}>
       <MaterialCommunityIcons name="magnify" size={17} color={colors.muted} />
-      <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 13, minHeight: 38, paddingVertical: 6 }} />
+      <TextInput value={value} onChangeText={onChange} placeholder={placeholder} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 16, minHeight: 44, minWidth: 0, paddingVertical: 6 }} />
       {value ? <Pressable accessibilityRole="button" accessibilityLabel="Aramayı temizle" onPress={() => onChange("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={16} color={colors.muted} /></Pressable> : null}
     </View>
   );

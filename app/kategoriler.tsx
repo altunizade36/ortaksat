@@ -14,7 +14,7 @@ import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { colors } from "@/components/colors";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { WebFooter, WebTrustStrip } from "@/components/web-landing";
-import { getCategoryImage } from "@/lib/categories";
+import { categoryChipLabel, getCategoryImage } from "@/lib/categories";
 import { type CategoryNode } from "@/lib/category-tree";
 import { useIsWideWeb } from "@/lib/layout";
 
@@ -78,7 +78,7 @@ function CategoriesPageLegacy() {
     };
   });
   const totalActive = listings.filter((l) => l.status === "active").length;
-  const quickChips = tops.slice(0, 8).map((c) => ({ key: c.key, label: c.label, shortLabel: c.label }));
+  const quickChips = tops.slice(0, 8).map((c) => ({ key: c.key, label: c.label, shortLabel: categoryChipLabel(c.label) }));
 
 
   function search() {
@@ -99,8 +99,8 @@ function CategoriesPageLegacy() {
           <Text style={{ color: colors.muted, fontSize: 15, fontWeight: "600", lineHeight: 22, maxWidth: 540 }}>{translateCopy("Kategorilere göz at, ortak satışla kazanmaya başla.", language)}</Text>
           <View style={{ alignItems: "center", backgroundColor: "#FFFFFF", borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, maxWidth: 520, paddingLeft: 14, paddingRight: 6 }}>
             <MaterialCommunityIcons name="magnify" size={20} color={colors.muted} />
-            <TextInput value={query} onChangeText={setQuery} onSubmitEditing={search} placeholder={translateCopy("Kategori veya ürün ara...", language)} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600", height: 46 }} />
-            <Pressable onPress={search} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flexDirection: "row", gap: 5, height: 36, paddingHorizontal: 16 }}>
+            <TextInput value={query} onChangeText={setQuery} onSubmitEditing={search} placeholder={translateCopy("Kategori veya ürün ara...", language)} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600", height: 46, minWidth: 0 }} />
+            <Pressable onPress={search} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 9, flexDirection: "row", flexShrink: 0, gap: 5, height: 36, paddingHorizontal: 14 }}>
               <MaterialCommunityIcons name="magnify" size={16} color="#FFFFFF" />
               <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Ara", language)}</Text>
             </Pressable>
@@ -138,7 +138,7 @@ function CategoriesPageLegacy() {
               </View>
               <View style={isWideWeb ? { flex: 1, gap: 1, minWidth: 0 } : { alignItems: "center", gap: 1, minWidth: 0, width: "100%" }}>
                 <Text numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.8} style={{ color: colors.ink, fontSize: isWideWeb ? 18 : 15, fontWeight: "900" }}>{s.value}</Text>
-                <Text numberOfLines={1} style={{ color: colors.muted, fontSize: isWideWeb ? 12 : 10.5, fontWeight: "700", textAlign: isWideWeb ? "left" : "center" }}>{s.label}</Text>
+                <Text numberOfLines={isWideWeb ? 1 : 2} style={{ color: colors.muted, fontSize: isWideWeb ? 12 : 10.5, fontWeight: "700", lineHeight: isWideWeb ? 16 : 13, textAlign: isWideWeb ? "left" : "center" }}>{s.label}</Text>
               </View>
             </View>
           ))}
@@ -158,7 +158,7 @@ function CategoriesPageLegacy() {
                   <View style={{ backgroundColor: PALETTE[i % PALETTE.length][0], borderRadius: 12, height: 46, overflow: "hidden", width: 46 }}>
                     <SafeRemoteImage uri={image} alt={`${translateCopy(cat.label, language)} kategorisi`} accessibilityLabel={`${translateCopy(cat.label, language)} kategorisi`} style={{ height: "100%", width: "100%" }} contentFit="cover" transition={140} />
                   </View>
-                  <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900" }}>{translateCopy(cat.label, language)}</Text>
+                  <Text numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 15, fontWeight: "900", lineHeight: 19 }}>{translateCopy(cat.label, language)}</Text>
                 </View>
                 <View style={{ gap: 4 }}>
                   {cat.subcategories.slice(0, isWideWeb ? 3 : 2).map((sub) => (
@@ -194,12 +194,12 @@ function SectionHead({ title, subtitle }: { title: string; subtitle: string }) {
   const { language } = useLanguage();
   return (
     <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10, justifyContent: "space-between" }}>
-      <View style={{ gap: 2 }}>
+      <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
         <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{title}</Text>
         <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{subtitle}</Text>
       </View>
       <Link href="/explore" asChild>
-        <Pressable><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Tümünü Gör", language)}</Text></Pressable>
+        <Pressable style={{ flexShrink: 0 }}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{translateCopy("Tümünü Gör", language)}</Text></Pressable>
       </Link>
     </View>
   );

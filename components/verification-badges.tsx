@@ -16,9 +16,9 @@ export function VerificationBadges({ user, size = "md" }: { user: Pick<User, "ve
   return (
     <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
       {badges.map((b: VerificationBadge) => (
-        <View key={b.key} style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 4 }}>
-          <MaterialCommunityIcons name={b.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={ic} color={colors.success} />
-          <Text style={{ color: colors.success, fontSize: fs, fontWeight: "800" }}>{translateCopy(b.label, language)}</Text>
+        <View key={b.key} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, maxWidth: "100%", paddingHorizontal: 9, paddingVertical: 4 }}>
+          <MaterialCommunityIcons name={b.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={ic} color={colors.primary} />
+          <Text numberOfLines={1} style={{ color: colors.primary, flexShrink: 1, fontSize: fs, fontWeight: "800" }}>{translateCopy(b.label, language)}</Text>
         </View>
       ))}
     </View>

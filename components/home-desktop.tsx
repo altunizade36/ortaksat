@@ -15,7 +15,7 @@ import { Mascot } from "@/components/brand/Mascot";
 import { colors, heroGradient, shadow } from "@/components/colors";
 import { PressLink } from "@/components/ui";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
+import { categoryChipLabel, getCategoryIcon, getCategoryShortLabel } from "@/lib/categories";
 import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
@@ -29,7 +29,7 @@ import { loadPartnerDirectory, type PartnerDirectoryEntry } from "@/lib/supabase
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
-import { catalogueCountLabel, catalogueRanges, useCatalogueFill, useServerCatalogue, type WebCatalogueSort } from "@/lib/web-catalogue";
+import { CATALOGUE_TOTAL_CAP, catalogueCountLabel, catalogueRanges, useCatalogueFill, useServerCatalogue, type WebCatalogueSort } from "@/lib/web-catalogue";
 import { RetryNotice } from "@/components/retry-notice";
 
 
@@ -163,10 +163,10 @@ export function HomeDesktop() {
         if (onlyNew && !(Date.parse(l.createdAt ?? "") > Date.now() - 7 * 86400000)) return false;
       }
       // Kategori-özel facet eşleşmesi (Yakıt=Dizel…): ilan attribute'u seçili değerlerden biriyse geçer.
-      // Sunucu yolunda tek-değerli facet sunucuda; aynı alanda çoklu (VEYA) seçim yerelde kalır.
+      // Sunucu yolunda facet'ler sunucuda (attrs / attrsAny).
       for (const key of Object.keys(attrFilters)) {
         const want = attrFilters[key];
-        if (srvFiltered && want.length <= 1) continue;
+        if (srvFiltered) continue;
         const have = l.attributes?.[key];
         const ok = Array.isArray(have) ? have.some((v) => want.includes(String(v))) : want.includes(String(have ?? ""));
         if (!ok) return false;
@@ -205,8 +205,8 @@ export function HomeDesktop() {
   }, [filtered, sortMode, srvOwners, useSrv]);
 
   const grid = sorted.slice(0, visibleCount);
-  // Sunucu toplamı "gerçek toplam"dır; yalnız aynı alanda çoklu (VEYA) facet yerelde kalır → (+).
-  const srvExact = srv.local.attrKeys.length === 0;
+  // Sunucu toplamı gerçek toplamdır; yalnız sunucu üst sınırı aşılınca "100.000+" gösterilir.
+  const srvExact = srv.total <= CATALOGUE_TOTAL_CAP;
   const countLabel = useSrv ? catalogueCountLabel(srv, srvExact, filtered.length) : String(filtered.length);
   const canShowMore = visibleCount < filtered.length || (useSrv && srv.hasMore);
   const moreBusy = useSrv && (srv.loadingMore || srv.loading) && visibleCount >= filtered.length;
@@ -248,7 +248,7 @@ export function HomeDesktop() {
                     style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 14, paddingVertical: 10 }}
                   >
                     <MaterialCommunityIcons name={getCategoryIcon(n.label)} size={17} color={on ? colors.primaryDark : colors.muted} />
-                    <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 13, fontWeight: on ? "900" : "600" }}>{translateCopy(n.label, language)}</Text>
+                    <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 13, fontWeight: on ? "900" : "600" }}>{translateCopy(categoryChipLabel(n.label), language)}</Text>
                     {children.length ? <MaterialCommunityIcons name={expanded ? "chevron-down" : "chevron-right"} size={16} color={colors.subtle} /> : null}
                   </Pressable>
                   {expanded && children.length ? (
@@ -481,8 +481,8 @@ export function HomeDesktop() {
                 <Pressable key={l.id} onPress={() => router.push(`/listing/${l.id}`)} style={{ backgroundColor: colors.surface, borderRadius: 14, overflow: "hidden", width: 156 }}>
                   <View style={{ height: 92, width: "100%" }}>
                     <SafeRemoteImage uri={l.image} style={{ height: 92, width: "100%" }} contentFit="cover" />
-                    <View style={{ backgroundColor: colors.gold, borderRadius: 6, left: 8, paddingHorizontal: 6, paddingVertical: 2, position: "absolute", top: 8 }}>
-                      <Text style={{ color: colors.badgeInk, fontSize: 9.5, fontWeight: "900" }}>{translateCopy("Kazanç", language)} {moneyIn(commissionAmount(l), l.currency)}</Text>
+                    <View style={{ backgroundColor: colors.badgeGold, borderRadius: 999, left: 8, maxWidth: 140, paddingHorizontal: 8, paddingVertical: 3, position: "absolute", top: 8 }}>
+                      <Text numberOfLines={1} style={{ color: colors.badgeInk, fontSize: 10.5, fontWeight: "800", lineHeight: 13 }}>{translateCopy("Komisyon", language)} {moneyIn(commissionAmount(l), l.currency)}</Text>
                     </View>
                   </View>
                   <View style={{ gap: 4, padding: 9 }}>
@@ -597,7 +597,7 @@ export function HomeDesktop() {
               {minRate ? <ActiveChip label={`%${minRate}+`} onRemove={() => setMinRate(0)} /> : null}
               {commTypeFilter !== "all" ? <ActiveChip label={commTypeFilter === "rate" ? translateCopy("Oran %", language) : translateCopy("Sabit ₺", language)} onRemove={() => setCommTypeFilter("all")} /> : null}
               {minRating ? <ActiveChip label={`★ ${minRating}+`} onRemove={() => setMinRating(0)} /> : null}
-              {onlyOpen ? <ActiveChip label={translateCopy("Ortak satışa açık", language)} onRemove={() => setOnlyOpen(false)} /> : null}
+              {onlyOpen ? <ActiveChip label={translateCopy("Ortaklığa açık", language)} onRemove={() => setOnlyOpen(false)} /> : null}
               {onlyFeatured ? <ActiveChip label={translateCopy("Öne çıkan", language)} onRemove={() => setOnlyFeatured(false)} /> : null}
               {onlyVerified ? <ActiveChip label={translateCopy("Doğrulanmış", language)} onRemove={() => setOnlyVerified(false)} /> : null}
               {inStock ? <ActiveChip label={translateCopy("Stokta", language)} onRemove={() => setInStock(false)} /> : null}
