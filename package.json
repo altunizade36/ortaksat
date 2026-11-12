@@ -15,7 +15,8 @@
     "test:mobile-filters": "node scripts/check-mobile-filters.mjs",
     "test:mobile-catalogue": "node scripts/check-mobile-catalogue-ui.mjs",
     "check:encoding": "node scripts/check-encoding.mjs",
-    "lint:hooks": "eslint app components lib data --ext .ts,.tsx",
+    "lint": "eslint app components lib data",
+    "lint:hooks": "npm run lint",
     "quality": "npm run check:encoding && npm run lint:hooks && npm run typecheck && npm run doctor",
     "export:android": "expo export --platform android --output-dir dist-check-android",
     "sitemap": "node scripts/generate-sitemap.mjs",
@@ -37,7 +38,7 @@
   "dependencies": {
     "@expo/vector-icons": "^15.0.3",
     "@react-native-async-storage/async-storage": "2.2.0",
-    "@supabase/supabase-js": "^2.107.0",
+    "@supabase/supabase-js": "^2.119.0",
     "expo": "~58.0.25",
     "expo-asset": "~58.0.21",
     "expo-audio": "~58.0.12",
@@ -74,16 +75,16 @@
     "react-native-worklets": "0.13.0"
   },
   "devDependencies": {
-    "@electric-sql/pglite": "0.5.14",
-    "@playwright/test": "^1.61.1",
+    "@electric-sql/pglite": "^0.5.16",
+    "@playwright/test": "^1.65.0",
     "@types/react": "~19.3.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "eslint": "^8.57.1",
-    "eslint-plugin-react-hooks": "^4.6.2",
+    "eslint": "^10.14.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
     "jimp": "^1.6.1",
-    "pg": "^8.21.0",
-    "subset-font": "^2.5.0",
-    "typescript": "~6.0.3"
+    "pg": "^8.23.1",
+    "subset-font": "^2.9.0",
+    "typescript": "~6.0.3",
+    "typescript-eslint": "^8.72.2"
   },
   "expo": {
     "install": {
@@ -92,5 +93,12 @@
       ]
     }
   },
-  "private": true
+  "private": true,
+  "overrides": {
+    "zod": "^4.6.6",
+    "minimatch@>=7.0.0 <=11.0.0": "^11.0.8"
+  },
+  "engines": {
+    "node": "24.x"
+  }
 }
