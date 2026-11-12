@@ -36,7 +36,10 @@ export function RecordSaleModal({
   onSubmit: (amount: number, quantity: number) => void;
 }) {
   const { language } = useLanguage();
-  const [amount, setAmount] = useState(String(listPrice));
+  // Tutar alanı TAM SAYI (number-pad, rakam dışı her şey atılır). Kesirli ilan fiyatı ("1500.5")
+  // ham yazılırsa nokta atılıp 15005 okunuyordu → satış ve komisyon 10×/100× kaydediliyordu.
+  const wholeAmount = (value: number) => String(Math.max(0, Math.round(Number.isFinite(value) ? value : 0)));
+  const [amount, setAmount] = useState(wholeAmount(listPrice));
   const [qty, setQty] = useState("1");
   // Tutar kullanıcı tarafından elle değiştirildi mi? Değilse adet arttıkça tutar
   // otomatik fiyat×adet olur (eskiden tutar birim-fiyatta kalıp adet=3'te komisyon
@@ -44,18 +47,18 @@ export function RecordSaleModal({
   const [amountEdited, setAmountEdited] = useState(false);
 
   useEffect(() => {
-    if (visible) { setAmount(String(listPrice)); setQty("1"); setAmountEdited(false); }
+    if (visible) { setAmount(wholeAmount(listPrice)); setQty("1"); setAmountEdited(false); }
   }, [visible, listPrice]);
 
   function changeQty(t: string) {
     const q = Math.max(1, Number(t.replace(/[^0-9]/g, "")) || 1);
     setQty(t.replace(/[^0-9]/g, ""));
-    if (!amountEdited) setAmount(String(listPrice * q)); // elle düzenlenmediyse toplamı ölçekle
+    if (!amountEdited) setAmount(wholeAmount(listPrice * q)); // elle düzenlenmediyse toplamı ölçekle
   }
 
   const amountNum = Number(amount.replace(/[^0-9]/g, "")) || 0;
   const qtyNum = Math.max(1, Number(qty.replace(/[^0-9]/g, "")) || 1);
-  const totalAmount = amountNum > 0 ? amountNum : listPrice * qtyNum;
+  const totalAmount = amountNum > 0 ? amountNum : Math.round(listPrice * qtyNum);
   const commission = computeCommission
     ? computeCommission(totalAmount, qtyNum)
     : commissionType === "rate" ? Math.round((totalAmount * commissionValue) / 100) : commissionValue * qtyNum;
@@ -90,7 +93,7 @@ export function RecordSaleModal({
                 value={amount}
                 onChangeText={(t) => { setAmount(t.replace(/[^0-9]/g, "")); setAmountEdited(true); }}
                 keyboardType="number-pad"
-                placeholder={String(listPrice)}
+                placeholder={wholeAmount(listPrice)}
                 placeholderTextColor={colors.subtle}
                 style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 46, paddingHorizontal: 12 }}
               />

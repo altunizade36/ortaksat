@@ -5,6 +5,7 @@ import Constants from "expo-constants";
 import { Link, type Href } from "expo-router";
 import { useMemo, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const APP_VERSION = Constants.expoConfig?.version ?? "1.0.0";
 
@@ -65,6 +66,8 @@ function MenuScreenInner() {
   const [open, setOpen] = useState<string>("Ortak Satış Merkezi");
   const [query, setQuery] = useState("");
   const tokens = searchKey(query).split(" ").filter(Boolean);
+  // Native'de bu sekmenin üst başlığı (mobil-web header'ı) gizlidir → üst güvenli alanı ekran kendisi bırakır.
+  const insets = useSafeAreaInsets();
 
   // Menü kategorileri artık gerçek kategori ağacından türer; her satır
   // /kategori/[slug] landing sayfasına bağlanır (mobilde tüm ağaç gezilebilir + SEO).
@@ -93,7 +96,7 @@ function MenuScreenInner() {
   }, [groups, language, tokens]);
 
   return (
-    <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.surface, gap: 8, padding: 12, paddingBottom: 0 }}>
+    <ScrollView contentInsetAdjustmentBehavior={isMobileApp ? "never" : "automatic"} contentContainerStyle={{ flexGrow: 1, backgroundColor: colors.surface, gap: 8, padding: 12, paddingBottom: 0, paddingTop: isMobileApp ? insets.top + 12 : 12 }}>
       <WebContainer max={1280} padding={0} style={{ gap: 8 }}>
       <View style={{ gap: 8, marginBottom: 4 }}>
         <Text selectable style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>

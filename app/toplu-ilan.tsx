@@ -3,7 +3,7 @@ import * as Clipboard from "expo-clipboard";
 import * as ImagePicker from "expo-image-picker";
 import Head from "expo-router/head";
 import { useRouter } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
@@ -13,14 +13,17 @@ import { colors } from "@/components/colors";
 import { Alert } from "@/lib/alert";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
-import { categoryPathAttributes, matchCategoryLabelPath } from "@/lib/category-path";
+import { listingCategoryPath } from "@/lib/category-match";
+import { categoryPathAttributes, isLeafCategoryPath, matchCategoryLabelPath } from "@/lib/category-path";
 import { matchCategoryByName, resolveFormKey, getFormSchema, type CategoryNode, type FieldDef } from "@/lib/category-tree";
-import type { PartnershipMode } from "@/lib/types";
+import { searchKey } from "@/lib/locale";
+import type { Listing, PartnershipMode } from "@/lib/types";
 import { autoFillListing } from "@/lib/listing-autofill";
 import { formatLocation, getProvince, resolveProvinceByName, districtsOfProvince } from "@/lib/locations";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { downloadCsv } from "@/lib/csv-export";
 import { uploadListingImage, fetchMyListingSkus, updateListingFieldsLive, fetchMyListingsForExport } from "@/lib/live-service";
+import { isListingVideoUrl } from "@/lib/listing-video";
 import { useStore } from "@/lib/use-store";
 import { parseTrPrice, validateListing } from "@/lib/validation";
 
@@ -38,6 +41,10 @@ type ParsedRow = {
   price: number;
   category?: { node: CategoryNode; path: CategoryNode[] };
   categoryRaw: string;
+  // GÜNCELLEME modunda kategori YALNIZ burası doluysa yazılır (tam + tek + yaprak yol, mevcuttan farklı).
+  categoryChange?: { path: CategoryNode[]; from: string; to: string; formKeyChanged: boolean };
+  // Güncellemede yol yazılmış ama güvenli değil (kısmi / yaprak değil / eş-etiketli kardeş) → kategoriye dokunulmaz.
+  categoryPathIgnored?: boolean;
   provinceId?: number;
   districtId?: number;
   provinceName?: string;
@@ -145,6 +152,38 @@ function coerceAttr(field: FieldDef, raw: string): string | number | boolean | s
   }
 }
 
+const PATH_SEP = /[>›»]/;
+const pathText = (path: CategoryNode[]) => path.map((n) => n.label).join(" > ");
+
+/**
+ * GÜNCELLEME modunda kategori değişikliğine izin veren TEK biçim: KÖKTEN YAPRAĞA tam yol.
+ * Yeni ilanlarla aynı eşleyici (matchCategoryLabelPath) kullanılır, sonra sonucu sıkılaştırırız:
+ *   • yazılan parça sayısı = çözülen yol uzunluğu (kısmi "Konut > Satılık" kabul edilmez — eşleyici
+ *     sondan eşleyip birden çok daldan birini SEÇEBİLİYOR),
+ *   • yol bir yaprakta biter,
+ *   • hiçbir seviyede aynı etiketli kardeş yok (aksi halde hangi düğüm olduğu etiketten bilinemez).
+ * Tutmazsa undefined → kategoriye dokunulmaz.
+ */
+function exactLeafPath(tree: CategoryNode[], raw: string, hit: { path: CategoryNode[] } | undefined): CategoryNode[] | undefined {
+  // `hit` = matchCategoryLabelPath(tree, raw) sonucu (çağıran zaten hesapladı; ağaç yürüyüşü pahalı, tekrarlanmaz).
+  const parts = raw.split(/\s*[>›»]\s*/).map((p) => searchKey(p)).filter(Boolean);
+  if (!hit || hit.path.length !== parts.length || !isLeafCategoryPath(hit.path)) return undefined;
+  let level = tree;
+  for (let i = 0; i < hit.path.length; i++) {
+    if (!level.includes(hit.path[i])) return undefined; // kökten başlamıyor
+    if (level.filter((n) => searchKey(n.label) === parts[i]).length !== 1) return undefined;
+    level = hit.path[i].children ?? [];
+  }
+  return hit.path;
+}
+
+type SkuEntry = { id: string; title: string; status: string; category: string | null; attributes: Record<string, unknown> | null };
+
+/** Mevcut ilanın ağaçtaki yolu (kayıtlı _path, yoksa etiket-tabanlı çözücü). Çözülemezse []. */
+function currentPathOf(entry: SkuEntry): CategoryNode[] {
+  return listingCategoryPath({ category: entry.category ?? "", attributes: (entry.attributes ?? undefined) as Listing["attributes"] });
+}
+
 function resolveHeader(headers: string[]): Record<string, number> {
   const norm = normKey;
   const map: Record<string, number> = {};
@@ -171,14 +210,23 @@ function BulkUploadInner() {
   const [failedRows, setFailedRows] = useState<Array<{ row: number; title: string; reason: string }>>([]);
   // SKU SENKRONİZASYONU: satıcının mevcut ilanlarının harici-kod → {id,başlık,durum} haritası.
   // Aynı SKU tekrar gelirse yeni oluşturmaz, MEVCUDU günceller (Trendyol/Sahibinden modeli).
-  const [existingSkus, setExistingSkus] = useState<Map<string, { id: string; title: string; status: string }>>(new Map());
+  const [existingSkus, setExistingSkus] = useState<Map<string, SkuEntry>>(new Map());
   const [deactivateMissing, setDeactivateMissing] = useState(false);
   const [exporting, setExporting] = useState(false);
+  const alive = useRef(true);
+  const navTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   useEffect(() => {
-    void fetchMyListingSkus(currentUser.id).then((list) => {
-      setExistingSkus(new Map(list.map((r) => [r.externalId, { id: r.id, title: r.title, status: r.status }])));
-    }).catch(() => {});
+    alive.current = true;
+    return () => { alive.current = false; if (navTimer.current) clearTimeout(navTimer.current); };
+  }, []);
+  // Kategori + attributes de gelir: güncellemede "mevcut yol ↔ yazılan yol" karşılaştırması için.
+  const loadSkus = useCallback(async () => {
+    try {
+      const list = await fetchMyListingSkus(currentUser.id);
+      if (alive.current) setExistingSkus(new Map(list.map((r) => [r.externalId, { id: r.id, title: r.title, status: r.status, category: r.category, attributes: r.attributes }])));
+    } catch { /* eşleşme haritası yüklenemedi → satırlar "yeni" görünür; DB tekil index mükerreri engeller */ }
   }, [currentUser.id]);
+  useEffect(() => { void loadSkus(); }, [loadSkus]);
 
   const parse = () => {
     setNotice(null);
@@ -222,7 +270,28 @@ function BulkUploadInner() {
       // TAM YOL ("Emlak > Konut > Satılık > Daire") kesin eşleşir. Tek ad birçok dalda geçebildiği
       // için (Satılık, Diğer, marka/model adları) ada göre eşleme en sığ/dallı düğümü TAHMİN eder.
       // Yol yazılmış ama ağaçta yoksa kelime-benzerliğine DÜŞÜLMEZ (yanlış kategoriye gitmesin) → satır hatası.
-      const category = !categoryRaw ? undefined : /[>›»]/.test(categoryRaw) ? matchCategoryLabelPath(categoryTree, categoryRaw) : matchCategoryByName(categoryRaw);
+      const isPathText = PATH_SEP.test(categoryRaw);
+      const category = !categoryRaw ? undefined : isPathText ? matchCategoryLabelPath(categoryTree, categoryRaw) : matchCategoryByName(categoryRaw);
+      // GÜNCELLEMEDE KATEGORİ: tek ad / bulanık eşleşme HER ZAMAN yok sayılır (dışa aktarılıp geri yüklenen
+      // ilanın etiketi sessizce değişmesin). Yalnız kökten yaprağa TAM ve TEK yol, mevcut yoldan FARKLIYSA yazılır.
+      let categoryChange: ParsedRow["categoryChange"];
+      let categoryPathIgnored = false;
+      if (existing && isPathText && category) {
+        const exact = exactLeafPath(categoryTree, categoryRaw, category);
+        if (!exact) categoryPathIgnored = true;
+        else {
+          const nextSlugs = exact.map((n) => n.slug).join("/");
+          const savedPath = existing.attributes?._path;
+          const current = currentPathOf(existing);
+          const same = (Array.isArray(savedPath) && savedPath.join("/") === nextSlugs && searchKey(String(existing.attributes?._leaf ?? existing.category ?? "")) === searchKey(exact[exact.length - 1].label))
+            || (current.length > 0 && current.map((n) => n.slug).join("/") === nextSlugs);
+          if (!same) {
+            const nextFormKey = resolveFormKey(exact);
+            const prevFormKey = typeof existing.attributes?._formKey === "string" && existing.attributes._formKey ? existing.attributes._formKey : current.length ? resolveFormKey(current) : "";
+            categoryChange = { path: exact, from: current.length ? pathText(current) : (existing.category || "—"), to: pathText(exact), formKeyChanged: prevFormKey !== nextFormKey };
+          }
+        }
+      }
       const prov = resolveProvinceByName(get("province"));
       let districtId: number | undefined;
       if (prov) {
@@ -276,6 +345,9 @@ function BulkUploadInner() {
       // Komisyon yalnız ortak satış AÇIK/ONAYLI iken anlamlı; normal ilanda (none) atlanır.
       if (partnershipMode !== "none" && (commission <= 0 || commission > 90)) errors.push(translateCopy("Komisyon 1–90 arası olmalı", language));
       if (rawImageItems.length > MAX_IMAGES) errors.push(translateCopy(`İlan başına en fazla ${MAX_IMAGES} görsel eklenebilir. Fazla görselleri kaldır.`, language));
+      // Görsel sütunu YALNIZ fotoğraf kabul eder. Video bağlantısı ilk sıradaysa KAPAK oluyor (kartlarda kırık
+      // görsel), sonraki sıralarda ise 30 sn / 25 MB sınırı ve video kovası dışından "ilan videosu" sayılıyordu.
+      if (rawImageItems.some((item) => isListingVideoUrl(item))) errors.push(translateCopy("gorsel_url sütununda video bağlantısı var. Bu sütuna yalnızca fotoğraf bağlantısı (JPG, PNG, WebP) yaz; videoyu ilan oluştuktan sonra ilanı düzenleyerek ekleyebilirsin.", language));
       // Mükerrer SKU (aynı partide iki kez) → upsert çakışması; reddet.
       if (sku && seenSkus.has(sku)) errors.push(translateCopy("Bu harici kod (SKU) partide zaten var (mükerrer)", language));
       else if (sku) seenSkus.add(sku);
@@ -283,7 +355,7 @@ function BulkUploadInner() {
       const titleKey = title.toLocaleLowerCase("tr-TR").trim();
       if (!sku && titleKey && seenTitles.has(titleKey)) errors.push(translateCopy("Bu başlık partide zaten var (mükerrer)", language));
       else if (!sku && titleKey) seenTitles.add(titleKey);
-      return { raw: {}, sku, existingId: existing?.id, mode, title, description, price, category, categoryRaw, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, partnershipMode, stock, image, images, attrs, recognizedAttrs, errors };
+      return { raw: {}, sku, existingId: existing?.id, mode, title, description, price, category, categoryRaw, categoryChange, categoryPathIgnored, provinceId: prov?.id, districtId, provinceName: prov?.name, commission, partnershipMode, stock, image, images, attrs, recognizedAttrs, errors };
     });
     setRows(parsed);
   };
@@ -291,6 +363,7 @@ function BulkUploadInner() {
   const validRows = useMemo(() => (rows ?? []).filter((r) => r.errors.length === 0), [rows]);
   const newCount = useMemo(() => validRows.filter((r) => r.mode === "new").length, [validRows]);
   const updateCount = useMemo(() => validRows.filter((r) => r.mode === "update").length, [validRows]);
+  const categoryChangeCount = useMemo(() => validRows.filter((r) => r.mode === "update" && r.categoryChange).length, [validRows]);
 
   async function pickBulkImages() {
     const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -339,7 +412,12 @@ function BulkUploadInner() {
       const body = list.map((r) => {
         const prov = getProvince(r.provinceId);
         const dist = r.districtId ? districtsOfProvince(r.provinceId).find((d) => d.id === r.districtId) : undefined;
-        return [r.externalId ?? "", r.title, r.description ?? "", String(r.price), r.category ?? "", prov?.name ?? "", dist?.name ?? "", String(r.commissionValue), String(r.stockCount), ""];
+        // KATEGORİ = TAM YOL (kök > … > yaprak): tek etiket birçok dalda geçtiği için kayıpsız değil.
+        // Geri yüklemede bu yol mevcut yolla AYNI çözülür → kategori değişikliği tetiklenmez.
+        // Yol çözülemiyorsa (ağaçta olmayan eski etiket) kayıtlı etiket olduğu gibi yazılır.
+        const catPath = listingCategoryPath({ category: r.category ?? "", attributes: (r.attributes ?? undefined) as Listing["attributes"] });
+        const categoryCell = catPath.length ? pathText(catPath) : (r.category ?? "");
+        return [r.externalId ?? "", r.title, r.description ?? "", String(r.price), categoryCell, prov?.name ?? "", dist?.name ?? "", String(r.commissionValue), String(r.stockCount), ""];
       });
       downloadCsv("ortaksat-ilanlarim.csv", ["harici_kod", "baslik", "aciklama", "fiyat", "kategori", "il", "ilce", "komisyon", "stok", "gorsel_url"], body);
       const noSku = list.filter((r) => !r.externalId).length;
@@ -357,6 +435,7 @@ function BulkUploadInner() {
     setProgress({ done: 0, total: validRows.length });
     let created = 0;
     let updated = 0;
+    let recategorized = 0;
     let pausedCount = 0;
     const failures: Array<{ row: number; title: string; reason: string }> = [];
     const touchedIds = new Set<string>(); // dosyada geçen mevcut ilan id'leri (pasife-al senkronu için)
@@ -365,11 +444,14 @@ function BulkUploadInner() {
       try {
         if (r.mode === "update" && r.existingId) {
           // MEVCUT İLANI GÜNCELLE (SKU eşleşti) — yalnız DOLU alanlar yazılır (kısmi upsert).
-          // KATEGORİ GÜNCELLEMEDE YAZILMAZ: bu uç yalnız `category` kolonunu yazabiliyor, attributes'taki
-          // _root/_leaf/_formKey/_path'i yazamıyor. Eskiden yalnız kolon değişiyordu → ilan (çözücü _leaf'e
-          // baktığı için) eski kategoride listelenmeye devam ediyor, etiketi ise yenisini gösteriyordu.
-          // Ada göre bulanık eşleme, dışa aktarılıp geri yüklenen ilanın etiketini de sessizce değiştirebiliyordu.
+          // KATEGORİ yalnız r.categoryChange varsa yazılır (kökten yaprağa TAM + TEK yol, mevcuttan farklı).
+          // Tek ad / bulanık eşleşme güncellemede yok sayılır: dışa aktarılıp geri yüklenen ilanın etiketi
+          // sessizce değişmesin. Yazılırken `category` kolonu ile attributes'taki _root/_leaf/_formKey/_path
+          // BİRLİKTE ve TEK update'te değişir (yalnız kolon değişirse ilan — çözücü _leaf/_path'e baktığı için —
+          // eski kategoride listelenmeye devam eder). Diğer attributes değerleri KORUNUR (sığ birleştirme);
+          // mevcut attributes okunamazsa uç HİÇBİR ŞEY yazmaz → satır başarısız sayılır.
           const location = r.provinceId ? (formatLocation({ provinceId: r.provinceId, districtId: r.districtId }, "neighborhood") || getProvince(r.provinceId)?.name || undefined) : undefined;
+          const change = r.categoryChange;
           const okUpd = await updateListingFieldsLive(r.existingId, {
             title: r.title || undefined,
             description: r.description || undefined,
@@ -378,11 +460,13 @@ function BulkUploadInner() {
             stockCount: r.stock,
             location,
             provinceId: r.provinceId,
-            districtId: r.districtId
+            districtId: r.districtId,
+            ...(change ? { category: change.path[change.path.length - 1].label, attributesPatch: categoryPathAttributes(change.path) } : null)
           });
-          if (!okUpd) throw new Error(translateCopy("güncelleme kaydedilemedi", language));
+          if (!okUpd) throw new Error(translateCopy(change ? "güncelleme kaydedilemedi (kategori değişikliği dahil hiçbir alan yazılmadı)" : "güncelleme kaydedilemedi", language));
           touchedIds.add(r.existingId);
           updated++;
+          if (change) recategorized++;
         } else {
           // YENİ İLAN — SKU'yu externalId olarak yaz (sonraki yüklemede eşleşsin).
           const leaf = r.category!.node;
@@ -448,19 +532,25 @@ function BulkUploadInner() {
         try { if (await updateListingFieldsLive(id, { status: "paused" })) pausedCount++; } catch { /* yut — tek ilan takılmasın */ }
       }
     }
+    if (!alive.current) return; // ekran kapandı: durum yazma / yönlendirme yok
     setProgress(null);
     setPublishing(false);
     setFailedRows(failures);
+    // Eşleşme haritasını tazele: yazılan kategori/SKU'lar sonraki önizlemede "mevcut" olarak görünsün
+    // (yoksa aynı dosya yeniden ayrıştırılınca tamamlanmış kategori değişiklikleri tekrar "değişecek" görünür).
+    if (created || updated) void loadSkus();
     if (failures.length === 0) {
       const parts: string[] = [];
       if (created) parts.push(`${created} ${translateCopy("yeni ilan onaya gönderildi", language)}`);
       if (updated) parts.push(`${updated} ${translateCopy("mevcut ilan güncellendi", language)}`);
+      if (recategorized) parts.push(`${recategorized} ${translateCopy("ilanın kategorisi değişti", language)}`);
       if (pausedCount) parts.push(`${pausedCount} ${translateCopy("ilan pasife alındı", language)}`);
       setNotice(`${parts.join(" · ")}.`);
       setRows(null);
       setCsv("");
       setBulkImages([]);
-      setTimeout(() => router.replace("/(tabs)/seller"), 2400);
+      if (navTimer.current) clearTimeout(navTimer.current);
+      navTimer.current = setTimeout(() => router.replace("/(tabs)/seller"), 2400);
     } else {
       // Kısmi başarı: başarısızlar listelenir + CSV indirilebilir; kullanıcı düzeltip tekrar dener.
       setNotice(`${created + updated} ${translateCopy("başarılı", language)} · ${failures.length} ${translateCopy("başarısız", language)}. ${translateCopy("Başarısız satırları aşağıda görüp CSV olarak indirebilirsin.", language)}`);
@@ -545,6 +635,7 @@ function BulkUploadInner() {
           {Platform.OS === "web" ? (
             <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy("İpucu: Mevcut ilanlarını dışa aktar, Excel'de fiyat/stok güncelle, tekrar yükle — harici_kod eşleşenler otomatik güncellenir (yeni ilan açılmaz).", language)}</Text>
           ) : null}
+          <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy("Mevcut ilanın kategorisini değiştirmek için kategori sütununa kökten yaprağa TAM yolu yaz (Emlak > Konut > Satılık > Daire). Tek ad yazarsan güncellemede kategoriye dokunulmaz. Dışa aktarım tam yolu yazar; dokunmadığın satırların kategorisi değişmez.", language)}</Text>
         </View>
 
         {/* Adım 2: yapıştır + toplu ayarlar */}
@@ -635,6 +726,12 @@ function BulkUploadInner() {
                   <Text style={{ color: colors.info, fontSize: 11, fontWeight: "800" }}>{updateCount} {translateCopy("güncelle", language)}</Text>
                 </View>
               ) : null}
+              {categoryChangeCount > 0 ? (
+                <View style={{ alignItems: "center", backgroundColor: colors.goldSoft, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 9, paddingVertical: 4 }}>
+                  <MaterialCommunityIcons name="swap-horizontal" size={12} color={colors.goldInk} />
+                  <Text style={{ color: colors.goldInk, fontSize: 11, fontWeight: "800" }}>{categoryChangeCount} {translateCopy("kategori değişecek", language)}</Text>
+                </View>
+              ) : null}
             </View>
             <ScrollView horizontal showsHorizontalScrollIndicator style={{ maxWidth: "100%" }}>
               <View style={{ gap: 6, minWidth: 812 }}>
@@ -674,6 +771,21 @@ function BulkUploadInner() {
                         <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15, marginLeft: 34 }}>
                           {translateCopy("Kategori", language)}: {r.category.path.map((n) => translateCopy(n.label, language)).join(" › ")}
                           {r.category.node.children && r.category.node.children.length ? ` — ${translateCopy("genel kategori; daha doğru yer için tam yol yaz (ör. Emlak > Konut > Satılık > Daire)", language)}` : ""}
+                        </Text>
+                      ) : null}
+                      {/* GÜNCELLEMEDE KATEGORİ DEĞİŞİKLİĞİ: yayından önce eski → yeni tam yol görünür. */}
+                      {isUpdate && r.categoryChange ? (
+                        <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 5, marginLeft: 34 }}>
+                          <MaterialCommunityIcons name="swap-horizontal" size={13} color={colors.goldInk} style={{ marginTop: 1 }} />
+                          <Text style={{ color: colors.goldInk, flex: 1, fontSize: 11, fontWeight: "700", lineHeight: 15 }}>
+                            {translateCopy("Kategori değişecek", language)}: {r.categoryChange.from} → {r.categoryChange.to}
+                            {r.categoryChange.formKeyChanged ? ` — ${translateCopy("özellik formu da değişiyor; ilandaki mevcut özellik değerleri SİLİNMEZ, olduğu gibi kalır (yeni forma uymayanları ilanı düzenleyerek güncelle)", language)}` : ""}
+                          </Text>
+                        </View>
+                      ) : null}
+                      {isUpdate && r.categoryPathIgnored ? (
+                        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15, marginLeft: 34 }}>
+                          {translateCopy("Kategori değiştirilmeyecek: güncellemede yalnız kökten yaprağa TAM ve tek anlamlı yol kabul edilir (ör. Emlak > Konut > Satılık > Daire). Diğer alanlar güncellenir.", language)}
                         </Text>
                       ) : null}
                       {okRow && (r.images.length > 1 || r.recognizedAttrs.length > 0 || (r.mode === "new" && r.partnershipMode !== "approval")) ? (

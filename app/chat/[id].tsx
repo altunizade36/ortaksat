@@ -27,6 +27,9 @@ import { useTypingIndicator } from "@/lib/use-typing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { useKeyboardInset } from "@/lib/use-keyboard-inset";
+import { isComposerSendKey } from "@/lib/composer-keys";
+import { usePairBlocked } from "@/lib/use-pair-blocked";
+import { useScreenActive } from "@/lib/use-screen-active";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { searchKey, shortDate } from "@/lib/locale";
 import type { Message } from "@/lib/types";
@@ -106,9 +109,16 @@ function ChatScreenInner() {
   // Sekme ön plana dönünce mesajları tazele — WS askıdayken gelen yanıt kaçmasın (mobil-web).
   useForegroundRefresh(refreshUserData);
 
+  // Yalnız ekran GERÇEKTEN görünürken okundu yaz. Sohbet ekranı, kullanıcı ilan detayına/başka
+  // sayfaya geçince de stack'te MOUNT'lu kalır; sekme arka plandayken de öyle. Eskiden o sırada
+  // gelen her mesaj (messages.length değişimi) görülmeden "okundu" oluyordu → rozet hiç
+  // görünmüyor, gönderen ise okundu tiki görüyordu.
+  const screenActive = useScreenActive();
+  const conversationId = conversation?.id;
+  const hasUnread = Boolean(conversationId) && messages.some((m) => m.conversationId === conversationId && m.receiverId === currentUser.id && !m.read);
   useEffect(() => {
-    if (conversation) markConversationRead(conversation.id);
-  }, [conversation?.id, messages.length, markConversationRead]);
+    if (screenActive && !isWideWeb && conversationId && hasUnread) markConversationRead(conversationId);
+  }, [screenActive, isWideWeb, conversationId, hasUnread, markConversationRead]);
 
   // Masaüstünde tek başına sohbet ekranı yerine 3-panelli mesaj kutusunu kullan
   // (Sahibinden benzeri). Konuşmayı seçili açacak şekilde yönlendir.
@@ -122,14 +132,19 @@ function ChatScreenInner() {
   const otherId = conversation?.participantIds.find((item) => item !== currentUser.id);
   const otherUser = otherId ? findUser(otherId) : undefined;
   const blockedHere = otherId ? isUserBlocked(otherId) : false;
+  // Karşı taraf beni engellediyse store bilemez (RLS yalnız kendi engellerimi gösterir) →
+  // sunucuya sor; composer yerine net bant göster (yoksa her mesaj "gönderilemedi" döngüsü).
+  const failedCount = messages.reduce((n, m) => n + (m.conversationId === (conversationId ?? id) && m.status === "failed" ? 1 : 0), 0);
+  const blockedByOther = usePairBlocked(conversation ? currentUser.id : undefined, otherId, `${id}:${failedCount}:${blockedHere ? 1 : 0}`) && !blockedHere;
   const conversationMessages = useMemo(() => {
     // messages dizisi yeni→eski (başa eklenir); aynı zaman damgasında yüksek index
     // = daha eski, bu yüzden önce gelir (eskiden yeniye doğru thread).
     const idx = new Map(messages.map((m, i) => [m.id, i]));
+    // conversationId: yerel id sunucudaki mevcut konuşmaya eşlenmiş olabilir (store alias).
     return messages
-      .filter((item) => item.conversationId === id)
+      .filter((item) => item.conversationId === (conversationId ?? id))
       .sort((a, b) => a.createdAt.localeCompare(b.createdAt) || ((idx.get(b.id) ?? 0) - (idx.get(a.id) ?? 0)));
-  }, [id, messages]);
+  }, [id, conversationId, messages]);
 
   if (isWideWeb) {
     return (
@@ -348,7 +363,7 @@ function ChatScreenInner() {
 
       {/* Hızlı yanıt önerileri — kutu boşken ve odak yokken. Odaklanınca gizlenir ki
           yazmaya başlayınca ekran "zıplamasın" (kayma tek seferde klavye açılışına biner). */}
-      {!blockedHere && showReplies ? (
+      {!blockedHere && !blockedByOther && currentConversation.status === "open" && showReplies ? (
         <ScrollView horizontal showsHorizontalScrollIndicator={false} keyboardShouldPersistTaps="handled" contentContainerStyle={{ gap: 6, paddingHorizontal: 10, paddingVertical: 8 }} style={{ backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, maxHeight: 52 }}>
           <Pressable onPress={() => setBody(translateCopy("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?", language))} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 7 }}>
             <MaterialCommunityIcons name="handshake-outline" size={13} color={colors.primaryDark} />
@@ -370,9 +385,9 @@ function ChatScreenInner() {
         </ScrollView>
       ) : null}
 
-      {blockedHere || currentConversation.status !== "open" ? (
+      {blockedHere || blockedByOther || currentConversation.status !== "open" ? (
         <View style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingBottom: insets.bottom > 0 ? insets.bottom : 14, paddingHorizontal: 16, paddingTop: 14 }}>
-          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", textAlign: "center" }}>{translateCopy(blockedHere ? "Bu kullanıcıyı engelledin. Mesajlaşmak için engeli kaldır." : "Bu konuşma kapatılmış. Mesaj geçmişini görüntüleyebilirsin.", language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "700", textAlign: "center" }}>{translateCopy(blockedHere ? "Bu kullanıcıyı engelledin. Mesajlaşmak için engeli kaldır." : blockedByOther ? "Bu kullanıcıyla mesajlaşma şu anda mümkün değil. Mesaj geçmişini görüntüleyebilirsin." : "Bu konuşma kapatılmış. Mesaj geçmişini görüntüleyebilirsin.", language)}</Text>
           {blockedHere ? <Pressable accessibilityRole="button" onPress={() => otherId && void unblockUser(otherId)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primary, borderRadius: 10, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 10 })}>
             <Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "700" }}>{translateCopy("Engeli kaldır", language)}</Text>
           </Pressable> : null}
@@ -395,13 +410,13 @@ function ChatScreenInner() {
           placeholder={translateCopy("Mesaj yaz…", language)}
           placeholderTextColor={colors.muted}
           onKeyPress={(e) => {
-            const ev = e.nativeEvent as { key?: string; shiftKey?: boolean };
-            if (Platform.OS === "web" && ev.key === "Enter" && !ev.shiftKey) {
-              (e as unknown as { preventDefault?: () => void }).preventDefault?.();
-              send();
-            }
+            // IME bileşimi sürerken Enter adayı onaylar (göndermez); Shift+Enter ve dokunmatik
+            // klavyede Enter yeni satırdır (telefonda gönderim düğmeyle).
+            if (!isComposerSendKey(e as unknown as Parameters<typeof isComposerSendKey>[0])) return;
+            (e as unknown as { preventDefault?: () => void }).preventDefault?.();
+            send();
           }}
-          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 14, maxHeight: 120, minHeight: 44, minWidth: 0, paddingHorizontal: 16, paddingVertical: 11 }}
+          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, color: colors.ink, flex: 1, fontSize: Platform.OS === "web" ? 16 : 14, maxHeight: 120, minHeight: 44, minWidth: 0, paddingHorizontal: 16, paddingVertical: 11 }}
         />
         <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Gönder", language)} disabled={!body.trim()} onPress={send} style={({ pressed }) => ({ alignItems: "center", backgroundColor: body.trim() ? colors.primary : colors.line, borderRadius: 999, height: 44, justifyContent: "center", opacity: pressed ? 0.75 : 1, width: 44 })}>
           <MaterialCommunityIcons name="send" size={20} color="#FFFFFF" />
@@ -463,9 +478,9 @@ const MessageBubbles = memo(function MessageBubbles({ messages, currentUserId, l
                   </Pressable>
                 ) : null}
                 {message.attachmentType === "file" && message.attachmentUrl ? (
-                  <Pressable accessibilityRole="button" accessibilityLabel={`${translateCopy("Dosyayı aç", language)}: ${message.attachmentName ?? "Dosya"}`} onPress={() => message.attachmentUrl && void openUrlSafe(message.attachmentUrl)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`${translateCopy("Dosyayı aç", language)}: ${message.attachmentName ?? translateCopy("Dosya", language)}`} onPress={() => message.attachmentUrl && void openUrlSafe(message.attachmentUrl)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}>
                     <MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primaryDark} />
-                    <Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12.5, fontWeight: "700", maxWidth: 170 }}>{message.attachmentName ?? "Dosya"}</Text>
+                    <Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12.5, fontWeight: "700", maxWidth: 170 }}>{message.attachmentName ?? translateCopy("Dosya", language)}</Text>
                   </Pressable>
                 ) : null}
                 {message.body ? (

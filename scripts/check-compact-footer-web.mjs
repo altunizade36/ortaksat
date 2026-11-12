@@ -12,7 +12,7 @@ try {
       await footer.first().waitFor({ state: 'attached' });
       assert.equal(await footer.count(), 1, `${route}: one footer`);
       const links = await footer.getByRole('link').evaluateAll(els => els.map(el => el.getAttribute('href')));
-      assert.deepEqual(links, ['/hakkimizda', '/sss', '/iletisim', '/gizlilik-politikasi', '/kullanim-sartlari', '/kvkk']);
+      assert.deepEqual(links, ['/hakkimizda', '/sss', '/iletisim', '/gizlilik-politikasi', '/kullanim-sartlari', '/kvkk', '/hesap-silme']);
       const box = await footer.boundingBox();
       assert.ok(box.height >= 100 && box.height <= 125 && box.x >= 0 && box.x + box.width <= width + 1, `${route}: ${JSON.stringify(box)}`);
       findings.push({ width, route, height: box.height, links: links.length });
@@ -21,5 +21,5 @@ try {
   }
   assert.equal(errors.length, 0, JSON.stringify(errors));
   await writeFile('audit/web-review/compact-footer-results.json', JSON.stringify({ mockOnly: true, findings, errors }, null, 2));
-  console.log('Passed compact web footer: eight routes at 320px and 390px, six correct links, no duplicate footer or horizontal overflow.');
+  console.log('Passed compact web footer: eight routes at 320px and 390px, seven correct links, no duplicate footer or horizontal overflow.');
 } finally { await browser.close(); }

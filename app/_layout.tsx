@@ -20,6 +20,7 @@ import { MetaPixelRouter } from "@/components/meta-pixel-router";
 import { ErrorToast } from "@/components/error-toast";
 import { ToastHost } from "@/components/toast-host";
 import { AlertHost } from "@/components/alert-host";
+import { AccountDeletionGate } from "@/components/account-deletion-notice";
 import { GlobalSeo } from "@/components/global-seo";
 import { RouteErrorBoundary } from "@/components/error-boundary";
 import { StoreProvider } from "@/data/app-store";
@@ -120,6 +121,7 @@ function RootStack() {
       <PushRegistrar />
       <InviteCapture />{/* Y8: giriş sonrası saklanan davet kodunu yakalar */}
       <MetaPixelRouter />{/* SPA gezinmesinde Meta Pixel PageView (web + ID varsa) */}
+      <AccountDeletionGate />{/* kendi silme talebi beklerken tam ekran bildirim (toast/alert bunun ÜSTÜNDE kalır) */}
       <ErrorToast />
       <ToastHost />{/* hafif başarı/bilgi toast'ı (showToast) — bloklamayan geri bildirim */}
       <AlertHost />

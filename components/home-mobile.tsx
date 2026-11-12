@@ -3,7 +3,7 @@ import { listingCommissionDisplay } from "@/lib/mobile-listing";
 import { CompactFooter } from "@/components/compact-footer";
 import { displayListingTitle } from "@/lib/listing-title";
 import { categoryByPrefix } from "@/lib/mobile-catalog";
-import { useMemo, useState } from "react";
+import { memo, useMemo, useState } from "react";
 import { Keyboard, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
 import { UserAvatar } from "@/components/user-avatar";
@@ -19,7 +19,7 @@ import { useStore } from "@/lib/use-store";
 import { moneyIn } from "@/lib/format";
 import { useFavoriteFlag } from "@/lib/favorites-cache";
 import { useLanguage, translateCopy } from "@/lib/i18n";
-import { mobile, useMobileLayout } from "@/components/mobile/ui";
+import { fitPillText, mobile, useMobileLayout } from "@/components/mobile/ui";
 import type { Listing } from "@/lib/types";
 
 const teal = "#0645C9";
@@ -32,7 +32,7 @@ const categories: { label: string; icon: keyof typeof Icon.glyphMap; color: stri
   { label: "İş Makineleri\n& Sanayi", icon: "excavator", color: "#F5A800", match: "İş Makineleri" },
   { label: "Ustalar &\nHizmetler", icon: "tools", color: "#04308C", match: "Ustalar" },
   { label: "Özel Ders &\nEğitim", icon: "school", color: "#098DE3", match: "Özel Ders" },
-  { label: "Hobi & Spor", icon: "paw", color: "#F38A22", match: "Hobi" },
+  { label: "Spor &\nOutdoor", icon: "soccer", color: "#F38A22", match: "Spor" },
   { label: "Tüm\nKategoriler", icon: "view-grid-outline", color: "#172334", match: "all" },
 ];
 const slides = [
@@ -53,14 +53,17 @@ export function HomeMobile() {
   const [refreshing, setRefreshing] = useState(false);
   const [visible, setVisible] = useState(18);
   const listings = useMemo(() => store.listings.filter((l) => l.status === "active").slice().sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured))), [store.listings]);
-  const { maxWidth, tablet } = useMobileLayout();
-  const columns = tablet ? (width > 1000 ? 5 : 4) : 2;
+  const { maxWidth, tablet, wide } = useMobileLayout();
+  // Telefon 2, küçük tablet (600 dp+) 3, tablet 4-5 sütun.
+  const columns = tablet ? (width > 1000 ? 5 : 4) : wide ? 3 : 2;
   const cardWidth = Math.floor((maxWidth - 28 - (columns - 1) * 8) / columns);
   const hasUnread = store.notifications.some((n) => n.userId === store.currentUser?.id && !n.read);
   function search(value: string, filters = false) {
     const q = value.trim().replace(/\s+/g, " ").slice(0, 120);
     Keyboard.dismiss();
-    router.push({ pathname: "/explore", params: { q, ...(filters ? { filters: "1" } : {}) } });
+    // Sonuçlar LİSTE görünümünde açılır (view=list): yalnız q ile açılınca arama temizlendiğinde liste
+    // Keşfet mozaiğine düşüyor, uygulanan filtreler kayboluyordu. Boş arama eskisi gibi Keşfet'i açar.
+    router.push({ pathname: "/explore", params: { q, ...(q || filters ? { view: "list" } : {}), ...(filters ? { filters: "1" } : {}) } });
   }
   async function refresh() {
     setRefreshing(true);
@@ -71,7 +74,7 @@ export function HomeMobile() {
       <View style={s.header}>
         <MobileBrand size={30} />
         <View style={s.headerActions}>
-          <Pressable accessibilityRole="button" accessibilityLabel={tr("Bildirimler")} onPress={() => router.push("/notifications")} style={s.iconButton}>
+          <Pressable accessibilityRole="button" accessibilityLabel={tr("Bildirimler")} onPress={() => router.push("/notifications")} hitSlop={6} style={s.iconButton}>
             <Icon name="bell-outline" size={27} color="#111B2B" />
             {hasUnread && <View style={s.unread} />}
           </Pressable>
@@ -83,7 +86,7 @@ export function HomeMobile() {
       <View style={s.search}>
         <Icon name="magnify" size={23} color="#59616B" />
         <TextInput accessibilityLabel={tr("İlan ara")} placeholder={tr("OrtakSat’ta ara...")} placeholderTextColor="#7A7E87" value={query} onChangeText={setQuery} maxLength={120} autoCapitalize="none" autoCorrect={false} onSubmitEditing={event => search(event.nativeEvent.text)} returnKeyType="search" style={s.searchInput} />
-        <Pressable accessibilityRole="button" accessibilityLabel={tr("Arama ve filtreler")} onPress={() => search(query, true)} style={s.iconButton}><Icon name="tune-variant" size={24} color="#182334" /></Pressable>
+        <Pressable accessibilityRole="button" accessibilityLabel={tr("Arama ve filtreler")} onPress={() => search(query, true)} hitSlop={6} style={s.iconButton}><Icon name="tune-variant" size={24} color="#182334" /></Pressable>
       </View>
       <LinearGradient colors={["#001C5F", "#0035A3", "#001E68"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={s.hero}>
         <View style={s.heroGlow} />
@@ -122,17 +125,23 @@ export function HomeMobile() {
   );
 }
 
-function MobileListingCard({ listing, width }: { listing: Listing; width: number }) {
+// memo: arama kutusundaki her tuş vuruşu ve her store güncellemesi görünen TÜM kartları yeniden çiziyordu.
+const MobileListingCard = memo(function MobileListingCard({ listing, width }: { listing: Listing; width: number }) {
   const router = useRouter();
   const { language } = useLanguage();
   const { isFav: favorite, toggle } = useFavoriteFlag(listing.id);
   const commission = listingCommissionDisplay(listing);
+  // Hap tek satırdır; dar kartta TUTAR "…" ile kırpılıyordu. Sığmıyorsa "Komisyon" sözcüğü düşer
+  // (ikon anlamı taşır), yazı 10 px'in altına inmez. Bütçe = kart − kenarlık/boşluklar − ikon.
+  const commissionLabel = fitPillText(commission
+    ? [`${translateCopy("Komisyon", language)} ${commission}`, commission]
+    : [translateCopy("Komisyonu satıcıya sor", language), language === "en" ? "Ask seller" : "Satıcıya sor"], width - 36);
   return <View style={[s.card, { width }]}>
     <Pressable accessibilityRole="button" accessibilityLabel={displayListingTitle(listing.title)} onPress={() => router.push(`/listing/${listing.id}` as never)}>
       <View style={{ height: (width - 2) / LISTING_GRID_PHOTO_RATIO }}>
         <SafeRemoteImage uri={listing.imageUrl || listing.image} fallbackUri={listing.fallbackCategoryImage} style={{ width: "100%", height: "100%" }} accessibilityLabel={displayListingTitle(listing.title)} />
         {listing.demo && <View style={s.demo}><Text style={s.demoText}>{translateCopy("Örnek", language)}</Text></View>}
-        {listing.partnershipMode !== "none" && <View style={s.commission}><Icon name="account-group" size={13} color="white" /><Text numberOfLines={1} style={s.commissionText}>{commission ? `${translateCopy("Komisyon", language)} ${commission}` : translateCopy("Komisyonu satıcıya sor", language)}</Text></View>}
+        {listing.partnershipMode !== "none" && <View style={s.commission}><Icon name="account-group" size={13} color="white" /><Text numberOfLines={1} style={s.commissionText}>{commissionLabel}</Text></View>}
       </View>
       <View style={s.cardBody}>
         <Text numberOfLines={2} style={s.cardTitle}>{displayListingTitle(listing.title)}</Text>
@@ -140,9 +149,9 @@ function MobileListingCard({ listing, width }: { listing: Listing; width: number
         <View style={s.location}><Icon name="map-marker" size={12} color="#8A9099" /><Text numberOfLines={1} style={s.locationText}>{listing.location}</Text></View>
       </View>
     </Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel={translateCopy(favorite ? "Favorilerden çıkar" : "Favorilere ekle", language)} accessibilityState={{ selected: favorite }} aria-pressed={favorite} onPress={toggle} style={s.favorite}><Icon name={favorite ? "heart" : "heart-outline"} size={22} color={favorite ? "#FF647A" : "white"} /></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={translateCopy(favorite ? "Favorilerden çıkar" : "Favorilere ekle", language)} accessibilityState={{ selected: favorite }} aria-pressed={favorite} onPress={toggle} hitSlop={6} style={s.favorite}><Icon name={favorite ? "heart" : "heart-outline"} size={22} color={favorite ? "#FF647A" : "white"} /></Pressable>
   </View>;
-}
+});
 
 const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#FAFCFE" },
@@ -152,7 +161,7 @@ const s = StyleSheet.create({
   avatar: { width: 38, height: 38, borderRadius: 19, backgroundColor: "#E7E9F2", alignItems: "center", justifyContent: "center", overflow: "hidden" },
   search: { marginHorizontal: 20, marginBottom: 14, flexDirection: "row", alignItems: "center", gap: 7, paddingHorizontal: 12, height: 43, borderRadius: 15, borderWidth: 1, borderColor: "#E3E8ED", backgroundColor: "#FAFCFF", boxShadow: "0px 3px 8px #1122330B" },
   searchInput: { flex: 1, fontSize: 15, color: "#182334", minWidth: 0, paddingVertical: 8 },
-  hero: { marginHorizontal: 12, borderRadius: 13, overflow: "hidden", padding: 11, boxShadow: "0px 4px 8px #003E4624" },
+  hero: { marginHorizontal: 12, borderRadius: 13, overflow: "hidden", padding: 11, boxShadow: "0px 4px 8px #09275E24" },
   heroGlow: { position: "absolute", width: 200, height: 200, borderRadius: 100, backgroundColor: "#5B9BFF30", right: -40, top: -100 },
   mascot: { position: "absolute", top: 0, right: 0 },
   heroCopy: { padding: 4, minHeight: 113, width: "60%" }, heroTitle: { color: "#EFF4FC", fontWeight: "800", fontStyle: "italic", fontSize: 19, lineHeight: 23 }, heroDescription: { color: "#DEE7F6", fontSize: 12, lineHeight: 16, marginTop: 6 },
@@ -160,6 +169,6 @@ const s = StyleSheet.create({
   dots: { flexDirection: "row", justifyContent: "center", gap: 7, paddingVertical: 11 }, dot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#DDE2E7" },
   categories: { flexDirection: "row", flexWrap: "wrap", paddingHorizontal: 10, marginTop: 0, marginBottom: 14, rowGap: 9 }, category: { width: "20%", alignItems: "center", paddingHorizontal: 3 }, categoryTile: { width: "100%", maxWidth: 85, height: 52, borderRadius: 12, borderColor: "#EDF1F5", borderWidth: 1, alignItems: "center", justifyContent: "center" }, categoryLabel: { color: "#111827", textAlign: "center", fontSize: 10, lineHeight: 13, fontWeight: "700", marginTop: 5, minHeight: 26 },
   sectionHeading: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingHorizontal: 20, marginTop: 14, marginBottom: 10 }, sectionTitle: { fontSize: 18, fontWeight: "800", color: "#101827" }, seeAll: { flexDirection: "row", alignItems: "center", minHeight: 36 }, seeAllText: { color: teal, fontSize: 11, fontWeight: "600" },
-  grid: { paddingHorizontal: 14, flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "flex-start" }, card: { backgroundColor: "#FFFFFF", borderRadius: 9, overflow: "hidden", borderWidth: 1, borderColor: "#EBEEF1", boxShadow: "0px 2px 4px #132B4010" }, cardBody: { padding: 5, gap: 2, height:84 }, cardTitle: { color: "#101827", fontSize: 12, lineHeight: 15, fontWeight: "700", height: 30 }, location: { height:14, flexDirection: "row", alignItems: "center", gap: 2 }, locationText: { fontSize: 10, color: "#7A808A", flex: 1 }, price: { color: "#002E93", fontSize: 18, fontWeight: "800" }, favorite: { position: "absolute", top: 3, right: 2, width: 32, height: 32, borderRadius: 16, backgroundColor: "#00000050", alignItems: "center", justifyContent: "center" }, commission: { position: "absolute", bottom: 4, left: 4, right: 4, borderRadius: 12, backgroundColor: "#00959CEB", flexDirection: "row", alignItems: "center", paddingHorizontal: 5, paddingVertical: 4, gap: 3 }, commissionText: { color: "white", fontSize: 10, fontWeight: "600", flexShrink: 1 }, demo: { position: "absolute", top: 5, left: 4, borderRadius: 4, backgroundColor: "#FFFFFFDC", paddingHorizontal: 4, paddingVertical: 2 }, demoText: { fontSize: 10, color: "#4B5563" }, empty: { padding: 24, color: "#64748B", textAlign: "center" }, loadMore: { alignSelf: "center", padding: 20 },
+  grid: { paddingHorizontal: 14, flexDirection: "row", flexWrap: "wrap", gap: 8, alignItems: "flex-start" }, card: { backgroundColor: "#FFFFFF", borderRadius: 9, overflow: "hidden", borderWidth: 1, borderColor: "#EBEEF1", boxShadow: "0px 2px 4px #132B4010" }, cardBody: { padding: 5, gap: 2, height:84 }, cardTitle: { color: "#101827", fontSize: 12, lineHeight: 15, fontWeight: "700", height: 30 }, location: { height:14, flexDirection: "row", alignItems: "center", gap: 2 }, locationText: { fontSize: 10, color: "#7A808A", flex: 1 }, price: { color: "#002E93", fontSize: 18, fontWeight: "800" }, favorite: { position: "absolute", top: 3, right: 2, width: 32, height: 32, borderRadius: 16, backgroundColor: "#00000050", alignItems: "center", justifyContent: "center" }, commission: { position: "absolute", bottom: 4, left: 4, right: 4, borderRadius: 12, backgroundColor: "#0645C9EB", flexDirection: "row", alignItems: "center", paddingHorizontal: 5, paddingVertical: 4, gap: 3 }, commissionText: { color: "white", fontSize: 10, fontWeight: "600", flexShrink: 1 }, demo: { position: "absolute", top: 5, left: 4, borderRadius: 4, backgroundColor: "#FFFFFFDC", paddingHorizontal: 4, paddingVertical: 2 }, demoText: { fontSize: 10, color: "#4B5563" }, empty: { padding: 24, color: "#64748B", textAlign: "center" }, loadMore: { alignSelf: "center", padding: 20 },
 });
 

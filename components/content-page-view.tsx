@@ -24,7 +24,7 @@ export function ContentPageView({ slug, fallback }: { slug: string; fallback?: R
   if (!page) return <Fragment>{fallback ?? <NotFound />}</Fragment>;
 
   const paras = page.body.split(/\n{2,}/).map((s) => s.trim()).filter(Boolean);
-  return <InformationPage title={page.title || slug} seoTitle={page.seoTitle} path={`/${slug}`} intro={page.seoDescription || "OrtakSat hakk?nda g?ncel bilgiler ve destek."}>{paras.map((paragraph, i) => <View key={i} style={{ padding: 18, backgroundColor: "white", borderWidth: 1, borderColor: colors.line, borderRadius: 14 }}><Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 23 }}>{paragraph}</Text></View>)}</InformationPage>;
+  return <InformationPage title={page.title || slug} seoTitle={page.seoTitle} path={`/${slug}`} intro={page.seoDescription || "OrtakSat hakkında güncel bilgiler ve destek."}>{paras.map((paragraph, i) => <View key={i} style={{ padding: 18, backgroundColor: "white", borderWidth: 1, borderColor: colors.line, borderRadius: 14 }}><Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 23 }}>{paragraph}</Text></View>)}</InformationPage>;
 
 }
 

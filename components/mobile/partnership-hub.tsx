@@ -27,6 +27,7 @@ import { fetchListingsByIds } from "@/lib/supabase-data";
 import { emptyMobileFilters } from "@/lib/mobile-filters";
 import { categoryByPrefix, categoryTrail } from "@/lib/mobile-catalog";
 import { moneyIn } from "@/lib/format";
+import { partnershipStatusLabels } from "@/lib/status-labels";
 import { showToast } from "@/lib/toast";
 import { shareOrCopy } from "@/lib/share";
 import { Alert } from "@/lib/alert";
@@ -58,14 +59,8 @@ const statusColor: Record<string, string> = {
   cancelled: mobile.muted,
   completed: mobile.muted,
 };
-const status: Record<string, string> = {
-  active: "Aktif",
-  pending: "Bekliyor",
-  rejected: "Reddedildi",
-  cancelled: "Sonlandırıldı",
-  completed: "Tamamlandı",
-  blocked: "Kapatıldı",
-};
+// Kısa durum etiketi — tek kaynak lib/status-labels.ts (profil ve detay ekranlarıyla aynı).
+const status: Record<string, string> = partnershipStatusLabels;
 export function MobilePartnershipHub() {
   const store = useStore(),
     router = useRouter(),
@@ -93,7 +88,7 @@ export function MobilePartnershipHub() {
   const [tab, setTab] = useState(
       ["requests", "pending"].includes(params.tab || "")
         ? "Talepler"
-        : params.tab === "active"
+        : ["active", "links"].includes(params.tab || "") // "links" = Paylaşım bağlantılarım: bağlantılar ortaklık kartlarındadır
           ? "Ortaklıklarım"
           : params.tab === "earnings"
             ? "Kazançlar"
@@ -120,7 +115,7 @@ export function MobilePartnershipHub() {
     setTab(
       ["requests", "pending"].includes(params.tab || "")
         ? "Talepler"
-        : params.tab === "active"
+        : ["active", "links"].includes(params.tab || "") // "links" = Paylaşım bağlantılarım: bağlantılar ortaklık kartlarındadır
           ? "Ortaklıklarım"
           : params.tab === "earnings"
             ? "Kazançlar"
@@ -325,10 +320,10 @@ export function MobilePartnershipHub() {
               : moneyIn(potentialCommission(l, p)!, l.currency)}
           </Text>
         )}
-        <View style={ms.row}>
+        <View style={[ms.row, { flexWrap: "wrap" }]}>
           <MobileButton
             secondary
-            style={{ flex: 1 }}
+            style={{ flex: 1, minWidth: 120 }}
             onPress={() => router.push(`/partnership/${p.id}` as never)}
           >
             {ownerMode ? "Ortaklığı Yönet" : "Ortaklık Detayı"}
@@ -336,7 +331,7 @@ export function MobilePartnershipHub() {
           {ownerMode && (
             <MobileButton
               secondary
-              style={{ flex: 1 }}
+              style={{ flex: 1, minWidth: 120 }}
               onPress={() => router.push(`/store/${p.partnerId}` as never)}
             >
               Profili Gör
@@ -345,11 +340,15 @@ export function MobilePartnershipHub() {
           {l && (
             <MobileButton
               secondary
-              style={{ flex: 1 }}
+              style={{ flex: 1, minWidth: 120 }}
               onPress={() => {
                 void shareOrCopy({
                   title: displayListingTitle(l.title),
                   url: `https://www.ortaksat.com/listing/${l.id}`,
+                }).then((result) => {
+                  if (result === "copied") showToast("Bağlantı kopyalandı.");
+                  if (result === "failed")
+                    showToast("Paylaşılamadı. Lütfen tekrar dene.");
                 });
               }}
             >
@@ -896,7 +895,7 @@ export function MobilePartnershipHub() {
           <HorizontalScroll
             contentContainerStyle={{ gap: 7, paddingVertical: 12 }}
           >
-            {["Tümü", "Bekliyor", "Aktif", "Reddedildi"].map((label) => (
+            {["Tümü", "Onay bekliyor", "Aktif", "Reddedildi"].map((label) => (
               <MobileChip
                 key={label}
                 label={label}
@@ -990,7 +989,7 @@ export function MobilePartnershipHub() {
       {tab === "Ortaklıklarım" && (
         <>
           <View style={[ms.wrap, { marginBottom: 12 }]}>
-            {["Tümü", "Aktif", "Bekliyor", "Tamamlandı"].map((label) => (
+            {["Tümü", "Aktif", "Onay bekliyor", "Tamamlandı", "Reddedildi", "Sonlandırıldı", "Kapatıldı"].map((label) => (
               <MobileChip
                 key={label}
                 label={label}

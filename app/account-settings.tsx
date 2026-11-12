@@ -60,7 +60,7 @@ function AccountSettings() {
       {row("Şikâyetlerim", "Gönderdiğin şikâyetlerin durumunu takip et", "flag-outline", () => router.push("/reports" as never))}
       {row("Kullanım Koşulları", "Şartlar ve politikalar", "file-outline", () => router.push("/kullanim-sartlari"))}
       {row("Hesaptan Çıkış Yap", signingOut ? "Çıkış yapılıyor…" : "Bu cihazdaki oturumu kapat", "logout", () => Alert.alert("Çıkış Yap", "Bu cihazdaki oturum kapatılsın mı?", [{ text: "Vazgeç", style: "cancel" }, { text: "Çıkış Yap", style: "destructive", onPress: () => void signOut() }]), false, true)}
-    </MobileCard><MobileCard style={{ borderColor: colors.accentSoft, backgroundColor: "#FFF7F8" }}>{row("Hesabımı Sil", "Hesap silme talebini güvenlik doğrulamasıyla oluştur", "trash-can-outline", () => advanced("security"), true, true)}</MobileCard>
+    </MobileCard><MobileCard style={{ borderColor: colors.accentSoft, backgroundColor: "#FFF7F8" }}>{row("Hesabımı Sil", "Hesabını ve kişisel verilerini sil; 30 gün içinde geri alabilirsin", "trash-can-outline", () => router.push("/hesap-silme" as never), true, true)}</MobileCard>
     </View>
   </MobileScreen>;
 }

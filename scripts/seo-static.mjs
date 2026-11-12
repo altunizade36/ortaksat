@@ -245,6 +245,12 @@ const ROUTES = {
     description:
       "Kişisel verilerinin işlenmesi, saklanması ve haklarının kullanımı. KVKK kapsamında veri talebi için destek@ortaksat.com üzerinden başvurabilirsin.",
     canonical: "/kvkk"
+  },
+  "hesap-silme.html": {
+    title: "Hesap Silme — Hesabını ve verilerini sil | OrtakSat",
+    description:
+      "OrtakSat hesabını ve kişisel verilerini nasıl sileceğin, nelerin silinip nelerin saklandığı ve 30 günlük geri alma süresi. Giriş yaparak ya da destek@ortaksat.com üzerinden talep açabilirsin.",
+    canonical: "/hesap-silme"
   }
 };
 

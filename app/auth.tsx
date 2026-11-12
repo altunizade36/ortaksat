@@ -1,9 +1,9 @@
-import { safeAuthRedirect, useMobileAccess } from "@/lib/mobile-access";
+import { requiresMobileAccount, safeAuthRedirect, useMobileAccess } from "@/lib/mobile-access";
 import { isMobileApp } from "@/lib/mobile-app";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
-import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { BackHandler, KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 import { Alert } from "@/lib/alert";
 import { showToast } from "@/lib/toast";
 
@@ -29,7 +29,7 @@ export default function AuthScreen() {
   const router = useRouter();
   const mobileAccess = useMobileAccess();
   const params = useLocalSearchParams<{ redirect?: string; mode?: string }>();
-  const { authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signUpWithEmail } = useStore();
+  const { authAttempt, authError, currentUser, isAuthenticated, pendingVerifyEmail, clearPendingVerify, verifyEmailCode, resendEmailCode, resetPasswordWithEmail, resetPasswordWithCode, signInWithEmail, signInWithGoogle, signUpWithEmail } = useStore();
   const [mode, setMode] = useState<AuthMode>("login");
   useEffect(() => { if (params.mode === "register" || params.mode === "login" || params.mode === "reset") setMode(params.mode); }, [params.mode]);
   const [emailFormOpen, setEmailFormOpen] = useState(Platform.OS === "web");
@@ -81,6 +81,9 @@ export default function AuthScreen() {
 
   // Güvenli iç yönlendirme hedefi (yalnız uygulama-içi "/..." yolları; açık yönlendirme engeli).
   const safeRedirect = safeAuthRedirect(params.redirect);
+  // "Geç" hedefi (native): giriş duvarına takılan hedef HERKESE AÇIK bir sayfaysa (ör. paylaşılan
+  // ilan linki) misafir oraya gider; hesap gerektiren hedefte ya da web'de eskisi gibi ana sayfa.
+  const skipTarget = isMobileApp && safeRedirect && !requiresMobileAccount(safeRedirect.split("?")[0]) ? safeRedirect : undefined;
 
   async function sendResetCode() {
     if (loading || authOperation.current) return;
@@ -94,9 +97,9 @@ export default function AuthScreen() {
     authOperation.current = true;
     setLoading(true);
     try {
-      const ok = await resetPasswordWithEmail(cleanEmail);
+      const { ok, error } = await authAttempt(() => resetPasswordWithEmail(cleanEmail));
       if (ok) { setResetSent(true); showToast(translateCopy("Kod e-postana gönderildi", language)); }
-      else { const m = authError ?? translateCopy("Geçerli bir e-posta gir ve tekrar dene.", language); setFormError(m); Alert.alert(translateCopy("Gönderilemedi", language), translateCopy(m, language)); }
+      else { const m = error ?? translateCopy("Geçerli bir e-posta gir ve tekrar dene.", language); setFormError(m); Alert.alert(translateCopy("Gönderilemedi", language), translateCopy(m, language)); }
     } catch {
       const m = translateCopy("Bağlantı hatası. Lütfen tekrar dene.", language);
       setFormError(m); Alert.alert(translateCopy("Gönderilemedi", language), m);
@@ -121,9 +124,9 @@ export default function AuthScreen() {
     authOperation.current = true;
     setLoading(true);
     try {
-      const ok = await resetPasswordWithCode(cleanEmail, resetCode, newPassword);
+      const { ok, error } = await authAttempt(() => resetPasswordWithCode(cleanEmail, resetCode, newPassword));
       if (ok) { setResetSent(false); setResetCode(""); setNewPassword(""); setMode("login"); showToast(translateCopy("Şifren güncellendi — yeni şifrenle giriş yap", language)); }
-      else { const m = authError ?? translateCopy("Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa.", language); setFormError(m); Alert.alert(translateCopy("Güncellenemedi", language), translateCopy(m, language)); }
+      else { const m = error ?? translateCopy("Kod hatalı/süresi dolmuş olabilir ya da şifre çok kısa.", language); setFormError(m); Alert.alert(translateCopy("Güncellenemedi", language), translateCopy(m, language)); }
     } catch {
       const m = translateCopy("Bağlantı hatası. Lütfen tekrar dene.", language);
       setFormError(m); Alert.alert(translateCopy("Güncellenemedi", language), m);
@@ -170,11 +173,32 @@ export default function AuthScreen() {
   // Sekme (giriş/kayıt/sıfırlama) değişince satır-içi doğrulama uyarısını temizle.
   useEffect(() => { setFormError(null); setConsentHint(false); }, [mode]);
 
+  // ANDROID donanım geri tuşu: e-posta formu / şifre sıfırlama açıkken ekrandaki "Diğer giriş
+  // seçenekleri" bağlantısıyla AYNI işi yapsın (seçeneklere dön). Eskiden geri tuşu tüm giriş
+  // ekranını kapatıyor, giriş ekranı yığındaki tek ekransa uygulamadan çıkıyordu.
+  useEffect(() => {
+    if (Platform.OS !== "android" || pendingVerifyEmail || !(emailFormOpen || mode === "reset")) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => {
+      setEmailFormOpen(false);
+      if (mode === "reset") setMode("login");
+      return true;
+    });
+    return () => subscription.remove();
+  }, [emailFormOpen, mode, pendingVerifyEmail]);
+
   // Giriş başarılı olunca: yeni üye ilk kez /hosgeldin rehberine (rol seçimi),
   // önceden görmüşse doğrudan ana sayfaya. Herhangi bir hata olursa güvenle "/".
   useEffect(() => {
     if (!isAuthenticated) return;
-    if (isMobileApp) { router.replace((safeRedirect ?? "/") as never); return; }
+    if (isMobileApp) {
+      // Yığında auth'un altında ekran varken (ör. [(tabs), auth]) `replace("/")`, auth'u YENİ bir
+      // (tabs) navigatörüyle değiştirip iki sekme ağacı bırakıyordu (Android geri tuşu eski ana
+      // sayfaya dönüyordu). dismissTo hedef yığındaysa ona kadar POP eder, değilse auth'un yerine koyar.
+      const target = (safeRedirect ?? "/") as never;
+      if (router.canDismiss()) router.dismissTo(target);
+      else router.replace(target);
+      return;
+    }
     const uid = currentUser?.id;
     // AÇIK NİYET ÖNCELİĞİ: redirect varsa (ör. anonim "İlan Ver" → kayıt), kullanıcıyı welcome
     // detour'una sokma; hedefine gönder. /create'te taslağı "devam et?" ile bekliyor = en iyi
@@ -210,10 +234,10 @@ export default function AuthScreen() {
     authOperation.current = true;
     setLoading(true);
     try {
-      const ok = await signInWithGoogle(acceptedAll);
+      const { ok, error } = await authAttempt(() => signInWithGoogle(acceptedAll));
       // Başarılıysa tarayıcı Google'a yönlenir (geri dönüş otomatik). Başarısızsa hata authError'da.
-      if (!ok && authError) {
-        Alert.alert(language === "en" ? "Could not continue with Google" : "Google ile giriş yapılamadı", translateCopy(authError, language));
+      if (!ok && error) {
+        Alert.alert(language === "en" ? "Could not continue with Google" : "Google ile giriş yapılamadı", translateCopy(error, language));
       }
     } catch {
       const m = translateCopy("Google ile bağlantı kurulamadı. Lütfen tekrar dene.", language);
@@ -241,10 +265,10 @@ export default function AuthScreen() {
     authOperation.current = true;
     setLoading(true);
     try {
-      const ok = await signInWithEmail(cleanEmail, password);
+      const { ok, error } = await authAttempt(() => signInWithEmail(cleanEmail, password));
       // Başarılıysa yukarıdaki effect ana sayfaya yönlendirir. Hata varsa göster.
       if (!ok) {
-        const m = authError ?? (language === "en" ? "Could not sign in. Please try again." : "Giriş yapılamadı. Lütfen tekrar dene.");
+        const m = error ?? (language === "en" ? "Could not sign in. Please try again." : "Giriş yapılamadı. Lütfen tekrar dene.");
         setFormError(m); Alert.alert(language === "en" ? "Could not sign in" : "Giriş yapılamadı", translateCopy(m, language));
       }
     } catch {
@@ -299,12 +323,12 @@ export default function AuthScreen() {
     authOperation.current = true;
     setLoading(true);
     try {
-      const ok = await signUpWithEmail({ email: cleanEmail, password, name: fullName, legalAccepted: acceptedAll });
+      const { ok, error } = await authAttempt(() => signUpWithEmail({ email: cleanEmail, password, name: fullName, legalAccepted: acceptedAll }));
       // Akış kendini yönetir: oturum açıldıysa (doğrulama kapalı) effect /hosgeldin'e
       // yönlendirir; kod gerekiyorsa pendingVerifyEmail set olur ve kod ekranı gelir.
       // Başarısızsa authError formda gösterilir; hiçbir mesaj yoksa da net bir uyarı ver.
       if (!ok) {
-        const m = authError ?? (language === "en" ? "Registration failed. Please try again." : "Kayıt yapılamadı. Lütfen tekrar dene.");
+        const m = error ?? (language === "en" ? "Registration failed. Please try again." : "Kayıt yapılamadı. Lütfen tekrar dene.");
         setFormError(m); Alert.alert(language === "en" ? "Registration failed" : "Kayıt yapılamadı", translateCopy(m, language));
       } else {
         setPassword(""); setConfirmPassword("");
@@ -457,7 +481,7 @@ export default function AuthScreen() {
   </>;
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : Platform.OS === "android" ? "height" : undefined} style={{ flex: 1 }}>
     {seoHead}
-    <MobileAuthLanding mode={mode === "register" ? "register" : "login"} onModeChange={setMode} onEmail={() => setEmailFormOpen(true)} onGoogle={loginWithGoogle} onSkip={mobileAccess.skip} consent={legalChecks} accepted={acceptedAll} busy={loading} error={formError || authError}
+    <MobileAuthLanding mode={mode === "register" ? "register" : "login"} onModeChange={setMode} onEmail={() => setEmailFormOpen(true)} onGoogle={loginWithGoogle} onSkip={() => mobileAccess.skip(skipTarget)} consent={legalChecks} accepted={acceptedAll} busy={loading} error={formError || authError}
       form={emailFormOpen || mode === "reset" ? emailForm : undefined} formTitle={emailFormOpen || mode === "reset" ? mode === "register" ? "Hesabını oluştur" : mode === "reset" ? "Şifreni yenile" : "E-posta ile giriş yap" : undefined} showTabs={mode !== "reset"}
       onBack={Platform.OS === "web" ? mode === "reset" ? () => setMode("login") : undefined : () => { setEmailFormOpen(false); if (mode === "reset") setMode("login"); }}/>
     {legalModal}

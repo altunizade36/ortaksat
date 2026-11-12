@@ -32,7 +32,7 @@ export function HeaderActions() {
           accessibilityLabel={translateCopy("Ücretsiz İlan Ver", language)}
           onPressIn={() => setPressed(true)}
           onPressOut={() => setPressed(false)}
-          style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, elevation: 2, flexDirection: "row", gap: 5, minHeight: 44, minWidth: compact ? 44 : undefined, opacity: pressed ? 0.85 : 1, paddingHorizontal: compact ? 0 : 12, shadowColor: colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6 }}
+          style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 999, elevation: 2, flexDirection: "row", gap: 5, justifyContent: "center", minHeight: 44, minWidth: compact ? 44 : undefined, opacity: pressed ? 0.85 : 1, paddingHorizontal: compact ? 0 : 12, shadowColor: colors.accent, shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.3, shadowRadius: 6 }}
         >
           <MaterialCommunityIcons name="plus-box" size={19} color="#FFFFFF" />
           {!compact ? (

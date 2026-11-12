@@ -15,6 +15,9 @@ import { Seo } from "@/components/seo";
 import { JsonLd } from "@/components/json-ld";
 import { ListingCard } from "@/components/listing-card";
 import { ReviewCard } from "@/components/review-card";
+import { RatingSummary } from "@/components/reviews/rating-summary";
+import { ReviewSortBar } from "@/components/reviews/review-filters";
+import { ratingStats, sortReviews, type ReviewSort } from "@/lib/reviews";
 import { EmptyState, Metric, PrimaryButton, StatusPill } from "@/components/ui";
 import { ErrorScreen } from "@/components/error-boundary";
 import { WebFooter } from "@/components/web-landing";
@@ -167,27 +170,31 @@ function StoreScreenLegacy() {
   // giriş yapan kullanıcının YAZDIĞI yorumları tutuyor). Böylece ziyaretçi de
   // satıcının aldığı gerçek değerlendirmeleri görür.
   const [fetchedReviews, setFetchedReviews] = useState<Review[]>([]);
-  const [reviewSort, setReviewSort] = useState<"recent" | "high" | "low" | "helpful">("recent");
+  const [reviewSort, setReviewSort] = useState<ReviewSort>("recent");
+  const [reviewsLoaded, setReviewsLoaded] = useState(false);
   // ReviewCard yanıt/oy sonrası kaynağı günceller → tab değişip geri gelince (remount) stale
   // prop yerine güncel değer seed'lenir (eskiden yanıt/oy görünüşte kayboluyordu).
   const patchReview = (rid: string, patch: Partial<Review>) => setFetchedReviews((rs) => rs.map((r) => (r.id === rid ? { ...r, ...patch } : r)));
   const removeFetched = (rid: string) => setFetchedReviews((rs) => rs.filter((r) => r.id !== rid));
   useEffect(() => {
     let alive = true;
-    if (id) void fetchReviewsForUser(id).then((r) => { if (alive) setFetchedReviews(r); });
+    setReviewsLoaded(false);
+    if (id) void fetchReviewsForUser(id).then((r) => { if (alive) { setFetchedReviews(r); setReviewsLoaded(true); } });
     return () => { alive = false; };
   }, [id]);
   const reviewsAboutSeller = useMemo(() => {
     const map = new Map<string, Review>();
     for (const r of reviews) if (r.reviewedUserId === id) map.set(r.id, r);
     for (const r of fetchedReviews) map.set(r.id, r);
-    const list = Array.from(map.values());
-    const byRecent = (a: Review, b: Review) => b.createdAt.localeCompare(a.createdAt);
-    if (reviewSort === "high") return list.sort((a, b) => b.rating - a.rating || byRecent(a, b));
-    if (reviewSort === "low") return list.sort((a, b) => a.rating - b.rating || byRecent(a, b));
-    if (reviewSort === "helpful") return list.sort((a, b) => (b.helpfulCount ?? 0) - (a.helpfulCount ?? 0) || byRecent(a, b));
-    return list.sort(byRecent);
+    return sortReviews(Array.from(map.values()), reviewSort);
   }, [reviews, fetchedReviews, id, reviewSort]);
+  // Özet (ortalama + adet + dağılım) GÖSTERİLEN yorumlardan hesaplanır → başlıktaki puan, özet ve
+  // liste birbirini tutar. Eskiden başlık profildeki saklı `rating`'i basıyordu: yorumu olmayan
+  // satıcıda "0.0 puan", son yorum silindikten sonra da eski puan görünüyordu.
+  const reviewStats = useMemo(() => ratingStats(reviewsAboutSeller.map((r) => r.rating)), [reviewsAboutSeller]);
+  // Yorumlar yüklenene kadar profildeki puan gösterilir (titreme olmasın); yüklendikten sonra yorum yoksa puan YOK ("—").
+  const ratingValue = reviewStats.count ? reviewStats.average : !reviewsLoaded && (seller?.rating ?? 0) > 0 ? Number(seller?.rating) : null;
+  const ratingText = ratingValue == null ? "—" : ratingValue.toFixed(1);
 
   async function refresh() {
     setRefreshing(true);
@@ -300,7 +307,7 @@ function StoreScreenLegacy() {
     { icon: "check-decagram", label: translateCopy("Kimlik Doğrulandı", language), sub: translateCopy("Resmi kimlik onaylı", language), on: seller.verifiedIdentity, tint: colors.successSoft, color: colors.success },
     { icon: "phone-check", label: translateCopy("Telefon Doğrulandı", language), sub: translateCopy("Numara onaylı", language), on: seller.verifiedPhone, tint: colors.infoSoft, color: colors.info },
     { icon: "instagram", label: translateCopy("Instagram Bağlı", language), sub: translateCopy("Sosyal hesap onaylı", language), on: !!seller.verifiedInstagram, tint: colors.violetSoft, color: colors.violet },
-    { icon: "star-circle", label: translateCopy("Yüksek Puan", language), sub: translateCopy("4.5+ değerlendirme", language), on: seller.rating >= 4.5, tint: colors.goldSoft, color: colors.gold },
+    { icon: "star-circle", label: translateCopy("Yüksek Puan", language), sub: translateCopy("4.5+ değerlendirme", language), on: (ratingValue ?? 0) >= 4.5, tint: colors.goldSoft, color: colors.gold },
     { icon: "trophy", label: translateCopy("Çok Satan", language), sub: translateCopy("50+ başarılı satış", language), on: seller.successfulSales >= 50, tint: colors.primarySoft, color: colors.primaryDark },
     { icon: "lightning-bolt", label: translateCopy("Hızlı Yanıt", language), sub: translateCopy("%90+ yanıt oranı", language), on: seller.responseRate >= 90, tint: colors.accentSoft, color: colors.accent }
   ];
@@ -333,7 +340,7 @@ function StoreScreenLegacy() {
             name: seller.name,
             url: `https://www.ortaksat.com/store/${seller.id}`,
             ...(seller.avatar?.startsWith("http") ? { image: seller.avatar } : {}),
-            ...(reviewsAboutSeller.length > 0 && seller.rating > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: Number(seller.rating.toFixed(1)), reviewCount: reviewsAboutSeller.length } } : {})
+            ...(reviewStats.count > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: reviewStats.average, reviewCount: reviewStats.count, bestRating: 5, worstRating: 1 } } : {})
           })} />
         ) : null}
         {/* Cover — mağazaya özgü katmanlı banner (harici görsel yok; CSP-güvenli) */}
@@ -353,7 +360,7 @@ function StoreScreenLegacy() {
                 <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 14, marginTop: 2 }}>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
                     <MaterialCommunityIcons name="star" size={15} color={colors.gold} />
-                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{seller.rating.toFixed(1)}</Text>
+                    <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{ratingText}</Text>
                     <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600" }}>({reviewsAboutSeller.length} {translateCopy("yorum", language)})</Text>
                   </View>
                   <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
@@ -400,7 +407,7 @@ function StoreScreenLegacy() {
 
             {/* Stats strip */}
             <View style={{ borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", marginTop: 18, paddingTop: 16 }}>
-              <DeskProfileStat value={seller.rating.toFixed(1)} label={translateCopy("Puan", language)} />
+              <DeskProfileStat value={ratingText} label={translateCopy("Puan", language)} />
               <DeskProfileStat value={`${seller.successfulSales}`} label={translateCopy("Satış", language)} />
               <DeskProfileStat value={`${activeListings.length}`} label={translateCopy("Aktif ilan", language)} />
               <DeskProfileStat value={`${sellerPartnerships.length}`} label={translateCopy("Ortaklık", language)} />
@@ -540,10 +547,10 @@ function StoreScreenLegacy() {
 
               {tab === "reviews" ? (
                 <View style={{ gap: 12 }}>
-                  {reviewsAboutSeller.length > 0 ? <ReviewSummary reviews={reviewsAboutSeller} rating={seller.rating} language={language} /> : null}
+                  {reviewStats.count > 0 ? <RatingSummary stats={reviewStats} language={language} /> : null}
                   {reviewsAboutSeller.length > 1 ? <ReviewSortBar value={reviewSort} onChange={setReviewSort} language={language} /> : null}
                   {reviewsAboutSeller.length === 0 ? (
-                    <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
+                    <EmptyState title={translateCopy("Henüz değerlendirme yok", language)} body={translateCopy("Değerlendirmeler yalnızca tamamlanmış bir satışın taraflarınca yazılabilir.", language)} />
                   ) : reviewsAboutSeller.map((r) => (
                     <ReviewCard key={r.id} review={r} reviewerName={r.reviewerName ?? findUser(r.reviewerId)?.name} isSeller={isOwnStore} authed={isAuthed} onPatch={patchReview} onRemove={removeFetched} isMine={r.reviewerId === currentUser.id} onEdit={editReview} onDelete={deleteReview} onReport={reportReview} language={language} />
                   ))}
@@ -647,7 +654,7 @@ function StoreScreenLegacy() {
           name: seller.name,
           url: `https://www.ortaksat.com/store/${seller.id}`,
           ...(seller.avatar?.startsWith("http") ? { image: seller.avatar } : {}),
-          ...(reviewsAboutSeller.length > 0 && seller.rating > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: Number(seller.rating.toFixed(1)), reviewCount: reviewsAboutSeller.length } } : {})
+          ...(reviewStats.count > 0 ? { aggregateRating: { "@type": "AggregateRating", ratingValue: reviewStats.average, reviewCount: reviewStats.count, bestRating: 5, worstRating: 1 } } : {})
         })} />
       ) : null}
       <StoreCover seed={seller.id} height={92} radius={10} />
@@ -662,7 +669,7 @@ function StoreScreenLegacy() {
               {seller.bio || translateCopy("Satıcı mağazası", language)}
             </Text>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              <StatusPill label={`${seller.rating.toFixed(1)} ${t("points")}`} tone="info" />
+              <StatusPill label={ratingValue == null ? translateCopy("Henüz puan yok", language) : `${ratingText} ${t("points")}`} tone="info" />
               <StatusPill label={seller.verifiedIdentity ? t("identityVerified") : t("identityPending")} tone={seller.verifiedIdentity ? "success" : "warning"} />
             </View>
             {seller.city || memberLabel ? (
@@ -692,7 +699,7 @@ function StoreScreenLegacy() {
           <Metric label={translateCopy("Takipçi", language)} value={`${seller.followerCount}`} />
         </View>
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <Metric label={translateCopy("Puan", language)} value={seller.rating.toFixed(1)} />
+          <Metric label={translateCopy("Puan", language)} value={ratingText} />
           <Metric label={translateCopy("Yanıt oranı", language)} value={`%${seller.responseRate}`} />
           <Metric label={translateCopy("Satıcı güveni", language)} value={trust?.seller.score == null ? "Henüz yok" : `%${trust.seller.score}`} />
         </View>
@@ -831,10 +838,10 @@ function StoreScreenLegacy() {
         <Text selectable style={{ color: colors.ink, fontSize: 19, fontWeight: "900" }}>
           {translateCopy("Satıcı yorumları", language)} {reviewsAboutSeller.length ? `(${reviewsAboutSeller.length})` : ""}
         </Text>
-        {reviewsAboutSeller.length > 0 ? <ReviewSummary reviews={reviewsAboutSeller} rating={seller.rating} language={language} /> : null}
+        {reviewStats.count > 0 ? <RatingSummary stats={reviewStats} language={language} /> : null}
         {reviewsAboutSeller.length > 1 ? <ReviewSortBar value={reviewSort} onChange={setReviewSort} language={language} /> : null}
         {reviewsAboutSeller.length === 0 ? (
-          <EmptyState title={translateCopy("Henüz yorum yok", language)} body={translateCopy("Bu satıcı için ilk değerlendirmeyi sen yapabilirsin.", language)} />
+          <EmptyState title={translateCopy("Henüz değerlendirme yok", language)} body={translateCopy("Değerlendirmeler yalnızca tamamlanmış bir satışın taraflarınca yazılabilir.", language)} />
         ) : (
           // Mobilde de paylaşılan ReviewCard: satıcı yanıtı + faydalı oyu masaüstüyle eşit (eskiden
           // mobil satır bunları HİÇ göstermiyordu → satıcı yanıtları mobil ziyaretçiye görünmezdi).
@@ -845,58 +852,6 @@ function StoreScreenLegacy() {
       </View>
     </ScrollView>
     </KeyboardAvoidingView>
-  );
-}
-
-// Yorum özeti: büyük ortalama + yıldız satırı + 5★..1★ dağılım barları (Trendyol/Sahibinden).
-type ReviewSort = "recent" | "high" | "low" | "helpful";
-function ReviewSortBar({ value, onChange, language }: { value: ReviewSort; onChange: (v: ReviewSort) => void; language: "tr" | "en" }) {
-  const opts: Array<{ key: ReviewSort; label: string }> = [
-    { key: "recent", label: translateCopy("En yeni", language) },
-    { key: "high", label: translateCopy("En yüksek", language) },
-    { key: "low", label: translateCopy("En düşük", language) },
-    { key: "helpful", label: translateCopy("En faydalı", language) }
-  ];
-  return (
-    <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-      {opts.map((o) => {
-        const on = value === o.key;
-        return (
-          <Pressable key={o.key} onPress={() => onChange(o.key)} accessibilityRole="button" style={({ pressed }) => ({ backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 12, paddingVertical: 6 })}>
-            <Text style={{ color: on ? "#FFFFFF" : colors.muted, fontSize: 12, fontWeight: "800" }}>{o.label}</Text>
-          </Pressable>
-        );
-      })}
-    </View>
-  );
-}
-
-function ReviewSummary({ reviews, rating, language }: { reviews: Review[]; rating: number; language: "tr" | "en" }) {
-  const total = reviews.length;
-  return (
-    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, flexDirection: "row", gap: 18, padding: 16 }}>
-      <View style={{ alignItems: "center", justifyContent: "center", minWidth: 78, paddingHorizontal: 6 }}>
-        <Text style={{ color: colors.ink, fontSize: 34, fontWeight: "900" }}>{rating.toFixed(1)}</Text>
-        <View style={{ flexDirection: "row", gap: 1 }}>{[1, 2, 3, 4, 5].map((n) => <MaterialCommunityIcons key={n} name={n <= Math.round(rating) ? "star" : "star-outline"} size={13} color={colors.gold} />)}</View>
-        <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700", marginTop: 2 }}>{total} {translateCopy("yorum", language)}</Text>
-      </View>
-      <View style={{ flex: 1, gap: 4, justifyContent: "center" }}>
-        {[5, 4, 3, 2, 1].map((star) => {
-          const count = reviews.filter((r) => Math.round(r.rating) === star).length;
-          const pct = total ? Math.round((count / total) * 100) : 0;
-          return (
-            <View key={star} style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-              <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800", width: 10 }}>{star}</Text>
-              <MaterialCommunityIcons name="star" size={11} color={colors.gold} />
-              <View style={{ backgroundColor: colors.line, borderRadius: 999, flex: 1, height: 7, overflow: "hidden" }}>
-                <View style={{ backgroundColor: colors.gold, height: 7, width: `${pct}%` }} />
-              </View>
-              <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "700", textAlign: "right", width: 24 }}>{count}</Text>
-            </View>
-          );
-        })}
-      </View>
-    </View>
   );
 }
 

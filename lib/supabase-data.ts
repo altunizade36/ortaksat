@@ -1,6 +1,7 @@
 ﻿import { supabase } from "@/lib/supabase";
 import { getDemoProductImageMeta } from "@/lib/demo-product-images";
 import { msgStamp } from "@/lib/format";
+import { noteThreadActivity } from "@/lib/inbox-model";
 import { displayText, repairTurkishText } from "@/lib/text";
 import type { CategorySuggestion, Conversation, Favorite, Lead, Listing, LocationSuggestion, Message, Notification, NotificationMeta, Order, Partnership, Report, Review, Sale, SuggestionStatus, User } from "@/lib/types";
 
@@ -108,7 +109,14 @@ export type AccountSnapshot = {
   messages: Message[];
   notifications: Notification[];
   reports: Report[];
+  /**
+   * Sorgusu BAŞARISIZ olan dilimler (o dilim `[]` döner ama "gerçekten boş" DEĞİLDİR). Tam başarılı
+   * yüklemede boş nesnedir. Yenileme yapan çağıran, işaretli dilimi state'e YAZMAMALI — yoksa geçici
+   * bir ağ hatası iyi veriyi (konuşmalar, bildirimler…) boş listeyle ezer.
+   */
+  failed?: Partial<Record<AccountSlice, true>>;
 };
+export type AccountSlice = "partnerships" | "leads" | "sales" | "orders" | "reviews" | "favorites" | "conversations" | "messages" | "notifications" | "reports";
 
 /** Bildirim metadata'sını (jsonb → nesne) güvenli çözer; boşsa undefined. */
 export function parseNotifMeta(raw: unknown): NotificationMeta | undefined {
@@ -631,7 +639,7 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
 
   // LİMİT ŞART: aksi halde 100k ilanlı satıcı 100k id'yi `.in(...)` sorgu-string'ine gömer →
   // URL/statement sınırı aşılır, giriş takılır. Hesap-özeti join'leri için en yeni 1000 yeterli.
-  const { data: ownedListings } = await supabase.from("listings").select("id").eq("owner_id", userId).order("created_at", { ascending: false }).limit(1000);
+  const { data: ownedListings, error: ownedListingsError } = await supabase.from("listings").select("id").eq("owner_id", userId).order("created_at", { ascending: false }).limit(1000);
   const ownedListingIds = (ownedListings ?? []).map((item) => item.id as string);
 
   const [
@@ -659,7 +667,9 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
     ownedListingIds.length
       ? supabase.from("orders").select("*").in("listing_id", ownedListingIds).order("created_at", { ascending: false }).limit(500)
       : supabase.from("orders").select("*").eq("seller_id", userId).order("created_at", { ascending: false }).limit(500),
-    supabase.from("reviews").select("*").eq("reviewer_id", userId).is("deleted_at", null).order("created_at", { ascending: false }).limit(300),
+    // Yazdığım + HAKKIMDA yazılan yorumlar (eskiden yalnız yazdıklarım → profilde "hakkımda" hep 0, güven puanı alınan yorumu görmüyordu).
+    // Tüketiciler "benim yazdığım" için reviewerId === kullanıcı süzgeci kullanır.
+    supabase.from("reviews").select("*").or(`reviewer_id.eq.${userId},reviewed_user_id.eq.${userId}`).is("deleted_at", null).order("created_at", { ascending: false }).limit(500),
     supabase.from("favorites").select("*").eq("user_id", userId).limit(500),
     supabase.from("conversations").select("*").contains("participant_ids", [userId]).order("last_message_at", { ascending: false }).limit(200),
     supabase.from("messages").select("*").or(`sender_id.eq.${userId},receiver_id.eq.${userId}`).order("created_at", { ascending: false }).limit(1000),
@@ -684,7 +694,22 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
   // → kullanıcı "her şey boş" görüyordu. Artık her sonuç kendi `.data ?? []` ile map'lenir.
   if (firstError) console.warn("Supabase account load partial failure", firstError);
 
+  // Hangi dilim başarısız? (bkz. AccountSnapshot.failed) Sahip olunan ilan listesi okunamadıysa
+  // ortaklık/sipariş sorguları EKSİK süzgeçle çalışmıştır → o iki dilim de güvenilmezdir.
+  const failed: Partial<Record<AccountSlice, true>> = {};
+  if (partnershipsResult.error || ownedListingsError) failed.partnerships = true;
+  if (leadsResult.error) failed.leads = true;
+  if (commissionsResult.error) failed.sales = true;
+  if (ordersResult.error || ownedListingsError) failed.orders = true;
+  if (reviewsResult.error) failed.reviews = true;
+  if (favoritesResult.error) failed.favorites = true;
+  if (conversationsResult.error) failed.conversations = true;
+  if (messagesResult.error) failed.messages = true;
+  if (notificationsResult.error) failed.notifications = true;
+  if (reportsResult.error) failed.reports = true;
+
   return {
+    failed,
     partnerships: (partnershipsResult.data ?? []).map((row) => ({
       id: row.id,
       listingId: row.listing_id,
@@ -776,17 +801,21 @@ export async function loadAccountSnapshot(userId: string): Promise<AccountSnapsh
       savedPrice: row.saved_price != null ? toNumber(row.saved_price) : undefined,
       collection: typeof row.collection === "string" && row.collection.trim() ? row.collection : undefined
     })),
-    conversations: (conversationsResult.data ?? []).map((row) => ({
-      id: row.id,
-      listingId: row.listing_id,
-      sellerId: row.seller_id,
-      buyerId: row.buyer_id ?? undefined,
-      partnerId: row.partner_id ?? undefined,
-      participantIds: row.participant_ids ?? [],
-      status: row.status,
-      lastMessageAt: row.last_message_at ? msgStamp(row.last_message_at) : msgStamp(row.created_at),
-      createdAt: msgStamp(row.created_at)
-    })),
+    conversations: (conversationsResult.data ?? []).map((row) => {
+      // Saniyeye kırpılmadan ÖNCE: mesajı olan konuşma, gelen kutusunda "boş" sayılıp gizlenmesin.
+      noteThreadActivity(row.id, row.last_message_at, row.created_at);
+      return {
+        id: row.id,
+        listingId: row.listing_id,
+        sellerId: row.seller_id,
+        buyerId: row.buyer_id ?? undefined,
+        partnerId: row.partner_id ?? undefined,
+        participantIds: row.participant_ids ?? [],
+        status: row.status,
+        lastMessageAt: row.last_message_at ? msgStamp(row.last_message_at) : msgStamp(row.created_at),
+        createdAt: msgStamp(row.created_at)
+      };
+    }),
     messages: (messagesResult.data ?? []).map((row) => ({
       id: row.id,
       conversationId: row.conversation_id ?? `${row.listing_id}-${row.sender_id}-${row.receiver_id}`,

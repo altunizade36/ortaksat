@@ -12,7 +12,7 @@ import { KeyboardAvoidingView, Platform, Pressable, RefreshControl, ScrollView, 
 import { Alert } from "@/lib/alert";
 
 import { colors } from "@/components/colors";
-import { StarRatingInput } from "@/components/star-rating-input";
+import { SaleReviewForm } from "@/components/reviews/sale-review-form";
 import { ReasonModal } from "@/components/reason-modal";
 import { RecordSaleModal } from "@/components/record-sale-modal";
 import { CommissionOverrideModal } from "@/components/commission-override-modal";
@@ -35,17 +35,12 @@ import { displayText } from "@/lib/text";
 import { calculateUserTrustScores } from "@/lib/trust-score";
 import type { Lead, LeadSource, Listing, Partnership, PurchaseIntent, Sale, SaleStatus } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { saleStatusLabels } from "@/lib/status-labels";
+import { NativeAdvancedFrame } from "@/components/mobile/advanced-frame";
 import { WebContainer } from "@/components/web-container";
 
-const saleLabels: Record<SaleStatus, string> = {
-  pending: "Bekliyor",
-  return_pending: "İade süresi",
-  approved: "Onaylandı",
-  seller_paid: "Satıcı ödedi",
-  paid: "Ortak onayladı",
-  cancelled: "İptal",
-  disputed: "Anlaşmazlık"
-};
+// Tek kaynak: lib/status-labels.ts (mobil kazanç ekranı ve Kazançlarım ile aynı etiketler).
+const saleLabels: Record<SaleStatus, string> = saleStatusLabels;
 
 const sourceLabels: Record<LeadSource, string> = {
   whatsapp: "WhatsApp",
@@ -72,7 +67,10 @@ export default function SellerScreen() {
   const mounted = useMounted();
   const params = useLocalSearchParams<{ view?: string }>();
   if (!mounted) return <ScreenSkeleton />;
-  return isMobileApp && params.view !== "advanced" ? <MobileMyListings /> : <SellerScreenInner />;
+  if (isMobileApp && params.view !== "advanced") return <MobileMyListings />;
+  // Native ayrıntılı panel: başlık geçmişe bağlı kalmasın (bkz. NativeAdvancedFrame).
+  if (isMobileApp) return <NativeAdvancedFrame title="Satış ve Ödeme Yönetimi" hubParams><SellerScreenInner /></NativeAdvancedFrame>;
+  return <SellerScreenInner />;
 }
 
 function SellerScreenInner() {
@@ -1350,24 +1348,15 @@ function ReviewPrompt({
   sale: Sale;
 }) {
   const { language } = useLanguage();
-  const [comment, setComment] = useState("");
-  const [rating, setRating] = useState(5);
-  if (!canReviewSale(sale.id)) return null;
-
+  // Paylaşılan form: puan önceden seçili gelmez, çift gönderim kilidi, en az 10 karakter, hata/başarı geri bildirimi.
   return (
-    <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 8, padding: 10 }}>
-      <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Ortağı değerlendir", language)}</Text>
-      <StarRatingInput value={rating} onChange={setRating} />
-      <TextInput
-        value={comment}
-        onChangeText={setComment}
-        multiline
-        placeholder={translateCopy("Ortak satıcı alıcıyı doğru yönlendirdi mi?", language)}
-        placeholderTextColor={colors.muted}
-        style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, minHeight: 74, padding: 10, textAlignVertical: "top" }}
-      />
-      <PrimaryButton tone="secondary" onPress={() => { if (comment.trim()) createSaleReview(sale.id, rating, comment.trim()); }}>Yorumu kaydet</PrimaryButton>
-    </View>
+    <SaleReviewForm
+      saleId={sale.id}
+      title={translateCopy("Ortağı değerlendir", language)}
+      placeholder={translateCopy("Ortak satıcı alıcıyı doğru yönlendirdi mi?", language)}
+      canReviewSale={canReviewSale}
+      createSaleReview={createSaleReview}
+    />
   );
 }
 

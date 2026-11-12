@@ -1,8 +1,10 @@
-import { parseListingMoney, parseListingRate, listingCommissionError } from "@/lib/listing-numbers";
+import { parseListingMoney, parseListingRate, listingCommissionError, LISTING_MONEY_ERROR } from "@/lib/listing-numbers";
+import { LISTING_DRAFT_PREFIX, LISTING_DRAFT_TTL_MS, deleteListingVideo, isListingVideoUrl, listingDraftKey, listingVideoExists, withListingVideo, type ListingVideoValue } from "@/lib/listing-video";
+import { ListingVideoField, type ListingVideoStatus } from "@/components/listing-video-field";
 import { categoryPathAttributes, isLeafCategoryPath, resolveCategoryPath, searchCategoryTree } from "@/lib/category-path";
 import { ListingLocationFields } from "@/components/listing-location-fields";
-import { displayListingTitle } from "@/lib/listing-title";
-import { ListingTitleField } from "@/components/listing-title-field";
+import { displayListingTitle, validateListingTitle } from "@/lib/listing-title";
+import { ListingTitleInput } from "@/components/listing-title-input";
 import { isMobileApp } from "@/lib/mobile-app";
 import { MobileCreateFlow } from "@/components/mobile/create-flow";
 import { MobileScreen, MobileButton, MobileCard } from "@/components/mobile/ui";
@@ -40,7 +42,8 @@ import { useStore } from "@/lib/use-store";
 import { LIMITS, parseTrPrice, validateListing } from "@/lib/validation";
 
 // İlan fotoğraf limiti: kapak dahil en fazla 5. Galeri, sürükle-bırak ve yapıştırma
-// aynı sabiti kullanır; video kabul edilmez, yalnız görsel seçilir.
+// aynı sabiti kullanır; fotoğraf listesine video kabul edilmez. İsteğe bağlı TEK video ayrı tutulur
+// (ListingVideoField) ve bu sayıya DAHİL DEĞİLDİR.
 const MAX_PHOTOS = 5;
 // MİNİMAL İLAN DETAYLARI (mockup): formda + zorunlulukta YALNIZ bu alanlar. Kategoriye özel
 // Form, kategorinin ZORUNLU alanlarını gösterir: sade ürünlerde (elektronik/pet) yalnız
@@ -112,13 +115,15 @@ const PARTNER_REGIONS = ["Tüm Türkiye", ...TR_PROVINCES];
 // TASLAK ANAHTARI KULLANICIYA ÖZEL olmalı: eskiden sabit anahtardı ve çıkışta
 // silinmiyordu → A kullanıcısının yarım ilanı (başlık/fiyat/fotoğraf/konum) aynı
 // cihazda B kullanıcısına "yarım kalan ilanın var" diye açılıyordu.
-const DRAFT_PREFIX = "ortaksat_listing_draft_v1";
-const draftKeyFor = (userId?: string) => `${DRAFT_PREFIX}:${userId || "anon"}`;
+// Anahtar ve ömür lib/listing-video ile ORTAK: sahipsiz video temizliği aynı taslağı okuyup videosunu korur
+// ve "sahipsiz" yaşını taslak ömründen uzun tutar (yaşayan taslağın videosu süpürülemez).
+const DRAFT_PREFIX = LISTING_DRAFT_PREFIX;
+const draftKeyFor = listingDraftKey;
 // Anonim kullanıcı "Yayınla" deyip kayda yönlendirilince taslak BURAYA yazılır; kayıt/giriş
 // sonrası /create'e dönünce kullanıcının kendi anahtarına taşınır (anon→user migrasyonu).
 // ANON_USER.id'den bağımsız sabit anahtar → hangi guest kimliği olursa olsun kaybolmaz.
 const ANON_PENDING_KEY = `${DRAFT_PREFIX}:anon-pending`;
-const DRAFT_TTL_MS = 7 * 24 * 60 * 60 * 1000; // 7 gün
+const DRAFT_TTL_MS = LISTING_DRAFT_TTL_MS; // 7 gün
 
 type Values = Record<string, string | boolean | string[]>;
 
@@ -146,13 +151,17 @@ type DraftShape = {
   commissionCondition?: string;
   partnerRegion?: string;
   maxPartners?: string;
+  // İsteğe bağlı TEK video: yalnız YÜKLENMİŞ herkese açık URL saklanır (blob: URL asla yazılmaz).
+  video?: ListingVideoValue | null;
 };
 
 export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | "seek" } = {}) {
   const { language } = useLanguage();
   const isWideWeb = useIsWideWeb();
   const router = useRouter();
-  const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, isAuthenticated, listings, categoryTree } = useStore();
+  const { createListing, addCategorySuggestion, addLocationSuggestion, currentUser, isAuthenticated, listings, categoryTree, backendMode } = useStore();
+  // Video yalnız canlı + girişli hesapta yüklenebilir (depolama klasörü kullanıcı kimliğidir).
+  const canUploadVideo = isAuthenticated && backendMode === "supabase" && !!currentUser?.id && currentUser.id.includes("-");
   const DRAFT_KEY = draftKeyFor(currentUser?.id);
   const [step, setStep] = useState(0);
   // İlan niyeti: "sell" (ürün/hizmet satıyorum) | "seek" (bir şey arıyorum = talep/buluş komisyonu).
@@ -166,6 +175,20 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   const [customCategory, setCustomCategory] = useState("");
   const [values, setValues] = useState<Values>({});
   const [images, setImages] = useState<string[]>([]);
+  // İsteğe bağlı TEK video (yüklenmiş URL) + yükleme durumu. Fotoğraf sayısına dahil değildir.
+  const [video, setVideo] = useState<ListingVideoValue | null>(null);
+  const [videoStatus, setVideoStatus] = useState<ListingVideoStatus>("idle");
+  // Taslak geri yüklenince video alanı YENİDEN kurulur (key): alanın içindeki yarım/başarısız yükleme,
+  // üst durum "idle"a çekilirken geride kalıp yayını sessizce serbest bırakmasın.
+  const [videoFieldKey, setVideoFieldKey] = useState(0);
+  // Geri yüklenen taslağın videosu depoda hâlâ var mı diye bakılırken (en fazla birkaç saniye) yayın bekler.
+  const [videoChecking, setVideoChecking] = useState(false);
+  const videoCheckToken = useRef(0);
+  // İlan oluşturulduktan sonra yerel taslak YENİDEN yazılmasın (video artık canlı ilana ait).
+  const draftClosed = useRef(false);
+  // Fotoğraf hataları fotoğraf kartının İÇİNDE gösterilir (eskiden sayfanın en altındaki genel
+  // hata şeridine düşüyordu; mobilde fotoğraf bloğu en üstte olduğu için kullanıcı görmüyordu).
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [loc, setLoc] = useState<LocationValue>({});
   const [visibility, setVisibility] = useState<"city_only" | "district_only" | "neighborhood" | "full_address_private">("neighborhood");
 
@@ -191,6 +214,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   const publishOperation = useRef(false);
   const [pickingPhotos, setPickingPhotos] = useState(false);
   const photoPickerLock = useRef(false);
+  const photoPickerToken = useRef(0);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [honeypot, setHoneypot] = useState(""); // bot tuzağı: gerçek kullanıcı boş bırakır
@@ -397,17 +421,28 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     // Eskiden kaydedilmiyorlardı: kademeli komisyon kurup ya da eksik kategori adı yazıp
     // sayfadan çıkan kullanıcı, taslağı geri yüklediğinde ikisini de sessizce kaybediyordu.
     tiers, customCategory, urgentDays,
-    commissionCondition, partnerRegion, maxPartners
+    commissionCondition, partnerRegion, maxPartners,
+    video: video && /^https?:\/\//i.test(video.url) ? video : null
   });
 
   useEffect(() => {
-    if (!draftReady || pendingDraft || publishing || (!path.length && !images.length && !String(values.title || "").trim())) return;
+    // `published`: yayın sonrası ekranda taslak YENİDEN yazılmasın (eskiden yazılıyordu → /create'e dönünce
+    // yayınlanmış ilan "yarım kalan ilan" diye geri geliyordu; videosu da canlı ilanla paylaşılmış olurdu).
+    if (!draftReady || pendingDraft || publishing || published || draftClosed.current || (!path.length && !images.length && !video && !String(values.title || "").trim())) return;
     const draft = buildDraft();
     const h = setTimeout(() => { void AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)); }, 700);
     return () => clearTimeout(h);
-  }, [DRAFT_KEY, draftReady, pendingDraft, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow, tiers, customCategory, step, publishing, commissionCondition, partnerRegion, maxPartners]);
+  }, [DRAFT_KEY, draftReady, pendingDraft, path, values, images, loc, visibility, currency, commissionType, commissionValue, bonusAmount, bonusQuota, partnershipMode, partnerNote, contactMethod, attributionWindow, tiers, customCategory, step, publishing, commissionCondition, partnerRegion, maxPartners, video, published]);
 
-  const clearDraft = () => { setPendingDraft(null); void AsyncStorage.removeItem(DRAFT_KEY); };
+  const clearDraft = () => {
+    // Silinen taslağın videosu başka hiçbir yere bağlı değil → depoda yetim kalmasın (formdaki videoysa dokunma).
+    // Bir İLANA bağlı videoya ASLA dokunma: taslak yayınlandıktan sonra bellekte kalan kopyası aynı dosyayı gösterebilir.
+    const orphan = pendingDraft?.video?.url;
+    const inListing = !!orphan && listings.some((l) => l.adAssets?.includes(orphan));
+    if (orphan && orphan !== video?.url && !inListing && currentUser?.id) void deleteListingVideo(orphan, currentUser.id);
+    setPendingDraft(null);
+    void AsyncStorage.removeItem(DRAFT_KEY);
+  };
 
   const restoreDraft = () => {
     const d = pendingDraft;
@@ -420,7 +455,38 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     lastLeafFormKey.current = isLeafCategoryPath(restored) ? resolveFormKey(restored) : "";
     setPath(restored);
     setValues(d.values ?? {});
-    setImages([...new Set(d.images ?? [])].slice(0, MAX_PHOTOS));
+    const draftImages = [...new Set(d.images ?? [])].filter((uri) => typeof uri === "string" && uri && !isListingVideoUrl(uri)).slice(0, MAX_PHOTOS);
+    setImages(draftImages);
+    // WEB: taslaktaki fotoğraflar blob: URL'dir ve sayfa yenilenince ÖLÜR. Eskiden ölü URL'ler boş
+    // karelere dönüşüyor, "Yayınla" ise "Görsel yüklenemedi" ile çöküyordu. Okunamayanları ayıkla + söyle.
+    if (Platform.OS === "web" && draftImages.some((uri) => uri.startsWith("blob:"))) {
+      void Promise.all(draftImages.map((uri) => (uri.startsWith("blob:") ? fetch(uri).then((r) => r.ok, () => false) : Promise.resolve(true)))).then((alive) => {
+        const dead = draftImages.filter((_, i) => !alive[i]);
+        if (!dead.length) return;
+        setImages((current) => current.filter((uri) => !dead.includes(uri)));
+        setPhotoError(translateCopy("Taslaktaki fotoğraflar bu oturumda açılamadı. Lütfen fotoğrafları yeniden ekle; diğer bilgilerin korundu.", language));
+      });
+    }
+    // Taslaktaki video yalnız yüklenmiş URL'dir; depoda hâlâ duruyorsa geri getir.
+    const draftVideo = d.video && typeof d.video.url === "string" && /^https?:\/\//i.test(d.video.url) && isListingVideoUrl(d.video.url) ? d.video : null;
+    setVideo(draftVideo);
+    setVideoStatus("idle");
+    // Alanı yeniden kur: içindeki yarım/başarısız yükleme "idle" durumuyla birlikte gerçekten bırakılır
+    // (eski alan kapanınca süren yükleme kendi dosyasını siler).
+    setVideoFieldKey((current) => current + 1);
+    // Depoda duruyor mu? WEB VE NATIVE (eskiden yalnız web'de bakılıyordu → uygulamada silinmiş video
+    // "eklendi" görünüp ölü bağlantıyla yayınlanıyordu). Sonuç gelene kadar yayın bekletilir.
+    const checkToken = ++videoCheckToken.current;
+    setVideoChecking(!!draftVideo);
+    if (draftVideo) {
+      void listingVideoExists(draftVideo.url).then((exists) => {
+        if (videoCheckToken.current !== checkToken) return;
+        setVideoChecking(false);
+        if (exists !== false) return; // var ya da bilinemedi (çevrimdışı): dokunma
+        setVideo((current) => (current?.url === draftVideo.url ? null : current));
+        showToast(translateCopy("Taslaktaki video artık bulunamadı; istersen videoyu yeniden ekleyebilirsin.", language));
+      });
+    }
     setLoc(d.loc ?? {});
     if (d.visibility) setVisibility(d.visibility);
     if (d.currency) setCurrency(d.currency);
@@ -456,7 +522,10 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     // Tek sayfa düzen: fotoğraf paneli her zaman görünür → web'de sürükle-bırak/yapıştır hep aktif.
     if (Platform.OS !== "web" || typeof window === "undefined") return;
     const takeFiles = (files: FileList | null | undefined) => {
-      const imgs = Array.from(files ?? ([] as unknown as FileList)).filter((f) => f.type.startsWith("image/"));
+      const all = Array.from(files ?? ([] as unknown as FileList));
+      const imgs = all.filter((f) => f.type.startsWith("image/"));
+      // Fotoğraf alanına bırakılan video sessizce yutulmasın: nereye ekleneceğini söyle.
+      if (!imgs.length && all.some((f) => f.type.startsWith("video/"))) setPhotoError(translateCopy("Videoyu fotoğrafların altındaki Video bölümünden ekleyebilirsin.", language));
       if (!imgs.length) return;
       addAssets(imgs.map((f) => ({ uri: URL.createObjectURL(f), fileSize: f.size })));
     };
@@ -483,7 +552,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
   function addAssets(assets: Array<{ uri: string; fileSize?: number }>) {
     const tooBig = assets.some((a) => typeof a.fileSize === "number" && a.fileSize > MAX_BYTES);
-    if (tooBig) setError(translateCopy("Bazı görseller çok büyük (32 MB üzeri) ve eklenmedi. Diğerleri otomatik optimize edilir.", language));
+    setPhotoError(tooBig ? translateCopy("Bazı görseller çok büyük (32 MB üzeri) ve eklenmedi. Diğerleri otomatik optimize edilir.", language) : null);
     const uris = assets
       .filter((a) => !(typeof a.fileSize === "number" && a.fileSize > MAX_BYTES))
       .map((a) => a.uri)
@@ -491,21 +560,37 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     if (!uris.length) return;
     setImages((s) => {
       const next = [...new Set([...s, ...uris])].slice(0, MAX_PHOTOS);
-      if (s.length + uris.length > MAX_PHOTOS) setError(translateCopy(`En fazla ${MAX_PHOTOS} görsel ekleyebilirsin. Fazlası eklenmedi.`, language));
+      if (s.length + uris.length > MAX_PHOTOS) setPhotoError(translateCopy(`En fazla ${MAX_PHOTOS} görsel ekleyebilirsin. Fazlası eklenmedi.`, language));
       return next;
     });
   }
 
   async function pickPhotos(camera: boolean) {
     if (photoPickerLock.current || publishing) return;
-    if (images.length >= MAX_PHOTOS) { setError(translateCopy("En fazla 5 fotoğraf ekleyebilirsin.", language)); return; }
+    if (images.length >= MAX_PHOTOS) { setPhotoError(translateCopy("En fazla 5 fotoğraf ekleyebilirsin.", language)); return; }
     photoPickerLock.current = true;
+    const token = ++photoPickerToken.current;
     setPickingPhotos(true);
-    setError(null);
+    setPhotoError(null);
+    // Kilidi yalnız onu ALAN çağrı bırakır (aşağıdaki "bayat kilit" kurtarmasından sonra geç dönen eski çağrı
+    // yenisinin kilidini açmasın).
+    const release = () => {
+      if (photoPickerToken.current !== token) return;
+      photoPickerLock.current = false;
+      setPickingPhotos(false);
+    };
+    // WEB: dosya seçici iptal edilince bazı tarayıcılar "cancel" olayı göndermez → seçici sözü hiç çözülmez,
+    // kilit sonsuza dek kalır (fotoğraf eklenemez, "İlanı Yayınla" sessizce çalışmazdı). Pencere odağı geri
+    // gelince (seçici kapandı) kısa bir pay bırakıp kilidi aç; seçim yapıldıysa sonuç yine eklenir.
+    let onFocus: (() => void) | null = null;
+    if (Platform.OS === "web" && typeof window !== "undefined") {
+      onFocus = () => { setTimeout(release, 1500); };
+      window.addEventListener("focus", onFocus, { once: true });
+    }
     try {
       const permission = camera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
       if (!permission.granted) {
-        setError(translateCopy(camera ? "Kamera izni verilmedi. Ayarlardan izin verip tekrar dene." : "Galeri izni verilmedi. Ayarlardan izin verip tekrar dene.", language));
+        setPhotoError(translateCopy(camera ? "Kamera izni verilmedi. Ayarlardan izin verip tekrar dene." : "Galeri izni verilmedi. Ayarlardan izin verip tekrar dene.", language));
         return;
       }
       const result = camera
@@ -513,10 +598,10 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
         : await ImagePicker.launchImageLibraryAsync({ allowsMultipleSelection: true, mediaTypes: ["images"], quality: 0.85, selectionLimit: MAX_PHOTOS - images.length });
       if (!result.canceled) addAssets(result.assets.filter(asset => asset.type !== "video"));
     } catch {
-      setError(translateCopy("Fotoğraf açılamadı. İzinlerini kontrol edip tekrar dene.", language));
+      setPhotoError(translateCopy("Fotoğraf açılamadı. İzinlerini kontrol edip tekrar dene.", language));
     } finally {
-      photoPickerLock.current = false;
-      setPickingPhotos(false);
+      if (onFocus && typeof window !== "undefined") window.removeEventListener("focus", onFocus);
+      release();
     }
   }
   async function pickFromGallery() { await pickPhotos(false); }
@@ -526,7 +611,6 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   // Eskiden buton sessizce disabled'dı: kullanıcı uzun formda hangi alanın eksik olduğunu
   // arıyordu. showErrors true olunca DField'lar `invalid` ile kırmızı işaretlenir.
   const [showErrors, setShowErrors] = useState(false);
-  const missingKeys = useMemo(() => new Set(missingFields.map((f) => f.key)), [missingFields]);
 
   /** İlk eksik alana kaydır (web). Native'de alanlar kırmızı işaretlenir. */
   function scrollToFirstMissing() {
@@ -549,8 +633,99 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     return false;
   }
 
+  // ── SATIR-İÇİ DOĞRULAMA (komisyon / kademe / bonus / ortak sayısı) ──────────────────
+  // Eskiden bu değerler yayın anında SESSİZCE kırpılıyor ya da atılıyordu (ör. bonus tutarı
+  // girilip kontenjan boşsa bonus kayboluyor, "12,5" kademe oranı 0 sayılıp siliniyordu).
+  const commissionIssue = partnershipMode === "none" ? "" :
+    listingCommissionError(commissionType, commissionRaw) ||
+    (commissionType === "fixed" && priceNum > 0 && commissionNum > priceNum ? "Sabit komisyon ilan fiyatından yüksek olamaz." : "");
+  const maxPartnersIssue = partnershipMode !== "none" && maxPartners.trim() !== "" && (!/^\d+$/.test(maxPartners.trim()) || !Number.isSafeInteger(Number(maxPartners)) || Number(maxPartners) < 1)
+    ? "Ortak sayısı en az 1 olan bir tam sayı olmalı." : "";
+  const tierIssue = partnershipMode !== "none" && commissionType === "rate" && tiers.some((tr) => {
+    if (!tr.rate.trim() && !tr.minSales.trim()) return false;
+    const rate = parseListingRate(tr.rate);
+    return !(rate > 0 && rate <= 90) || !/^\d+$/.test(tr.minSales.trim());
+  }) ? "Kademelerde satış adedini tam sayı, oranı 1–90 arasında gir (ör. 5 satıştan sonra %12,5)." : "";
+  const bonusIssue = partnershipMode === "none" || (!bonusAmount.trim() && !bonusQuota.trim()) ? "" :
+    !(parseListingMoney(bonusAmount) > 0) ? "Bonus için geçerli bir tutar gir (ör. 500) ya da iki alanı da boş bırak." :
+    !/^\d+$/.test(bonusQuota.trim()) || Number(bonusQuota) < 1 ? "Bonus kontenjanını gir: kaç satışa kadar geçerli (en az 1)." : "";
+
+  /** Yayına engel olan HER ŞEY, sayfadaki sırayla. "İlanı Yayınla"ya basınca özet + ilk eksiğe odak. */
+  const formIssues: Array<{ key: string; message: string }> = [];
+  if (!images.length) formIssues.push({ key: "photos", message: "En az bir fotoğraf ekle." });
+  if (!schema) {
+    formIssues.push({ key: "category", message: path.length ? "Kategoride bir alt seviye daha seç." : "İlanın için bir kategori seç." });
+  } else {
+    const titleValue = String(values.title ?? "");
+    const titleError = validateListingTitle(titleValue).error;
+    if (titleError) formIssues.push({ key: "title", message: titleValue.trim() ? titleError : "İlan başlığını yaz." });
+    for (const f of missingFields) if (f.key !== "title") formIssues.push({ key: f.key, message: `${f.label} alanını doldur.` });
+    for (const f of schema.fields) {
+      if (f.type !== "number") continue;
+      const text = typeof values[f.key] === "string" ? String(values[f.key]).trim() : "";
+      if (!text) continue;
+      if (f.key === priceKey) {
+        const parsed = parseListingMoney(text);
+        if (!Number.isFinite(parsed)) formIssues.push({ key: f.key, message: LISTING_MONEY_ERROR });
+        else if (parsed > LIMITS.price.max) formIssues.push({ key: f.key, message: "Fiyat çok yüksek görünüyor." });
+      } else if (!/^[\d.,\s]+$/.test(text)) formIssues.push({ key: f.key, message: `${f.label}: yalnızca rakam gir.` });
+    }
+    const descriptionText = String(values.description ?? "").trim();
+    if (descriptionText && descriptionText.length < LIMITS.description.min) formIssues.push({ key: "description", message: `Açıklama en az ${LIMITS.description.min} karakter olmalı.` });
+    const locationIssue = validateListingLocation(loc);
+    if (locationIssue) formIssues.push({ key: "location", message: locationIssue });
+    if (commissionIssue) formIssues.push({ key: "commission", message: commissionIssue });
+    if (tierIssue) formIssues.push({ key: "tiers", message: tierIssue });
+    if (bonusIssue) formIssues.push({ key: "bonus", message: bonusIssue });
+    if (maxPartnersIssue) formIssues.push({ key: "maxPartners", message: maxPartnersIssue });
+  }
+  if (videoStatus === "uploading") formIssues.push({ key: "video", message: "Video yükleniyor; yükleme bitince yayınlayabilirsin." });
+  if (videoStatus === "error") formIssues.push({ key: "video", message: "Video yüklenemedi: tekrar dene ya da videosuz devam et." });
+  if (videoChecking && videoStatus === "idle") formIssues.push({ key: "video", message: "Taslaktaki video kontrol ediliyor; birkaç saniye sonra tekrar dene." });
+  const blockingIssues = formIssues.length;
+  if (!acceptedLegal) formIssues.push({ key: "legal", message: "Yayınlamak için aracı platform koşullarını onayla." });
+  const issueFor = (key: string) => formIssues.find((issue) => issue.key === key)?.message ?? "";
+
+  /** Alanı görünür yap ve odakla (web). Native'de alanlar kırmızı işaretlenir. */
+  function focusIssue(key: string) {
+    if (Platform.OS !== "web" || typeof document === "undefined") return;
+    requestAnimationFrame(() => {
+      const el = document.querySelector(`[data-field="${key}"]`) as HTMLElement | null;
+      if (!el) return;
+      el.scrollIntoView?.({ block: "center", behavior: "smooth" });
+      const target = el.querySelector('input:not([type="file"]), textarea, [role="button"], [role="checkbox"], [role="switch"]') as HTMLElement | null;
+      try { target?.focus?.({ preventScroll: true }); } catch { /* odak desteklenmiyor */ }
+    });
+  }
+
+  /** "İlanı Yayınla": eksik varsa hepsini işaretle + özetle + ilk eksiğe git; yoksa yayınla. */
+  function attemptPublish() {
+    if (publishing || publishOperation.current) return;
+    if (formIssues.length) {
+      setShowErrors(true);
+      if (!acceptedLegal) setShowLegalError(true);
+      setError(null);
+      focusIssue(formIssues[0].key);
+      return;
+    }
+    void publish();
+  }
+
   async function publish(asDraft = false) {
-    if (publishOperation.current || photoPickerLock.current) return;
+    if (publishOperation.current) return;
+    // Fotoğraf seçici kilidi yayını SESSİZCE yutmasın. Web'de dosya seçici açıkken sayfaya tıklanamaz; buraya
+    // gelindiyse seçici kapanmıştır ve kilit bayattır ("cancel" olayı göndermeyen tarayıcı) → bırak, devam et.
+    // Native'de seçim gerçekten sürüyor olabilir → nedenini söyle.
+    if (photoPickerLock.current) {
+      if (Platform.OS !== "web") { setError(translateCopy("Fotoğraf seçimi sürüyor; seçim bitince tekrar dene.", language)); return; }
+      photoPickerToken.current += 1;
+      photoPickerLock.current = false;
+      setPickingPhotos(false);
+    }
+    // Video: yükleme sürerken yayınlama; başarısız videoyu SESSİZCE düşürme (kullanıcı karar verir).
+    if (videoStatus === "uploading") { setError(translateCopy("Video yükleniyor; yükleme bitince tekrar dene.", language)); focusIssue("video"); return; }
+    if (videoStatus === "error") { setError(translateCopy("Video yüklenemedi. Video bölümünden \"Tekrar dene\" ya da \"Videosuz devam et\" seçeneğini kullan.", language)); focusIssue("video"); return; }
+    if (videoChecking) { setError(translateCopy("Taslaktaki video kontrol ediliyor; birkaç saniye sonra tekrar dene.", language)); focusIssue("video"); return; }
     if (!schema) {
       // Eskiden sessizce return ediyordu: "Yayınla" tıklanıyor, hiçbir şey olmuyordu.
       setError(translateCopy("Kategori formu yüklenemedi. Kategoriyi tekrar seç.", language));
@@ -596,8 +771,8 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
     if (images.length === 0) { setError(translateCopy("En az bir fotoğraf ekle.", language)); return; }
     const locationError = validateListingLocation(loc);
     if (locationError) { setError(translateCopy(locationError, language)); return; }
-    const commissionError = partnershipMode !== "none" ? listingCommissionError(commissionType, commissionRaw, maxPartners) : "";
-    if (commissionError) { setError(commissionError); return; }
+    const commissionError = partnershipMode !== "none" ? listingCommissionError(commissionType, commissionRaw, maxPartners) || commissionIssue || tierIssue || bonusIssue : "";
+    if (commissionError) { setError(translateCopy(commissionError, language)); return; }
 
     // ANONİM YAYIN: form GEÇERLİ ama giriş yok → taslağı anon-pending'e kaydet + Kayıt'a
     // yönlendir (dönüşte /create'e döner, taslak migrasyonla korunur). Emeğini harcamış
@@ -721,7 +896,8 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
         description: description ? v.clean.description : auto.description,
         salesPitch: detailLines.slice(0, 4).length ? detailLines.slice(0, 4) : auto.salesPitch,
         shareTemplates: auto.shareTemplates,
-        adAssets: uploadedImages.slice(1),
+        // SÖZLEŞME: ek fotoğraflar + (varsa) TEK video EN SONDA. Kapak (`image`) her zaman fotoğraftır.
+        adAssets: withListingVideo(uploadedImages.slice(1), video?.url),
         tags: tags.length ? tags : auto.tags,
         price,
         currency,
@@ -730,7 +906,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
         // toggle "15"i sıfırlamadığından kart/panel/önizlemede hayalet "%15 komisyon" görünüyordu.
         commissionValue: partnershipMode === "none" ? 0 : commissionNum || 0,
         commissionTiers: partnershipMode !== "none" && commissionType === "rate"
-          ? tiers.map((tr) => ({ minSales: Math.max(0, Math.floor(Number(tr.minSales) || 0)), rate: Math.max(0, Math.min(90, Number(tr.rate) || 0)) })).filter((tr) => tr.rate > 0).sort((a, b) => a.minSales - b.minSales)
+          ? tiers.map((tr) => ({ minSales: Math.max(0, Math.floor(Number(tr.minSales) || 0)), rate: Math.max(0, Math.min(90, parseListingRate(tr.rate) || 0)) })).filter((tr) => tr.rate > 0).sort((a, b) => a.minSales - b.minSales)
           : undefined,
         bonusAmount: partnershipMode !== "none" && bonusNum > 0 && Number(bonusQuota) > 0 ? bonusNum : undefined,
         bonusQuota: partnershipMode !== "none" && bonusNum > 0 && Number(bonusQuota) > 0 ? Number(bonusQuota) : undefined,
@@ -757,7 +933,15 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       }, statusOverride);
 
       // İlan oluşturuldu → yarım-kalan taslağı sil (tekrar "devam et?" çıkmasın).
+      draftClosed.current = true;
       void AsyncStorage.removeItem(DRAFT_KEY).catch(() => { /* Publication already succeeded; local cleanup must not turn it into a failure. */ });
+      // Bellekteki "kayıtlı taslak" da kapanır. Eskiden kalıyordu: "Yeni İlan Ver" sonrası "Vazgeç / taslağı sil"
+      // az önce yayınlanan ilanın videosunu depodan siliyor, "Taslağa devam et" ise aynı dosyayı ikinci bir
+      // ilana bağlıyordu. Ayrı (devam edilmemiş) bir taslağın videosu varsa sahipsiz temizliği toplar.
+      setPendingDraft(null);
+      // Video artık ilana ait: formdan düş (depodan SİLME).
+      setVideo(null);
+      setVideoStatus("idle");
 
       // BAŞARI EKRANI: eskiden kullanıcı doğrudan panele atılıyordu ve elinde HİÇBİR ŞEY
       // kalmıyordu. Paylaşım metinleri yayından ÖNCE gösteriliyordu — yani içlerinde gerçek
@@ -798,7 +982,10 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   // ── YAYIN SONRASI ───────────────────────────────────────────────────────────
   function resetForNew() {
     lastLeafFormKey.current = "";
+    draftClosed.current = false;
+    videoCheckToken.current += 1;
     setPublished(null); setStep(0); setPath([]); setValues({}); setImages([]);
+    setVideo(null); setVideoStatus("idle"); setVideoChecking(false); setPhotoError(null); setShowErrors(false);
     setLoc({}); setTiers([]); setCustomCategory(""); setError(null); setNotice(null);
   }
 
@@ -809,7 +996,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       <MobileButton onPress={() => router.push(`/listing/${l.id}` as never)}>İlanı Gör</MobileButton><View style={{ height: 10 }} /><MobileButton secondary onPress={() => void shareOrCopy({ title: l.title, url: productUrl(l), message: listingShareTemplates(l, productUrl(l)).whatsapp })}>İlanı Paylaş</MobileButton><View style={{ height: 10 }} /><MobileButton secondary onPress={resetForNew}>Yeni İlan Ver</MobileButton>
     </MobileScreen>;
   }
-  if (isMobileApp) return <MobileCreateFlow picking={pickingPhotos} currency={currency} path={path} onPath={changePath} schema={schema} values={values} onValue={setV} images={images} onImages={setImages} onGallery={() => void pickFromGallery()} onCamera={() => void captureFromCamera()} loc={loc} onLocation={setLoc} visibility={visibility} onVisibility={setVisibility} commissionType={commissionType} onCommissionType={setCommissionType} commissionValue={commissionValue} onCommission={setCommissionValue} partnershipMode={partnershipMode} onPartnership={setPartnershipMode} maxPartners={maxPartners} onMaxPartners={setMaxPartners} contactMethod={contactMethod} onContact={setContactMethod} acceptedLegal={acceptedLegal} onLegal={setAcceptedLegal} publishing={publishing} error={error} onPublish={() => { if (guardRequiredFields()) void publish(); }} hasDraft={!!pendingDraft} onRestore={restoreDraft} onClearDraft={clearDraft} onSaveDraft={() => { const draft = buildDraft(); void AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)).then(() => { setPendingDraft(draft); showToast("Taslak cihazına kaydedildi."); }).catch(() => showToast("Taslak kaydedilemedi.")); }} />;
+  if (isMobileApp) return <MobileCreateFlow picking={pickingPhotos} currency={currency} path={path} onPath={changePath} schema={schema} values={values} onValue={setV} images={images} onImages={setImages} video={video} onVideo={setVideo} videoStatus={videoStatus} onVideoStatus={setVideoStatus} videoUserId={currentUser?.id} canUploadVideo={canUploadVideo} videoKeepUrl={pendingDraft?.video?.url} videoFieldKey={videoFieldKey} videoChecking={videoChecking} onGallery={() => void pickFromGallery()} onCamera={() => void captureFromCamera()} loc={loc} onLocation={setLoc} visibility={visibility} onVisibility={setVisibility} commissionType={commissionType} onCommissionType={setCommissionType} commissionValue={commissionValue} onCommission={setCommissionValue} partnershipMode={partnershipMode} onPartnership={setPartnershipMode} maxPartners={maxPartners} onMaxPartners={setMaxPartners} contactMethod={contactMethod} onContact={setContactMethod} acceptedLegal={acceptedLegal} onLegal={setAcceptedLegal} publishing={publishing} error={error || photoError} onPublish={() => { if (guardRequiredFields()) void publish(); }} hasDraft={!!pendingDraft} onRestore={restoreDraft} onClearDraft={clearDraft} onSaveDraft={() => { const draft = buildDraft(); void AsyncStorage.setItem(DRAFT_KEY, JSON.stringify(draft)).then(() => { setPendingDraft(draft); showToast("Taslak cihazına kaydedildi."); }).catch(() => showToast("Taslak kaydedilemedi.")); }} />;
 
   if (published) {
     const l = published.listing;
@@ -932,9 +1119,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       <View style={{ alignItems: "flex-start", flexDirection: isWideWeb ? "row" : "column", gap: 18 }}>
 
         {/* ── SOL KOLON: Ürün Fotoğrafları ── */}
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, flexShrink: 0, gap: 14, padding: isWideWeb ? 18 : 14, width: isWideWeb ? 384 : "100%" }}>
+        <View dataSet={{ field: "photos" }} style={{ backgroundColor: colors.surface, borderColor: showErrors && !images.length ? colors.accent : colors.line, borderRadius: 18, borderWidth: 1, flexShrink: 0, gap: 14, padding: isWideWeb ? 18 : 14, width: isWideWeb ? 384 : "100%" }}>
           <View style={{ gap: 3 }}>
-            <Text style={{ color: colors.ink, fontSize: isWideWeb ? 17 : 15.5, fontWeight: "900" }}>{translateCopy("Ürün Fotoğrafları", language)}</Text>
+            <Text style={{ color: colors.ink, fontSize: isWideWeb ? 17 : 15.5, fontWeight: "900" }}>{translateCopy("Ürün Fotoğrafları", language)} *</Text>
             <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy(`En az 1, en fazla ${MAX_PHOTOS} fotoğraf. İlk fotoğraf kapak olur; fotoğraflar otomatik ölçeklenir.`, language)}</Text>
           </View>
 
@@ -1021,6 +1208,17 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             </View>
           ) : null}
 
+          {photoError || (showErrors && !images.length) ? (
+            <View testID="photo-error" accessibilityRole="alert" style={{ alignItems: "flex-start", backgroundColor: colors.accentSoft, borderRadius: 10, flexDirection: "row", gap: 7, padding: 10 }}>
+              <MaterialCommunityIcons name="alert-circle-outline" size={16} color={colors.accent} style={{ marginTop: 1 }} />
+              <Text style={{ color: colors.accent, flex: 1, fontSize: 12.5, fontWeight: "700", lineHeight: 17, minWidth: 0 }}>{photoError || translateCopy("En az bir fotoğraf ekle.", language)}</Text>
+            </View>
+          ) : null}
+
+          {/* VİDEO (isteğe bağlı) — ilan başına TEK kısa klip; fotoğraf sayısına dahil değil. */}
+          {/* keepUrl: kayıtlı taslağın videosu formdaki "Değiştir/Kaldır" ile depodan SİLİNMEZ (taslak hâlâ ona bağlı). */}
+          <ListingVideoField key={videoFieldKey} value={video} onChange={setVideo} userId={currentUser?.id} canUpload={canUploadVideo} disabled={publishing} keepUrl={pendingDraft?.video?.url} onStatus={setVideoStatus} />
+
         </View>
 
         {/* ── SAĞ KOLON: İlan Detayları (kategori → form → konum → komisyon) ── */}
@@ -1028,7 +1226,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           {/* Sol "Ürün Fotoğrafları" başlığıyla simetrik sağ kolon başlığı */}
           <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{translateCopy("İlan Detayları", language)}</Text>
         {/* Kart: Ne yapmak istersin + Kategori */}
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, padding: isWideWeb ? 22 : 14 }}>
+          <View dataSet={{ field: "category" }} style={{ backgroundColor: colors.surface, borderColor: showErrors && !schema ? colors.accent : colors.line, borderRadius: 18, borderWidth: 1, gap: 14, padding: isWideWeb ? 22 : 14 }}>
             {!path.length ? (
               <View style={{ gap: 9 }}>
                 <Text style={{ color: colors.ink, fontSize: isWideWeb ? 17 : 15.5, fontWeight: "900" }}>{translateCopy("Ne yapmak istersin?", language)}</Text>
@@ -1091,10 +1289,10 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
               const models = modelsForSchema(schema.key, String(values.brand ?? ""));
               if (models.length) {
                 const dep: FieldDef = { ...f, type: "select", options: [...models, "Diğer"] };
-                return <DField key={f.key} field={dep} value={values[f.key]} onChange={(v) => setV(f.key, v)} invalid={showErrors && missingKeys.has(f.key)} />;
+                return <DField key={f.key} field={dep} value={values[f.key]} onChange={(v) => setV(f.key, v)} invalid={showErrors && !!issueFor(f.key)} errorText={issueFor(f.key)} />;
               }
             }
-            return <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} invalid={showErrors && missingKeys.has(f.key)} />;
+            return <DField key={f.key} field={f} value={values[f.key]} onChange={(v) => setV(f.key, v)} invalid={showErrors && !!issueFor(f.key)} errorText={issueFor(f.key)} />;
           };
           return (
             <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 16, padding: isWideWeb ? 22 : 14 }}>
@@ -1209,9 +1407,10 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
         {/* Kart: Konum */}
         {schema ? (
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 18, borderWidth: 1, gap: 14, padding: isWideWeb ? 22 : 14 }}>
-            <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{translateCopy("Konum", language)}</Text>
+          <View dataSet={{ field: "location" }} style={{ backgroundColor: colors.surface, borderColor: showErrors && issueFor("location") ? colors.accent : colors.line, borderRadius: 18, borderWidth: 1, gap: 14, padding: isWideWeb ? 22 : 14 }}>
+            <Text style={{ color: colors.ink, fontSize: 15.5, fontWeight: "900" }}>{translateCopy("Konum", language)} *</Text>
             <ListingLocationFields value={loc} onChange={setLoc} visibility={visibility} onVisibility={setVisibility} />
+            {showErrors && issueFor("location") ? <InlineError text={translateCopy(issueFor("location"), language)} /> : null}
           </View>
         ) : null}
 
@@ -1254,9 +1453,13 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                   })}
                 </View>
               </View>
-              <View style={{ flex: 1, minWidth: 200 }}>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800", marginBottom: 6 }}>{translateCopy("Komisyon", language)} {commissionType === "rate" ? translateCopy("oranı (%)", language) : translateCopy("tutarı (₺)", language)}</Text>
-                <TextInput accessibilityLabel={translateCopy("Komisyon değeri", language)} value={commissionValue} onChangeText={setCommissionValue} keyboardType="numeric" style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+              <View dataSet={{ field: "commission" }} style={{ flex: 1, gap: 6, minWidth: 200 }}>
+                <Text style={{ color: commissionIssue && (commissionRaw.trim() || showErrors) ? colors.accent : colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Komisyon", language)} {commissionType === "rate" ? translateCopy("oranı (%)", language) : translateCopy("tutarı (₺)", language)} *</Text>
+                <TextInput testID="field-commission" accessibilityLabel={translateCopy("Komisyon değeri", language)} value={commissionValue} onChangeText={setCommissionValue} keyboardType={commissionType === "rate" ? "decimal-pad" : "numeric"} placeholder={commissionType === "rate" ? "1–90" : translateCopy("Örn. 1.500", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: commissionIssue && (commissionRaw.trim() || showErrors) ? colors.accent : colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                {/* Yazılan değer geçersizse HEMEN söyle (boşken yalnız yayın denemesinden sonra). */}
+                {commissionIssue && (commissionRaw.trim() || showErrors)
+                  ? <InlineError testID="commission-error" text={translateCopy(commissionIssue, language)} />
+                  : perSaleCommission > 0 && priceNum > 0 ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Ortağın satış başına kazancı", language)}: {moneyIn(perSaleCommission, currency)}</Text> : null}
               </View>
             </View>
 
@@ -1285,7 +1488,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             {/* Kademeli komisyon (yalnız %): ortağın kümülatif satışı arttıkça oran yükselir.
                 Edit'te vardı, CREATE'te YOKTU → satıcı önce yayınlayıp sonra düzenlemek zorundaydı (bulgu #4). */}
             {commissionType === "rate" ? (
-              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
+              <View dataSet={{ field: "tiers" }} style={{ backgroundColor: colors.surfaceAlt, borderColor: tierIssue ? colors.accent : colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Kademeli komisyon (opsiyonel)", language)}</Text>
                 <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Ortağın bu ilandaki kümülatif satışı arttıkça oran yükselsin. Boş bırakırsan tek oran geçerli.", language)}</Text>
                 {tiers.map((tr, i) => (
@@ -1301,6 +1504,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                     <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Kademeyi kaldır", language)} onPress={() => setTiers((s) => s.filter((_, j) => j !== i))} hitSlop={8} style={{ paddingBottom: 10 }}><MaterialCommunityIcons name="close-circle" size={22} color={colors.muted} /></Pressable>
                   </View>
                 ))}
+                {tierIssue ? <InlineError text={translateCopy(tierIssue, language)} /> : null}
                 {tiers.length < 4 ? (
                   <Pressable accessibilityRole="button" onPress={() => setTiers((s) => [...s, { minSales: "", rate: "" }])} style={{ alignItems: "center", borderColor: colors.primary, borderRadius: 10, borderStyle: "dashed", borderWidth: 1, flexDirection: "row", gap: 6, justifyContent: "center", paddingVertical: 9 }}>
                     <MaterialCommunityIcons name="plus" size={15} color={colors.primaryDark} />
@@ -1312,7 +1516,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
             {/* Başlangıç bonusu + kontenjan — ilk N satışta ortağa komisyona EK sabit ödül.
                 Edit'te vardı, CREATE'te YOKTU (bulgu #4). */}
-            <View style={{ gap: 6 }}>
+            <View dataSet={{ field: "bonus" }} style={{ gap: 6 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Başlangıç bonusu (opsiyonel)", language)}</Text>
               <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("İlk satışları getiren ortağa komisyona EK sabit ödül (₺). Kontenjan: kaç satışa kadar geçerli.", language)}</Text>
               <View style={{ flexDirection: "row", gap: 10 }}>
@@ -1323,6 +1527,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                   <TextInput accessibilityLabel={translateCopy("Bonus kontenjanı", language)} value={bonusQuota} onChangeText={setBonusQuota} keyboardType="numeric" placeholder={translateCopy("Kontenjan", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
                 </View>
               </View>
+              {bonusIssue ? <InlineError text={translateCopy(bonusIssue, language)} /> : null}
             </View>
 
             {/* Komisyon Koşulları (YENİ dropdown) — attributes._commissionCondition */}
@@ -1338,7 +1543,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
             </View>
 
             {/* Maksimum Ortak Sayısı (YENİ) — Sınırsız / Belirle; Belirle secilince sayı inputu. attributes._maxPartners */}
-            <View style={{ gap: 6 }}>
+            <View dataSet={{ field: "maxPartners" }} style={{ gap: 6 }}>
               <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Maksimum Ortak Sayısı", language)}</Text>
               <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
                 {([["unlimited", "Sınırsız"], ["limited", "Belirle"]] as const).map(([k, lbl]) => {
@@ -1347,8 +1552,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
                 })}
               </View>
               {maxPartners.trim() !== "" ? (
-                <TextInput accessibilityLabel={translateCopy("Maksimum ortak sayısı", language)} value={maxPartners} onChangeText={setMaxPartners} keyboardType="numeric" placeholder={translateCopy("Örn. 5", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
+                <TextInput accessibilityLabel={translateCopy("Maksimum ortak sayısı", language)} value={maxPartners} onChangeText={setMaxPartners} keyboardType="numeric" placeholder={translateCopy("Örn. 5", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: maxPartnersIssue ? colors.accent : colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: 46, paddingHorizontal: 12 }} />
               ) : null}
+              {maxPartnersIssue ? <InlineError text={translateCopy(maxPartnersIssue, language)} /> : null}
             </View>
 
             {/* OrtakSat para tutmaz — komisyon satıcı ile ortak arasında doğrudan ödenir. */}
@@ -1367,7 +1573,9 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
         {/* Yasal uyarı — KOMPAKT onay kutucuğu (eski büyük kutu mobilde ekranı kaplıyordu).
             İşaretleyip yayınlayınca aracı-platform şartları kabul edilmiş olur; "Tüm maddeleri gör" ile açılır. */}
-        <LegalDisclaimerAccept value={acceptedLegal} onChange={(v) => { setAcceptedLegal(v); if (v) setShowLegalError(false); }} error={showLegalError} />
+        <View dataSet={{ field: "legal" }}>
+          <LegalDisclaimerAccept value={acceptedLegal} onChange={(v) => { setAcceptedLegal(v); if (v) setShowLegalError(false); }} error={showLegalError} />
+        </View>
 
         {/* Honeypot (botlar için gizli tuzak; ekranda görünmez, gerçek kullanıcı dokunmaz) */}
         <TextInput
@@ -1403,9 +1611,18 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
           </View>
         ) : null}
 
-        {/* Eksik zorunlu alanları açıkça göster (sessiz kilitli "Yayınla" yerine). */}
-        {schema && missingFields.length ? (
-          <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Eksik zorunlu alan", language)}: {missingFields.map((f) => translateCopy(f.label, language)).join(", ")}</Text>
+        {/* EKSİK ÖZETİ — yalnız "İlanı Yayınla"ya basıldıktan SONRA görünür (eskiden kullanıcı tek harf
+            yazmadan kırmızı "Eksik zorunlu alan: …" satırı çıkıyordu). Her satır ilgili alana götürür. */}
+        {showErrors && formIssues.length ? (
+          <View testID="publish-issues" accessibilityRole="alert" style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 12, borderWidth: 1, gap: 4, padding: 13 }}>
+            <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "900" }}>{translateCopy("Yayınlamadan önce tamamla", language)} ({formIssues.length})</Text>
+            {formIssues.map((issue, i) => (
+              <Pressable key={`${issue.key}-${i}`} accessibilityRole="button" onPress={() => focusIssue(issue.key)} style={({ pressed }) => ({ alignItems: "flex-start", flexDirection: "row", gap: 7, minHeight: 32, opacity: pressed ? 0.7 : 1, paddingVertical: 5 })}>
+                <MaterialCommunityIcons name="chevron-right" size={16} color={colors.accent} style={{ marginTop: 1 }} />
+                <Text style={{ color: colors.accent, flex: 1, fontSize: 12.5, fontWeight: "700", lineHeight: 18, minWidth: 0, textDecorationLine: "underline" }}>{translateCopy(issue.message, language)}</Text>
+              </Pressable>
+            ))}
+          </View>
         ) : null}
 
         {/* İLAN GÜCÜ — yayın öncesi kalite özeti (tek-sayfa akışta footer'ın hemen üstünde).
@@ -1450,15 +1667,15 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
         {/* Footer — her zaman görünür: Taslak Olarak Kaydet (sol) + İlanı Yayınla (sağ) */}
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 12, justifyContent: "space-between" }}>
-          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Taslak Olarak Kaydet", language)} accessibilityState={{ disabled: publishing, busy: publishing }} disabled={publishing} onPress={() => void publish(true)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 12 })}>
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Taslak Olarak Kaydet", language)} accessibilityState={{ disabled: publishing || videoStatus === "uploading", busy: publishing }} disabled={publishing || videoStatus === "uploading"} onPress={() => void publish(true)} style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, opacity: pressed ? 0.85 : 1, paddingHorizontal: 18, paddingVertical: 12 })}>
             <MaterialCommunityIcons name="content-save-outline" size={16} color={colors.muted} />
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Taslak Olarak Kaydet", language)}</Text>
           </Pressable>
           {/* TIKLANABİLİR (disabled değil): eksik alan varsa sessizce kilitlenmek yerine
               basınca kırmızı işaretle + ilk eksiğe kaydır (guardRequiredFields). Yalnız
               yayın sürerken / moderasyon "block" iken gerçekten kilitli. */}
-          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy(publishing ? "Yayınlanıyor…" : "İlanı Yayınla", language)} accessibilityState={{ disabled: publishing || liveModeration?.level === "block", busy: publishing }} disabled={publishing || liveModeration?.level === "block"} onPress={() => { if (!guardRequiredFields()) return; if (!acceptedLegal) { setShowLegalError(true); return; } void publish(); }} style={{ alignItems: "center", backgroundColor: missingFields.length || liveModeration?.level === "block" ? colors.subtle : colors.primary, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
-            <MaterialCommunityIcons name="check-decagram" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{publishing ? translateCopy("Yayınlanıyor…", language) : translateCopy("İlanı Yayınla", language)}</Text>
+          <Pressable accessibilityRole="button" accessibilityLabel={translateCopy(publishing ? "Yayınlanıyor…" : "İlanı Yayınla", language)} accessibilityState={{ disabled: publishing || liveModeration?.level === "block", busy: publishing }} disabled={publishing || liveModeration?.level === "block"} testID="publish-submit" onPress={attemptPublish} style={{ alignItems: "center", backgroundColor: blockingIssues || liveModeration?.level === "block" ? colors.subtle : colors.primary, opacity: publishing ? 0.7 : 1, borderRadius: 10, flexDirection: "row", gap: 7, paddingHorizontal: 24, paddingVertical: 12 }}>
+            <MaterialCommunityIcons name="check-decagram" size={17} color="#FFFFFF" /><Text style={{ color: "#FFFFFF", fontSize: 13.5, fontWeight: "900" }}>{publishing ? translateCopy("Yayınlanıyor…", language) : videoStatus === "uploading" ? translateCopy("Video yükleniyor…", language) : translateCopy("İlanı Yayınla", language)}</Text>
           </Pressable>
         </View>
 
@@ -1488,19 +1705,28 @@ function FormSection({ title, hint, icon, children }: { title: string; hint?: st
   );
 }
 
-function DField({ field, value, onChange, invalid }: { field: FieldDef; value: string | boolean | string[] | undefined; onChange: (v: string | boolean | string[]) => void; invalid?: boolean }) {
+/** Alan altı kısa hata satırı. */
+function InlineError({ text, testID }: { text: string; testID?: string }) {
+  return <Text testID={testID} accessibilityRole="alert" style={{ color: colors.accent, fontSize: 12, fontWeight: "700", lineHeight: 17 }}>{text}</Text>;
+}
+
+function DField({ field, value, onChange, invalid, errorText }: { field: FieldDef; value: string | boolean | string[] | undefined; onChange: (v: string | boolean | string[]) => void; invalid?: boolean; errorText?: string }) {
   const { language } = useLanguage();
+  // Hata, kullanıcı alanı TERK EDİNCE (blur) ya da yayın denemesinden sonra (invalid) gösterilir —
+  // yazarken ("1.5" → "1.500") araya kırmızı uyarı girmez.
+  const [touched, setTouched] = useState(false);
+  const shownError = errorText && (invalid || touched) ? errorText : "";
   const wide = field.type === "textarea" || field.type === "multiselect";
   // Başlık/açıklama için karakter standardı (Sahibinden benzeri) + canlı sayaç.
   const charLimit = field.key === "title" ? LIMITS.title : field.key === "description" ? LIMITS.description : null;
   const charLen = charLimit ? String(value ?? "").length : 0;
   const selected = Array.isArray(value) ? value : [];
-  if (field.key === "title") return <View style={{ flexBasis: 230, flexGrow: 1, minWidth: 0 }}><ListingTitleField value={String(value ?? "")} onChange={onChange} invalid={invalid}/></View>;
+  if (field.key === "title") return <View style={{ flexBasis: 230, flexGrow: 1, minWidth: 0 }}><ListingTitleInput value={String(value ?? "")} onChange={onChange} invalid={invalid} placeholder={field.placeholder} /></View>;
   return (
     // data-field: "İlanı Yayınla"ya basınca ilk EKSİK alana kaydırmak için hedef (web).
     <View dataSet={{ field: field.key }} style={{ flexBasis: wide ? "100%" : 230, flexGrow: 1, gap: 6, minWidth: 0 }}>
       <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text style={{ color: invalid ? colors.accent : colors.muted, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} seçili` : ""}</Text>
+        <Text style={{ color: invalid || shownError ? colors.accent : colors.muted, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{field.label}{field.required ? " *" : ""}{field.suffix ? ` (${field.suffix})` : ""}{field.type === "multiselect" && selected.length ? ` · ${selected.length} seçili` : ""}</Text>
         {charLimit ? <Text style={{ color: charLen > charLimit.max || (charLen > 0 && charLen < charLimit.min) ? colors.accent : colors.subtle, fontSize: 11, fontWeight: "700" }}>{charLen}/{charLimit.max}</Text> : null}
       </View>
       {field.type === "multiselect" ? (
@@ -1544,14 +1770,16 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
           accessibilityLabel={field.label}
           value={String(value ?? "")}
           onChangeText={onChange}
+          onBlur={() => setTouched(true)}
           keyboardType={field.type === "number" ? "numeric" : "default"}
           multiline={wide}
           maxLength={charLimit ? charLimit.max : undefined}
           placeholder={field.key === "title" ? (field.placeholder || `En az ${LIMITS.title.min} karakter — kısa ve net başlık`) : field.placeholder}
           placeholderTextColor={colors.subtle}
-          style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: wide ? 84 : 46, paddingHorizontal: 12, paddingVertical: wide ? 10 : 8, textAlignVertical: wide ? "top" : "center" }}
+          style={{ backgroundColor: colors.surfaceAlt, borderColor: invalid || shownError ? colors.accent : colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 14, minHeight: wide ? 84 : 46, paddingHorizontal: 12, paddingVertical: wide ? 10 : 8, textAlignVertical: wide ? "top" : "center" }}
         />
       )}
+      {shownError ? <InlineError testID={`error-${field.key}`} text={translateCopy(shownError, language)} /> : null}
     </View>
   );
 }
@@ -1560,6 +1788,7 @@ function DField({ field, value, onChange, invalid }: { field: FieldDef; value: s
  *  Yaprağa (çocuğu olmayan düğüm) inince durur. Eski sürükle-sütun seçicinin yerine geldi. */
 function CategoryDropdowns({ value, onChange, presetFormKey }: { value: CategoryNode[]; onChange: (path: CategoryNode[]) => void; presetFormKey?: string }) {
   const { language } = useLanguage();
+  const isWideWeb = useIsWideWeb();
   const { categoryTree } = useStore();
   useEffect(() => {
     if (presetFormKey && value.length === 0) {
@@ -1591,19 +1820,22 @@ function CategoryDropdowns({ value, onChange, presetFormKey }: { value: Category
   return (
     <View style={{ gap: 10 }}>
       <View style={{ gap: 6 }}>
-        <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: query ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 9, paddingHorizontal: 12 }}>
-          <MaterialCommunityIcons name="magnify" size={19} color={colors.subtle} />
+        {/* ODAK HALKASI: alanın KENDİSİ yuvarlak kutudur (ikon/temizle üstüne bindirilir). Eskiden kenarlık
+            dış sarmalayıcıdaydı, içteki çıplak input odaklanınca yuvarlak kutunun İÇİNDE köşeli ikinci bir
+            çerçeve çiziliyordu (mobil-web'de "yanlış kutu"). Artık halka kutunun köşelerini izler. */}
+        <View style={{ justifyContent: "center" }}>
           <TextInput
             testID="listing-category-search"
             accessibilityLabel={translateCopy("Kategori ara", language)}
             value={query}
             onChangeText={setQuery}
-            placeholder={translateCopy("Kategori ara: iPhone, koltuk, araba, arsa…", language)}
+            placeholder={translateCopy(isWideWeb ? "Kategori ara: iPhone, koltuk, araba, arsa…" : "Kategori ara: iPhone, araba…", language)}
             placeholderTextColor={colors.subtle}
             autoCorrect={false}
-            style={{ color: colors.ink, flex: 1, fontSize: 16, minHeight: 46, minWidth: 0, paddingVertical: 8 }}
+            style={{ backgroundColor: colors.surfaceAlt, borderColor: query ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 48, minWidth: 0, paddingLeft: 40, paddingRight: query ? 44 : 12, paddingVertical: 8 }}
           />
-          {query ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Aramayı temizle", language)} onPress={() => setQuery("")} hitSlop={10}><MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} /></Pressable> : null}
+          <View style={{ left: 12, pointerEvents: "none", position: "absolute" }}><MaterialCommunityIcons name="magnify" size={19} color={colors.subtle} /></View>
+          {query ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Aramayı temizle", language)} onPress={() => setQuery("")} hitSlop={10} style={{ alignItems: "center", height: 44, justifyContent: "center", position: "absolute", right: 2, width: 40 }}><MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} /></Pressable> : null}
         </View>
         {query.trim().length >= 2 ? (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, overflow: "hidden" }}>

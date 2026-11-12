@@ -12,11 +12,24 @@ export async function fetchMobileCatalogue({ trail, filters, query = "", sort = 
   const node = trail[trail.length - 1];
   const { data, error } = await supabase.rpc("mobile_catalogue_page", { params: {
     root: trail[0]?.label ?? "", rootOnly: trail.length === 1,
-    labels: node ? categoryLabels(node) : [], forms: subtreeFormKeys(trail), node: node?.slug ?? "", filters, q: query.trim(), sort, offset, limit,
+    labels: node ? requestLabels(trail) : [], forms: subtreeFormKeys(trail), node: node?.slug ?? "", filters, q: query.trim(), sort, offset, limit,
   } });
   if (error) throw error;
   if (!data || !Array.isArray(data.listings) || !Number.isFinite(data.total)) throw new Error("Invalid catalogue response");
   return { listings: data.listings.map(mapListing), total: data.total };
+}
+
+// Sunucu kategoriyi `node` slug'ı + ilanın `attributes._path`'i ile eşler; etiket listesi yalnız `_path`'i
+// olmayan eski kayıtlar için YEDEKtir (ve boş olursa sunucu kategori süzmesini hiç uygulamaz → en az bir
+// etiket şart). Kökte tüm alt etiketleri göndermek her istekte 20-34 kB gövdeydi (Emlak 1273, Vasıta 1970,
+// Yedek Parça 1838 etiket): kök zaten `rootOnly` + `_root` ile eşlenir → tek etiket yeter. Derin düğümde
+// yedek korunur ama büyük marka/model dallarında (Otomobil…) aynı şişmeyi yapmasın diye sınırlanır.
+const MAX_FALLBACK_LABELS = 400;
+function requestLabels(trail: CategoryNode[]): string[] {
+  const node = trail[trail.length - 1];
+  if (trail.length === 1) return [node.label];
+  const labels = categoryLabels(node);
+  return labels.length <= MAX_FALLBACK_LABELS ? labels : [node.label];
 }
 
 // Aynı etiket (ör. bir marka adı) kök içinde birden çok dalda geçebilir; sunucu ilanın

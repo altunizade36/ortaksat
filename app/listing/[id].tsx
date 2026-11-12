@@ -1,11 +1,11 @@
 import { ListingTermsSummary } from "@/components/listing-terms-summary";
 import { listingFlowPaths, listingJoinAction } from "@/lib/listing-actions";
-import { listingPhotos } from "@/lib/mobile-listing";
+import { listingMedia } from "@/lib/mobile-listing";
 import { displayListingTitle } from "@/lib/listing-title";
 import { isMobileApp } from "@/lib/mobile-app";
 import { MobileListingDetail } from "@/components/mobile/listing-detail";
 import { MaterialCommunityIcons } from "@/components/icons";
-import { Link, type Href, useLocalSearchParams, useRouter } from "expo-router";
+import { type Href, useLocalSearchParams, useRouter } from "expo-router";
 import Head from "expo-router/head";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, TextInput, View, useWindowDimensions } from "react-native";
@@ -16,33 +16,34 @@ import { openUrlSafe } from "@/lib/link";
 import { shareOrCopy } from "@/lib/share";
 import { parseTrPrice } from "@/lib/validation";
 
-import { describeAttributes, findCategorySlug } from "@/lib/category-tree";
+import { findCategorySlug } from "@/lib/category-tree";
 import { useCompare } from "@/lib/compare";
 import { Accordion } from "@/components/accordion";
 import { AgreementCard } from "@/components/agreement-card";
 import { colors } from "@/components/colors";
-import { StarRatingInput } from "@/components/star-rating-input";
+import { RatingSummary } from "@/components/reviews/rating-summary";
+import { SaleReviewForm } from "@/components/reviews/sale-review-form";
+import { ratingStats } from "@/lib/reviews";
 import { ReviewCard } from "@/components/review-card";
 import { JsonLd } from "@/components/json-ld";
 import { LegalDisclaimerCollapsible } from "@/components/legal-disclaimer";
 import { ListingCard } from "@/components/listing-card";
 import { ListingQA } from "@/components/listing-qa";
 import { ShareRow } from "@/components/share-row";
-import { Skeleton } from "@/components/skeleton";
 import { tokenize } from "@/lib/search";
 import { ImageWatermark } from "@/components/image-watermark";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { SafetyNote } from "@/components/safety-note";
-import { Card, EmptyState, PrimaryButton, StatusPill } from "@/components/ui";
+import { EmptyState, PressLink, PrimaryButton } from "@/components/ui";
+import { OptionSheet } from "@/components/option-sheet";
+import { ClampedText, CommissionSummary, DefinitionGrid, DetailMetaLine, DetailNotice, DetailSection, DetailSkeleton, FeatureChips, GalleryCounter, GalleryNavButtons, GalleryOverlayButton, ListingVideo, LocationRow, SafetyTips, SellerSummary, VideoBadge, VideoThumb, buildSummaryRows, detail, detailPriceFontSize, galleryHeightFor, isVideoUri, partnershipModeLabel, splitListingMedia } from "@/components/listing-detail/shared";
 import { ErrorScreen } from "@/components/error-boundary";
-import { commissionAmount, commissionText, listingInviteCode, listingNo, moneyIn, partnerInviteUrl, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
+import { commissionAmount, commissionText, listingInviteCode, moneyIn, partnerInviteUrl, productUrl, shareUrl, trPhoneIntl } from "@/lib/format";
 import { categoryConversion } from "@/lib/conversion";
-import { VerificationBadges } from "@/components/verification-badges";
 import { haptic } from "@/lib/haptics";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-import { useIsWideWeb } from "@/lib/layout";
+import { useContentWidth, useIsWideWeb } from "@/lib/layout";
 import { WebContainer } from "@/components/web-container";
 import { fetchListingById, fetchSellerPhone } from "@/lib/supabase-data";
 import { fetchReviewsForListing, insertReferralLead, logReferralClick, recordListingView, resolveReferralLink } from "@/lib/live-service";
@@ -63,8 +64,9 @@ export default function ListingDetailScreen() {
   // Ortak referans kodu: ?ref= veya kısa ?p= (varsa). Landing dışı akışta da yakalanır.
   const refParam = (Array.isArray(params.ref) ? params.ref[0] : params.ref) || (Array.isArray(params.p) ? params.p[0] : params.p) || "";
   const { language } = useLanguage();
-  const { width } = useWindowDimensions();
+  const { width, height } = useWindowDimensions();
   const isWideWeb = useIsWideWeb();
+  const contentWidth = useContentWidth();
   const insets = useSafeAreaInsets();
   const {
     createLead,
@@ -98,8 +100,9 @@ export default function ListingDetailScreen() {
   } = useStore();
   const { has: hasInCompare, toggle: toggleCompare } = useCompare();
   const storeListing = findListing(id);
-  const [showAllSpecs, setShowAllSpecs] = useState(false);
-  useEffect(() => { setShowAllSpecs(false); }, [id]);
+  // Sabit alt çubuğun ölçülen yüksekliği → içerik alt boşluğu (çubuk son bölümü örtmesin).
+  const [barHeight, setBarHeight] = useState(0);
+  const [moreOpen, setMoreOpen] = useState(false);
   const [remote, setRemote] = useState<{ listing: Listing; owner?: User } | null>(null);
   const [fetching, setFetching] = useState(false);
   const [fetchError, setFetchError] = useState(false); // ağ hatası (bulunamadı DEĞİL) → retry
@@ -119,8 +122,6 @@ export default function ListingDetailScreen() {
   const [revealingPhone, setRevealingPhone] = useState(false);
   const mobileContactLock = useRef(false);
   const [message, setMessage] = useState("");
-  const [reviewComment, setReviewComment] = useState("");
-  const [reviewRating, setReviewRating] = useState(5);
   // TEKLİF: alıcının bu ilandaki AKTİF teklifi (geri çekilmiş/eski olanlar sayılmaz).
   const [offerOpen, setOfferOpen] = useState(false);
   const [offerAmount, setOfferAmount] = useState("");
@@ -170,7 +171,8 @@ export default function ListingDetailScreen() {
   useEffect(() => {
     if (!lightbox || Platform.OS !== "web" || typeof window === "undefined") return;
     const l = storeListing ?? remote?.listing;
-    const n = l ? [l.image, ...(l.adAssets ?? [])].filter(Boolean).length : 0;
+    // Tam ekran yalnız FOTOĞRAFLARI gezer (video satır içi oynar).
+    const n = l ? splitListingMedia(listingMedia(l)).photos.length : 0;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Escape") setLightbox(false);
       else if (e.key === "ArrowRight" && n > 1) { setActiveImage((i) => (i + 1) % n); setZoomed(false); }
@@ -299,27 +301,31 @@ export default function ListingDetailScreen() {
   const listingReviews = useMemo(() => {
     const byId = new Map<string, (typeof fetchedReviews)[number]>();
     for (const r of fetchedReviews) byId.set(r.id, r);
-    for (const r of reviews) if (r.listingId === id) byId.set(r.id, r);
+    // DB'den az önce çekilen satır ESASTIR (satıcı yanıtı, yanıt tarihi, faydalı sayısı, yazar adı/
+    // avatarı sunucuya aittir; ReviewCard bunları doğrudan sunucuya + onPatch ile fetchedReviews'a
+    // yazar, store'a DEĞİL). Store kopyası hesap yüklenirken alınır; eskiden çekilen satırı eziyordu →
+    // satıcının yazdığı yanıt ilan yeniden açılınca kayboluyor, düğme yine "Yanıtla" oluyordu.
+    // Store'dan yalnız KENDİ yorumumun puan/metni alınır (oturumdaki iyimser düzenleme). Çekilen
+    // listede olmayan store kaydı (oturumda yeni yazılan / çekim başarısız) olduğu gibi eklenir.
+    for (const r of reviews) {
+      if (r.listingId !== id) continue;
+      const fetched = byId.get(r.id);
+      if (!fetched) byId.set(r.id, r);
+      else if (r.reviewerId === currentUser.id) byId.set(r.id, { ...fetched, rating: r.rating, comment: r.comment });
+    }
     return [...byId.values()].sort((a, b) => String(b.createdAt).localeCompare(String(a.createdAt)));
-  }, [fetchedReviews, reviews, id]);
+  }, [fetchedReviews, reviews, id, currentUser.id]);
+
+  // Galeri yüksekliği: dar ekranda görünür alanın %40'ını aşmaz; geniş ekranda sütuna oranlı.
+  const shellWidth = Math.min(contentWidth, 1280);
+  const galleryH = isWideWeb ? Math.max(320, Math.min(480, Math.round(((shellWidth - 60) * 1.12) / 2.12 * 0.72))) : galleryHeightFor(contentWidth, height);
 
   if (!listing) {
     if (fetching) {
+      // İskelet, nihai düzenle aynı bloklar (galeri → başlık → fiyat → meta → özet).
       return (
-        <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 14, padding: 16 }}>
-          <View style={{ alignSelf: "center", gap: 14, maxWidth: 1000, width: "100%" }}>
-            <Skeleton style={{ borderRadius: 16, height: 300, width: "100%" }} />
-            <Skeleton style={{ height: 14, width: "35%" }} />
-            <Skeleton style={{ height: 26, width: "80%" }} />
-            <Skeleton style={{ height: 30, width: "40%" }} />
-            <View style={{ flexDirection: "row", gap: 10 }}>
-              <Skeleton style={{ borderRadius: 12, flex: 1, height: 70 }} />
-              <Skeleton style={{ borderRadius: 12, flex: 1, height: 70 }} />
-            </View>
-            <Skeleton style={{ borderRadius: 12, height: 48, width: "100%" }} />
-            <Skeleton style={{ height: 14, width: "90%" }} />
-            <Skeleton style={{ height: 14, width: "75%" }} />
-          </View>
+        <ScrollView contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: 32 }}>
+          <DetailSkeleton wide={isWideWeb} galleryHeight={galleryH} />
         </ScrollView>
       );
     }
@@ -339,7 +345,7 @@ export default function ListingDetailScreen() {
         {/* Kaldırılmış/satılmış ilan referans/SEO trafiğinde ÖLÜ-UÇ olmasın → keşfet/ana sayfa
             kurtarma CTA'ları (ortak-linki tıklayan alıcı benzer ürünlere yönlenir). */}
         <View style={{ alignItems: "center", gap: 18, maxWidth: 440, width: "100%" }}>
-          <EmptyState title={translateCopy("İlan bulunamadı", language)} body={translateCopy("Bu ilan kaldırılmış, satılmış ya da bağlantı artık geçerli değil. Benzer ürünler için ilanları keşfedebilirsin.", language)} />
+          <EmptyState icon="tag-off-outline" title={translateCopy("İlan bulunamadı", language)} body={translateCopy("Bu ilan kaldırılmış, satılmış ya da bağlantı artık geçerli değil. Benzer ürünler için ilanları keşfedebilirsin.", language)} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "center" }}>
             <PrimaryButton href="/explore" icon="storefront-outline">{translateCopy("İlanları keşfet", language)}</PrimaryButton>
             <PrimaryButton href="/" tone="secondary" icon="home-outline">{translateCopy("Ana sayfa", language)}</PrimaryButton>
@@ -363,8 +369,13 @@ export default function ListingDetailScreen() {
   const validInvite = isInviteMode && !!inviteParam && inviteParam === listingInviteCode(currentListing);
   const flowPaths = listingFlowPaths(currentListing.id, validInvite ? inviteParam : undefined);
   const listingReturnPath = flowPaths.listing;
-  const gallery = listingPhotos(currentListing);
-  const galleryIdx = Math.min(activeImage, Math.max(0, gallery.length - 1));
+  // Medya: fotoğraflar + (varsa) TEK video. Video kapak olmaz, galeride daima SON öğedir.
+  const media = splitListingMedia(listingMedia(currentListing));
+  const gallery = media.photos;
+  const mediaCount = media.count;
+  const galleryIdx = Math.min(activeImage, Math.max(0, mediaCount - 1));
+  const onVideo = !!media.video && galleryIdx === gallery.length;
+  const photoIdx = Math.min(galleryIdx, Math.max(0, gallery.length - 1));
   const owner = findUser(currentListing.ownerId) ?? remote?.owner;
   const ownerTrust = owner ? calculateUserTrustScores({ leads, listings, partnerships, reports, reviews, sales, user: owner }).seller : undefined;
   const partnership = findPartnership(currentListing.id);
@@ -411,7 +422,6 @@ export default function ListingDetailScreen() {
     .slice(0, 8);
   // Satıcı güven sinyalleri (Sahibinden tarzı): aktif ilan sayısı + tamamlanan satış.
   const sellerActiveCount = owner ? listings.filter((item) => item.ownerId === owner.id && item.status === "active").length : 0;
-  const sellerSales = owner?.successfulSales ?? 0;
   // (Benzer ilanlar `similarFinal` yukarıda useMemo'landı — erken-return öncesi, tokenize+skorlama
   // artık her render değil.)
   // Son gezdiklerin (bu ilan hariç, aktif) — client-only localStorage.
@@ -514,17 +524,6 @@ export default function ListingDetailScreen() {
     finally { mobileContactLock.current = false; setRevealingPhone(false); }
   }
 
-  async function handleSaleReview() {
-    if (!reviewableSale) return;
-    const created = await createSaleReview(reviewableSale.id, reviewRating, reviewComment);
-    if (!created) {
-      Alert.alert(translateCopy("Yorum eklenemedi", language), translateCopy("Yorum için tamamlanmış satış ve tekil yorum hakkı gerekli.", language));
-      return;
-    }
-    setReviewComment("");
-    showToast(translateCopy("Yorum eklendi — güven alanında görünecek", language));
-  }
-
   async function submitReport() {
     if (!reportReason) { Alert.alert(translateCopy("Sebep seç", language), translateCopy("Lütfen bir şikayet nedeni seç.", language)); return; }
     const details = `${currentTitle} — ${reportReason}${reportDetail.trim() ? ` · ${reportDetail.trim()}` : ""}`;
@@ -550,7 +549,7 @@ export default function ListingDetailScreen() {
     "@context": "https://schema.org",
     "@type": "Product",
     name: currentTitle,
-    image: [currentListing.image, ...(currentListing.adAssets ?? [])].filter(Boolean).slice(0, 5),
+    image: [currentListing.image, ...(currentListing.adAssets ?? [])].filter((u) => Boolean(u) && !isVideoUri(String(u))).slice(0, 5),
     description: metaDesc,
     category: currentListing.category,
     // aggregateRating + review: YALNIZCA gerçek (demo değil) ilan yorumları varsa. Sahte
@@ -659,9 +658,374 @@ export default function ListingDetailScreen() {
     onReport={(reason) => { void reportListing(currentListing.id, reason, `${currentTitle} — ${reason}`).then((ok) => showToast(ok ? "Bildirimin alındı." : "İlan bildirmek için giriş yapmalısın.")); }} />;
 
   const showMobileActionBar = !isWideWeb && !isDemo && !listingUnavailable;
+  // 360px altında çubuk tek satır kalsın: "Mesaj gönder" → "Mesaj".
+  const barContactLabel = currentListing.contactMethod === "message" ? (contentWidth < 360 ? "Mesaj" : "Mesaj gönder") : currentListing.contactMethod === "phone" ? (contentWidth < 360 ? "Ara" : "Satıcıyı ara") : "WhatsApp";
+  const moreCompareLabel = translateCopy(inCompare ? "Karşılaştırmadan çıkar" : "Karşılaştır", language);
+  const moreReportLabel = translateCopy("İlanı bildir", language);
+  const moreOptions = [...(!isDemo ? [moreCompareLabel] : []), ...(!isOwner ? [moreReportLabel] : [])];
+  const contactDisabled = revealingPhone || isOwner || isUserBlocked(currentListing.ownerId);
+  const priceLabel = moneyIn(currentListing.price, currentListing.currency);
+  // Fiyat hiçbir genişlikte taşmaz: sütunun iç genişliğine göre punto küçülür (kart fiyatıyla aynı yaklaşım).
+  const headInnerWidth = (isWideWeb ? Math.floor((shellWidth - 60) / 2.12) : contentWidth - detail.gutter * 2) - detail.pad * 2 - 2;
+  const priceSize = detailPriceFontSize(priceLabel, headInnerWidth, isWideWeb ? 34 : 30);
+  const summary = buildSummaryRows(currentListing, language);
+  const imgAlt = `${currentTitle}${currentListing.category ? ` — ${currentListing.category}` : ""}${currentListing.location ? `, ${currentListing.location}` : ""} · OrtakSat ortak satış ilanı`;
+  const urgentUntil = currentListing.attributes?._urgentUntil ? Date.parse(String(currentListing.attributes._urgentUntil)) : 0;
+  const urgentDaysLeft = urgentUntil && urgentUntil > Date.now() ? Math.max(1, Math.ceil((urgentUntil - Date.now()) / 86400000)) : 0;
+  const catSlug = findCategorySlug(currentListing.category);
+  const catHref = catSlug ? ({ pathname: "/kategori/[slug]", params: { slug: catSlug } } as unknown as Href) : ("/kategoriler" as Href);
+  const goToMedia = (i: number) => setActiveImage(Math.max(0, Math.min(mediaCount - 1, i)));
+  const swipeHandlers = {
+    onTouchStart: (e: unknown) => { swipeStartX.current = touchPageX(e); inlineSwiped.current = false; },
+    onTouchEnd: (e: unknown) => {
+      const dx = touchPageX(e) - swipeStartX.current;
+      if (Math.abs(dx) > 45 && mediaCount > 1) {
+        inlineSwiped.current = true;
+        setActiveImage((dx < 0 ? galleryIdx + 1 : galleryIdx - 1 + mediaCount) % mediaCount);
+      }
+    }
+  };
+
+  // ---- GALERİ (dar: tam genişlik + fotoğraf üstü küçük düğmeler; geniş: küçük resimler) ----
+  const galleryBlock = (
+    <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? detail.radius : 0, borderWidth: isWideWeb ? 1 : 0, overflow: "hidden" }}>
+      <View style={{ backgroundColor: colors.neutralSoft, height: galleryH, position: "relative" }}>
+        {onVideo && media.video ? (
+          /* Video öğesinde kaydırma DİNLENMEZ: zaman çubuğunu sürükleyen dokunuş (≥45px yatay)
+             galeri kaydırması sayılıp videoyu ortasında kapatıyordu. Gezinme: önceki/sonraki düğmeleri. */
+          <View style={{ height: galleryH, width: "100%" }}>
+            <ListingVideo uri={media.video} active={!lightbox} style={{ height: galleryH, width: "100%" }} />
+          </View>
+        ) : (
+          <Pressable
+            testID="listing-web-gallery"
+            disabled={!gallery.length}
+            accessibilityState={{ disabled: !gallery.length }}
+            accessibilityRole="imagebutton"
+            accessibilityLabel={translateCopy(gallery.length ? "Görseli büyüt" : "İlan fotoğrafı bulunmuyor", language)}
+            onPress={() => { if (inlineSwiped.current) { inlineSwiped.current = false; return; } setLightbox(true); }}
+            {...swipeHandlers}
+            style={{ height: galleryH, position: "relative" }}
+          >
+            {/* LCP: ilan detayının kahraman görseli → yüksek öncelik + fade/scrim yok
+                (SafeRemoteImage priority="high" ile eager). */}
+            {gallery.length ? <SafeRemoteImage full uri={gallery[photoIdx] ?? currentListing.image} alt={imgAlt} accessibilityLabel={imgAlt} priority="high" style={{ backgroundColor: colors.line, height: galleryH, width: "100%" }} contentFit="cover" /> : <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, gap: 10, height: galleryH, justifyContent: "center" }}><MaterialCommunityIcons name="image-off-outline" size={40} color={colors.muted} /><Text style={{ color: colors.muted, fontSize: 13 }}>{translateCopy("Bu ilanda fotoğraf yok", language)}</Text></View>}
+            {/* Kaynak filigranı — dosyaya gömülmez, yalnız görüntüleme katmanı (ürün bozulmaz). */}
+            {!!gallery.length && <ImageWatermark size={isWideWeb ? 20 : 15} />}
+          </Pressable>
+        )}
+        {mediaCount > 0 ? (
+          <View style={{ left: 10, position: "absolute", top: 10 }}>
+            <GalleryCounter testID="listing-web-counter" index={galleryIdx} total={mediaCount} video={onVideo} />
+          </View>
+        ) : null}
+        {/* Dar ekran: favori / paylaş / diğer — fotoğraf üstünde küçük düğmeler (40px dokunma). */}
+        {!isWideWeb ? (
+          <View testID="listing-gallery-tools" style={{ flexDirection: "row", gap: 2, position: "absolute", right: 6, top: 4 }}>
+            <GalleryOverlayButton testID="listing-fav-button" icon={favorited ? "heart" : "heart-outline"} active={favorited} label={translateCopy("Beğen", language)} onPress={() => toggleFavorite(currentListing.id)} />
+            <GalleryOverlayButton icon="share-variant-outline" label={translateCopy("Paylaş", language)} onPress={() => void handleShare()} />
+            {moreOptions.length ? <GalleryOverlayButton testID="listing-more-button" icon="dots-horizontal" label={translateCopy("Diğer işlemler", language)} onPress={() => setMoreOpen(true)} /> : null}
+          </View>
+        ) : null}
+        {/* Dar ekran: nokta göstergesi (kaydırma ipucu) — video öğesinde yerel kontrollerle çakışmasın. */}
+        {!isWideWeb && mediaCount > 1 && mediaCount <= 8 && !onVideo ? (
+          <View style={{ alignItems: "center", bottom: 4, flexDirection: "row", justifyContent: "center", left: 60, position: "absolute", right: 60 }}>
+            {Array.from({ length: mediaCount }, (_, i) => (
+              <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${i + 1}. ${translateCopy("görsele git", language)}`} onPress={() => goToMedia(i)} style={{ alignItems: "center", height: 32, justifyContent: "center", paddingHorizontal: 6 }}>
+                <View style={{ backgroundColor: i === galleryIdx ? "#FFFFFF" : "rgba(255,255,255,0.55)", borderRadius: 999, height: 6, width: i === galleryIdx ? 16 : 6 }} />
+              </Pressable>
+            ))}
+          </View>
+        ) : null}
+        {/* Dar ekran: noktaların OLMADIĞI durumlarda (video öğesi / 8'den fazla medya) önceki-sonraki
+            düğmeleri — fare ve klavyeyle de çıkış yolu (eskiden video öğesinden yalnız dokunmatik
+            kaydırmayla dönülebiliyordu; <1024px masaüstü penceresinde kullanıcı videoda kalıyordu). */}
+        {!isWideWeb && mediaCount > 1 && (onVideo || mediaCount > 8) ? (
+          <GalleryNavButtons top={Math.round(galleryH / 2) - 20} onPrev={() => goToMedia((galleryIdx - 1 + mediaCount) % mediaCount)} onNext={() => goToMedia((galleryIdx + 1) % mediaCount)} />
+        ) : null}
+        {media.video && !onVideo ? (
+          <View style={{ bottom: 2, position: "absolute", right: 8 }}>
+            <VideoBadge onPress={() => goToMedia(mediaCount - 1)} />
+          </View>
+        ) : null}
+      </View>
+      {isWideWeb && mediaCount > 1 ? (
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingTop: 12 }}>
+          {gallery.map((img, i) => (
+            <Pressable key={img + i} testID="listing-gallery-thumb" accessibilityRole="button" accessibilityLabel={`${i + 1}. ${translateCopy("görsele git", language)}`} accessibilityState={{ selected: i === galleryIdx }} onPress={() => goToMedia(i)} style={{ borderColor: i === galleryIdx ? colors.primary : colors.line, borderRadius: 8, borderWidth: 2, height: 60, overflow: "hidden", width: 60 }}>
+              <SafeRemoteImage uri={img} alt={`${imgAlt} — görsel ${i + 1}`} accessibilityLabel={`${imgAlt} — görsel ${i + 1}`} style={{ height: "100%", width: "100%" }} contentFit="cover" />
+            </Pressable>
+          ))}
+          {media.video ? (
+            <Pressable testID="listing-gallery-thumb" accessibilityRole="button" accessibilityLabel={translateCopy("Videoyu göster", language)} accessibilityState={{ selected: onVideo }} onPress={() => goToMedia(mediaCount - 1)} style={{ borderColor: onVideo ? colors.primary : colors.line, borderRadius: 8, borderWidth: 2, height: 60, overflow: "hidden", width: 60 }}>
+              <VideoThumb size={56} />
+            </Pressable>
+          ) : null}
+        </View>
+      ) : null}
+      {/* Geniş ekran: sessiz ikincil satır (dört büyük düğme yerine metin bağlantıları). */}
+      {isWideWeb ? (
+        <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, paddingHorizontal: 8, paddingVertical: 6 }}>
+          <QuietAction active={favorited} icon={favorited ? "heart" : "heart-outline"} label="Beğen" onPress={() => toggleFavorite(currentListing.id)} />
+          {!isDemo ? <QuietAction active={inCompare} icon={inCompare ? "compare-remove" : "compare-horizontal"} label="Karşılaştır" onPress={() => toggleCompare(currentListing.id)} /> : null}
+          <QuietAction icon="share-variant-outline" label="Paylaş" onPress={() => void handleShare()} />
+          <View style={{ flex: 1 }} />
+          {!isOwner ? <QuietAction icon="flag-outline" label="Bildir" onPress={() => setReportOpen(true)} /> : null}
+        </View>
+      ) : null}
+    </View>
+  );
+
+  // ---- ORTAKLIK DURUMU (başvuru / davet / aktif) — talep ve normal ilanda aynı görünüm ----
+  const partnerStatus = partnership?.status === "active" ? (
+    <View style={{ backgroundColor: colors.primarySoft, borderRadius: 10, gap: 9, padding: 12 }}>
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+        <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primary} />
+        <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "800" }}>{translateCopy("Ortaksın · ürünü kendi yönteminle tanıt", language)}</Text>
+      </View>
+      {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentTitle} — ${priceLabel}`} /> : null}
+      {partnership?.agreedAt ? (
+        <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
+          <MaterialCommunityIcons name="lock-check" size={13} color={colors.muted} />
+          <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Komisyon şartların ortak olduğun anda kilitlendi — satıcı ilanı düzenlese de değişmez.", language)}</Text>
+        </View>
+      ) : null}
+    </View>
+  ) : partnership?.status === "pending" ? (
+    <DetailNotice icon="clock-outline" tone="pending" title={translateCopy("Başvurun satıcı onayında.", language)} />
+  ) : isInviteMode && !validInvite ? (
+    isDemand ? (
+      <View style={{ gap: 8 }}>
+        <DetailNotice icon="email-lock-outline" tone="neutral" title={translateCopy("Ortaklık sadece davetle", language)} body={translateCopy("Bu ürünün ortaklığı herkese açık değil. Ortak olmak istiyorsan satıcıdan davet linki iste; linkle geldiğinde anında ortak olabilirsin.", language)} />
+        <PrimaryButton tone="secondary" icon="message-text-outline" disabled={contactDisabled} onPress={() => void handleContact()}>{translateCopy("Satıcıdan davet iste", language)}</PrimaryButton>
+      </View>
+    ) : (
+      <DetailNotice icon="email-lock-outline" tone="neutral" title={translateCopy("Ortaklık sadece davetle — satıcıdan davet linki iste.", language)} />
+    )
+  ) : validInvite ? (
+    <DetailNotice icon="ticket-confirmation-outline" tone="info" title={translateCopy("Satıcı seni davet etti — anında ortak olabilirsin.", language)} />
+  ) : partnerable && currentListing.partnershipMode !== "open" && canJoinNow ? (
+    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "500", lineHeight: 17 }}>{translateCopy("Başvurunu gönder; satıcı kabul ederse anında ortak olursun. Ekstra bilgi doldurmana gerek yok.", language)}</Text>
+  ) : null;
+
+  // ---- AKSİYONLAR: tek birincil CTA. Dar ekranda birincil düğmeler sabit alt çubuktadır. ----
+  const actionsBlock = (
+    <View style={{ gap: 10 }}>
+      {/* Durum-duyarlı ana aksiyon (apply=1 ile buraya kaydırılır) */}
+      <View ref={joinAnchorRef} />
+      {isOwner ? (
+        /* SAHİP GÖRÜNÜMÜ: satın al/ortak ol yerine düzenle + yönetim kısayolları. */
+        <View testID="listing-owner-actions" style={{ gap: 8 }}>
+          {!showMobileActionBar ? <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: currentListing.id } }} icon="pencil-outline">{translateCopy("İlanı Düzenle", language)}</PrimaryButton> : null}
+          <View style={{ flexDirection: "row", gap: 8 }}>
+            <View style={{ flex: 1, minWidth: 0 }}><PrimaryButton href={{ pathname: "/listing-stats/[id]", params: { id: currentListing.id } }} tone="secondary" icon="chart-box-outline">{translateCopy("İstatistikler", language)}</PrimaryButton></View>
+            <View style={{ flex: 1, minWidth: 0 }}><PrimaryButton href="/(tabs)/seller" tone="secondary" icon="storefront-outline">{translateCopy("Satıcı paneli", language)}</PrimaryButton></View>
+          </View>
+          {isInviteMode ? (
+            <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 8, paddingTop: 10 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                <MaterialCommunityIcons name="ticket-account" size={16} color={colors.primary} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "800" }}>{translateCopy("Ortak davet linki", language)}</Text>
+              </View>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "500", lineHeight: 17 }}>{translateCopy("Bu ilan sadece davetle. Aşağıdaki linki güvendiğin ortaklarla paylaş; linkle gelen kişi anında (ön-onaylı) ortak olur.", language)}</Text>
+              <ShareRow url={partnerInviteUrl(currentListing)} text={`${currentTitle} — ${translateCopy("ortak daveti", language)}`} />
+            </View>
+          ) : null}
+        </View>
+      ) : isDemo ? null : (
+        <>
+          {partnerStatus}
+          {isDemand ? (
+            /* TALEP (arayan): Satın Al yok; ortak-ol / başvuru akışı korunur. */
+            partnership?.status === "active" || partnership?.status === "pending" || (isInviteMode && !validInvite) || (showMobileActionBar && canJoinNow) ? null : (
+              <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{translateCopy(currentListing.partnershipMode === "open" || validInvite ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder", language)}</PrimaryButton>
+            )
+          ) : !showMobileActionBar ? (
+            /* Aksiyon: partnerable + katılabilir → [İletişim | Ortak Ol]; aksi halde tek iletişim düğmesi. */
+            canJoinNow ? (
+              <View style={{ flexDirection: "row", gap: 10 }}>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <PrimaryButton tone="secondary" icon="message-text-outline" disabled={contactDisabled} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
+                </View>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <PrimaryButton icon="handshake" onPress={handleJoin}>{translateCopy("Ortak Ol", language)}</PrimaryButton>
+                </View>
+              </View>
+            ) : (
+              <PrimaryButton icon="message-text-outline" disabled={contactDisabled} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
+            )
+          ) : null}
+
+          {/* TEKLİF: talep (arayan) ilanında gösterilmez (satılık ürün yok). */}
+          {isDemand ? null : myOffer ? (
+            <View style={{ backgroundColor: myOffer.status === "accepted" ? colors.successSoft : colors.goldSoft, borderRadius: 10, gap: 4, padding: 12 }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
+                <MaterialCommunityIcons name="handshake" size={16} color={myOffer.status === "accepted" ? colors.success : colors.goldInk} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>
+                  {translateCopy("Teklifin", language)}: {moneyIn(myOffer.amount, currentListing.currency)}
+                </Text>
+              </View>
+              <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "500", lineHeight: 17 }}>
+                {myOffer.status === "pending" ? translateCopy("Satıcının yanıtı bekleniyor.", language)
+                  : myOffer.status === "accepted" ? translateCopy("KABUL EDİLDİ — satıcıyla mesajlaşarak teslimatı ayarla.", language)
+                  : myOffer.status === "rejected" ? translateCopy("Kabul edilmedi. Yeni bir teklif verebilirsin.", language)
+                  : myOffer.status === "countered" ? `${translateCopy("Satıcı karşı teklif verdi", language)}: ${moneyIn(myOffer.counterAmount ?? 0, currentListing.currency)}`
+                  : translateCopy("Geri çekildi.", language)}
+              </Text>
+              {myOffer.status === "pending" ? (
+                <Pressable onPress={() => void buyerOfferAction(myOffer.id, "withdrawn")} accessibilityRole="button" style={{ alignSelf: "flex-start", justifyContent: "center", minHeight: 40 }}>
+                  <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Teklifi geri çek", language)}</Text>
+                </Pressable>
+              ) : null}
+              {/* Satıcı karşı teklif verdiyse alıcı yanıtlayabilmeli — yoksa akış burada tıkanıyordu. */}
+              {myOffer.status === "countered" ? (
+                <View style={{ flexDirection: "row", gap: 8, paddingTop: 4 }}>
+                  <Pressable accessibilityRole="button" testID="offer-accept-counter" onPress={() => void buyerOfferAction(myOffer.id, "accept_counter")} style={{ alignItems: "center", backgroundColor: colors.primaryDark, borderRadius: 8, flexDirection: "row", gap: 6, minHeight: 40, paddingHorizontal: 14 }}>
+                    <MaterialCommunityIcons name="check" size={15} color="#FFFFFF" />
+                    <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Kabul Et", language)}</Text>
+                  </Pressable>
+                  <Pressable accessibilityRole="button" testID="offer-reject-counter" onPress={() => void buyerOfferAction(myOffer.id, "reject_counter")} style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 40, paddingHorizontal: 14 }}>
+                    <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Reddet", language)}</Text>
+                  </Pressable>
+                </View>
+              ) : null}
+            </View>
+          ) : null}
+
+          {/* İkincil işlemler tek satırda: Teklif Ver · Numarayı Göster (ya da talep ilanında iletişim). */}
+          <View style={{ flexDirection: "row", gap: 10 }}>
+            {!isDemand && !myOffer ? (
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <PrimaryButton tone="secondary" icon="handshake-outline" onPress={() => { if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık satışa açık değil.", language)); return; } if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; } setOfferAmount(""); setOfferNote(""); setOfferErr(null); setOfferOpen(true); }}>{translateCopy("Teklif Ver", language)}</PrimaryButton>
+              </View>
+            ) : null}
+            {/* Talep (arayan) ilanında ayrı iletişim düğmesi (Satın Al yok). */}
+            {isDemand ? (
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} disabled={contactDisabled} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
+              </View>
+            ) : null}
+            {/* Numarayı Göster (Sahibinden tarzı) — istek üzerine gerçek numara */}
+            {currentListing.contactMethod !== "message" && !revealedPhone ? (
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <PrimaryButton tone="secondary" icon="phone-outline" disabled={contactDisabled} onPress={() => void revealPhone()}>{revealingPhone ? translateCopy("Yükleniyor…", language) : translateCopy("Numarayı Göster", language)}</PrimaryButton>
+              </View>
+            ) : null}
+          </View>
+          {currentListing.contactMethod !== "message" && revealedPhone ? (
+            <Pressable onPress={() => { const tel = revealedPhone.replace(/[^0-9+]/g, ""); if (tel) void openUrlSafe(`tel:${tel}`); }} accessibilityRole="button" accessibilityLabel={`${translateCopy("Ara", language)}: ${revealedPhone}`} style={{ alignItems: "center", backgroundColor: colors.successSoft, borderRadius: 8, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 46 }}>
+              <MaterialCommunityIcons name="phone" size={16} color={colors.ink} />
+              <Text selectable style={{ color: colors.ink, fontSize: 15, fontVariant: ["tabular-nums"], fontWeight: "800" }}>{revealedPhone}</Text>
+            </Pressable>
+          ) : null}
+        </>
+      )}
+    </View>
+  );
+
+  // ---- BAŞLIK KARTI: başlık → FİYAT → meta → ortaklık özeti → (geniş: CTA) ----
+  const headCard = (
+    <View testID="listing-detail-head" style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: detail.radius, borderWidth: 1, gap: 10, padding: detail.pad }}>
+      <Text selectable numberOfLines={3} accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 22 : 19, fontWeight: "700", lineHeight: isWideWeb ? 28 : 24 }}>{currentTitle}</Text>
+      {/* Fiyat sayfanın en güçlü öğesi: en büyük punto, tabular rakam, taşmaz. */}
+      <Text testID="listing-detail-price" selectable numberOfLines={1} style={{ color: colors.ink, fontSize: priceSize, fontVariant: ["tabular-nums"], fontWeight: "800", letterSpacing: -0.4, lineHeight: Math.round(priceSize * 1.18) }}>{priceLabel}</Text>
+      <DetailMetaLine listing={currentListing} />
+      {isDemo ? <DetailNotice icon="eye-outline" tone="neutral" title={translateCopy("Örnek (vitrin) ilan", language)} body={translateCopy("Bu ilan yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık kapalıdır.", language)} /> : null}
+      {/* Müsait değil durum bandı — satın alma/ortaklık/teklif kapalı (aksiyon handler'ları da guard'lı). */}
+      {listingUnavailable ? <DetailNotice icon={currentListing.status === "sold" ? "check-decagram" : "close-circle-outline"} tone="danger" title={unavailableLabel} body={translateCopy("Bu ilanda satın alma, ortaklık ve teklif kapalı. Aşağıdaki benzer ürünlere göz atabilirsin.", language)} /> : null}
+      {/* ACİL SATIŞ — attributes._urgentUntil GELECEKTEyse. */}
+      {urgentDaysLeft ? <DetailNotice icon="fire" tone="danger" title={`${translateCopy("Acil satış", language)} — ${urgentDaysLeft} ${translateCopy("gün içinde satılmalı", language)}`} /> : null}
+      <CommissionSummary listing={currentListing} demand={isDemand} />
+      {/* Sosyal kanıt — görüntülenme + favori (yalnız >0). */}
+      {(currentListing.viewCount > 0 || currentListing.favoriteCount > 0) ? (
+        <Text style={{ color: colors.muted, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "500", lineHeight: 16 }}>
+          {[currentListing.viewCount > 0 ? `${currentListing.viewCount} ${translateCopy("kez görüntülendi", language)}` : "", currentListing.favoriteCount > 0 ? `${currentListing.favoriteCount} ${translateCopy("favori", language)}` : ""].filter(Boolean).join("  ·  ")}
+        </Text>
+      ) : null}
+      {actionsBlock}
+    </View>
+  );
+
+  // ---- GÖVDE BÖLÜMLERİ (sabit sıra): Özet → Açıklama → Ortaklık koşulları → Satıcı → Konum → Güvenli alışveriş ----
+  const bodySections = (
+    <>
+      <DetailSection title="Özet" icon="format-list-bulleted" testID="listing-section-summary">
+        <DefinitionGrid rows={summary.rows} />
+        <FeatureChips groups={summary.chips} />
+      </DetailSection>
+
+      <DetailSection title="Açıklama" icon="text-box-outline" testID="listing-section-description">
+        <ClampedText key={currentListing.id} text={currentListing.description} />
+        {currentListing.salesPitch.slice(0, 4).map((line) => (
+          <Bullet key={line} icon="check-circle-outline" text={line} />
+        ))}
+      </DetailSection>
+
+      {partnerable ? (
+        isDemand ? (
+          /* TALEP (arayan): BULUŞ KOMİSYONU koşulları — bulan kazanır, komisyonu ilan sahibi öder. */
+          <DetailSection title="Ortaklık koşulları" icon="handshake-outline" testID="listing-section-terms" right={<Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy(partnershipModeLabel(currentListing.partnershipMode), language)}</Text>}>
+            <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "400", lineHeight: 19 }}>{translateCopy("Bu talebi karşılayan ürünü/satıcıyı bul ve getir; bulan komisyonu kazanır. Komisyonu ilan sahibi öder.", language)}</Text>
+            {(() => {
+              const conv = categoryConversion(currentListing.category);
+              return (
+                <>
+                  <DefinitionGrid
+                    initial={8}
+                    rows={[
+                      { label: "Buluş komisyonu", value: `${moneyIn(commission, currentListing.currency)}${currentListing.commissionType === "rate" ? ` · %${currentListing.commissionValue}` : ""}` },
+                      { label: "Atıf penceresi", value: `${currentListing.attributionWindowDays} ${translateCopy("gün", language)}` },
+                      { label: "Komisyon vadesi", value: `${currentListing.commissionDueDays} ${translateCopy("gün", language)}` },
+                      { label: "Hak ediş koşulu", value: conv.event },
+                      ...(currentListing.partnerCount > 0 ? [{ label: "Ortak", value: `${currentListing.partnerCount} ${translateCopy("ortak tanıtıyor", language)}` }] : []),
+                      ...(currentListing.leadCount > 0 ? [{ label: "Talep", value: `${currentListing.leadCount} ${translateCopy("talep geldi", language)}` }] : [])
+                    ]}
+                  />
+                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "500", lineHeight: 17 }}>{translateCopy(conv.hint, language)}</Text>
+                </>
+              );
+            })()}
+            {currentListing.partnerRules.length > 0 ? (
+              <View style={{ borderTopColor: colors.line, borderTopWidth: 1, gap: 6, paddingTop: 10 }}>
+                <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy("Satıcının ortaklardan beklentileri:", language)}</Text>
+                {currentListing.partnerRules.map((rule, i) => (
+                  <Bullet key={`${i}-${rule}`} icon="check-circle-outline" text={rule} />
+                ))}
+              </View>
+            ) : null}
+          </DetailSection>
+        ) : (
+          <View style={{ gap: 6 }}>
+            <ListingTermsSummary key={currentListing.id} listing={currentListing} />
+            {currentListing.minPartnerRating > 0 ? <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "500", paddingHorizontal: 2 }}>{translateCopy("Min. ortak puanı", language)}: {currentListing.minPartnerRating}+</Text> : null}
+          </View>
+        )
+      ) : null}
+      {partnership ? <Accordion title={translateCopy("Ortaklık kaydın", language)} icon="file-document-outline"><AgreementCard listing={currentListing} partnership={partnership} /></Accordion> : null}
+
+      <DetailSection title="Satıcı" icon="account-outline" testID="listing-section-seller">
+        <SellerSummary owner={owner} ownerId={currentListing.ownerId} demo={isDemo} activeCount={sellerActiveCount} />
+      </DetailSection>
+
+      <DetailSection title="Konum" icon="map-marker-outline" testID="listing-section-location">
+        <LocationRow location={currentListing.location} />
+      </DetailSection>
+
+      <DetailSection title="Güvenli alışveriş" icon="shield-check-outline" testID="listing-section-safety">
+        <SafetyTips />
+      </DetailSection>
+      <LegalDisclaimerCollapsible />
+      <Accordion title={translateCopy("Sıkça sorulan sorular", language)} icon="comment-question-outline">
+        <SpecRow label="Komisyonu kim öder?" value="İlan sahibi, satış gerçekleştiğinde ortağa öder." />
+        <SpecRow label="Ortak olmak ücretli mi?" value="Hayır, ortaklık ücretsizdir." />
+        <SpecRow label="Süreç güvenli mi?" value="Komisyon şartı ve talepler sistemde kayıt altındadır." />
+      </Accordion>
+    </>
+  );
+
   return (
     <View style={{ flex: 1 }}>
-    <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ gap: 12, paddingBottom: (showMobileActionBar ? 132 : 96) + insets.bottom }}>
+    <ScrollView style={{ flex: 1 }} keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ paddingBottom: showMobileActionBar ? (barHeight || 69 + insets.bottom) + 24 : 96 + insets.bottom }}>
       <Head>
         <title>{`${currentTitle} — OrtakSat`}</title>
         <meta name="description" content={metaDesc} />
@@ -684,653 +1048,84 @@ export default function ListingDetailScreen() {
       </Head>
       <JsonLd id="product" json={productLd} />
       <JsonLd id="breadcrumb" json={breadcrumbLd} />
-      <WebContainer max={1280} padding={0} style={{ gap: 16 }}>
-      {/* Breadcrumb: Ana Sayfa › Kategori › Ürün */}
-      <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, marginHorizontal: isWideWeb ? 0 : 12 }}>
-        <Link href="/" asChild><Pressable accessibilityRole="link" accessibilityLabel={translateCopy("Ana sayfa", language)}><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Ana Sayfa", language)}</Text></Pressable></Link>
+      <WebContainer max={1280} padding={isWideWeb ? 20 : 0} style={{ gap: isWideWeb ? 8 : 0 }}>
+      {/* Breadcrumb: Ana Sayfa › Kategori › Ürün — tek satır; ORTA öğe kısalır, düzeni itmez. */}
+      <View style={{ alignItems: "center", flexDirection: "row", gap: 4, minHeight: 30, paddingHorizontal: isWideWeb ? 0 : detail.gutter }}>
+        <PressLink href="/" hitSlop={6} accessibilityLabel={translateCopy("Ana sayfa", language)} style={{ flexShrink: 0, justifyContent: "center", minHeight: 30 }}>
+          <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy("Ana Sayfa", language)}</Text>
+        </PressLink>
         <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-        {(() => {
-          const catSlug = findCategorySlug(currentListing.category);
-          const href = catSlug ? ({ pathname: "/kategori/[slug]", params: { slug: catSlug } } as unknown as Href) : ("/kategoriler" as Href);
-          return (
-            <Link href={href} asChild>
-              <Pressable accessibilityRole="link" accessibilityLabel={`${translateCopy(currentListing.category, language)} ${translateCopy("kategorisi", language)}`}><Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(currentListing.category, language)}</Text></Pressable>
-            </Link>
-          );
-        })()}
+        <PressLink href={catHref} hitSlop={6} accessibilityLabel={`${translateCopy(currentListing.category, language)} ${translateCopy("kategorisi", language)}`} style={{ flexShrink: 1, justifyContent: "center", maxWidth: "46%", minHeight: 30, minWidth: 0 }}>
+          <Text numberOfLines={1} ellipsizeMode="tail" style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy(currentListing.category, language)}</Text>
+        </PressLink>
         <MaterialCommunityIcons name="chevron-right" size={14} color={colors.subtle} />
-        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0 }}>{currentTitle}</Text>
+        <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 12, fontWeight: "700", minWidth: 0 }}>{currentTitle}</Text>
       </View>
-      {isDemo ? (
-        <View style={{ alignItems: "center", backgroundColor: colors.goldSoft, borderColor: colors.gold, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, marginHorizontal: isWideWeb ? 0 : 12, padding: 13 }}>
-          <View style={{ alignItems: "center", backgroundColor: colors.gold, borderRadius: 999, height: 34, justifyContent: "center", width: 34 }}>
-            <MaterialCommunityIcons name="eye-outline" size={19} color={colors.goldInk} />
+
+      {isWideWeb ? (
+        /* GENİŞ: iki sütun — galeri solda STICKY, sağda başlık/fiyat/CTA kartı + bölümler. */
+        <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 20 }}>
+          <View style={{ alignSelf: "flex-start", flex: 1.12, minWidth: 0, position: "sticky", top: 12 } as any}>
+            {galleryBlock}
           </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Örnek (vitrin) ilan", language)}</Text>
-            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Bu ilan yalnızca platformun nasıl göründüğünü göstermek içindir. Mesajlaşma, iletişim ve ortaklık kapalıdır.", language)}</Text>
+          <View style={{ flex: 1, gap: detail.gap, minWidth: 0 }}>
+            {headCard}
+            {bodySections}
           </View>
         </View>
-      ) : null}
-      <View style={isWideWeb ? { flexDirection: "row", gap: 20, alignItems: "flex-start" } : { gap: 12 }}>
-      {/* Masaüstü: galeri sütunu STICKY — kaydırırken sabit kalır, sağdaki uzun içerik akar
-          (Amazon/Trendyol deseni). Eskiden galeri kısa olduğundan sol tarafta DEV boş beyaz
-          alan oluşuyordu. alignSelf:flex-start → sütun galeri boyunda kalır (sticky çalışsın). */}
-      <View style={isWideWeb ? ({ flex: 1.12, minWidth: 0, alignSelf: "flex-start", position: "sticky", top: 12 } as any) : undefined}>
-      {(() => {
-        const mainImg = gallery[galleryIdx] ?? currentListing.image;
-        // SEO + a11y: ürün görseline açıklayıcı alt (Google Görseller + ekran okuyucu).
-        const imgAlt = `${currentTitle}${currentListing.category ? ` — ${currentListing.category}` : ""}${currentListing.location ? `, ${currentListing.location}` : ""} · OrtakSat ortak satış ilanı`;
-        return (
-          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: isWideWeb ? 18 : 0, borderWidth: isWideWeb ? 1 : 0, marginTop: isWideWeb ? 16 : 0, overflow: "hidden" }}>
-            <Pressable
-              testID="listing-web-gallery"
-              disabled={!gallery.length}
-              accessibilityState={{ disabled: !gallery.length }}
-              accessibilityRole="imagebutton"
-              accessibilityLabel={translateCopy(gallery.length ? "Görseli büyüt" : "İlan fotoğrafı bulunmuyor", language)}
-              onPress={() => { if (inlineSwiped.current) { inlineSwiped.current = false; return; } setLightbox(true); }}
-              onTouchStart={(e) => { swipeStartX.current = e.nativeEvent.pageX; inlineSwiped.current = false; }}
-              onTouchEnd={(e) => {
-                const dx = e.nativeEvent.pageX - swipeStartX.current;
-                if (Math.abs(dx) > 45 && gallery.length > 1) {
-                  inlineSwiped.current = true;
-                  setActiveImage((dx < 0 ? galleryIdx + 1 : galleryIdx - 1 + gallery.length) % gallery.length);
-                }
-              }}
-              style={{ position: "relative" }}
-            >
-              {/* LCP: ilan detayının kahraman görseli → yüksek öncelik + fade/scrim yok
-                  (SafeRemoteImage priority="high" ile eager). Eskiden low+cross-dissolve idi. */}
-              {gallery.length ? <SafeRemoteImage full uri={mainImg} alt={imgAlt} accessibilityLabel={imgAlt} priority="high" style={{ backgroundColor: colors.line, height: isWideWeb ? 520 : 290, width: "100%" }} contentFit="cover" /> : <View style={{ height: isWideWeb ? 520 : 290, backgroundColor: colors.surfaceAlt, alignItems: "center", justifyContent: "center", gap: 12 }}><MaterialCommunityIcons name="image-off-outline" size={44} color={colors.muted} /><Text style={{ color: colors.muted }}>{translateCopy("Bu ilanda fotoğraf yok", language)}</Text></View>}
-              {/* Kaynak filigranı — dosyaya gömülmez, yalnız görüntüleme katmanı (ürün bozulmaz). */}
-              {!!gallery.length && <ImageWatermark size={isWideWeb ? 20 : 15} />}
-              {/* Ortaklığa AÇIK ilan rozeti (marka mavisi, sol üst) — kapalı/normal ilanda gösterilmez. */}
-              {partnerable ? (
-                <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 5, left: 12, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", top: 12 }}>
-                  <MaterialCommunityIcons name="check-decagram" size={14} color="#FFFFFF" />
-                  <Text numberOfLines={1} style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Ortaklığa açık", language)}</Text>
-                </View>
-              ) : null}
-              {!!gallery.length && <View testID="listing-web-counter" style={{ alignItems: "center", backgroundColor: "rgba(0,0,0,0.5)", borderRadius: 999, bottom: 12, flexDirection: "row", gap: 5, paddingHorizontal: 11, paddingVertical: 6, position: "absolute", right: 12 }}>
-                <MaterialCommunityIcons name="magnify-plus-outline" size={14} color="#FFFFFF" />
-                <Text style={{ color: "#FFFFFF", fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Büyüt", language)}{gallery.length > 1 ? ` · ${galleryIdx + 1}/${gallery.length}` : ""}</Text>
-              </View>}
-              {/* Mobil: birden çok görselde kaydırma ipucu (nokta göstergesi) */}
-              {!isWideWeb && gallery.length > 1 ? (
-                <View style={{ alignItems: "center", bottom: 12, flexDirection: "row", gap: 5, justifyContent: "center", left: 0, position: "absolute", right: 0 }}>
-                  {gallery.map((_, i) => (
-                    <View key={i} style={{ backgroundColor: i === galleryIdx ? "#FFFFFF" : "rgba(255,255,255,0.5)", borderRadius: 999, height: 7, width: i === galleryIdx ? 18 : 7 }} />
-                  ))}
-                </View>
-              ) : null}
-            </Pressable>
-            {gallery.length > 1 && isWideWeb ? (
-              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, paddingHorizontal: 12, paddingTop: 12 }}>
-                {gallery.map((img, i) => (
-                  <Pressable key={img + i} onPress={() => setActiveImage(i)} style={{ borderColor: i === galleryIdx ? colors.primary : colors.line, borderRadius: 10, borderWidth: i === galleryIdx ? 2 : 1, height: 64, overflow: "hidden", width: 64 }}>
-                    <SafeRemoteImage uri={img} alt={`${imgAlt} — görsel ${i + 1}`} accessibilityLabel={`${imgAlt} — görsel ${i + 1}`} style={{ height: "100%", width: "100%" }} contentFit="cover" />
-                  </Pressable>
-                ))}
-              </View>
-            ) : null}
-            <View style={{ flexDirection: "row", gap: isWideWeb ? 8 : 6, padding: isWideWeb ? 12 : 8 }}>
-              <IconButton active={favorited} icon={favorited ? "heart" : "heart-outline"} label={translateCopy("Beğen", language)} onPress={() => toggleFavorite(currentListing.id)} />
-              {!isDemo ? <IconButton active={inCompare} icon={inCompare ? "compare-remove" : "compare-horizontal"} label={translateCopy(isWideWeb ? "Karşılaştır" : "Kıyasla", language)} onPress={() => toggleCompare(currentListing.id)} /> : null}
-              <IconButton icon="share-variant-outline" label={translateCopy("Paylaş", language)} onPress={() => void handleShare()} />
-              {!isOwner ? <IconButton icon="flag-outline" label={translateCopy("Bildir", language)} onPress={() => setReportOpen(true)} /> : null}
-            </View>
-          </View>
-        );
-      })()}
-      </View>
-
-      <View style={isWideWeb ? { flex: 1, gap: 12, minWidth: 0, marginTop: 16 } : { gap: 12, paddingHorizontal: 12 }}>
-        {/* Satın alma / ortak kutusu — e-ticaret tarzı tek, net karar alanı */}
-        <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 12, padding: 16 }}>
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            <StatusPill label={translateCopy(currentListing.category, language)} tone="neutral" />
-            {partnerable ? <StatusPill label={translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı", language)} tone="info" /> : null}
-          </View>
-
-          <Text selectable accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 22 : 20, fontWeight: "700", lineHeight: isWideWeb ? 28 : 26 }}>{currentTitle}</Text>
-
-          {/* Müsait değil durum bandı — satın alma/ortaklık/teklif kapalı (aksiyon handler'ları da guard'lı). */}
-          {listingUnavailable ? (
-            <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, padding: 12 }}>
-              <MaterialCommunityIcons name={currentListing.status === "sold" ? "check-decagram" : "close-circle-outline"} size={22} color={colors.accent} />
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <Text style={{ color: colors.accent, fontSize: 14.5, fontWeight: "900" }}>{unavailableLabel}</Text>
-                <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{translateCopy("Bu ilanda satın alma, ortaklık ve teklif kapalı. Aşağıdaki benzer ürünlere göz atabilirsin.", language)}</Text>
-              </View>
-            </View>
-          ) : null}
-
-          <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-            {owner?.rating ? (
-              <>
-                <MaterialCommunityIcons name="star" size={15} color={colors.gold} />
-                <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{owner.rating.toFixed(1)}</Text>
-              </>
-            ) : (
-              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 8, paddingVertical: 2 }}>
-                <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{translateCopy("Yeni satıcı", language)}</Text>
-              </View>
-            )}
-            {owner?.verifiedPhone || owner?.verifiedIdentity ? (
-              <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 3, paddingHorizontal: 8, paddingVertical: 2 }}>
-                <MaterialCommunityIcons name="check-decagram" size={12} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 10.5, fontWeight: "900" }}>{translateCopy("Doğrulanmış", language)}</Text>
-              </View>
-            ) : null}
-            <Text numberOfLines={1} style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{owner?.successfulSales ? `${owner.successfulSales} ${translateCopy("satış", language)} · ` : ""}{currentListing.location}</Text>
-          </View>
-
-          {/* İlan tarihi + no (Sahibinden tarzı referans/tazelik bilgisi) */}
-          {(() => {
-            const created = new Date(currentListing.createdAt);
-            const valid = !Number.isNaN(created.getTime());
-            const days = valid ? Math.floor((Date.now() - created.getTime()) / 86400000) : -1;
-            const dateLabel = !valid ? "" : days <= 0 ? translateCopy("Bugün", language) : days === 1 ? translateCopy("Dün", language) : days < 30 ? `${days} ${translateCopy("gün önce", language)}` : created.toLocaleDateString(language === "en" ? "en-GB" : "tr-TR");
-            const ilanNo = listingNo(currentListing.id); // Sahibinden tarzı 10 haneli numerik kod
-            return (
-              <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                {dateLabel ? (
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                    <MaterialCommunityIcons name="calendar-blank-outline" size={13} color={colors.subtle} />
-                    <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{dateLabel}</Text>
-                  </View>
-                ) : null}
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                  <MaterialCommunityIcons name="pound" size={13} color={colors.subtle} />
-                  <Text selectable style={{ color: colors.subtle, fontSize: 12, fontWeight: "700" }}>{translateCopy("İlan no", language)}: {ilanNo}</Text>
-                </View>
-              </View>
-            );
-          })()}
-
-          {/* Fiyat sayfanın en güçlü öğesi olmalı (ürün sayfası) — ortaklığa açık ilanda turkuaz
-              (primaryDark) vurgu, kapalı/normal ilanda nötr ink. */}
-          <Text testID="listing-detail-price" selectable style={{ color: partnerable ? colors.primaryDark : colors.ink, fontSize: isWideWeb ? 30 : 27, fontWeight: "700", letterSpacing: -0.3 }}>{moneyIn(currentListing.price, currentListing.currency)}</Text>
-
-          {/* ACİL SATIŞ banner — attributes._urgentUntil GELECEKTEyse (fiyatın hemen altında, dikkat çekici). */}
-          {(() => {
-            const uu = currentListing.attributes?._urgentUntil ? String(currentListing.attributes._urgentUntil) : "";
-            const until = uu ? Date.parse(uu) : 0;
-            if (!until || until <= Date.now()) return null;
-            const daysLeft = Math.max(1, Math.ceil((until - Date.now()) / 86400000));
-            return (
-              <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 12, paddingVertical: 9 }}>
-                <MaterialCommunityIcons name="fire" size={18} color={colors.accent} />
-                <Text style={{ color: colors.accent, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Acil satış", language)} — {daysLeft} {translateCopy("gün içinde satılmalı", language)}</Text>
-              </View>
-            );
-          })()}
-
-          {/* Y6: sosyal kanıt — görüntülenme + favori (yalnız >0, "0 görüntülenme" gösterilmez). */}
-          {(currentListing.viewCount > 0 || currentListing.favoriteCount > 0) ? (
-            <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-              {currentListing.viewCount > 0 ? (
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                  <MaterialCommunityIcons name="eye-outline" size={14} color={colors.subtle} />
-                  <Text style={{ color: colors.muted, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "700" }}>{currentListing.viewCount} {translateCopy("kez görüntülendi", language)}</Text>
-                </View>
-              ) : null}
-              {currentListing.favoriteCount > 0 ? (
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 4 }}>
-                  <MaterialCommunityIcons name="heart-outline" size={14} color={colors.subtle} />
-                  <Text style={{ color: colors.muted, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "700" }}>{currentListing.favoriteCount} {translateCopy("favori", language)}</Text>
-                </View>
-              ) : null}
-            </View>
-          ) : null}
-
-          {/* Ürün Detayları (Sahibinden tarzı) — kategoriye özel skaler özellikler + stok/iade/
-              komisyon vadesi/ortaklık durumu TEK tabloda konsolide (eski ayrı Metric kartları
-              buraya taşındı). Her zaman gösterilir (stok/iade her ilanda vardır). */}
-          {(() => {
-            const scalarSpecs = describeAttributes(currentListing.attributes).filter((r) => !r.items);
-            const extraRows: { label: string; value: string }[] = [
-              { label: "Stok", value: `${currentListing.stockCount} ${translateCopy("adet", language)}` },
-              { label: "İade süresi", value: `${currentListing.returnWindowDays} ${translateCopy("gün", language)}` },
-              ...(partnerable ? [{ label: "Komisyon vadesi", value: `${currentListing.commissionDueDays} ${translateCopy("gün", language)}` }] : []),
-              { label: "Ortaklık", value: !partnerable ? translateCopy("Kapalı (normal ilan)", language) : translateCopy(currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı", language) }
-            ];
-            const rows: { label: string; value: string }[] = [...scalarSpecs.map((r) => ({ label: r.label, value: r.value })), ...extraRows];
-            return (
-              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, overflow: "hidden" }}>
-                <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 13, paddingVertical: 9 }}>
-                  <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ürün Detayları", language)}</Text>
-                </View>
-                {rows.slice(0, showAllSpecs ? undefined : 4).map((row, i) => (
-                  <View key={`${row.label}-${i}`} style={{ backgroundColor: i % 2 === 1 ? colors.surface : "transparent", flexDirection: "row", gap: 10, paddingHorizontal: 13, paddingVertical: 8 }}>
-                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700", minWidth: 0 }}>{translateCopy(row.label, language)}</Text>
-                    <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "800", minWidth: 0, textAlign: "right" }}>{translateCopy(row.value, language)}</Text>
-                  </View>
-                ))}
-                {rows.length > 4 ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Tüm ilan özellikleri", language)} accessibilityState={{ expanded: showAllSpecs }} onPress={() => setShowAllSpecs((v) => !v)} style={{ minHeight: 38, paddingHorizontal: 13, alignItems: "center", flexDirection: "row", gap: 6, borderTopWidth: 1, borderTopColor: colors.line }}><Text style={{ flex: 1, fontSize: 12, color: colors.primaryDark, fontWeight: "600" }}>{translateCopy(showAllSpecs ? "Daha az göster" : "Tüm özellikler", language)} ({rows.length})</Text><MaterialCommunityIcons name={showAllSpecs ? "chevron-up" : "chevron-down"} size={18} color={colors.primaryDark} /></Pressable> : null}
-              </View>
-            );
-          })()}
-
-          {/* Ortaklık kutusu — açık ilanda konsolide "Ortaklık Bilgisi", talep (arayan) ilanında
-              mevcut BULUŞ KOMİSYONU görünümü KORUNUR, ortaklığa kapalı ilanda sade not. */}
-          {partnerable ? (
-            isDemand ? (
-              /* ===== TALEP (arayan) — BULUŞ KOMİSYONU görünümü değiştirilmez ===== */
-              <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 4, padding: 12 }}>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                  <MaterialCommunityIcons name="magnify" size={16} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "900", letterSpacing: 0.3 }}>{translateCopy("BULUŞ KOMİSYONU", language)}</Text>
-                  <Text style={{ color: colors.primaryDark, fontSize: 17, fontWeight: "900" }}>{moneyIn(commission, currentListing.currency)}</Text>
-                </View>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 16 }}>{commissionText(currentListing)}{" · "}{translateCopy("Bu talebi karşılayan ürünü/satıcıyı bul ve getir; bulan komisyonu kazanır. Komisyonu ilan sahibi öder.", language)}</Text>
-                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 5, marginTop: 2 }}>
-                  {currentListing.partnerCount > 0 ? (
-                    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <MaterialCommunityIcons name="account-group" size={13} color={colors.primaryDark} />
-                      <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.partnerCount} {translateCopy("ortak tanıtıyor", language)}</Text>
-                    </View>
-                  ) : null}
-                  {currentListing.leadCount > 0 ? (
-                    <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-                      <MaterialCommunityIcons name="account-clock-outline" size={13} color={colors.primaryDark} />
-                      <Text style={{ color: colors.primaryDark, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{currentListing.leadCount} {translateCopy("talep geldi", language)}</Text>
-                    </View>
-                  ) : null}
-                  <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, flexDirection: "row", gap: 4, paddingHorizontal: 8, paddingVertical: 3 }}>
-                    <MaterialCommunityIcons name="clock-outline" size={13} color={colors.muted} />
-                    <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "800" }}>{translateCopy("Atıf penceresi", language)}: {currentListing.attributionWindowDays} {translateCopy("gün", language)}</Text>
-                  </View>
-                </View>
-                {(() => {
-                  const conv = categoryConversion(currentListing.category);
-                  return (
-                    <View style={{ alignItems: "flex-start", backgroundColor: colors.surface, borderRadius: 9, flexDirection: "row", gap: 7, marginTop: 4, padding: 9 }}>
-                      <MaterialCommunityIcons name={conv.icon as keyof typeof MaterialCommunityIcons.glyphMap} size={15} color={colors.primaryDark} style={{ marginTop: 1 }} />
-                      <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-                        <Text style={{ color: colors.ink, fontSize: 11.5, fontWeight: "900" }}>{translateCopy("Komisyon şu olayda hak edilir", language)}: {translateCopy(conv.event, language)}</Text>
-                        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15 }}>{translateCopy(conv.hint, language)}</Text>
-                      </View>
-                    </View>
-                  );
-                })()}
-              </View>
-            ) : (
-              <ListingTermsSummary key={currentListing.id} listing={currentListing} />
-            )
-          ) : (
-            /* ===== ORTAKLIĞA KAPALI (normal ilan) — sade uyarı notu ===== */
-            <View style={{ alignItems: "flex-start", backgroundColor: colors.warningSoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 11 }}>
-              <MaterialCommunityIcons name="information-outline" size={16} color={colors.warning} style={{ marginTop: 1 }} />
-              <Text style={{ color: colors.warning, flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16, minWidth: 0 }}>{translateCopy("Bu ilan sahibi ürünü ortaklığa açmamış.", language)}</Text>
-            </View>
-          )}
-
-          {/* Y5: Ortaklık şartları — satıcının ortaklardan beklentileri (partnerRules). Ortak,
-              istek göndermeden ÖNCE kuralları görür → sürtünme + yanlış-eşleşme azalır. YALNIZ
-              ortak satışa açık ilanda ve kural tanımlıysa gösterilir. */}
-          {partnerable && isDemand && currentListing.partnerRules.length > 0 ? (
-            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                <MaterialCommunityIcons name="clipboard-check-outline" size={16} color={colors.primaryDark} />
-                <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaklık şartları", language)}</Text>
-              </View>
-              <Text style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 15 }}>{translateCopy("Satıcının ortaklardan beklentileri:", language)}</Text>
-              {currentListing.partnerRules.map((rule, i) => (
-                <View key={`${i}-${rule}`} style={{ alignItems: "flex-start", flexDirection: "row", gap: 7 }}>
-                  <MaterialCommunityIcons name="check-circle-outline" size={14} color={colors.primary} style={{ marginTop: 1 }} />
-                  <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700", lineHeight: 17 }}>{translateCopy(rule, language)}</Text>
-                </View>
-              ))}
-            </View>
-          ) : null}
-
-          {/* Durum-duyarlı ana aksiyon (apply=1 ile buraya kaydırılır) */}
-          <View ref={joinAnchorRef} />
-          {isOwner ? (
-            <View style={{ gap: 8 }}>
-              <PrimaryButton href={{ pathname: "/listing-edit/[id]", params: { id: currentListing.id } }} icon="pencil-outline">{translateCopy("İlanı Düzenle", language)}</PrimaryButton>
-              <PrimaryButton href="/(tabs)/seller" tone="secondary" icon="storefront-outline">{translateCopy("Satıcı panelinde yönet", language)}</PrimaryButton>
-              {isInviteMode ? (
-                <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 12 }}>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                    <MaterialCommunityIcons name="ticket-account" size={16} color={colors.primaryDark} />
-                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortak davet linki", language)}</Text>
-                  </View>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Bu ilan sadece davetle. Aşağıdaki linki güvendiğin ortaklarla paylaş; linkle gelen kişi anında (ön-onaylı) ortak olur.", language)}</Text>
-                  <ShareRow url={partnerInviteUrl(currentListing)} text={`${currentTitle} — ${translateCopy("ortak daveti", language)}`} />
-                </View>
-              ) : null}
-            </View>
-          ) : isDemo ? (
-            <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
-              <MaterialCommunityIcons name="lock-outline" size={16} color={colors.muted} />
-              <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Örnek ilan — ortaklık ve iletişim kapalıdır.", language)}</Text>
-            </View>
-          ) : isDemand ? (
-            /* ===== TALEP (arayan) — mevcut ortak-ol / başvuru akışı KORUNUR (Satın Al gösterilmez) ===== */
-            partnership?.status === "active" ? (
-              <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 9, padding: 12 }}>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                  <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · ürünü kendi yönteminle tanıt", language)}</Text>
-                </View>
-                {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentTitle} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
-                {partnership?.agreedAt ? (
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                    <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Komisyon şartların ortak olduğun anda kilitlendi — satıcı ilanı düzenlese de değişmez.", language)}</Text>
-                  </View>
-                ) : null}
-              </View>
-            ) : partnership?.status === "pending" ? (
-              <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
-                <MaterialCommunityIcons name="clock-outline" size={16} color={colors.warning} />
-                <Text style={{ color: colors.warning, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Başvurun satıcı onayında.", language)}</Text>
-              </View>
-            ) : isInviteMode && !validInvite ? (
-              <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, gap: 8, padding: 14 }}>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                  <MaterialCommunityIcons name="email-lock-outline" size={17} color={colors.muted} />
-                  <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Ortaklık sadece davetle", language)}</Text>
-                </View>
-                <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Bu ürünün ortaklığı herkese açık değil. Ortak olmak istiyorsan satıcıdan davet linki iste; linkle geldiğinde anında ortak olabilirsin.", language)}</Text>
-                <PrimaryButton tone="secondary" icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy("Satıcıdan davet iste", language)}</PrimaryButton>
-              </View>
-            ) : (
-              <View style={{ gap: 10 }}>
-                {validInvite ? (
-                  <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 12, flexDirection: "row", gap: 8, padding: 12 }}>
-                    <MaterialCommunityIcons name="ticket-confirmation-outline" size={17} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Satıcı seni davet etti — anında ortak olabilirsin.", language)}</Text>
-                  </View>
-                ) : null}
-                {currentListing.partnershipMode !== "open" && !validInvite ? (
-                  <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 8, padding: 12 }}>
-                    <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} style={{ marginTop: 1 }} />
-                    <Text style={{ color: colors.muted, flex: 1, fontSize: 12.5, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Başvurunu gönder; satıcı kabul ederse anında ortak olur, ürünü kendi yönteminle tanıtmaya başlarsın. Ekstra bilgi doldurmana gerek yok.", language)}</Text>
-                  </View>
-                ) : null}
-                <PrimaryButton icon="handshake-outline" onPress={handleJoin}>{translateCopy(currentListing.partnershipMode === "open" || validInvite ? "Hemen Ortak Ol ve Kazan" : "Ortaklık Başvurusu Gönder", language)}</PrimaryButton>
-              </View>
-            )
-          ) : (
-            /* ===== NORMAL SAT/ORTAK İLAN — Satın Al + Ortak Ol (mockup) ===== */
-            <View style={{ gap: 10 }}>
-              {/* Ortaklık durum bantları (buton satırının üstünde bilgilendirici) */}
-              {partnership?.status === "active" ? (
-                <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, gap: 9, padding: 12 }}>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                    <MaterialCommunityIcons name="check-decagram" size={17} color={colors.primaryDark} />
-                    <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 13, fontWeight: "900" }}>{translateCopy("Ortaksın · ürünü kendi yönteminle tanıt", language)}</Text>
-                  </View>
-                  {activeShareUrl ? <ShareRow url={activeShareUrl} text={`${currentTitle} — ${moneyIn(currentListing.price, currentListing.currency)}`} /> : null}
-                  {partnership?.agreedAt ? (
-                    <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                      <MaterialCommunityIcons name="lock-check" size={13} color={colors.primaryDark} />
-                      <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 11.5, fontWeight: "700" }}>{translateCopy("Komisyon şartların ortak olduğun anda kilitlendi — satıcı ilanı düzenlese de değişmez.", language)}</Text>
-                    </View>
-                  ) : null}
-                </View>
-              ) : partnership?.status === "pending" ? (
-                <View style={{ alignItems: "center", backgroundColor: colors.warningSoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 12 }}>
-                  <MaterialCommunityIcons name="clock-outline" size={16} color={colors.warning} />
-                  <Text style={{ color: colors.warning, flex: 1, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Başvurun satıcı onayında.", language)}</Text>
-                </View>
-              ) : isInviteMode && !validInvite ? (
-                <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, padding: 11 }}>
-                  <MaterialCommunityIcons name="email-lock-outline" size={16} color={colors.muted} style={{ marginTop: 1 }} />
-                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "700", lineHeight: 16, minWidth: 0 }}>{translateCopy("Ortaklık sadece davetle — satıcıdan davet linki iste.", language)}</Text>
-                </View>
-              ) : validInvite ? (
-                <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 11, flexDirection: "row", gap: 8, padding: 11 }}>
-                  <MaterialCommunityIcons name="ticket-confirmation-outline" size={16} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, flex: 1, fontSize: 12, fontWeight: "800", minWidth: 0 }}>{translateCopy("Satıcı seni davet etti — anında ortak olabilirsin.", language)}</Text>
-                </View>
-              ) : partnerable && currentListing.partnershipMode !== "open" ? (
-                <View style={{ alignItems: "flex-start", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 8, padding: 11 }}>
-                  <MaterialCommunityIcons name="handshake-outline" size={16} color={colors.primaryDark} style={{ marginTop: 1 }} />
-                  <Text style={{ color: colors.muted, flex: 1, fontSize: 12, fontWeight: "600", lineHeight: 16, minWidth: 0 }}>{translateCopy("Başvurunu gönder; satıcı kabul ederse anında ortak olursun. Ekstra bilgi doldurmana gerek yok.", language)}</Text>
-                </View>
-              ) : null}
-
-              {/* Aksiyon: partnerable + katılabilir → [Satın Al | Ortak Ol]; aksi halde tek "Satın Al". */}
-              {!showMobileActionBar ? (canJoinNow ? (
-                <View style={{ flexDirection: "row", gap: 10 }}>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <PrimaryButton tone="secondary" icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
-                  </View>
-                  <View style={{ flex: 1, minWidth: 0 }}>
-                    <PrimaryButton icon="handshake" onPress={handleJoin}>{translateCopy("Ortak Ol", language)}</PrimaryButton>
-                  </View>
-                </View>
-              ) : (
-                <PrimaryButton icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton>
-              )) : null}
-            </View>
-          )}
-
-          {/* İletişim */}
-          {!isOwner && !isDemo ? (
-            <View style={{ gap: 10 }}>
-              <SafetyNote />
-              {/* TEKLİF VER — eskiden teklif yalnız sohbete serbest metin olarak
-                  yazılabiliyordu; satıcı takip edemiyor, kabul/ret edemiyordu.
-                  TALEP (arayan) ilanında GÖSTERİLMEZ: satılık ürün yok → "Teklif Ver"
-                  arayan kişiye satın-alma teklifi göndermek anlamsız (yalnız iletişim/ortak kalır). */}
-              {isDemand ? null : myOffer ? (
-                <View style={{ backgroundColor: myOffer.status === "accepted" ? colors.successSoft : myOffer.status === "rejected" ? colors.accentSoft : colors.goldSoft, borderColor: myOffer.status === "accepted" ? colors.success : myOffer.status === "rejected" ? colors.accent : colors.gold, borderRadius: 10, borderWidth: 1, gap: 4, padding: 12 }}>
-                  <View style={{ alignItems: "center", flexDirection: "row", gap: 7 }}>
-                    <MaterialCommunityIcons name="handshake" size={16} color={myOffer.status === "accepted" ? colors.success : myOffer.status === "rejected" ? colors.accent : colors.goldInk} />
-                    <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "900" }}>
-                      {translateCopy("Teklifin", language)}: {moneyIn(myOffer.amount, currentListing.currency)}
-                    </Text>
-                  </View>
-                  <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "700" }}>
-                    {myOffer.status === "pending" ? translateCopy("Satıcının yanıtı bekleniyor.", language)
-                      : myOffer.status === "accepted" ? translateCopy("KABUL EDİLDİ — satıcıyla mesajlaşarak teslimatı ayarla.", language)
-                      : myOffer.status === "rejected" ? translateCopy("Kabul edilmedi. Yeni bir teklif verebilirsin.", language)
-                      : myOffer.status === "countered" ? `${translateCopy("Satıcı karşı teklif verdi", language)}: ${moneyIn(myOffer.counterAmount ?? 0, currentListing.currency)}`
-                      : translateCopy("Geri çekildi.", language)}
-                  </Text>
-                  {myOffer.status === "pending" ? (
-                    <Pressable onPress={() => void buyerOfferAction(myOffer.id, "withdrawn")} accessibilityRole="button" hitSlop={6} style={({ pressed }) => ({ alignSelf: "flex-start", opacity: pressed ? 0.7 : 1, paddingTop: 2 })}>
-                      <Text style={{ color: colors.accent, fontSize: 12, fontWeight: "900" }}>{translateCopy("Teklifi geri çek", language)}</Text>
-                    </Pressable>
-                  ) : null}
-                  {/* Satıcı karşı teklif verdiyse alıcı yanıtlayabilmeli — yoksa akış burada tıkanıyordu. */}
-                  {myOffer.status === "countered" ? (
-                    <View style={{ flexDirection: "row", gap: 8, paddingTop: 4 }}>
-                      <Pressable
-                        accessibilityRole="button"
-                        testID="offer-accept-counter"
-                        onPress={() => void buyerOfferAction(myOffer.id, "accept_counter")}
-                        style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.success, borderRadius: 9, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
-                      >
-                        <MaterialCommunityIcons name="check" size={15} color="#FFFFFF" />
-                        <Text style={{ color: "#FFFFFF", fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Kabul Et", language)}</Text>
-                      </Pressable>
-                      <Pressable
-                        accessibilityRole="button"
-                        testID="offer-reject-counter"
-                        onPress={() => void buyerOfferAction(myOffer.id, "reject_counter")}
-                        style={({ pressed }) => ({ alignItems: "center", borderColor: colors.line, borderRadius: 9, borderWidth: 1, flexDirection: "row", gap: 6, opacity: pressed ? 0.85 : 1, paddingHorizontal: 14, paddingVertical: 9 })}
-                      >
-                        <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy("Reddet", language)}</Text>
-                      </Pressable>
-                    </View>
-                  ) : null}
-                </View>
-              ) : (
-                <PrimaryButton tone="secondary" icon="handshake-outline" onPress={() => { if (listingUnavailable) { Alert.alert(unavailableLabel, translateCopy("Bu ilan artık satışa açık değil.", language)); return; } if (!isAuthenticated) { router.push({ pathname: "/auth", params: { redirect: listingReturnPath } }); return; } setOfferAmount(""); setOfferNote(""); setOfferErr(null); setOfferOpen(true); }}>{translateCopy("Teklif Ver", language)}</PrimaryButton>
-              )}
-              {/* İletişim butonu: normal sat/ortak ilanda ana "Satın Al" bu akışı (handleContact)
-                  zaten çağırır; yalnız talep (arayan) ilanında burada ayrı gösterilir (Satın Al yok). */}
-              {isDemand ? <PrimaryButton tone="secondary" icon={currentListing.contactMethod === "whatsapp" ? "whatsapp" : currentListing.contactMethod === "phone" ? "phone" : "message-text-outline"} disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(contactLabel(currentListing.contactMethod), language)}</PrimaryButton> : null}
-              {/* Numarayı Göster (Sahibinden tarzı) — istek üzerine gerçek numara */}
-              {currentListing.contactMethod !== "message" && (revealedPhone ? (
-                <Pressable onPress={() => { const tel = revealedPhone.replace(/[^0-9+]/g, ""); if (tel) void openUrlSafe(`tel:${tel}`); }} accessibilityRole="button" accessibilityLabel={`${translateCopy("Ara", language)}: ${revealedPhone}`} style={{ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 12 }}>
-                  <MaterialCommunityIcons name="phone" size={16} color={colors.success} />
-                  <Text selectable style={{ color: colors.success, fontSize: 15, fontVariant: ["tabular-nums"], fontWeight: "900" }}>{revealedPhone}</Text>
-                </Pressable>
-              ) : (
-                <Pressable onPress={() => void revealPhone()} disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} accessibilityRole="button" accessibilityLabel={translateCopy("Numarayı göster", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", opacity: revealingPhone ? 0.7 : 1, paddingVertical: 12 }}>
-                  <MaterialCommunityIcons name="phone-outline" size={16} color={colors.primaryDark} />
-                  <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{revealingPhone ? translateCopy("Yükleniyor…", language) : translateCopy("Numarayı Göster", language)}</Text>
-                </Pressable>
-              ))}
-            </View>
-          ) : null}
-
-          {/* Satıcı mini kartı */}
-          <View style={{ alignItems: "center", borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingTop: 12 }}>
-            <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, height: 40, justifyContent: "center", width: 40 }}>
-              <Text style={{ color: colors.primaryDark, fontSize: 15, fontWeight: "900" }}>{(owner?.name ?? "S").slice(0, 1).toLocaleUpperCase("tr-TR")}</Text>
-            </View>
-            <View style={{ flex: 1, gap: 1, minWidth: 0 }}>
-              <View style={{ alignItems: "center", flexDirection: "row", gap: 5 }}>
-                <Text numberOfLines={2} style={{ color: colors.ink, flexShrink: 1, fontSize: 14, fontWeight: "900", lineHeight: 18 }}>{owner?.name ?? translateCopy("Satıcı", language)}</Text>
-                {!isDemo && (owner?.verifiedPhone || owner?.verifiedIdentity) ? <MaterialCommunityIcons name="check-decagram" size={14} color={colors.primary} /> : null}
-                {!isDemo && owner?.rating ? <Text style={{ color: colors.gold, fontSize: 12, fontWeight: "800" }}>★ {owner.rating.toFixed(1)}</Text> : null}
-              </View>
-              <Text numberOfLines={2} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700", lineHeight: 15 }}>{isDemo ? translateCopy("Örnek vitrin satıcısı", language) : translateCopy("Doğrulanmış güven karnesi henüz yok", language)}</Text>
-              {!isDemo ? (
-                <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4, marginTop: 1 }}>
-                  <MaterialCommunityIcons name="storefront-outline" size={11} color={colors.subtle} />
-                  <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>
-                    {sellerActiveCount} {translateCopy("aktif ilan", language)}{sellerSales > 0 ? ` · ${sellerSales} ${translateCopy("tamamlanan satış", language)}` : ""}
-                  </Text>
-                </View>
-              ) : null}
-              {/* Gerçek doğrulama rozetleri (yalnız kazanılanlar; şirket/banka gibi uygulanmayan gösterilmez). */}
-              {!isDemo ? <View style={{ marginTop: 5 }}><VerificationBadges user={owner} size="sm" /></View> : null}
-            </View>
-            <Link href={{ pathname: "/store/[id]", params: { id: currentListing.ownerId } }} asChild>
-              <Pressable accessibilityRole="link" accessibilityLabel={translateCopy("Mağazayı aç", language)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 12, paddingVertical: 8 }}>
-                <MaterialCommunityIcons name="store-search-outline" size={14} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Mağaza", language)}</Text>
-              </Pressable>
-            </Link>
+      ) : (
+        /* DAR: tek sütun — galeri tam genişlik, ardından aynı sırayla kartlar. */
+        <View style={{ gap: detail.gap }}>
+          {galleryBlock}
+          <View style={{ gap: detail.gap, paddingHorizontal: detail.gutter }}>
+            {headCard}
+            {bodySections}
           </View>
         </View>
-      </View>
-      </View>
+      )}
 
-      <View style={{ gap: 12, paddingHorizontal: isWideWeb ? 0 : 12 }}>
-        {/* Kazanç hesaplayıcı (adet stepper + projeksiyon) KALDIRILDI — kullanıcı istemiyor.
-            Kazanç bilgisi zaten "Ortak Ol (%X Kazan)" butonunda + Ürün Detayları tablosunda var. */}
-        {partnership ? <Accordion title={translateCopy("Ortaklık kaydın", language)} icon="file-document-outline"><AgreementCard listing={currentListing} partnership={partnership} /></Accordion> : null}
-
-        <View style={{ gap: 10 }}>
-          <Accordion title={translateCopy("Ürün açıklaması", language)} icon="text-box-outline" defaultOpen>
-            <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>{currentListing.description}</Text>
-            {currentListing.salesPitch.slice(0, 4).map((line) => (
-              <Bullet key={line} icon="check-circle-outline" text={line} tone="info" />
-            ))}
-          </Accordion>
-          {/* Özellikler & Donanım (Sahibinden tarzı) — çok-seçimli donanım/güvenlik/
-              konfor dizileri çip olarak. Skaler özellikler yukarıdaki İlan Bilgileri kutusunda. */}
-          {(() => {
-            const listSpecs = describeAttributes(currentListing.attributes).filter((r) => r.items && r.items.length);
-            if (listSpecs.length === 0) return null;
-            return (
-              <Accordion title={translateCopy("Özellikler & Donanım", language)} icon="star-check-outline" defaultOpen>
-                <View style={{ gap: 12 }}>
-                  {listSpecs.map((row) => (
-                    <View key={row.label} style={{ gap: 7 }}>
-                      <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>{translateCopy(row.label, language)}</Text>
-                      <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-                        {(row.items ?? []).map((it) => (
-                          <View key={it} style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 6 }}>
-                            <MaterialCommunityIcons name="check" size={13} color={colors.primaryDark} />
-                            <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "700" }}>{translateCopy(it, language)}</Text>
-                          </View>
-                        ))}
-                      </View>
-                    </View>
-                  ))}
-                </View>
-              </Accordion>
-            );
-          })()}
-          <Accordion title={translateCopy("İlan detayları", language)} icon="format-list-bulleted">
-            <SpecRow label="Kategori" value={currentListing.category} />
-            {currentListing.attributes?.listingType ? <SpecRow label="İlan tipi" value={String(currentListing.attributes.listingType)} /> : null}
-            <SpecRow label="Konum" value={currentListing.location} />
-            <SpecRow label="Stok" value={`${currentListing.stockCount} ${translateCopy("adet", language)}`} />
-            <SpecRow label="Komisyon" value={currentListing.commissionType === "rate" ? `%${currentListing.commissionValue}` : moneyIn(commission, currentListing.currency)} />
-            <SpecRow label="Ortak kazancı" value={moneyIn(commission, currentListing.currency)} />
-            <SpecRow label="Ortaklık" value={currentListing.partnershipMode === "open" ? "Anında ortaklık" : isInviteMode ? "Davetle ortaklık" : "Satıcı onaylı"} />
-            {currentListing.minPartnerRating > 0 ? <SpecRow label="Min. ortak puanı" value={`${currentListing.minPartnerRating}+`} /> : null}
-            <SpecRow label="Komisyon vadesi" value={`${currentListing.commissionDueDays} ${translateCopy("gün", language)}`} />
-            <SpecRow label="İade süresi" value={`${currentListing.returnWindowDays} ${translateCopy("gün", language)}`} />
-            <SpecRow label="Atıf (referans) süresi" value={`${currentListing.attributionWindowDays} ${translateCopy("gün", language)}`} />
-            <SpecRow label="İletişim" value={contactLabel(currentListing.contactMethod)} />
-          </Accordion>
-          <Accordion title={translateCopy("Teslimat ve iade", language)} icon="truck-outline">
-            <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "500", lineHeight: 22 }}>
-              {translateCopy("Teslimat ve ödeme, satıcı ile alıcı arasında", language)} {translateCopy(contactLabel(currentListing.contactMethod), language)}{translateCopy(" üzerinden kararlaştırılır. İade ve değişim koşullarını satışı kapatmadan önce satıcıyla netleştir.", language)}
-            </Text>
-            <View style={{ marginTop: 8 }}><LegalDisclaimerCollapsible /></View>
-          </Accordion>
-          <Accordion title={translateCopy("Sıkça sorulan sorular", language)} icon="comment-question-outline">
-            <SpecRow label="Komisyonu kim öder?" value="İlan sahibi, satış gerçekleştiğinde ortağa öder." />
-            <SpecRow label="Ortak olmak ücretli mi?" value="Hayır, ortaklık ücretsizdir." />
-            <SpecRow label="Süreç güvenli mi?" value="Komisyon şartı ve talepler sistemde kayıt altındadır." />
-          </Accordion>
-        </View>
-
+      <View style={{ gap: detail.gap, marginTop: detail.gap, paddingHorizontal: isWideWeb ? 0 : detail.gutter }}>
         <ListingQA listingId={currentListing.id} isOwner={isOwner} isDemo={isDemo} />
 
         <RelatedListingsSection
           cardWidth={relatedCardWidth}
           listings={sellerOtherListings}
           ownersById={(ownerId) => findUser(ownerId)}
-          title={translateCopy("Satıcının diğer ürünleri", language)}
+          title="Satıcının diğer ürünleri"
           actionLabel={translateCopy("Mağazayı aç", language)}
           actionHref={{ pathname: "/store/[id]", params: { id: currentListing.ownerId } }}
-          emptyText={translateCopy("Bu satıcının başka aktif ürünü yok.", language)}
         />
 
         <RelatedListingsSection
           cardWidth={relatedCardWidth}
           listings={similarFinal}
           ownersById={(ownerId) => findUser(ownerId)}
-          title={translateCopy("Benzer ürünler", language)}
-          emptyText={translateCopy("Bu kategoride başka aktif ürün yok.", language)}
+          title="Benzer ürünler"
         />
 
-        {recentViewed.length > 0 ? (
-          <RelatedListingsSection
-            cardWidth={relatedCardWidth}
-            listings={recentViewed}
-            ownersById={(ownerId) => findUser(ownerId)}
-            title={translateCopy("Son gezdiklerin", language)}
-            emptyText=""
-          />
-        ) : null}
+        <RelatedListingsSection
+          cardWidth={relatedCardWidth}
+          listings={recentViewed}
+          ownersById={(ownerId) => findUser(ownerId)}
+          title="Son gezdiklerin"
+        />
 
-        <Card>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-            <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>{translateCopy("Yorumlar", language)}</Text>
-            <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "900" }}>{listingReviews.length}</Text>
-          </View>
+        <DetailSection title="Yorumlar" icon="star-outline" testID="listing-section-reviews" right={<Text style={{ color: colors.muted, fontSize: 12, fontVariant: ["tabular-nums"], fontWeight: "700" }}>{listingReviews.length}</Text>}>
+          {/* Satış sonrası yorum formu — paylaşılan bileşen (puan boş başlar, çift-gönderim kilidi, min. uzunluk). */}
           {reviewableSale ? (
-            <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 10, padding: 10 }}>
-              <Text selectable style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>{translateCopy("Satış sonrası yorum hakkın var", language)}</Text>
-              <StarRatingInput value={reviewRating} onChange={setReviewRating} />
-              <Field label="Yorum" value={reviewComment} onChangeText={setReviewComment} multiline />
-              <PrimaryButton tone="secondary" icon="star-outline" onPress={handleSaleReview}>{translateCopy("Yorumu kaydet", language)}</PrimaryButton>
+            <View style={{ borderBottomColor: colors.line, borderBottomWidth: 1, paddingBottom: 12 }}>
+              <SaleReviewForm saleId={reviewableSale.id} title={translateCopy("Satış sonrası yorum hakkın var", language)} createSaleReview={createSaleReview} />
             </View>
           ) : null}
-          {listingReviews.length === 0 ? (
+          {listingReviews.length > 0 ? (
+            <RatingSummary stats={ratingStats(listingReviews.map((r) => r.rating))} language={language} />
+          ) : (
             <Text selectable style={{ color: colors.muted, fontSize: 13, lineHeight: 18 }}>
-              {translateCopy("Bu ürün için henüz yorum yok.", language)}
+              {translateCopy("Henüz değerlendirme yok", language)}
             </Text>
-          ) : null}
+          )}
           {/* Paylaşılan ReviewCard (mağaza sayfasıyla AYNI): kendi yorumunu düzenle/sil,
-              satıcı yanıtı, faydalı oyu, şikayet. Burada eskiden salt-okunur bir kopya vardı. */}
+              satıcı yanıtı, faydalı oyu, şikayet. */}
           {listingReviews.map((item) => (
             <ReviewCard
               key={item.id}
@@ -1342,12 +1137,30 @@ export default function ListingDetailScreen() {
               onEdit={editReview}
               onDelete={deleteReview}
               onReport={reportReview}
+              onPatch={(rid, patch) => setFetchedReviews((rs) => rs.map((r) => (r.id === rid ? { ...r, ...patch } : r)))}
+              onRemove={(rid) => setFetchedReviews((rs) => rs.filter((r) => r.id !== rid))}
               language={language}
             />
           ))}
-        </Card>
+        </DetailSection>
+        <View testID="listing-detail-end" />
       </View>
       </WebContainer>
+
+      {/* Dar ekran "diğer işlemler" menüsü: karşılaştır / bildir (fotoğraf üstündeki ⋯). */}
+      <OptionSheet
+        visible={moreOpen}
+        title={translateCopy("Diğer işlemler", language)}
+        allowClear={false}
+        searchable={false}
+        options={moreOptions}
+        onClose={() => setMoreOpen(false)}
+        onSelect={(v) => {
+          setMoreOpen(false);
+          if (v === moreCompareLabel) toggleCompare(currentListing.id);
+          else if (v === moreReportLabel) setReportOpen(true);
+        }}
+      />
 
       {/* Tam ekran görsel (lightbox) */}
       {/* Şikayet nedeni seçici (spec 80) */}
@@ -1389,7 +1202,7 @@ export default function ListingDetailScreen() {
                 multiline
                 placeholder={translateCopy("Ör. Nakit alırım, bugün gelebilirim.", language)}
                 placeholderTextColor={colors.subtle}
-                style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13.5, minHeight: 70, padding: 10, textAlignVertical: "top" }}
+                style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: Platform.OS === "web" ? 16 : 13.5, minHeight: 70, padding: 10, textAlignVertical: "top" }}
               />
             </View>
             {offerErr ? <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "800" }}>{offerErr}</Text> : null}
@@ -1450,7 +1263,7 @@ export default function ListingDetailScreen() {
                 );
               })}
             </View>
-            <TextInput value={reportDetail} onChangeText={setReportDetail} placeholder={translateCopy("İstersen kısa bir açıklama ekle (opsiyonel)", language)} placeholderTextColor={colors.subtle} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 13, minHeight: 64, padding: 12, textAlignVertical: "top" }} />
+            <TextInput value={reportDetail} onChangeText={setReportDetail} placeholder={translateCopy("İstersen kısa bir açıklama ekle (opsiyonel)", language)} placeholderTextColor={colors.subtle} multiline style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: Platform.OS === "web" ? 16 : 13, minHeight: 64, padding: 12, textAlignVertical: "top" }} />
             <View style={{ flexDirection: "row", gap: 10, justifyContent: "flex-end" }}>
               <Pressable onPress={() => setReportOpen(false)} style={{ borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text></Pressable>
               <Pressable onPress={() => void submitReport()} style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, paddingHorizontal: 18, paddingVertical: 11 }}><Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{translateCopy("Bildir", language)}</Text></Pressable>
@@ -1461,7 +1274,7 @@ export default function ListingDetailScreen() {
       </Modal>
 
       <Modal visible={lightbox} transparent animationType="fade" onRequestClose={() => { setLightbox(false); setZoomed(false); }}>
-        <View style={{ backgroundColor: "rgba(0,0,0,0.92)", flex: 1, justifyContent: "center" }}>
+        <View testID="listing-web-lightbox" style={{ backgroundColor: "rgba(0,0,0,0.92)", flex: 1, justifyContent: "center" }}>
           <Pressable accessibilityLabel={translateCopy("Kapat", language)} onPress={() => { setLightbox(false); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 42, justifyContent: "center", position: "absolute", right: 18, top: 18, width: 42, zIndex: 5 }}>
             <MaterialCommunityIcons name="close" size={24} color="#FFFFFF" />
           </Pressable>
@@ -1469,18 +1282,18 @@ export default function ListingDetailScreen() {
             onPress={() => setZoomed((z) => !z)}
             accessibilityRole="imagebutton"
             accessibilityLabel={zoomed ? translateCopy("Uzaklaştır", language) : translateCopy("Yakınlaştır", language)}
-            onTouchStart={(e) => { swipeStartX.current = e.nativeEvent.pageX; }}
+            onTouchStart={(e) => { swipeStartX.current = touchPageX(e); }}
             onTouchEnd={(e) => {
-              const dx = e.nativeEvent.pageX - swipeStartX.current;
+              const dx = touchPageX(e) - swipeStartX.current;
               if (!zoomed && Math.abs(dx) > 50 && gallery.length > 1) {
-                setActiveImage((dx < 0 ? galleryIdx + 1 : galleryIdx - 1 + gallery.length) % gallery.length);
+                setActiveImage((dx < 0 ? photoIdx + 1 : photoIdx - 1 + gallery.length) % gallery.length);
               }
             }}
             style={{ alignItems: "center", height: "78%", justifyContent: "center", overflow: "hidden", width: "100%" }}
           >
             <SafeRemoteImage
               full
-              uri={gallery[galleryIdx] ?? currentListing.image}
+              uri={gallery[photoIdx] ?? currentListing.image}
               alt={currentTitle}
               accessibilityLabel={currentTitle}
               style={{ height: "100%", transform: [{ scale: zoomed ? 2.2 : 1 }], width: "100%" }}
@@ -1496,15 +1309,15 @@ export default function ListingDetailScreen() {
           </View>
           {gallery.length > 1 ? (
             <>
-              <Pressable accessibilityLabel={translateCopy("Önceki görsel", language)} onPress={() => { setActiveImage((galleryIdx - 1 + gallery.length) % gallery.length); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", left: 14, position: "absolute", top: "46%", width: 48 }}>
+              <Pressable accessibilityLabel={translateCopy("Önceki görsel", language)} onPress={() => { setActiveImage((photoIdx - 1 + gallery.length) % gallery.length); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", left: 14, position: "absolute", top: "46%", width: 48 }}>
                 <MaterialCommunityIcons name="chevron-left" size={30} color="#FFFFFF" />
               </Pressable>
-              <Pressable accessibilityLabel={translateCopy("Sonraki görsel", language)} onPress={() => { setActiveImage((galleryIdx + 1) % gallery.length); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", position: "absolute", right: 14, top: "46%", width: 48 }}>
+              <Pressable accessibilityLabel={translateCopy("Sonraki görsel", language)} onPress={() => { setActiveImage((photoIdx + 1) % gallery.length); setZoomed(false); }} style={{ alignItems: "center", backgroundColor: "rgba(255,255,255,0.14)", borderRadius: 999, height: 48, justifyContent: "center", position: "absolute", right: 14, top: "46%", width: 48 }}>
                 <MaterialCommunityIcons name="chevron-right" size={30} color="#FFFFFF" />
               </Pressable>
               <View style={{ alignItems: "center", bottom: 26, flexDirection: "row", gap: 8, justifyContent: "center", left: 0, position: "absolute", right: 0 }}>
                 {gallery.map((_, i) => (
-                  <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${i + 1}. görsele git`} hitSlop={10} onPress={() => setActiveImage(i)} style={{ backgroundColor: i === galleryIdx ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 999, height: 8, width: i === galleryIdx ? 22 : 8 }} />
+                  <Pressable key={i} accessibilityRole="button" accessibilityLabel={`${i + 1}. görsele git`} hitSlop={10} onPress={() => setActiveImage(i)} style={{ backgroundColor: i === photoIdx ? "#FFFFFF" : "rgba(255,255,255,0.4)", borderRadius: 999, height: 8, width: i === photoIdx ? 22 : 8 }} />
                 ))}
               </View>
             </>
@@ -1516,7 +1329,7 @@ export default function ListingDetailScreen() {
         her zaman erişilebilir kalır (Trendyol/Sahibinden deseni). Masaüstünde sağ karar kutusu
         zaten hep görünür; native/dar-web'de yoktu → dönüşüm sızıntısı. Aynı handler'ları kullanır. */}
     {showMobileActionBar ? (
-      <View testID="listing-detail-actions" style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, bottom: 0, elevation: 12, flexDirection: "row", gap: 10, left: 0, paddingBottom: 12 + insets.bottom, paddingHorizontal: 14, paddingTop: 10, position: "absolute", right: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 8 }}>
+      <View testID="listing-detail-actions" onLayout={(e) => { const h = Math.round(e.nativeEvent.layout.height); setBarHeight((prev) => (prev === h ? prev : h)); }} style={{ alignItems: "center", backgroundColor: colors.surface, borderTopColor: colors.line, borderTopWidth: 1, bottom: 0, elevation: 12, flexDirection: "row", gap: 10, left: 0, paddingBottom: 12 + insets.bottom, paddingHorizontal: 14, paddingTop: 10, position: "absolute", right: 0, shadowColor: "#000", shadowOffset: { width: 0, height: -2 }, shadowOpacity: 0.1, shadowRadius: 8 }}>
         {!isOwner && !canJoinNow && width >= 390 ? (
           <View style={{ minWidth: 0, flexShrink: 1, maxWidth: "35%" }}>
             <Text style={{ color: colors.muted, fontSize: 10.5, fontWeight: "700" }}>{translateCopy("Fiyat", language)}</Text>
@@ -1530,21 +1343,32 @@ export default function ListingDetailScreen() {
             canJoinNow ? (
               <View style={{ flex: 1 }}><PrimaryButton icon="handshake" onPress={handleJoin}>{translateCopy("Ortak Ol", language)}</PrimaryButton></View>
             ) : (
-              <View style={{ flex: 1 }}><PrimaryButton icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy("Mesaj gönder", language)}</PrimaryButton></View>
+              <View style={{ flex: 1 }}><PrimaryButton icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(contentWidth < 360 ? "Mesaj" : "Mesaj gönder", language)}</PrimaryButton></View>
             )
           ) : canJoinNow ? (
             <>
-              <View style={{ flex: 1 }}><PrimaryButton tone="secondary" icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(currentListing.contactMethod === "message" ? "Mesaj gönder" : currentListing.contactMethod === "phone" ? "Satıcıyı ara" : "WhatsApp", language)}</PrimaryButton></View>
+              <View style={{ flex: 1 }}><PrimaryButton tone="secondary" icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(barContactLabel, language)}</PrimaryButton></View>
               <View style={{ flex: 1 }}><PrimaryButton icon="handshake" onPress={handleJoin}>{translateCopy("Ortak Ol", language)}</PrimaryButton></View>
             </>
           ) : (
-            <View style={{ flex: 1 }}><PrimaryButton icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(currentListing.contactMethod === "message" ? "Mesaj gönder" : currentListing.contactMethod === "phone" ? "Satıcıyı ara" : "WhatsApp", language)}</PrimaryButton></View>
+            <View style={{ flex: 1 }}><PrimaryButton icon="message-text-outline" disabled={revealingPhone || isOwner || isUserBlocked(currentListing.ownerId)} onPress={() => void handleContact()}>{translateCopy(barContactLabel, language)}</PrimaryButton></View>
           )}
         </View>
       </View>
     ) : null}
     </View>
   );
+}
+
+/**
+ * Dokunuşun sayfa-X'i. Web'de DOM TouchEvent'in `pageX`'i YOKTUR (touches/changedTouches
+ * içindedir) → eski `nativeEvent.pageX` web'de undefined dönüyor, kaydırma hiç çalışmıyordu.
+ * Native'de RN `nativeEvent.pageX` verir. İkisini de karşılar; bulunamazsa NaN (kaydırma sayılmaz).
+ */
+function touchPageX(e: unknown): number {
+  const n = (e as { nativeEvent?: { pageX?: number; changedTouches?: ArrayLike<{ pageX: number }>; touches?: ArrayLike<{ pageX: number }> } } | null)?.nativeEvent;
+  const x = n?.changedTouches?.[0]?.pageX ?? n?.touches?.[0]?.pageX ?? n?.pageX;
+  return typeof x === "number" ? x : Number.NaN;
 }
 
 function contactLabel(method: "whatsapp" | "phone" | "message") {
@@ -1557,7 +1381,6 @@ function RelatedListingsSection({
   actionHref,
   actionLabel,
   cardWidth,
-  emptyText,
   listings,
   ownersById,
   title
@@ -1565,50 +1388,48 @@ function RelatedListingsSection({
   actionHref?: Href;
   actionLabel?: string;
   cardWidth: number;
-  emptyText: string;
   listings: Listing[];
   ownersById: (ownerId: string) => User | undefined;
   title: string;
 }) {
-  const { language } = useLanguage();
-
+  // Boş bölüm gösterilmez ("başka ürün yok" kartı görsel gürültüydü).
+  if (listings.length === 0) return null;
   return (
-    <Card>
-      <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-        <Text selectable numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 17, fontWeight: "900", lineHeight: 22 }}>{translateCopy(title, language)}</Text>
-        {actionHref && actionLabel ? <PrimaryButton href={actionHref} tone="secondary" icon="store-search-outline">{actionLabel}</PrimaryButton> : null}
-      </View>
-      {listings.length === 0 ? (
-        <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "800", lineHeight: 18 }}>{translateCopy(emptyText, language)}</Text>
-      ) : (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
-          {listings.map((item) => (
-            <ListingCard key={item.id} listing={item} owner={ownersById(item.ownerId)} width={cardWidth} />
-          ))}
-        </ScrollView>
-      )}
-    </Card>
+    <DetailSection
+      title={title}
+      right={actionHref && actionLabel ? (
+        <PressLink href={actionHref} hitSlop={8} style={{ alignItems: "center", flexDirection: "row", gap: 2, justifyContent: "center", minHeight: 32 }}>
+          <Text style={{ color: colors.primary, fontSize: 12.5, fontWeight: "700" }}>{actionLabel}</Text>
+          <MaterialCommunityIcons name="chevron-right" size={16} color={colors.primary} />
+        </PressLink>
+      ) : undefined}
+    >
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10, paddingRight: 4 }}>
+        {listings.map((item) => (
+          <ListingCard key={item.id} listing={item} owner={ownersById(item.ownerId)} width={cardWidth} />
+        ))}
+      </ScrollView>
+    </DetailSection>
   );
 }
 
-
-function IconButton({ active, icon, label, onPress }: { active?: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void }) {
+/** Geniş ekran ikincil işlem: zeminsiz, sessiz metin düğmesi (40px dokunma). */
+function QuietAction({ active, icon, label, onPress }: { active?: boolean; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; onPress: () => void }) {
   const { language } = useLanguage();
-  const wide = useIsWideWeb();
   return (
-    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} accessibilityLabel={translateCopy(label, language)} onPress={onPress} style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primarySoft : colors.surfaceAlt, borderRadius: 10, flex: 1, minWidth: 0, flexDirection: "row", gap: wide ? 6 : 4, justifyContent: "center", minHeight: wide ? 44 : 40, paddingHorizontal: 2, opacity: pressed ? 0.72 : 1 })}>
-      <MaterialCommunityIcons name={icon} size={18} color={active ? colors.primaryDark : colors.ink} />
-      <Text ellipsizeMode="tail" numberOfLines={1} style={{ color: active ? colors.primaryDark : colors.ink, flexShrink: 1, fontSize: wide ? 13 : 11, fontWeight: "600" }}>{translateCopy(label, language)}</Text>
+    <Pressable accessibilityRole="button" accessibilityState={{ selected: !!active }} accessibilityLabel={translateCopy(label, language)} onPress={onPress} style={{ alignItems: "center", borderRadius: 8, flexDirection: "row", gap: 6, minHeight: 40, paddingHorizontal: 10 }}>
+      <MaterialCommunityIcons name={icon} size={17} color={active ? colors.primary : colors.muted} />
+      <Text numberOfLines={1} style={{ color: active ? colors.primary : colors.muted, fontSize: 12.5, fontWeight: "600" }}>{translateCopy(label, language)}</Text>
     </Pressable>
   );
 }
 
-function Bullet({ icon, text, tone }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; text: string; tone: "success" | "info" }) {
+function Bullet({ icon, text }: { icon: keyof typeof MaterialCommunityIcons.glyphMap; text: string }) {
   const { language } = useLanguage();
   return (
     <View style={{ flexDirection: "row", gap: 8 }}>
-      <MaterialCommunityIcons name={icon} size={18} color={tone === "success" ? colors.success : colors.info} />
-      <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 14, lineHeight: 20 }}>{translateCopy(text, language)}</Text>
+      <MaterialCommunityIcons name={icon} size={16} color={colors.primary} style={{ marginTop: 2 }} />
+      <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 13.5, lineHeight: 20, minWidth: 0 }}>{translateCopy(text, language)}</Text>
     </View>
   );
 }
@@ -1619,32 +1440,6 @@ function SpecRow({ label, value }: { label: string; value: string }) {
     <View style={{ alignItems: "flex-start", flexDirection: "row", gap: 12, paddingVertical: 4 }}>
       <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "700", width: 130 }}>{translateCopy(label, language)}</Text>
       <Text selectable style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600", lineHeight: 20 }}>{translateCopy(value, language)}</Text>
-    </View>
-  );
-}
-
-function Field({ label, value, onChangeText, multiline }: { label: string; value: string; onChangeText: (value: string) => void; multiline?: boolean }) {
-  const { language } = useLanguage();
-  return (
-    <View style={{ gap: 6 }}>
-      <Text selectable style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy(label, language)}</Text>
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        multiline={multiline}
-        placeholderTextColor={colors.muted}
-        style={{
-          backgroundColor: colors.surfaceAlt,
-          borderColor: colors.line,
-          borderRadius: 8,
-          borderWidth: 1,
-          color: colors.ink,
-          fontSize: 15,
-          minHeight: multiline ? 82 : 46,
-          padding: 12,
-          textAlignVertical: multiline ? "top" : "center"
-        }}
-      />
     </View>
   );
 }

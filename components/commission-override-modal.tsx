@@ -66,7 +66,7 @@ export function CommissionOverrideModal({
               const on = type === k;
               return (
                 <Pressable key={k} disabled={busy} onPress={() => setType(k)} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 10 }}>
-                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy(k === "rate" ? "Yüzde (%)" : "Sabit (₺)", language)}</Text>
+                  <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 13, fontWeight: "800" }}>{k === "rate" ? translateCopy("Yüzde (%)", language) : `${translateCopy("Sabit", language)} (${currency === "USD" ? "$" : currency === "EUR" ? "€" : "₺"})`}</Text>
                 </Pressable>
               );
             })}

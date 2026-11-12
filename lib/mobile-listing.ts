@@ -5,8 +5,13 @@ export const listingStatusLabels: Record<Listing["status"], string> = {
   active: "Yayında", draft: "Taslak", pending_review: "İncelemede", paused: "Yayından kaldırıldı",
   expired: "Süresi doldu", sold: "Satıldı", rejected: "Reddedildi", archived: "Arşivlendi",
 };
-export const listingPhotos = (listing: Pick<Listing, "image" | "imageUrl" | "adAssets">) =>
+type ListingMediaRef = Pick<Listing, "image" | "imageUrl" | "adAssets">;
+const VIDEO_URL = /\.(mp4|mov|m4v|webm)(\?|#|$)/i;
+/** Kapak + adAssets: fotoğraflar VE (varsa, sonda) tek ilan videosu. */
+export const listingMedia = (listing: ListingMediaRef) =>
   [...new Set([listing.imageUrl || listing.image, ...(listing.adAssets ?? [])].filter((s): s is string => typeof s === "string").map(s => s.trim()).filter(Boolean))];
+/** Yalnız FOTOĞRAFLAR (video hariç) — sayaçlar, küçük resimler ve kapak seçimi bunu kullanır. */
+export const listingPhotos = (listing: ListingMediaRef) => listingMedia(listing).filter((uri) => !VIDEO_URL.test(uri));
 export function maximumPartners(listing: Pick<Listing, "attributes">) {
   const value = Number(listing.attributes?._maxPartners);
   return Number.isSafeInteger(value) && value > 0 ? value : null;

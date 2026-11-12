@@ -17,8 +17,13 @@
       ],
       "infoPlist": {
         "ITSAppUsesNonExemptEncryption": false,
-        "NSPhotoLibraryUsageDescription": "OrtakSat ilan fotoğrafı seçmek için galeri erişimi ister.",
-        "NSCameraUsageDescription": "OrtakSat, ilan fotoğrafını doğrudan çekebilmen için kamera erişimi ister."
+        "NSPhotoLibraryUsageDescription": "OrtakSat; ilan fotoğrafı ve videosu, profil fotoğrafı ve mesaj, destek, şikâyet ya da doğrulama eki seçebilmen için galerine erişir.",
+        "NSCameraUsageDescription": "OrtakSat; ilan fotoğrafını ve profil fotoğrafını doğrudan çekebilmen için kameraya erişir.",
+        "NSLocationWhenInUseUsageDescription": "OrtakSat; yakınındaki ilanları göstermek, ilan konumunu doldurmak ve istersen sohbette konum paylaşmak için konumunu kullanır.",
+        "CFBundleDevelopmentRegion": "tr",
+        "CFBundleLocalizations": [
+          "tr"
+        ]
       }
     },
     "android": {
@@ -38,32 +43,32 @@
             {
               "scheme": "https",
               "host": "ortaksat.com",
-              "pathPrefix": "/i"
+              "pathPrefix": "/i/"
             },
             {
               "scheme": "https",
               "host": "ortaksat.com",
-              "pathPrefix": "/listing"
+              "pathPrefix": "/listing/"
             },
             {
               "scheme": "https",
               "host": "ortaksat.com",
-              "pathPrefix": "/onay"
+              "pathPrefix": "/onay/"
             },
             {
               "scheme": "https",
               "host": "www.ortaksat.com",
-              "pathPrefix": "/i"
+              "pathPrefix": "/i/"
             },
             {
               "scheme": "https",
               "host": "www.ortaksat.com",
-              "pathPrefix": "/listing"
+              "pathPrefix": "/listing/"
             },
             {
               "scheme": "https",
               "host": "www.ortaksat.com",
-              "pathPrefix": "/onay"
+              "pathPrefix": "/onay/"
             }
           ],
           "category": [
@@ -89,8 +94,9 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "OrtakSat ilan fotoğrafı seçmek için galeri erişimi ister.",
-          "cameraPermission": "OrtakSat, ilan fotoğrafını doğrudan çekebilmen için kamera erişimi ister."
+          "photosPermission": "OrtakSat; ilan fotoğrafı ve videosu, profil fotoğrafı ve mesaj, destek, şikâyet ya da doğrulama eki seçebilmen için galerine erişir.",
+          "cameraPermission": "OrtakSat; ilan fotoğrafını ve profil fotoğrafını doğrudan çekebilmen için kameraya erişir.",
+          "microphonePermission": false
         }
       ],
       [
@@ -116,7 +122,15 @@
       [
         "expo-location",
         {
-          "locationWhenInUsePermission": "OrtakSat, yakınındaki ilanları göstermek için konumunu kullanır."
+          "locationWhenInUsePermission": "OrtakSat; yakınındaki ilanları göstermek, ilan konumunu doldurmak ve istersen sohbette konum paylaşmak için konumunu kullanır.",
+          "locationAlwaysAndWhenInUsePermission": "OrtakSat; yakınındaki ilanları göstermek, ilan konumunu doldurmak ve istersen sohbette konum paylaşmak için konumunu kullanır.",
+          "locationAlwaysPermission": "OrtakSat; yakınındaki ilanları göstermek, ilan konumunu doldurmak ve istersen sohbette konum paylaşmak için konumunu kullanır."
+        }
+      ],
+      [
+        "expo-secure-store",
+        {
+          "faceIDPermission": false
         }
       ]
     ],

@@ -1,93 +1,144 @@
 import { ListingTermsSummary } from "@/components/listing-terms-summary";
 import { listingJoinAction, type ListingJoinAction } from "@/lib/listing-actions";
-import { listingCommissionDisplay, listingPhotos } from "@/lib/mobile-listing";
+import { listingMedia } from "@/lib/mobile-listing";
 import { useBackNavigation } from "@/lib/use-back-navigation";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { displayListingTitle } from "@/lib/listing-title";
-import { UserAvatar } from "@/components/user-avatar";
 import { useEffect, useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { Stack, useRouter } from "expo-router";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
-import { BrandMark } from "@/components/brand/brand-mark";
 import { OptionSheet } from "@/components/option-sheet";
-import { describeAttributes } from "@/lib/category-tree";
-import { groupThousands, moneyIn } from "@/lib/format";
-import { openUrlSafe } from "@/lib/link";
+import { colors } from "@/components/colors";
+import { ClampedText, CommissionSummary, DefinitionGrid, DetailMetaLine, DetailNotice, DetailSection, FeatureChips, GalleryCounter, GalleryNavButtons, GalleryOverlayButton, ListingVideo, LocationRow, SafetyTips, SellerSummary, VideoBadge, VideoThumb, buildSummaryRows, detail, detailPriceFontSize, galleryHeightFor, splitListingMedia } from "@/components/listing-detail/shared";
+import { moneyIn } from "@/lib/format";
+import { translateCopy, useLanguage } from "@/lib/i18n";
 import type { Listing, PartnershipStatus, User } from "@/lib/types";
-import { MobileButton, MobileCard, IconButton, mobile, ms, useMobileLayout } from "./ui";
+import { MobileButton, IconButton, mobile, ms, useMobileLayout } from "./ui";
 
+// NATIVE İLAN DETAYI — web ile AYNI standart (components/listing-detail/shared.tsx):
+// galeri → başlık → FİYAT → meta satırı → ortaklık özeti → Özet → Açıklama →
+// Ortaklık koşulları → Satıcı → Konum → Güvenli alışveriş. Alt aksiyon çubuğu akışın
+// içindedir (mutlak konumlu değil) → içeriği asla örtmez.
 type Props = { listing: Listing; owner?: User; favorite: boolean; onFavorite: () => void; onShare: () => void; onMessage: () => void; onCall: () => void; onJoin: () => void; onReport: (reason: string) => void; isOwner: boolean; unavailable?: string; partnershipStatus?: PartnershipStatus; joinAction?: ListingJoinAction; contactBusy?: boolean; sellerBlocked?: boolean };
 export function MobileListingDetail({ listing: l, owner, favorite, onFavorite, onShare, onMessage, onCall, onJoin, onReport, isOwner, unavailable, partnershipStatus, joinAction: suppliedJoinAction, contactBusy = false, sellerBlocked = false }: Props) {
   const { width, height, insets, tablet, maxWidth } = useMobileLayout();
+  const { language } = useLanguage();
   const router = useRouter();
   const goBack = useBackNavigation();
   const [image, setImage] = useState(0);
   const [lightbox, setLightbox] = useState(false);
-  const [expanded, setExpanded] = useState(false);
   const [menu, setMenu] = useState(false);
   const [report, setReport] = useState(false);
   const galleryRef = useRef<ScrollView>(null);
   const selectedImage = useRef(image); selectedImage.current = image;
-  const photos = listingPhotos(l);
+  // Fotoğraflar + (varsa) TEK video. Video kapak olmaz; galeride daima SON öğedir.
+  const media = splitListingMedia(listingMedia(l));
+  const photos = media.photos;
+  const mediaCount = media.count;
+  const onVideo = !!media.video && image === photos.length;
   const galleryWidth = tablet ? Math.round(maxWidth * 0.55) : width;
-  const galleryHeight = galleryWidth * 0.65 + (tablet ? 0 : insets.top);
-  const photoKey = photos.join("\n");
+  // Telefon: galeri görünür alanın %40'ını aşmaz (başlık + fiyat + komisyon ilk ekranda kalsın).
+  const galleryHeight = tablet ? Math.round(galleryWidth * 0.65) : galleryHeightFor(width, height) + insets.top;
+  const photoKey = [...photos, media.video ?? ""].join("\n");
   useEffect(() => { selectedImage.current = 0; setImage(0); setLightbox(false); galleryRef.current?.scrollTo({ x: 0, animated: false }); }, [l.id, photoKey]);
   useEffect(() => { galleryRef.current?.scrollTo({ x: galleryWidth * selectedImage.current, animated: false }); }, [galleryWidth]);
   useEffect(() => { galleryRef.current?.scrollTo({ x: image * galleryWidth, animated: false }); }, [image, galleryWidth]);
 
-  const a = l.attributes ?? {};
-  const commission = listingCommissionDisplay(l);
   const partnerable = l.partnershipMode !== "none";
-  const details = describeAttributes(a).filter((d) => !/başlık|açıklama|fiyat/i.test(d.label));
-  const info = [["map-marker", l.location], ["calendar", a.year], ["speedometer", a.km != null ? `${groupThousands(Number(a.km))} km` : a.rooms], ["gas-station", a.fuel], ["car-shift-pattern", a.gear ?? a.transmission]] as const;
+  const summary = buildSummaryRows(l, language);
   const joinAction = suppliedJoinAction ?? listingJoinAction({ listing: l, status: partnershipStatus, isOwner, sellerBlocked });
   const joinLabel = joinAction.label;
   const joinDisabled = joinAction.kind === "disabled";
   const contactDisabled = !!(unavailable || l.demo || isOwner || sellerBlocked || contactBusy);
   const externalContact = l.contactMethod === "phone" || l.contactMethod === "whatsapp";
+  const priceLabel = moneyIn(l.price, l.currency);
+  const headWidth = (tablet ? maxWidth - galleryWidth - 20 : width) - (tablet ? 0 : detail.gutter * 2) - detail.pad * 2;
+  const priceSize = detailPriceFontSize(priceLabel, headWidth, 30);
+  const lightboxIndex = Math.min(image, Math.max(0, photos.length - 1));
 
   function selectImage(i: number) { setImage(i); galleryRef.current?.scrollTo({ x: i * galleryWidth, animated: true }); }
   return <View style={ms.screen}>
     <Stack.Screen options={{ headerShown: false }} />
     <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ width: "100%", maxWidth: tablet ? maxWidth : undefined, alignSelf: "center", paddingBottom: 20 }}>
-      <View style={{ flexDirection: tablet ? "row" : "column", paddingTop: tablet ? insets.top + 12 : 0, gap: tablet ? 20 : 0 }}>
+      <View style={{ flexDirection: tablet ? "row" : "column", paddingTop: tablet ? insets.top + 12 : 0, gap: tablet ? 20 : detail.gap }}>
+        {/* GALERİ: kaydır + nokta (telefon), küçük resimler (tablet), sayaç, dokununca tam ekran. */}
         <View style={{ width: galleryWidth }}>
-          <View style={{ height: galleryHeight, backgroundColor: "#DCE6EC" }}>
-            {photos.length ? <ScrollView ref={galleryRef} style={{ flex: 1 }} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setImage(Math.max(0, Math.min(photos.length - 1, Math.round(e.nativeEvent.contentOffset.x / galleryWidth))))}>{photos.map((uri, i) => <Pressable key={`${uri}-${i}`} accessibilityRole="button" accessibilityLabel={`Fotoğrafı büyüt ${i + 1}`} style={{ width: galleryWidth, height: galleryHeight }} onPress={() => { setImage(i); setLightbox(true); }}><SafeRemoteImage full uri={uri} fallbackUri={l.fallbackCategoryImage} style={{ width: galleryWidth, height: "100%" }} contentFit="cover" /></Pressable>)}</ScrollView> : <View accessibilityLabel="İlan fotoğrafı bulunmuyor" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 9 }}><Icon name="image-off-outline" size={42} color={mobile.muted} /><Text style={ms.muted}>Bu ilanda fotoğraf yok</Text></View>}
-            <View style={[s.galleryTools, { top: tablet ? 8 : insets.top + 7 }]}><IconButton name="chevron-left" label="Geri" color="white" style={s.roundButton} onPress={goBack} /><View style={{ flex: 1 }} /><IconButton name={favorite ? "heart" : "heart-outline"} label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"} color="white" style={s.roundButton} onPress={onFavorite} /><IconButton name="share-variant" label="Paylaş" color="white" style={s.roundButton} onPress={onShare} /></View>
-            {partnerable && <View style={s.commission}><Icon name="account-group" size={20} color="white" /><Text style={{ color: "white", fontSize: 15, fontWeight: "700" }}>{commission ? `Komisyon ${commission}` : "Komisyonu satıcıya sor"}</Text></View>}
-            {!!photos.length && <View testID="listing-gallery-counter" style={s.counter}><Icon name="image" size={16} color="white" /><Text style={{ color: "white", fontSize: 13 }}>{image + 1}/{photos.length}</Text></View>}
+          <View style={{ height: galleryHeight, backgroundColor: colors.neutralSoft, borderRadius: tablet ? detail.radius : 0, overflow: "hidden" }}>
+            {mediaCount ? <ScrollView ref={galleryRef} style={{ flex: 1 }} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={(e) => setImage(Math.max(0, Math.min(mediaCount - 1, Math.round(e.nativeEvent.contentOffset.x / galleryWidth))))}>
+              {photos.map((uri, i) => <Pressable key={`${uri}-${i}`} accessibilityRole="button" accessibilityLabel={`Fotoğrafı büyüt ${i + 1}`} style={{ width: galleryWidth, height: galleryHeight }} onPress={() => { setImage(i); setLightbox(true); }}><SafeRemoteImage full uri={uri} fallbackUri={l.fallbackCategoryImage} style={{ width: galleryWidth, height: "100%" }} contentFit="cover" /></Pressable>)}
+              {media.video ? <ListingVideo key="video" uri={media.video} active={onVideo && !lightbox} style={{ width: galleryWidth, height: galleryHeight, paddingTop: tablet ? 0 : insets.top }} /> : null}
+            </ScrollView> : <View accessibilityLabel="İlan fotoğrafı bulunmuyor" style={{ flex: 1, alignItems: "center", justifyContent: "center", gap: 9 }}><Icon name="image-off-outline" size={40} color={mobile.muted} /><Text style={ms.muted}>{translateCopy("Bu ilanda fotoğraf yok", language)}</Text></View>}
+            {/* Fotoğraf üstü küçük düğmeler: 40px dokunma alanı, 34px görsel. */}
+            <View style={[s.galleryTools, { top: tablet ? 6 : insets.top + 4 }]}>
+              <GalleryOverlayButton icon="chevron-left" label="Geri" onPress={goBack} />
+              <View style={{ flex: 1 }} />
+              <GalleryOverlayButton icon={favorite ? "heart" : "heart-outline"} active={favorite} label={favorite ? "Favorilerden çıkar" : "Favorilere ekle"} onPress={onFavorite} />
+              <GalleryOverlayButton icon="share-variant-outline" label="Paylaş" onPress={onShare} />
+              <GalleryOverlayButton icon="dots-horizontal" label="İlan seçenekleri" onPress={() => setMenu(true)} />
+            </View>
+            {!!mediaCount && !onVideo && <View style={s.counter}><GalleryCounter testID="listing-gallery-counter" index={image} total={mediaCount} /></View>}
+            {!!mediaCount && onVideo && <View style={[s.counter, { bottom: undefined, top: (tablet ? 6 : insets.top + 4) + 46 }]}><GalleryCounter testID="listing-gallery-counter" index={image} total={mediaCount} video /></View>}
+            {!tablet && mediaCount > 1 && mediaCount <= 8 && !onVideo && <View style={s.dots}>
+              {Array.from({ length: mediaCount }, (_, i) => <Pressable key={i} accessibilityRole="button" accessibilityLabel={i < photos.length ? `Fotoğraf ${i + 1}` : "Video"} accessibilityState={{ selected: image === i }} aria-pressed={image === i} hitSlop={6} onPress={() => selectImage(i)} style={{ height: 32, justifyContent: "center", paddingHorizontal: 6 }}><View style={{ backgroundColor: i === image ? "#FFFFFF" : "rgba(255,255,255,0.55)", borderRadius: 999, height: 6, width: i === image ? 16 : 6 }} /></Pressable>)}
+            </View>}
+            {/* Video öğesinde noktalar gizlidir (yerel kontrollerle çakışmasın) → görünür önceki/sonraki düğmeleri. */}
+            {onVideo && mediaCount > 1 && <GalleryNavButtons top={(tablet ? 0 : insets.top) + Math.round((galleryHeight - (tablet ? 0 : insets.top)) / 2) - 20} onPrev={() => selectImage((image - 1 + mediaCount) % mediaCount)} onNext={() => selectImage((image + 1) % mediaCount)} />}
+            {!!media.video && !onVideo && <View style={{ position: "absolute", left: 8, bottom: 2 }}><VideoBadge onPress={() => selectImage(mediaCount - 1)} /></View>}
           </View>
-          <HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6, padding: 9 }}>{photos.map((uri, i) => <Pressable key={`${uri}-${i}`} accessibilityRole="button" accessibilityLabel={`Fotoğraf ${i + 1}`} accessibilityState={{ selected: image === i }} aria-pressed={image === i} onPress={() => selectImage(i)} style={{ borderRadius: 7, overflow: "hidden", borderWidth: 1.5, borderColor: i === image ? mobile.teal : "transparent" }}><SafeRemoteImage uri={uri} style={{ width: tablet ? 104 : (width - 50) / 5, height: tablet ? 73 : 48 }} /></Pressable>)}</HorizontalScroll>
+          {tablet && mediaCount > 1 && <HorizontalScroll showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingVertical: 10 }}>
+            {photos.map((uri, i) => <Pressable key={`${uri}-${i}`} accessibilityRole="button" accessibilityLabel={`Fotoğraf ${i + 1}`} accessibilityState={{ selected: image === i }} aria-pressed={image === i} onPress={() => selectImage(i)} style={{ borderRadius: 8, overflow: "hidden", borderWidth: 2, borderColor: i === image ? colors.primary : colors.line }}><SafeRemoteImage uri={uri} style={{ width: 88, height: 62 }} /></Pressable>)}
+            {media.video ? <Pressable accessibilityRole="button" accessibilityLabel="Video" accessibilityState={{ selected: onVideo }} aria-pressed={onVideo} onPress={() => selectImage(mediaCount - 1)} style={{ borderRadius: 8, overflow: "hidden", borderWidth: 2, borderColor: onVideo ? colors.primary : colors.line }}><VideoThumb size={88} height={62} /></Pressable> : null}
+          </HorizontalScroll>}
         </View>
-        <View style={{ flex: 1, paddingHorizontal: tablet ? 0 : 14, paddingTop: tablet ? 10 : 1 }}>
-          <Text accessibilityRole="header" style={s.title}>{displayListingTitle(l.title)}</Text><View style={[ms.row, { justifyContent: "space-between" }]}><Text style={[s.status, !partnerable && { backgroundColor: "#F2F4F7", color: "#475569" }]}>{l.partnershipMode === "invite" ? "Davetle Ortaklık" : partnerable ? "Ortaklığa Açık" : "Ortaklığa Kapalı"}</Text><IconButton name="dots-vertical" label="İlan seçenekleri" onPress={() => setMenu(true)} style={{ width: 22 }} /></View>
-          <Text style={s.price}>{moneyIn(l.price, l.currency)}</Text>
-          <View style={[ms.wrap, { marginVertical: 9 }]}>{info.filter(([, v]) => v != null && v !== "").map(([icon, value]) => <View key={icon} style={{ flexDirection: "row", gap: 4, alignItems: "center" }}><Icon name={icon} size={14} color={mobile.muted} /><Text style={{ color: mobile.muted, fontSize: 11 }}>{String(value)}</Text></View>)}</View>
-          {unavailable && <Text style={ms.error}>{unavailable}</Text>}
-          {l.demo && <Text style={ms.muted}>Örnek ilan — iletişim ve ortaklık işlemleri kapalıdır.</Text>}
-          <MobileCard style={{ flexDirection: "row", alignItems: "center", padding: 10, marginTop: 5 }}>
-            <Pressable accessibilityRole="button" accessibilityLabel="Satıcı profili" onPress={() => owner && router.push(`/store/${owner.id}` as never)} style={{ flexDirection: "row", gap: 8, alignItems: "center", flex: 1 }}><UserAvatar uri={owner?.avatar} style={s.avatar} /><View style={{ flex: 1 }}><View style={ms.row}><Text numberOfLines={1} style={s.owner}>{owner?.name || "Satıcı"}</Text>{(owner?.verifiedIdentity || owner?.verifiedPhone) && <Icon name="check-decagram" size={15} color={mobile.teal} />}</View><Text style={ms.muted}>{owner?.createdAt ? `Üyelik: ${owner.createdAt.slice(0, 4)}` : "OrtakSat üyesi"}</Text><Text style={ms.muted}>{owner?.listingCount ?? 0} aktif ilan</Text></View></Pressable>
-
-          </MobileCard>
-          {partnerable && <ListingTermsSummary key={l.id} listing={l} />}
+        {/* BAŞLIK KARTI: başlık → FİYAT → meta → durum → ortaklık özeti */}
+        <View style={{ flex: tablet ? 1 : undefined, paddingHorizontal: tablet ? 0 : detail.gutter }}>
+          <View testID="listing-detail-head" style={s.head}>
+            <Text accessibilityRole="header" numberOfLines={3} style={s.title}>{displayListingTitle(l.title)}</Text>
+            <Text testID="listing-detail-price" numberOfLines={1} adjustsFontSizeToFit minimumFontScale={0.6} style={[s.price, { fontSize: priceSize, lineHeight: Math.round(priceSize * 1.18) }]}>{priceLabel}</Text>
+            <DetailMetaLine listing={l} />
+            {unavailable ? <DetailNotice icon={l.status === "sold" ? "check-decagram" : "close-circle-outline"} tone="danger" title={unavailable} /> : null}
+            {l.demo ? <DetailNotice icon="eye-outline" tone="neutral" title={translateCopy("Örnek ilan — ortaklık ve iletişim kapalıdır.", language)} /> : null}
+            <CommissionSummary listing={l} demand={l.attributes?._formKey === "arayan"} />
+            {!!joinAction.reason && partnerable && !isOwner ? <Text accessibilityRole="alert" style={{ color: colors.muted, fontSize: 12, lineHeight: 17 }}>{joinAction.reason}</Text> : null}
+          </View>
         </View>
       </View>
-      <View style={{ paddingHorizontal: 14, marginTop: 3 }}>
-        {!!joinAction.reason && partnerable && !isOwner && <MobileCard><Text accessibilityRole="alert" style={ms.muted}>{joinAction.reason}</Text></MobileCard>}
-        {!!details.length && <MobileCard><HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 0 }}>{details.map((d) => <View key={d.label} style={s.attribute}><Icon name={/yıl/i.test(d.label) ? "calendar" : /kilometre/i.test(d.label) ? "speedometer" : /yakıt/i.test(d.label) ? "gas-station" : /vites/i.test(d.label) ? "car-shift-pattern" : /model/i.test(d.label) ? "car" : "tag-outline"} size={21} color="#536074" /><Text style={{ color: mobile.muted, fontSize: 10, marginTop: 6 }}>{d.label}</Text><Text style={{ color: mobile.ink, fontSize: 11, marginTop: 6 }}>{d.value}</Text></View>)}</HorizontalScroll></MobileCard>}
-        <MobileCard><Text style={ms.section}>Açıklama</Text><Text numberOfLines={expanded ? undefined : 5} style={{ color: "#656F80", fontSize: 13, lineHeight: 20 }}>{l.description}</Text><Pressable accessibilityRole="button" onPress={() => setExpanded((v) => !v)} style={ms.row}><Text style={{ color: mobile.teal, fontSize: 12 }}>{expanded ? "Daha Az Göster" : "Daha Fazla Göster"}</Text><Icon name={expanded ? "chevron-up" : "chevron-down"} size={19} color={mobile.teal} /></Pressable></MobileCard>
-        <Text style={[ms.section, { marginVertical: 9 }]}>Konum</Text><Pressable accessibilityRole="button" accessibilityLabel="Konumu haritada aç" onPress={() => void openUrlSafe(`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(l.location)}`)}><MobileCard style={{ flexDirection: "row", alignItems: "center" }}><View style={{ width: 80, height: 48, borderRadius: 8, backgroundColor: "#E5E9F2", justifyContent: "center", alignItems: "center" }}><Icon name="map-marker-radius" size={35} color={mobile.teal} /></View><View style={{ flex: 1 }}><Text style={{ color: mobile.ink, fontSize: 13, fontWeight: "600" }}>{l.location}</Text><Text style={ms.muted}>Haritada aç</Text></View><Icon name="chevron-right" size={22} color={mobile.muted} /></MobileCard></Pressable>
-        <Text style={[ms.muted, { marginVertical: 10, fontSize: 10 }]}>Ödeme ve teslimat satıcı ile alıcı arasında gerçekleşir. OrtakSat aracılık platformudur. İlan no: {l.id.slice(0, 12)}</Text>
+      {/* GÖVDE (sabit sıra) */}
+      <View style={{ paddingHorizontal: tablet ? 0 : detail.gutter, marginTop: detail.gap, gap: detail.gap }}>
+        <DetailSection title="Özet" icon="format-list-bulleted">
+          <DefinitionGrid rows={summary.rows} />
+          <FeatureChips groups={summary.chips} />
+        </DetailSection>
+        <DetailSection title="Açıklama" icon="text-box-outline">
+          <ClampedText key={l.id} text={l.description} />
+        </DetailSection>
+        {partnerable && <ListingTermsSummary key={l.id} listing={l} />}
+        <DetailSection title="Satıcı" icon="account-outline">
+          <SellerSummary owner={owner} ownerId={l.ownerId} demo={!!l.demo} />
+        </DetailSection>
+        <DetailSection title="Konum" icon="map-marker-outline">
+          <LocationRow location={l.location} />
+        </DetailSection>
+        <DetailSection title="Güvenli alışveriş" icon="shield-check-outline">
+          <SafetyTips />
+        </DetailSection>
       </View>
     </ScrollView>
-    <View style={[s.footer, { paddingBottom: Math.max(10, insets.bottom) }]}>{isOwner ? <MobileButton onPress={() => router.push(`/listing-edit/${l.id}` as never)} style={{ flex: 1 }} icon="pencil">İlanı Düzenle</MobileButton> : <>{externalContact && <Pressable accessibilityRole="button" accessibilityLabel={contactBusy ? "Açılıyor…" : l.contactMethod === "whatsapp" ? "WhatsApp" : "Satıcıyı Ara"} disabled={contactDisabled} accessibilityState={{disabled:contactDisabled}} onPress={onCall} style={{width:44,height:46,borderRadius:10,borderWidth:1,borderColor:mobile.line,alignItems:"center",justifyContent:"center",opacity:contactDisabled ? 0.45 : 1}}><Icon name={contactBusy?"loading":l.contactMethod === "whatsapp"?"whatsapp":"phone"} size={21} color={mobile.teal}/></Pressable>}<MobileButton secondary onPress={onMessage} disabled={contactDisabled} style={{ flex: 1 }} icon="chat">Mesaj</MobileButton>{(partnerable || joinAction.kind === "view") && <MobileButton onPress={onJoin} disabled={joinDisabled} style={{ flex: 1 }} icon={joinAction.kind === "view" ? undefined : "account-group"}>{joinLabel}</MobileButton>}</>}</View>
-    <Modal visible={lightbox} animationType="fade" onRequestClose={() => setLightbox(false)}><View testID="listing-lightbox" style={{ flex: 1, backgroundColor: "#070D13", paddingTop: insets.top }}><View style={{ alignItems: "flex-end", padding: 8 }}><IconButton name="close" color="white" label="Galeriyi kapat" onPress={() => setLightbox(false)} /></View><ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} contentOffset={{ x: width * image, y: 0 }} onMomentumScrollEnd={e => setImage(Math.max(0, Math.min(photos.length - 1, Math.round(e.nativeEvent.contentOffset.x / width))))}>{photos.map((uri, i) => <SafeRemoteImage full key={i} uri={uri} contentFit="contain" style={{ width, height: Math.max(120, height - insets.top - 60), backgroundColor: "#070D13" }} />)}</ScrollView></View></Modal>
-    <OptionSheet visible={menu} title="İlan seçenekleri" options={["İlanı paylaş", "İlanı bildir"]} onClose={() => setMenu(false)} onSelect={(v) => { setMenu(false); if (v === "İlanı paylaş") onShare(); else router.push({pathname:"/report",params:{listingId:l.id}} as never); }} />
+    {/* ALT AKSİYON ÇUBUĞU — tek birincil CTA; sahip görünümünde düzenle + istatistik kısayolu. */}
+    <View testID="listing-detail-actions" style={[s.footer, { paddingBottom: Math.max(10, insets.bottom) }]}>{isOwner ? <><MobileButton secondary onPress={() => router.push(`/listing-stats/${l.id}` as never)} style={{ flex: 1 }} icon="chart-box-outline">İstatistikler</MobileButton><MobileButton onPress={() => router.push(`/listing-edit/${l.id}` as never)} style={{ flex: 1 }} icon="pencil">İlanı Düzenle</MobileButton></> : <>{externalContact && <Pressable accessibilityRole="button" accessibilityLabel={contactBusy ? "Açılıyor…" : l.contactMethod === "whatsapp" ? "WhatsApp" : "Satıcıyı Ara"} disabled={contactDisabled} accessibilityState={{ disabled: contactDisabled }} onPress={onCall} style={{ width: 46, height: 46, borderRadius: 10, borderWidth: 1, borderColor: mobile.line, alignItems: "center", justifyContent: "center", opacity: contactDisabled ? 0.45 : 1 }}><Icon name={contactBusy ? "loading" : l.contactMethod === "whatsapp" ? "whatsapp" : "phone"} size={21} color={mobile.teal} /></Pressable>}<MobileButton secondary onPress={onMessage} disabled={contactDisabled} style={{ flex: 1 }} icon="chat">Mesaj</MobileButton>{(partnerable || joinAction.kind === "view") && <MobileButton onPress={onJoin} disabled={joinDisabled} style={{ flex: 1 }} icon={joinAction.kind === "view" ? undefined : "account-group"}>{joinLabel}</MobileButton>}</>}</View>
+    <Modal visible={lightbox} animationType="fade" onRequestClose={() => setLightbox(false)}><View testID="listing-lightbox" style={{ flex: 1, backgroundColor: detail.stage, paddingTop: insets.top }}><View style={{ alignItems: "flex-end", padding: 8 }}><IconButton name="close" color="white" label="Galeriyi kapat" onPress={() => setLightbox(false)} /></View><ScrollView horizontal pagingEnabled showsHorizontalScrollIndicator={false} contentOffset={{ x: width * lightboxIndex, y: 0 }} onMomentumScrollEnd={e => setImage(Math.max(0, Math.min(photos.length - 1, Math.round(e.nativeEvent.contentOffset.x / width))))}>{photos.map((uri, i) => <SafeRemoteImage full key={i} uri={uri} contentFit="contain" style={{ width, height: Math.max(120, height - insets.top - 60), backgroundColor: detail.stage }} />)}</ScrollView></View></Modal>
+    <OptionSheet visible={menu} title="İlan seçenekleri" options={["İlanı paylaş", "İlanı bildir"]} onClose={() => setMenu(false)} onSelect={(v) => { setMenu(false); if (v === "İlanı paylaş") onShare(); else router.push({ pathname: "/report", params: { listingId: l.id } } as never); }} />
     <OptionSheet visible={report} title="Bildirim nedeni" options={["Yanıltıcı ilan", "Uygunsuz içerik", "Yanlış kategori", "Dolandırıcılık şüphesi"]} onClose={() => setReport(false)} onSelect={(v) => { setReport(false); onReport(v); }} />
   </View>;
 }
-const s = StyleSheet.create({ galleryTools: { position: "absolute", left: 10, right: 10, flexDirection: "row", gap: 7, alignItems: "center" }, roundButton: { backgroundColor: "#17233199", borderRadius: 24, width: 37, height: 37 }, commission: { position: "absolute", left: 12, bottom: 9, borderRadius: 19, backgroundColor: "#0645C9EE", paddingHorizontal: 11, paddingVertical: 7, flexDirection: "row", alignItems: "center", gap: 6 }, counter: { position: "absolute", bottom: 10, right: 12, backgroundColor: "#172331BB", borderRadius: 14, paddingHorizontal: 9, paddingVertical: 6, flexDirection: "row", gap: 5 }, title: { color: mobile.ink, fontSize: 21, lineHeight: 26, fontWeight: "800" }, price: { color: mobile.teal, fontSize: 25, fontWeight: "800", marginTop: 5 }, status: { backgroundColor: "#E5F0FF", color: "#0645C9", fontSize: 10, fontWeight: "800", borderRadius: 999, overflow: "hidden", paddingHorizontal: 8, paddingVertical: 4, marginTop: 5 }, avatar: { width: 44, height: 44, borderRadius: 22 }, owner: { fontSize: 14, fontWeight: "700", color: mobile.ink, flexShrink: 1 }, messageSeller: { backgroundColor: "#E5F0FF", padding: 8, borderRadius: 10, alignItems: "center", gap: 5, maxWidth: 123 }, handshake: { width: 44, height: 44, borderRadius: 22, backgroundColor: mobile.teal, alignItems: "center", justifyContent: "center" }, attribute: { minWidth: 73, paddingHorizontal: 10, alignItems: "center", borderRightWidth: 1, borderColor: mobile.line }, footer: { flexDirection: "row", padding: 10, gap: 7, backgroundColor: "white", borderTopLeftRadius: 17, borderTopRightRadius: 17, borderTopWidth: 1, borderColor: mobile.line } });
+const s = StyleSheet.create({
+  galleryTools: { position: "absolute", left: 6, right: 6, flexDirection: "row", gap: 2, alignItems: "center" },
+  counter: { position: "absolute", bottom: 10, right: 10 },
+  dots: { position: "absolute", left: 60, right: 60, bottom: 4, flexDirection: "row", alignItems: "center", justifyContent: "center" },
+  head: { backgroundColor: colors.surface, borderColor: colors.line, borderRadius: detail.radius, borderWidth: 1, gap: 10, padding: detail.pad },
+  title: { color: colors.ink, fontSize: 19, lineHeight: 24, fontWeight: "700" },
+  price: { color: colors.ink, fontWeight: "800", letterSpacing: -0.4, fontVariant: ["tabular-nums"] },
+  footer: { flexDirection: "row", padding: 10, gap: 8, backgroundColor: colors.surface, borderTopWidth: 1, borderColor: colors.line }
+});

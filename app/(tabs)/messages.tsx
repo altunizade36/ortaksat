@@ -1,4 +1,4 @@
-import { conversationGroup } from "@/lib/inbox-model";
+import { conversationGroup, isEmptyThread } from "@/lib/inbox-model";
 import { ConversationListingStrip } from "@/components/conversation-listing-strip";
 import { ConversationOfferCard } from "@/components/conversation-offer-card";
 import { ConversationListingActions } from "@/components/conversation-listing-actions";
@@ -8,6 +8,7 @@ import { CompactFooter } from "@/components/compact-footer";
 import { displayListingTitle } from "@/lib/listing-title";
 import { UserAvatar } from "@/components/user-avatar";
 import { isMobileApp } from "@/lib/mobile-app";
+import { listingPhotos } from "@/lib/mobile-listing";
 import { MobileMessages } from "@/components/mobile/messages";
 import { MaterialCommunityIcons } from "@/components/icons";
 import * as ImagePicker from "expo-image-picker";
@@ -15,7 +16,7 @@ import { Link, useLocalSearchParams, type Href } from "expo-router";
 
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Modal, Platform, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
+import { Modal, Pressable, RefreshControl, ScrollView, Text, TextInput, View } from "react-native";
 
 import { Alert } from "@/lib/alert";
 
@@ -37,6 +38,9 @@ import { searchKey, shortDate } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Conversation, Lead, Message, Partnership } from "@/lib/types";
 import { useInboxPrefs } from "@/lib/inbox-prefs";
+import { isComposerSendKey } from "@/lib/composer-keys";
+import { usePairBlocked } from "@/lib/use-pair-blocked";
+import { useScreenActive } from "@/lib/use-screen-active";
 import { useStore } from "@/lib/use-store";
 
 type InboxFilter = "all" | "unread" | "action" | "sales" | "buyers" | "sellers" | "partner";
@@ -46,39 +50,48 @@ function msgTime(createdAt: string) {
   const m = /\d{2}:\d{2}/.exec(createdAt);
   return m ? m[0] : "";
 }
-const MONTHS_SHORT_TR = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
+type Lang = "tr" | "en";
+const MONTHS_SHORT: Record<Lang, string[]> = {
+  tr: ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"],
+  en: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+};
 // Inbox listesi zaman damgasi: bugun -> saat, dun -> "Dun", daha eski -> gun+ay.
 // (msgTime HEP HH:MM dondurdugu icin 3 gun onceki mesaj tarihsiz "14:30" gorunuyordu;
 //  "|| shortDate" fallback'i asla tetiklenmiyordu.)
-function inboxTime(createdAt: string) {
+function inboxTime(createdAt: string, language: Lang) {
   const day = createdAt.slice(0, 10); // "YYYY-MM-DD"
   const today = localToday();
   if (day === today) return msgTime(createdAt) || shortDate(createdAt);
   const [ty, tm, td] = today.split("-").map(Number);
   const yd = new Date(ty, tm - 1, td - 1); // yerel; ay/yil devri güvenli
   const yStr = `${yd.getFullYear()}-${String(yd.getMonth() + 1).padStart(2, "0")}-${String(yd.getDate()).padStart(2, "0")}`;
-  if (day === yStr) return "Dün";
+  if (day === yStr) return language === "en" ? "Yesterday" : "Dün";
   const p = day.split("-");
-  return p.length === 3 ? `${p[2]} ${MONTHS_SHORT_TR[Number(p[1]) - 1] ?? ""}`.trim() : shortDate(createdAt);
+  const month = MONTHS_SHORT[language][Number(p[1]) - 1];
+  if (p.length !== 3 || !month) return shortDate(createdAt);
+  // Geçen yıllardan kalan görüşmede yıl da görünsün ("12 Kas" bu yılla karışmasın).
+  const year = p[0] !== today.slice(0, 4) ? ` ${p[0]}` : "";
+  return language === "en" ? `${month} ${Number(p[2])}${year}` : `${p[2]} ${month}${year}`;
 }
-function messagePreview(m: Message | undefined): string {
+function messagePreview(m: Message | undefined, language: Lang): string {
   if (!m) return "";
   if (m.body) return m.body;
-  if (m.attachmentType === "file") return `📎 ${m.attachmentName ?? "Dosya"}`;
-  if (m.attachmentUrl) return "📷 Görsel";
+  if (m.attachmentType === "file") return `📎 ${m.attachmentName ?? translateCopy("Dosya", language)}`;
+  if (m.attachmentUrl) return `📷 ${translateCopy("Görsel", language)}`;
   return "";
 }
 function msgDay(createdAt: string) {
   return createdAt.slice(0, 10);
 }
-function dayHeader(day: string) {
+function dayHeader(day: string, language: Lang) {
   const today = localToday();
-  if (day === today) return "Bugün";
+  if (day === today) return language === "en" ? "Today" : "Bugün";
   // "YYYY-MM-DD" doğrudan ayrıştırılır: new Date("YYYY-MM-DD") UTC gece yarısıdır →
   // UTC'nin gerisindeki saat dilimlerinde başlık bir gün ÖNCEYİ gösterirdi.
   const [y, mo, d] = day.split("-").map(Number);
-  if (!y || !d || !MONTHS_SHORT_TR[mo - 1]) return day;
-  return `${String(d).padStart(2, "0")} ${MONTHS_SHORT_TR[mo - 1]} ${y}`;
+  const month = MONTHS_SHORT[language][mo - 1];
+  if (!y || !d || !month) return day;
+  return language === "en" ? `${month} ${d}, ${y}` : `${String(d).padStart(2, "0")} ${month} ${y}`;
 }
 const MONTHS_TR = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
 function longDateTr(value: string) {
@@ -124,7 +137,7 @@ function scanMessageRisk(text: string) {
 }
 
 function MessagesScreenInner() {
-  const { conversations, currentUser, findListing, findUser, leads, markConversationRead, messages, partnerships, refreshUserData, sales, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser } = useStore();
+  const { conversations, currentUser, findConversation, findListing, findUser, leads, markConversationRead, messages, partnerships, refreshUserData, sales, sendConversationMessage, retryMessage, isUserBlocked, blockUser, unblockUser } = useStore();
   const { refreshing, onRefresh } = useNativeRefresh(refreshUserData);
   // Sekme ön plana dönünce mesajları tazele (WS askıdayken kaçan yanıtları getirir).
   useForegroundRefresh(refreshUserData);
@@ -150,18 +163,38 @@ function MessagesScreenInner() {
   const deskNearBottomRef = useRef(true);
   const sendingDraftRef = useRef(false); // çift-gönderim (hızlı Enter) koruması
 
+  // Derin bağlantı (?c=<konuşma>): konuşmayı seç ve ARŞİVDEYSE arşiv görünümüne geç.
+  // Eskiden tek bir ref-koruması vardı: arşiv listesi sonradan değişirse (tercihler geç
+  // gelirse ya da arşiv başka sekmede değiştiyse) efekt yeniden çalışsa bile koruma
+  // `setShowArchived`'ı engelliyor, arşivli konuşma gelen kutusu görünümünde aranıp
+  // BULUNAMIYOR → orta panel boş kalıyordu. Artık seçim (kullanıcı+konuşma başına) BİR kez
+  // yapılır; arşiv görünümü ise kullanıcı listeye kendisi dokunana kadar arşiv durumunu izler.
   const handledConversationParam = useRef<string | undefined>(undefined);
+  const deepLinkPending = useRef<string | undefined>(undefined);
   useEffect(() => {
-    if (params.c && handledConversationParam.current !== params.c) {
-      handledConversationParam.current = params.c;
-      setActiveId(params.c);setQuery("");setFilter("all");setShowArchived(archivedIds.includes(params.c));
+    if (!params.c) return;
+    const key = `${currentUser.id}:${params.c}`;
+    if (handledConversationParam.current !== key) {
+      handledConversationParam.current = key;
+      deepLinkPending.current = params.c;
+      setActiveId(params.c);setQuery("");setFilter("all");
     }
-  }, [params.c, archivedIds]);
+    if (deepLinkPending.current === params.c) setShowArchived(archivedIds.includes(params.c));
+  }, [params.c, archivedIds, currentUser.id]);
+  // Kullanıcı listeyle kendisi etkileşince derin bağlantı izlemesi biter (arşivlediği açık
+  // konuşma yüzünden görünüm kendiliğinden arşive zıplamasın).
+  const releaseDeepLink = () => { deepLinkPending.current = undefined; };
+  const clearSelection = () => { releaseDeepLink(); setActiveId(null); };
+  const archiveToggle = (id: string) => { releaseDeepLink(); toggleArchive(id); };
 
   // PERF: memo'lu → composer/arama tuş vuruşlarında (draft/query) yeniden hesaplanmaz.
+  // Yerel id sunucudaki mevcut konuşmaya eşlenmiş olabilir (store alias) → gerçek id ile ara.
+  const resolvedActiveId = activeId ? findConversation(activeId)?.id ?? activeId : null;
+  const threadsWithMessages = useMemo(() => new Set(messages.map((m) => m.conversationId)), [messages]);
+  // Hiç mesaj yazılmamış konuşmalar listelenmez (seçili/derin-bağlantılı olan hariç) — bkz. isEmptyThread.
   const myConversations = useMemo(() => conversations
-    .filter((conversation) => conversation.participantIds.includes(currentUser.id))
-    .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt)), [conversations, currentUser.id]);
+    .filter((conversation) => conversation.participantIds.includes(currentUser.id) && (conversation.id === resolvedActiveId || !isEmptyThread(conversation, threadsWithMessages.has(conversation.id))))
+    .sort((a, b) => b.lastMessageAt.localeCompare(a.lastMessageAt)), [conversations, currentUser.id, resolvedActiveId, threadsWithMessages]);
 
   const unreadMessages = useMemo(() => messages.filter((item) => item.receiverId === currentUser.id && !item.read), [messages, currentUser.id]);
   const tokens = useMemo(() => searchKey(query).split(" ").filter(Boolean), [query]);
@@ -205,8 +238,8 @@ function MessagesScreenInner() {
 
   // Keep the explicitly opened unread thread after its unread badge disappears.
   // Never fall through to the next unread thread and mark an entire inbox read.
-  const selectedConversation = visibleConversations.find((c) => c.id === activeId) ??
-    (filter === "unread" && !query.trim() ? myConversations.find((c) => c.id === activeId && archivedIds.includes(c.id) === showArchived) : undefined);
+  const selectedConversation = visibleConversations.find((c) => c.id === resolvedActiveId) ??
+    (filter === "unread" && !query.trim() ? myConversations.find((c) => c.id === resolvedActiveId && archivedIds.includes(c.id) === showArchived) : undefined);
   useEffect(() => {
     if (isWideWeb && !activeId && filter === "all" && !query.trim() && !showArchived && myConversations[0]) setActiveId(myConversations[0].id);
   }, [isWideWeb, activeId, filter, query, showArchived, myConversations]);
@@ -218,9 +251,16 @@ function MessagesScreenInner() {
   };
   const { otherTyping, notifyTyping } = useTypingIndicator(selectedId, currentUser.id);
   const selectedHasUnread = Boolean(selectedId && messages.some((message) => message.conversationId === selectedId && message.receiverId === currentUser.id && !message.read));
+  // Yalnız ekran GERÇEKTEN görünürken okundu yaz: Mesajlar sekmesi başka sekmedeyken/tarayıcı
+  // arka plandayken de mount'lu kalır; eskiden o sırada gelen mesajlar görülmeden okundu oluyordu.
+  const screenActive = useScreenActive();
   useEffect(() => {
-    if (selectedId && selectedHasUnread) markConversationRead(selectedId);
-  }, [selectedId, selectedHasUnread, markConversationRead]);
+    if (screenActive && selectedId && selectedHasUnread) markConversationRead(selectedId);
+  }, [screenActive, selectedId, selectedHasUnread, markConversationRead]);
+  // Karşı taraf beni engellediyse (store bunu bilemez) composer yerine bant göster.
+  const selectedOtherId = selectedConversation?.participantIds.find((id) => id !== currentUser.id);
+  const selectedFailedCount = selectedId ? messages.reduce((n, m) => n + (m.conversationId === selectedId && m.status === "failed" ? 1 : 0), 0) : 0;
+  const pairBlocked = usePairBlocked(selectedId ? currentUser.id : undefined, selectedOtherId, `${selectedId ?? ""}:${selectedFailedCount}:${selectedOtherId && isUserBlocked(selectedOtherId) ? 1 : 0}`);
   useEffect(() => {
     deskNearBottomRef.current = true;
     deskScrollRef.current?.scrollToEnd({ animated: false });
@@ -232,6 +272,7 @@ function MessagesScreenInner() {
     const activeOtherId = activeConversation?.participantIds.find((id) => id !== currentUser.id);
     const activeClosed = activeConversation?.status !== "open";
     const activeBlocked = activeOtherId ? isUserBlocked(activeOtherId) : false; // masaüstünde de engelleme (mobil paritesi)
+    const activeBlockedByOther = !activeBlocked && pairBlocked; // karşı taraf engellemiş
     const activeOther = activeOtherId ? findUser(activeOtherId) : undefined;
     // Eskiden yeniye sırala. `messages` dizisi yeni→eski tutulur (başa eklenir);
     // aynı zaman damgasında daha yüksek index = daha eski, o yüzden önce gelir.
@@ -244,6 +285,7 @@ function MessagesScreenInner() {
       : undefined;
 
     const selectConversation = (id: string) => {
+      releaseDeepLink();
       setActiveId(id);
       markConversationRead(id);
     };
@@ -280,12 +322,11 @@ function MessagesScreenInner() {
       }
     };
     // Web: Enter gonderir, Shift+Enter yeni satir.
+    // IME bileşimi sürerken Enter adayı onaylar (göndermez); dokunmatik klavyede Enter yeni satırdır.
     const onComposerKeyPress = (e: { nativeEvent: { key?: string; shiftKey?: boolean } }) => {
-      if (Platform.OS !== "web") return;
-      if (e.nativeEvent.key === "Enter" && !e.nativeEvent.shiftKey) {
-        (e as unknown as { preventDefault?: () => void }).preventDefault?.();
-        sendDraft();
-      }
+      if (!isComposerSendKey(e)) return;
+      (e as unknown as { preventDefault?: () => void }).preventDefault?.();
+      sendDraft();
     };
     const insertPriceOffer = () => {
       const base = activeListing ? moneyIn(activeListing.price, activeListing.currency) : "";
@@ -299,7 +340,7 @@ function MessagesScreenInner() {
       { key: "partner", label: translateCopy("Ortaklık", language), count: 0 }
     ];
     const activeIsPartner = Boolean(activeConversation?.partnerId);
-    const activePhotoCount = activeListing ? [...new Set([activeListing.image, ...(activeListing.adAssets ?? [])].filter(Boolean))].length : 0;
+    const activePhotoCount = activeListing ? listingPhotos(activeListing).length : 0;
     const activeListingNo = activeListing ? activeListing.id.replace(/[^0-9]/g, "").slice(-10) || activeListing.id : "";
     const draftRisk = scanMessageRisk(draft);
     const estimatedCommission = activeListing ? commissionAmount(activeListing) : 0;
@@ -316,7 +357,7 @@ function MessagesScreenInner() {
           <View style={{ borderRightColor: colors.line, borderRightWidth: 1, width: 280 }}>
             <View style={{ gap: 10, padding: 16 }}>
 
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}><Text style={{ color: colors.ink, fontSize: 18, fontWeight: "700", flex: 1 }}>{translateCopy("Mesajlarım", language)}</Text>{unreadMessages.length > 0 ? <Text style={{ backgroundColor: colors.primaryDark, color: "white", borderRadius: 12, paddingHorizontal: 7, paddingVertical: 3, fontSize: 11 }}>{unreadMessages.length}</Text> : null}<Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Okunmamış", language)} accessibilityState={{ selected: filter === "unread" }} onPress={() => { setActiveId(null);setFilter(filter === "unread" ? "all" : "unread"); }} style={{ height: 36, width: 32, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="email-mark-as-unread" size={18} color={filter === "unread" ? colors.primaryDark : colors.muted}/></Pressable><Link href="/explore" asChild><Pressable accessibilityLabel={translateCopy("Yeni görüşme için ilan bul", language)} style={{ width: 32, height: 36, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="plus" size={22} color={colors.primaryDark}/></Pressable></Link></View>
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 7 }}><Text style={{ color: colors.ink, fontSize: 18, fontWeight: "700", flex: 1 }}>{translateCopy("Mesajlarım", language)}</Text>{unreadMessages.length > 0 ? <Text style={{ backgroundColor: colors.primaryDark, color: "white", borderRadius: 12, paddingHorizontal: 7, paddingVertical: 3, fontSize: 11 }}>{unreadMessages.length}</Text> : null}<Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Okunmamış", language)} accessibilityState={{ selected: filter === "unread" }} onPress={() => { clearSelection();setFilter(filter === "unread" ? "all" : "unread"); }} style={{ height: 36, width: 32, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="email-mark-as-unread" size={18} color={filter === "unread" ? colors.primaryDark : colors.muted}/></Pressable><Link href="/explore" asChild><Pressable accessibilityLabel={translateCopy("Yeni görüşme için ilan bul", language)} style={{ width: 32, height: 36, alignItems: "center", justifyContent: "center" }}><MaterialCommunityIcons name="plus" size={22} color={colors.primaryDark}/></Pressable></Link></View>
               <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 8, paddingHorizontal: 14 }}>
                 <MaterialCommunityIcons name="magnify" size={18} color={colors.muted} />
                 <TextInput value={query} onChangeText={setQuery} accessibilityLabel={translateCopy("Görüşmelerde ara", language)} placeholder={translateCopy("Görüşmelerde ara", language)} placeholderTextColor={colors.muted} style={{ color: colors.ink, flex: 1, fontSize: 13.5, minHeight: 40, paddingVertical: 6 }} />
@@ -325,7 +366,7 @@ function MessagesScreenInner() {
                 {filters.map((f) => {
                   const on = filter === f.key;
                   return (
-                    <Pressable key={f.key} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={f.label} hitSlop={6} onPress={() => { setActiveId(null); setFilter(f.key); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 8 }}>
+                    <Pressable key={f.key} accessibilityRole="button" accessibilityState={{ selected: on }} accessibilityLabel={f.label} hitSlop={6} onPress={() => { clearSelection(); setFilter(f.key); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 10, paddingVertical: 8 }}>
                       <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 11, fontWeight: "600" }}>{f.label}</Text>
 
                     </Pressable>
@@ -349,16 +390,16 @@ function MessagesScreenInner() {
                 const on = activeConversation?.id === conversation.id;
 
                 return (
-                  <Pressable accessibilityRole="button" accessibilityLabel={`${otherUser?.name ?? t("user")} ile sohbet`} accessibilityState={{ selected: on }} key={conversation.id} dataSet={{ vrow: "1" }} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 12 })}>
+                  <Pressable accessibilityRole="button" accessibilityLabel={`${translateCopy("Sohbet", language)}: ${otherUser?.name ?? t("user")}`} accessibilityState={{ selected: on }} key={conversation.id} dataSet={{ vrow: "1" }} onPress={() => selectConversation(conversation.id)} style={({ pressed }) => ({ backgroundColor: on ? colors.primarySoft : pressed ? colors.surfaceAlt : "transparent", borderLeftColor: on ? colors.primary : "transparent", borderLeftWidth: 3, flexDirection: "row", gap: 11, paddingHorizontal: 13, paddingVertical: 12 })}>
                     <UserAvatar uri={otherUser?.avatar} size={42} />
                     <View style={{ flex: 1, gap: 2, minWidth: 0 }}>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
                         <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{otherUser?.name ?? t("user")}</Text>
-                        <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{last ? inboxTime(last.createdAt) : ""}</Text>
+                        <Text style={{ color: colors.subtle, fontSize: 10.5, fontWeight: "700" }}>{last ? inboxTime(last.createdAt, language) : ""}</Text>
                       </View>
                       <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "700" }}>{conversation.partnerId ? translateCopy("Ortaklık · ", language) : ""}{listing ? displayListingTitle(listing.title) : t("listingConversation")}</Text>
                       <View style={{ alignItems: "center", flexDirection: "row", gap: 6 }}>
-                        <Text numberOfLines={1} style={{ color: unread ? colors.ink : colors.muted, flex: 1, fontSize: 12, fontWeight: unread ? "800" : "500" }}>{last ? `${last.senderId === currentUser.id ? translateCopy("Sen: ", language) : ""}${messagePreview(last)}` : t("conversationStarted")}</Text>
+                        <Text numberOfLines={1} style={{ color: unread ? colors.ink : colors.muted, flex: 1, fontSize: 12, fontWeight: unread ? "800" : "500" }}>{last ? `${last.senderId === currentUser.id ? translateCopy("Sen: ", language) : ""}${messagePreview(last, language)}` : t("conversationStarted")}</Text>
                         {unread ? <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "700" }}>{unread > 9 ? "9+" : unread}</Text></View> : null}
                       </View>
 
@@ -367,7 +408,7 @@ function MessagesScreenInner() {
                 );
               })}
             </ScrollView>
-            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Arşivlenen konuşmaları göster", language)} onPress={() => { setActiveId(null); setShowArchived((v) => !v); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 })}>
+            <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Arşivlenen konuşmaları göster", language)} onPress={() => { clearSelection(); setShowArchived((v) => !v); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", paddingVertical: 13 })}>
               <MaterialCommunityIcons name={showArchived ? "inbox-arrow-down-outline" : "archive-outline"} size={17} color={colors.muted} />
               <Text style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{showArchived ? translateCopy("Gelen kutusuna dön", language) : translateCopy("Arşivlenen konuşmaları göster", language)}</Text>
             </Pressable>
@@ -396,7 +437,7 @@ function MessagesScreenInner() {
                 </View>
                 {showTools ? <View style={{ backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, paddingHorizontal: 18, paddingVertical: 8, flexDirection: "row", justifyContent: "flex-end", gap: 8 }}>
                   <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Önemli işaretle", language)} onPress={() => toggleStar(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name={starred[activeConversation.id] ? "star" : "star-outline"} size={16} color={starred[activeConversation.id] ? colors.gold : colors.muted} /></Pressable>
-                  <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Arşivle", language)} onPress={() => toggleArchive(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="archive-outline" size={16} color={colors.muted} /></Pressable>
+                  <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={translateCopy("Arşivle", language)} onPress={() => archiveToggle(activeConversation.id)} style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, height: 34, justifyContent: "center", width: 34 }}><MaterialCommunityIcons name="archive-outline" size={16} color={colors.muted} /></Pressable>
                   {/* Engelle/kaldır — masaüstünde eksikti (mobil paritesi). Engellenince composer banner'a döner. */}
                   {activeOtherId ? (
                     <Pressable accessibilityRole="button" hitSlop={8} accessibilityLabel={activeBlocked ? translateCopy("Engeli kaldır", language) : translateCopy("Kullanıcıyı engelle", language)}
@@ -428,7 +469,7 @@ function MessagesScreenInner() {
                       <View key={m.id} style={{ marginTop: i === 0 ? 0 : showDay ? 6 : grouped ? 2 : 10 }}>
                         {showDay ? (
                           <View style={{ alignItems: "center", marginBottom: 8 }}>
-                            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{dayHeader(msgDay(m.createdAt))}</Text></View>
+                            <View style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 3 }}><Text style={{ color: colors.muted, fontSize: 11, fontWeight: "800" }}>{dayHeader(msgDay(m.createdAt), language)}</Text></View>
                           </View>
                         ) : null}
                         <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 8, justifyContent: mine ? "flex-end" : "flex-start" }}>
@@ -445,7 +486,7 @@ function MessagesScreenInner() {
                               <Pressable accessibilityRole="imagebutton" accessibilityLabel={translateCopy("Görseli büyüt", language)} onPress={() => m.attachmentUrl && setLightboxUri(m.attachmentUrl)}><SafeRemoteImage uri={m.attachmentUrl} accessibilityLabel={translateCopy("Sohbet görseli", language)} contentFit="cover" style={{ backgroundColor: colors.line, borderRadius: 10, height: 190, maxWidth: "100%", width: 240 }} /></Pressable>
                             ) : null}
                             {m.attachmentType === "file" && m.attachmentUrl ? (
-                              <Pressable accessibilityRole="button" accessibilityLabel={`Dosyayı aç: ${m.attachmentName ?? "Dosya"}`} onPress={() => m.attachmentUrl && void openUrlSafe(m.attachmentUrl)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primaryDark} /><Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? "Dosya"}</Text></Pressable>
+                              <Pressable accessibilityRole="button" accessibilityLabel={`${translateCopy("Dosyayı aç", language)}: ${m.attachmentName ?? translateCopy("Dosya", language)}`} onPress={() => m.attachmentUrl && void openUrlSafe(m.attachmentUrl)} style={{ alignItems: "center", flexDirection: "row", gap: 8, paddingVertical: 2 }}><MaterialCommunityIcons name="file-document-outline" size={22} color={mine ? "#FFFFFF" : colors.primaryDark} /><Text numberOfLines={1} style={{ color: mine ? "#FFFFFF" : colors.ink, flexShrink: 1, fontSize: 12.5, fontWeight: "700", maxWidth: 180 }}>{m.attachmentName ?? translateCopy("Dosya", language)}</Text></Pressable>
                             ) : null}
                             {m.body ? <Text style={{ color: mine ? "#FFFFFF" : colors.ink, fontSize: 13.5, fontWeight: "500", lineHeight: 19, paddingHorizontal: m.attachmentType === "image" ? 9 : 0, paddingTop: m.attachmentType === "image" ? 5 : 0 }}>{m.body}</Text> : null}
                             {lastOfGroup ? (
@@ -480,10 +521,10 @@ function MessagesScreenInner() {
                       <Text style={{ color: colors.ink, flex: 1, fontSize: 11.5, fontWeight: "700", lineHeight: 16 }}>{translateCopy("Bu mesajda hassas ödeme veya site dışı iletişim ifadesi var. Görüşmeyi kayıtlı mesaj içinde net tutun.", language)}</Text>
                     </View>
                   ) : null}
-                  {activeBlocked || activeClosed ? (
+                  {activeBlocked || activeBlockedByOther || activeClosed ? (
                     <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, paddingHorizontal: 14, paddingVertical: 12 }}>
                       {activeBlocked ? <MaterialCommunityIcons name="account-cancel" size={18} color={colors.accent} /> : <MaterialCommunityIcons name="lock-outline" size={18} color={colors.accent} />}
-                      <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(activeBlocked ? "Bu kişiyi engelledin. Mesajlaşma iki yönlü kapalı." : "Bu konuşma kapatılmış. Mesaj geçmişini görüntüleyebilirsin.", language)}</Text>
+                      <Text style={{ color: colors.ink, flex: 1, fontSize: 12.5, fontWeight: "700" }}>{translateCopy(activeBlocked ? "Bu kişiyi engelledin. Mesajlaşma iki yönlü kapalı." : activeBlockedByOther ? "Bu kullanıcıyla mesajlaşma şu anda mümkün değil. Mesaj geçmişini görüntüleyebilirsin." : "Bu konuşma kapatılmış. Mesaj geçmişini görüntüleyebilirsin.", language)}</Text>
                       {activeBlocked ? <Pressable accessibilityRole="button" onPress={() => activeOtherId && void unblockUser(activeOtherId)} style={({ pressed }) => ({ backgroundColor: colors.surface, borderColor: colors.accent, borderRadius: 999, borderWidth: 1, opacity: pressed ? 0.8 : 1, paddingHorizontal: 14, paddingVertical: 8 })}>
                         <Text style={{ color: colors.accent, fontSize: 12.5, fontWeight: "700" }}>{translateCopy("Engeli Kaldır", language)}</Text>
                       </Pressable> : null}
@@ -557,7 +598,7 @@ function MessagesScreenInner() {
                     <DeskActionRow icon="handshake-outline" title={translateCopy("Ortaklık öner", language)} sub={translateCopy("Ortaklık için mesaj taslağı hazırla", language)} onPress={() => setDraft(translateCopy("Bu ürün için ortak satış yapmak istiyorum; komisyon ve şartları konuşabilir miyiz?", language))} />
                     <DeskActionRow icon="shield-check-outline" title={translateCopy("Güvenli anlaşma taslağı", language)} sub={translateCopy("Ödeme/teslimat/komisyon şartlarını mesajda netleştir", language)} onPress={() => setDraft(safeDealDraft)} />
                     <DeskActionRow icon="tag-outline" title={translateCopy("Mesajda fiyat öner", language)} sub={translateCopy("Mesaja fiyat önerisi ekle", language)} onPress={insertPriceOffer} />
-                    <DeskActionRow icon="archive-outline" title={archivedIds.includes(activeConversation.id) ? translateCopy("Arşivden çıkar", language) : translateCopy("Sohbeti arşivle", language)} sub={translateCopy("Görüşmeyi gelen kutusundan gizle", language)} onPress={() => toggleArchive(activeConversation.id)} />
+                    <DeskActionRow icon="archive-outline" title={archivedIds.includes(activeConversation.id) ? translateCopy("Arşivden çıkar", language) : translateCopy("Sohbeti arşivle", language)} sub={translateCopy("Görüşmeyi gelen kutusundan gizle", language)} onPress={() => archiveToggle(activeConversation.id)} />
                     <DeskActionRow icon="flag-outline" title={translateCopy("Şikayet et", language)} sub={translateCopy("Bu ilanı veya kullanıcıyı bildir", language)} href={{ pathname: "/report", params: { listingId: activeListing.id, userId: activeOtherId } } as Href} />
                   </Accordion>
                 </>
@@ -604,7 +645,7 @@ function MessagesScreenInner() {
           {mobileFilters.map((f) => {
             const on = filter === f.key;
             return (
-              <Pressable accessibilityRole="button" accessibilityLabel={f.label} accessibilityState={{ selected: on }} key={f.key} onPress={() => { setActiveId(null); setFilter(f.key); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 7 }}>
+              <Pressable accessibilityRole="button" accessibilityLabel={f.label} accessibilityState={{ selected: on }} key={f.key} onPress={() => { clearSelection(); setFilter(f.key); }} style={{ alignItems: "center", backgroundColor: on ? colors.primary : colors.surfaceAlt, borderColor: on ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 7 }}>
                 <Text style={{ color: on ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{f.label}</Text>
                 {f.count > 0 ? <View style={{ alignItems: "center", backgroundColor: on ? "rgba(255,255,255,0.24)" : colors.primary, borderRadius: 999, justifyContent: "center", minWidth: 17, paddingHorizontal: 4 }}><Text style={{ color: "#FFFFFF", fontSize: 10, fontWeight: "700" }}>{f.count}</Text></View> : null}
               </Pressable>
@@ -616,7 +657,7 @@ function MessagesScreenInner() {
       {/* keyboardShouldPersistTaps: yoksa isimle filtreleyip sonuca basınca İLK dokunuş
           yalnız klavyeyi kapatıyor (çift dokunuş gerekiyordu). seller/favorites'ta zaten var. */}
       <ScrollView keyboardShouldPersistTaps="handled" contentInsetAdjustmentBehavior="automatic" contentContainerStyle={{ flexGrow: 1, paddingBottom: 0 }} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor={colors.primary} colors={[colors.primary]} />}>
-      {myConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noConversation")} body={t("noConversationBody")} action={{ label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="mobile" /></View> : null}
+      {myConversations.length === 0 ? <View style={{ padding: 24 }}><EmptyState title={t("noConversation")} body={t("noConversationBody")} action={{ label: translateCopy("Ürünleri keşfet", language), href: "/explore", icon: "compass-outline" }} mascot="mobile" /></View> : null}
       {myConversations.length > 0 && visibleConversations.length === 0 ? <View style={{ padding: 24 }}>{showArchived && filter === "all" && !query.trim() ? <EmptyState title={translateCopy("Arşiv boş", language)} body={translateCopy("Arşivlenen görüşme yok.", language)} /> : <EmptyState title={t("noResults")} body={t("searchOrFilterAgain")} mascot="thinking" />}</View> : null}
 
       {visibleConversations.map((conversation) => {
@@ -645,11 +686,11 @@ function MessagesScreenInner() {
               <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                   <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "700" }}>{otherUser?.name ?? t("user")}</Text>
-                  <Text style={{ color: unreadCount ? colors.primary : colors.subtle, fontSize: 11, fontWeight: unreadCount ? "900" : "700" }}>{lastMessage ? inboxTime(lastMessage.createdAt) : ""}</Text>
+                  <Text style={{ color: unreadCount ? colors.primary : colors.subtle, fontSize: 11, fontWeight: unreadCount ? "900" : "700" }}>{lastMessage ? inboxTime(lastMessage.createdAt, language) : ""}</Text>
                 </View>
                 <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
                   <Text numberOfLines={1} style={{ color: unreadCount ? colors.ink : colors.muted, flex: 1, fontSize: 13, fontWeight: unreadCount ? "800" : "500" }}>
-                    {lastMessage ? `${lastMessage.senderId === currentUser.id ? t("youPrefix") : ""}${messagePreview(lastMessage)}` : t("conversationStarted")}
+                    {lastMessage ? `${lastMessage.senderId === currentUser.id ? t("youPrefix") : ""}${messagePreview(lastMessage, language)}` : t("conversationStarted")}
                   </Text>
                   {unreadCount > 0 ? (
                     <View style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, height: 20, justifyContent: "center", minWidth: 20, paddingHorizontal: 6 }}>
@@ -673,7 +714,7 @@ function MessagesScreenInner() {
       {/* Arşiv geçişi — dar (mobil/tablet web) düzende YOKTU: masaüstünde arşivlenen görüşmeler
           telefonda erişilemez kalıyor, hepsi arşivliyse liste "sonuç yok" çıkmazına düşüyordu. */}
       {showArchived || myConversations.some((conversation) => archivedIds.includes(conversation.id)) ? (
-        <Pressable accessibilityRole="button" accessibilityLabel={showArchived ? translateCopy("Gelen kutusuna dön", language) : translateCopy("Arşivlenen konuşmaları göster", language)} onPress={() => { setActiveId(null); setShowArchived((v) => !v); }} style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 48, paddingHorizontal: 14 }}>
+        <Pressable accessibilityRole="button" accessibilityLabel={showArchived ? translateCopy("Gelen kutusuna dön", language) : translateCopy("Arşivlenen konuşmaları göster", language)} onPress={() => { clearSelection(); setShowArchived((v) => !v); }} style={{ alignItems: "center", backgroundColor: colors.surface, borderBottomColor: colors.line, borderBottomWidth: 1, flexDirection: "row", gap: 8, justifyContent: "center", minHeight: 48, paddingHorizontal: 14 }}>
           <MaterialCommunityIcons name={showArchived ? "inbox-arrow-down-outline" : "archive-outline"} size={17} color={colors.muted} />
           <Text numberOfLines={1} style={{ color: colors.ink, flexShrink: 1, fontSize: 13, fontWeight: "800" }}>{showArchived ? translateCopy("Gelen kutusuna dön", language) : translateCopy("Arşivlenen konuşmaları göster", language)}</Text>
         </Pressable>

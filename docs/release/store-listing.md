@@ -87,7 +87,7 @@ Uygulamanın topladığı veriler (dürüst beyan):
 - **Üçüncü tarafa satış:** YOK.
 - **Şifreleme:** İletimde TLS. `ITSAppUsesNonExemptEncryption: false` (standart HTTPS).
 - **Gizlilik politikası:** https://www.ortaksat.com/gizlilik-politikasi
-- **Hesap silme (Apple 5.1.1 zorunlu):** VAR — uygulama içi "Hesabı kapat" (Ayarlar → Kişisel Bilgiler → Tehlikeli bölge).
+- **Hesap silme (Apple 5.1.1 zorunlu):** VAR — uygulama içi "Hesabımı Sil" (Hesap Ayarları → Hesabımı Sil → /hesap-silme). Herkese açık web sayfası (Google Play "Delete account URL"): https://www.ortaksat.com/hesap-silme
 
 ## 10. Destek & Pazarlama URL'leri
 - Destek: https://www.ortaksat.com/iletisim

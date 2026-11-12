@@ -7,6 +7,7 @@ import { MaterialCommunityIcons } from "@/components/icons";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { moneyIn } from "@/lib/format";
 import { displayListingTitle } from "@/lib/listing-title";
+import { listingPhotos } from "@/lib/mobile-listing";
 import type { Listing } from "@/lib/types";
 
 const GAP = 2;
@@ -45,11 +46,27 @@ function commissionLabel(l: Listing): string | null {
   return moneyIn(l.commissionValue, l.currency);
 }
 
+/** Milyon ve üzeri sabit komisyonun kısa biçimi ("₺1,3 M") — yalnız tam tutar küçük karoya sığmadığında. */
+function commissionCompact(l: Listing): string | null {
+  if (l.commissionType === "rate" || !(l.commissionValue >= 1_000_000)) return null;
+  const symbol = moneyIn(0, l.currency).slice(0, -1);
+  return `${symbol}${(l.commissionValue / 1_000_000).toFixed(1).replace(".0", "").replace(".", ",")} M`;
+}
+
 const Tile = memo(function Tile({ listing: l, size, large, eager, onOpen }: { listing: Listing; size: number; large?: boolean; eager?: boolean; onOpen: (l: Listing) => void }) {
   const commission = commissionLabel(l);
-  const photoCount = new Set([l.image, ...(l.adAssets ?? [])].filter(Boolean)).size;
+  const photoCount = listingPhotos(l).length;
   const title = displayListingTitle(l.title);
   const price = l.price > 0 ? moneyIn(l.price, l.currency) : "";
+  // Komisyon hapı tek satır. En dar karoda (320 dp ekran → ~105 dp) tutar "…" ile kırpılıyordu. Sıra:
+  // çoklu-fotoğraf ikonu yoksa hap karonun tamamını kullanır → sığmıyorsa el sıkışma ikonu düşer →
+  // hâlâ sığmıyorsa milyonluk tutar kısalır. Yazı boyutu küçülmez; geniş karolarda görünüm aynı kalır.
+  const pillMax = size - (photoCount > 1 ? 34 : 12);
+  const pillFont = large ? 12 : 10;
+  const pillRoom = pillMax - (large ? 18 : 14);
+  const pillFits = (text: string, room: number) => text.length * pillFont * 0.64 <= room;
+  const pillIcon = !!commission && pillFits(commission, pillRoom - (large ? 16 : 13));
+  const pillText = commission && !pillIcon && !pillFits(commission, pillRoom) ? commissionCompact(l) ?? commission : commission;
   return (
     <Pressable
       accessibilityRole="link"
@@ -66,9 +83,9 @@ const Tile = memo(function Tile({ listing: l, size, large, eager, onOpen }: { li
         </View>
       ) : null}
       {commission ? (
-        <View pointerEvents="none" style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 3, left: 6, maxWidth: size - 34, paddingHorizontal: large ? 9 : 7, paddingVertical: large ? 4 : 2, position: "absolute", top: 6 }}>
-          <MaterialCommunityIcons name="handshake" size={large ? 13 : 10} color="#FFFFFF" />
-          <Text numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: large ? 12 : 10, fontWeight: "800" }}>{commission}</Text>
+        <View pointerEvents="none" style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 999, flexDirection: "row", gap: 3, left: 6, maxWidth: pillMax, paddingHorizontal: large ? 9 : 7, paddingVertical: large ? 4 : 2, position: "absolute", top: 6 }}>
+          {pillIcon ? <MaterialCommunityIcons name="handshake" size={large ? 13 : 10} color="#FFFFFF" /> : null}
+          <Text numberOfLines={1} style={{ color: "#FFFFFF", flexShrink: 1, fontSize: pillFont, fontWeight: "800" }}>{pillText}</Text>
         </View>
       ) : null}
       <View pointerEvents="none" style={{ bottom: large ? 10 : 5, left: large ? 10 : 6, position: "absolute", right: large ? 10 : 6 }}>

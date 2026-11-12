@@ -34,7 +34,14 @@ export async function shareOrCopy(content: ShareContent): Promise<ShareResult> {
   }
 
   try {
-    await Share.share({ title: content.title, message: content.message ?? "", url: content.url });
+    // ANDROID: RN Share `url` alanını YOK SAYAR (yalnız `message` → Intent.EXTRA_TEXT). Eskiden
+    // `{ title, url }` ile çağrılan paylaşımlar Android'de BOŞ metin gönderiyor, `message + url`
+    // ile çağrılanlar bağlantıyı düşürüyordu (ör. alıcı onay linki). Bağlantı metne eklenir.
+    const message = Platform.OS === "android"
+      ? (content.url && !(content.message ?? "").includes(content.url) ? [content.message, content.url].filter(Boolean).join("\n") : content.message ?? "")
+      : content.message ?? "";
+    const result = await Share.share({ title: content.title, message, url: content.url });
+    if (result?.action === Share.dismissedAction) return "dismissed";
     return "shared";
   } catch {
     // Native'de de son çare panoya kopyala.

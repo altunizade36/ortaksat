@@ -27,6 +27,7 @@ import { haptic } from "@/lib/haptics";
 import { metaTrack } from "@/lib/meta-pixel";
 import { syncSavedForUser } from "@/lib/saved-searches";
 import { effectiveCommissionAmount, listingInviteCode, moneyIn, msgStamp } from "@/lib/format";
+import { noteThreadActivity, noteThreadHasMessages } from "@/lib/inbox-model";
 import { scanTextLocal } from "@/lib/moderation";
 import {
   deleteFavorite,
@@ -41,6 +42,7 @@ import {
   fetchBlockedUsers,
   createOfferLive,
   fetchOffersLive,
+  fetchOffersResultLive,
   offerSellerRespondLive,
   offerBuyerActionLive,
   loadMyFollowsLive,
@@ -49,7 +51,7 @@ import {
   insertLead,
   insertListing,
   insertConversation,
-  insertMessage,
+  insertMessageResult,
   messageSendBlockedReason,
   insertNotification,
   partnerJoinLive,
@@ -75,7 +77,7 @@ import {
   saveEmailNotificationsLive,
   recordLegalConsentLive,
   requestAccountDeletionLive,
-  deleteListingLive,
+  cancelAccountDeletionLive,
   removeListingLive,
   updateListingFeaturedLive,
   insertBulkNotifications,
@@ -101,7 +103,8 @@ import {
   updateLocationSuggestionStatusLive
 } from "@/lib/live-service";
 import { rateLimit, rateLimitSync } from "@/lib/rate-limit";
-import { supabase, isSupabaseConfigured } from "@/lib/supabase";
+import { unregisterPush } from "@/lib/push";
+import { supabase, isSupabaseConfigured, readStoredAuthUser } from "@/lib/supabase";
 import { fetchListingsByIds, fetchPublicProfiles, fetchUserNotifications, loadAccountSnapshot, loadAdminSnapshot, loadBlogPosts, loadCategories, loadContentPages, loadMarketplacePage, loadMarketplaceSnapshot, loadOwnListings, loadPlatformSettings, loadSeoSettings, loadSuggestions, parseNotifMeta, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
 import { categoryTree as baseCategoryTree, setHiddenCategories as setHiddenCategoriesModule, type CategoryNode } from "@/lib/category-tree";
 import { displayText, repairTurkishText } from "@/lib/text";
@@ -184,6 +187,17 @@ type SaleFromLeadInput = {
 const LEGAL_CONSENT_VERSION = "2026-06-11";
 const LEGAL_DOCUMENT_TYPES = ["privacy", "terms", "kvkk", "seller_rules"] as const;
 
+// Auth e-postalarındaki (kayıt / şifre sıfırlama / kod tekrar) ve OAuth'taki dönüş adresi — TEK KAYNAK.
+// KRİTİK: native'de `window` HER ZAMAN tanımlıdır (RN `global.window = global`) ama yayın
+// derlemesinde `window.location` YOKTUR → `typeof window !== "undefined"` kontrolüyle
+// `window.location.origin` okumak kayıt ve şifre sıfırlamayı native'de ÇÖKERTİYORDU
+// ("Bağlantı hatası"). Web'de site adresi, native'de uygulama şeması döner.
+function authRedirectUrl(): string {
+  return Platform.OS === "web" && typeof window !== "undefined" && window.location?.origin
+    ? `${window.location.origin}/auth`
+    : "ortaksat://auth";
+}
+
 // Supabase/GoTrue İngilizce hata mesajlarını Türkçeye çevirir (site Türkçe).
 function translateAuthError(msg?: string | null): string | undefined {
   if (!msg) return undefined;
@@ -240,8 +254,9 @@ type AppStore = {
   notifications: Notification[];
   reports: Report[];
   platformSettings: PlatformSettings;
-  updatePlatformSetting: (key: keyof PlatformSettings, value: boolean) => void;
-  setAnnouncement: (text: string, active: boolean) => void;
+  /** true = kalıcı yazıldı; false = yetki yok ya da yazım başarısız (iyimser değişiklik geri alınır). */
+  updatePlatformSetting: (key: keyof PlatformSettings, value: boolean) => Promise<boolean>;
+  setAnnouncement: (text: string, active: boolean) => Promise<boolean>;
   blogPosts: DbBlogPost[];
   contentPages: DbContentPage[];
   seoSettings: DbSeoSetting[];
@@ -266,6 +281,12 @@ type AppStore = {
   signInWithGoogle: (legalAccepted: boolean) => Promise<boolean>;
   verifyEmailCode: (email: string, code: string) => Promise<boolean>;
   resendEmailCode: (email: string) => Promise<boolean>;
+  /**
+   * Bir auth eylemini (signInWithEmail, signUpWithEmail, …) çalıştırır ve o çağrının GERÇEK
+   * hatasını sonuçla birlikte döndürür. Eylemlerin kendisi `boolean` dönmeye devam eder (mevcut
+   * çağıranlar bozulmaz); hata metnine ihtiyacı olan ekran bunu kullanır.
+   */
+  authAttempt: (action: () => Promise<boolean>) => Promise<{ ok: boolean; error?: string }>;
   signOut: () => Promise<void>;
   signOutAllDevices: () => Promise<boolean>;
   updateProfile: (input: Pick<User, "name" | "phone" | "avatar" | "bio"> & { expertiseCategories?: string[]; city?: string;username?:string;districtId?:number|null;website?:string;instagram?:string }) => Promise<boolean>;
@@ -280,6 +301,8 @@ type AppStore = {
   recordLegalConsent: (documentType: "privacy" | "terms" | "kvkk" | "seller_rules") => Promise<boolean>;
   createSupportTicket: (subject: string, message: string, options?: {id?:string;category?:string;attachments?:string[]}) => Promise<boolean>;
   requestAccountDeletion: (reason: string) => Promise<boolean>;
+  /** Bekleyen hesap silme talebini iptal eder; başarılıysa hesap yeniden aktif olur. */
+  cancelAccountDeletion: () => Promise<boolean>;
   createListing: (input: NewListingInput, statusOverride?: Listing["status"]) => Promise<Listing>;
   updateListing: (listingId: string, input: NewListingInput, publish?: boolean) => Promise<boolean>;
   createLead: (input: Omit<Lead, "id" | "createdAt" | "status">) => Lead | undefined;
@@ -321,20 +344,22 @@ type AppStore = {
   locationSuggestions: LocationSuggestion[];
   addCategorySuggestion: (input: { suggestedPath: string; note?: string; listingId?: string }) => void;
   addLocationSuggestion: (input: { provinceId?: number; districtId?: number; suggestedName: string; note?: string }) => void;
-  setCategorySuggestionStatus: (id: string, status: SuggestionStatus) => void;
-  setLocationSuggestionStatus: (id: string, status: SuggestionStatus) => void;
+  setCategorySuggestionStatus: (id: string, status: SuggestionStatus) => Promise<boolean>;
+  setLocationSuggestionStatus: (id: string, status: SuggestionStatus) => Promise<boolean>;
   updateLeadStatus: (leadId: string, status: LeadStatus) => void;
   updateListingStatus: (listingId: string, status: Listing["status"]) => Promise<boolean>;
   updateListingInventory: (listingId: string, patch: { stockCount?: number; price?: number }) => void;
-  setListingFeatured: (listingId: string, featured: boolean) => void;
-  deleteListing: (listingId: string) => void;
+  setListingFeatured: (listingId: string, featured: boolean) => Promise<boolean>;
+  /** Sunucu-otoriteli kaldırma (remove_listing RPC): geçmişi olmayan ilan SİLİNİR, geçmişi olan ARŞİVLENİR.
+   *  true = kaldırıldı; hangisinin olduğu onOutcome ile bildirilir. false = yetki yok / yazım başarısız. */
+  deleteListing: (listingId: string, onOutcome?: (outcome: "deleted" | "archived") => void) => Promise<boolean>;
   removeListing: (listingId: string) => Promise<boolean>;
-  setUserRole: (userId: string, role: UserRole) => void;
-  setUserStatus: (userId: string, status: NonNullable<User["status"]>) => void;
-  setUserVerification: (userId: string, field: "verifiedPhone" | "verifiedIdentity", value: boolean) => void;
-  adminNotifyUser: (userId: string, title: string, body: string) => void;
+  setUserRole: (userId: string, role: UserRole) => Promise<boolean>;
+  setUserStatus: (userId: string, status: NonNullable<User["status"]>) => Promise<boolean>;
+  setUserVerification: (userId: string, field: "verifiedPhone" | "verifiedIdentity", value: boolean) => Promise<boolean>;
+  adminNotifyUser: (userId: string, title: string, body: string) => Promise<boolean>;
   adminBroadcast: (title: string, body: string) => void;
-  updateSaleStatus: (saleId: string, status: SaleStatus, reason?: string) => void;
+  updateSaleStatus: (saleId: string, status: SaleStatus, reason?: string) => Promise<boolean>;
   recordBatchPayout: (partnerId: string, listingId?: string) => void;
   findConversation: (id: string) => Conversation | undefined;
   findListing: (id: string) => Listing | undefined;
@@ -433,7 +458,14 @@ const ANON_USER: User = {
 export function StoreProvider({ children }: PropsWithChildren) {
   const [backendMode, setBackendMode] = useState<"mock" | "supabase">("mock");
   const [authReady, setAuthReady] = useState(!isSupabaseConfigured);
-  const [authError, setAuthError] = useState<string | undefined>();
+  const [authError, setAuthErrorState] = useState<string | undefined>();
+  // Son auth hatasının ANLIK kopyası: `authError` state'i çağıranın closure'ında bir render
+  // GERİDEN gelir (await sonrası eski değer okunur) → `authAttempt` gerçek hatayı buradan döndürür.
+  const lastAuthErrorRef = useRef<string | undefined>(undefined);
+  const setAuthError = useRef((value: string | undefined) => {
+    lastAuthErrorRef.current = value;
+    setAuthErrorState(value);
+  }).current;
   // CANLI mod (Supabase ayarlı): hiçbir demo/mock veri yüklenmez — her şey gerçek
   // veriyle Supabase'den gelir. Yalnızca yerel önizlemede (Supabase yokken) demo veri.
   const [authUser, setAuthUser] = useState<User | null>(null);
@@ -451,6 +483,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
   const partnershipWrites=useRef(new Set<string>());
   favoriteAccount.current = authUser?.id;
   const notificationWrites = useRef(new Set<string>());
+  // Mesajlaşma: (ilan:alıcı) → bu oturumda açılan konuşma. `conversations` state'i bir sonraki
+  // render'a kadar bayat olduğundan hızlı çift dokunuş İKİ konuşma açıyordu; ref anında görür.
+  const pendingConversations = useRef(new Map<string, Conversation>());
+  // konuşma id → sunucuya yazımı bekleyen söz (ilk mesaj konuşma satırından ÖNCE gitmesin).
+  const conversationReady = useRef(new Map<string, Promise<string | null>>());
+  // yerel konuşma id → sunucudaki mevcut konuşma id (aynı ilan+kişi için zaten varsa).
+  const conversationAlias = useRef(new Map<string, string>());
+  // Sunucuya yazıldığı DOĞRULANAN konuşma id'leri (yerel + sunucu id). Doğrulanmamış yerel konuşma,
+  // yenilemede sunucu listesinde olmadığı için silinmez (bkz. mergeServerConversations).
+  const confirmedConversations = useRef(new Set<string>());
   const favoriteWrites = useRef(new Set<string>());
   const [favorites, setFavorites] = useState(isSupabaseConfigured ? [] : initialFavorites);
   const [followedSellerIds, setFollowedSellerIds] = useState<string[]>([]);
@@ -526,10 +568,38 @@ export function StoreProvider({ children }: PropsWithChildren) {
     });
   }, [conversations, authUser?.id, accountLoaded]);
 
+  // Sunucudan gelen mesaj listesini yerel durumla birleştir: sunucuda OLMAYAN ama yerelde duran
+  // "gönderilemedi" (tekrar dene bekleyen) ve son 2 dakikada yazılmış (yazımı süren) mesajlar
+  // KORUNUR. Eskiden yenileme `setMessages(sunucu)` ile bunları siliyordu → başarısız mesajın
+  // metni, sekme öne gelince sessizce kayboluyordu.
+  const mergeServerMessages = (server: Message[], local: Message[]): Message[] => {
+    const known = new Set(server.map((m) => m.id));
+    const recent = msgStamp(new Date(Date.now() - 120000).toISOString());
+    const keep = local.filter((m) => !known.has(m.id) && (m.status === "failed" || m.createdAt >= recent));
+    return keep.length ? [...keep, ...server] : server;
+  };
+  // Aynı mantık konuşmalar için: bu oturumda açılmış (pendingConversations) ama sunucu listesinde
+  // OLMAYAN yerel konuşma, sunucuya yazımı henüz doğrulanmadıysa (çevrimdışı/başarısız) ya da son
+  // 2 dakikada açıldıysa (yazımdan ÖNCE başlamış bayat yenileme) KORUNUR. Eskiden yenileme onu
+  // siliyordu → kullanıcının içinde olduğu sohbet "Konuşma bulunamadı"ya dönüyordu.
+  const mergeServerConversations = (server: Conversation[], local: Conversation[]): Conversation[] => {
+    if (!pendingConversations.current.size) return server;
+    const known = new Set(server.map((c) => c.id));
+    const pendingIds = new Set(Array.from(pendingConversations.current.values(), (c) => c.id));
+    const recent = msgStamp(new Date(Date.now() - 120000).toISOString());
+    const keep = local.filter((c) => !known.has(c.id) && pendingIds.has(c.id) && (!confirmedConversations.current.has(c.id) || c.createdAt >= recent));
+    return keep.length ? [...keep, ...server] : server;
+  };
   // Çıkışta kullanıcıya ÖZEL (private) durumları temizle → aynı tarayıcıda sıradaki
   // kullanıcı/oturum önceki kullanıcının konuşma/mesaj/favori/ortaklık/talep/satış/
   // bildirim verisini GÖRMESİN. Herkese açık listings/reviews korunur (public feed).
   const resetPrivateState = () => {
+    pendingConversations.current.clear();
+    conversationReady.current.clear();
+    conversationAlias.current.clear();
+    confirmedConversations.current.clear();
+    // Sipariş/şikâyet/öneri de hesaba özeldir (yönetici hesabında TÜM kayıtlar) → sıradaki oturuma kalmasın.
+    if (isSupabaseConfigured) { setOrders([]); setReports([]); setCategorySuggestions([]); setLocationSuggestions([]); }
     setConversations([]);
     setMessages([]);
     setFavorites([]);
@@ -739,7 +809,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setLeads(account.leads);
         setSales(account.sales);
         setOrders(account.orders);
-        setReviews((items) => [...account.reviews, ...items.filter((item) => item.reviewerId !== profile.id)]);
+        setReviews((items) => [...account.reviews, ...items.filter((item) => item.reviewerId !== profile.id && item.reviewedUserId !== profile.id)]);
         setFavorites(account.favorites);
         setConversations(account.conversations);
         setMessages(account.messages);
@@ -750,6 +820,26 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // (ezme riski yok: ortada ezilecek yüklenmiş veri yok).
         loadedAccountUserRef.current = null;
       }
+    }
+
+    // NATIVE ÇEVRİMDIŞI KORUMASI: erişim token'ının süresi dolmuşken (uygulama ~1 saatten uzun
+    // kapalı kaldıysa) ağ yoksa auth-js yenilemeyi deneyip `session: null` döner — ama oturumu
+    // cihazda SAKLI BIRAKIR (gerçek çıkışta/geçersiz token'da siler). Eskiden bu null "çıkış
+    // yapıldı" sayılıyordu → çevrimdışı açılışta kullanıcı giriş duvarına düşüyordu. Saklı oturum
+    // duruyorsa kullanıcıyı GİRİŞLİ tut; ağ gelince TOKEN_REFRESHED → loadProfile hesabı yükler
+    // (o ana kadar accountLoaded=false → ekranlar "yükleniyor" gösterir, boş-veri göstermez).
+    // Dönüş: true = ele alındı (oturum korundu ya da daha yeni bir auth olayı geldi), false = saklı oturum yok.
+    async function keepStoredSession(revisionAtCall: number): Promise<boolean> {
+      if (Platform.OS === "web") return false; // web davranışı değişmez
+      const stored = await readStoredAuthUser();
+      if (!mounted || revisionAtCall !== authRevision) return true;
+      if (!stored) return false;
+      setEmailVerified(Boolean(stored.email_confirmed_at));
+      setAuthUser((previous) => previous ?? userFromAuth(stored.id, stored.phone, stored.user_metadata?.full_name, stored.user_metadata?.avatar_url || stored.user_metadata?.picture));
+      setBackendMode("supabase");
+      setAuthError(undefined);
+      setAuthReady(true);
+      return true;
     }
 
     supabase.auth.getSession().then(({ data, error }) => {
@@ -765,9 +855,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
         void loadProfile(user.id, user.phone, user.user_metadata?.full_name, user.user_metadata?.avatar_url || user.user_metadata?.picture)
           .catch((e) => console.warn("loadProfile failed", e));
       } else if (mounted) {
-        setAuthUser(null);
-        setEmailVerified(false);
-        setAuthReady(true);
+        const markSignedOut = () => {
+          setAuthUser(null);
+          setEmailVerified(false);
+          setAuthReady(true);
+        };
+        // Hata ile gelen null (yenileme ağ hatası) + cihazda saklı oturum → çıkış sayma (native).
+        if (error && Platform.OS !== "web") {
+          void keepStoredSession(authRevision).then((handled) => { if (!handled && mounted && !receivedAuthEvent) markSignedOut(); });
+        } else markSignedOut();
       }
     }).catch((e) => {
       // Ağ reddinde (getSession fetch timeout/kopuk) authReady askıda kalmasın → UI kilitlenmesin.
@@ -775,7 +871,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       if (mounted && !receivedAuthEvent) setAuthReady(true);
     });
 
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
       if (!mounted) return;
       receivedAuthEvent = true;
       const user = session?.user;
@@ -786,18 +882,26 @@ export function StoreProvider({ children }: PropsWithChildren) {
         void loadProfile(user.id, user.phone, user.user_metadata?.full_name, user.user_metadata?.avatar_url || user.user_metadata?.picture)
           .catch((e) => console.warn("loadProfile failed", e));
       } else {
-        authRevision++;
-        sessionUserId = null;
-        accountRevision++;
-        setAuthUser(null);
-        setEmailVerified(false);
-        loadedAccountUserRef.current = null; // çıkış → sonraki giriş hesap-özetini yeniden yüklesin
-        setAccountLoaded(false);
-        void syncSavedForUser(null); // kayıtlı aramaları temizle (paylaşılan tarayıcı gizliliği)
-        // Oturum başka bir yolla kapandıysa (token süresi, başka sekmede çıkış) da
-        // özel veriyi temizle → sonraki kullanıcıya sızmasın.
-        resetPrivateState();
-        setAuthReady(true);
+        const signOutLocally = () => {
+          authRevision++;
+          sessionUserId = null;
+          accountRevision++;
+          setAuthUser(null);
+          setEmailVerified(false);
+          loadedAccountUserRef.current = null; // çıkış → sonraki giriş hesap-özetini yeniden yüklesin
+          setAccountLoaded(false);
+          void syncSavedForUser(null); // kayıtlı aramaları temizle (paylaşılan tarayıcı gizliliği)
+          // Oturum başka bir yolla kapandıysa (token süresi, başka sekmede çıkış) da
+          // özel veriyi temizle → sonraki kullanıcıya sızmasın.
+          resetPrivateState();
+          setAuthReady(true);
+        };
+        // NATIVE açılış: INITIAL_SESSION null gelse de cihazda saklı oturum duruyorsa bu bir
+        // ağ hatasıdır (bkz. keepStoredSession) → çıkış yapma. SIGNED_OUT vb. her zaman çıkıştır.
+        if (Platform.OS !== "web" && event === "INITIAL_SESSION") {
+          const revision = authRevision;
+          void keepStoredSession(revision).then((handled) => { if (!handled && mounted && revision === authRevision) signOutLocally(); });
+        } else signOutLocally();
       }
     });
 
@@ -811,6 +915,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
   useEffect(() => {
     if (!supabase || !authUser) return;
     const client = supabase;
+    let subscribedOnce = false;
+    let alive = true;
 
     const channel = client
       .channel(`account-realtime-${authUser.id}`)
@@ -818,6 +924,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
         "postgres_changes",
         { event: "*", schema: "public", table: "conversations" },
         (payload) => {
+          // DELETE (ilan silinince CASCADE): yalnız PK gelir → hayalet konuşmayı yerelden kaldır.
+          if (payload.eventType === "DELETE") {
+            const goneId = (payload.old as Record<string, any> | null)?.id as string | undefined;
+            if (!goneId) return;
+            setConversations((items) => (items.some((item) => item.id === goneId) ? items.filter((item) => item.id !== goneId) : items));
+            setMessages((items) => (items.some((item) => item.conversationId === goneId) ? items.filter((item) => item.conversationId !== goneId) : items));
+            return;
+          }
           const row = payload.new as Record<string, any> | null;
           if (!row || !Array.isArray(row.participant_ids) || !row.participant_ids.includes(authUser.id)) return;
           const conversation: Conversation = {
@@ -831,6 +945,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
             lastMessageAt: row.last_message_at ? msgStamp(row.last_message_at) : msgStamp(row.created_at),
             createdAt: msgStamp(row.created_at)
           };
+          confirmedConversations.current.add(conversation.id); // satır sunucuda VAR
+          noteThreadActivity(row.id, row.last_message_at, row.created_at); // ham damgalar: mesajı olan konuşma "boş" sayılmasın
           setConversations((items) => [conversation, ...items.filter((item) => item.id !== conversation.id)]);
         }
       )
@@ -840,6 +956,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // (böylece gönderenin "✓✓ okundu" göstergesi canlı güncellenir).
         { event: "*", schema: "public", table: "messages" },
         (payload) => {
+          if (payload.eventType === "DELETE") {
+            const goneId = (payload.old as Record<string, any> | null)?.id as string | undefined;
+            if (goneId) setMessages((items) => (items.some((item) => item.id === goneId) ? items.filter((item) => item.id !== goneId) : items));
+            return;
+          }
           const row = payload.new as Record<string, any> | null;
           if (!row || (row.sender_id !== authUser.id && row.receiver_id !== authUser.id)) return;
           const message: Message = {
@@ -865,9 +986,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
             }
             return [message, ...items];
           });
+          noteThreadHasMessages(message.conversationId);
           // Gerçek-zamanlı gelen mesaj, konuşmanın son-mesaj zamanını da güncellesin
-          // (yoksa gelen kutusu sıralaması ve gösterilen saat bayat kalır).
-          setConversations((items) => items.map((item) => (item.id === message.conversationId ? { ...item, lastMessageAt: message.createdAt } : item)));
+          // (yoksa gelen kutusu sıralaması ve gösterilen saat bayat kalır). UPDATE (okundu bilgisi)
+          // ESKİ bir mesaja ait olabilir → saati GERİ almasın; yalnız yeni mesaj ya da daha ileri damga yazar.
+          const isNewMessage = payload.eventType === "INSERT";
+          setConversations((items) => items.map((item) => (item.id === message.conversationId && (isNewMessage || item.lastMessageAt < message.createdAt) ? { ...item, lastMessageAt: message.createdAt } : item)));
         }
       )
       .on(
@@ -883,10 +1007,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
             title: row.title,
             body: row.body,
             read: row.read,
-            createdAt: row.created_at.slice(0, 16).replace("T", " "),
+            // Tam ISO damga (hesap-özetiyle AYNI biçim). Eskiden ilk 16 karakter alınıp saat dilimi
+            // atılıyordu → UTC saat yerel sanılıyor (TR'de 3 saat ileri), Safari/Hermes'te Invalid Date.
+            createdAt: row.created_at,
             metadata: parseNotifMeta(row.metadata)
           };
           setNotifications((items) => [notification, ...items.filter((item) => item.id !== notification.id)]);
+          // Teklif bildirimi = karşı taraf teklif verdi/yanıtladı. `offers` tablosu realtime
+          // yayınında değil → sohbetteki teklif kartı bayat kalıyordu; bildirim gelince tazele.
+          // Sorgu başarısızsa (null) eldeki teklifler boş listeyle EZİLMEZ.
+          if (payload.eventType === "INSERT" && row.type === "offer") void fetchOffersResultLive().then((rows) => { if (alive && rows) setOffers(rows); }).catch(() => {});
         }
       )
       // partnerships/leads/commissions: filtre YOK — RLS aboneye yalnizca gorme
@@ -979,12 +1109,30 @@ export function StoreProvider({ children }: PropsWithChildren) {
           });
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        // YENİDEN bağlanma (ağ kopması / uyku sonrası): realtime kaçan INSERT'leri tekrar oynatmaz →
+        // ilk abonelikten sonraki her SUBSCRIBED'da konuşma/mesaj/bildirimleri sunucudan tazele.
+        if (status !== "SUBSCRIBED") return;
+        if (!subscribedOnce) { subscribedOnce = true; return; }
+        void loadAccountSnapshot(authUser.id).then((account) => {
+          if (!alive || !account) return;
+          // Sorgusu BAŞARISIZ olan dilim (account.failed) yazılmaz: yeniden bağlanma anı ağın en
+          // kararsız olduğu andır; boş dönen dilim iyi veriyi (gelen kutusu, bildirimler) ezmesin.
+          const failed = account.failed ?? {};
+          if (!failed.conversations) setConversations((items) => mergeServerConversations(account.conversations, items));
+          if (!failed.messages) setMessages((items) => mergeServerMessages(account.messages, items));
+          if (!failed.notifications) setNotifications(account.notifications.map((n) => (notificationWrites.current.has(n.id) ? { ...n, read: true } : n)));
+        }).catch(() => {});
+      });
 
     return () => {
+      alive = false;
       void client.removeChannel(channel);
     };
-  }, [authUser]);
+    // Yalnız kullanıcı DEĞİŞİNCE yeniden abone ol. Eskiden bağımlılık `authUser` nesnesiydi →
+    // her profil/tercih kaydında kanal kapatılıp yeniden açılıyor, aradaki mesajlar kaçıyordu.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authUser?.id]);
   const value = useMemo<AppStore>(() => {
     // Canlı (Supabase) modda oturum yoksa misafir kullanıcı: kullanıcı giriş
     // yapmadan gezebilir; aksiyonlar (ilan ver, favori, mesaj) /auth'a yönlenir.
@@ -1012,9 +1160,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
       // fallback geçer → konuşma yine kurulur (yüksek-niyetli paylaşım trafiği ölmesin).
       const listing = listings.find((item) => item.id === listingId) ?? fallbackListing;
       if (!listing || listing.demo || receiverId === currentUser.id) return undefined;
-      const existing = conversations.find(
+      const pendingKey = `${listingId}:${receiverId}`;
+      const inState = conversations.find(
         (item) => item.listingId === listingId && item.participantIds.includes(currentUser.id) && item.participantIds.includes(receiverId)
       );
+      const existing = inState ?? pendingConversations.current.get(pendingKey);
       const now = msgStamp();
       const conversation: Conversation = existing ?? {
         id: newId("c", liveUser),
@@ -1028,8 +1178,18 @@ export function StoreProvider({ children }: PropsWithChildren) {
         createdAt: now
       };
       if (!existing) {
+        pendingConversations.current.set(pendingKey, conversation);
         setConversations((items) => [conversation, ...items]);
-        if (liveUser) void insertConversation(conversation);
+        if (liveUser) writeConversation(conversation, pendingKey);
+      } else {
+        // Konuşma yalnız pendingConversations'ta kalmış olabilir (state'ten düşmüş): geri ekle; yoksa
+        // çağıran var olmayan bir konuşmaya yönlenir ve "Konuşma bulunamadı" görür — her denemede.
+        if (!inState) setConversations((items) => (items.some((item) => item.id === existing.id) ? items : [existing, ...items]));
+        // Sunucuya yazımı daha önce BAŞARISIZ olduysa (çevrimdışı açılmış) yeniden dene.
+        const prior = conversationReady.current.get(existing.id);
+        if (liveUser && prior) void prior.then((serverId) => {
+          if (!serverId && conversationReady.current.get(existing.id) === prior) writeConversation(existing, pendingKey);
+        });
       }
       if (body?.trim()) {
         if (!rateLimitSync("message_send")) { setSyncError("Çok hızlı mesaj gönderiyorsun. Lütfen biraz yavaşla."); return conversation; }
@@ -1047,13 +1207,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
         setConversations((items) => items.map((item) => (item.id === conversation.id ? { ...item, lastMessageAt: message.createdAt } : item)));
         // conversationId + listingId ekli: bildirime dokununca DOĞRU sohbet açılır (eskiden
         // meta yoktu → "en son katılımcı görüşmesi"ne düşüyordu, çok görüşmede yanlış sohbet).
-        notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${message.body}`, { conversationId: conversation.id, listingId });
         // Başarısızsa mesajı SİLME (eskiden siliniyor + ham tarayıcı uyarısı çıkıyordu):
         // "failed" işaretle → baloncukta "Gönderilemedi · tekrar dene" görünür ve tek
         // dokunuşla yeniden gönderilir. sendConversationMessage ile aynı davranış.
-        if (liveUser) insertMessage(message)
-          .then((ok) => { if (!ok) handleSendFailure(message); })
-          .catch(() => handleSendFailure(message));
+        // İlk mesaj, konuşma satırı sunucuya YAZILDIKTAN sonra gider (eskiden iki istek paralel
+        // gidiyor, mesaj önce varırsa RLS/FK reddi → "konuşma yok" sanılıp yerelden siliniyordu).
+        deliverMessage(message);
       }
       return conversation;
     }
@@ -1069,9 +1228,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
      * Artık: geçici hata → baloncuk "failed" (tekrar dene). Kalıcı hata → hayalet
      * konuşma yerelden temizlenir ve kullanıcıya gerçek sebep söylenir.
      */
-    function handleSendFailure(message: Message) {
+    function handleSendFailure(message: Message, code?: string) {
+      // Sunucu hız-limiti (trg_throttle_messages, P0001): bağlantı değil → doğru sebebi söyle.
+      if (code === "P0001") {
+        setMessages((items) => items.map((m) => (m.id === message.id ? { ...m, status: "failed" } : m)));
+        setSyncError("Kısa sürede çok fazla mesaj gönderdin. Birkaç dakika bekleyip mesajın altındaki “tekrar dene”ye dokun.");
+        return;
+      }
       void messageSendBlockedReason(message).then((reason) => {
         if (reason === "gone") {
+          pendingConversations.current.forEach((c, key) => { if (c.id === message.conversationId) pendingConversations.current.delete(key); });
           setConversations((items) => items.filter((c) => c.id !== message.conversationId));
           setMessages((items) => items.filter((m) => m.conversationId !== message.conversationId));
           setSyncError("Bu görüşme artık mevcut değil — ilan kaldırılmış olabilir.");
@@ -1085,6 +1251,66 @@ export function StoreProvider({ children }: PropsWithChildren) {
         // Geçici (ağ/sunucu) → mesaj durur, tek dokunuşla tekrar denenir.
         setMessages((items) => items.map((m) => (m.id === message.id ? { ...m, status: "failed" } : m)));
       });
+    }
+    // Mesajı sunucuya yaz; alıcıya "Yeni mesaj" bildirimi YALNIZ mesaj gerçekten yazıldıysa gider.
+    // Eskiden bildirim mesajdan ÖNCE ve bağımsız gönderiliyordu → engellenen/hız-limitine takılan
+    // (yani alıcıya hiç ulaşmayan) mesajın önizlemesi yine de alıcının bildirimine düşüyordu:
+    // engellenen kişi, engelleyene bildirim üzerinden yazmaya devam edebiliyordu.
+    function deliverMessage(message: Message) {
+      const announce = (conversationId: string) => {
+        const preview = message.body || (message.attachmentType === "file" ? `📎 ${message.attachmentName ?? "Dosya"}` : "📷 Görsel");
+        notify(message.receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${preview.slice(0, 140)}`, { conversationId, listingId: message.listingId });
+      };
+      if (!liveUser) { announce(message.conversationId); return; }
+      const pendingWrite = conversationReady.current.get(message.conversationId);
+      // Konuşma satırının ilk yazımı başarısız olduysa (ağ) mesajdan önce YENİDEN dene; yoksa
+      // "tekrar dene" hiç var olmayan konuşmaya yazmaya çalışıp sonsuza dek başarısız olurdu.
+      const ready: Promise<string | null> = !pendingWrite ? Promise.resolve(message.conversationId) : pendingWrite.then((serverId) => {
+        if (serverId) return serverId;
+        const entry = Array.from(pendingConversations.current.entries()).find(([, c]) => c.id === message.conversationId);
+        if (!entry) return null;
+        // Başka bir mesaj yeniden yazımı zaten başlattıysa onu paylaş; yoksa başlat (takma-ad eşlemesi dahil).
+        const current = conversationReady.current.get(message.conversationId);
+        return current && current !== pendingWrite ? current : writeConversation(entry[1], entry[0]);
+      });
+      void ready.then((serverId) => {
+        // Konuşma satırı sunucuda henüz yok (yazımı yine başarısız): mesajı yazmayı DENEME. Denenirse
+        // sunucu "konuşma yok" (23503) der, bu da "ilan kaldırılmış" sanılıp konuşmayı ve kullanıcının
+        // yazdığı metni yerelden SİLERDİ — oysa sorun geçicidir. "failed" kalır; "tekrar dene" önce
+        // konuşmayı yeniden yazar.
+        if (!serverId) {
+          setMessages((items) => items.map((m) => (m.id === message.id ? { ...m, status: "failed" } : m)));
+          return undefined;
+        }
+        // Konuşma sunucuda başka id ile zaten varsa mesaj ona yazılır.
+        const target = { ...message, conversationId: serverId, status: undefined };
+        return insertMessageResult(target).then((res) => { if (!res.ok) handleSendFailure(target, res.code); /* canlıda "Yeni mesaj" bildirimi sunucuda üretilir (messages AFTER INSERT) */ });
+      }).catch(() => handleSendFailure(message));
+    }
+    // Konuşma satırını sunucuya yazar ve sonucu `conversationReady`'ye koyar (ilk yazım + yeniden deneme
+    // AYNI yoldan geçer). Sunucuda aynı ilan+kişi için ZATEN konuşma varsa (başka cihaz / yarış) yenisi
+    // açılmaz: yerel konuşma ve mesajları mevcut konuşmaya taşınır (tek thread).
+    function writeConversation(conversation: Conversation, pendingKey: string): Promise<string | null> {
+      const localId = conversation.id;
+      const account = currentUser.id;
+      const ready = insertConversation(conversation).then((serverId) => {
+        if (!serverId) return null;
+        // Yazım sürerken çıkış yapıldıysa (ref'ler temizlendi) sıradaki oturumun durumuna dokunma.
+        if (favoriteAccount.current !== account) return serverId;
+        confirmedConversations.current.add(localId);
+        confirmedConversations.current.add(serverId);
+        if (serverId !== localId) {
+          conversationAlias.current.set(localId, serverId);
+          pendingConversations.current.set(pendingKey, { ...conversation, id: serverId });
+          setConversations((items) => (items.some((item) => item.id === serverId)
+            ? items.filter((item) => item.id !== localId)
+            : items.map((item) => (item.id === localId ? { ...item, id: serverId } : item))));
+          setMessages((items) => items.map((item) => (item.conversationId === localId ? { ...item, conversationId: serverId } : item)));
+        }
+        return serverId;
+      }).catch(() => null);
+      conversationReady.current.set(localId, ready);
+      return ready;
     }
     function notify(userId: string, type: Notification["type"], title: string, body: string, metadata?: NotificationMeta) {
       const notification: Notification = {
@@ -1118,6 +1344,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         .then((ok) => { if (!ok) setSyncError(message); })
         .catch(() => setSyncError(message));
     }
+    // Sonucu ÇAĞIRANA dönen yazımlar için: istisna da "başarısız" sayılır (asla reddetmez).
+    function settleWrite(write: Promise<boolean>): Promise<boolean> {
+      return write.then((ok) => ok === true, () => false);
+    }
 
     return {
       backendMode,
@@ -1125,6 +1355,11 @@ export function StoreProvider({ children }: PropsWithChildren) {
       authError,
       syncError,
       clearSyncError() { setSyncError(null); },
+      async authAttempt(action) {
+        lastAuthErrorRef.current = undefined;
+        const ok = await action();
+        return { ok, error: ok ? undefined : lastAuthErrorRef.current };
+      },
       currentUser,
       isAuthenticated,
       pendingVerifyEmail,
@@ -1238,8 +1473,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
             // Web'de doğrulama linki tarayıcıya (siteye) dönmeli; native şemaya
             // (ortaksat://) sabitlenirse mobil-web kullanıcısı e-postadaki linki
             // tarayıcıda açamaz ve hesabını onaylayamaz.
-            emailRedirectTo:
-              typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth"
+            emailRedirectTo: authRedirectUrl()
           }
         });
         setAuthError(translateAuthError(error?.message));
@@ -1284,8 +1518,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
         const { error } = await supabase.auth.resetPasswordForEmail(email.trim().toLowerCase(), {
           // Web'de şifre sıfırlama linki siteye dönmeli (native şema tarayıcıda açılmaz).
-          redirectTo:
-            typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth"
+          redirectTo: authRedirectUrl()
         });
         setAuthError(translateAuthError(error?.message));
         return !error;
@@ -1329,7 +1562,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const isWebEnv = Platform.OS === "web";
         // Web'de tarayıcı Google'a yönlenir, dönüşte onAuthStateChange oturumu yakalar.
         // Native'de otomatik yönlenme YOK → URL'yi expo-web-browser ile aç, dönüşü işle.
-        const redirectTo = isWebEnv && typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth";
+        const redirectTo = authRedirectUrl();
         const { data, error } = await supabase.auth.signInWithOAuth({
           provider: "google",
           options: { redirectTo, skipBrowserRedirect: !isWebEnv }
@@ -1390,12 +1623,15 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const { error } = await supabase.auth.resend({
           type: "signup",
           email: cleanEmail,
-          options: { emailRedirectTo: typeof window !== "undefined" ? `${window.location.origin}/auth` : "ortaksat://auth" }
+          options: { emailRedirectTo: authRedirectUrl() }
         });
         setAuthError(translateAuthError(error?.message));
         return !error;
       },
       async signOut() {
+        // Bu cihazın push token'ını oturum AÇIKKEN sil (RLS: yalnız sahibi silebilir). Yoksa çıkış
+        // yapan kullanıcının bildirimleri bu cihaza gelmeye devam eder (sıradaki kullanıcı görür).
+        await unregisterPush().catch(() => {});
         if (supabase) await supabase.auth.signOut();
         setAuthUser(null);
         resetPrivateState();
@@ -1405,6 +1641,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       async signOutAllDevices() {
         if (!supabase) { setAuthUser(null); resetPrivateState(); return true; }
         void logActivity("sign_out", { userId: authUser?.id, metadata: { scope: "global" } });
+        await unregisterPush().catch(() => {});
         const { error } = await supabase.auth.signOut({ scope: "global" });
         if (error) { setAuthError(translateAuthError(error.message)); return false; }
         setAuthUser(null);
@@ -1559,6 +1796,17 @@ export function StoreProvider({ children }: PropsWithChildren) {
           return false;
         }
         return requestAccountDeletionLive({ userId: currentUser.id, reason: reason.trim() || "Kullanıcı hesap silme talebi oluşturdu." });
+      },
+      // Sunucu profili yeniden aktif eder ve talebin duraklattığı ilanları geri açar; burada yalnız
+      // yerel hesap durumu eşitlenir (çağıran ardından refreshMarketplace/refreshUserData çalıştırır).
+      async cancelAccountDeletion() {
+        if (!liveUser) return false;
+        const account = currentUser.id;
+        if (!await cancelAccountDeletionLive()) return false;
+        const restored: User = { ...currentUser, status: "active" };
+        setUsers((items) => [restored, ...items.filter((item) => item.id !== account)]);
+        if (authUser?.id === account) setAuthUser(restored);
+        return true;
       },
       async createListing(input, statusOverride) {
         const titleCheck = validateListingTitle(input.title);
@@ -1722,10 +1970,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
             listing.id === listingId ? { ...listing, reviewCount: listing.reviewCount + 1 } : listing
           )
         );
-        // Ürün yorumu: ilan sahibine bildir (kendine yorum zaten yukarıda engelli).
-        if (listing.ownerId !== currentUser.id) {
-          notify(listing.ownerId, "review", "Yeni ürün yorumu", `${currentUser.name} "${listing.title}" ilanına ${rating}★ yorum bıraktı.`, { listingId });
-        }
+        // "Yorum alındı" bildirimi SUNUCUDA üretilir (reviews AFTER INSERT trigger) — istemci ayrıca yazmaz (çift bildirim olmasın).
         return review;
       },
       canReviewSale(saleId) {
@@ -1767,16 +2012,12 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if(favoriteAccount.current!==currentUser.id)return undefined;
         setReviews((items) => [review, ...items.filter(item=>item.id!==review.id)]);
         setListings((items) => items.map((item) => (item.id === listing.id ? { ...item, reviewCount: item.reviewCount + 1 } : item)));
-        // Karşı tarafa (değerlendirilen satıcı/ortak) bildir.
-        if (review.reviewedUserId) {
-          const rol = reviewerIsSeller ? "Satıcı" : "Ortak";
-          notify(review.reviewedUserId, "review", "Yeni değerlendirme aldın", `${currentUser.name} (${rol}) seni ${rating}★ ile değerlendirdi.`, { listingId: listing.id });
-        }
+        // Karşı tarafa "yeni değerlendirme" bildirimi SUNUCUDA üretilir (reviews AFTER INSERT trigger) — istemci ayrıca yazmaz.
         return review;
       },
       async editReview(reviewId, rating, comment) {
         const mine = reviews.find((r) => r.id === reviewId && r.reviewerId === currentUser.id);
-        if (!mine || rating < 1 || rating > 5 || !comment.trim()) return false;
+        if (!mine || !Number.isInteger(rating) || rating < 1 || rating > 5 || !comment.trim() || comment.trim().length > 1000) return false;
         const prev = { rating: mine.rating, comment: mine.comment };
         setReviews((items) => items.map((r) => (r.id === reviewId ? { ...r, rating, comment: comment.trim() } : r)));
         if (liveUser) {
@@ -2215,14 +2456,14 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (sellerId === currentUser.id) return { ok: false, error: "Kendi ilanına teklif veremezsin." };
         if (!(amount > 0)) return { ok: false, error: "Geçerli bir tutar gir." };
         const res = await createOfferLive({ listingId, sellerId, amount, note });
-        if (res.ok) setOffers(await fetchOffersLive()); // sunucudan tazele (id/created_at gerçek)
+        if (res.ok) { const rows = await fetchOffersResultLive(); if (rows) setOffers(rows); } // sunucudan tazele (id/created_at gerçek); okuma başarısızsa eldekini EZME
         return res;
       },
       // SATICI: kabul / ret / karşı teklif. Durum geçişini SUNUCU zorlar (RPC).
       async sellerRespondOffer(offerId, action, counterAmount) {
         const ok = await offerSellerRespondLive(offerId, action, counterAmount);
         if (!ok) { setSyncError("Teklif yanıtlanamadı. Tekrar dene."); return false; }
-        setOffers(await fetchOffersLive()); // gerçek durum/tutar sunucudan
+        { const rows = await fetchOffersResultLive(); if (rows) setOffers(rows); } // gerçek durum/tutar sunucudan; okuma başarısızsa eldekini EZME
         return true;
       },
       // ALICI: geri çek, ya da karşı teklifi kabul/ret. Kabul edilirse anlaşma tutarını
@@ -2230,7 +2471,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
       async buyerOfferAction(offerId, action) {
         const ok = await offerBuyerActionLive(offerId, action);
         if (!ok) { setSyncError("İşlem yapılamadı. Tekrar dene."); return false; }
-        setOffers(await fetchOffersLive());
+        { const rows = await fetchOffersResultLive(); if (rows) setOffers(rows); }
         return true;
       },
       blockedUserIds,
@@ -2290,15 +2531,10 @@ export function StoreProvider({ children }: PropsWithChildren) {
         };
         setMessages((items) => [message, ...items]);
         setConversations((items) => items.map((item) => (item.id === conversationId ? { ...item, lastMessageAt: message.createdAt } : item)));
-        const preview = trimmed || (attachment?.type === "file" ? `📎 ${attachment.name ?? "Dosya"}` : "📷 Görsel");
-        // Metadata: bildirime tıklayınca DOĞRU sohbeti aç (conversationId olmadan en son
-        // aktif konuşma açılıp yanlış thread'e düşüyordu — birden fazla konuşma varken).
-        notify(receiverId, "message", "Yeni mesaj", `${currentUser.name}: ${preview}`, { conversationId, listingId: conversation.listingId });
         // Mesaj DB'ye yazılamazsa (bağlantı/RLS) baloncuğu SİLME → "failed" işaretle
         // ki kullanıcı görsün ve "tekrar dene" ile yeniden gönderebilsin (kayıp yok).
-        if (liveUser) insertMessage(message)
-          .then((ok) => { if (!ok) handleSendFailure(message); })
-          .catch(() => handleSendFailure(message));
+        // Alıcı bildirimi (doğru sohbeti açan metadata ile) yalnız yazım başarılıysa gider.
+        deliverMessage(message);
         return true;
       },
       retryMessage(messageId) {
@@ -2306,9 +2542,7 @@ export function StoreProvider({ children }: PropsWithChildren) {
         if (!msg) return;
         // "failed" işaretini kaldır (yeniden gönderiliyor) → başarısızsa tekrar işaretlenir.
         setMessages((items) => items.map((m) => (m.id === messageId ? { ...m, status: undefined } : m)));
-        if (liveUser) insertMessage({ ...msg, status: undefined })
-          .then((ok) => { if (!ok) handleSendFailure(msg); })
-          .catch(() => handleSendFailure(msg));
+        if (liveUser) deliverMessage({ ...msg, status: undefined });
       },
       markConversationRead(conversationId) {
         const unread = messages.filter((item) => item.conversationId === conversationId && item.receiverId === currentUser.id && !item.read);
@@ -2353,13 +2587,23 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setLocationSuggestions((items) => items.filter((s) => s.id !== suggestion.id));
         }, "Öneri gönderilemedi. Lütfen tekrar dene.");
       },
-      setCategorySuggestionStatus(id, status) {
+      async setCategorySuggestionStatus(id, status) {
+        const prev = categorySuggestions.find((item) => item.id === id)?.status;
+        if (!prev) return false;
         setCategorySuggestions((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
-        if (liveUser) void updateCategorySuggestionStatusLive(id, status, currentUser.id);
+        if (!liveUser) return true;
+        const ok = await settleWrite(updateCategorySuggestionStatusLive(id, status, currentUser.id));
+        if (!ok) setCategorySuggestions((items) => items.map((item) => (item.id === id ? { ...item, status: prev } : item)));
+        return ok;
       },
-      setLocationSuggestionStatus(id, status) {
+      async setLocationSuggestionStatus(id, status) {
+        const prev = locationSuggestions.find((item) => item.id === id)?.status;
+        if (!prev) return false;
         setLocationSuggestions((items) => items.map((item) => (item.id === id ? { ...item, status } : item)));
-        if (liveUser) void updateLocationSuggestionStatusLive(id, status, currentUser.id);
+        if (!liveUser) return true;
+        const ok = await settleWrite(updateLocationSuggestionStatusLive(id, status, currentUser.id));
+        if (!ok) setLocationSuggestions((items) => items.map((item) => (item.id === id ? { ...item, status: prev } : item)));
+        return ok;
       },
       updateLeadStatus(leadId, status) {
         const lead = leads.find((item) => item.id === leadId);
@@ -2441,18 +2685,34 @@ export function StoreProvider({ children }: PropsWithChildren) {
           if (reactivate) persistOrWarn(updateListingStatusLive({ ...listing, status: "active" }), "İlan durumu güncellenemedi. Lütfen tekrar dene.");
         }
       },
-      setListingFeatured(listingId, featured) {
+      // Admin aksiyonları GERÇEK sonucu döndürür (true/false): iyimser uygula → canlı yazımı bekle →
+      // başarısızsa GERİ AL + false. Sonucu çağıran gösterir (admin run()); ayrıca syncError yazılmaz.
+      async setListingFeatured(listingId, featured) {
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
-        if (!isStaff) return;
+        if (!isStaff) return false;
+        const prev = listings.find((item) => item.id === listingId)?.featured;
         setListings((items) => items.map((item) => (item.id === listingId ? { ...item, featured } : item)));
-        if (liveUser) persistOrWarn(updateListingFeaturedLive(listingId, featured), "İlan öne çıkarma güncellenemedi.");
+        if (!liveUser) return true;
+        const ok = await settleWrite(updateListingFeaturedLive(listingId, featured));
+        if (!ok) setListings((items) => items.map((item) => (item.id === listingId ? { ...item, featured: prev } : item)));
+        return ok;
       },
-      deleteListing(listingId) {
+      // Kalıcı silme SUNUCU-OTORİTELİ (remove_listing RPC; sahip + admin/moderatör): düz DELETE,
+      // komisyon/sipariş FK'si (NO ACTION) olan ilanda patlıyor, ortaklık/talep geçmişini de CASCADE ile
+      // sessizce siliyordu. Sonuç önceden bilinemediği için yerel durum YANITTAN SONRA uygulanır.
+      async deleteListing(listingId, onOutcome) {
         const listing = listings.find((item) => item.id === listingId);
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
-        if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return;
-        setListings((items) => items.filter((item) => item.id !== listingId));
-        if (liveUser) persistOrWarn(deleteListingLive(listingId), "İlan silinemedi. Lütfen tekrar dene.");
+        if (!listing || (listing.ownerId !== currentUser.id && !isStaff)) return false;
+        let result: "deleted" | "archived" | false = "deleted"; // demo/canlı-değil: yerel silme
+        if (liveUser) { try { result = await removeListingLive(listingId); } catch { result = false; } }
+        if (result === false) return false;
+        if (result === "archived") {
+          setListings((items) => items.map((item) => (item.id === listingId ? { ...item, status: "archived" as const } : item)));
+          setPartnerships((items) => items.map((p) => (p.listingId === listingId && p.status === "active" ? { ...p, status: "cancelled" as const } : p)));
+        } else setListings((items) => items.filter((item) => item.id !== listingId));
+        onOutcome?.(result);
+        return true;
       },
       // Kullanıcı ilan silme (sahip). Finansal/ilişki geçmişi olan ilan hard-delete EDİLMEZ →
       // arşivlenir (gizlenir, geçmiş korunur). Temiz ilan gerçekten silinir. Sunucu da FK
@@ -2472,28 +2732,43 @@ export function StoreProvider({ children }: PropsWithChildren) {
           setAuthError(undefined); return true;
         } catch { setAuthError("Bağlantı kurulamadı. İlanın korunuyor."); return false; }
       },
-      setUserRole(userId, role) {
+      async setUserRole(userId, role) {
         const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
-        if (!isAdmin || userId === currentUser.id) return; // kendi rolunu degistirme
+        if (!isAdmin || userId === currentUser.id) return false; // kendi rolunu degistirme
+        const prev = users.find((item) => item.id === userId)?.role;
         setUsers((items) => items.map((item) => (item.id === userId ? { ...item, role } : item)));
-        if (liveUser) persistOrWarn(updateUserRoleLive(userId, role), "Kullanıcı rolü güncellenemedi.");
+        if (!liveUser) return true;
+        const ok = await settleWrite(updateUserRoleLive(userId, role));
+        if (!ok) setUsers((items) => items.map((item) => (item.id === userId ? { ...item, role: prev } : item)));
+        return ok;
       },
-      setUserStatus(userId, status) {
+      async setUserStatus(userId, status) {
         const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
-        if (!isAdmin || userId === currentUser.id) return;
+        if (!isAdmin || userId === currentUser.id) return false;
+        const prev = users.find((item) => item.id === userId)?.status;
         setUsers((items) => items.map((item) => (item.id === userId ? { ...item, status } : item)));
-        if (liveUser) persistOrWarn(updateUserStatusLive(userId, status), "Kullanıcı durumu güncellenemedi.");
+        if (!liveUser) return true;
+        const ok = await settleWrite(updateUserStatusLive(userId, status));
+        if (!ok) setUsers((items) => items.map((item) => (item.id === userId ? { ...item, status: prev } : item)));
+        return ok;
       },
-      setUserVerification(userId, field, value) {
+      async setUserVerification(userId, field, value) {
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
-        if (!isStaff) return;
+        if (!isStaff) return false;
+        const prev = users.find((item) => item.id === userId)?.[field];
         setUsers((items) => items.map((item) => (item.id === userId ? { ...item, [field]: value } : item)));
-        if (liveUser) persistOrWarn(updateUserVerificationLive(userId, field, value), "Doğrulama güncellenemedi.");
+        if (!liveUser) return true;
+        const ok = await settleWrite(updateUserVerificationLive(userId, field, value));
+        if (!ok) setUsers((items) => items.map((item) => (item.id === userId ? { ...item, [field]: prev } : item)));
+        return ok;
       },
-      adminNotifyUser(userId, title, body) {
+      async adminNotifyUser(userId, title, body) {
         const isStaff = currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin";
-        if (!isStaff || !title.trim() || userId === currentUser.id) return;
-        notify(userId, "system", title.trim(), body.trim());
+        if (!isStaff || !title.trim() || userId === currentUser.id) return false;
+        // Sonuç ÇAĞIRANA döner: yönetici "gönderildi" bildirimini yalnız sunucu kabul edince görür.
+        const notification: Notification = { id: newId("n", liveUser), userId, type: "system", title: title.trim(), body: body.trim(), read: false, createdAt: new Date().toISOString() };
+        if (!liveUser) { setNotifications((items) => [notification, ...items]); return true; }
+        return settleWrite(insertNotification(notification));
       },
       adminBroadcast(title, body) {
         const isAdmin = currentUser.role === "admin" || currentUser.role === "super_admin";
@@ -2523,19 +2798,19 @@ export function StoreProvider({ children }: PropsWithChildren) {
           (partnerAction && !isPartner && !staff) ||
           (status === "disputed" && !isSeller && !isPartner && !staff)
         ) {
-          return;
+          return Promise.resolve(false);
         }
         // TERMİNAL DURUM: cancelled/paid personel dışında geri alınamaz — iptal edilen
         // ya da kapanan komisyon yeniden "ödenecek/onaylı" duruma sokulup metrikleri
         // ve panel sinyalini bozmasın.
         if (!staff && (sale.status === "cancelled" || sale.status === "paid") && status !== sale.status) {
-          return;
+          return Promise.resolve(false);
         }
         // Geçiş ön-koşulu: ortak "paid"i yalnızca satıcı ödeme bildirdikten (seller_paid)
         // veya anlaşmazlık (disputed) durumundan kapatabilir — açık/iade-penceresi
         // komisyonu erkenden kapatılamaz.
         if (!staff && partnerAction && sale.status !== "seller_paid" && sale.status !== "disputed") {
-          return;
+          return Promise.resolve(false);
         }
         const disputeText = reason?.trim() ? `Anlaşmazlık: ${reason.trim()}` : "Komisyon için anlaşmazlık kaydı açıldı.";
         const updatedSale = sale
@@ -2592,9 +2867,16 @@ export function StoreProvider({ children }: PropsWithChildren) {
           const other = isSeller ? salePartnership?.partnerId : saleListing?.ownerId;
           if (other) notify(other, "payout", "Komisyon anlaşmazlığı açıldı", `${saleListing?.title ?? "İlan"} komisyonu için anlaşmazlık bildirildi. Panelden inceleyip çözebilirsin.`, payoutMeta);
         }
-        if (liveUser && updatedSale && sale) persistCritical(updateSaleStatusLive(updatedSale), () => {
-          setSales((items) => items.map((item) => (item.id === saleId ? sale : item)));
-        }, "Durum güncellemesi kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
+        if (!liveUser || !updatedSale) return Promise.resolve(true);
+        // Sonuç çağırana da döner (yönetim paneli dürüst geri bildirim verir); diğer ekranlar
+        // için hata yine görünür uyarıya (syncError) düşer ve iyimser değişiklik geri alınır.
+        return settleWrite(updateSaleStatusLive(updatedSale)).then((ok) => {
+          if (!ok) {
+            setSales((items) => items.map((item) => (item.id === saleId ? sale : item)));
+            setSyncError("Durum güncellemesi kaydedilemedi. Bağlantını kontrol edip tekrar dene.");
+          }
+          return ok;
+        });
       },
       recordBatchPayout(partnerId, listingId) {
         // Satıcı, bir ortağın (ops. tek ilan) BORÇLU komisyonlarını TEK toplu ödeme kaydıyla
@@ -2619,15 +2901,21 @@ export function StoreProvider({ children }: PropsWithChildren) {
       platformSettings,
       emailVerified,
       isSuspended,
-      updatePlatformSetting(key, value) {
-        if (currentUser.role !== "admin" && currentUser.role !== "super_admin") return;
+      async updatePlatformSetting(key, value) {
+        if (currentUser.role !== "admin" && currentUser.role !== "super_admin") return false;
+        const before = platformSettings[key];
         setPlatformSettings((prev) => ({ ...prev, [key]: value }));
-        void updatePlatformSettingLive(key, value);
+        const ok = await settleWrite(updatePlatformSettingLive(key, value));
+        if (!ok) setPlatformSettings((prev) => ({ ...prev, [key]: before }));
+        return ok;
       },
-      setAnnouncement(text, active) {
-        if (currentUser.role !== "admin" && currentUser.role !== "super_admin") return;
+      async setAnnouncement(text, active) {
+        if (currentUser.role !== "admin" && currentUser.role !== "super_admin") return false;
+        const before = { announcement: platformSettings.announcement, announcementActive: platformSettings.announcementActive };
         setPlatformSettings((prev) => ({ ...prev, announcement: text, announcementActive: active }));
-        void updateAnnouncementLive(text, active);
+        const ok = await settleWrite(updateAnnouncementLive(text, active));
+        if (!ok) setPlatformSettings((prev) => ({ ...prev, ...before }));
+        return ok;
       },
       blogPosts,
       contentPages,
@@ -2756,19 +3044,24 @@ export function StoreProvider({ children }: PropsWithChildren) {
         const uid = currentUser?.id;
         if (!isSupabaseConfigured || !uid || !isAuthenticated) return;
         conversationContextAttempts.current.listings.clear();conversationContextAttempts.current.users.clear();
-        const [account, refreshedOffers] = await Promise.all([loadAccountSnapshot(uid).catch(() => null), fetchOffersLive()]);
-        setOffers(refreshedOffers);
+        const [account, refreshedOffers] = await Promise.all([loadAccountSnapshot(uid).catch(() => null), fetchOffersResultLive()]);
+        // Yükleme sürerken çıkış yapıldı / hesap değişti → önceki hesabın özel verisini geri YAZMA.
+        if (favoriteAccount.current !== uid) return;
+        if (refreshedOffers) setOffers(refreshedOffers);
         if (!account) return;
-        setPartnerships(account.partnerships);
-        setLeads(account.leads);
-        setSales(account.sales);
-        setOrders(account.orders);
-        setReviews((items) => [...account.reviews, ...items.filter((item) => item.reviewerId !== uid)]);
-        setFavorites(account.favorites);
-        setConversations(account.conversations);
-        setMessages(account.messages);
-        setNotifications(account.notifications);
-        setReports(account.reports);
+        // Sorgusu BAŞARISIZ olan dilim yazılmaz (o dilim için önceki durum korunur): tek bir tablonun
+        // zaman aşımı gelen kutusunu / bildirimleri / satışları boş listeyle ezmesin.
+        const failed = account.failed ?? {};
+        if (!failed.partnerships) setPartnerships(account.partnerships);
+        if (!failed.leads) setLeads(account.leads);
+        if (!failed.sales) setSales(account.sales);
+        if (!failed.orders) setOrders(account.orders);
+        if (!failed.reviews) setReviews((items) => [...account.reviews, ...items.filter((item) => item.reviewerId !== uid && item.reviewedUserId !== uid)]);
+        if (!failed.favorites) setFavorites(account.favorites);
+        if (!failed.conversations) setConversations((items) => mergeServerConversations(account.conversations, items));
+        if (!failed.messages) setMessages((items) => mergeServerMessages(account.messages, items));
+        if (!failed.notifications) setNotifications(account.notifications.map((n) => (notificationWrites.current.has(n.id) ? { ...n, read: true } : n)));
+        if (!failed.reports) setReports(account.reports);
       },
       // İlk yükleme başarısızsa "Yeniden dene" düğmesinin çağırdığı retry: skeleton'ı
       // tekrar aç, snapshot'ı yeniden çek; yine başarısızsa fail durumunu koru.
@@ -2792,7 +3085,8 @@ export function StoreProvider({ children }: PropsWithChildren) {
         }
       },
       findConversation(id) {
-        return conversationById.get(id);
+        // Yerel id sunucudaki mevcut konuşmaya eşlendiyse (bkz. createOrReuseConversation) onu döndür.
+        return conversationById.get(id) ?? conversationById.get(conversationAlias.current.get(id) ?? "");
       },
       findListing(id) {
         return listingById.get(id);

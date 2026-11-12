@@ -584,6 +584,9 @@ function Renewal() {
                       value ? [...old, l.id] : old.filter((id) => id !== l.id),
                     )
                   }
+                  trackColor={{ false: mobile.line, true: mobile.teal }}
+                  thumbColor="#FFFFFF"
+                  ios_backgroundColor={mobile.line}
                 />
               </View>
             )}

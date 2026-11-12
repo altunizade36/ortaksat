@@ -19,7 +19,7 @@ import { shareOrCopy } from "@/lib/share";
 import { Mascot } from "@/components/brand/Mascot";
 import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { colors } from "@/components/colors";
-import { StarRatingInput } from "@/components/star-rating-input";
+import { SaleReviewForm } from "@/components/reviews/sale-review-form";
 import { Seo } from "@/components/seo";
 import { DisputeModal } from "@/components/dispute-modal";
 import { LegalDisclaimerCollapsible } from "@/components/legal-disclaimer";
@@ -40,17 +40,12 @@ import { searchKey } from "@/lib/locale";
 import { displayText } from "@/lib/text";
 import type { Lead, LeadSource, LeadStatus, Listing, Partnership, PurchaseIntent, Sale, SaleStatus, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { saleStatusLabels } from "@/lib/status-labels";
+import { NativeAdvancedFrame } from "@/components/mobile/advanced-frame";
 import { WebContainer } from "@/components/web-container";
 
-const saleLabels: Record<SaleStatus, string> = {
-  pending: "Bekliyor",
-  return_pending: "İade süresi",
-  approved: "Onaylandı",
-  seller_paid: "Satıcı ödedi",
-  paid: "Ödeme alındı",
-  cancelled: "İptal",
-  disputed: "Anlaşmazlık"
-};
+// Tek kaynak: lib/status-labels.ts (mobil kazanç ekranı ve Kazançlarım ile aynı etiketler).
+const saleLabels: Record<SaleStatus, string> = saleStatusLabels;
 
 const sourceLabels: Record<LeadSource, string> = {
   whatsapp: "WhatsApp",
@@ -78,7 +73,10 @@ export default function PartnerScreen() {
   const mounted = useMounted();
   const params = useLocalSearchParams<{ view?: string }>();
   if (!mounted) return <ScreenSkeleton />;
-  return params.view !== "advanced" ? <MobilePartnershipHub /> : <PartnerScreenInner />;
+  if (params.view !== "advanced") return <MobilePartnershipHub />;
+  // Native ayrıntılı panel: başlık geçmişe bağlı kalmasın (bkz. NativeAdvancedFrame).
+  if (isMobileApp) return <NativeAdvancedFrame title="Satış ve Kazanç Yönetimi" hubParams><PartnerScreenInner /></NativeAdvancedFrame>;
+  return <PartnerScreenInner />;
 }
 
 function PartnerScreenInner() {
@@ -1193,24 +1191,15 @@ function ReviewPrompt({
   sale: Sale;
 }) {
   const { language } = useLanguage();
-  const [comment, setComment] = useState("");
-  const [rating, setRating] = useState(5);
-  if (!canReviewSale(sale.id)) return null;
-
+  // Paylaşılan form: puan önceden seçili gelmez, çift gönderim kilidi, en az 10 karakter, hata/başarı geri bildirimi.
   return (
-    <View style={{ backgroundColor: colors.surfaceAlt, borderRadius: 8, gap: 8, padding: 10 }}>
-      <Text selectable style={{ color: colors.ink, fontSize: 14, fontWeight: "900" }}>{translateCopy("Satıcıyı değerlendir", language)}</Text>
-      <StarRatingInput value={rating} onChange={setRating} />
-      <TextInput
-        value={comment}
-        onChangeText={setComment}
-        multiline
-        placeholder={language === "en" ? "How was the sales process, communication, and product information?" : "Satış süreci, iletişim ve ürün bilgisi nasıldı?"}
-        placeholderTextColor={colors.muted}
-        style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 8, borderWidth: 1, color: colors.ink, minHeight: 74, padding: 10, textAlignVertical: "top" }}
-      />
-      <PrimaryButton tone="secondary" onPress={() => { if (comment.trim()) createSaleReview(sale.id, rating, comment.trim()); }}>Yorumu kaydet</PrimaryButton>
-    </View>
+    <SaleReviewForm
+      saleId={sale.id}
+      title={translateCopy("Satıcıyı değerlendir", language)}
+      placeholder={language === "en" ? "How was the sales process, communication, and product information?" : "Satış süreci, iletişim ve ürün bilgisi nasıldı?"}
+      canReviewSale={canReviewSale}
+      createSaleReview={createSaleReview}
+    />
   );
 }
 

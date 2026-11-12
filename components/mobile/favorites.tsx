@@ -16,12 +16,15 @@ import { moneyIn } from "@/lib/format";
 import { searchKey } from "@/lib/locale";
 import { showToast } from "@/lib/toast";
 import type { Favorite, Listing, User } from "@/lib/types";
-import { MobileBottomNav, MobileButton, MobileCard, MobileChip, MobileField, MobileScreen, IconButton, mobile, ms } from "./ui";
+import { MobileBottomNav, MobileButton, MobileCard, MobileChip, MobileField, MobileScreen, IconButton, mobile, ms, useMobileLayout } from "./ui";
 
 const tabs = ["Tümü", "Ortaklığa Açık", "Fiyatı Düşen", "Son Eklenen"];
 const sorts = ["En son kaydedilen", "Fiyat: düşükten yükseğe", "Fiyat: yüksekten düşüğe"];
 export function MobileFavorites() {
   const store = useStore(), router = useRouter();
+  // Tablette kartlar tek sütunda 1100+ dp'ye uzuyordu (görsel ~350×103 şerit) → 2 sütunlu ızgara.
+  const { tablet, maxWidth } = useMobileLayout();
+  const gridCard = tablet ? { width: Math.floor((maxWidth - 32 - 10) / 2), marginBottom: 0 } : undefined;
   const [tab,setTab] = useState(tabs[0]), [query,setQuery] = useState(""), [search,setSearch] = useState(false);
   const [sort,setSort] = useState(sorts[0]), [menu,setMenu] = useState(false), [limit,setLimit] = useState(20);
   const [remote,setRemote] = useState<Listing[]>([]), [owners,setOwners] = useState<User[]>([]);
@@ -56,9 +59,9 @@ export function MobileFavorites() {
     if(conversation)router.push(`/chat/${conversation.id}` as never);else showToast("Mesaj başlatılamadı. Tekrar dene.");
   }
   function card(f:Favorite,l?:Listing) {
-    if(!l)return loading?null:<MobileCard key={f.id}><Text style={ms.section}>{failed?"İlan bilgisi yüklenemedi":"Kaydettiğin ilan artık yayında olmayabilir"}</Text><MobileChip label="Favorilerden kaldır" icon="heart-off-outline" onPress={()=>store.toggleFavorite(f.listingId)}/></MobileCard>;
+    if(!l)return loading?null:<MobileCard key={f.id} style={gridCard}><Text style={ms.section}>{failed?"İlan bilgisi yüklenemedi":"Kaydettiğin ilan artık yayında olmayabilir"}</Text><MobileChip label="Favorilerden kaldır" icon="heart-off-outline" onPress={()=>store.toggleFavorite(f.listingId)}/></MobileCard>;
     const photos=listingPhotos(l),owner=store.findUser(l.ownerId)||owners.find(u=>u.id===l.ownerId),change=priceChange(f.savedPrice,l.price),open=isPublicPartnershipListing(l),max=maximumPartners(l);
-    return <MobileCard key={f.id}>
+    return <MobileCard key={f.id} style={gridCard}>
       <View style={{flexDirection:"row",gap:10}}><Pressable accessibilityRole="button" accessibilityLabel={`${displayListingTitle(l.title)} ilanını aç`} onPress={()=>router.push(`/listing/${l.id}` as never)} style={{width:"32%"}}><SafeRemoteImage uri={photos[0]} style={{width:"100%",height:103,borderRadius:9}}/><Text style={{position:"absolute",bottom:4,left:4,backgroundColor:"#17232FBB",color:"white",padding:4,fontSize:9,borderRadius:5}}>{photos.length?`1/${photos.length}`:"Fotoğraf yok"}</Text></Pressable><View style={{flex:1,gap:5}}><View style={ms.row}><Text numberOfLines={2} style={{flex:1,fontWeight:"700",color:mobile.ink,fontSize:14}}>{displayListingTitle(l.title)}</Text><Pressable accessibilityRole="button" accessibilityLabel={`${displayListingTitle(l.title)} favorilerden kaldır`} onPress={()=>store.toggleFavorite(l.id)} hitSlop={8}><Icon name="heart" size={23} color="#FF728B"/></Pressable></View><View style={[ms.row,{flexWrap:"wrap"}]}><Text style={{fontSize:21,fontWeight:"800",color:mobile.teal}}>{moneyIn(l.price,l.currency)}</Text>{change&&<Text style={{fontSize:10,color:change.down?"#138447":"#CF3154",backgroundColor:change.down?"#E9F9EF":"#FFEFF3",padding:4,borderRadius:4}}>{change.down?"↓":"↑"} %{change.percent}</Text>}</View><Text numberOfLines={1} style={ms.muted}>⌖ {l.location}</Text><Text style={{color:open?mobile.teal:mobile.muted,fontSize:10}}>{open?"Ortaklığa Açık":l.partnershipMode==="invite"?"Yalnız davetle ortaklık":"Ortaklığa Kapalı"}{open?` · ${l.commissionType==="rate"?`%${l.commissionValue}`:moneyIn(l.commissionValue,l.currency)} · ${l.partnerCount||0}/${max||"∞"} ortak`:""}</Text></View></View>
       <View style={[ms.row,{flexWrap:"wrap"}]}><Pressable accessibilityRole="button" accessibilityLabel={`${owner?.name||"Satıcı"} profilini aç`} onPress={()=>router.push(`/store/${l.ownerId}` as never)} style={{flex:1,minWidth:95,flexDirection:"row",gap:6,alignItems:"center"}}><UserAvatar uri={owner?.avatar} size={30}/><View style={{flex:1}}><Text numberOfLines={1} style={{fontWeight:"700",fontSize:11,color:mobile.ink}}>{owner?.name||"Satıcı profili"}</Text><Text style={{fontSize:10,color:mobile.muted}}>Satıcı</Text></View></Pressable>{l.ownerId!==store.currentUser.id&&<MobileChip icon="chat" label="Mesaj Gönder" onPress={()=>message(l)}/>}<MobileChip icon="open-in-new" label="İlanı Gör" onPress={()=>router.push(`/listing/${l.id}` as never)}/></View>
     </MobileCard>;
@@ -68,7 +71,7 @@ export function MobileFavorites() {
     <HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:7,paddingVertical:12}}>{tabs.map(label=><MobileChip key={label} label={`${label} (${loading&&label!=="Tümü"?"…":rows.filter(r=>matches(r,label)).length})`} selected={tab===label} onPress={()=>{setTab(label);setLimit(20);}}/>)}</HorizontalScroll>
     <MobileCard style={{backgroundColor:"#EFF2FC",flexDirection:"row",alignItems:"center"}}><Icon name="heart-circle" size={30} color={mobile.teal}/><Text style={[ms.muted,{flex:1}]}>Kaydettiğin ilanları, fiyat değişikliklerini ve ortaklığa açık ürünleri buradan takip edebilirsin. Son eklenenler son 7 günde kaydettiklerindir.</Text></MobileCard>
     {failed&&<MobileCard><Text style={ms.error}>Bazı ilanlar yüklenemedi. Kaydedilen favorilerin korunuyor.</Text><MobileChip label="Tekrar yükle" onPress={()=>setRetry(v=>v+1)}/></MobileCard>}
-    {selected.slice(0,limit).map(({favorite,listing})=>card(favorite,listing))}
+    <View style={tablet?{flexDirection:"row",flexWrap:"wrap",gap:10,alignItems:"flex-start",marginBottom:10}:undefined}>{selected.slice(0,limit).map(({favorite,listing})=>card(favorite,listing))}</View>
     {loading&&<Text style={ms.muted}>İlan bilgileri yükleniyor…</Text>}
     {!selected.length&&!loading&&!failed&&<MobileCard><Text style={ms.section}>{favorites.length?"Bu görünümde favori bulunamadı":"Henüz favori ilanın yok"}</Text><Text style={ms.muted}>Diğer filtreleri seçebilir veya keşfet ekranından ilan kaydedebilirsin.</Text>{favorites.length>0&&(query||tab!==tabs[0])&&<MobileButton secondary onPress={()=>{setQuery("");setTab(tabs[0]);setLimit(20);}}>Arama ve filtreleri temizle</MobileButton>}<MobileButton secondary onPress={()=>router.push("/explore")}>İlanları Keşfet</MobileButton></MobileCard>}
     {selected.length>limit&&<MobileButton secondary onPress={()=>setLimit(v=>v+20)}>Diğer favorileri göster</MobileButton>}

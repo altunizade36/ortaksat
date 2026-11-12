@@ -86,7 +86,8 @@ const STATIC = [
   ["/sss", "monthly", "0.5"],
   ["/blog", "weekly", "0.6"],
   ["/legal", "monthly", "0.4"],
-  ["/kvkk", "monthly", "0.4"]
+  ["/kvkk", "monthly", "0.4"],
+  ["/hesap-silme", "monthly", "0.4"]
 ];
 
 function esc(s) {

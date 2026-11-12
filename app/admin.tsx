@@ -5,21 +5,20 @@ import { KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView, Text, Tex
 
 import { Alert } from "@/lib/alert";
 
-import { AdminActivity, type AdminAnalytics, type AdminMsgStats } from "@/components/admin-activity";
-import { ADMIN_CARD, ADMIN_INPUT, ActionButton, AdminWideCtx, ChartCard, NoData, Pager, RangeSwitch, bucketDates, usePager } from "@/components/admin-kit";
+import { AdminActivity, RootCategoryCard, ServerTrendCard, TopSellersCard, useAdminTimeseries, type AdminAnalytics, type AdminMsgStats, type AdminTsState } from "@/components/admin-activity";
+import { ADMIN_CARD, ADMIN_INPUT, ActionButton, AdminWideCtx, NoData, Pager, usePager } from "@/components/admin-kit";
 import { AuthRequired } from "@/components/auth-gate";
-import { DonutChart, HBarChart, MultiLineChart, ResponsiveLineArea, money as fmtMoney } from "@/components/charts";
+import { DonutChart, HBarChart, ResponsiveLineArea, money as fmtMoney } from "@/components/charts";
 import { colors } from "@/components/colors";
 import { EmptyState, PressLink } from "@/components/ui";
 import { money } from "@/lib/format";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
-import { listingRootNode } from "@/lib/category-match";
 import { downloadCsv } from "@/lib/csv-export";
 import { getDistrict, getProvince } from "@/lib/locations";
 import { computeListingRisk } from "@/lib/risk";
 import { fetchAdminAudit, type AuditEntry, type DbBlogPost, type DbContentPage, type DbSeoSetting, type ExtraCategory } from "@/lib/supabase-data";
-import { adminBroadcastLive, adminClosePartnerRequest, adminDeleteQuestion, adminModerateReview, adminSetPartnershipStatus, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminPartnerships, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminPartnershipRow, type AdminSiteRecords } from "@/lib/live-service";
+import { adminBroadcastLive, adminResolveAccountDeletionLive, fetchAdminAccountDeletionsLive, type AdminAccountDeletion, adminClosePartnerRequest, adminDeleteQuestion, adminModerateReview, adminSetPartnershipStatus, fetchAdminMessageStats, fetchAdminMessages, fetchAdminOverview, fetchAdminPartnerships, fetchAdminSiteRecords, type AdminMessageRow, type AdminOverview, type AdminPartnershipRow, type AdminSiteRecords } from "@/lib/live-service";
 import { showToast } from "@/lib/toast";
 import type { SaleStatus, SuggestionStatus, UserRole } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -195,25 +194,32 @@ function AdminScreenInner() {
   const aliveRef = useRef(true);
   useEffect(() => { aliveRef.current = true; return () => { aliveRef.current = false; }; }, []);
   /**
-   * Tek aksiyon koşucusu: çift gönderimi engeller, sonucu GÖRÜNÜR kılar.
-   * fn `false`/`null` dönerse ya da hata atarsa başarısızlık uyarısı; aksi halde başarı toast'ı.
-   * (Store'un void dönen aksiyonları iyimser uygulanır; kalıcı yazım hatasını store ayrıca bildirir.)
+   * Tek aksiyon koşucusu: çift gönderimi engeller, sonucu DÜRÜSTÇE gösterir.
+   *   true      → başarı toast'ı (ok metin ya da sonuca göre metin üreten fonksiyon)
+   *   false / hata → başarısızlık uyarısı
+   *   undefined → HİÇBİR ŞEY (sonucu bilinmeyen, iyimser store aksiyonu: başarı iddia edilmez;
+   *               yazım hatasını store kendi hata bildirimiyle gösterir)
    */
-  const run = async (key: string, fn: () => unknown, ok: string, fail = "İşlem tamamlanamadı. Lütfen tekrar dene.") => {
+  const run = async (key: string, fn: () => boolean | undefined | void | Promise<boolean | undefined | void>, ok: string | (() => string), fail = "İşlem tamamlanamadı. Lütfen tekrar dene.") => {
     if (busyRef.current[key]) return;
     busyRef.current[key] = true;
     setBusy((b) => ({ ...b, [key]: true }));
     try {
       const res = await fn();
-      if (res === false || res === null) Alert.alert("İşlem başarısız", fail);
-      // Sonucu bilinmeyen (void, iyimser) aksiyonda başarı İDDİA EDİLMEZ: yazım hatasını store ayrıca bildirir.
-      else if (res !== undefined) showToast(ok);
+      if (res === true) showToast(typeof ok === "function" ? ok() : ok);
+      else if (res === false) Alert.alert("İşlem başarısız", fail);
     } catch {
       Alert.alert("İşlem başarısız", fail);
     } finally {
       delete busyRef.current[key];
       if (aliveRef.current) setBusy((b) => { const n = { ...b }; delete n[key]; return n; });
     }
+  };
+  // Doğrulama talebi: ÖNCE rozet yazılır; yazılamadıysa talep KAPATILMAZ (eskiden rozet sonucu
+  // beklenmeden talep kapanıyordu → rozet yazılamasa da "doğrulandı" deniyordu).
+  const verifyAndResolve = async (userId: string, field: "verifiedPhone" | "verifiedIdentity", reportId: string) => {
+    if (!(await setUserVerification(userId, field, true))) return false;
+    return updateReportStatus(reportId, "resolved");
   };
   const uq = userQuery.trim().toLocaleLowerCase("tr-TR");
   const lq = listingQuery.trim().toLocaleLowerCase("tr-TR");
@@ -248,7 +254,7 @@ function AdminScreenInner() {
    * yazmak zorundaydı). Artık onaylamak öneriyi GERÇEKTEN ağaca ekler:
    * yol "Kök → … → Yaprak" ise yaprak, kök kategorinin alt kategorisi olarak eklenir.
    */
-  function adoptCategorySuggestion(id: string, suggestedPath: string) {
+  function adoptCategorySuggestion(id: string, suggestedPath: string): Promise<boolean> | undefined {
     const parts = suggestedPath.split(/[→>]/).map((p) => p.trim()).filter(Boolean);
     const leaf = parts[parts.length - 1];
     const root = parts[0] ?? leaf;
@@ -271,9 +277,13 @@ function AdminScreenInner() {
         isActive: true
       });
     }
-    setCategorySuggestionStatus(id, "approved");
+    return setCategorySuggestionStatus(id, "approved");
   }
   const [section, setSection] = useState<Section>("dashboard");
+  // Sunucu zaman serisi (admin_timeseries): yalnız yetkili oturumda ve seriyi gösteren bölümlerde yoklanır.
+  const ts = useAdminTimeseries(
+    (currentUser.role === "admin" || currentUser.role === "moderator" || currentUser.role === "super_admin") && (section === "dashboard" || section === "stats")
+  );
   const [adminNavOpen, setAdminNavOpen] = useState(false);
   // Mobil bölüm sekmeleri: aktif sekme yatay şeritte görünür alana kaydırılır.
   const tabsRef = useRef<ScrollView>(null);
@@ -320,6 +330,27 @@ function AdminScreenInner() {
     void fetchAdminPartnerships().then(setAdminPartnerships).catch(() => setAdminPartnerships([]));
   }, [section]);
   const reloadAdminPartnerships = () => { void fetchAdminPartnerships().then(setAdminPartnerships).catch(() => {}); };
+  // "Hesap silme talepleri" kuyruğu (staff RPC) — Kullanıcılar bölümü açılınca çekilir. null = yükleniyor.
+  // Gece işi kurulana kadar kalıcı silme BURADAN yapılır ("Şimdi sil" yalnız admin/super_admin).
+  const [accountDeletions, setAccountDeletions] = useState<AdminAccountDeletion[] | null>(null);
+  const [accountDeletionsFailed, setAccountDeletionsFailed] = useState(false);
+  const [deleteNowTarget, setDeleteNowTarget] = useState<AdminAccountDeletion | null>(null);
+  const [deleteNowText, setDeleteNowText] = useState("");
+  const reloadAccountDeletions = () => {
+    void fetchAdminAccountDeletionsLive()
+      .then((rows) => { setAccountDeletionsFailed(rows === null); setAccountDeletions(rows ?? []); })
+      .catch(() => { setAccountDeletionsFailed(true); setAccountDeletions([]); });
+  };
+  useEffect(() => {
+    if (section !== "users") return;
+    reloadAccountDeletions();
+  }, [section]);
+  const resolveAccountDeletion = (row: AdminAccountDeletion, action: "reject" | "delete_now") => run(
+    `adel:${row.id}`,
+    async () => { const ok = await adminResolveAccountDeletionLive(row.id, action); if (ok) reloadAccountDeletions(); return ok; },
+    action === "reject" ? "Talep reddedildi; hesap yeniden aktif" : "Hesap kalıcı olarak silindi",
+    action === "reject" ? "Talep reddedilemedi. Talebin durumunu yenileyip tekrar dene." : "Hesap silinemedi. Yetkini ve talebin durumunu kontrol edip tekrar dene."
+  );
   // Moderasyon aksiyonları — izleme değil KONTROL: aksiyon sonrası kayıtları tazele.
   const reloadRecords = () => { void fetchAdminSiteRecords().then(setSiteRecords).catch(() => {}); };
   const modReview = (id: string, del: boolean) => confirmAction(del ? "Bu yorumu gizle (herkese kapat)?" : "Yorumu geri al (yayına aç)?", () => void run(`rev:${id}`, async () => { const ok = await adminModerateReview(id, del); if (ok) reloadRecords(); return ok; }, del ? "Yorum gizlendi" : "Yorum yayına alındı"), del ? "Gizle" : "Geri Al");
@@ -333,6 +364,7 @@ function AdminScreenInner() {
   const doRefresh = async () => {
     if (refreshing) return;
     setRefreshing(true);
+    ts.reload();
     try {
       await Promise.all([
         fetchAdminOverview().then(setOverview).catch(() => {}),
@@ -364,15 +396,8 @@ function AdminScreenInner() {
   // Son 12 ay — gerçek veri: aya göre yayınlanan ilan sayısı (kayıtlı veriden).
   const { data: chartData, labels: chartLabels } = useMemo(() => monthlyListingChart(listings), [listings]);
 
-  // Analitik dağılımlar (İstatistikler): en çok ilanı olan satıcılar, en çok
-  // komisyon kazanan ortaklar, kategori ve şehir dağılımı — gerçek veriden.
-  const topSellers = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const l of listings) if (l.status === "active") m.set(l.ownerId, (m.get(l.ownerId) ?? 0) + 1);
-    const arr = [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6);
-    const max = arr[0]?.[1] ?? 1;
-    return arr.map(([id, c]) => ({ label: findUser(id)?.name ?? "—", value: `${c} ilan`, count: c, max }));
-  }, [listings, findUser]);
+  // Analitik dağılımlar (İstatistikler): en çok komisyon kazanan ortaklar ve şehir dağılımı yüklü
+  // kayıtlardan; en çok ilanı olan satıcılar + kök kategori dağılımı SUNUCUDAN (ts).
   const topPartners = useMemo(() => {
     const m = new Map<string, number>();
     for (const s of sales) { const p = partnerships.find((pp) => pp.id === s.partnershipId); if (p) m.set(p.partnerId, (m.get(p.partnerId) ?? 0) + s.commissionAmount); }
@@ -557,15 +582,52 @@ function AdminScreenInner() {
         {section === "dashboard" ? (
           <View style={{ gap: 18 }}>
             <DashHero analytics={analytics} disputedN={disputedSalesN} name={currentUser.name} />
-            <AdminActivity onData={setAnalytics} onOverview={setOverview} onMsgStats={setMsgStats} onNavigate={setSection} />
+            <AdminActivity onData={setAnalytics} onOverview={setOverview} onMsgStats={setMsgStats} onNavigate={setSection} ts={ts} />
             <Dashboard
               listings={listings} users={users} notifications={notifications}
               pendingN={pendingReview.length} reportsN={pendingReports} pendingCat={pendingCat} pendingLoc={pendingLoc} disputedN={disputedSalesN}
-              setSection={setSection} analytics={analytics} overview={overview} findUser={findUser}
+              setSection={setSection} analytics={analytics} overview={overview} ts={ts}
             />
           </View>
         ) : null}
 
+        {section === "users" ? (
+          <Panel title="Hesap silme talepleri" sub={accountDeletions === null ? "Yükleniyor…" : `${accountDeletions.filter((d) => d.status === "open").length} bekliyor · ${accountDeletions.length} kayıt — talep açılınca hesap askıya alınır, 30 gün sonunda kalıcı silinir.`}>
+            {accountDeletions === null ? <EmptyState title="Yükleniyor…" body="Hesap silme talepleri çekiliyor." /> : accountDeletionsFailed ? (
+              <View style={{ alignItems: "flex-start", gap: 8 }}>
+                <EmptyState icon="alert-circle-outline" title="Talepler yüklenemedi" body="Kuyruk okunamadı. Bağlantını kontrol edip yenile." />
+                <ActionButton tone="neutral" icon="refresh" label="Yenile" onPress={reloadAccountDeletions} />
+              </View>
+            ) : accountDeletions.length === 0 ? <EmptyState icon="account-remove-outline" title="Hesap silme talebi yok" body="Bir kullanıcı hesabını silmek istediğinde talebi burada görünür." /> : (
+              <Table head={["KULLANICI", "NEDEN", "TALEP", "KALICI SİLME", "DURUM", "İŞLEM"]} cols={[1.5, 2, 0.9, 0.9, 0.9, 1.8]}>
+                {accountDeletions.map((d) => {
+                  const dk = `adel:${d.id}`;
+                  const open = d.status === "open";
+                  const own = d.userId === currentUser.id;
+                  const label = open ? "Bekliyor" : d.status === "completed" ? "Silindi" : d.status === "rejected" ? "Reddedildi" : d.status === "cancelled" ? "İptal edildi" : d.status;
+                  return (
+                    <Row key={d.id} cols={[1.5, 2, 0.9, 0.9, 0.9, 1.8]} cells={[
+                      <View style={{ gap: 2 }}>
+                        <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12.5, fontWeight: "800" }}>{d.name || "İsimsiz kullanıcı"}</Text>
+                        <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "600" }}>{`${d.listingCount} ilan`}</Text>
+                      </View>,
+                      <Text numberOfLines={3} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{d.note ? `${d.reason || "—"} · Not: ${d.note}` : d.reason || "—"}</Text>,
+                      <Text style={{ color: colors.muted, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "600" }}>{(d.requestedAt ?? "").slice(0, 10) || "—"}</Text>,
+                      <Text style={{ color: colors.ink, fontSize: 11.5, fontVariant: ["tabular-nums"], fontWeight: "800" }}>{(d.completedAt ?? d.scheduledFor ?? "").slice(0, 10) || "—"}</Text>,
+                      <StatusBadge label={label} tone={open ? "warning" : d.status === "completed" ? "accent" : "neutral"} />,
+                      open ? (
+                        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: isWideWeb ? "flex-end" : "flex-start" }}>
+                          <ActionButton tone="neutral" icon="account-reactivate-outline" label="Talebi reddet" busy={busy[dk]} accessibilityLabel={`${d.name} silme talebini reddet`} onPress={() => confirmAction(`${d.name || "Bu kullanıcı"} için hesap silme talebi REDDEDİLSİN mi? Hesap yeniden aktif olur ve talebin duraklattığı ilanlar geri açılır.`, () => void resolveAccountDeletion(d, "reject"), "Talebi reddet")} />
+                          {canManageUsers && !own ? <ActionButton tone="danger" icon="trash-can-outline" label="Şimdi sil" busy={busy[dk]} accessibilityLabel={`${d.name} hesabını şimdi kalıcı sil`} onPress={() => { setDeleteNowText(""); setDeleteNowTarget(d); }} /> : null}
+                        </View>
+                      ) : <Text style={{ color: colors.subtle, fontSize: 11, fontWeight: "700" }}>—</Text>
+                    ]} />
+                  );
+                })}
+              </Table>
+            )}
+          </Panel>
+        ) : null}
         {section === "users" ? (
           <Panel title="Kullanıcılar" sub={`${analytics ? `${fmtN(analytics.total_users)} toplam kayıtlı (sunucu) · ` : overview ? `${fmtN(overview.users_total)} toplam kayıtlı (sunucu) · ` : ""}${shownUsers.length} yüklü${deletedUserCount ? ` · ${deletedUserCount} silinmiş (gizli)` : ""}${canManageUsers ? " · rol, durum, doğrulama" : ""}`}>
             <AdminSearch value={userQuery} onChange={setUserQuery} placeholder="İsim, rol veya durum ara…" />
@@ -766,7 +828,7 @@ function AdminScreenInner() {
                       : <ActionButton tone="primary" icon="eye-outline" label="Yayınla" busy={busy[lk]} onPress={() => void run(lk, () => updateListingStatus(l.id, "active"), "İlan yayınlandı", "İlan yayınlanamadı. Tekrar dene.")} />}
                     <ActionButton tone={l.featured ? "warning" : "neutral"} icon={l.featured ? "star" : "star-outline"} label={l.featured ? "Öne çıkan" : "Öne çıkar"} busy={busy[`lf:${l.id}`]} onPress={() => void run(`lf:${l.id}`, () => setListingFeatured(l.id, !l.featured), l.featured ? "Öne çıkarma kaldırıldı" : "İlan öne çıkarıldı")} />
                     {l.status !== "rejected" ? <ActionButton tone="warning" icon="close-circle-outline" label="Reddet" busy={busy[lk]} onPress={() => confirmAction(`"${l.title}" ilanı reddedilsin mi?`, () => void run(lk, () => updateListingStatus(l.id, "rejected"), "İlan reddedildi", "İlan reddedilemedi. Tekrar dene."), "Reddet")} /> : null}
-                    <ActionButton tone="danger" icon="trash-can-outline" label="Kalıcı sil" busy={busy[lk]} onPress={() => confirmAction(`"${l.title}" ilanı kalıcı olarak silinsin mi? Bu işlem geri alınamaz.`, () => void run(lk, () => deleteListing(l.id), "İlan silindi"), "Kalıcı sil")} />
+                    <ActionButton tone="danger" icon="trash-can-outline" label="Kalıcı sil" busy={busy[lk]} onPress={() => confirmAction(`"${l.title}" ilanı kalıcı olarak silinsin mi? Bu işlem geri alınamaz. Satış, komisyon, ortaklık veya talep geçmişi olan ilan silinmez; arşivlenir (yayından kalkar, kayıtlar korunur).`, () => { let outcome: "deleted" | "archived" = "deleted"; void run(lk, () => deleteListing(l.id, (o) => { outcome = o; }), () => (outcome === "archived" ? "İlan arşivlendi (geçmişi olduğu için silinmedi)" : "İlan kalıcı olarak silindi"), "İlan kaldırılamadı; kayıt olduğu gibi duruyor. Tekrar dene ya da yayından kaldırmayı kullan."); }, "Kalıcı sil")} />
                   </View>
                 ]} />
                 );
@@ -873,8 +935,8 @@ function AdminScreenInner() {
                     ) : null}
                     {isOpenReport(r) && r.reason.startsWith("DOĞRULAMA TALEBİ") && actUser && canManageUsers ? (
                       <>
-                        <ActionButton tone="success" icon="check-decagram" label="Kimlik doğrula" busy={busy[rk]} onPress={() => void run(rk, () => { setUserVerification(actUser.id, "verifiedIdentity", true); return updateReportStatus(r.id, "resolved"); }, "Kimlik doğrulandı, talep kapatıldı", "Talep kapatılamadı. Tekrar dene.")} />
-                        <ActionButton tone="success" icon="phone-check" label="Telefon doğrula" busy={busy[rk]} onPress={() => void run(rk, () => { setUserVerification(actUser.id, "verifiedPhone", true); return updateReportStatus(r.id, "resolved"); }, "Telefon doğrulandı, talep kapatıldı", "Talep kapatılamadı. Tekrar dene.")} />
+                        <ActionButton tone="success" icon="check-decagram" label="Kimlik doğrula" busy={busy[rk]} onPress={() => void run(rk, () => verifyAndResolve(actUser.id, "verifiedIdentity", r.id), "Kimlik doğrulandı, talep kapatıldı", "Kimlik doğrulanamadı ya da talep kapatılamadı. Kaydı kontrol edip tekrar dene.")} />
+                        <ActionButton tone="success" icon="phone-check" label="Telefon doğrula" busy={busy[rk]} onPress={() => void run(rk, () => verifyAndResolve(actUser.id, "verifiedPhone", r.id), "Telefon doğrulandı, talep kapatıldı", "Telefon doğrulanamadı ya da talep kapatılamadı. Kaydı kontrol edip tekrar dene.")} />
                       </>
                     ) : null}
                     {isOpenReport(r) ? (
@@ -1139,22 +1201,18 @@ function AdminScreenInner() {
               <Stat icon="account-check" tint={colors.successSoft} color={SUCCESS_INK} value={`${buyerConfirmedN}`} title="Alıcı onaylı satış" />
               <Stat icon="account-clock-outline" tint={colors.primarySoft} color={colors.primary} value={`${buyerAwaitingN}`} title="Alıcı onayı bekleyen" />
             </View>
-            <LoadedTrend listings={listings} users={users} listingsTotal={analytics?.listings_total ?? overview?.listings_total ?? null} />
+            <ServerTrendCard ts={ts} />
             <Panel title="Aylık İlan Trendi" sub="Son 12 ay — yüklü kayıtlardan (sunucu toplamları için Canlı Panel)">
               <ResponsiveLineArea points={chartData.map((v, i) => ({ label: chartLabels[i] ?? `${i + 1}`, value: v }))} color={colors.primary} height={210} />
             </Panel>
             <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
-              <View style={{ flexBasis: 300, flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
-                <Panel title="En Çok İlanı Olan Satıcılar" sub="Aktif ilan sayısına göre ilk 6">
-                  {topSellers.length === 0 ? <EmptyState title="Veri yok" body="Henüz satıcı verisi yok." /> : <HBarChart rank data={topSellers.map((r) => ({ label: r.label, value: r.count }))} valueFmt={(n) => `${Math.round(n)} ilan`} />}
-                </Panel>
-              </View>
+              <TopSellersCard ts={ts} />
               <View style={{ flexBasis: 300, flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
                 <Panel title="En Çok Kazanan Ortaklar" sub="Kayıtlı komisyona göre ilk 6">
                   {topPartners.length === 0 ? <EmptyState title="Veri yok" body="Henüz komisyon kaydı yok." /> : <HBarChart rank data={topPartners.map((r) => ({ label: r.label, value: r.count }))} valueFmt={fmtMoney} />}
                 </Panel>
               </View>
-              <RootCategoryCard listings={listings} serverActive={analytics?.listings_active ?? overview?.listings?.active ?? null} />
+              <RootCategoryCard ts={ts} />
               <View style={{ flexBasis: 300, flexGrow: 1, flexShrink: 1, minWidth: 0 }}>
                 <Panel title="Şehir Dağılımı" sub="Aktif ilana göre ilk 8 şehir">
                   {cityDist.length === 0 ? <EmptyState title="Veri yok" body="Aktif ilan yok." /> : <HBarChart rank data={cityDist.map((r) => ({ label: r.label, value: r.count }))} valueFmt={(n) => `${Math.round(n)}`} />}
@@ -1394,6 +1452,51 @@ function AdminScreenInner() {
         </View>
       </Modal>
 
+      {/* "Şimdi sil" GÜÇLÜ onay: geri alınamaz kalıcı anonimleştirme → yazılı onay ("SİL") olmadan çalışmaz. */}
+      <Modal visible={deleteNowTarget !== null} transparent animationType="fade" onRequestClose={() => setDeleteNowTarget(null)}>
+        <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ flex: 1 }}>
+          <Pressable accessibilityLabel="Kapat" onPress={() => setDeleteNowTarget(null)} style={{ alignItems: "center", backgroundColor: "rgba(9,39,94,0.5)", flex: 1, justifyContent: "center", padding: 16 }}>
+            <Pressable onPress={() => undefined} style={{ backgroundColor: colors.surface, borderRadius: 16, gap: 12, maxHeight: "90%", maxWidth: 460, padding: 16, width: "100%" }}>
+              <View style={{ alignItems: "center", flexDirection: "row", gap: 9 }}>
+                <MaterialCommunityIcons name="alert-octagon-outline" size={22} color={colors.accent} />
+                <Text style={{ color: colors.ink, flex: 1, fontSize: 16, fontWeight: "900" }}>Hesabı şimdi kalıcı sil</Text>
+              </View>
+              <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "700", lineHeight: 20 }}>{deleteNowTarget?.name || "Bu kullanıcı"}</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>Ad, telefon, profil fotoğrafı, e-posta ve giriş bilgileri silinir; ilanlar arşivlenir ve bu hesapla bir daha giriş yapılamaz. Satış, komisyon ve mesaj geçmişi anonim profile bağlı kalır. Bu işlem GERİ ALINAMAZ; 30 günlük süre beklenmeden uygulanır.</Text>
+              <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "800" }}>Onaylamak için SİL yaz</Text>
+              <TextInput
+                accessibilityLabel="Onaylamak için SİL yaz"
+                value={deleteNowText}
+                onChangeText={setDeleteNowText}
+                autoCapitalize="characters"
+                autoCorrect={false}
+                autoFocus
+                maxLength={8}
+                placeholder="SİL"
+                placeholderTextColor={colors.subtle}
+                style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, fontSize: 16, minHeight: 46, paddingHorizontal: 12 }}
+              />
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8, justifyContent: "flex-end" }}>
+                <ActionButton tone="neutral" label="Vazgeç" onPress={() => setDeleteNowTarget(null)} />
+                <ActionButton
+                  tone="danger"
+                  icon="trash-can-outline"
+                  label="Kalıcı sil"
+                  disabled={!["SİL", "SIL", "sil", "Sil"].includes(deleteNowText.trim())}
+                  onPress={() => {
+                    const target = deleteNowTarget;
+                    if (!target || !["SİL", "SIL", "sil", "Sil"].includes(deleteNowText.trim())) return;
+                    setDeleteNowTarget(null);
+                    setDeleteNowText("");
+                    void resolveAccountDeletion(target, "delete_now");
+                  }}
+                />
+              </View>
+            </Pressable>
+          </Pressable>
+        </KeyboardAvoidingView>
+      </Modal>
+
       {/* Kullanıcıya bildirim gönder — her iki platformda çalışan gerçek metin kutusu
           (eskiden web'de window.prompt, NATIVE'de hiç girdi alınmadan sabit metin). */}
       <Modal visible={notifyTarget !== null} transparent animationType="fade" onRequestClose={() => setNotifyTarget(null)}>
@@ -1477,64 +1580,15 @@ function DashHero({ analytics, disputedN, name }: { analytics: AdminAnalytics | 
   );
 }
 
-/**
- * 30 / 90 / 365 günlük trend — istemciye YÜKLENMİŞ kayıtlardan (admin snapshot: ilanlar + kullanıcılar).
- * Sunucu günlük serisi yalnız 14 gündür (Canlı Panel); daha uzun aralık için sunucu RPC'si yok,
- * bu yüzden kapsam ("N / toplam yüklü") açıkça yazılır. Kayıt tarihi olmayan satırlar sayılmaz.
- */
-function LoadedTrend({ listings, users, listingsTotal }: { listings: StoreT["listings"]; users: StoreT["users"]; listingsTotal: number | null }) {
-  const [range, setRange] = useState<30 | 90 | 365>(30);
-  const [w, setW] = useState(0);
-  const li = useMemo(() => bucketDates(listings.map((l) => l.createdAt), range), [listings, range]);
-  const us = useMemo(() => bucketDates(users.map((u) => u.createdAt), range), [users, range]);
-  const usersDated = useMemo(() => users.filter((u) => !!u.createdAt).length, [users]);
-  const series = [
-    { label: "Yeni ilan", color: colors.primary, values: li.values },
-    ...(usersDated > 0 ? [{ label: "Yeni kayıt", color: colors.violet, values: us.values }] : [])
-  ];
-  const empty = li.counted === 0 && us.counted === 0;
-  const partial = listingsTotal != null && listingsTotal > listings.length;
-  return (
-    <ChartCard
-      title="Uzun dönem trend"
-      meta={`${range <= 31 ? "Günlük" : "Haftalık"} · yüklü kayıtlardan: ${fmtN(listings.length)}${listingsTotal != null ? ` / ${fmtN(listingsTotal)}` : ""} ilan${usersDated > 0 ? ` · ${fmtN(usersDated)} kullanıcı` : " · kullanıcı kayıt tarihi yüklü değil"}${partial ? " · KISMİ" : ""}`}
-      right={<RangeSwitch value={range} onChange={setRange} options={[{ key: 30, label: "30 gün" }, { key: 90, label: "90 gün" }, { key: 365, label: "12 ay" }]} />}
-    >
-      <View onLayout={(e) => setW(Math.round(e.nativeEvent.layout.width))} style={{ width: "100%" }}>
-        {empty ? <NoData text="Bu aralıkta yüklü kayıt yok." /> : w > 0 ? <MultiLineChart labels={li.labels} series={series} width={w} /> : <View style={{ height: 200 }} />}
-      </View>
-    </ChartCard>
-  );
-}
-
-/** Aktif ilanların KÖK kategoriye göre dağılımı (listingRootNode) — yüklü ilanlardan; kapsam yazılır. */
-function RootCategoryCard({ listings, serverActive }: { listings: StoreT["listings"]; serverActive: number | null }) {
-  const { rows, n } = useMemo(() => {
-    const m = new Map<string, number>();
-    let count = 0;
-    for (const l of listings) {
-      if (l.status !== "active") continue;
-      count += 1;
-      const label = listingRootNode(l)?.label ?? "Kök eşleşmedi";
-      m.set(label, (m.get(label) ?? 0) + 1);
-    }
-    return { rows: [...m.entries()].sort((a, b) => b[1] - a[1]), n: count };
-  }, [listings]);
-  return (
-    <ChartCard title="Kök kategori dağılımı" meta={`Aktif ilan · ${fmtN(n)} yüklü${serverActive != null ? ` / ${fmtN(serverActive)} sunucu` : ""}${serverActive != null && serverActive > n ? " · KISMİ" : ""}`} basis={300}>
-      {rows.length === 0 ? <NoData text="Aktif ilan yok." /> : <HBarChart rank data={rows.map(([label, value]) => ({ label, value, color: colors.primary }))} valueFmt={(v) => `${fmtN(v)} · %${n ? Math.round((v / n) * 100) : 0}`} />}
-    </ChartCard>
-  );
-}
-
 type DashProps = {
-  listings: StoreT["listings"]; users: StoreT["users"]; notifications: StoreT["notifications"]; findUser: StoreT["findUser"];
+  listings: StoreT["listings"]; users: StoreT["users"]; notifications: StoreT["notifications"];
   pendingN: number; reportsN: number; pendingCat: number; pendingLoc: number; disputedN: number;
   setSection: (s: Section) => void;
   analytics: AdminAnalytics | null;
   overview: AdminOverview | null;
+  ts: AdminTsState;
 };
-function Dashboard({ listings, users, notifications, findUser, pendingN, reportsN, pendingCat, pendingLoc, disputedN, setSection, analytics, overview }: DashProps) {
+function Dashboard({ listings, users, notifications, pendingN, reportsN, pendingCat, pendingLoc, disputedN, setSection, analytics, overview, ts }: DashProps) {
   // Oranlar SUNUCU toplamlarından (admin_live_analytics + admin_overview). Sunucu verisi yoksa "—".
   const totalListings = analytics?.listings_total ?? overview?.listings_total ?? null;
   const activeListings = analytics?.listings_active ?? overview?.listings?.active ?? null;
@@ -1548,11 +1602,6 @@ function Dashboard({ listings, users, notifications, findUser, pendingN, reports
   const pendingComm = analytics ? (Number.isFinite(analytics.commission_pending_amount) ? analytics.commission_pending_amount : Math.max(0, analytics.commission_amount - analytics.commission_paid_amount)) : null;
   const recentUsers = sortByDate(users.filter((u) => u.status !== "deleted" && !!u.createdAt), "createdAt").slice(0, 5);
   const recentListings = sortByDate(listings, "createdAt").slice(0, 6);
-  const topSellers = useMemo(() => {
-    const m = new Map<string, number>();
-    for (const l of listings) if (l.status === "active") m.set(l.ownerId, (m.get(l.ownerId) ?? 0) + 1);
-    return [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, 6).map(([id, c]) => ({ label: findUser(id)?.name ?? "—", value: c, color: colors.primary }));
-  }, [listings, findUser]);
   const listingStatusData = listingStatusStats(listings);
   const priorities = [
     { label: "Onay bekleyen ilan", value: pendingN, icon: "clock-alert-outline" as const, tone: colors.gold, go: "listings" as Section, helper: "Yayına alınmayı bekliyor" },
@@ -1569,13 +1618,11 @@ function Dashboard({ listings, users, notifications, findUser, pendingN, reports
         </View>
       ) : null}
 
-      <LoadedTrend listings={listings} users={users} listingsTotal={totalListings} />
+      <ServerTrendCard ts={ts} />
 
       <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 16 }}>
-        <RootCategoryCard listings={listings} serverActive={activeListings} />
-        <ChartCard title="En çok ilanı olan satıcılar" meta="Aktif ilan sayısına göre ilk 6 · yüklü ilanlardan" basis={300}>
-          {topSellers.length === 0 ? <NoData text="Henüz aktif ilanı olan satıcı yok." /> : <HBarChart rank data={topSellers} valueFmt={(v) => `${fmtN(v)} ilan`} />}
-        </ChartCard>
+        <RootCategoryCard ts={ts} />
+        <TopSellersCard ts={ts} />
       </View>
 
       <Panel title="Operasyon Sağlığı" sub="Sunucu toplamlarından hesaplanan oranlar">

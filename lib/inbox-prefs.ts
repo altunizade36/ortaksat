@@ -67,7 +67,19 @@ export function useInboxPrefs(userId: string | undefined) {
   useEffect(() => {
     const l = () => force((x) => x + 1);
     listeners.add(l);
-    return () => { listeners.delete(l); };
+    // Başka sekmede yapılan yıldız/arşiv değişikliği: bellek önbelleği bayat kalmasın
+    // (aynı konuşma bir sekmede arşivde, diğerinde gelen kutusunda görünüyordu).
+    const onStorage = (e: StorageEvent) => {
+      if (!e.key || !e.key.startsWith(`${KEY}:`)) return;
+      delete cache[e.key.slice(KEY.length + 1)];
+      l();
+    };
+    const canListen = typeof window !== "undefined" && typeof window.addEventListener === "function";
+    if (canListen) window.addEventListener("storage", onStorage);
+    return () => {
+      listeners.delete(l);
+      if (canListen) window.removeEventListener("storage", onStorage);
+    };
   }, []);
   const p = load(uid);
   return {

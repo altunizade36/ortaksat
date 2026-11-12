@@ -6,7 +6,7 @@ export function backFallback(pathname: string): string {
   if (/^\/chat\//.test(pathname)) return "/messages";
   if (/^\/(partnership|partnership-request)\//.test(pathname) || pathname === "/earnings") return "/partner";
   if (pathname === "/profile-edit" || pathname === "/account-settings") return "/profile";
-  if (["/account-security", "/notification-settings", "/engellenenler"].includes(pathname)) return "/account-settings";
+  if (["/account-security", "/notification-settings", "/engellenenler", "/hesap-silme"].includes(pathname)) return "/account-settings";
   if (["/report", "/review", "/reports"].includes(pathname)) return "/profile";
   if (["/hakkimizda", "/sss", "/iletisim", "/kvkk", "/gizlilik-politikasi", "/kullanim-sartlari", "/support", "/mobile-tools", "/market-tools"].includes(pathname)) return "/menu";
   return "/";

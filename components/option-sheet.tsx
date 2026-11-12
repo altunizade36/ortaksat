@@ -1,6 +1,6 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { useMemo, useState } from "react";
-import { Modal, Pressable, ScrollView, Text, TextInput, View } from "react-native";
+import { useEffect, useMemo, useState } from "react";
+import { Keyboard, Modal, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -47,6 +47,18 @@ export function OptionSheet({
     return options.filter((o) => searchKey(o).includes(k));
   }, [options, query]);
 
+  // iOS KLAVYE: RN Modal ebeveynin KeyboardAvoidingView'ını miras almaz ve iOS görünümü klavye için
+  // küçültmez → arama kutusuna yazınca sonuçlar azalıp alta yaslı sayfa kısalıyor, arama kutusu
+  // dahil TAMAMEN klavyenin arkasında kalıyordu. Klavye yüksekliği kadar alt boşluk, sayfayı
+  // klavyenin üstüne taşır (klavye kapalıyken 0 → görünüm aynı). Web ve Android'de devreye girmez.
+  const [keyboardInset, setKeyboardInset] = useState(0);
+  useEffect(() => {
+    if (Platform.OS !== "ios" || !visible) return;
+    const show = Keyboard.addListener("keyboardWillShow", (event) => setKeyboardInset(event.endCoordinates?.height ?? 0));
+    const hide = Keyboard.addListener("keyboardWillHide", () => setKeyboardInset(0));
+    return () => { show.remove(); hide.remove(); setKeyboardInset(0); };
+  }, [visible]);
+
   function close() {
     setQuery("");
     onClose();
@@ -59,10 +71,12 @@ export function OptionSheet({
         accessibilityRole="button"
         accessibilityLabel={translateCopy("Kapat", language)}
         onPress={close}
-        style={{ backgroundColor: "rgba(15,23,42,0.45)", flex: 1, justifyContent: "flex-end" }}
+        style={{ backgroundColor: "rgba(15,23,42,0.45)", flex: 1, justifyContent: "flex-end", paddingBottom: keyboardInset }}
       >
         {/* İçeriğe dokunma kapatmasın */}
-        <Pressable onPress={() => {}} style={{ backgroundColor: colors.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: "78%", paddingBottom: 22 }}>
+        {/* Native tablette sayfa kenardan kenara uzamasın: 560 dp ile sınırlı, ortalı. Telefonda (<560 dp)
+            ve web'de görünüm AYNI (web'de sınır uygulanmaz). */}
+        <Pressable onPress={() => {}} style={{ alignSelf: "center", backgroundColor: colors.surface, borderTopLeftRadius: 22, borderTopRightRadius: 22, maxHeight: "78%", maxWidth: Platform.OS === "web" ? undefined : 560, paddingBottom: 22, width: "100%" }}>
           <View style={{ alignItems: "center", paddingTop: 10 }}>
             <View style={{ backgroundColor: colors.line, borderRadius: 999, height: 4, width: 46 }} />
           </View>

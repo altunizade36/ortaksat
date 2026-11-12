@@ -1,8 +1,9 @@
 import { CompactFooter } from "@/components/compact-footer";
-import type { ReactNode } from "react";
+import type { ReactElement, ReactNode } from "react";
 import { useEffect, useState } from "react";
-import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions, type StyleProp, type ViewStyle } from "react-native";
-import { Stack, usePathname, useRouter } from "expo-router";
+import { Keyboard, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View, useWindowDimensions, type RefreshControlProps, type StyleProp, type ViewStyle } from "react-native";
+import { Stack, usePathname, useRouter, useSegments } from "expo-router";
+import { goToTabRoute, isTabHref } from "@/lib/mobile-access";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
@@ -32,16 +33,26 @@ export function useMobileLayout() {
   const width = Platform.OS === "web" ? (mounted ? contentWidth : 390) : nativeWidth;
   const insets = useSafeAreaInsets();
   const tablet = width >= 700;
+  // `wide` = küçük tabletler dahil (600 dp+). Göz atma ekranları sütun sayısını buna göre artırır;
+  // `tablet` (700 dp+) iki bölmeli düzenleri (ilan detayı, mesajlar) açtığı için eşiği değişmedi —
+  // 600 dp'de o bölmeler ~210-240 dp'ye sıkışırdı.
+  const wide = width >= 600;
   const maxWidth = tablet ? Math.min(width - 48, 1180) : width;
-  return { width, height, insets, tablet, maxWidth, padding: tablet ? 24 : 16 };
+  return { width, height, insets, tablet, wide, maxWidth, padding: tablet ? 24 : 16 };
 }
 
-export function MobileScreen({ children, title, right, bottom, scroll = true, back = true, contentStyle, onBack, footer, headerShown = false, keyboardBehavior }: { children: ReactNode; title?: string; right?: ReactNode; bottom?: ReactNode; scroll?: boolean; back?: boolean; contentStyle?: StyleProp<ViewStyle>; onBack?: () => void; footer?: ReactNode; headerShown?: boolean; keyboardBehavior?: "height" | "padding" | "position" }) {
+/** Tek satırlık hap/rozet metni: yaklaşık glif genişliğiyle (0,64 em — kalın rakamlar) SIĞAN ilk adayı
+ * seçer; hiçbiri sığmazsa en kısasını (sonuncu). Tutar "…" ile kırpılacağına kısa biçim gösterilir. */
+export function fitPillText(candidates: string[], budget: number, fontSize = 10): string {
+  return candidates.find((text) => text.length * fontSize * 0.64 <= budget) ?? candidates[candidates.length - 1];
+}
+
+export function MobileScreen({ children, title, right, bottom, scroll = true, back = true, contentStyle, onBack, footer, headerShown = false, keyboardBehavior, refreshControl, onEndReached }: { children: ReactNode; title?: string; right?: ReactNode; bottom?: ReactNode; scroll?: boolean; back?: boolean; contentStyle?: StyleProp<ViewStyle>; onBack?: () => void; footer?: ReactNode; headerShown?: boolean; keyboardBehavior?: "height" | "padding" | "position"; /** Aşağı çekerek yenileme (yalnız scroll=true). */ refreshControl?: ReactElement<RefreshControlProps>; /** İçeriğin sonuna ~600 dp kala çağrılır (sonsuz kaydırma); çağıran kendi kilidini tutar. */ onEndReached?: () => void }) {
   const { insets, maxWidth } = useMobileLayout();
   return <KeyboardAvoidingView behavior={keyboardBehavior ?? (Platform.OS === "ios" ? "padding" : undefined)} style={ms.screen}>
     <Stack.Screen options={{ headerShown }} />
     {title ? <View style={{ paddingTop: insets.top, backgroundColor: mobile.canvas }}><MobileHeader title={title} right={right} back={back} onBack={onBack} /></View> : null}
-    {scroll ? <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} contentContainerStyle={[{ flexGrow: 1, width: "100%", maxWidth, alignSelf: "center", paddingHorizontal: 16, paddingBottom: 0, paddingTop: title ? 4 : insets.top }, contentStyle]}>{children}{footer ?? <CompactFooter />}</ScrollView> : <View style={[{ flex: 1, width: "100%", maxWidth, alignSelf: "center" }, contentStyle]}>{children}</View>}
+    {scroll ? <ScrollView keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false} refreshControl={refreshControl} scrollEventThrottle={onEndReached ? 120 : undefined} onScroll={onEndReached ? (event) => { const n = event.nativeEvent; if (n.contentOffset.y + n.layoutMeasurement.height > n.contentSize.height - 600) onEndReached(); } : undefined} contentContainerStyle={[{ flexGrow: 1, width: "100%", maxWidth, alignSelf: "center", paddingHorizontal: 16, paddingBottom: 0, paddingTop: title ? 4 : insets.top }, contentStyle]}>{children}{footer ?? <CompactFooter />}</ScrollView> : <View style={[{ flex: 1, width: "100%", maxWidth, alignSelf: "center" }, contentStyle]}>{children}</View>}
     {bottom}
   </KeyboardAvoidingView>;
 }
@@ -86,6 +97,8 @@ export function MobileChip({ label, selected, onPress, icon }: { label: string; 
 
 export function MobileBottomNav({ active: requestedActive }: { active?: string }) {
   const pathname = usePathname();
+  // Bu çubuk hem sekme çubuğu olarak ((tabs) içinde) hem de kök-yığın ekranlarının altında çizilir.
+  const inTabs = (useSegments() as string[])[0] === "(tabs)";
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   useEffect(() => {
     if (Platform.OS === "web") return;
@@ -107,8 +120,14 @@ export function MobileBottomNav({ active: requestedActive }: { active?: string }
     { key: "partner", label: "Ortak Satış", icon: "account-group-outline", href: "/partner" },
     { key: "menu", label: "Menü", icon: "menu", href: "/menu" },
   ];
+  // NATIVE: sekme rotasına giderken kök yığına ikinci bir (tabs) eklenmesin (bkz. goToTabRoute).
+  // Web'de (tarayıcı geçmişi) ve "İlan Ver" modalında davranış eskisi gibi: push.
+  const go = (href: string) => {
+    if (Platform.OS !== "web" && isTabHref(href)) goToTabRoute(router, href, inTabs);
+    else router.push(href as never);
+  };
   if (keyboardOpen) return null;
-  return <View testID="mobile-bottom-nav" style={[ms.nav, { paddingBottom: Math.max(4, insets.bottom), paddingHorizontal: tablet ? "12%" : 4 }]}>{items.map((item) => <Pressable key={item.key} accessibilityRole="button" accessibilityLabel={item.label} accessibilityState={{ selected: active === item.key }} onPress={() => item.key === "menu" ? drawer.open() : router.push(item.href as never)} style={ms.navItem}>
+  return <View testID="mobile-bottom-nav" style={[ms.nav, { paddingBottom: Math.max(4, insets.bottom), paddingHorizontal: tablet ? "12%" : 4 }]}>{items.map((item) => <Pressable key={item.key} accessibilityRole="button" accessibilityLabel={item.label} accessibilityState={{ selected: active === item.key }} onPress={() => item.key === "menu" ? drawer.open() : go(item.href)} style={ms.navItem}>
     {item.key === "create" ? <View style={ms.fab}><LinearGradient colors={["#075BEB", "#0645C9"]} style={ms.fabFill}><Icon name="plus" size={28} color="white" /></LinearGradient></View> : <View style={{ height: 27, justifyContent: "center" }}><Icon name={item.icon} size={tablet ? 27 : 24} color={active === item.key ? mobile.teal : "#152033"} />{unread && item.key === "menu" && <View style={ms.badge} />}</View>}
     <Text numberOfLines={1} style={{ color: active === item.key ? mobile.teal : "#687080", fontSize: tablet ? 11 : 9.5, lineHeight: 12, marginTop: 1, fontWeight: active === item.key ? "800" : "600" }}>{item.label}</Text>
   </Pressable>)}</View>;

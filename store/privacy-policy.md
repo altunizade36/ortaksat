@@ -29,4 +29,4 @@ Kullanıcı uygulama içindeki Yasal ve Destek Merkezi ekranından hesap silme v
 
 ## İletişim
 
-Destek: https://ortaksat.com/support
+Destek: https://www.ortaksat.com/iletisim

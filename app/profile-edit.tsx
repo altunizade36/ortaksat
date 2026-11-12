@@ -19,12 +19,13 @@ import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb, useMounted } from "@/lib/layout";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
-import { changePasswordLive, reauthenticateLive, uploadProfileAvatar } from "@/lib/live-service";
+import { changePasswordLive, uploadProfileAvatar } from "@/lib/live-service";
 import { actionLabel, fetchLoginHistory, type LoginEvent } from "@/lib/security-history";
 import { useStore } from "@/lib/use-store";
 import { passwordStrength } from "@/lib/validation";
 import { isMobileApp } from "@/lib/mobile-app";
 import { MobileProfileEditor } from "@/components/mobile/profile-editor";
+import { NativeAdvancedFrame } from "@/components/mobile/advanced-frame";
 
 type SettingsSection = "personal" | "security" | "notifications" | "store" | "verification";
 
@@ -42,7 +43,7 @@ function ProfileEditScreenInner() {
   const params = useLocalSearchParams<{ section?: string }>();
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, backendMode, currentUser, updateProfile, savePreferences, setEmailNotifications, requestAccountDeletion, requestVerification, signOut, signOutAllDevices } = useStore();
+  const { authError, backendMode, currentUser, updateProfile, savePreferences, setEmailNotifications, requestVerification, signOut, signOutAllDevices } = useStore();
   // Gerçek e-posta bildirim aç/kapa (eskiden ayarlar sadece statik metin gösteriyordu; toggle YOKTU).
   const [emailNotif, setEmailNotif] = useState(currentUser.emailNotifications ?? true);
   const [emailBusy, setEmailBusy] = useState(false);
@@ -169,44 +170,11 @@ function ProfileEditScreenInner() {
     );
   }
 
-  // Hesap silme: şifre doğrulaması + 30 gün geri alma bilgisi (soft-delete).
-  const [deleteOpen, setDeleteOpen] = useState(false);
-  const [deletePw, setDeletePw] = useState("");
-  const [deleteReason, setDeleteReason] = useState("");
-  const [deleting, setDeleting] = useState(false);
-
+  // Hesap silme TEK ekranda yürür (/hesap-silme): şifresi olan hesap şifreyle, Google gibi
+  // sağlayıcıyla açılan hesap yazılı onayla doğrulanır; 30 gün içinde geri alınabilir. Eskiden
+  // buradaki modal HER hesaptan şifre istiyordu → sağlayıcıyla giren kullanıcı hesabını silemiyordu.
   function closeAccount() {
-    if (!isLiveAccount) {
-      Alert.alert(translateCopy("Ön izleme hesabı", language), translateCopy("Hesap silme yalnızca canlı hesaplarda geçerlidir.", language));
-      return;
-    }
-    setDeletePw("");
-    setDeleteReason("");
-    setDeleteOpen(true);
-  }
-
-  async function confirmDeleteAccount() {
-    if (deleting) return;
-    if (deletePw.length < 1) { Alert.alert(translateCopy("Şifre gerekli", language), translateCopy("Devam etmek için şifreni gir.", language)); return; }
-    setDeleting(true);
-    const verified = await reauthenticateLive(deletePw);
-    if (!verified) {
-      setDeleting(false);
-      Alert.alert(translateCopy("Şifre doğrulanamadı", language), translateCopy("Girdiğin şifre hatalı. Hesap silme işlemi güvenlik için iptal edildi.", language));
-      return;
-    }
-    const ok = await requestAccountDeletion(deleteReason.trim() || "Kullanıcı ayarlar ekranından hesap silme talebi oluşturdu.");
-    setDeleting(false);
-    setDeleteOpen(false);
-    if (ok) {
-      Alert.alert(
-        translateCopy("Hesap silme talebin alındı", language),
-        translateCopy("Hesabın 30 gün boyunca askıya alınır; bu süre içinde giriş yaparsan talebini iptal edip hesabını geri alabilirsin. 30 gün sonunda hesabın ve ilişkili verilerin kalıcı olarak silinir.", language),
-        [{ text: translateCopy("Anladım", language), onPress: () => void signOut() }]
-      );
-    } else {
-      Alert.alert(translateCopy("Oluşturulamadı", language), authError ?? translateCopy("Talep oluşturulamadı, lütfen tekrar dene.", language));
-    }
+    router.push("/hesap-silme" as never);
   }
 
   async function pickAvatar() {
@@ -318,34 +286,6 @@ function ProfileEditScreenInner() {
       </KeyboardAvoidingView>
     </Modal>
   );
-  const deleteModal = (
-    <Modal visible={deleteOpen} transparent animationType="fade" onRequestClose={() => setDeleteOpen(false)}>
-      <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={{ backgroundColor: "rgba(0,0,0,0.55)", flex: 1, justifyContent: "center", padding: 20 }}>
-        <View style={{ alignSelf: "center", backgroundColor: colors.background, borderRadius: 18, gap: 14, maxWidth: 440, padding: 22, width: "100%" }}>
-          <View style={{ alignItems: "center", flexDirection: "row", gap: 10 }}>
-            <View style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderRadius: 12, height: 44, justifyContent: "center", width: 44 }}>
-              <MaterialCommunityIcons name="account-alert-outline" size={24} color={colors.accent} />
-            </View>
-            <Text style={{ color: colors.ink, flex: 1, fontSize: 18, fontWeight: "900" }}>{translateCopy("Hesabını sil", language)}</Text>
-          </View>
-          <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", lineHeight: 19 }}>
-            {translateCopy("Hesabın", language)} <Text style={{ color: colors.ink, fontWeight: "900" }}>{translateCopy("30 gün", language)}</Text> {translateCopy("boyunca askıya alınır. Bu süre içinde tekrar giriş yaparsan talebini iptal edip hesabını geri alabilirsin. 30 günün sonunda hesabın, ilanların ve ilişkili verilerin kalıcı olarak silinir.", language)}
-          </Text>
-          <DeskField icon="lock-outline" label={translateCopy("Devam etmek için şifreni gir", language)} secure value={deletePw} onChangeText={setDeletePw} placeholder={translateCopy("Şifren", language)} />
-          <DeskField icon="comment-outline" label={translateCopy("Sebep (opsiyonel)", language)} value={deleteReason} onChangeText={setDeleteReason} placeholder={translateCopy("Ayrılma sebebini yazabilirsin", language)} />
-          <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10, justifyContent: "flex-end" }}>
-            <Pressable onPress={() => setDeleteOpen(false)} style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, paddingHorizontal: 18, paddingVertical: 11 }}>
-              <Text style={{ color: colors.ink, fontSize: 13, fontWeight: "800" }}>{translateCopy("Vazgeç", language)}</Text>
-            </Pressable>
-            <Pressable onPress={() => void confirmDeleteAccount()} disabled={deleting} style={{ alignItems: "center", backgroundColor: colors.accent, borderRadius: 10, opacity: deleting ? 0.6 : 1, paddingHorizontal: 18, paddingVertical: 11 }}>
-              <Text style={{ color: "#FFFFFF", fontSize: 13, fontWeight: "900" }}>{deleting ? translateCopy("İşleniyor…", language) : translateCopy("Hesabımı sil", language)}</Text>
-            </Pressable>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    </Modal>
-  );
-
   if (isWideWeb) {
     const navItems: Array<{ key: SettingsSection; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string }> = [
       { key: "personal", icon: "account-outline", label: translateCopy("Kişisel Bilgiler", language), sub: translateCopy("Ad, telefon, foto, bio", language) },
@@ -365,7 +305,6 @@ function ProfileEditScreenInner() {
 
     return (
       <ScrollView contentInsetAdjustmentBehavior="automatic" showsVerticalScrollIndicator={false} contentContainerStyle={{ backgroundColor: colors.background, flexGrow: 1, paddingBottom: 0 }} style={{ backgroundColor: colors.background }}>
-        {deleteModal}
         {cityModal}
         <View style={{ alignSelf: "center", gap: 16, maxWidth: 1280, paddingHorizontal: 20, paddingTop: 16, width: "100%" }}>
         <View style={{ gap: 4 }}>
@@ -541,9 +480,9 @@ function ProfileEditScreenInner() {
             <View style={{ backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 16, borderWidth: 1, gap: 8, padding: 18 }}>
               <MaterialCommunityIcons name="alert-octagon-outline" size={22} color={colors.accent} />
               <Text style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900" }}>{translateCopy("Tehlikeli bölge", language)}</Text>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Hesabını kapatırsan ilanların ve komisyon geçmişin kalıcı olarak silinir.", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Hesabını silme talebi oluşturursan hesabın hemen askıya alınır ve 30 gün sonra kalıcı olarak silinir. Bu süre içinde giriş yapıp talebi iptal edebilirsin.", language)}</Text>
               <Pressable onPress={closeAccount} style={{ alignItems: "center", borderColor: colors.accent, borderRadius: 10, borderWidth: 1, marginTop: 2, paddingVertical: 10 }}>
-                <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>{translateCopy("Hesabı kapat", language)}</Text>
+                <Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>{translateCopy("Hesabımı Sil", language)}</Text>
               </Pressable>
             </View>
           </View>
@@ -565,7 +504,6 @@ function ProfileEditScreenInner() {
 
   return (
     <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : "height"} style={{ flex: 1 }}>
-      {deleteModal}
       {cityModal}
       <ScrollView contentInsetAdjustmentBehavior="automatic" keyboardShouldPersistTaps="handled" contentContainerStyle={{ alignSelf: "center", gap: 14, maxWidth: 760, padding: 16, paddingBottom: 110, width: "100%" }}>
         <Card>
@@ -686,8 +624,8 @@ function ProfileEditScreenInner() {
             <MaterialCommunityIcons name="alert-outline" size={18} color={colors.accent} />
             <Text style={{ color: colors.accent, fontSize: 15, fontWeight: "900" }}>{translateCopy("Tehlikeli bölge", language)}</Text>
           </View>
-          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Hesabını kapatırsan ilanların ve profilin kaldırılır. Bu işlem geri alınamaz.", language)}</Text>
-          <PrimaryButton icon="account-cancel-outline" tone="danger" onPress={closeAccount}>{translateCopy("Hesabı kapat", language)}</PrimaryButton>
+          <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>{translateCopy("Hesabını silme talebi oluşturursan hesabın hemen askıya alınır ve 30 gün sonra kalıcı olarak silinir. Bu süre içinde giriş yapıp talebi iptal edebilirsin.", language)}</Text>
+          <PrimaryButton icon="trash-can-outline" tone="danger" onPress={closeAccount}>{translateCopy("Hesabımı Sil", language)}</PrimaryButton>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -869,5 +807,6 @@ export default function ProfileEditScreen() {
     if (!auth.accountLoaded) return <ScreenSkeleton />;
     return <MobileProfileEditor key={auth.currentUser.id} />;
   }
+  if (isMobileApp) return <NativeAdvancedFrame title="Hesap ve Mağaza Ayarları"><ProfileEditScreenInner /></NativeAdvancedFrame>;
   return <ProfileEditScreenInner />;
 }

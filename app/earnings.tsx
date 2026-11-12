@@ -23,15 +23,17 @@ import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { displayText } from "@/lib/text";
 import type { SaleStatus } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { saleStatusLabels } from "@/lib/status-labels";
+import { NativeAdvancedFrame } from "@/components/mobile/advanced-frame";
 
 const STATUS_META: Record<SaleStatus, { label: string; tint: string; color: string }> = {
-  pending: { label: "Bekliyor", tint: colors.warningSoft, color: colors.warning },
-  return_pending: { label: "İade süresi", tint: colors.warningSoft, color: colors.warning },
-  approved: { label: "Onaylandı", tint: colors.infoSoft, color: colors.info },
-  seller_paid: { label: "Onay bekliyor", tint: colors.goldSoft, color: colors.gold },
-  paid: { label: "Ödendi", tint: colors.successSoft, color: colors.success },
-  cancelled: { label: "İptal", tint: colors.surfaceAlt, color: colors.muted },
-  disputed: { label: "İtiraz", tint: colors.accentSoft, color: colors.accent }
+  pending: { label: saleStatusLabels.pending, tint: colors.warningSoft, color: colors.warning },
+  return_pending: { label: saleStatusLabels.return_pending, tint: colors.warningSoft, color: colors.warning },
+  approved: { label: saleStatusLabels.approved, tint: colors.infoSoft, color: colors.info },
+  seller_paid: { label: saleStatusLabels.seller_paid, tint: colors.goldSoft, color: colors.gold },
+  paid: { label: saleStatusLabels.paid, tint: colors.successSoft, color: colors.success },
+  cancelled: { label: saleStatusLabels.cancelled, tint: colors.surfaceAlt, color: colors.muted },
+  disputed: { label: saleStatusLabels.disputed, tint: colors.accentSoft, color: colors.accent }
 };
 
 const TR_MONTHS = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
@@ -492,5 +494,6 @@ export default function EarningsScreen() {
   if (!auth.authReady) return <ScreenSkeleton />; // oturum geri-yüklenene kadar bekle (auth-flash önle)
   if (!auth.isAuthenticated) return <AuthRequired title={translateCopy("Kazançlarını görmek için giriş yapın", language)} />;
   if(isMobileApp&&params.view!=="advanced")return <MobileScreen title="Ortaklık Kazançlarım" bottom={<MobileBottomNav active="partner"/>}><MobileEarnings key={auth.currentUser.id}/></MobileScreen>;
+  if (isMobileApp) return <NativeAdvancedFrame title="Kazanç ve Ödeme İşlemleri"><EarningsScreenInner /></NativeAdvancedFrame>;
   return <EarningsScreenInner />;
 }

@@ -28,6 +28,8 @@ import { listingCategoryTrail } from "@/lib/mobile-catalog";
 import { type CurrencyCode } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadListingImage } from "@/lib/live-service";
+import { deleteListingVideo, splitListingMedia, withListingVideo, type ListingVideoValue } from "@/lib/listing-video";
+import { ListingVideoField, type ListingVideoStatus } from "@/components/listing-video-field";
 import { formatLocation, getProvince, validateListingLocation, type AddressVisibility } from "@/lib/locations";
 import type { CommissionType, Listing, PartnershipMode } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
@@ -86,7 +88,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [bonusAmount, setBonusAmount] = useState(listing.bonusAmount ? String(listing.bonusAmount) : "");
   const [bonusQuota, setBonusQuota] = useState(listing.bonusQuota ? String(listing.bonusQuota) : "");
   // Kademeli komisyon (yalnız yüzde) — mevcut kademelerden yüklenir.
-  const [tiers, setTiers] = useState<Array<{ minSales: string; rate: string }>>((listing.commissionTiers ?? []).map((tr) => ({ minSales: String(tr.minSales), rate: String(tr.rate) })));
+  const [tiers, setTiers] = useState<Array<{ minSales: string; rate: string }>>((listing.commissionTiers ?? []).map((tr) => ({ minSales: String(tr.minSales), rate: listingNumberInput(tr.rate) })));
   // Yapısal konum (create ile aynı): il/ilçe korunur; boş metin-alan bug'ı giderildi.
   const [loc, setLoc] = useState<LocationValue>({ provinceId: listing.provinceId ?? undefined, districtId: listing.districtId ?? undefined, neighborhood: listing.locationNote, neighborhoodId: listing.neighborhoodId });
   const [visibility, setVisibility] = useState<AddressVisibility>((listing.addressVisibility as AddressVisibility) ?? "neighborhood");
@@ -102,7 +104,12 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [instagramText, setInstagramText] = useState(listing.shareTemplates?.instagram ?? "");
   const [whatsappText, setWhatsappText] = useState(listing.shareTemplates?.whatsapp ?? "");
   const [tiktokText, setTiktokText] = useState(listing.shareTemplates?.tiktok ?? "");
-  const [adAssets, setAdAssets] = useState<string[]>(listing.adAssets ?? []);
+  // adAssets = ek FOTOĞRAFLAR + (varsa, en sonda) TEK video. Eskiden hepsi fotoğraf sayılıyordu:
+  // video kırık görsel olarak çiziliyor ve 4 ek fotoğraflı ilanda kaydederken sessizce siliniyordu.
+  const originalVideo = splitListingMedia(listing.adAssets).video;
+  const [adAssets, setAdAssets] = useState<string[]>(() => splitListingMedia(listing.adAssets).photos);
+  const [video, setVideo] = useState<ListingVideoValue | null>(originalVideo ? { url: originalVideo } : null);
+  const [videoStatus, setVideoStatus] = useState<ListingVideoStatus>("idle");
   const [partnerRules, setPartnerRules] = useState(listing.partnerRules.join("\n"));
   const [contactMethod, setContactMethod] = useState<ContactMethod>(listing.contactMethod);
   const [saving, setSaving] = useState(false);
@@ -183,6 +190,9 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   }
 
   async function submit() {
+    if (saving) return;
+    if (videoStatus === "uploading") { Alert.alert(translateCopy("Video yükleniyor", language), translateCopy("Video yükleniyor; yükleme bitince tekrar dene.", language)); return; }
+    if (videoStatus === "error") { Alert.alert(translateCopy("Video yüklenemedi", language), translateCopy("Video bölümünden \"Tekrar dene\" ya da \"Vazgeç\" seçeneğini kullan.", language)); return; }
     const parsedPrice = parseListingMoney(price.trim() ? price : 0); // "1.500.000" gibi TR biçimini doğru okur (Number NaN veriyordu)
     // Fiyat, şemada price alanı yoksa (İş İlanı) veya opsiyonelse (hayvan/hizmet/ders
     // "Teklif al") zorunlu değildir — create ile parite. Aksi hâlde edit bu ilanları kilitliyordu.
@@ -247,6 +257,14 @@ function ListingEditForm({ listing }: { listing: Listing }) {
     if (!Number.isFinite(parsedPrice) || parsedPrice > 999_999_999_999) { Alert.alert("Fiyatı kontrol et", LISTING_MONEY_ERROR); return; }
     const commissionError = partnershipMode !== "none" ? listingCommissionError(commissionType, commissionValue) : "";
     if (commissionError) { Alert.alert("Komisyonu kontrol et", commissionError); return; }
+    // Kademeler (create ile parite): oran TR ondalığıyla da yazılabilir ("12,5"). Eskiden Number("12,5") = NaN → 0
+    // oluyor ve kademe kaydederken SESSİZCE siliniyordu. Geçersiz satır artık kaydı durdurur; tamamen boş satır yok sayılır.
+    const tierError = partnershipMode !== "none" && commissionType === "rate" && tiers.some((tr) => {
+      if (!tr.rate.trim() && !tr.minSales.trim()) return false;
+      const rate = parseListingRate(tr.rate);
+      return !(rate > 0 && rate <= 90) || !/^\d+$/.test(tr.minSales.trim());
+    });
+    if (tierError) { Alert.alert("Kademeleri kontrol et", "Kademelerde satış adedini tam sayı, oranı 1–90 arasında gir (ör. 5 satıştan sonra %12,5)."); return; }
     if (!Number.isSafeInteger(parsedStock) || parsedStock < 0) { Alert.alert("Stok", "Stok sıfır veya daha büyük bir tam sayı olmalı."); return; }
     const titleCheck = validateListingTitle(title);
     if (titleCheck.error) { Alert.alert("Başlığı düzenleyin", titleCheck.error); return; }
@@ -296,7 +314,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       description: description.trim(),
       salesPitch: salesPitch.length > 0 ? salesPitch : ["Ürünün ana faydasını kısa ve net anlat."],
       shareTemplates,
-      adAssets: uploadedAssets,
+      adAssets: withListingVideo(uploadedAssets, video?.url),
       tags: parsedTags.length > 0 ? parsedTags : ["ortak satış"],
       price: parsedPrice,
       commissionType,
@@ -304,7 +322,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       // kart/panelde hayalet komisyon kalırdı.
       commissionValue: partnershipMode === "none" ? 0 : parsedCommission,
       commissionTiers: partnershipMode !== "none" && commissionType === "rate"
-        ? tiers.map((tr) => ({ minSales: Math.max(0, Math.floor(Number(tr.minSales) || 0)), rate: Math.max(0, Math.min(90, Number(tr.rate) || 0)) })).filter((tr) => tr.rate > 0).sort((a, b) => a.minSales - b.minSales)
+        ? tiers.map((tr) => ({ minSales: Math.max(0, Math.floor(Number(tr.minSales) || 0)), rate: Math.max(0, Math.min(90, parseListingRate(tr.rate) || 0)) })).filter((tr) => tr.rate > 0).sort((a, b) => a.minSales - b.minSales)
         : undefined,
       partnershipMode,
       attributes: builtAttrs,
@@ -335,6 +353,8 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       return;
     }
 
+    // Kayıt başarılı: değiştirilen/kaldırılan ESKİ video artık hiçbir ilana bağlı değil → depodan sil (en-iyi-çaba).
+    if (originalVideo && originalVideo !== video?.url) void deleteListingVideo(originalVideo, currentUser.id);
     showToast(translateCopy("İlan güncellendi", language));
     router.back();
   }
@@ -539,6 +559,7 @@ function ListingEditForm({ listing }: { listing: Listing }) {
               ) : null}
             </View>
           </View>
+          <ListingVideoField value={video} onChange={setVideo} userId={currentUser.id} canUpload={isLiveAccount} disabled={saving} keepUrl={originalVideo} onStatus={setVideoStatus} />
           <Field label="Ortak satış kuralları" value={partnerRules} onChangeText={setPartnerRules} multiline />
           <Field label="Teslimat notu" value={deliveryNote} onChangeText={setDeliveryNote} multiline />
         </Card>

@@ -5,12 +5,14 @@ import { isMobileApp } from "@/lib/mobile-app";
 import { MobileNotifications } from "@/components/mobile/notifications";
 import { MaterialCommunityIcons } from "@/components/icons";
 import { Link, useRouter, type Href } from "expo-router";
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Platform, Pressable, RefreshControl, ScrollView, Text, View } from "react-native";
 
 import { AuthRequired } from "@/components/auth-gate";
 import { colors } from "@/components/colors";
 import { relativeTime } from "@/lib/locale";
+import { legacyMuteMigrationPatch, notificationTypeEnabled, notificationTypePatch } from "@/lib/notification-preferences";
+import { notificationDate, notificationDayBucket } from "@/lib/notification-time";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { WebFooter } from "@/components/web-landing";
 import { translateCopy, useLanguage } from "@/lib/i18n";
@@ -74,7 +76,7 @@ function NotificationsScreenLegacy() {
 function NotificationsScreenInner() {
   const { language } = useLanguage();
   const { conversations, currentUser, listings, markNotificationRead, notifications, partnerships, refreshNotifications, savePreferences, setEmailNotifications } = useStore();
-  const { refreshing, onRefresh } = useNativeRefresh(async () => { try { await refreshNotifications(); } catch { showToast("Bildirimler yenilenemedi. Tekrar deneyebilirsin."); } });
+  const { refreshing, onRefresh } = useNativeRefresh(async () => { try { await refreshNotifications(); } catch { showToast(translateCopy("Bildirimler yenilenemedi. Tekrar deneyebilirsin.", language)); } });
   const router = useRouter();
   const isWideWeb = useIsWideWeb();
 
@@ -95,37 +97,61 @@ function NotificationsScreenInner() {
   const [readingAll, setReadingAll] = useState(false);
   const allLock = useRef(false);
   const p0 = currentUser.preferences ?? {};
-  const [prefs, setPrefs] = useState<Record<string, boolean>>({ push: p0.notify_all_off !== true, email: currentUser.emailNotifications !== false, sms: p0.notif_sms === true, whatsapp: p0.notif_whatsapp !== false });
-  // "email" gerçek bir sunucu tercihidir (profiles.email_notifications → e-posta
-  // tetikleyicisi onu okur); diğerleri JSONB preferences'ta tutulur.
+  const failToast = () => showToast(translateCopy("Bildirim tercihi kaydedilemedi. Tekrar dene.", language));
+  // Değerler HER ZAMAN store'daki tercihten türetilir (Bildirim Ayarları ekranında yapılan
+  // değişiklik bu ekrana, buradaki değişiklik oraya anında yansır). `pending` yalnız kayıt
+  // sürerken iyimser değeri tutar; kayıt bitince (başarı/hata) silinir → hata = otomatik geri alma.
+  const [pending, setPending] = useState<Record<string, boolean>>({});
+  const allOff = (pending.push ?? p0.notify_all_off !== true) === false;
+  const prefs: Record<string, boolean> = {
+    push: pending.push ?? p0.notify_all_off !== true,
+    email: pending.email ?? currentUser.emailNotifications !== false,
+    sms: false,
+    whatsapp: false
+  };
+  const saving = useRef(false);
+  const settle = (key: string, write: Promise<boolean>) => {
+    saving.current = true;
+    void write.then((ok) => { if (!ok) failToast(); }).catch(failToast)
+      .finally(() => { saving.current = false; setPending((s) => { const next = { ...s }; delete next[key]; return next; }); });
+  };
+  // "email" gerçek bir sunucu tercihidir (profiles.email_notifications → e-posta tetikleyicisi
+  // onu okur). "push" = `notify_all_off` (uygulama-içi üretim + push bunu okur).
   const togglePref = (key: string) => {
+    // Tercihler TEK bir JSON alanında tutulur ve her kayıt tüm alanı yazar → iki kayıt aynı anda
+    // giderse sonuncusu öncekini ezer. Bir kayıt bitmeden yenisi başlatılmaz.
+    if (saving.current) return;
     const v = !prefs[key];
-    setPrefs((s) => ({ ...s, [key]: v }));
-    // Sunucu kaydı başarısızsa yerel anahtarı GERİ AL (eskiden UI yeni değeri gösterirken DB
-    // eski değerde kalıyordu — profil-düzenle e-posta anahtarı zaten böyle geri alıyordu, parite).
-    // "push" eskiden HİÇBİR yerde okunmayan `notif_push` anahtarını yazıyordu (ölü anahtar).
-    // Gerçek tercih `notify_all_off`'tur (push gönderimi + Bildirim Ayarları ekranı bunu okur).
-    const p = key === "email" ? setEmailNotifications(v) : key === "push" ? savePreferences({ notify_all_off: !v }) : savePreferences({ [`notif_${key}`]: v });
-    void p.then((ok) => { if (!ok) { setPrefs((s) => ({ ...s, [key]: !v })); showToast(translateCopy("Bildirim tercihi kaydedilemedi. Tekrar dene.", language)); } })
-      .catch(() => setPrefs((s) => ({ ...s, [key]: !v })));
+    setPending((s) => ({ ...s, [key]: v }));
+    settle(key, key === "email" ? setEmailNotifications(v) : savePreferences({ notify_all_off: !v }));
   };
-  // Tür bazında sustur — kalıcı tercih; susturulan tür listeden gizlenir.
-  const [mutes, setMutes] = useState<Record<string, boolean>>(() => {
-    const m: Record<string, boolean> = {};
-    (Object.keys(typeMeta) as NotificationType[]).forEach((tp) => { m[tp] = (p0 as Record<string, boolean>)[`notif_mute_${tp}`] === true; });
-    return m;
-  });
-  // Kayıt çağrısı state-updater'ın DIŞINDA (updater saf olmalı; StrictMode'da iki kez çalışıp
-  // çift yazıyordu) ve sunucu kaydı başarısızsa anahtar geri alınır (eskiden UI yeni değerde kalıyordu).
+  // Tür bazında aç/kapat — SUNUCUNUN okuduğu `notify_type_<tür>` anahtarına yazar (Bildirim
+  // Ayarları ekranıyla AYNI anahtar). Eskiden burası yalnız istemcide listeyi gizleyen
+  // `notif_mute_<tür>` yazıyordu: tür "kapalı" görünürken push/e-posta/uygulama-içi üretim
+  // sürüyor, diğer ekran da açık gösteriyordu. Eski anahtar yalnız geri-uyum için OKUNUR.
+  const typeOn = (tp: NotificationType) => pending[`type:${tp}`] ?? notificationTypeEnabled(p0, tp);
+  const mutes = {} as Record<NotificationType, boolean>;
+  (Object.keys(typeMeta) as NotificationType[]).forEach((tp) => { mutes[tp] = !typeOn(tp); });
   const toggleMute = (tp: NotificationType) => {
-    const v = !mutes[tp];
-    setMutes((s) => ({ ...s, [tp]: v }));
-    void savePreferences({ [`notif_mute_${tp}`]: v }).then((ok) => {
-      if (!ok) { setMutes((s) => ({ ...s, [tp]: !v })); showToast(translateCopy("Bildirim tercihi kaydedilemedi. Tekrar dene.", language)); }
-    }).catch(() => setMutes((s) => ({ ...s, [tp]: !v })));
+    const key = `type:${tp}`;
+    if (allOff || saving.current) return;
+    const enable = mutes[tp];
+    setPending((s) => ({ ...s, [key]: enable }));
+    settle(key, savePreferences(notificationTypePatch(p0, tp, enable)));
   };
-  const mutedCount = Object.values(mutes).filter(Boolean).length;
-  const visibleNotifications = myNotifications.filter((n) => !mutes[n.type]);
+  // Eski "sustur" seçimlerini bir kez sunucu anahtarına taşı → seçim push/e-postada da geçerli olur.
+  const migratedFor = useRef<string | null>(null);
+  useEffect(() => {
+    if (migratedFor.current === currentUser.id) return;
+    migratedFor.current = currentUser.id;
+    const patch = legacyMuteMigrationPatch(currentUser.preferences ?? {});
+    if (!Object.keys(patch).length) return;
+    saving.current = true;
+    void savePreferences(patch).catch(() => false).finally(() => { saving.current = false; });
+  }, [currentUser.id, currentUser.preferences, savePreferences]);
+  // Kapatılan tür artık ÜRETİLMEZ; daha önce gelmiş olanlar listede kalır (eskiden gizleniyordu →
+  // başlıktaki okunmamış rozeti görünmeyen satırları sayıyor ve hiç temizlenemiyordu).
+  const visibleNotifications = myNotifications;
   // Kanal tercihleri (uygulama-içi/e-posta aktif; SMS/WhatsApp yakında) — hem
   // masaüstü hem mobil kullanır (eskiden yalnız masaüstünde render ediliyordu).
   const prefRows: Array<{ key: string; icon: keyof typeof MaterialCommunityIcons.glyphMap; label: string; sub: string; available: boolean }> = [
@@ -136,27 +162,25 @@ function NotificationsScreenInner() {
   ];
 
   function markRead(id: string) {
-    void markNotificationRead(id).then(ok => { if (!ok) showToast("Okundu bilgisi kaydedilemedi. Tekrar deneyebilirsin."); });
+    void markNotificationRead(id).then(ok => { if (!ok) showToast(translateCopy("Okundu bilgisi kaydedilemedi. Tekrar deneyebilirsin.", language)); });
   }
   async function markAll() {
     if (allLock.current) return;
     allLock.current = true; setReadingAll(true);
     try {
       const results = await Promise.all(visibleNotifications.filter(n => !n.read).map(n => markNotificationRead(n.id)));
-      if (results.some(ok => !ok)) showToast("Bazı bildirimler okundu işaretlenemedi. Tekrar deneyebilirsin.");
+      if (results.some(ok => !ok)) showToast(translateCopy("Bazı bildirimler okundu işaretlenemedi. Tekrar deneyebilirsin.", language));
     } finally { allLock.current = false; setReadingAll(false); }
   }
 
   if (isWideWeb) {
+    // Yerel takvim gününe göre grupla; saat dilimsiz realtime damgası da doğru okunur
+    // (Date.parse onu Safari'de NaN → her şey "Daha önce", Chrome'da 3 saat ileri okuyordu).
     const dateGroup = (createdAt: string): DeskNotif["group"] => {
-      const t = Date.parse(createdAt);
-      if (Number.isNaN(t)) return "Daha önce";
-      const days = (Date.now() - t) / 86400000;
-      if (days < 1) return "Bugün";
-      if (days < 7) return "Bu hafta";
-      return "Daha önce";
+      const bucket = notificationDayBucket(createdAt);
+      return bucket === "today" ? "Bugün" : bucket === "older" ? "Daha önce" : "Bu hafta";
     };
-    const realDesk: DeskNotif[] = myNotifications.filter((n) => !mutes[n.type]).map((n) => ({
+    const realDesk: DeskNotif[] = myNotifications.map((n) => ({
       id: n.id, type: n.type, title: n.title, body: n.body, createdAt: n.createdAt, group: dateGroup(n.createdAt), real: true, metadata: n.metadata
     }));
     // YALNIZCA gerçek bildirimler — sahte/örnek veri yok (eski SAMPLE dizisi tamamen kaldırıldı,
@@ -199,7 +223,7 @@ function NotificationsScreenInner() {
             <Text style={{ color: colors.ink, fontSize: 26, fontWeight: "900" }}>{translateCopy("Bildirimler", language)}</Text>
             <Text style={{ color: colors.muted, fontSize: 14, fontWeight: "600" }}>{translateCopy("Başvuru, talep, satış ve komisyon hareketlerinin tümünü buradan takip et.", language)}</Text>
           </View>
-          <PrimaryButton tone="secondary" disabled={refreshing} onPress={() => void onRefresh()}>{refreshing ? "Yenileniyor…" : "Bildirimleri Yenile"}</PrimaryButton>
+          <PrimaryButton tone="secondary" disabled={refreshing} onPress={() => void onRefresh()}>{translateCopy(refreshing ? "Yenileniyor…" : "Bildirimleri Yenile", language)}</PrimaryButton>
           <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Tümünü okundu işaretle", language)} accessibilityState={{ disabled: readingAll || totalUnread === 0 }} disabled={readingAll || totalUnread === 0} onPress={() => void markAll()} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, flexDirection: "row", gap: 7, opacity: readingAll || totalUnread === 0 ? 0.5 : 1, paddingHorizontal: 14, paddingVertical: 9 })}>
             <MaterialCommunityIcons name="check-all" size={17} color={colors.primaryDark} />
             <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>{translateCopy("Tümünü okundu işaretle", language)}</Text>
@@ -254,7 +278,7 @@ function NotificationsScreenInner() {
                             </View>
                             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "500", lineHeight: 19 }}>{translateCopy(n.body, language)}</Text>
                             <View style={{ alignItems: "center", flexDirection: "row", gap: 10, marginTop: 2 }}>
-                              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{relativeTime(n.createdAt)}</Text>
+                              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "600" }}>{relativeTime(notificationDate(n.createdAt) ?? n.createdAt)}</Text>
                               <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy(target ? target.label : "Ayrıntıları oku", language)} →</Text>
                             </View>
                           </View>
@@ -312,7 +336,7 @@ function NotificationsScreenInner() {
                     <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy(p.sub, language)}</Text>
                   </View>
                   {p.available ? (
-                    <Pressable accessibilityRole="switch" accessibilityState={{ checked: !!prefs[p.key] }} accessibilityLabel={translateCopy(p.label, language)} onPress={() => togglePref(p.key)} style={{ alignItems: prefs[p.key] ? "flex-end" : "flex-start", backgroundColor: prefs[p.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+                    <Pressable accessibilityRole="switch" aria-checked={!!prefs[p.key]} accessibilityState={{ checked: !!prefs[p.key] }} accessibilityLabel={translateCopy(p.label, language)} onPress={() => togglePref(p.key)} style={{ alignItems: prefs[p.key] ? "flex-end" : "flex-start", backgroundColor: prefs[p.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
                       <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
                     </Pressable>
                   ) : (
@@ -331,7 +355,7 @@ function NotificationsScreenInner() {
                     <MaterialCommunityIcons name={typeIcons[tp]} size={18} color={mutes[tp] ? colors.subtle : typeMeta[tp].color} />
                   </View>
                   <Text style={{ color: mutes[tp] ? colors.muted : colors.ink, flex: 1, fontSize: 13, fontWeight: "700" }}>{translateCopy(typeMeta[tp].label, language)}</Text>
-                  <Pressable accessibilityRole="switch" accessibilityState={{ checked: !mutes[tp] }} accessibilityLabel={`${translateCopy(typeMeta[tp].label, language)} ${translateCopy("bildirimleri", language)}`} onPress={() => toggleMute(tp)} style={{ alignItems: mutes[tp] ? "flex-start" : "flex-end", backgroundColor: mutes[tp] ? colors.line : colors.primary, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+                  <Pressable accessibilityRole="switch" aria-checked={!mutes[tp] && !allOff} accessibilityState={{ checked: !mutes[tp] && !allOff, disabled: allOff }} accessibilityLabel={`${translateCopy(typeMeta[tp].label, language)} ${translateCopy("bildirimleri", language)}`} disabled={allOff} onPress={() => toggleMute(tp)} style={{ alignItems: mutes[tp] || allOff ? "flex-start" : "flex-end", backgroundColor: mutes[tp] || allOff ? colors.line : colors.primary, borderRadius: 999, height: 22, justifyContent: "center", opacity: allOff ? 0.5 : 1, paddingHorizontal: 2, width: 40 }}>
                     <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
                   </Pressable>
                 </View>
@@ -374,7 +398,7 @@ function NotificationsScreenInner() {
           </View>
         </View>
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, marginTop: 4 }}>
-          <PrimaryButton tone="secondary" disabled={refreshing} onPress={() => void onRefresh()}>{refreshing ? "Yenileniyor…" : "Bildirimleri Yenile"}</PrimaryButton>
+          <PrimaryButton tone="secondary" disabled={refreshing} onPress={() => void onRefresh()}>{translateCopy(refreshing ? "Yenileniyor…" : "Bildirimleri Yenile", language)}</PrimaryButton>
           <StatusPill label={`${unreadCount} ${translateCopy("okunmamış", language)}`} tone={unreadCount ? "warning" : "success"} />
           <StatusPill label={`${myNotifications.length} ${translateCopy("toplam", language)}`} />
           {/* Mobilde "tümünü okundu işaretle" YOKTU (yalnız masaüstünde) → kullanıcı okunmamış
@@ -392,7 +416,7 @@ function NotificationsScreenInner() {
           kartının (16 satır) ALTINDA kalıyor, "Son bildirimler" başlığı da listesinden kopuk duruyordu. */}
       <SectionTitle title={translateCopy("Son bildirimler", language)} action={`${visibleNotifications.length}`} />
 
-      {visibleNotifications.length === 0 ? <EmptyState title={mutedCount > 0 ? translateCopy("Görünür bildirim yok", language) : translateCopy("Bildirim yok", language)} body={mutedCount > 0 ? translateCopy("Bazı türleri kapattın. Görmek için aşağıdaki bildirim türlerinden aç.", language) : translateCopy("Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek.", language)} action={mutedCount > 0 ? undefined : { label: "Ürünleri keşfet", href: "/explore", icon: "compass-outline" }} mascot="mobile" /> : null}
+      {visibleNotifications.length === 0 ? <EmptyState title={translateCopy("Bildirim yok", language)} body={translateCopy("Yeni ortaklık, talep, satış ve ödeme hareketleri burada görünecek.", language)} action={{ label: translateCopy("Ürünleri keşfet", language), href: "/explore", icon: "compass-outline" }} mascot="mobile" /> : null}
 
       {visibleNotifications.map((notification) => {
         const href = hrefForMeta(notification.metadata, notification.type);
@@ -430,7 +454,7 @@ function NotificationsScreenInner() {
                 </View>
                 {!read ? <View style={{ backgroundColor: colors.accent, borderRadius: 999, height: 8, width: 8 }} /> : null}
                 <View style={{ flex: 1 }} />
-                <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{relativeTime(notification.createdAt)}</Text>
+                <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{relativeTime(notificationDate(notification.createdAt) ?? notification.createdAt)}</Text>
               </View>
               <Text selectable style={{ color: colors.ink, fontSize: 14.5, fontWeight: "900", lineHeight: 19 }}>{translateCopy(notification.title, language)}</Text>
               <Text selectable style={{ color: colors.muted, fontSize: 12.5, fontWeight: "500", lineHeight: 18 }}>{translateCopy(notification.body, language)}</Text>
@@ -451,7 +475,7 @@ function NotificationsScreenInner() {
               <Text numberOfLines={1} style={{ color: colors.muted, fontSize: 11.5, fontWeight: "600" }}>{translateCopy(p.sub, language)}</Text>
             </View>
             {p.available ? (
-              <Pressable accessibilityRole="switch" accessibilityState={{ checked: !!prefs[p.key] }} accessibilityLabel={translateCopy(p.label, language)} hitSlop={8} onPress={() => togglePref(p.key)} style={{ alignItems: prefs[p.key] ? "flex-end" : "flex-start", backgroundColor: prefs[p.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+              <Pressable accessibilityRole="switch" aria-checked={!!prefs[p.key]} accessibilityState={{ checked: !!prefs[p.key] }} accessibilityLabel={translateCopy(p.label, language)} hitSlop={8} onPress={() => togglePref(p.key)} style={{ alignItems: prefs[p.key] ? "flex-end" : "flex-start", backgroundColor: prefs[p.key] ? colors.primary : colors.line, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
                 <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
               </Pressable>
             ) : (
@@ -466,12 +490,12 @@ function NotificationsScreenInner() {
       {/* Tür bazında sustur */}
       <Card>
         <Text style={{ color: colors.ink, fontSize: 14, fontWeight: "900", marginBottom: 4 }}>{translateCopy("Bildirim türleri", language)}</Text>
-        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", marginBottom: 6 }}>{translateCopy("Kapattığın tür bildirim listende görünmez.", language)}</Text>
+        <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", marginBottom: 6 }}>{translateCopy(allOff ? "Tüm bildirimler kapalı. Türleri seçmek için önce uygulama içi bildirimi aç." : "Kapattığın türde yeni bildirim, push ve e-posta gönderilmez. Daha önce gelenler listede kalır.", language)}</Text>
         {(Object.keys(typeMeta) as NotificationType[]).map((tp) => (
-          <Pressable key={tp} onPress={() => toggleMute(tp)} style={{ alignItems: "center", flexDirection: "row", gap: 10, paddingVertical: 8 }}>
+          <Pressable key={tp} accessibilityRole="switch" aria-checked={!mutes[tp] && !allOff} accessibilityState={{ checked: !mutes[tp] && !allOff, disabled: allOff }} accessibilityLabel={`${translateCopy(typeMeta[tp].label, language)} ${translateCopy("bildirimleri", language)}`} disabled={allOff} onPress={() => toggleMute(tp)} style={{ alignItems: "center", flexDirection: "row", gap: 10, minHeight: 44, opacity: allOff ? 0.5 : 1, paddingVertical: 8 }}>
             <MaterialCommunityIcons name={typeIcons[tp]} size={18} color={mutes[tp] ? colors.subtle : typeMeta[tp].color} />
             <Text style={{ color: mutes[tp] ? colors.muted : colors.ink, flex: 1, fontSize: 13.5, fontWeight: "700" }}>{translateCopy(typeMeta[tp].label, language)}</Text>
-            <View style={{ alignItems: mutes[tp] ? "flex-start" : "flex-end", backgroundColor: mutes[tp] ? colors.line : colors.primary, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
+            <View style={{ alignItems: mutes[tp] || allOff ? "flex-start" : "flex-end", backgroundColor: mutes[tp] || allOff ? colors.line : colors.primary, borderRadius: 999, height: 22, justifyContent: "center", paddingHorizontal: 2, width: 40 }}>
               <View style={{ backgroundColor: "#FFFFFF", borderRadius: 999, height: 18, width: 18 }} />
             </View>
           </Pressable>

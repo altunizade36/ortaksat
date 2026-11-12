@@ -33,9 +33,13 @@ export function useForegroundRefresh(fn: () => Promise<unknown> | void, minGapMs
       const onVis = () => { if (document.visibilityState === "visible") run(); };
       document.addEventListener("visibilitychange", onVis);
       window.addEventListener("focus", run);
+      // Ağ geri geldiğinde de tazele: sekme hep öndeyken bağlantı kopup dönerse (tünel, Wi-Fi
+      // değişimi) ne visibilitychange ne focus tetiklenir; kaçan mesajlar gelmiyordu.
+      window.addEventListener("online", run);
       return () => {
         document.removeEventListener("visibilitychange", onVis);
         window.removeEventListener("focus", run);
+        window.removeEventListener("online", run);
       };
     }
 

@@ -22,26 +22,28 @@ const SETTING_COLUMN: Record<string, string> = {
 /** Kullanici rolunu gunceller (yalniz admin; RLS harden_profile_roles uygular). */
 export async function updateUserRoleLive(userId: string, role: string): Promise<boolean> {
   if (!supabase) return true;
-  const { error } = await supabase.from("profiles").update({ role }).eq("id", userId);
+  // Etkilenen satırı geri iste: satır yoksa / RLS 0 satır güncellediyse "başarı" sayılmasın.
+  // (profiles SELECT politikası herkese açık + `id` kolonu grant'lı → yönetici satırı geri okuyabilir.)
+  const { data, error } = await supabase.from("profiles").update({ role }).eq("id", userId).select("id").maybeSingle();
   if (error) { console.warn("User role update failed", error); return false; }
-  return true;
+  return !!data;
 }
 
 /** Kullanici durumunu gunceller (active/suspended/deleted; yalniz admin). */
 export async function updateUserStatusLive(userId: string, status: string): Promise<boolean> {
   if (!supabase) return true;
-  const { error } = await supabase.from("profiles").update({ status }).eq("id", userId);
+  const { data, error } = await supabase.from("profiles").update({ status }).eq("id", userId).select("id").maybeSingle();
   if (error) { console.warn("User status update failed", error); return false; }
-  return true;
+  return !!data;
 }
 
 /** Kullanici dogrulama rozetini (telefon/kimlik) admin manuel gunceller. */
 export async function updateUserVerificationLive(userId: string, field: "verifiedPhone" | "verifiedIdentity", value: boolean): Promise<boolean> {
   if (!supabase) return true;
   const column = field === "verifiedPhone" ? "verified_phone" : "verified_identity";
-  const { error } = await supabase.from("profiles").update({ [column]: value }).eq("id", userId);
+  const { data, error } = await supabase.from("profiles").update({ [column]: value }).eq("id", userId).select("id").maybeSingle();
   if (error) { console.warn("User verification update failed", error); return false; }
-  return true;
+  return !!data;
 }
 
 /** Referans linki tiklamasini kaydeder. K1: artik SUNUCU-DOGRULAMALI RPC uzerinden
@@ -248,9 +250,11 @@ export async function insertBulkNotifications(rows: Array<{ id: string; userId: 
 /** Ilani one cikar/geri al (admin; RLS uygular). */
 export async function updateListingFeaturedLive(listingId: string, featured: boolean): Promise<boolean> {
   if (!supabase) return true;
-  const { error } = await supabase.from("listings").update({ featured }).eq("id", listingId);
+  // Etkilenen satırı geri iste: RLS'in SESSİZCE 0 satır güncellemesi "başarı" sayılmasın
+  // (updateListingStatusLive ile aynı desen).
+  const { data, error } = await supabase.from("listings").update({ featured }).eq("id", listingId).select("id").maybeSingle();
   if (error) { console.warn("Listing featured update failed", error); return false; }
-  return true;
+  return !!data;
 }
 
 /** Ilani kalici siler (sahibi veya admin; RLS uygular). Iliskili kayitlar FK cascade ile temizlenir. */
@@ -342,25 +346,32 @@ export async function saveSeoSettingLive(p: { path: string; metaTitle: string; m
 }
 
 /** Site duyurusunu (metin + aktiflik) gunceller (yalniz admin). */
-export async function updateAnnouncementLive(text: string, active: boolean) {
-  if (!supabase) return;
-  const { error } = await supabase
+export async function updateAnnouncementLive(text: string, active: boolean): Promise<boolean> {
+  if (!supabase) return true; // demo/önizleme: yalnız yerel durum
+  // Satırı geri iste (platform_settings herkese okunur): RLS'in sessizce 0 satır yazması "başarı" sayılmasın.
+  const { data, error } = await supabase
     .from("platform_settings")
     .update({ announcement: text, announcement_active: active, updated_at: new Date().toISOString() })
-    .eq("id", 1);
-  if (error) console.warn("Announcement update failed", error);
+    .eq("id", 1)
+    .select("id")
+    .maybeSingle();
+  if (error) { console.warn("Announcement update failed", error); return false; }
+  return !!data;
 }
 
 /** Platform ayarini gunceller (yalniz admin; RLS uygular). */
-export async function updatePlatformSettingLive(key: string, value: boolean) {
-  if (!supabase) return;
+export async function updatePlatformSettingLive(key: string, value: boolean): Promise<boolean> {
+  if (!supabase) return true; // demo/önizleme: yalnız yerel durum
   const column = SETTING_COLUMN[key];
-  if (!column) return;
-  const { error } = await supabase
+  if (!column) return false; // bilinmeyen ayar: hiçbir şey yazılmadı
+  const { data, error } = await supabase
     .from("platform_settings")
     .update({ [column]: value, updated_at: new Date().toISOString() })
-    .eq("id", 1);
-  if (error) console.warn("Platform setting update failed", error);
+    .eq("id", 1)
+    .select("id")
+    .maybeSingle();
+  if (error) { console.warn("Platform setting update failed", error); return false; }
+  return !!data;
 }
 
 export function makeUuid() {
@@ -899,7 +910,7 @@ export async function setBuyerConfirmToken(commissionId: string, token: string):
 
 export async function updateSaleStatusLive(sale: Sale): Promise<boolean> {
   if (!supabase) return true;
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from("commissions")
     .update({
       status: sale.status,
@@ -909,9 +920,11 @@ export async function updateSaleStatusLive(sale: Sale): Promise<boolean> {
       partner_confirmed_paid_at: sale.partnerConfirmedPaidAt ?? null,
       payout_note: sale.payoutNote ?? null
     })
-    .eq("id", sale.id);
+    .eq("id", sale.id)
+    .select("id");
   if (error) { console.warn("Supabase commission update failed", error); return false; }
-  return true;
+  // 0 satır = RLS süzdü ya da kayıt yok → "başarılı" sayma (taraflar ve personel satırı geri okuyabilir).
+  return (data?.length ?? 0) > 0;
 }
 
 export async function updateListingStatusLive(listing: Listing): Promise<boolean> {
@@ -934,18 +947,21 @@ export async function updateListingStockPriceLive(id: string, patch: { stockCoun
 }
 
 /** Toplu yükleme SKU eşleştirmesi — satıcının external_id'li ilanları (RLS: sahip kendi satırlarını okur). */
-export async function fetchMyListingSkus(ownerId: string): Promise<Array<{ id: string; externalId: string; title: string; status: string }>> {
+export async function fetchMyListingSkus(ownerId: string): Promise<Array<{ id: string; externalId: string; title: string; status: string; category: string | null; attributes: Record<string, unknown> | null }>> {
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("listings")
-    .select("id, external_id, title, status")
+    .select("id, external_id, title, status, category, attributes")
     .eq("owner_id", ownerId)
     .not("external_id", "is", null)
     .limit(5000);
   if (error) { console.warn("fetchMyListingSkus failed", error); return []; }
-  return ((data ?? []) as Array<{ id: string; external_id: string | null; title: string; status: string }>)
+  return ((data ?? []) as Array<{ id: string; external_id: string | null; title: string; status: string; category: string | null; attributes: unknown }>)
     .filter((r) => r.external_id)
-    .map((r) => ({ id: r.id, externalId: r.external_id as string, title: r.title, status: r.status }));
+    .map((r) => ({
+      id: r.id, externalId: r.external_id as string, title: r.title, status: r.status, category: r.category ?? null,
+      attributes: r.attributes && typeof r.attributes === "object" && !Array.isArray(r.attributes) ? (r.attributes as Record<string, unknown>) : null
+    }));
 }
 
 export type ExportListingRow = {
@@ -959,6 +975,8 @@ export type ExportListingRow = {
   commissionValue: number;
   stockCount: number;
   status: string;
+  /** Kategori yolunu çözmek için (_root/_leaf/_formKey/_path); dışa aktarımda tam yol yazılır. */
+  attributes: Record<string, unknown> | null;
 };
 
 /** Toplu yükleme DIŞA-AKTARIM — satıcının ilanlarını şablon sütunlarında CSV'ye dökmek için.
@@ -967,7 +985,7 @@ export async function fetchMyListingsForExport(ownerId: string): Promise<ExportL
   if (!supabase) return [];
   const { data, error } = await supabase
     .from("listings")
-    .select("external_id, title, description, price, category, province_id, district_id, commission_value, stock_count, status")
+    .select("external_id, title, description, price, category, province_id, district_id, commission_value, stock_count, status, attributes")
     .eq("owner_id", ownerId)
     .not("status", "in", "(archived,sold,rejected)")
     .order("created_at", { ascending: false })
@@ -983,14 +1001,28 @@ export async function fetchMyListingsForExport(ownerId: string): Promise<ExportL
     districtId: (r.district_id as number) ?? null,
     commissionValue: Number(r.commission_value) || 0,
     stockCount: Number(r.stock_count) || 0,
-    status: (r.status as string) ?? ""
+    status: (r.status as string) ?? "",
+    attributes: r.attributes && typeof r.attributes === "object" && !Array.isArray(r.attributes) ? (r.attributes as Record<string, unknown>) : null
   }));
 }
 
-/** Toplu yükleme upsert güncelleme — SKU eşleşen mevcut ilanın alanlarını günceller (RLS: sahip). */
-export async function updateListingFieldsLive(id: string, patch: { title?: string; description?: string; price?: number; commissionValue?: number; stockCount?: number; category?: string; location?: string; provinceId?: number | null; districtId?: number | null; status?: ListingStatus }): Promise<boolean> {
+/**
+ * Toplu yükleme upsert güncelleme — SKU eşleşen mevcut ilanın alanlarını günceller (RLS: sahip).
+ * `attributesPatch`: mevcut attributes OKUNUR, üstüne sığ birleştirilir, sonra TEK update ile
+ * (diğer alanlarla birlikte) yazılır; diğer anahtarlar korunur. Okuma başarısızsa / satır yoksa /
+ * değer nesne değilse HİÇBİR ŞEY yazılmaz ve false döner — okunamayan attributes'ın üstüne yalnız
+ * yamayı yazıp geri kalanını silmemek için.
+ */
+export async function updateListingFieldsLive(id: string, patch: { title?: string; description?: string; price?: number; commissionValue?: number; stockCount?: number; category?: string; location?: string; provinceId?: number | null; districtId?: number | null; status?: ListingStatus; attributesPatch?: Record<string, unknown> }): Promise<boolean> {
   if (!supabase) return true;
   const payload: Record<string, unknown> = {};
+  if (patch.attributesPatch && Object.keys(patch.attributesPatch).length > 0) {
+    const { data: cur, error: readError } = await supabase.from("listings").select("attributes").eq("id", id).maybeSingle();
+    if (readError || !cur) { console.warn("updateListingFieldsLive: attributes read failed; nothing written", readError); return false; }
+    const current = (cur as { attributes: unknown }).attributes;
+    if (current != null && (typeof current !== "object" || Array.isArray(current))) { console.warn("updateListingFieldsLive: unexpected attributes shape; nothing written"); return false; }
+    payload.attributes = { ...((current as Record<string, unknown> | null) ?? {}), ...patch.attributesPatch };
+  }
   if (patch.title !== undefined) payload.title = patch.title;
   if (patch.description !== undefined) payload.description = patch.description;
   if (patch.price !== undefined) payload.price = patch.price;
@@ -1109,7 +1141,10 @@ export async function insertReview(review: Review): Promise<boolean> {
     reviewed_user_id: review.reviewedUserId ?? null
     ,experience_tags:review.experienceTags||[],media_paths:review.mediaPaths||[]
   });
-  if(error?.code==="23505"){const existing=await supabase.from("reviews").select("*").eq("id",review.id).eq("reviewer_id",review.reviewerId).is("deleted_at",null).maybeSingle();if(!existing.error&&existing.data){Object.assign(review,mapReviewRow(existing.data));return true;}}
+  if(error?.code==="23505"){const existing=await supabase.from("reviews").select("*").eq("id",review.id).eq("reviewer_id",review.reviewerId).is("deleted_at",null).maybeSingle();if(!existing.error&&existing.data){Object.assign(review,mapReviewRow(existing.data));return true;}
+    // Aynı satış için bu kullanıcının yorumu ZATEN var (başka sekme/cihaz, bayat istemci durumu): tekil indeks
+    // (sale_id, reviewer_id) reddetti. Mevcut yorumu döndür → form "kaydedilemedi" döngüsünde kalmasın.
+    if(review.saleId){const same=await supabase.from("reviews").select("*").eq("sale_id",review.saleId).eq("reviewer_id",review.reviewerId).is("deleted_at",null).maybeSingle();if(!same.error&&same.data){Object.assign(review,mapReviewRow(same.data));return true;}}}
   if (error) { console.warn("Supabase review insert failed", error); return false; }
   return true;
 }
@@ -1259,8 +1294,28 @@ export async function savePushTokenLive(token: string, platform: string): Promis
   if (error) console.warn("push token save failed", error);
 }
 
-export async function insertConversation(conversation: Conversation) {
-  if (!supabase) return;
+/**
+ * Konuşmayı oluşturur. Dönüş: sunucudaki GEÇERLİ konuşma id'si (çoğunlukla kendi id'si) ya da
+ * başarısızsa null.
+ *
+ * Aynı ilan + aynı iki kişi için sunucuda ZATEN bir konuşma varsa (başka cihazda açılmış, çift
+ * dokunuş yarışı, ya da tekil indeks 23505 ile reddetti) yenisini açmak yerine mevcut olanın
+ * id'si döner; çağıran yerel konuşmayı ona eşler. Böylece aynı kişiyle aynı ilan için iki ayrı
+ * thread oluşmaz.
+ */
+export async function insertConversation(conversation: Conversation): Promise<string | null> {
+  if (!supabase) return conversation.id;
+  const findExisting = async (): Promise<string | null> => {
+    if (!supabase) return null;
+    const { data } = await supabase.from("conversations").select("id")
+      .eq("listing_id", conversation.listingId).contains("participant_ids", conversation.participantIds)
+      .order("created_at", { ascending: true }).limit(1);
+    return (data?.[0]?.id as string | undefined) ?? null;
+  };
+  try {
+    const existing = await findExisting();
+    if (existing) return existing;
+  } catch { /* okuma hatası → insert'i yine dene */ }
   const { error } = await supabase.from("conversations").insert({
     id: conversation.id,
     listing_id: conversation.listingId,
@@ -1268,14 +1323,25 @@ export async function insertConversation(conversation: Conversation) {
     buyer_id: conversation.buyerId ?? null,
     partner_id: conversation.partnerId ?? null,
     participant_ids: conversation.participantIds,
-    status: conversation.status,
-    last_message_at: conversation.lastMessageAt
+    status: conversation.status
+    // last_message_at GÖNDERİLMEZ: istemci damgası saat dilimsiz YEREL metindi → sunucu UTC sayıp
+    // TR'de 3 saat İLERİ yazıyordu (mesajsız konuşma listenin tepesine yapışıyordu). DB default now().
   });
-  if (error) console.warn("Supabase conversation insert failed", error);
+  if (!error) return conversation.id;
+  if (error.code === "23505") {
+    try { return await findExisting(); } catch { return null; }
+  }
+  console.warn("Supabase conversation insert failed", error);
+  return null;
 }
 
 export async function insertMessage(message: Message): Promise<boolean> {
-  if (!supabase) return true;
+  return (await insertMessageResult(message)).ok;
+}
+// insertMessage + Postgres hata kodu. P0001 = sunucu hız-limiti (trg_throttle_messages):
+// "bağlantı" sorunu DEĞİL → çağıran kullanıcıya doğru sebebi söyleyebilsin.
+export async function insertMessageResult(message: Message): Promise<{ ok: boolean; code?: string }> {
+  if (!supabase) return { ok: true };
   const payload: Record<string, unknown> = {
     id: message.id,
     conversation_id: message.conversationId,
@@ -1293,8 +1359,12 @@ export async function insertMessage(message: Message): Promise<boolean> {
     if (message.attachmentName) payload.attachment_name = message.attachmentName;
   }
   const { error } = await supabase.from("messages").insert(payload);
-  if (error) { console.warn("Supabase message insert failed", error); return false; }
-  return true;
+  // 23505 = bu id ZATEN yazılmış: önceki deneme sunucuda tamamlandı ama yanıtı kayboldu (zaman aşımı).
+  // Kimlik istemcide üretilen UUID olduğundan başka bir satırla çakışamaz → başarı say; yoksa
+  // ulaşmış mesaj "Gönderilemedi"de takılır ve her "tekrar dene" yine 23505 alır.
+  if (error?.code === "23505") return { ok: true };
+  if (error) { console.warn("Supabase message insert failed", error); return { ok: false, code: error.code }; }
+  return { ok: true };
 }
 
 /**
@@ -1357,8 +1427,8 @@ export async function markConversationReadLive(conversationId: string, userId: s
     .eq("conversation_id", conversationId).eq("receiver_id", userId).eq("read", false);
   if (error) console.warn("Supabase mark conversation read failed", error);
 }
-export async function insertNotification(notification: Notification) {
-  if (!supabase) return;
+export async function insertNotification(notification: Notification): Promise<boolean> {
+  if (!supabase) return true;
   const { error } = await supabase.from("notifications").insert({
     id: notification.id,
     user_id: notification.userId,
@@ -1370,6 +1440,9 @@ export async function insertNotification(notification: Notification) {
     ...(notification.metadata ? { metadata: notification.metadata } : {})
   });
   if (error) console.warn("Supabase notification insert failed", error);
+  // true = sunucu HATA vermedi. Alıcı bu türü sessize aldıysa tetikleyici satırı sessizce düşürür (0 satır,
+  // hata yok) ve bu başarıdan AYIRT EDİLEMEZ: gönderen başkasının bildirimini geri okuyamaz (RLS: user_id = auth.uid()).
+  return !error;
 }
 
 export async function markNotificationReadLive(notification: Notification): Promise<boolean> {
@@ -1578,6 +1651,51 @@ export async function fetchAdminMessageStats(): Promise<{ conversations: number;
   return (data ?? null) as { conversations: number; messages: number; messages_24h: number; blocked_pairs: number } | null;
 }
 
+// Sunucu günlük serisi (admin_timeseries RPC; yalnız yetkili — değilse 'not authorized' hatası).
+// Günler Europe/Istanbul takvimine göre, eskiden yeniye; SON gün (bugün) henüz TAMAMLANMAMIŞTIR.
+export type AdminTimeseriesDay = { day: string; active: number; signups: number; listings: number; messages: number; leads: number; orders: number; gmv: number; commission: number };
+export type AdminTimeseries = {
+  range: number; // sunucunun uyguladığı gün sayısı (7..365'e sıkıştırılır)
+  days: AdminTimeseriesDay[];
+  messages_24h: number;
+  messages_prev_24h: number;
+  leads_7d: number;
+  leads_prev_7d: number;
+  orders_7d: number;
+  orders_prev_7d: number;
+  reports_7d: number;
+  reports_prev_7d: number;
+  views_total: number;
+  leads_total: number;
+  root_categories: Array<{ root: string; n: number }>; // aktif ilanlar, kök kategoriye göre
+  top_sellers: Array<{ name: string; n: number }>; // aktif ilan sayısına göre ilk 8
+};
+
+/** Hata / yetkisiz / bozuk yanıt → null (çağıran hata durumunu gösterir; sayı UYDURULMAZ). */
+export async function fetchAdminTimeseries(days: number): Promise<AdminTimeseries | null> {
+  if (!supabase) return null;
+  const { data, error } = await supabase.rpc("admin_timeseries", { p_days: days });
+  if (error) { console.warn("admin_timeseries failed", error); return null; }
+  const raw = data as (Record<string, unknown> & { days?: unknown }) | null;
+  if (!raw || !Array.isArray(raw.days)) { console.warn("admin_timeseries returned an unexpected shape"); return null; }
+  const num = (v: unknown) => { const n = Number(v); return Number.isFinite(n) ? n : 0; };
+  return {
+    range: num(raw.range) || raw.days.length,
+    days: (raw.days as Array<Record<string, unknown>>).map((d) => ({
+      day: String(d.day ?? ""), active: num(d.active), signups: num(d.signups), listings: num(d.listings), messages: num(d.messages),
+      leads: num(d.leads), orders: num(d.orders), gmv: num(d.gmv), commission: num(d.commission)
+    })),
+    messages_24h: num(raw.messages_24h), messages_prev_24h: num(raw.messages_prev_24h),
+    leads_7d: num(raw.leads_7d), leads_prev_7d: num(raw.leads_prev_7d),
+    orders_7d: num(raw.orders_7d), orders_prev_7d: num(raw.orders_prev_7d),
+    reports_7d: num(raw.reports_7d), reports_prev_7d: num(raw.reports_prev_7d),
+    views_total: num(raw.views_total), leads_total: num(raw.leads_total),
+    // json_agg satır yokken NULL döner → boş dizi (uydurma değil: gerçekten kayıt yok).
+    root_categories: Array.isArray(raw.root_categories) ? (raw.root_categories as Array<Record<string, unknown>>).map((r) => ({ root: String(r.root ?? ""), n: num(r.n) })) : [],
+    top_sellers: Array.isArray(raw.top_sellers) ? (raw.top_sellers as Array<Record<string, unknown>>).map((r) => ({ name: String(r.name ?? ""), n: num(r.n) })) : []
+  };
+}
+
 
 // ---------------------------------------------------------------------------
 // TEKLİFLER — alıcının ilana verdiği yapılandırılmış, tutarlı öneri.
@@ -1623,10 +1741,18 @@ export async function createOfferLive(input: { listingId: string; sellerId: stri
 
 /** Kullanıcının TARAF olduğu tüm teklifler (alıcı veya satıcı) — RLS zaten süzer. */
 export async function fetchOffersLive(): Promise<Offer[]> {
+  return (await fetchOffersResultLive()) ?? [];
+}
+/** fetchOffersLive ile aynı; sorgu BAŞARISIZSA null döner (çağıran eldeki teklifleri boş listeyle ezmesin). */
+export async function fetchOffersResultLive(): Promise<Offer[] | null> {
   if (!supabase) return [];
-  const { data, error } = await supabase.from("offers").select("*").order("created_at", { ascending: false }).limit(300);
-  if (error) { console.warn("offers fetch failed", error); return []; }
-  return (data ?? []).map((r) => mapOffer(r as Record<string, unknown>));
+  try {
+    const { data, error } = await supabase.from("offers").select("*").order("created_at", { ascending: false }).limit(300);
+    if (error) { console.warn("offers fetch failed", error); return null; }
+    return (data ?? []).map((r) => mapOffer(r as Record<string, unknown>));
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -1738,27 +1864,110 @@ export async function reauthenticateLive(password: string): Promise<boolean> {
   }
 }
 
+// ---- Hesap silme (sunucu-otoriteli) ---------------------------------------
+// Talep `request_account_deletion` RPC'siyle açılır (idempotent): sunucu profili askıya alır,
+// kullanıcının aktif ilanlarını duraklatır ve push token'larını siler. 30 gün içinde
+// `cancel_account_deletion` ile geri alınabilir; süre sonunda hesap kalıcı olarak anonimleştirilir.
+
+/** Kullanıcının bekleyen silme talebi (yoksa `pending: false`). */
+export type AccountDeletionState = { pending: boolean; requestedAt?: string; scheduledFor?: string };
+
+function mapAccountDeletionState(raw: unknown): AccountDeletionState {
+  const row = (raw && typeof raw === "object" ? raw : {}) as Record<string, unknown>;
+  return {
+    pending: row.pending === true,
+    requestedAt: typeof row.requested_at === "string" ? row.requested_at : undefined,
+    scheduledFor: typeof row.scheduled_for === "string" ? row.scheduled_for : undefined
+  };
+}
+
+/** Silme talebini açar. Başarısızsa null; başarılıysa planlanan kalıcı silme tarihiyle durum döner. */
+export async function requestAccountDeletionDetailedLive(input: { userId: string; reason: string }): Promise<AccountDeletionState | null> {
+  if (!supabase || !uuidPattern.test(input.userId)) return null;
+  try {
+    const { data, error } = await supabase.rpc("request_account_deletion", { p_reason: input.reason });
+    if (error) { console.warn("Supabase account deletion request failed", error); return null; }
+    const row = (data && typeof data === "object" ? data : {}) as Record<string, unknown>;
+    if (row.ok !== true) return null;
+    return { ...mapAccountDeletionState(row), pending: true };
+  } catch {
+    return null;
+  }
+}
+
 export async function requestAccountDeletionLive(input: { userId: string; reason: string }) {
-  if (!supabase || !uuidPattern.test(input.userId)) return false;
+  return (await requestAccountDeletionDetailedLive(input)) !== null;
+}
 
-  // Yinelenen talep koruması: kullanıcının zaten AÇIK silme talebi varsa yenisini AÇMA (eskiden
-  // her dokunuş yeni satır ekliyordu → admin'de mükerrer talep). Kapanmış talep yenisini engellemez.
-  const { data: existing } = await supabase.from("account_deletion_requests")
-    .select("id").eq("user_id", input.userId).eq("status", "open").limit(1);
-  if (existing && existing.length > 0) return true;
+/** Oturumdaki kullanıcının silme talebi durumu. Okunamazsa null (çağıran "bilinmiyor" sayar). */
+export async function fetchMyAccountDeletionLive(): Promise<AccountDeletionState | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc("my_account_deletion");
+    if (error) return null;
+    return mapAccountDeletionState(data);
+  } catch {
+    return null;
+  }
+}
 
-  const { error } = await supabase.from("account_deletion_requests").insert({
-    id: makeUuid(),
-    user_id: input.userId,
-    reason: input.reason
-  });
-
-  if (error) {
-    console.warn("Supabase account deletion request insert failed", error);
+/** Bekleyen silme talebini iptal eder: profil yeniden aktif olur, talebin duraklattığı ilanlar geri açılır. */
+export async function cancelAccountDeletionLive(): Promise<boolean> {
+  if (!supabase) return false;
+  try {
+    const { data, error } = await supabase.rpc("cancel_account_deletion");
+    return !error && data === true;
+  } catch {
     return false;
   }
+}
 
-  return true;
+export type AdminAccountDeletion = {
+  id: string;
+  userId: string;
+  name: string;
+  reason: string;
+  status: string;
+  requestedAt?: string;
+  scheduledFor?: string;
+  completedAt?: string;
+  note?: string;
+  listingCount: number;
+};
+
+/** Yönetim: hesap silme talepleri kuyruğu (yalnız staff). Okunamazsa null. */
+export async function fetchAdminAccountDeletionsLive(): Promise<AdminAccountDeletion[] | null> {
+  if (!supabase) return null;
+  try {
+    const { data, error } = await supabase.rpc("admin_account_deletions");
+    if (error || !Array.isArray(data)) return null;
+    const text = (value: unknown) => (typeof value === "string" && value ? value : undefined);
+    return (data as Array<Record<string, unknown>>).filter((row) => typeof row?.id === "string").map((row) => ({
+      id: String(row.id),
+      userId: String(row.userId ?? ""),
+      name: text(row.name) ?? "",
+      reason: text(row.reason) ?? "",
+      status: text(row.status) ?? "open",
+      requestedAt: text(row.requestedAt),
+      scheduledFor: text(row.scheduledFor),
+      completedAt: text(row.completedAt),
+      note: text(row.note),
+      listingCount: Number(row.listingCount ?? 0) || 0
+    }));
+  } catch {
+    return null;
+  }
+}
+
+/** Yönetim: talebi reddet (hesabı geri açar) ya da hemen kalıcı sil (yalnız admin/super_admin). */
+export async function adminResolveAccountDeletionLive(id: string, action: "reject" | "delete_now"): Promise<boolean> {
+  if (!supabase || !uuidPattern.test(id)) return false;
+  try {
+    const { data, error } = await supabase.rpc("admin_resolve_account_deletion", { p_id: id, p_action: action });
+    return !error && data === true;
+  } catch {
+    return false;
+  }
 }
 
 

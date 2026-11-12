@@ -28,8 +28,12 @@ ortak satış, komisyon, ilan, pazar yeri, satıcı, sosyal satış
 
 ## Support URL
 
-https://ortaksat.com/support
+https://www.ortaksat.com/iletisim
 
 ## Privacy Policy URL
 
-https://ortaksat.com/privacy
+https://www.ortaksat.com/gizlilik-politikasi
+
+## Account Deletion URL
+
+https://www.ortaksat.com/hesap-silme

@@ -35,7 +35,7 @@ export function MobileCategorySelect({ visible, initial, onClose, onSelect, leaf
   function select(path: CategoryNode[]) { onSelect(path); setQuery(""); onClose(); }
   return <Modal visible={visible} animationType="slide" onRequestClose={back}>
     <View style={{ flex: 1, backgroundColor: mobile.canvas, paddingTop: insets.top, paddingBottom: insets.bottom }}>
-      <View style={[ms.row, { padding: 12 }]}><Pressable accessibilityRole="button" accessibilityLabel="Önceki kategori" onPress={back} style={ms.iconButton}><Icon name="chevron-left" size={27} color={mobile.ink} /></Pressable><Text style={[ms.section, { flex: 1 }]}>Kategori seç</Text><Pressable accessibilityRole="button" onPress={onClose}><Text style={{ color: mobile.teal }}>Kapat</Text></Pressable></View>
+      <View style={[ms.row, { padding: 12 }]}><Pressable accessibilityRole="button" accessibilityLabel="Önceki kategori" onPress={back} style={ms.iconButton}><Icon name="chevron-left" size={27} color={mobile.ink} /></Pressable><Text style={[ms.section, { flex: 1 }]}>Kategori seç</Text><Pressable accessibilityRole="button" accessibilityLabel="Kapat" onPress={onClose} style={{ minWidth: 44, minHeight: 44, alignItems: "center", justifyContent: "center", paddingHorizontal: 6 }}><Text style={{ color: mobile.teal }}>Kapat</Text></Pressable></View>
       <View style={{ paddingHorizontal: 16, gap: 10, flex: 1, width: "100%", maxWidth: tablet ? 760 : undefined, alignSelf: "center" }}>
         <Text style={ms.muted}>{trail.map((n) => n.label).join(" / ") || "Tüm kategoriler"}</Text>
         <TextInput accessibilityLabel="Kategorilerde ara" value={query} onChangeText={v => { setQuery(v); setLimit(60); }} placeholder="Tüm alt kategorilerde ara..." style={ms.input} />

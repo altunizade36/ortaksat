@@ -22,9 +22,10 @@ Shopping
 
 ## İletişim
 
-- Web: https://ortaksat.com
-- Destek: https://ortaksat.com/support
-- Gizlilik: https://ortaksat.com/privacy
+- Web: https://www.ortaksat.com
+- Destek: https://www.ortaksat.com/iletisim
+- Gizlilik: https://www.ortaksat.com/gizlilik-politikasi
+- Hesap silme (Play Console "Delete account URL"): https://www.ortaksat.com/hesap-silme
 
 ## Veri Güvenliği Notları
 
@@ -32,4 +33,4 @@ Shopping
 - İlan ve ürün fotoğrafları satış/ortaklık akışı için saklanır.
 - Alıcı adı ve telefonu satıcıyla iletişim ve komisyon takibi için kaydedilir.
 - Mesajlar, talepler, yorumlar ve bildirimler uygulama deneyimi için işlenir.
-- Kullanıcı uygulama içinden destek ve hesap silme talebi oluşturabilir.
+- Kullanıcı uygulama içinden (Hesap Ayarları › Hesabımı Sil) ve web'den (https://www.ortaksat.com/hesap-silme) hesap silme talebi oluşturabilir; talep 30 gün içinde iptal edilebilir, sonra hesap kalıcı olarak silinir. Mali kayıtlar ve karşı tarafın mesaj geçmişi anonim profile bağlı saklanır.

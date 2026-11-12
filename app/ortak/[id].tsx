@@ -1,10 +1,12 @@
 import { MaterialCommunityIcons } from "@/components/icons";
 import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 
 import { colors } from "@/components/colors";
 import { ListingCard } from "@/components/listing-card";
+import { ReviewCard } from "@/components/review-card";
+import { RatingSummary } from "@/components/reviews/rating-summary";
 import { ScreenSkeleton } from "@/components/screen-skeleton";
 import { Seo } from "@/components/seo";
 import { tierFromCount } from "@/components/partner-tier";
@@ -14,8 +16,11 @@ import { WebFooter } from "@/components/web-landing";
 import { PAGE_MAX_WIDTH } from "@/components/web-container";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { responsiveGrid, useIsWideWeb, useMounted } from "@/lib/layout";
+import { fetchReviewsForUser } from "@/lib/live-service";
 import { saveRefAttribution } from "@/lib/referral";
+import { ratingStats } from "@/lib/reviews";
 import { loadMyFavoritePartnerIds, loadPartnerShopLive, togglePartnerFavorite, type PartnerShopItem, type PartnerShopProfile } from "@/lib/supabase-data";
+import type { Review } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
 
 export default function PartnerShopScreen() {
@@ -28,7 +33,7 @@ function Inner() {
   const { language } = useLanguage();
   const { width } = useWindowDimensions();
   const isWideWeb = useIsWideWeb();
-  const { currentUser, findUser, isAuthenticated } = useStore();
+  const { currentUser, findUser, isAuthenticated, editReview, deleteReview, reportReview } = useStore();
   const [loading, setLoading] = useState(true);
   const [profile, setProfile] = useState<PartnerShopProfile | null>(null);
   const [items, setItems] = useState<PartnerShopItem[]>([]);
@@ -36,6 +41,15 @@ function Inner() {
   const [favorited, setFavorited] = useState(false);
   const [favCount, setFavCount] = useState(0);
   const isOwnShop = Boolean(currentUser?.id && currentUser.id === partnerId);
+  // Ortak olarak aldığı değerlendirmeler (satıcıların, tamamlanmış satış sonrası yazdığı). Yoksa bölüm hiç çizilmez.
+  const [partnerReviews, setPartnerReviews] = useState<Review[]>([]);
+  useEffect(() => {
+    let alive = true;
+    setPartnerReviews([]);
+    if (partnerId) void fetchReviewsForUser(partnerId).then((rows) => { if (alive) setPartnerReviews(rows.filter((r) => r.type === "partner")); }).catch(() => {});
+    return () => { alive = false; };
+  }, [partnerId]);
+  const partnerReviewStats = useMemo(() => ratingStats(partnerReviews.map((r) => r.rating)), [partnerReviews]);
 
   useEffect(() => {
     let alive = true;
@@ -196,6 +210,30 @@ function Inner() {
             ))}
           </View>
         )}
+
+        {/* Ortak değerlendirmeleri — mağaza sayfasıyla AYNI özet + kart; hiç yoksa gizli */}
+        {partnerReviews.length > 0 ? (
+          <View style={{ gap: 12, marginTop: 24 }}>
+            <Text style={{ color: colors.ink, fontSize: 16, fontWeight: "900" }}>{translateCopy("Ortak değerlendirmeleri", language)} · {partnerReviews.length}</Text>
+            <RatingSummary stats={partnerReviewStats} language={language} />
+            {partnerReviews.map((r) => (
+              <ReviewCard
+                key={r.id}
+                review={r}
+                reviewerName={r.reviewerName ?? findUser(r.reviewerId)?.name}
+                isSeller={isOwnShop}
+                authed={isAuthenticated}
+                isMine={r.reviewerId === currentUser?.id}
+                onEdit={editReview}
+                onDelete={deleteReview}
+                onReport={reportReview}
+                onPatch={(rid, patch) => setPartnerReviews((rows) => rows.map((x) => (x.id === rid ? { ...x, ...patch } : x)))}
+                onRemove={(rid) => setPartnerReviews((rows) => rows.filter((x) => x.id !== rid))}
+                language={language}
+              />
+            ))}
+          </View>
+        ) : null}
       </View>
       <WebFooter />
     </ScrollView>

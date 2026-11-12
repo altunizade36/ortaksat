@@ -26,6 +26,15 @@ type Props = {
 };
 const messages = ["Ürününü paylaş, ortak bul,", "Ücretsiz ilan ver, birlikte sat,", "Ortak ol, paylaş, kazan,"];
 
+// iOS SOSYAL GİRİŞ ANAHTARI. App Store kuralı 4.8: üçüncü taraf girişi (Google) sunan iOS
+// uygulaması "Apple ile Giriş"i de sunmak ZORUNDA. Apple girişi henüz yok (hesap sahibinin
+// Apple Developer + Supabase Apple sağlayıcı kurulumu gerekiyor) → iOS'ta Google düğmesi de
+// gizlenir. Apple girişi eklendiği gün bu değer `true` yapılır (ikisi BİRLİKTE açılır).
+// Android'de Google her zaman açık; e-posta ile giriş/kayıt her iki platformda da tam çalışır.
+// Çalışmayan "Yakında" düğmeleri (Apple / telefon) mağaza incelemesinde ret sebebi olduğu için kaldırıldı.
+const IOS_SOCIAL_LOGIN_ENABLED = false;
+const socialLogin = Platform.OS !== "ios" || IOS_SOCIAL_LOGIN_ENABLED;
+
 export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onSkip, consent, accepted, busy, error, form, formTitle, onBack, showTabs = true }: Props) {
   const scrollRef = useRef<ScrollView>(null);
   const consentRef = useRef<View>(null);
@@ -67,7 +76,7 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onSki
         <MobileBrand size={Math.min(tablet ? 54 : 44, sceneWidth * 0.12)} />
         <Text style={s.slogan}>{tr("Al, Sat, Ortak Ol")}</Text>{!(Platform.OS === "web" && form && !tablet) ? <Text style={s.subSlogan}>{tr("Herkes Kazansın.")}</Text> : null}
         {!form && <View style={s.features}>
-          {([{ icon: "tag", color: "#003AB3", bg: "#C7EFF0C9", text: "Ücretsiz\nİlan Ver" }, { icon: "account-group", color: "#003AB3", bg: "#D5F6ECCF", text: "Ürününü Ortak\nSatışa Aç" }, { icon: "chart-bar", color: "#7552D7", bg: "#E6DFF9CC", text: "Daha Fazla\nKişiye Ulaş" }] as const).map((f) => <View key={f.icon} style={s.feature}><View style={[s.featureIcon, { backgroundColor: f.bg }]}><Icon name={f.icon} size={29} color={f.color} /></View><Text style={s.featureText}>{tr(f.text)}</Text></View>)}
+          {([{ icon: "tag", color: "#003AB3", bg: "#E5F0FFCC", text: "Ücretsiz\nİlan Ver" }, { icon: "account-group", color: "#003AB3", bg: "#DCE6F5CC", text: "Ürününü Ortak\nSatışa Aç" }, { icon: "chart-bar", color: "#7552D7", bg: "#E6DFF9CC", text: "Daha Fazla\nKişiye Ulaş" }] as const).map((f) => <View key={f.icon} style={s.feature}><View style={[s.featureIcon, { backgroundColor: f.bg }]}><Icon name={f.icon} size={29} color={f.color} /></View><Text style={s.featureText}>{tr(f.text)}</Text></View>)}
         </View>}
       </View>
       {(!form && !compactNative) || tablet ? <><View style={s.message}><View style={s.messageIcon}><Icon name="trending-up" size={24} color="white" /></View><Text style={s.messageText}>{tr(messages[slide])}{"\n"}<Text style={{ color: "#0039B1", fontWeight: "800" }}>{tr("daha fazla kişiye ulaş.")}</Text></Text></View>
@@ -81,13 +90,13 @@ export function MobileAuthLanding({ mode, onModeChange, onEmail, onGoogle, onSki
       {showTabs && <View accessibilityRole="tablist" style={s.tabs}>{(["login", "register"] as const).map((tab) => <Pressable key={tab} accessibilityRole="tab" accessibilityState={{ selected: mode === tab }} disabled={busy} onPress={() => onModeChange(tab)} style={[s.tab, mode === tab && s.activeTab]}><Text style={[s.tabText, mode === tab && { color: "#002D92" }]}>{tr(tab === "login" ? "Giriş Yap" : "Hesap Oluştur")}</Text></Pressable>)}</View>}
       {form ? <View style={{ gap: 14 }}>{form}</View> : <>
       <Pressable accessibilityRole="button" accessibilityLabel={tr("E-posta ile devam et")} disabled={busy} onPress={onEmail} style={[s.button, s.email]}><Icon name="email" size={25} color="white" /><Text style={[s.buttonText, { color: "white" }]}>{tr("E-posta ile devam et")}</Text></Pressable>
+      {/* Yasal onay kutusu yalnız sosyal giriş için gerekir (e-posta kaydı onayı kendi formunda alır). */}
+      {socialLogin ? <>
       <View ref={consentRef} collapsable={false} style={{ marginBottom: 14, marginTop: 3 }}>{consent}</View>
       <Pressable accessibilityRole="button" accessibilityLabel={tr("Google ile devam et")} disabled={busy} accessibilityState={{ disabled: busy, busy }} onPress={continueWithGoogle} style={[s.button, { opacity: busy ? 0.6 : 1 }]}><GoogleMark /><Text style={s.buttonText}>{tr(busy ? "Bağlanıyor…" : "Google ile devam et")}</Text></Pressable>
-      <Pressable accessibilityRole="button" accessibilityLabel={tr("Apple ile devam et")} disabled accessibilityState={{ disabled: true }} accessibilityHint={tr("Apple ile giriş henüz kullanıma açık değil")} style={s.button}><Icon name="apple" size={29} color="#111111" /><Text style={s.buttonText}>{tr("Apple ile devam et")}</Text><Text style={s.soon}>{tr("Yakında")}</Text></Pressable>
-      <View style={s.divider}><View style={s.line} /><Text style={s.or}>{tr("veya")}</Text><View style={s.line} /></View>
-      <Pressable accessibilityRole="button" accessibilityLabel={tr("Telefon numarası ile devam et")} disabled accessibilityState={{ disabled: true }} accessibilityHint={tr("Telefon ile giriş henüz kullanıma açık değil")} style={[s.button, s.phone]}><Icon name="phone" size={24} color="#0645C9" /><Text style={[s.phoneText, { flexShrink: 1 }]}>{tr("Telefon numarası ile devam et")}</Text><Text style={s.soon}>{tr("Yakında")}</Text></Pressable>
+      </> : null}
       {error ? <Text accessibilityRole="alert" style={s.error}>{tr(error)}</Text> : null}
-      {!accepted && <Text style={s.legal}>{tr("Sosyal giriş için önce yukarıdaki yasal onay kutusunu işaretle.")}</Text>}
+      {socialLogin && !accepted && <Text style={s.legal}>{tr("Sosyal giriş için önce yukarıdaki yasal onay kutusunu işaretle.")}</Text>}
       </>}
       <Text style={s.copyright}>© 2026 OrtakSat</Text>
       </View>
@@ -108,5 +117,5 @@ const s = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "white" }, skip: { position: "absolute", right: 19, zIndex: 2, flexDirection: "row", alignItems: "center", minHeight: 44 }, skipText: { color: "#101827", fontSize: 14 }, intro: { alignItems: "center", paddingHorizontal: 20 }, slogan: { color: "#0F172A", fontWeight: "700", fontSize: 21, marginTop: 3 }, subSlogan: { color: "#0F172A", fontSize: 20, marginTop: 1 },
   features: { flexDirection: "row", justifyContent: "center", gap: 9, marginTop: 18 }, feature: { alignItems: "center", width: 86 }, featureIcon: { width: 50, height: 50, borderRadius: 25, alignItems: "center", justifyContent: "center" }, featureText: { marginTop: 5, textAlign: "center", fontSize: 12, fontWeight: "600", lineHeight: 16, color: "#101827" },
   message: { position: "absolute", bottom: 34, alignSelf: "center", backgroundColor: "#FFFFFFDE", borderRadius: 40, flexDirection: "row", gap: 11, alignItems: "center", paddingHorizontal: 19, paddingVertical: 9 }, messageIcon: { width: 31, height: 31, borderRadius: 16, backgroundColor: "#0040BB", alignItems: "center", justifyContent: "center" }, messageText: { fontSize: 13, lineHeight: 18, color: "#172033" }, dots: { position: "absolute", bottom: 18, alignSelf: "center", flexDirection: "row", gap: 9 }, dot: { width: 9, height: 9, borderRadius: 5, backgroundColor: "#FFFFFFCC" },
-  sheet: { backgroundColor: "white", borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 22, paddingTop: 25, marginTop: -12 }, tabs: { flexDirection: "row", marginBottom: 17, borderBottomWidth: 1, borderColor: "#DCE6F5" }, tab: { flex: 1, alignItems: "center", paddingVertical: 11, borderBottomWidth: 3, borderColor: "transparent", marginBottom: -1 }, activeTab: { borderColor: "#0645C9" }, tabText: { fontSize: 15, fontWeight: "700", color: "#667085" }, button: { borderRadius: 15, minHeight: 52, borderWidth: 1, borderColor: "#DCE6F5", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 8, paddingHorizontal: 10, paddingVertical: 9, backgroundColor: "#FFFFFF", boxShadow: "0px 3px 8px #09275E12" }, email: { backgroundColor: "#0645C9", borderColor: "#0645C9" }, buttonText: { fontSize: 15, fontWeight: "600", color: "#09275E" }, soon: { color: "#8B9098", fontSize: 10, position: "absolute", right: 8, bottom: 3 }, divider: { flexDirection: "row", alignItems: "center", gap: 12, marginTop: 2, marginBottom: 14 }, line: { flex: 1, height: 1, backgroundColor: "#DCE6F5" }, or: { color: "#667085", fontSize: 13 }, phone: { borderColor: "#0645C9", boxShadow: "none" }, phoneText: { color: "#0645C9", fontSize: 13 }, legal: { color: "#667085", fontSize: 11, lineHeight: 17, textAlign: "center", marginTop: 8, marginBottom: 12 }, legalLink: { color: "#0645C9", fontWeight: "600" }, error: { color: "#B42318", fontSize: 12, lineHeight: 18, textAlign: "center", marginVertical: 5 },
+  sheet: { backgroundColor: "white", borderTopLeftRadius: 30, borderTopRightRadius: 30, paddingHorizontal: 22, paddingTop: 25, marginTop: -12 }, tabs: { flexDirection: "row", marginBottom: 17, borderBottomWidth: 1, borderColor: "#DCE6F5" }, tab: { flex: 1, alignItems: "center", paddingVertical: 11, borderBottomWidth: 3, borderColor: "transparent", marginBottom: -1 }, activeTab: { borderColor: "#0645C9" }, tabText: { fontSize: 15, fontWeight: "700", color: "#667085" }, button: { borderRadius: 15, minHeight: 52, borderWidth: 1, borderColor: "#DCE6F5", flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 8, paddingHorizontal: 10, paddingVertical: 9, backgroundColor: "#FFFFFF", boxShadow: "0px 3px 8px #09275E12" }, email: { backgroundColor: "#0645C9", borderColor: "#0645C9" }, buttonText: { fontSize: 15, fontWeight: "600", color: "#09275E" }, legal: { color: "#667085", fontSize: 11, lineHeight: 17, textAlign: "center", marginTop: 8, marginBottom: 12 }, legalLink: { color: "#0645C9", fontWeight: "600" }, error: { color: "#B42318", fontSize: 12, lineHeight: 18, textAlign: "center", marginVertical: 5 },
 });

@@ -14,7 +14,7 @@ export function ListingTitleField({ value, onChange, invalid = false, inputRef }
     </View>
     <TextInput ref={inputRef} testID="field-title" accessibilityLabel="Başlık" value={value} onChangeText={onChange} onBlur={() => setTouched(true)}
       placeholder="Örn. iPhone 13 Pro 128 GB, temiz kullanılmış" placeholderTextColor="#79869A" autoCapitalize="sentences"
-      style={{ minHeight: 48, borderRadius: 10, borderWidth: 1, borderColor: error ? "#D92D20" : "#D9E2EC", backgroundColor: "#FFFFFF", color: "#14213D", paddingHorizontal: 12, paddingVertical: 10, fontSize: 14 }} />
+      style={{ minHeight: 48, borderRadius: 10, borderWidth: 1, borderColor: error ? "#D92D20" : "#D9E2EC", backgroundColor: "#FFFFFF", color: "#14213D", paddingHorizontal: 12, paddingVertical: 10, fontSize: 16 }} />
     <Text style={{ color: "#64748B", fontSize: 12, lineHeight: 18 }}>{LISTING_TITLE_HELP}</Text>
     {error && <Text accessibilityRole="alert" accessibilityLiveRegion="polite" style={{ color: "#B42318", fontSize: 12, lineHeight: 18 }}>{error}</Text>}
   </View>;

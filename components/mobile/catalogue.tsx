@@ -1,12 +1,12 @@
-import { listingCommissionDisplay } from "@/lib/mobile-listing";
+import { listingCommissionDisplay, listingPhotos } from "@/lib/mobile-listing";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { displayListingTitle } from "@/lib/listing-title";
 import { clearMobileFilters, mobileFilterCount, filterMobileListings as filtered, mobileFilterError, type MobileFilters as Filters } from "@/lib/mobile-filters";
 import { CategoryArtwork } from "./categories";
-import { mobileCategories } from "@/lib/mobile-catalog";
-import { memo, useEffect, useMemo, useRef, useState } from "react";
-import { Keyboard, Modal, PanResponder, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
-import { useLocalSearchParams, useRouter, type Href } from "expo-router";
+import { categoryTile } from "@/lib/mobile-catalog";
+import { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { BackHandler, Keyboard, Modal, PanResponder, Platform, Pressable, RefreshControl, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { useFocusEffect, useLocalSearchParams, useRouter, type Href } from "expo-router";
 import { useBackNavigation } from "@/lib/use-back-navigation";
 import { currentListingLocation, currentLocationError, deviceLocationAvailable } from "@/lib/current-location";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
@@ -28,18 +28,18 @@ import { showToast } from "@/lib/toast";
 import { useSavedSearches } from "@/lib/saved-searches";
 import { restoreMobileSearch } from "@/lib/mobile-saved-search";
 import { MobileCategorySelect } from "./category-select";
-import { MobileBottomNav, MobileButton, MobileCard, MobileChip, MobileField, MobileScreen, MobileSelect, SectionLabel, IconButton, mobile, ms, useMobileLayout } from "./ui";
+import { MobileBottomNav, MobileButton, MobileCard, MobileChip, MobileField, MobileScreen, MobileSelect, SectionLabel, IconButton, fitPillText, mobile, ms, useMobileLayout } from "./ui";
 
 const sorting = ["Önerilen", "En yeni", "Fiyat: düşükten yükseğe", "Fiyat: yüksekten düşüğe", "En yüksek komisyon"];
 export function MobileCatalogue({ slug, tabbed = false }: { slug?: string; tabbed?: boolean }) {
-  const params = useLocalSearchParams<{ q?: string; filters?: string; saved?:string }>();
+  const params = useLocalSearchParams<{ q?: string; filters?: string; saved?:string; from?: string }>();
   const saved=useSavedSearches();
   const [searchDraft, setSearchDraft] = useState(typeof params.q === "string" ? params.q : "");
   useEffect(() => { setSearchDraft(typeof params.q === "string" ? params.q : ""); }, [params.q]);
   const restored=restoreMobileSearch(params.saved);
   const router = useRouter();
   const { listings, categoryTree, marketplaceInitialLoading, marketplaceLoadFailed, retryMarketplace } = useStore();
-  const { tablet, maxWidth } = useMobileLayout();
+  const { wide, maxWidth } = useMobileLayout();
   const [remote, setRemote] = useState<Listing[]>([]);
   const [total, setTotal] = useState(0);
   const [remoteLoading, setRemoteLoading] = useState(false);
@@ -47,6 +47,10 @@ export function MobileCatalogue({ slug, tabbed = false }: { slug?: string; tabbe
   const [retry, setRetry] = useState(0);
   const [f, setF] = useState<Filters>(()=>restored.filters);
   const [filterOpen, setFilterOpen] = useState(params.filters === "1");
+  // `filters=1` (Ana Sayfa / Keşfet filtre düğmesi) paneli bir kez açar; panel kapanınca parametre
+  // temizlenir. Eskiden parametre rotada kalıyor + liste her ölçüt değişiminde yeniden mount oluyordu →
+  // "ilanları göster" sonrası ve her çip dokunuşunda panel yeniden açılıyordu.
+  useEffect(() => { if (params.filters === "1") setFilterOpen(true); }, [params.filters]);
   const [sort, setSort] = useState(sorting[["recommended","newest","priceAsc","priceDesc","commission"].indexOf(restored.sort)]||sorting[0]);
   // Web routes can remount on Back. Restore criteria from this history entry,
   // rather than relying exclusively on component state retained by native stacks.
@@ -65,6 +69,16 @@ export function MobileCatalogue({ slug, tabbed = false }: { slug?: string; tabbe
   const labelsKey = node?.slug ?? "";
   const activeFilters = mobileFilterCount(f);
   const back = useBackNavigation((trail.length > 1 ? `/kategori/${trail[trail.length - 2].slug}` : slug ? "/kategoriler" : "/explore") as Href);
+  // Keşfet mozaiğinden açılan liste AYNI sekmenin içinde gezinir; sekme geçmişinde ayrı kayıt oluşmadığı
+  // için router.back() önceki SEKMEYE (çoğunlukla Ana Sayfa) dönüyordu. Mozaikten gelindiyse Geri (başlık
+  // düğmesi + Android donanım tuşu) mozaiğe döner; diğer girişlerde (Ana Sayfa araması vb.) geçmiş korunur.
+  const backToDiscovery = tabbed && params.from === "explore";
+  const goBack = useCallback(() => { if (backToDiscovery) router.navigate("/explore"); else back(); }, [backToDiscovery, router, back]);
+  useFocusEffect(useCallback(() => {
+    if (Platform.OS !== "android" || !backToDiscovery) return;
+    const subscription = BackHandler.addEventListener("hardwareBackPress", () => { router.navigate("/explore"); return true; });
+    return () => subscription.remove();
+  }, [backToDiscovery, router]));
   const requestKey = JSON.stringify({ trail: trail.map(n => n.key), f, query, sort });
   const sortKey = ["recommended", "newest", "priceAsc", "priceDesc", "commission"][sorting.indexOf(sort)] || "recommended";
   const [loadedKey, setLoadedKey] = useState("");
@@ -91,9 +105,26 @@ export function MobileCatalogue({ slug, tabbed = false }: { slug?: string; tabbe
   const localResult = useMemo(() => filtered(source, f, query).sort((a, b) => sort === sorting[1] ? b.createdAt.localeCompare(a.createdAt) : sort === sorting[2] ? a.price - b.price : sort === sorting[3] ? b.price - a.price : sort === sorting[4] ? commission(b) - commission(a) : Number(Boolean(b.featured)) - Number(Boolean(a.featured))), [source, f, query, sort]);
   const result = isSupabaseConfigured ? loadedKey === requestKey ? remote : [] : localResult;
   const resultTotal = isSupabaseConfigured ? total : localResult.length;
+  // Aşağı çekerek yenile: mevcut ölçütlerle ilk sayfayı yeniden çeker; liste yanıt gelene kadar ekranda kalır.
+  // Yenileme sürerken "daha fazla" isteği başlamaz: eski ofsetle gelen sayfa yeni ilk sayfaya eklenip arada boşluk bırakırdı.
+  const [refreshing, setRefreshing] = useState(false);
+  const refreshLock = useRef(false);
+  async function refresh() {
+    if (refreshLock.current) return;
+    if (!isSupabaseConfigured) { setRefreshing(true); try { await retryMarketplace(); } catch { /* yerel mod: hata kartı zaten gösterilir */ } finally { setRefreshing(false); } return; }
+    refreshLock.current = true;
+    const revision = ++requestRevision.current;
+    moreLock.current = null;
+    setRefreshing(true); setRemoteError(false); setLoadingMore(false);
+    try {
+      const data = await fetchMobileCatalogue({ trail, filters: f, query, sort: sortKey });
+      if (revision === requestRevision.current) { setRemote(Array.from(new Map(data.listings.map(l => [l.id, l])).values())); setTotal(data.total); setNextOffset(data.listings.length); setHasMore(data.listings.length > 0 && data.listings.length < data.total); setLoadedKey(requestKey); }
+    } catch { if (revision === requestRevision.current) setRemoteError(true); }
+    finally { refreshLock.current = false; if (revision === requestRevision.current) setRemoteLoading(false); setRefreshing(false); }
+  }
   async function more() {
     if (!isSupabaseConfigured) { setLimit(v => v + 24); return; }
-    if (loadingMore || remoteLoading || loadedKey !== requestKey || !hasMore || moreLock.current !== null) return;
+    if (loadingMore || remoteLoading || loadedKey !== requestKey || !hasMore || moreLock.current !== null || refreshLock.current) return;
     const revision = requestRevision.current;
     moreLock.current = revision;
     setLoadingMore(true); setRemoteError(false);
@@ -103,15 +134,24 @@ export function MobileCatalogue({ slug, tabbed = false }: { slug?: string; tabbe
     } catch { if (revision === requestRevision.current) setRemoteError(true); }
     finally { if (moreLock.current === revision) moreLock.current = null; if (revision === requestRevision.current) setLoadingMore(false); }
   }
+  const reachEnd = () => { if (isSupabaseConfigured ? hasMore && !remoteError : result.length > limit) void more(); };
+  // Panel kapanınca `filters=1` silinir. Sekmeli listede `view=list` de yazılır: yalnız `filters=1` ile
+  // gelinmişse parametre silinince liste Keşfet mozaiğine düşmesin.
+  const filterParamReset = (): { filters?: undefined; view?: string } => params.filters === "1" ? (tabbed ? { filters: undefined, view: "list" } : { filters: undefined }) : {};
+  function closeFilter() {
+    setFilterOpen(false);
+    if (params.filters === "1") router.setParams(filterParamReset());
+  }
   function saveCriteria(filters: Filters, nextSort = sort) {
     setF(filters); setSort(nextSort);
-    router.setParams({ saved: JSON.stringify({ mobile: filters, cat: node?.slug, sort: ["recommended", "newest", "priceAsc", "priceDesc", "commission"][sorting.indexOf(nextSort)] || "recommended" }) });
+    router.setParams({ ...filterParamReset(), saved: JSON.stringify({ mobile: filters, cat: node?.slug, sort: ["recommended", "newest", "priceAsc", "priceDesc", "commission"][sorting.indexOf(nextSort)] || "recommended" }) });
   }
   function search(value = searchDraft) {
     Keyboard.dismiss();
     const q = value.trim().replace(/\s+/g, " ");
     setSearchDraft(q);
-    router.setParams({ q });
+    // Sekmeli listede `view=list` korunur: arama temizlenince liste Keşfet mozaiğine düşmesin.
+    router.setParams(tabbed ? { q, view: "list" } : { q });
   }
   // Category transitions are real navigation entries, so Back restores the previous
   // category and filters rather than skipping to the home tab.
@@ -121,15 +161,22 @@ export function MobileCatalogue({ slug, tabbed = false }: { slug?: string; tabbe
     const sameCategory = (target?.slug || "") === (node?.slug || "");
     const nextFilters = filters ?? (sameCategory ? f : { ...f, attrs: {}, ranges: {}, texts: {} });
     if (sameCategory) { saveCriteria(nextFilters); return; }
+    if (params.filters === "1") router.setParams(filterParamReset());
     const routeParams = { q: query, saved: JSON.stringify({ mobile: nextFilters, sort: sortKey }) };
     router.push(target
       ? { pathname: "/kategori/[slug]", params: { ...routeParams, slug: target.slug } } as Href
-      : { pathname: "/explore", params: { ...routeParams, view: "list" } } as Href);
+      : { pathname: "/explore", params: { ...routeParams, view: "list", ...(tabbed && params.from ? { from: params.from } : {}) } } as Href);
   }
   const update = (patch: Partial<Filters>) => saveCriteria({ ...f, ...patch });
   const isBusy = isSupabaseConfigured ? remoteLoading || !remoteError && loadedKey !== requestKey : marketplaceInitialLoading;
+  const filterSchema = getFormSchema(resolveFormKey(trail));
+  const fieldLabel = (key: string) => filterSchema?.fields.find(d => d.key === key)?.label || key;
+  const valueLabel = (value: string | string[]) => Array.isArray(value) ? value.join(", ") : value === "true" ? "Evet" : value === "false" ? "Hayır" : value;
+  // Telefon 1, küçük tablet (600 dp+) 2, geniş tablet 3 sütun.
+  const columns = maxWidth >= 1000 ? 3 : wide ? 2 : 1;
+  const rowWidth = Math.floor((maxWidth - 24 - (columns - 1) * 9) / columns);
   return <>
-    <MobileScreen onBack={back} title={label} right={<IconButton name="heart-outline" label="Favoriler" onPress={() => router.push("/favorites")} />} bottom={tabbed ? undefined : <MobileBottomNav />} contentStyle={{ paddingHorizontal: 12 }}>
+    <MobileScreen onBack={goBack} refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => void refresh()} tintColor={mobile.teal} colors={[mobile.teal]} />} onEndReached={reachEnd} title={label} right={<IconButton name="heart-outline" label="Favoriler" onPress={() => router.push("/favorites")} />} bottom={tabbed ? undefined : <MobileBottomNav />} contentStyle={{ paddingHorizontal: 12 }}>
       {trail.length > 1 && <Text testID="category-breadcrumb" numberOfLines={1} accessibilityLabel={trail.map(n => n.label).join(" / ")} style={[ms.muted, { fontSize: 11, marginBottom: 6 }]}>{trail.map(n => n.label).join(" / ")}</Text>}
       <View style={[ms.row, { borderWidth: 1, borderColor: mobile.line, borderRadius: 12, backgroundColor: "white", paddingLeft: 10, marginBottom: 12 }]}>
         <Icon name="magnify" size={21} color={mobile.muted} />
@@ -138,14 +185,14 @@ export function MobileCatalogue({ slug, tabbed = false }: { slug?: string; tabbe
         <Pressable accessibilityRole="button" accessibilityLabel="İlan ara" onPress={() => search()} style={{ backgroundColor: mobile.teal, borderRadius: 9, paddingHorizontal: 12, minHeight: 38, justifyContent: "center", marginRight: 3 }}><Text style={{ color: "white", fontWeight: "700" }}>Ara</Text></Pressable>
       </View>
       <Text style={{ textAlign: "center", color: mobile.muted, marginTop: -3, marginBottom: 12, fontSize: 12 }}>{isBusy ? "İlanlar yükleniyor…" : remoteError && !result.length ? "İlanlar yüklenemedi" : `${groupThousands(resultTotal)} ilan`}</Text>
-      <View style={s.toolbar}><MobileChip label="Tümü" selected={activeFilters === 0} onPress={() => saveCriteria(clearMobileFilters({ ...f, currency: undefined }))} /><MobileChip label="Sahibinden" selected={f.owner} onPress={() => update({ owner: !f.owner })} /><MobileChip label="Ortaklığa Açık" selected={f.open} onPress={() => update({ open: !f.open })} /><View style={{ flex: 1, minWidth: tablet ? 160 : 85 }}><MobileSelect value={sort === sorting[0] ? "Sırala" : sort} options={sorting} onChange={(value) => saveCriteria(f, value)} /></View></View>
+      <View style={s.toolbar}><MobileChip label="Tümü" selected={activeFilters === 0} onPress={() => saveCriteria(clearMobileFilters({ ...f, currency: undefined }))} /><MobileChip label="Sahibinden" selected={f.owner} onPress={() => update({ owner: !f.owner })} /><MobileChip label="Ortaklığa Açık" selected={f.open} onPress={() => update({ open: !f.open })} /><View style={{ flex: 1, minWidth: wide ? 160 : 85 }}><MobileSelect value={sort === sorting[0] ? "Sırala" : sort} options={sorting} onChange={(value) => saveCriteria(f, value)} /></View></View>
       <View style={[s.toolbar, { marginTop: 9, marginBottom: 12 }]}>
         {!!f.currency && <MobileChip label={`Para birimi: ${f.currency} ×`} onPress={() => update({ currency: undefined })} />}
         {f.loc.provinceId && <MobileChip label={`${provinces.find((p) => p.id === f.loc.provinceId)?.name} ×`} icon="map-marker" onPress={() => update({ loc: {} })} />}
         {(f.min || f.max) && <MobileChip label={`${f.min || "0"} – ${f.max || "∞"}${f.currency ? ` ${f.currency === "TRY" ? "TL" : f.currency}` : ""} ×`} onPress={() => update({ min: "", max: "" })} />}
-        {Object.entries(f.attrs).filter(([, v]) => Array.isArray(v) ? v.length : v).map(([key, v]) => <MobileChip key={key} label={`${v} ×`} onPress={() => update({ attrs: { ...f.attrs, [key]: "" } })} />)}
-        {Object.entries(f.ranges).filter(([,v]) => v.min || v.max).map(([key,v]) => <MobileChip key={key} label={`${getFormSchema(resolveFormKey(trail))?.fields.find(d => d.key === key)?.label || key}: ${v.min || "0"} – ${v.max || "∞"} ×`} onPress={() => update({ ranges: { ...f.ranges, [key]: { min: "", max: "" } } })} />)}
-        {Object.entries(f.texts).filter(([,v]) => v).map(([key,v]) => <MobileChip key={key} label={`${v} ×`} onPress={() => update({ texts: { ...f.texts, [key]: "" } })} />)}
+        {Object.entries(f.attrs).filter(([, v]) => Array.isArray(v) ? v.length : v).map(([key, v]) => <MobileChip key={key} label={`${fieldLabel(key)}: ${valueLabel(v)} ×`} onPress={() => update({ attrs: { ...f.attrs, [key]: "" } })} />)}
+        {Object.entries(f.ranges).filter(([,v]) => v.min || v.max).map(([key,v]) => <MobileChip key={key} label={`${fieldLabel(key)}: ${v.min || "0"} – ${v.max || "∞"} ×`} onPress={() => update({ ranges: { ...f.ranges, [key]: { min: "", max: "" } } })} />)}
+        {Object.entries(f.texts).filter(([,v]) => v).map(([key,v]) => <MobileChip key={key} label={`${fieldLabel(key)}: ${v} ×`} onPress={() => update({ texts: { ...f.texts, [key]: "" } })} />)}
         <MobileChip label="Kategori" icon="view-grid-outline" onPress={() => setCategoryOpen(true)} /><View style={{ flex: 1 }} /><MobileChip label="Aramayı Kaydet" icon="bookmark-outline" onPress={()=>{saved.add(query,{mobile:f,cat:node?.slug,sort:sortKey});showToast("Arama bu cihazda kaydedildi.");}}/><MobileChip label={activeFilters ? `Filtrele (${activeFilters})` : "Filtrele"} icon="tune-variant" selected={activeFilters > 0} onPress={() => setFilterOpen(true)} />
       </View>
       {activeFilters > 0 && <View style={{ marginBottom: 10, gap: 7 }}><Text style={ms.muted}>{activeFilters} filtre uygulandı</Text><HorizontalScroll showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 6 }}>
@@ -153,11 +200,11 @@ export function MobileCatalogue({ slug, tabbed = false }: { slug?: string; tabbe
         <MobileChip label="Tüm filtreleri temizle" icon="filter-remove-outline" onPress={() => saveCriteria(clearMobileFilters({ ...f, currency: undefined }))} />
       </HorizontalScroll></View>}
       {node?.children?.length ? <HorizontalScroll  showsHorizontalScrollIndicator={false} style={{ marginBottom: 12 }} contentContainerStyle={{ gap: 7 }}>{node.children.map((n) => <MobileChip key={n.key} label={n.label} onPress={() => chooseCategory([...trail, n])} />)}</HorizontalScroll> : null}
-      {(isSupabaseConfigured ? remoteError : marketplaceLoadFailed) && !result.length ? <MarketplaceRetry onRetry={() => { setRetry((v) => v + 1); return retryMarketplace(); }} /> : !result.length ? <MobileCard><Text style={ms.section}>{isBusy ? "İlanlar yükleniyor…" : "Bu kriterlerde ilan bulunamadı"}</Text><Text style={ms.muted}>{isBusy ? "Güncel ilanlar hazırlanıyor." : query ? "Arama kelimelerini değiştirebilir veya filtrelerini genişletebilirsin." : "Filtreleri değiştirebilir veya diğer kategorilere göz atabilirsin."}</Text>{!isBusy && <>{!!query && <MobileButton secondary onPress={() => search("")}>Aramayı temizle</MobileButton>}{activeFilters > 0 ? <MobileButton secondary onPress={() => saveCriteria(clearMobileFilters({ ...f, currency: undefined }))}>Filtreleri temizle</MobileButton> : !query && <MobileButton secondary onPress={() => router.push("/kategoriler")}>Diğer kategorilere göz at</MobileButton>}</>}</MobileCard> : <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>{(isSupabaseConfigured ? result : result.slice(0, limit)).map((l) => <MobileRowListing key={l.id} listing={l} width={tablet ? Math.floor((maxWidth - 33) / 2) : maxWidth - 24} />)}</View>}
+      {(isSupabaseConfigured ? remoteError : marketplaceLoadFailed) && !result.length ? <MarketplaceRetry onRetry={() => { setRetry((v) => v + 1); return retryMarketplace(); }} /> : !result.length ? <MobileCard><Text style={ms.section}>{isBusy ? "İlanlar yükleniyor…" : "Bu kriterlerde ilan bulunamadı"}</Text><Text style={ms.muted}>{isBusy ? "Güncel ilanlar hazırlanıyor." : query ? "Arama kelimelerini değiştirebilir veya filtrelerini genişletebilirsin." : "Filtreleri değiştirebilir veya diğer kategorilere göz atabilirsin."}</Text>{!isBusy && <>{!!query && <MobileButton secondary onPress={() => search("")}>Aramayı temizle</MobileButton>}{activeFilters > 0 ? <MobileButton secondary onPress={() => saveCriteria(clearMobileFilters({ ...f, currency: undefined }))}>Filtreleri temizle</MobileButton> : !query && <MobileButton secondary onPress={() => router.push("/kategoriler")}>Diğer kategorilere göz at</MobileButton>}</>}</MobileCard> : <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 9 }}>{(isSupabaseConfigured ? result : result.slice(0, limit)).map((l) => <MobileRowListing key={l.id} listing={l} width={rowWidth} />)}</View>}
       {remoteError && result.length > 0 && <Text accessibilityRole="alert" style={ms.error}>Diğer ilanlar yüklenemedi. Yeniden deneyebilirsin.</Text>}
       {!isBusy && (isSupabaseConfigured ? hasMore : result.length > limit) && <MobileButton secondary disabled={loadingMore} onPress={() => void more()}>{loadingMore ? "Yükleniyor…" : remoteError ? "Tekrar dene" : "Daha fazla ilan göster"}</MobileButton>}
     </MobileScreen>
-    <Modal statusBarTranslucent navigationBarTranslucent visible={filterOpen} animationType="slide" onRequestClose={() => setFilterOpen(false)}>{filterOpen && <MobileFilter initial={f} trail={trail} source={source} query={query} onClose={() => setFilterOpen(false)} onApply={(v, path) => chooseCategory(path, v)} />}</Modal>
+    <Modal statusBarTranslucent navigationBarTranslucent visible={filterOpen} animationType="slide" onRequestClose={closeFilter}>{filterOpen && <MobileFilter initial={f} trail={trail} source={source} query={query} onClose={closeFilter} onApply={(v, path) => chooseCategory(path, v)} />}</Modal>
     <MobileCategorySelect key={categoryOpen ? labelsKey : "closed"} visible={categoryOpen} initial={trail} onSelect={(p) => chooseCategory(p)} onClose={() => setCategoryOpen(false)} />
   </>;
 }
@@ -166,14 +213,19 @@ export const MobileRowListing = memo(function MobileRowListing({ listing: l, wid
   const router = useRouter();
   const { isFav, toggle } = useFavoriteFlag(l.id);
   const a = l.attributes ?? {};
-  const photoCount = new Set([l.imageUrl || l.image, ...(l.adAssets ?? [])].filter(Boolean)).size;
+  const photoCount = listingPhotos(l).length;
+  // Komisyon hapı görselin içinde tek satırdır (genişliğin %95'i). Dar ekranda TUTAR "…" ile kırpılıyordu;
+  // sığmıyorsa "Komisyon" sözcüğü düşer (ikon anlamı taşır), yazı 10 px'in altına inmez.
+  const [imageWidth, setImageWidth] = useState(width ? Math.round((width - 10) * 0.43) : 0);
+  const amount = listingCommissionDisplay(l);
+  const commissionLabel = fitPillText(amount ? [`Komisyon ${amount}`, amount] : ["Komisyonu satıcıya sor", "Satıcıya sor"], imageWidth * 0.95 - 30);
   const details = [["calendar", a.year], ["speedometer", a.km ? `${groupThousands(Number(a.km))} km` : a.rooms], ["gas-station", a.fuel], ["car-shift-pattern", a.gear ?? a.transmission]] as const;
   return <View testID="catalogue-listing" style={[s.listing, { width }]}>
     <Pressable accessibilityRole="button" accessibilityLabel={displayListingTitle(l.title)} onPress={() => router.push(`/listing/${l.id}` as never)} style={{ flexDirection: "row", alignItems: "flex-start", gap: 10 }}>
-      <View style={s.listingImage}><SafeRemoteImage uri={l.imageUrl || l.image} fallbackUri={l.fallbackCategoryImage} accessibilityLabel={displayListingTitle(l.title)} style={{ width: "100%", height: "100%" }} />{l.partnershipMode !== "none" && <View style={s.commission}><Icon name="account-group" size={13} color="white" /><Text numberOfLines={1} style={s.commissionText}>{listingCommissionDisplay(l) ? `Komisyon ${listingCommissionDisplay(l)}` : "Komisyonu satıcıya sor"}</Text></View>}<View style={s.imageCount}><Icon name="image" size={9} color="white" /><Text style={{ color: "white", fontSize: 10 }}>{photoCount ? `1/${photoCount}` : "Fotoğraf yok"}</Text></View></View>
+      <View style={s.listingImage} onLayout={(event) => setImageWidth(Math.round(event.nativeEvent.layout.width))}><SafeRemoteImage uri={l.imageUrl || l.image} fallbackUri={l.fallbackCategoryImage} accessibilityLabel={displayListingTitle(l.title)} style={{ width: "100%", height: "100%" }} />{l.partnershipMode !== "none" && <View style={s.commission}><Icon name="account-group" size={13} color="white" /><Text numberOfLines={1} style={s.commissionText}>{commissionLabel}</Text></View>}<View style={s.imageCount}><Icon name="image" size={9} color="white" /><Text style={{ color: "white", fontSize: 10 }}>{photoCount ? `1/${photoCount}` : "Fotoğraf yok"}</Text></View></View>
       <View style={{ flex: 1, paddingVertical: 5, gap: 5 }}><Text numberOfLines={2} style={s.listingTitle}>{displayListingTitle(l.title)}</Text><Text numberOfLines={1} adjustsFontSizeToFit style={s.price}>{moneyIn(l.price, l.currency)}</Text><View style={ms.row}><Icon name="map-marker" size={13} color={mobile.muted} /><Text numberOfLines={1} style={[ms.muted, { fontSize: 10, flex: 1 }]}>{l.location}</Text></View><View style={[ms.wrap, { gap: 7 }]}>{details.filter(([, v]) => v != null && v !== "").map(([icon, value]) => <View key={icon} style={{ flexDirection: "row", gap: 4, alignItems: "center" }}><Icon name={icon} size={11} color={mobile.muted} /><Text style={{ fontSize: 10, color: mobile.muted }}>{String(value)}</Text></View>)}</View><Text style={[s.status, l.partnershipMode === "none" && { backgroundColor: "#F2F4F7", color: "#475569" }]}>{l.partnershipMode === "none" ? "Ortaklığa Kapalı" : l.partnershipMode === "invite" ? "Davetle Ortaklık" : "Ortaklığa Açık"}</Text></View>
     </Pressable>
-    <Pressable accessibilityRole="button" accessibilityLabel={isFav ? "Favorilerden çıkar" : "Favorilere ekle"} accessibilityState={{ selected: isFav }} aria-pressed={isFav} onPress={toggle} style={s.heart}><Icon name={isFav ? "heart" : "heart-outline"} size={24} color={isFav ? "#FF657C" : "white"} /></Pressable>
+    <Pressable accessibilityRole="button" accessibilityLabel={isFav ? "Favorilerden çıkar" : "Favorilere ekle"} accessibilityState={{ selected: isFav }} aria-pressed={isFav} onPress={toggle} hitSlop={6} style={s.heart}><Icon name={isFav ? "heart" : "heart-outline"} size={24} color={isFav ? "#FF657C" : "white"} /></Pressable>
   </View>;
 });
 
@@ -186,7 +238,7 @@ export function MobileFilter({ initial, trail: initialTrail, source, query, onAp
   const locationRequest = useRef(0), locatingLock = useRef(false), locationAlive = useRef(true);
   useEffect(() => { locationAlive.current = true; return () => { locationAlive.current = false; locationRequest.current++; }; }, []);
   useEffect(() => { locationRequest.current++; }, [f.loc.provinceId, f.loc.districtId, f.loc.neighborhoodId]);
-  const { tablet } = useMobileLayout();
+  const { tablet, insets } = useMobileLayout();
   const rawSchemaKey = resolveFormKey(trail);
   const schemaKey = rawSchemaKey;
   const schema = trail.length ? getFormSchema(schemaKey) : undefined;
@@ -195,7 +247,9 @@ export function MobileFilter({ initial, trail: initialTrail, source, query, onAp
   const field = (key: string) => schema?.fields.find((f) => f.key === key);
   const attr = (key: string, value: string) => setF((s) => ({ ...s, attrs: { ...s.attrs, [key]: value === "Tümü" ? "" : value, ...(key === "brand" ? { model: "" } : {}) }, texts: key === "brand" ? { ...s.texts, model: "" } : s.texts }));
   const update = (patch: Partial<Filters>) => setF((v) => ({ ...v, ...patch }));
-  const maxPrice = Math.max(5_000_000, ...source.filter(l => !f.currency || l.currency === f.currency).map((l) => l.price));
+  // Kaydırıcı tavanı kategorinin kendi en yüksek fiyatından türetilir (yuvarlanmış). Eskiden en az
+  // 5.000.000 idi → ~300 dp'lik izde 1 dp ≈ 16.700 TL: 100 bin TL altı kategorilerde kaydırıcı kullanılamıyordu.
+  const maxPrice = priceCeiling(source.filter(l => !f.currency || l.currency === f.currency).map((l) => l.price));
   const priceSymbol = f.currency === "TRY" ? "₺ " : f.currency === "USD" ? "$ " : f.currency === "EUR" ? "€ " : "";
   const [count, setCount] = useState<number | null>(null);
   const [countError, setCountError] = useState(false);
@@ -227,8 +281,8 @@ export function MobileFilter({ initial, trail: initialTrail, source, query, onAp
     finally { locatingLock.current = false; if (locationAlive.current) setLocating(false); }
   }
   return <>
-    <MobileScreen onBack={onClose} title="Filtrele" footer={<></>} right={<Pressable accessibilityRole="button" accessibilityLabel="Filtreleri sıfırla" style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center",paddingHorizontal:6}} onPress={() => setF(clearMobileFilters({ ...initial, currency: undefined }, lockOpen))}><Text style={{ color: mobile.teal, fontSize: 13, fontWeight: "700" }}>Temizle</Text></Pressable>} bottom={<View style={{ padding: 12, paddingBottom: 20, backgroundColor: "white" }}><MobileButton icon="magnify" disabled={!!filterError} onPress={() => onApply(f, trail)}>{countError ? "Filtreleri uygula" : count === null ? "Sonuçlar hesaplanıyor…" : `${groupThousands(count)} ilan göster`}</MobileButton><Pressable accessibilityRole="button" onPress={onClose} style={{ alignItems: "center", paddingTop: 9 }}><Text style={ms.muted}>Vazgeç</Text></Pressable></View>}>
-      <MobileCard style={{ flexDirection: "row", alignItems: "center" }}><CategoryArtwork tile={mobileCategories.find(c => trail[0]?.label.startsWith(c.match))?.tile ?? 15} size={48} /><View style={{ flex: 1 }}><Text style={ms.section}>{trail.map((n) => n.label).slice(0, 2).join(" / ") || "Tüm kategoriler"}</Text><Text style={ms.muted}>{countLabel}</Text></View><MobileChip label="Kategori Değiştir" onPress={() => setCategoryOpen(true)} /></MobileCard>
+    <MobileScreen onBack={onClose} title="Filtrele" footer={<></>} right={<Pressable accessibilityRole="button" accessibilityLabel="Filtreleri sıfırla" style={{minWidth:44,minHeight:44,alignItems:"center",justifyContent:"center",paddingHorizontal:6}} onPress={() => setF(clearMobileFilters({ ...initial, currency: undefined }, lockOpen))}><Text style={{ color: mobile.teal, fontSize: 13, fontWeight: "700" }}>Temizle</Text></Pressable>} contentStyle={tablet ? { maxWidth: FILTER_MAX_WIDTH } : undefined} bottom={<View style={{ padding: 12, paddingBottom: Math.max(20, insets.bottom + 12), backgroundColor: "white" }}><View style={tablet ? { width: "100%", maxWidth: FILTER_MAX_WIDTH, alignSelf: "center" } : undefined}><MobileButton icon="magnify" disabled={!!filterError} onPress={() => onApply(f, trail)}>{countError ? "Filtreleri uygula" : count === null ? "Sonuçlar hesaplanıyor…" : `${groupThousands(count)} ilan göster`}</MobileButton><Pressable accessibilityRole="button" onPress={onClose} style={{ alignItems: "center", justifyContent: "center", minHeight: 44, paddingTop: 5 }}><Text style={ms.muted}>Vazgeç</Text></Pressable></View></View>}>
+      <MobileCard style={{ flexDirection: "row", alignItems: "center" }}><CategoryArtwork tile={categoryTile(trail)} size={48} /><View style={{ flex: 1 }}><Text style={ms.section}>{trail.map((n) => n.label).slice(0, 2).join(" / ") || "Tüm kategoriler"}</Text><Text style={ms.muted}>{countLabel}</Text></View><MobileChip label="Kategori Değiştir" onPress={() => setCategoryOpen(true)} /></MobileCard>
       <View style={s.filterSection}><MobileSelect label="Para Birimi" value={f.currency || "Tümü"} options={["Tümü", "TRY", "USD", "EUR"]} onChange={v => update({ currency: v === "Tümü" ? undefined : v as Filters["currency"] })} /></View>
       <View style={s.filterSection}><SectionLabel icon="map-marker">Konum</SectionLabel><LocationSelector value={f.loc} onChange={(loc) => { locationRequest.current++; update({ loc }); }} mode="filter" showNeighborhood={false} />{deviceLocationAvailable && <Pressable accessibilityRole="button" accessibilityLabel="Konumumu kullan" accessibilityState={{ disabled: locating, busy: locating }} disabled={locating} onPress={locate} style={{ alignSelf: "flex-end", minHeight: 44, flexDirection: "row", alignItems: "center", gap: 6, paddingVertical: 9 }}><Icon name="crosshairs-gps" size={19} color={mobile.teal} /><Text style={{ color: mobile.teal, fontSize: 12 }}>{locating ? "Konum alınıyor…" : "Konumum"}</Text></Pressable>}</View>
       <View style={s.filterSection}><SectionLabel icon="database">Fiyat Aralığı</SectionLabel><PriceRange currency={f.currency} min={f.min} max={f.max} ceiling={maxPrice} onChange={(min, max) => update({ min, max })} /><View style={ms.row}><MobileField label="Min. Fiyat" placeholder={`${priceSymbol}0`} value={f.min} onChange={(min) => update({ min })} numeric /><MobileField label="Maks. Fiyat" placeholder={`${priceSymbol}${groupThousands(maxPrice)}+`} value={f.max} onChange={(max) => update({ max })} numeric /></View></View>
@@ -239,7 +293,7 @@ export function MobileFilter({ initial, trail: initialTrail, source, query, onAp
         if (!primary && !advanced) return null;
         const value = f.attrs[def.key];
         return <View key={def.key} style={s.filterSection}><SectionLabel icon={def.key === "fuel" ? "gas-station" : def.key === "year" ? "calendar" : def.type === "number" ? "ruler" : "tune-variant"}>{def.label}</SectionLabel>
-          {(def.type === "number" || def.key === "year" || def.key === "km") ? <View style={ms.row}><MobileField label={`${def.label} min.`} placeholder="Min." numeric value={f.ranges[def.key]?.min || ""} onChange={min => update({ ranges: { ...f.ranges, [def.key]: { min, max: f.ranges[def.key]?.max || "" } } })} /><MobileField label={`${def.label} maks.`} placeholder="Maks." numeric value={f.ranges[def.key]?.max || ""} onChange={max => update({ ranges: { ...f.ranges, [def.key]: { max, min: f.ranges[def.key]?.min || "" } } })} /></View>
+          {(def.type === "number" || def.key === "year" || def.key === "km") ? <View style={ms.row}><MobileField label={`${def.label} min.`} placeholder="Min." numeric value={f.ranges[def.key]?.min || ""} onChange={min => update({ ranges: { ...f.ranges, [def.key]: { min, max: f.ranges[def.key]?.max || "" } } })} /><MobileField label={`${def.label} maks.`} placeholder="Maks." numeric value={f.ranges[def.key]?.max || ""} onChange={max => update({ ranges: { ...f.ranges, [def.key]: { min: f.ranges[def.key]?.min || "", max } } })} /></View>
           : def.type === "bool" ? <View style={ms.wrap}>{[["", "Tümü"], ["true", "Evet"], ["false", "Hayır"]].map(([key,label]) => <MobileChip key={key} label={label} selected={(value || "") === key} onPress={() => attr(def.key,key)} />)}</View>
           : def.type === "multiselect" ? <View style={ms.wrap}>{(def.options ?? []).map(option => <MobileChip key={option} label={option} selected={Array.isArray(value) && value.includes(option)} onPress={() => { const old = Array.isArray(value) ? value : []; update({ attrs: { ...f.attrs, [def.key]: old.includes(option) ? old.filter(v => v !== option) : [...old, option] } }); }} />)}</View>
           : def.options?.length ? <MobileSelect placeholder={`${def.label} seçin`} value={String(value || "")} options={["Tümü", ...def.options]} onChange={v => attr(def.key,v)} />
@@ -253,6 +307,16 @@ export function MobileFilter({ initial, trail: initialTrail, source, query, onAp
     </MobileScreen>
     <MobileCategorySelect visible={categoryOpen} initial={trail} onClose={() => setCategoryOpen(false)} onSelect={(path) => { setTrail(path); setF(v => ({ ...v, attrs: {}, ranges: {}, texts: {}, open: lockOpen || v.open })); }} />
   </>;
+}
+// Filtre formu tablette kenardan kenara uzamasın (kategori seçici ile aynı ölçek).
+const FILTER_MAX_WIDTH = 720;
+/** Kaydırıcı tavanı: kategorinin en yüksek fiyatı, 1-2-5 basamağına yukarı yuvarlanır (taban 10.000). */
+function priceCeiling(prices: number[]): number {
+  const highest = prices.reduce((max, price) => Number.isFinite(price) && price > max ? price : max, 0);
+  if (highest <= 0) return 5_000_000;
+  const target = Math.max(10_000, highest);
+  const magnitude = 10 ** Math.floor(Math.log10(target));
+  return ([1, 2, 5, 10].find((step) => step * magnitude >= target) ?? 10) * magnitude;
 }
 function FilterSwitch({ label, value, onChange }: { label: string; value: boolean; onChange: (v: boolean) => void }) { return <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, minHeight: 48, marginVertical: 4 }}><Text style={{ flex: 1, color: mobile.ink, fontSize: 13, lineHeight: 18 }}>{label}</Text><Switch {...({ activeThumbColor: "#FFFFFF" } as object)} accessibilityLabel={label} value={value} onValueChange={onChange} trackColor={{ false: "#DDE3EA", true: mobile.teal }} thumbColor="white" /></View>; }
 function PriceRange({ min, max, ceiling, currency, onChange }: { min: string; max: string; ceiling: number; currency?: Filters["currency"]; onChange: (min: string, max: string) => void }) {

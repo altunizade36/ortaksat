@@ -18,7 +18,7 @@ export function CategoryArtwork({ tile, size = 65 }: { tile: number; size?: numb
 export function MobileCategories() {
   const router = useRouter();
   const { listings, categoryTree, marketplaceHasMore } = useStore();
-  const { tablet, maxWidth } = useMobileLayout();
+  const { tablet, wide, maxWidth } = useMobileLayout();
   const [query, setQuery] = useState("");
   const [all, setAll] = useState(false);
   const data = useMemo(() => mobileCategories.map((c) => {
@@ -27,11 +27,12 @@ export function MobileCategories() {
     return { ...c, node, count: node ? listings.filter((l) => l.status === "active" && inCategory(l, trail)).length : 0 };
   }), [categoryTree, listings]);
   const visible = data.filter((c) => searchKey(c.label).includes(searchKey(query)));
-  const columns = tablet ? (maxWidth > 950 ? 4 : 3) : 2;
+  // Küçük tabletler (600 dp+) de 3 sütun alır; telefonda 2.
+  const columns = tablet ? (maxWidth > 950 ? 4 : 3) : wide ? 3 : 2;
   const cardWidth = Math.floor((maxWidth - 32 - (columns - 1) * 8) / columns);
   return <><MobileScreen title="Kategoriler" bottom={<MobileBottomNav />}>
-    <View style={s.search}><Icon name="magnify" size={23} color="#626A79" /><TextInput accessibilityLabel="Kategori veya ürün ara" value={query} onChangeText={setQuery} placeholder="Kategori veya ürün ara..." placeholderTextColor="#7D8594" returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/explore", params: { q: query } })} style={s.input} /></View>
-    <View style={s.grid}>{visible.map((c) => <Pressable key={c.match} accessibilityRole="button" accessibilityLabel={c.label} onPress={() => c.match === "all" ? setAll((v) => !v) : c.node ? router.push(`/kategori/${c.node.slug}` as never) : router.push({ pathname: "/explore", params: { q: c.label } })} style={[s.card, { width: cardWidth }]}>
+    <View style={s.search}><Icon name="magnify" size={23} color="#626A79" /><TextInput accessibilityLabel="Kategori veya ürün ara" value={query} onChangeText={setQuery} placeholder="Kategori veya ürün ara..." placeholderTextColor="#7D8594" returnKeyType="search" onSubmitEditing={() => router.push({ pathname: "/explore", params: query.trim() ? { q: query.trim(), view: "list" } : {} })} style={s.input} /></View>
+    <View style={s.grid}>{visible.map((c) => <Pressable key={c.match} accessibilityRole="button" accessibilityLabel={c.label} onPress={() => c.match === "all" ? setAll((v) => !v) : c.node ? router.push(`/kategori/${c.node.slug}` as never) : router.push({ pathname: "/explore", params: { q: c.label, view: "list" } })} style={[s.card, { width: cardWidth }]}>
       <CategoryArtwork tile={c.tile} size={tablet ? 72 : cardWidth < 165 ? 50 : 55} />
       <View style={{ flex: 1, gap: 3 }}><Text style={s.name}>{c.label}</Text><Text style={s.count}>{c.match === "all" ? `${groupThousands(categoryTree.reduce((n, r) => n + countChildren(r), 0))} alt kategori` : c.count ? `${groupThousands(c.count)}${marketplaceHasMore ? "+" : ""} ilan` : "İlanları keşfet"}</Text></View><Icon name="chevron-right" size={18} color="#87909E" />
     </Pressable>)}</View>

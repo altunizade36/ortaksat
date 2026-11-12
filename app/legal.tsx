@@ -1,5 +1,5 @@
 ﻿import { MaterialCommunityIcons } from "@/components/icons";
-import { Link, useLocalSearchParams } from "expo-router";
+import { Link, useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
@@ -28,18 +28,15 @@ export default function LegalScreen() {
     backendMode,
     createSupportTicket,
     currentUser,
-    recordLegalConsent,
-    requestAccountDeletion
+    recordLegalConsent
   } = useStore();
+  const router = useRouter();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const isWideWeb = useIsWideWeb();
   const [subject, setSubject] = useState("Destek talebi");
   const [message, setMessage] = useState("Merhaba, OrtakSat hesabım veya ilan sürecim hakkında destek istiyorum.");
-  const [deleteReason, setDeleteReason] = useState("Hesabımı ve kişisel verilerimi silmek istiyorum.");
   const [category, setCategory] = useState("Genel");
   const [priority, setPriority] = useState("Normal");
-  const [deletionBusy, setDeletionBusy] = useState(false);
-  const [deletionSent, setDeletionSent] = useState(false);
 
   async function acceptAll() {
     const results = await Promise.all([
@@ -58,25 +55,10 @@ export default function LegalScreen() {
     else Alert.alert(translateCopy("Gönderilemedi", language), translateCopy("Canlı hesapla giriş yapıp konu ve mesaj yazmalısın.", language));
   }
 
-  // Hesap silme talebi HASSAS + geri döndürülmesi zor → tek dokunuşla açılmasın: onay iste.
-  // deletionBusy/deletionSent yinelenen (çift-dokunuş) talebi engeller (dedupe sunucuda da var).
+  // Hesap silme TEK ekranda yürür (/hesap-silme): neyin silindiği/saklandığı, 30 günlük süre,
+  // kimlik doğrulama (şifre ya da yazılı onay) ve talebin iptali orada.
   function requestDeletion() {
-    if (deletionBusy || deletionSent) return;
-    Alert.alert(
-      translateCopy("Hesap silme talebi", language),
-      translateCopy("Hesabının silinmesi için talep açılacak ve ekibimiz KVKK kapsamında işleme alacak. Devam edilsin mi?", language),
-      [
-        { text: translateCopy("Vazgeç", language), style: "cancel" },
-        { text: translateCopy("Talep aç", language), style: "destructive", onPress: () => void submitDeletion() }
-      ]
-    );
-  }
-  async function submitDeletion() {
-    setDeletionBusy(true);
-    const ok = await requestAccountDeletion(deleteReason);
-    setDeletionBusy(false);
-    if (ok) { setDeletionSent(true); showToast(translateCopy("Silme talebin kayıt altına alındı", language)); }
-    else Alert.alert(translateCopy("Talep açılamadı", language), translateCopy("Bu işlem için canlı hesapla giriş yapmalısın.", language));
+    router.push("/hesap-silme" as never);
   }
 
   if (isWideWeb) {
@@ -160,7 +142,7 @@ export default function LegalScreen() {
                     <Link href="/kvkk" asChild>
                       <Pressable style={{ alignItems: "center", borderColor: colors.line, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 11 }}><Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "800" }}>Veri Talebi Oluştur</Text></Pressable>
                     </Link>
-                    <Pressable onPress={() => void requestDeletion()} style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 11 }}><Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>Hesabımı Sil</Text></Pressable>
+                    <Pressable onPress={requestDeletion} style={{ alignItems: "center", backgroundColor: colors.accentSoft, borderColor: colors.accent, borderRadius: 10, borderWidth: 1, flex: 1, paddingVertical: 11 }}><Text style={{ color: colors.accent, fontSize: 13, fontWeight: "800" }}>Hesabımı Sil</Text></Pressable>
                   </View>
                 </View>
               </View>
@@ -271,10 +253,9 @@ export default function LegalScreen() {
         <Card>
           <SectionTitle title="Hesap silme talebi" />
           <Text selectable style={{ color: colors.muted, fontSize: 14, lineHeight: 20 }}>
-            {language === "en" ? "Store rules require that users can create an account/data deletion request inside the app. The request enters moderation and support flow." : "Mağaza kuralları gereği kullanıcı uygulama içinden hesap/veri silme talebi oluşturabilmelidir. Talep moderasyon ve destek sürecine düşer."}
+            {translateCopy("Hesabını silme talebi oluşturursan hesabın hemen askıya alınır ve 30 gün sonra kalıcı olarak silinir. Bu süre içinde giriş yapıp talebi iptal edebilirsin.", language)}
           </Text>
-          <Field label="Talep nedeni" value={deleteReason} onChangeText={setDeleteReason} multiline />
-          <PrimaryButton tone="danger" onPress={() => void requestDeletion()}>Hesap Silme Talebi Aç</PrimaryButton>
+          <PrimaryButton tone="danger" icon="trash-can-outline" onPress={requestDeletion}>Hesap silme ekranına git</PrimaryButton>
         </Card>
       </ScrollView>
     </KeyboardAvoidingView>

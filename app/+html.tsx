@@ -258,10 +258,10 @@ html, body { margin: 0; padding: 0; }
 html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
 /* Mobil tarayıcıda input odağında iOS'un otomatik yakınlaştırmasını engelle:
    16px altındaki alanlar odaklanınca sayfa zıplar. Telefonlarda tabanı 16px yap.
-   EŞİK 760px: mobil layout eşiğiyle (WIDE_WEB_BREAKPOINT, lib/layout.ts) AYNI olmalı —
-   eskiden 480px'ti; 481–760px (yatay/geniş telefon) mobil layout alıp inputlar 14px'e
-   dönüyor → iOS odakta zoom/kayma yapıyordu. */
-@media (max-width: 760px) {
+   EŞİK 1023px: mobil layout eşiğiyle (WIDE_WEB_BREAKPOINT = 1024, lib/layout.ts) AYNI olmalı —
+   eskiden 760px'ti; yatay tutulan iPhone (812–932px) mobil layout alıp bu kuralın DIŞINDA
+   kalıyor, 16px altı alanlar (sohbet yazma kutusu, teklif notu…) odakta zoom yapıyordu. */
+@media (max-width: 1023px) {
   input, textarea, select { font-size: 16px !important; }
 }
 /* Butonlarda iOS uzun-basış "kopyala/paylaş" balonunu kapat — app hissi. */

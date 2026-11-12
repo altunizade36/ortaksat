@@ -3,7 +3,9 @@ import { movePhoto, restorePhoto, type RemovedPhoto } from "@/lib/photo-order";
 import { HorizontalScroll } from "@/components/horizontal-scroll";
 import { ListingLocationFields } from "@/components/listing-location-fields";
 import { CompactFooter } from "@/components/compact-footer";
-import { ListingTitleField } from "@/components/listing-title-field";
+import { ListingTitleInput } from "@/components/listing-title-input";
+import { ListingVideoField, type ListingVideoStatus } from "@/components/listing-video-field";
+import { withListingVideo, type ListingVideoValue } from "@/lib/listing-video";
 import { validateListingTitle, normalizeListingTitle } from "@/lib/listing-title";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { BackHandler, Keyboard, Modal, Platform, Pressable, ScrollView, Switch, Text, TextInput, View } from "react-native";
@@ -31,6 +33,10 @@ type Props = {
   currency?: "TRY" | "USD" | "EUR";
   path: CategoryNode[]; onPath: (p: CategoryNode[]) => void; schema?: FormSchema; values: Values; onValue: (k: string, v: string | boolean | string[]) => void;
   images: string[]; onImages: (v: string[]) => void; onGallery: () => void; onCamera: () => void;
+  /** İsteğe bağlı TEK video (yüklenmiş URL) — fotoğraf sayısına dahil değil. */
+  video: ListingVideoValue | null; onVideo: (v: ListingVideoValue | null) => void; videoStatus: ListingVideoStatus; onVideoStatus: (s: ListingVideoStatus) => void; videoUserId?: string; canUploadVideo: boolean;
+  /** Kayıtlı taslağın videosu (alan onu depodan silmez) · alanı yeniden kuran anahtar (taslak geri yüklenince) · taslak videosu doğrulanıyor mu. */
+  videoKeepUrl?: string | null; videoFieldKey?: number; videoChecking?: boolean;
   loc: LocationValue; onLocation: (v: LocationValue) => void; visibility: string; onVisibility: (v: "city_only" | "district_only" | "neighborhood" | "full_address_private") => void;
   commissionType: CommissionType; onCommissionType: (v: CommissionType) => void; commissionValue: string; onCommission: (v: string) => void; partnershipMode: PartnershipMode; onPartnership: (v: PartnershipMode) => void;
   maxPartners: string; onMaxPartners: (v: string) => void; contactMethod: "message" | "whatsapp" | "phone"; onContact: (v: "message" | "whatsapp" | "phone") => void;
@@ -136,9 +142,17 @@ export function MobileCreateFlow(p: Props) {
     if (error) { invalid(error, 2); return false; }
     return true;
   }
+  /** Video yüklenirken ilerleme yok; başarısız video sessizce düşürülmez (kullanıcı karar verir). */
+  function videoBlocked() {
+    if (p.videoStatus === "uploading") { invalid("Video yükleniyor; yükleme bitince devam edebilirsin.", 0); return true; }
+    if (p.videoStatus === "error") { invalid("Video yüklenemedi: tekrar dene ya da videosuz devam et.", 0); return true; }
+    if (p.videoChecking) { invalid("Taslaktaki video kontrol ediliyor; birkaç saniye sonra tekrar dene.", 0); return true; }
+    return false;
+  }
   function showPreview() {
     if (p.picking || p.publishing) return;
     if (!p.images.length) { invalid("En az bir fotoğraf ekle.", 0); return; }
+    if (videoBlocked()) return;
     if (!validateProduct()) return;
     const locationError = validateListingLocation(p.loc);
     if (locationError) { invalid(locationError, 4); return; }
@@ -157,6 +171,7 @@ export function MobileCreateFlow(p: Props) {
     if (p.picking || p.publishing) return;
     if (step === 0) {
       if (!p.images.length) { invalid("En az bir fotoğraf ekle.", 0); return; }
+      if (videoBlocked()) return;
       goto(1); return;
     }
     if (step === 1) {
@@ -181,7 +196,7 @@ export function MobileCreateFlow(p: Props) {
       const value = p.values[def.key];
       if (value != null && value !== "") attributes[def.key] = def.type === "number" ? parseTrPrice(String(value)) : value;
     }
-    const draft: PreviewListing = { title: normalizeListingTitle(String(p.values.title || "")), description: String(p.values.description || ""), price, currency: p.currency || "TRY", category: p.path.map(n => n.label).join(" / "), location: formatLocation(p.loc, p.visibility as "city_only" | "district_only" | "neighborhood" | "full_address_private"), image: p.images[0] || "", adAssets: p.images.slice(1), attributes, partnershipMode: p.partnershipMode, commissionType: p.commissionType, commissionValue: partnerable ? commissionNumber : 0 };
+    const draft: PreviewListing = { title: normalizeListingTitle(String(p.values.title || "")), description: String(p.values.description || ""), price, currency: p.currency || "TRY", category: p.path.map(n => n.label).join(" / "), location: formatLocation(p.loc, p.visibility as "city_only" | "district_only" | "neighborhood" | "full_address_private"), image: p.images[0] || "", adAssets: withListingVideo(p.images.slice(1), p.video?.url), attributes, partnershipMode: p.partnershipMode, commissionType: p.commissionType, commissionValue: partnerable ? commissionNumber : 0 };
     return <MobileListingPreview listing={draft} onBack={back} onEdit={section => { if (section === "category") { setPreview(false); setCategoryOpen(true); } else goto(section === "photos" ? 0 : section === "partnership" ? 2 : 1); }} onConfirm={p.onPublish} busy={p.publishing} disabled={!p.acceptedLegal} legal={<LegalDisclaimerAccept value={p.acceptedLegal} onChange={p.onLegal}/>} error={p.error} />;
   }
   return <MobileScreen keyboardBehavior={Platform.OS === "android" ? "height" : undefined} onBack={back} title={preview ? "İlan Önizleme" : "İlan Ver"} right={<Pressable accessibilityRole="button" accessibilityLabel="Taslaklarım" onPress={() => setDraftOpen(true)}><Text style={{ color: mobile.teal, fontSize: 12, fontWeight: "700" }}>Taslaklarım</Text></Pressable>} scroll={false} bottom={<View><View testID="create-step-actions" style={{ paddingHorizontal: 13, paddingTop: 9, paddingBottom: keyboardOpen ? Math.max(9, insets.bottom + 9) : 9, backgroundColor: "white", borderTopWidth: 1, borderColor: mobile.line, gap: 6 }}>
@@ -202,9 +217,10 @@ export function MobileCreateFlow(p: Props) {
           <Text style={{ color: mobile.muted, fontSize: 11, lineHeight: 17 }}>Büyütmek, sıralamak, kapak yapmak veya kaldırmak için fotoğrafa dokun. İlk fotoğraf kapaktır.</Text>
           {removedPhoto && <View style={[ms.row, { flexWrap: "wrap" }]}><Text style={[ms.muted, { flex: 1 }]}>Fotoğraf kaldırıldı.</Text><MobileButton secondary disabled={p.picking || p.publishing || p.images.length >= 5 || p.images.includes(removedPhoto.uri)} onPress={() => { p.onImages(restorePhoto(p.images, removedPhoto)); setRemovedPhoto(null); }}>Geri al</MobileButton></View>}
           {photoOptions && <View style={ms.row}><MobileChip label="Galeriden seç" icon="image" onPress={() => { setPhotoOptions(false); p.onGallery(); }} /><MobileChip label="Fotoğraf çek" icon="camera" onPress={() => { setPhotoOptions(false); p.onCamera(); }} /></View>}
+          <ListingVideoField key={p.videoFieldKey ?? 0} value={p.video} onChange={p.onVideo} userId={p.videoUserId} canUpload={p.canUploadVideo} disabled={p.publishing || !!p.picking} keepUrl={p.videoKeepUrl} onStatus={p.onVideoStatus} />
         </MobileCard></View>
         <View onLayout={e => { positions.current[5] = e.nativeEvent.layout.y; }}><MobileCard><View style={[ms.row, { justifyContent: "space-between" }]}><SectionLabel icon="folder">2. Kategori Seç</SectionLabel><Pressable accessibilityRole="button" onPress={() => setCategoryOpen(true)}><Text style={{ color: mobile.teal, fontSize: 12 }}>Değiştir ›</Text></Pressable></View><Pressable accessibilityRole="button" accessibilityLabel="İlan kategorisi seç" onPress={() => setCategoryOpen(true)} style={[ms.row, { flexWrap: "wrap" }]}>{p.path.length ? p.path.map((n, i) => <View key={n.key} style={[ms.row, { maxWidth: "100%" }]}><Text style={[ms.chip, { fontSize: 11, color: mobile.ink, paddingVertical: 9, flexShrink: 1 }]}>{n.label}</Text>{i < p.path.length - 1 && <Icon name="chevron-right" size={16} color={mobile.muted} />}</View>) : <Text style={ms.muted}>İlanına uygun kategoriyi seç ›</Text>}</Pressable></MobileCard></View>
-        <View onLayout={(e) => { positions.current[1] = e.nativeEvent.layout.y; }}><MobileCard><SectionLabel icon="text-box">3. Ürün Bilgileri</SectionLabel><ListingTitleField inputRef={titleRef} invalid={invalidField === "title"} value={String(p.values.title || "")} onChange={setValue("title")} /><MobileField label="Açıklama" required={p.schema?.fields.find((f) => f.key === "description")?.required} value={String(p.values.description || "")} onChange={setValue("description")} multiline maxLength={LIMITS.description.max} />
+        <View onLayout={(e) => { positions.current[1] = e.nativeEvent.layout.y; }}><MobileCard><SectionLabel icon="text-box">3. Ürün Bilgileri</SectionLabel><ListingTitleInput inputRef={titleRef} invalid={invalidField === "title"} value={String(p.values.title || "")} onChange={setValue("title")} /><MobileField label="Açıklama" required={p.schema?.fields.find((f) => f.key === "description")?.required} value={String(p.values.description || "")} onChange={setValue("description")} multiline maxLength={LIMITS.description.max} />
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>{shownFields.filter((f) => f.type !== "bool" && f.type !== "multiselect").map((f) => <View key={f.key} style={{ width: f.type === "textarea" ? "100%" : tablet ? "31%" : "47%", flexGrow: 1 }}>{renderField(f)}</View>)}</View>
           {shownFields.filter((f) => f.type === "bool" || f.type === "multiselect").map((f) => <View key={f.key}>{renderField(f)}</View>)}
           {formFields.some((f) => !isPrimary(f)) && <MobileChip label={optionalOpen ? "Diğer özellikleri gizle" : "Diğer özellikleri ekle"} icon={optionalOpen ? "chevron-up" : "plus"} onPress={() => setOptionalOpen((v) => !v)} />}

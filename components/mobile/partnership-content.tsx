@@ -11,12 +11,14 @@ import {fetchPublicSeller} from "@/lib/supabase-data";
 import {useStore} from "@/lib/use-store";
 import {moneyIn} from "@/lib/format";
 import {colors} from "@/components/colors";
+import {partnershipStatusTitles} from "@/lib/status-labels";
 import type {Listing,Partnership,User} from "@/lib/types";
 import {MobileListingReviews} from "./listing-reviews";
 import {MobileButton,MobileCard,MobileChip,MobileScreen,IconButton,mobile,ms,useMobileLayout} from "./ui";
 // Anlamsal "kazanç/aktif" yeşili (teal değil): successSoft zemin üstünde AA okunur koyu ton.
 const GREEN_INK="#0645C9";
-export const partnershipStatusLabels:Record<string,string>={active:"Aktif Ortaklık",pending:"Onay Bekliyor",rejected:"Talep Reddedildi",cancelled:"Ortaklık Sonlandırıldı",completed:"Ortaklık Tamamlandı",blocked:"Ortaklık Kapatıldı"};
+// Kart başlığı biçimi — tek kaynak lib/status-labels.ts (eski ad geriye dönük uyum için korunur).
+export const partnershipStatusLabels:Record<string,string>=partnershipStatusTitles;
 export function MobilePartnershipContent({listing,partnership}:{listing:Listing;partnership:Partnership}){
  const store=useStore(),{maxWidth,tablet,height}=useMobileLayout(),[photo,setPhoto]=useState(0),[gallery,setGallery]=useState(false),[tab,setTab]=useState("Genel Bilgiler"),[expanded,setExpanded]=useState(false);
  const photos=listingPhotos(listing),potential=potentialCommission(listing,partnership),max=maximumPartners(listing),owner=listing.ownerId===store.currentUser.id,active=partnership.status==="active";

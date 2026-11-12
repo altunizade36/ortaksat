@@ -7,6 +7,8 @@ import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { describeAttributes } from "@/lib/category-tree";
 import { moneyIn } from "@/lib/format";
 import { listingPhotos, maximumPartners } from "@/lib/mobile-listing";
+import { isListingVideoUrl, splitListingMedia } from "@/lib/listing-video";
+import { VideoPreview } from "@/components/listing-video-field";
 import type { Listing } from "@/lib/types";
 import { MobileBottomNav, MobileButton, MobileCard, MobileChip, MobileScreen, IconButton, mobile, ms, useMobileLayout } from "./ui";
 
@@ -19,7 +21,9 @@ export function MobileListingPreview({ listing: l, onEdit, onBack, onConfirm, bu
   const { maxWidth, width: screenWidth, height: screenHeight, tablet, insets } = useMobileLayout();
   const [index, setIndex] = useState(0), [lightbox, setLightbox] = useState(false);
   const gallery = useRef<ScrollView>(null);
-  const photos = listingPhotos(l), width = maxWidth - 32;
+  // adAssets'in sonundaki TEK video fotoğraf galerisine karışmaz; ayrı bir blokta gösterilir.
+  const photos = listingPhotos(l).filter(uri => !isListingVideoUrl(uri)), width = maxWidth - 32;
+  const video = splitListingMedia(l.adAssets).video;
   const fields = describeAttributes(l.attributes ?? {}).filter(d => !/başlık|açıklama|fiyat/i.test(d.label));
   const open = l.partnershipMode !== "none", max = maximumPartners(l);
   function select(i: number) { setIndex(i); gallery.current?.scrollTo({ x: i * width, animated: true }); }
@@ -29,6 +33,7 @@ export function MobileListingPreview({ listing: l, onEdit, onBack, onConfirm, bu
     <MobileCard style={{backgroundColor:mobile.tealSoft,flexDirection:"row",alignItems:"center"}}><Icon name="eye" size={27} color={mobile.teal}/><View style={{flex:1}}><Text style={{fontWeight:"700",color:mobile.ink,fontSize:13}}>İlanını {editing ? "kaydetmeden" : "yayınlamadan"} önce son kontrolünü yap</Text><Text style={ms.muted}>Fotoğrafları, ürün bilgilerini ve ortaklık koşullarını aşağıdan kontrol edebilirsin.</Text></View></MobileCard>
     <View style={{height:tablet?350:230,borderRadius:12,overflow:"hidden",backgroundColor:"#EAF0F4"}}>{photos.length ? <ScrollView ref={gallery} horizontal pagingEnabled showsHorizontalScrollIndicator={false} onMomentumScrollEnd={e=>setIndex(Math.round(e.nativeEvent.contentOffset.x/width))}>{photos.map((uri,i)=><Pressable accessibilityRole="button" accessibilityLabel={`Önizleme fotoğraf ${i+1} büyüt`} style={{width,height:tablet?350:230}} key={uri} onPress={()=>{setIndex(i);setLightbox(true);}}><SafeRemoteImage full uri={uri} style={{width,height:"100%"}}/></Pressable>)}</ScrollView>:<Text style={{padding:30,color:mobile.muted}}>Fotoğraf eklenmemiş.</Text>}<Text style={{position:"absolute",left:10,top:10,padding:6,borderRadius:8,color:"white",backgroundColor:"#152333BB"}}>{photos.length ? `${index+1}/${photos.length}` : "Fotoğraf yok"}</Text></View>
     <HorizontalScroll  showsHorizontalScrollIndicator={false} contentContainerStyle={{gap:6,paddingVertical:8}}>{photos.map((uri,i)=><Pressable accessibilityRole="button" accessibilityLabel={`Önizleme fotoğraf ${i+1}`} accessibilityState={{selected:index===i}} key={uri} onPress={()=>select(i)} style={{borderWidth:2,borderColor:index===i?mobile.teal:"transparent",borderRadius:8,overflow:"hidden"}}><SafeRemoteImage uri={uri} style={{width:65,height:49}}/></Pressable>)}</HorizontalScroll>
+    {video && <MobileCard><View style={[ms.row,{justifyContent:"space-between"}]}><Text style={ms.section}>Video</Text>{edit("Değiştir","photos")}</View><View style={{height:tablet?300:190,borderRadius:10,overflow:"hidden",backgroundColor:"#0B1220"}}><VideoPreview uri={video} label="İlan videosu önizlemesi"/></View></MobileCard>}
     <View style={[ms.row,{justifyContent:"space-between",marginVertical:8}]}><View style={{flex:1}}><Text style={{fontWeight:"800",fontSize:21,color:mobile.ink}}>{displayListingTitle(l.title)}</Text><Text style={{fontSize:25,fontWeight:"800",color:mobile.teal,marginTop:5}}>{l.price>0?moneyIn(l.price,l.currency):"Fiyat belirtilmemiş"}</Text></View>{edit("Düzenle","details")}</View>
     <View style={[ms.row,{marginBottom:15,flexWrap:"wrap"}]}><Icon name="map-marker" size={17} color={mobile.muted}/><Text style={ms.muted}>{l.location}</Text><Text style={ms.muted}>{editing ? "Değişiklik önizlemesi" : "Henüz yayınlanmadı"}</Text></View>
     <View style={[ms.row,{justifyContent:"space-between",marginBottom:8}]}><Text style={ms.section}>İlan Detayları</Text>{edit("Detayları düzenle","details")}</View>

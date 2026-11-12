@@ -24,7 +24,7 @@ export function InformationPage({ title, intro, path, seoTitle, icon = "informat
     </View>
     {children}
     <View style={{ paddingTop: 12, borderTopWidth: 1, borderColor: colors.line, gap: 10 }}><Text style={{ color: colors.muted, fontSize: 12, fontWeight: "700" }}>{t("İlgili sayfalar")}</Text><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>{[
-      ["Hakkımızda", "/hakkimizda"], ["Yardım", "/sss"], ["İletişim", "/iletisim"], ["Gizlilik", "/gizlilik-politikasi"], ["Kullanım Şartları", "/kullanim-sartlari"], ["KVKK", "/kvkk"]
+      ["Hakkımızda", "/hakkimizda"], ["Yardım", "/sss"], ["İletişim", "/iletisim"], ["Gizlilik", "/gizlilik-politikasi"], ["Kullanım Şartları", "/kullanim-sartlari"], ["KVKK", "/kvkk"], ["Hesap Silme", "/hesap-silme"]
     ].filter(([, href]) => href !== path).map(([label, href]) => <Link href={href as Href} key={href} asChild><Pressable accessibilityRole="link" style={{ minHeight: 44, paddingHorizontal: 12, justifyContent: "center", borderRadius: 10, borderWidth: 1, borderColor: colors.line, backgroundColor: "white" }}><Text style={{ color: colors.primaryDark, fontSize: 12 }}>{t(label)}</Text></Pressable></Link>)}</View></View>
   </View>;
   return isMobileApp ? <MobileScreen title={title} bottom={<MobileBottomNav />}>{content}</MobileScreen> : <ScrollView style={{ flex: 1, backgroundColor: colors.background }} contentContainerStyle={{ flexGrow: 1 }} keyboardShouldPersistTaps="handled">{content}<WebFooter /></ScrollView>;

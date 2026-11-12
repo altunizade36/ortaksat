@@ -5,6 +5,8 @@ import { searchKey } from "./locale";
 type RecordValue = Record<string, unknown>;
 const record = (value: unknown): RecordValue => value && typeof value === "object" && !Array.isArray(value) ? value as RecordValue : {};
 const safeKey = (key: string) => !["__proto__", "prototype", "constructor"].includes(key);
+// NOT: aralıklar her zaman { min, max } SIRASIYLA yazılır — katalog isteği anahtarı JSON.stringify ile
+// üretildiği için farklı anahtar sırası aynı ölçütü iki ayrı istek sayardı (bkz. mobile/catalogue.tsx).
 const sorts: Record<string, string> = { recommended: "recommended", newest: "newest", new: "newest", priceAsc: "priceAsc", priceDesc: "priceDesc", commission: "commission" };
 
 /** Saved links and synced records can be older or malformed; restore only supported criteria. */

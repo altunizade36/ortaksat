@@ -2,6 +2,7 @@ import Constants from "expo-constants";
 import { Platform } from "react-native";
 
 import { savePushTokenLive } from "@/lib/live-service";
+import { supabase } from "@/lib/supabase";
 import { notificationEnabled } from "@/lib/notification-preferences";
 let currentPreferences:Record<string,unknown>={notify_all_off:true};
 export function setPushPreferences(preferences:Record<string,unknown>){currentPreferences=preferences;}
@@ -42,10 +43,43 @@ export async function registerForPush(): Promise<void> {
 
     const tokenResp = await Notifications.getExpoPushTokenAsync({ projectId });
     const token = tokenResp.data;
-    if (token) await savePushTokenLive(token, Platform.OS);
+    if (token) { registeredToken = token; await savePushTokenLive(token, Platform.OS); }
   } catch (err) {
     // Push kurulumu hiçbir zaman uygulamayı bloklamaz.
     if (__DEV__) console.warn("registerForPush skipped", err);
+  }
+}
+
+// Bu cihazda kaydedilen son Expo push token'ı (çıkışta silmek için).
+let registeredToken: string | null = null;
+
+/**
+ * Çıkıştan ÖNCE çağrılır: bu cihazın token'ını çıkış yapan kullanıcıdan ayırır. Yoksa push_tokens
+ * satırı eski kullanıcıda kalır ve onun bildirimleri (genel başlıkla da olsa) bu cihaza gelmeye
+ * devam eder; sıradaki kullanıcı görür. Oturum açıkken çalışmalı (RLS: user_id = auth.uid()).
+ * Web'de ve token yokken no-op. Hata uygulamayı/çıkışı asla bloklamaz.
+ *
+ * Çıkış bu çağrıyı BEKLER; çevrimdışıyken istek 15 sn'lik genel zaman aşımına kadar asılı kalıp
+ * "Çıkış yap" düğmesini ölü gösteriyordu → en çok UNREGISTER_WAIT_MS beklenir. Token yalnız silme
+ * BAŞARILIYSA unutulur (başarısızsa sonraki denemede yeniden silinebilsin).
+ */
+const UNREGISTER_WAIT_MS = 2500;
+export async function unregisterPush(): Promise<void> {
+  const token = registeredToken;
+  const client = supabase;
+  if (Platform.OS === "web" || !token || !client) return;
+  try {
+    const removal: Promise<boolean> = (async () => {
+      const { error } = await client.from("push_tokens").delete().eq("token", token);
+      return !error;
+    })().catch(() => false);
+    const removed = await Promise.race([
+      removal,
+      new Promise<boolean>((resolve) => setTimeout(() => resolve(false), UNREGISTER_WAIT_MS))
+    ]);
+    if (removed && registeredToken === token) registeredToken = null;
+  } catch {
+    /* no-op */
   }
 }
 

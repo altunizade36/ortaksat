@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { Animated, Modal, PanResponder, Platform, Pressable, ScrollView, Text, View, useWindowDimensions } from "react-native";
 import { Image } from "expo-image";
-import { usePathname, useRouter } from "expo-router";
+import { usePathname, useRouter, useSegments } from "expo-router";
+import { goToTabRoute, isTabHref } from "@/lib/mobile-access";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons as Icon } from "@/components/icons";
 import { colors } from "@/components/colors";
@@ -26,7 +27,10 @@ export function MobileDrawerProvider({ children }: { children: ReactNode }) {
   const closing=useRef(false);
   function open(){closing.current=false;translate.setValue(panelWidth);setVisible(true);Animated.timing(translate,{toValue:0,duration:230,useNativeDriver:Platform.OS!=="web"}).start();}
   function close(after?:()=>void){if(closing.current)return;closing.current=true;Animated.timing(translate,{toValue:panelWidth,duration:180,useNativeDriver:Platform.OS!=="web"}).start(()=>{setVisible(false);closing.current=false;after?.();});}
-  function go(href:string){close(()=>router.push(href as never));}
+  // NATIVE: sekme rotaları (İlanlarım, Mesajlarım, Profil, Ortaklıklarım…) kök yığına ikinci bir
+  // (tabs) navigatörü İTMESİN (bkz. goToTabRoute). Web'de ve yığın rotalarında eskisi gibi push.
+  const inTabs=(useSegments() as string[])[0]==="(tabs)";
+  function go(href:string){close(()=>{if(Platform.OS!=="web"&&isTabHref(href))goToTabRoute(router,href,inTabs);else router.push(href as never);});}
   const closeRef=useRef(close);closeRef.current=close;
   const gesture=useRef(PanResponder.create({onMoveShouldSetPanResponder:(_,g)=>g.dx>22&&Math.abs(g.dx)>Math.abs(g.dy)*1.5,onPanResponderMove:(_,g)=>translate.setValue(Math.max(0,g.dx)),onPanResponderRelease:(_,g)=>{if(g.dx>70||g.vx>0.7)closeRef.current();else Animated.spring(translate,{toValue:0,useNativeDriver:Platform.OS!=="web"}).start();}})).current;
   useEffect(()=>{setVisible(false);},[path]);

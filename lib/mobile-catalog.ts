@@ -30,16 +30,27 @@ export function listingCategoryTrail(nodes: CategoryNode[], listing: Pick<Listin
   return candidates.length === 1 ? candidates[0] : [];
 }
 
+// Her karo, ağaçtaki TEK bir düğüme `slug` ile bağlanır (slug'lar ağaçta benzersizdir). Eskiden yalnız
+// etiket önekiyle aranıyordu: "Oyun" → "Oyuncak"a, "Hobi" → "Hobi & El Sanatları"na düşüyordu. Karo adı,
+// açtığı düğümün ilanlarını anlatır ("Spor & Outdoor", "Sağlık & Medikal"); `match` yalnız durum anahtarıdır.
 export const mobileCategories = [
-  { label: "Emlak", match: "Emlak", tile: 0 }, { label: "Vasıta", match: "Vasıta", tile: 1 },
-  { label: "Elektronik", match: "Elektronik", tile: 2 }, { label: "Ev & Yaşam", match: "Ev", tile: 3 },
-  { label: "İkinci El & Sıfır Alışveriş", match: "İkinci El", tile: 4 }, { label: "İş Makineleri & Sanayi", match: "İş Makineleri", tile: 5 },
-  { label: "Ustalar & Hizmetler", match: "Ustalar", tile: 6 }, { label: "Özel Ders & Eğitim", match: "Özel Ders", tile: 7 },
-  { label: "Hobi & Spor", match: "Hobi", tile: 8 }, { label: "Moda & Aksesuar", match: "Moda", tile: 9 },
-  { label: "İş İlanları", match: "İş İlanları", tile: 10 }, { label: "Hayvanlar", match: "Hayvan", tile: 11 },
-  { label: "Yedek Parça & Aksesuar", match: "Yedek Parça", tile: 12 }, { label: "Oyun & Konsol", match: "Oyun", tile: 13 },
-  { label: "Sağlık & Güzellik", match: "Sağlık", tile: 14 }, { label: "Tüm Kategoriler", match: "all", tile: 15 },
+  { label: "Emlak", match: "Emlak", slug: "emlak", tile: 0 }, { label: "Vasıta", match: "Vasıta", slug: "vasita", tile: 1 },
+  { label: "Elektronik", match: "Elektronik", slug: "elektronik", tile: 2 }, { label: "Ev & Yaşam", match: "Ev", slug: "ev-ve-yasam", tile: 3 },
+  { label: "İkinci El & Sıfır Alışveriş", match: "İkinci El", slug: "ikinci-el-ve-sifir-alisveris", tile: 4 }, { label: "İş Makineleri & Sanayi", match: "İş Makineleri", slug: "is-makineleri-ve-sanayi", tile: 5 },
+  { label: "Ustalar & Hizmetler", match: "Ustalar", slug: "ustalar-ve-hizmetler", tile: 6 }, { label: "Özel Ders & Eğitim", match: "Özel Ders", slug: "ozel-ders-ve-egitim", tile: 7 },
+  { label: "Spor & Outdoor", match: "Spor", slug: "spor-ve-outdoor", tile: 8 }, { label: "Moda & Aksesuar", match: "Moda", slug: "moda", tile: 9 },
+  { label: "İş İlanları", match: "İş İlanları", slug: "is-ilanlari", tile: 10 }, { label: "Hayvanlar", match: "Hayvan", slug: "hayvanlar-alemi", tile: 11 },
+  { label: "Yedek Parça & Aksesuar", match: "Yedek Parça", slug: "yedek-parca-aksesuar-donanim-ve-tuning", tile: 12 }, { label: "Oyun & Konsol", match: "Oyun & Konsol", slug: "oyun-ve-konsol", tile: 13 },
+  { label: "Sağlık & Medikal", match: "Sağlık", slug: "saglik-ve-medikal", tile: 14 }, { label: "Tüm Kategoriler", match: "all", slug: "", tile: 15 },
 ];
+/** Bir kategori yolunun karo görseli: yolun EN DERİN karo düğümü (yoksa "tüm kategoriler" karosu). */
+export function categoryTile(trail: CategoryNode[]): number {
+  for (let i = trail.length - 1; i >= 0; i--) {
+    const tile = mobileCategories.find(c => c.slug && c.slug === trail[i].slug);
+    if (tile) return tile.tile;
+  }
+  return 15;
+}
 export function categoryTrail(nodes: CategoryNode[], slug: string): CategoryNode[] {
   let queue = nodes.map((node) => [node]);
   while (queue.length) {
@@ -68,6 +79,12 @@ export function searchCategoryPaths(nodes: CategoryNode[], query: string): Categ
   return found;
 }
 export function categoryByPrefix(nodes: CategoryNode[], prefix: string): CategoryNode | undefined {
+  // Karo anahtarları önce benzersiz slug ile çözülür; önek araması yalnız yedek yoldur.
+  const tileSlug = mobileCategories.find(c => c.match === prefix)?.slug;
+  if (tileSlug) {
+    const exact = categoryTrail(nodes, tileSlug);
+    if (exact.length) return exact[exact.length - 1];
+  }
   let layer = nodes;
   while (layer.length) {
     const node = layer.find((n) => searchKey(n.label).startsWith(searchKey(prefix)));
