@@ -182,7 +182,7 @@
       "typedRoutes": true
     },
     "web": {
-      "favicon": "./assets/brand-head-blue.png",
+      "favicon": "./assets/favicon-source.png",
       "bundler": "metro",
       "output": "static"
     },

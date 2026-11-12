@@ -45,7 +45,14 @@ export default function Root({ children }: PropsWithChildren) {
         <meta name="twitter:description" content="İlanını aç, ortakların paylaşsın, satışta komisyon kazan." />
         <meta name="twitter:image" content="https://www.ortaksat.com/og-cover.png" />
 
-        <link rel="icon" href="/favicon.ico" />
+        {/* SİTE SİMGESİ — arama sonuçlarında (Google/Bing) alan adının yanında çıkan logo buradan alınır.
+            Kurallar: kare, 48 pikselin katı, sabit adres, botlara açık. Simge BEYAZ DAİRE zeminlidir
+            (assets/favicon-source.png): şeffaf zeminli eski sürümde koyu temada el sıkışma kısmı kayboluyordu.
+            48/96/192 PNG + favicon.ico (16/32/48; app.json → web.favicon'dan üretilir) birlikte sunulur. */}
+        <link rel="icon" href="/favicon.ico" sizes="48x48" />
+        <link rel="icon" type="image/png" sizes="48x48" href="/favicon-48x48.png" />
+        <link rel="icon" type="image/png" sizes="96x96" href="/favicon-96x96.png" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192x192.png" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="manifest" href="/manifest.webmanifest" />
         {/* iOS "Ana Ekrana Ekle" → uygulama gibi standalone açılış + durum çubuğu stili.
@@ -199,7 +206,9 @@ const orgJsonLd = JSON.stringify({
       name: "OrtakSat",
       alternateName: ["Ortaksat", "ortak sat", "Ortak Sat", "ortaksat.com"],
       url: "https://www.ortaksat.com",
-      logo: "https://www.ortaksat.com/apple-touch-icon.png",
+      // Google "Organization logo" için en az 112×112, taranabilir ve opak zeminli görsel (512×512).
+      logo: { "@type": "ImageObject", url: "https://www.ortaksat.com/pwa-icon.png", width: 512, height: 512 },
+      image: "https://www.ortaksat.com/pwa-icon.png",
       description: "Ortak satış pazaryeri: ilanını aç, ortaklar kendi yöntemiyle tanıtsın, satışta komisyon kazan.",
       // Marka bilinirliği / Google knowledge-panel için: gerçek destek e-postası +
       // hizmet bölgesi. sameAs (sosyal profil) EKLENMEDİ — henüz gerçek hesap yok;
