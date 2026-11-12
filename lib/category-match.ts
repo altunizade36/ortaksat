@@ -1,4 +1,5 @@
 import { categoryTree, type CategoryNode } from "@/lib/category-tree";
+import { savedCategoryPath } from "@/lib/category-path";
 import { searchKey } from "@/lib/locale";
 import type { Listing } from "@/lib/types";
 
@@ -43,6 +44,8 @@ const trailCache = new Map<string, CategoryNode[]>();
 export function listingCategoryPath(listing: ListingRef): CategoryNode[] {
   if (!index || !rootKeys) build();
   const attrs = listing.attributes ?? {};
+  const exact = savedCategoryPath(categoryTree, listing);
+  if (exact) return exact;
   const leaf = searchKey(String(attrs._leaf || listing.category || ""));
   const root = searchKey(String(attrs._root || ""));
   const form = String(attrs._formKey || "");

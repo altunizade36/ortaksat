@@ -2,10 +2,13 @@ import type { CategoryNode } from "@/lib/category-tree";
 import { listingInCategoryNode } from "@/lib/category-match";
 import type { Listing } from "@/lib/types";
 import { searchKey } from "@/lib/locale";
+import { savedCategoryPath } from "@/lib/category-path";
 
 // Labels such as “Diğer Model” occur under several brands. Resolve a saved
 // listing using its brand as well, instead of silently choosing the first path.
 export function listingCategoryTrail(nodes: CategoryNode[], listing: Pick<Listing, "category" | "attributes">): CategoryNode[] {
+  const exact = savedCategoryPath(nodes, listing);
+  if (exact) return exact;
   const root = String(listing.attributes?._root || "");
   const leaf = String(listing.attributes?._leaf || listing.category);
   const brand = String(listing.attributes?.brand || listing.attributes?.compatBrand || "");

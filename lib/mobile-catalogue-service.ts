@@ -12,7 +12,7 @@ export async function fetchMobileCatalogue({ trail, filters, query = "", sort = 
   const node = trail[trail.length - 1];
   const { data, error } = await supabase.rpc("mobile_catalogue_page", { params: {
     root: trail[0]?.label ?? "", rootOnly: trail.length === 1,
-    labels: node ? categoryLabels(node) : [], forms: subtreeFormKeys(trail), filters, q: query.trim(), sort, offset, limit,
+    labels: node ? categoryLabels(node) : [], forms: subtreeFormKeys(trail), node: node?.slug ?? "", filters, q: query.trim(), sort, offset, limit,
   } });
   if (error) throw error;
   if (!data || !Array.isArray(data.listings) || !Number.isFinite(data.total)) throw new Error("Invalid catalogue response");

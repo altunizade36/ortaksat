@@ -1,5 +1,5 @@
 import { parseListingMoney, parseListingRate, listingCommissionError } from "@/lib/listing-numbers";
-import { resolveCategoryPath } from "@/lib/category-path";
+import { categoryPathAttributes, isLeafCategoryPath, resolveCategoryPath, searchCategoryTree } from "@/lib/category-path";
 import { ListingLocationFields } from "@/components/listing-location-fields";
 import { displayListingTitle } from "@/lib/listing-title";
 import { ListingTitleField } from "@/components/listing-title-field";
@@ -223,13 +223,25 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   }, [values.title, values.description, path]);
 
   const setV = (k: string, v: string | boolean | string[]) => setValues((s) => ({ ...s, [k]: v, ...(k === "brand" && s.brand !== v ? { model: "" } : {}) }));
+  // Form değerlerinin ait olduğu SON tam kategori şeması (ara seviyeler formu sıfırlamasın).
+  const lastLeafFormKey = useRef("");
   const changePath = (next: CategoryNode[]) => {
-    if (resolveFormKey(path) !== resolveFormKey(next)) {
-      setValues(previous => ({ title: previous.title || "", description: previous.description || "", price: previous.price || "" }));
+    // Önceki kategoriden TÜRETİLEN değerler (marka/model/ilan tipi + önerilen başlık) yeni
+    // kategoride bayat kalmasın. Eskiden (a) önerilen başlık hiç temizlenmiyordu → BMW'den
+    // Audi'ye geçince başlık "BMW 3 Serisi" kalıyordu; (b) eski tohum yalnız yol TAMKEN (schema)
+    // hesaplanıyordu. Kullanıcının elle yazdığı/düzelttiği değerler korunur.
+    const oldSeed: Record<string, string> = path.length ? deriveFieldsFromPath(path, getFormSchema(resolveFormKey(path))) : {};
+    const seeded = (key: string, value: unknown) => key in oldSeed && value === oldSeed[key];
+    // Şema karşılaştırması yalnız TAM (yaprak) yollar arasında yapılır. Eskiden her ara adım da
+    // karşılaştırılıyordu: bir üst seviyeye dönmek (ör. "Vasıta") formu o an sıfırlıyordu, kullanıcı
+    // aynı form tipinde başka bir yaprağı seçse bile yıl/km/m² gibi girdileri kaybediyordu.
+    const nextFormKey = isLeafCategoryPath(next) ? resolveFormKey(next) : "";
+    if (nextFormKey && lastLeafFormKey.current && nextFormKey !== lastLeafFormKey.current) {
+      setValues(previous => ({ title: seeded("title", previous.title) ? "" : previous.title || "", description: previous.description || "", price: previous.price || "" }));
     } else {
-      const oldSeed = schema ? deriveFieldsFromPath(path, schema) : {};
-      setValues(previous => Object.fromEntries(Object.entries(previous).filter(([key,value]) => !(key in oldSeed) || key === "title" || value !== oldSeed[key])));
+      setValues(previous => Object.fromEntries(Object.entries(previous).filter(([key, value]) => !seeded(key, value))));
     }
+    if (nextFormKey) lastLeafFormKey.current = nextFormKey;
     setPath(next);
   };
 
@@ -400,8 +412,13 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
   const restoreDraft = () => {
     const d = pendingDraft;
     if (!d) return;
-    skipNextDerive.current = true; // geri-yüklenen değerlerin üzerine türetme yazmasın
-    setPath(resolveCategoryPath(categoryTree, d.path));
+    const restored = resolveCategoryPath(categoryTree, d.path);
+    // Geri-yüklenen değerlerin üzerine türetme yazmasın. Bayrak yalnız türetme etkisi GERÇEKTEN
+    // çalışacaksa (tam + farklı yol) kurulur; yoksa takılı kalıp taslaktan SONRA seçilen ilk
+    // kategorinin marka/model/ilan-tipi otomatik doldurmasını yutuyordu.
+    skipNextDerive.current = isLeafCategoryPath(restored) && restored.map((p) => p.key).join("/") !== pathKey;
+    lastLeafFormKey.current = isLeafCategoryPath(restored) ? resolveFormKey(restored) : "";
+    setPath(restored);
     setValues(d.values ?? {});
     setImages([...new Set(d.images ?? [])].slice(0, MAX_PHOTOS));
     setLoc(d.loc ?? {});
@@ -654,9 +671,10 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
       }
       // Kategori bağlamı da sakla (alt-kategori filtresi, rozetler ve DÜZENLEME
       // ekranının form şemasını çözebilmesi için).
-      if (leafLabel) attributes._leaf = leafLabel;
-      if (path[0]?.label) attributes._root = path[0].label;
-      attributes._formKey = schema.key;
+      // TEK kaynak: _root/_leaf/_formKey + benzersiz _path (kökten yaprağa slug'lar). Aynı yaprak
+      // etiketi aynı kök + aynı form altında tekrar ettiği için (Satılık, Diğer, model adları)
+      // ilk üçü ilanın dalını tek başına belirleyemiyordu → ilan başka dalda görünüyordu.
+      Object.assign(attributes, categoryPathAttributes(path));
       // ACİL SATIŞ: seçili gün kadar ileri ISO damgası — kart/detay bunu okuyup "🔥 Acil" gösterir.
       if (urgentDays > 0) attributes._urgentUntil = new Date(Date.now() + urgentDays * 86400000).toISOString();
       // ORTAKLIK (mockup) ek alanları — yalnız ortaklık açıkken yaz (DB migrasyonsuz; attributes zaten public feed'de).
@@ -779,6 +797,7 @@ export function DesktopCreateFlow({ initialIntent }: { initialIntent?: "sell" | 
 
   // ── YAYIN SONRASI ───────────────────────────────────────────────────────────
   function resetForNew() {
+    lastLeafFormKey.current = "";
     setPublished(null); setStep(0); setPath([]); setValues({}); setImages([]);
     setLoc({}); setTiers([]); setCustomCategory(""); setError(null); setNotice(null);
   }
@@ -1563,7 +1582,65 @@ function CategoryDropdowns({ value, onChange, presetFormKey }: { value: Category
     if (node) next.push(node);
     onChange(next);
   };
+  // AĞAÇ GENELİ ARAMA: 6800+ yaprak yalnız seviye seviye açılır menüyle bulunabiliyordu (arama
+  // sadece açık listenin İÇİNDEydi). Sonuç tam yolu tek dokunuşla seçer; dal ise o seviyeye
+  // kadar doldurur, kullanıcı kalan alt kategoriyi aşağıdan seçer.
+  const [query, setQuery] = useState("");
+  const results = useMemo(() => searchCategoryTree(categoryTree, query, 10), [categoryTree, query]);
+  const complete = isLeafCategoryPath(value);
   return (
+    <View style={{ gap: 10 }}>
+      <View style={{ gap: 6 }}>
+        <View style={{ alignItems: "center", backgroundColor: colors.surfaceAlt, borderColor: query ? colors.primary : colors.line, borderRadius: 11, borderWidth: 1, flexDirection: "row", gap: 9, paddingHorizontal: 12 }}>
+          <MaterialCommunityIcons name="magnify" size={19} color={colors.subtle} />
+          <TextInput
+            testID="listing-category-search"
+            accessibilityLabel={translateCopy("Kategori ara", language)}
+            value={query}
+            onChangeText={setQuery}
+            placeholder={translateCopy("Kategori ara: iPhone, koltuk, araba, arsa…", language)}
+            placeholderTextColor={colors.subtle}
+            autoCorrect={false}
+            style={{ color: colors.ink, flex: 1, fontSize: 16, minHeight: 46, minWidth: 0, paddingVertical: 8 }}
+          />
+          {query ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Aramayı temizle", language)} onPress={() => setQuery("")} hitSlop={10}><MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} /></Pressable> : null}
+        </View>
+        {query.trim().length >= 2 ? (
+          <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, overflow: "hidden" }}>
+            {results.length === 0 ? (
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 13 }}>{translateCopy("Bu aramada kategori bulunamadı. Aşağıdan seviye seviye seçebilirsin.", language)}</Text>
+            ) : results.map((p, i) => {
+              const last = p[p.length - 1];
+              return (
+                <Pressable key={p.map((n) => n.key).join("/")} accessibilityRole="button" onPress={() => { onChange(p); setQuery(""); }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, flexDirection: "row", gap: 8, minHeight: 48, paddingHorizontal: 13, paddingVertical: 9 })}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy(last.label, language)}</Text>
+                    {p.length > 1 ? <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{p.slice(0, -1).map((n) => translateCopy(n.label, language)).join(" › ")}</Text> : null}
+                  </View>
+                  {last.children && last.children.length ? <MaterialCommunityIcons name="chevron-right" size={18} color={colors.subtle} /> : null}
+                </Pressable>
+              );
+            })}
+          </View>
+        ) : null}
+      </View>
+      {/* SEÇİLEN TAM YOL: kırıntıya dokun → o seviyeye dön (altındaki seçimler kalkar). */}
+      {value.length ? (
+        <View testID="listing-category-path" style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 4 }}>
+          {value.map((n, i) => (
+            <View key={n.key} style={{ alignItems: "center", flexDirection: "row", gap: 4, maxWidth: "100%" }}>
+              {i > 0 ? <Text style={{ color: colors.subtle, fontSize: 12.5 }}>›</Text> : null}
+              <Pressable accessibilityRole="button" disabled={i === value.length - 1} onPress={() => onChange(value.slice(0, i + 1))} hitSlop={6} style={{ flexShrink: 1 }}>
+                <Text style={{ color: i === value.length - 1 ? colors.primaryDark : colors.primary, fontSize: 12.5, fontWeight: i === value.length - 1 ? "900" : "700" }}>{translateCopy(n.label, language)}</Text>
+              </Pressable>
+            </View>
+          ))}
+          {complete ? <MaterialCommunityIcons name="check-circle" size={15} color={colors.primary} /> : null}
+          <Pressable accessibilityRole="button" onPress={() => onChange(value.slice(0, -1))} hitSlop={6} style={{ marginLeft: 6, minHeight: 28, justifyContent: "center" }}>
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800", textDecorationLine: "underline" }}>{translateCopy("Bir seviye geri", language)}</Text>
+          </Pressable>
+        </View>
+      ) : null}
     <View testID="listing-category-levels" style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
       {levels.map((lvl, i) => (
         <View key={i} style={{ flexBasis: 190, flexGrow: 1, minWidth: 0, zIndex: 40 - i }}>
@@ -1571,6 +1648,7 @@ function CategoryDropdowns({ value, onChange, presetFormKey }: { value: Category
           <DSelect label="" value={lvl.selected?.label ?? ""} options={lvl.options.map((o) => o.label)} onChange={(v) => pick(i, v)} placeholder={translateCopy(i === 0 ? "Kategori seç" : "Alt kategori seç", language)} />
         </View>
       ))}
+    </View>
     </View>
   );
 }

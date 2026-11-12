@@ -13,6 +13,7 @@ import { colors } from "@/components/colors";
 import { Alert } from "@/lib/alert";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
+import { categoryPathAttributes, matchCategoryLabelPath } from "@/lib/category-path";
 import { matchCategoryByName, resolveFormKey, getFormSchema, type CategoryNode, type FieldDef } from "@/lib/category-tree";
 import type { PartnershipMode } from "@/lib/types";
 import { autoFillListing } from "@/lib/listing-autofill";
@@ -159,7 +160,7 @@ function resolveHeader(headers: string[]): Record<string, number> {
 function BulkUploadInner() {
   const { language } = useLanguage();
   const router = useRouter();
-  const { createListing, currentUser } = useStore();
+  const { createListing, currentUser, categoryTree } = useStore();
   const [csv, setCsv] = useState("");
   const [rows, setRows] = useState<ParsedRow[] | null>(null);
   const [commissionAll, setCommissionAll] = useState(""); // toplu komisyon override (%)
@@ -218,7 +219,10 @@ function BulkUploadInner() {
       const description = get("description");
       const price = parseTrPrice(get("price"));
       const categoryRaw = get("category");
-      const category = categoryRaw ? matchCategoryByName(categoryRaw) : undefined;
+      // TAM YOL ("Emlak > Konut > Satılık > Daire") kesin eşleşir. Tek ad birçok dalda geçebildiği
+      // için (Satılık, Diğer, marka/model adları) ada göre eşleme en sığ/dallı düğümü TAHMİN eder.
+      // Yol yazılmış ama ağaçta yoksa kelime-benzerliğine DÜŞÜLMEZ (yanlış kategoriye gitmesin) → satır hatası.
+      const category = !categoryRaw ? undefined : /[>›»]/.test(categoryRaw) ? matchCategoryLabelPath(categoryTree, categoryRaw) : matchCategoryByName(categoryRaw);
       const prov = resolveProvinceByName(get("province"));
       let districtId: number | undefined;
       if (prov) {
@@ -361,7 +365,10 @@ function BulkUploadInner() {
       try {
         if (r.mode === "update" && r.existingId) {
           // MEVCUT İLANI GÜNCELLE (SKU eşleşti) — yalnız DOLU alanlar yazılır (kısmi upsert).
-          const leaf = r.category?.node;
+          // KATEGORİ GÜNCELLEMEDE YAZILMAZ: bu uç yalnız `category` kolonunu yazabiliyor, attributes'taki
+          // _root/_leaf/_formKey/_path'i yazamıyor. Eskiden yalnız kolon değişiyordu → ilan (çözücü _leaf'e
+          // baktığı için) eski kategoride listelenmeye devam ediyor, etiketi ise yenisini gösteriyordu.
+          // Ada göre bulanık eşleme, dışa aktarılıp geri yüklenen ilanın etiketini de sessizce değiştirebiliyordu.
           const location = r.provinceId ? (formatLocation({ provinceId: r.provinceId, districtId: r.districtId }, "neighborhood") || getProvince(r.provinceId)?.name || undefined) : undefined;
           const okUpd = await updateListingFieldsLive(r.existingId, {
             title: r.title || undefined,
@@ -369,7 +376,6 @@ function BulkUploadInner() {
             price: r.price,
             commissionValue: r.commission,
             stockCount: r.stock,
-            category: leaf?.label,
             location,
             provinceId: r.provinceId,
             districtId: r.districtId
@@ -381,7 +387,6 @@ function BulkUploadInner() {
           // YENİ İLAN — SKU'yu externalId olarak yaz (sonraki yüklemede eşleşsin).
           const leaf = r.category!.node;
           const rootLabel = r.category!.path[0]?.label ?? leaf.label;
-          const formKey = resolveFormKey(r.category!.path);
           // ÇOKLU GÖRSEL: tüm URL'leri yükle (uzak URL'ler zaten geçer) → kapak + ek galeri (adAssets).
           const uploaded = r.images.length
             ? (await Promise.all(r.images.map((u) => uploadListingImage(u, currentUser.id)))).filter(Boolean)
@@ -421,7 +426,9 @@ function BulkUploadInner() {
             deliveryNote: "Teslimat ve ödeme satıcıyla alıcı arasında netleştirilir; OrtakSat para tutmaz.",
             contactMethod: "message",
             partnershipMode: r.partnershipMode,
-            attributes: { _root: rootLabel, _leaf: leaf.label, _formKey: formKey, ...r.attrs }
+            // Meta alanları ÖZELLİKLERDEN SONRA yazılır (özellik sütunu ezemesin) + benzersiz _path:
+            // eş-etiketli dallarda _root/_leaf/_formKey ilanın dalını tek başına belirleyemiyor.
+            attributes: { ...r.attrs, ...categoryPathAttributes(r.category!.path) }
           }, "pending_review"); // TOPLU: yayından önce admin onayı
           created++;
         }
@@ -489,6 +496,7 @@ function BulkUploadInner() {
         <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 14, borderWidth: 1, gap: 10, padding: 16 }}>
           <Text style={{ color: colors.ink, fontSize: 15, fontWeight: "900" }}>1) {translateCopy("Şablonu kullan", language)}</Text>
           <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy(`Sütunlar: harici_kod, baslik, aciklama, fiyat, kategori, il, ilce, komisyon, stok, gorsel_url. Birden çok görsel için gorsel_url'e URL'leri | ile ayır; ilan başına en fazla ${MAX_IMAGES} görsel eklenir, ilki kapak olur. Excel'de düzenleyip CSV olarak kaydet, sonra buraya yapıştır.`, language)}</Text>
+          <Text style={{ color: colors.muted, fontSize: 12.5, fontWeight: "600", lineHeight: 18 }}>{translateCopy("Kategori: aynı ad birçok dalda geçebilir (Satılık, Diğer, marka adları). İlanın tam istediğin yerde görünmesi için yolu > ile yaz: Emlak > Konut > Satılık > Daire.", language)}</Text>
           <View style={{ alignItems: "flex-start", backgroundColor: colors.infoSoft, borderRadius: 10, flexDirection: "row", gap: 8, padding: 11 }}>
             <MaterialCommunityIcons name="barcode-scan" size={16} color={colors.info} style={{ marginTop: 1 }} />
             <Text style={{ color: colors.muted, flex: 1, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>
@@ -660,6 +668,14 @@ function BulkUploadInner() {
                         <Text style={{ color: colors.ink, fontSize: 12, fontWeight: "700", width: 40 }}>%{r.commission}</Text>
                       </View>
                       {!okRow ? <Text style={{ color: colors.accent, fontSize: 11, fontWeight: "700", marginLeft: 34 }}>{r.errors.join(" · ")}</Text> : null}
+                      {/* EŞLEŞEN TAM YOL: sütunda yalnız yaprak adı vardı ("Satılık", "Diğer") → satıcı ilanın
+                          hangi dala gideceğini yayından önce göremiyordu. */}
+                      {r.category && r.mode === "new" ? (
+                        <Text style={{ color: colors.muted, fontSize: 11, fontWeight: "600", lineHeight: 15, marginLeft: 34 }}>
+                          {translateCopy("Kategori", language)}: {r.category.path.map((n) => translateCopy(n.label, language)).join(" › ")}
+                          {r.category.node.children && r.category.node.children.length ? ` — ${translateCopy("genel kategori; daha doğru yer için tam yol yaz (ör. Emlak > Konut > Satılık > Daire)", language)}` : ""}
+                        </Text>
+                      ) : null}
                       {okRow && (r.images.length > 1 || r.recognizedAttrs.length > 0 || (r.mode === "new" && r.partnershipMode !== "approval")) ? (
                         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 10, marginLeft: 34 }}>
                           {r.images.length > 1 ? (

@@ -32,7 +32,7 @@ import { getFormSchema, matchCategoryByName, resolveFormKey, topCategories, type
 import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
 import { AnchoredDropdown, useAnchor } from "@/components/anchored-dropdown";
 import { SkeletonGrid } from "@/components/skeleton";
-import { commissionAmount, commissionRatePct, money, moneyCompact, moneyIn } from "@/lib/format";
+import { commissionAmount, commissionRatePct, groupThousands, money, moneyCompact, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { searchKey } from "@/lib/locale";
@@ -44,6 +44,7 @@ import { fetchListingsByCategory, searchListings } from "@/lib/supabase-data";
 import { displayText } from "@/lib/text";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { catalogueCountLabel, catalogueRanges, useCatalogueFill, useServerCatalogue, type WebCatalogueSort } from "@/lib/web-catalogue";
 
 type FeedFilter = "all" | "open" | "hot" | "new" | "commission";
 type SortMode = "recommended" | "priceAsc" | "priceDesc" | "commission" | "commissionRate" | "rating" | "new" | "mostViewed";
@@ -177,6 +178,79 @@ function ExploreScreenLegacy() {
   const SERVER_PAGE = 40;
   const queryText = sp(params.q).replace(/\s+/g, " ").trim().slice(0, 120);
 
+  // Seçili kategori düğümü + şeması + filtre alanları (facet/sayısal) + eşleşme etiketleri.
+  // catPath'i düğüm zincirine çöz (üstten aşağı). Etkin düğüm = en derin seçili.
+  const pathNodes = useMemo(() => {
+    const out: CategoryNode[] = [];
+    let level = topCategories();
+    for (const key of catPath) {
+      const found = level.find((n) => n.key === key);
+      if (!found) break;
+      out.push(found);
+      level = found.children ?? [];
+    }
+    return out;
+  }, [catPath]);
+  const catNode = pathNodes[pathNodes.length - 1];
+  // Mevcut seviyede inilebilecek alt düğümler (drill seçenekleri).
+  const drillOptions = catNode?.children ?? [];
+  const catSchema = useMemo(() => (catNode ? getFormSchema(resolveFormKey([catNode])) : undefined), [catNode]);
+  const catFacets = useMemo<FieldDef[]>(() => (catSchema ? catSchema.fields.filter((f) => {
+    const n = f.options?.length ?? 0;
+    if (f.key === "seller") return false;
+    if (f.key === "brand" && f.type === "select" && n > 16) return false; // marka ayrı aranabilir filtreye
+    // Büyük listeler (İç Özellikler 46, CAR_COLORS…) artık düşmüyor: 12+ seçenekli facet
+    // aranabilir/kaydırılabilir kutuda render edilir. Üst sınır 80.
+    if (f.type === "select") return n >= 2 && n <= 80;
+    if (f.type === "multiselect") return n >= 2 && n <= 80;
+    return false;
+  }) : []), [catSchema]);
+  // Aranabilir bağımsız marka filtresi: seçenek sayısı facet sınırını (16) aşan
+  // marka alanları (CAR_BRANDS ~74, PHONE_BRANDS 22…) chip-facet olarak sığmaz.
+  const catBrandField = useMemo<FieldDef | undefined>(() => (catSchema ? catSchema.fields.find((f) => f.key === "brand" && f.type === "select" && (f.options?.length ?? 0) > 16) : undefined), [catSchema]);
+  const catNums = useMemo(() => {
+    if (!catSchema) return [] as Array<{ key: string; label: string; suffix?: string }>;
+    const keys = new Set(catSchema.fields.map((f) => f.key));
+    const seen = new Set<string>();
+    return EXPLORE_NUM_FILTERS.filter((f) => keys.has(f.key) && !seen.has(f.label) && (seen.add(f.label), true));
+  }, [catSchema]);
+
+  // ÖLÇEK (sunucu kataloğu): kategori / herhangi bir filtre / varsayılan-dışı sıralama / arama
+  // etkinken sonuçlar ve GERÇEK toplam SUNUCUDAN (mobile_catalogue_page) gelir; "daha fazla"
+  // sonraki sunucu sayfasını ister. Hiçbiri etkin değilken eski store akışı sürer. Sunucunun
+  // desteklemediği yalnız üç ölçüt (tam şehir metni, aynı alanda çoklu-VEYA facet, göreli Trend
+  // eşiği) yüklü sunucu sayfalarının ÜZERİNE yerelde uygulanır.
+  // Supabase yoksa / RPC hata verirse srv.fallback → aşağıdaki yerel süzme aynen çalışır.
+  const srvPriceParts = priceRange ? priceRange.split("-") : [];
+  const srvRanges = catalogueRanges(catNums, numRange);
+  const srvTabSort: WebCatalogueSort = filter === "commission" ? "commission" : filter === "hot" ? "popular" : filter === "new" ? "newest" : "recommended";
+  const srvSort: WebCatalogueSort = sortMode === "recommended" ? srvTabSort : sortMode === "new" ? "newest" : sortMode === "mostViewed" ? "popular" : sortMode;
+  const srvQuery = queryText.length >= 2 ? queryText : "";
+  const criteriaActive = Boolean(srvQuery) || Boolean(catNode) || provinceId != null || Boolean(city) || Boolean(priceRange) || minCommission > 0 || minRate > 0 || minRating > 0
+    || onlyFeatured || statusOpen || Boolean(stockFilter) || onlyVerified || filter !== "all" || sortMode !== "recommended" || Object.keys(attrFilters).length > 0 || Object.keys(srvRanges).length > 0;
+  const srv = useServerCatalogue({
+    enabled: criteriaActive,
+    criteria: {
+      trail: pathNodes, query: srvQuery, priceMin: Number(srvPriceParts[0]) || null, priceMax: srvPriceParts[1] ? Number(srvPriceParts[1]) : null,
+      provinceId, districtId, attrs: attrFilters, ranges: srvRanges, instant: statusOpen || filter === "open", onlyFeatured, sort: srvSort,
+      minCommission, minRate, minRating, verified: onlyVerified, stock: stockFilter === "in" || stockFilter === "low" ? stockFilter : null, newerThanDays: filter === "new" ? 7 : undefined
+    },
+    pageSize: SERVER_PAGE
+  });
+  // Sunucunun metin araması bitişik alt-metin eşleşmesidir (yazım hatası toleransı yok). Hiç
+  // sonuç dönmezse eski bulanık arama yolu (search_listings + yerel skor) devreye girer.
+  const srvEmptyQuery = Boolean(srvQuery) && srv.settled && srv.total === 0;
+  const useSrv = criteriaActive && srv.ready && !srvEmptyQuery;
+  // Sunucu sonucu geçerli ölçütlere aitse eşlenen süzmeler yerelde TEKRAR uygulanmaz; bayat
+  // sonuçta (yeni ölçüt yüklenirken) hepsi yerelde uygulanır → anında geri bildirim.
+  const srvFiltered = useSrv && srv.settled;
+  const srvFallback = srv.fallback;
+  const srvListings = srv.listings;
+  const srvOwners = srv.owners;
+  const srvBusy = criteriaActive && !srvFallback && !srvEmptyQuery && (srv.loading || srv.loadingMore);
+  const legacySearch = !criteriaActive || srvFallback || srvEmptyQuery;
+  const ownerOf = useCallback((id: string) => srvOwners[id] ?? findUser(id), [srvOwners, findUser]);
+
   useEffect(() => {
     let alive = true;
     const revision = ++searchRevision.current;
@@ -186,7 +260,7 @@ function ExploreScreenLegacy() {
     setServerOwners({});
     setServerOffset(0);
     setServerHasMore(false);
-    if (queryText.length < 2) { setServerLoading(false); return; }
+    if (queryText.length < 2 || !legacySearch) { setServerLoading(false); return; }
     setServerLoading(true);
     const priceParts = priceRange ? priceRange.split("-") : [];
     const minPrice = priceParts[0] ? Number(priceParts[0]) : undefined;
@@ -212,7 +286,7 @@ function ExploreScreenLegacy() {
       })();
     }, 280);
     return () => { alive = false; clearTimeout(handle); if (searchRevision.current === revision) searchRevision.current++; };
-  }, [queryText, priceRange, statusOpen, sortMode, searchRetry]);
+  }, [queryText, priceRange, statusOpen, sortMode, searchRetry, legacySearch]);
 
   const loadMoreServer = (retry = false) => {
     if (!queryText || serverLoading || searchPageLock.current || !serverHasMore || serverFailure === "more" && !retry) return;
@@ -245,7 +319,7 @@ function ExploreScreenLegacy() {
   };
   const searchNotice = serverFailure ? <RetryNotice message={serverFailure === "more" ? "Diğer arama sonuçları yüklenemedi. Mevcut sonuçlar korunuyor." : "Arama tamamlanamadı. Yüklü ilanlardaki eşleşmeleri görebilirsin; tüm sonuçlar için tekrar dene."} onRetry={() => serverFailure === "more" ? loadMoreServer(true) : setSearchRetry(v => v + 1)} busy={serverLoading}/> : serverLoading ? <Text accessibilityRole="progressbar" style={{ color: colors.muted, padding: 12 }}>{translateCopy("Arama sonuçları yükleniyor…", language)}</Text> : null;
   const serverCatUserById = useMemo(() => { const m = new Map<string, User>(); for (const u of serverCat.users) m.set(u.id, u); return m; }, [serverCat.users]);
-  const resolveOwner = (id: string) => serverOwners[id] ?? findUser(id) ?? serverCatUserById.get(id);
+  const resolveOwner = (id: string) => serverOwners[id] ?? srvOwners[id] ?? findUser(id) ?? serverCatUserById.get(id);
   const feedFilters: Array<{ key: FeedFilter; label: string; icon: keyof typeof MaterialCommunityIcons.glyphMap }> = [
     { key: "all", label: t("all"), icon: "grid" },
     { key: "commission", label: translateCopy("Yüksek komisyon", language), icon: "cash-plus" },
@@ -295,55 +369,18 @@ function ExploreScreenLegacy() {
   const cities = useMemo(() => Array.from(new Set(marketplaceListings.map((l) => l.location))).sort((a, b) => a.localeCompare(b, "tr")), [marketplaceListings]);
   const provinceName = useMemo(() => (provinceId != null ? getProvince(provinceId)?.name : undefined), [provinceId]);
   const districtName = useMemo(() => (districtId != null ? getDistrict(districtId)?.name : undefined), [districtId]);
-  // Seçili kategori düğümü + şeması + filtre alanları (facet/sayısal) + eşleşme etiketleri.
-  // catPath'i düğüm zincirine çöz (üstten aşağı). Etkin düğüm = en derin seçili.
-  const pathNodes = useMemo(() => {
-    const out: CategoryNode[] = [];
-    let level = topCategories();
-    for (const key of catPath) {
-      const found = level.find((n) => n.key === key);
-      if (!found) break;
-      out.push(found);
-      level = found.children ?? [];
-    }
-    return out;
-  }, [catPath]);
-  const catNode = pathNodes[pathNodes.length - 1];
-  // Mevcut seviyede inilebilecek alt düğümler (drill seçenekleri).
-  const drillOptions = catNode?.children ?? [];
-  const catSchema = useMemo(() => (catNode ? getFormSchema(resolveFormKey([catNode])) : undefined), [catNode]);
-  const catFacets = useMemo<FieldDef[]>(() => (catSchema ? catSchema.fields.filter((f) => {
-    const n = f.options?.length ?? 0;
-    if (f.key === "seller") return false;
-    if (f.key === "brand" && f.type === "select" && n > 16) return false; // marka ayrı aranabilir filtreye
-    // Büyük listeler (İç Özellikler 46, CAR_COLORS…) artık düşmüyor: 12+ seçenekli facet
-    // aranabilir/kaydırılabilir kutuda render edilir. Üst sınır 80.
-    if (f.type === "select") return n >= 2 && n <= 80;
-    if (f.type === "multiselect") return n >= 2 && n <= 80;
-    return false;
-  }) : []), [catSchema]);
-  // Aranabilir bağımsız marka filtresi: seçenek sayısı facet sınırını (16) aşan
-  // marka alanları (CAR_BRANDS ~74, PHONE_BRANDS 22…) chip-facet olarak sığmaz.
-  const catBrandField = useMemo<FieldDef | undefined>(() => (catSchema ? catSchema.fields.find((f) => f.key === "brand" && f.type === "select" && (f.options?.length ?? 0) > 16) : undefined), [catSchema]);
-  const catNums = useMemo(() => {
-    if (!catSchema) return [] as Array<{ key: string; label: string; suffix?: string }>;
-    const keys = new Set(catSchema.fields.map((f) => f.key));
-    const seen = new Set<string>();
-    return EXPLORE_NUM_FILTERS.filter((f) => keys.has(f.key) && !seen.has(f.label) && (seen.add(f.label), true));
-  }, [catSchema]);
-
   // ÖLÇEK server-fetch (append-only): aktif kategori + daha çok ilan var + metin-arama YOK iken
   // o kategorinin ilanlarını sunucudan çek. mountedGate (post-mount → #418 güvenli); catNode?.slug
   // deps (stabil → sonsuz-fetch yok). Text-search yolu (queryText>=2) serverResults'ı kullanır, ayrı.
   useEffect(() => {
     let alive = true;
     setServerCat({ listings: [], users: [] });
-    if (!mountedGate || !catNode || !marketplaceHasMore || queryText.length >= 2) return;
+    if (!mountedGate || !catNode || !marketplaceHasMore || queryText.length >= 2 || !srvFallback) return;
     void fetchListingsByCategory(collectDescendantLabels(catNode)).then((r) => {
       if (alive && r) setServerCat(r);
     });
     return () => { alive = false; };
-  }, [mountedGate, catNode?.slug, marketplaceHasMore, queryText]);
+  }, [mountedGate, catNode?.slug, marketplaceHasMore, queryText, srvFallback]);
   const catLabelSet = useMemo(() => (catNode ? new Set(collectDescendantLabels(catNode).map((s) => s.toLocaleLowerCase("tr-TR").trim()).filter((s) => s.length > 2)) : null), [catNode]);
   // Üst kategori: seç/kaldır (tekrar basınca temizle). Alt seviyeye in / breadcrumb'a dön.
   const selectTop = (key: string) => { setCatPath((cur) => (cur.length === 1 && cur[0] === key ? [] : [key])); setAttrFilters({}); setNumRange({}); };
@@ -438,11 +475,12 @@ function ExploreScreenLegacy() {
   // q girildiyse temel set sunucu sonuclari (tum katalog); degilse yuklu katalog.
   // serverResults (metin arama) varsa onu kullan; yoksa bellek + kategori-server ilanları (dedupe).
   const baseListings = useMemo(() => {
+    if (useSrv) return srvListings;
     if (serverResults) return serverResults;
     if (serverCat.listings.length === 0) return marketplaceListings;
     const seen = new Set(marketplaceListings.map((l) => l.id));
     return [...marketplaceListings, ...serverCat.listings.filter((l) => !seen.has(l.id))];
-  }, [serverResults, marketplaceListings, serverCat.listings]);
+  }, [useSrv, srvListings, serverResults, marketplaceListings, serverCat.listings]);
 
   const activeListings = useMemo(() => {
     const provKey = provinceName ? locKey(provinceName) : "";
@@ -460,9 +498,9 @@ function ExploreScreenLegacy() {
       // Yapısal id varsa kesin eşleşme; yoksa (eski ilan) serbest metne düş.
       // Alt-metin eşleştirmesi tek başına yanıltıcıydı (ör. "Van" ⊂ başka metinler).
       // Ortak yardımcı (lib/locations) — kategori ve ana sayfa da aynısını kullanır.
-      if (!matchesLocationFilter(listing, provinceId, districtId)) return false;
-      if (minCommission > 0 && commissionAmount(listing) < minCommission) return false;
-      if (priceRange) {
+      if (!srvFiltered && !matchesLocationFilter(listing, provinceId, districtId)) return false;
+      if (!srvFiltered && minCommission > 0 && commissionAmount(listing) < minCommission) return false;
+      if (priceRange && !srvFiltered) {
         const [mn, mx] = priceRange.split("-");
         let min = Number(mn) || 0;
         let max = mx ? Number(mx) : Infinity;
@@ -470,14 +508,15 @@ function ExploreScreenLegacy() {
         if (Number.isFinite(max) && min > max) { const t = min; min = max; max = t; }
         if (listing.price < min || listing.price > max) return false;
       }
-      if (stockFilter === "in" && listing.stockCount <= 0) return false;
-      if (stockFilter === "low" && (listing.stockCount > 5 || listing.stockCount <= 0)) return false;
-      if (statusOpen && listing.partnershipMode !== "open") return false;
-      if (filter === "open" && listing.partnershipMode !== "open") return false;
+      // Stok / anında-ortak / yeni: sunucu yolunda sunucuda (stock, instant, createdAfter).
+      if (!srvFiltered && stockFilter === "in" && listing.stockCount <= 0) return false;
+      if (!srvFiltered && stockFilter === "low" && (listing.stockCount > 5 || listing.stockCount <= 0)) return false;
+      if (!srvFiltered && statusOpen && listing.partnershipMode !== "open") return false;
+      if (!srvFiltered && filter === "open" && listing.partnershipMode !== "open") return false;
       if (filter === "hot" && hotScore(listing) < hotThreshold) return false;
-      if (filter === "new" && !isNewListing(listing.createdAt)) return false;
+      if (!srvFiltered && filter === "new" && !isNewListing(listing.createdAt)) return false;
       // Kategori-özel filtre: seçili kategori + facet (attribute) + sayısal aralık.
-      if (catLabelSet) {
+      if (catLabelSet && !srvFiltered) {
         // Kesin (tam) eşleşme: alt-metin eşleşmesi kategoriler arası sızıntı yapıyordu
         // (ör. Vasıta alt "Yat" ⊂ "Yatak" → mobilya, araç filtresine düşüyordu).
         const catMatch = catNode ? listingInCategoryNode(listing, catNode) : true;
@@ -485,11 +524,13 @@ function ExploreScreenLegacy() {
       }
       for (const key of Object.keys(attrFilters)) {
         const want = attrFilters[key];
+        // Sunucu yolunda tek-değerli facet sunucuda; aynı alanda çoklu (VEYA) seçim yerelde kalır.
+        if (srvFiltered && want.length <= 1) continue;
         const have = listing.attributes?.[key];
         const ok = Array.isArray(have) ? have.some((v) => want.includes(String(v))) : want.includes(String(have ?? ""));
         if (!ok) return false;
       }
-      for (const nf of catNums) {
+      for (const nf of srvFiltered ? [] : catNums) {
         const r = numRange[nf.key];
         const mn = r?.min?.trim() ? Number(r.min) : null;
         const mx = r?.max?.trim() ? Number(r.max) : null;
@@ -505,22 +546,25 @@ function ExploreScreenLegacy() {
       }
       // Yalnızca onaylı satıcı: activeListings'e taşındı ki mobil feed de (media tiles)
       // bu filtreyi uygulasın (önceden yalnız masaüstü productListings'te vardı).
-      if (onlyVerified) {
-        const owner = findUser(listing.ownerId);
+      if (onlyVerified && !srvFiltered) {
+        const owner = ownerOf(listing.ownerId);
         if (!(owner?.verifiedPhone || owner?.verifiedIdentity)) return false;
       }
       // Ana sayfa paritesi: komisyon ORANI, satıcı puanı, öne çıkanlar.
-      if (minRate > 0 && commissionRatePct(listing) < minRate) return false;
-      if (minRating > 0 && (findUser(listing.ownerId)?.rating ?? 0) < minRating) return false;
-      if (onlyFeatured && !listing.featured) return false;
+      if (!srvFiltered && minRate > 0 && commissionRatePct(listing) < minRate) return false;
+      if (!srvFiltered && minRating > 0 && (ownerOf(listing.ownerId)?.rating ?? 0) < minRating) return false;
+      if (!srvFiltered && onlyFeatured && !listing.featured) return false;
       return true;
     });
+
+    // Sunucu yolu: metin eşleşmesi ve sıra sunucudan gelir (sayfalar eklenirken sıra korunur).
+    if (useSrv) return nonText;
 
     // Metin sorgusu varsa: fuzzy (yazım-hata toleranslı) skorla, ALAKA sırasına diz.
     const filtered =
       tokens.length > 0
         ? nonText
-            .map((l) => ({ l, s: scoreListing(l, findUser(l.ownerId)?.name, tokens) }))
+            .map((l) => ({ l, s: scoreListing(l, ownerOf(l.ownerId)?.name, tokens) }))
             .filter((x) => x.s > 0)
             .sort((a, b) => b.s - a.s || Number(Boolean(b.l.featured)) - Number(Boolean(a.l.featured)))
             .map((x) => x.l)
@@ -528,21 +572,23 @@ function ExploreScreenLegacy() {
 
     if (filtered.length || tokens.length > 0 || filter !== "all" || hasPanelFilter) return filtered;
     return baseListings.slice().sort((a, b) => exploreScore(b, seed) - exploreScore(a, seed));
-  }, [baseListings, city, districtName, filter, findUser, hasPanelFilter, minCommission, minRate, minRating, onlyFeatured, onlyVerified, priceRange, provinceName, seed, statusOpen, stockFilter, tokens, catLabelSet, attrFilters, catNums, numRange]);
+  }, [useSrv, srvFiltered, baseListings, city, districtName, filter, ownerOf, hasPanelFilter, minCommission, minRate, minRating, onlyFeatured, onlyVerified, priceRange, provinceName, seed, statusOpen, stockFilter, tokens, catLabelSet, attrFilters, catNums, numRange]);
 
   const productListings = useMemo(() => {
     // onlyVerified artık activeListings'te uygulanıyor (mobil feed de kapsasın diye);
     // burada tekrar süzmeye gerek yok — yalnızca sıralama.
+    // Sunucu yolunda sıra sunucudan gelir (tüm sıralamalar destekli) → yerelde yeniden sıralama yok.
+    if (useSrv) return activeListings;
     const sorted = activeListings.slice();
     if (sortMode === "priceAsc") sorted.sort((a, b) => a.price - b.price);
     else if (sortMode === "priceDesc") sorted.sort((a, b) => b.price - a.price);
     else if (sortMode === "commission") sorted.sort((a, b) => commissionAmount(b) - commissionAmount(a));
     else if (sortMode === "commissionRate") sorted.sort((a, b) => commissionRatePct(b) - commissionRatePct(a));
-    else if (sortMode === "rating") sorted.sort((a, b) => (findUser(b.ownerId)?.rating ?? 0) - (findUser(a.ownerId)?.rating ?? 0));
+    else if (sortMode === "rating") sorted.sort((a, b) => (ownerOf(b.ownerId)?.rating ?? 0) - (ownerOf(a.ownerId)?.rating ?? 0));
     else if (sortMode === "new") sorted.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     else if (sortMode === "mostViewed") sorted.sort((a, b) => b.viewCount - a.viewCount);
     return sorted;
-  }, [activeListings, sortMode, findUser]);
+  }, [activeListings, sortMode, ownerOf, useSrv]);
   // "Yeni eklenen" = en yeni ilanlar (gerçek). Önceden en-az-stoklu 3 ilan sahte
   // "fırsat/geri sayım/son X stok" aciliyetiyle sunuluyordu — kaldırıldı.
   const topCommissionListings = useMemo(() => activeListings.slice().sort((a, b) => commissionAmount(b) - commissionAmount(a)).slice(0, 3), [activeListings]);
@@ -561,16 +607,17 @@ function ExploreScreenLegacy() {
   // Mobil medya-feed'i de sıralamaya (sortMode) uysun: kaynağı önce sırala, sonra
   // media öğelerine aç. "recommended" → activeListings'in mevcut (alaka/öne çıkan) düzeni.
   const mediaSourceListings = useMemo(() => {
+    if (useSrv) return activeListings;
     const arr = activeListings.slice();
     if (sortMode === "priceAsc") arr.sort((a, b) => a.price - b.price);
     else if (sortMode === "priceDesc") arr.sort((a, b) => b.price - a.price);
     else if (sortMode === "commission") arr.sort((a, b) => commissionAmount(b) - commissionAmount(a));
     else if (sortMode === "commissionRate") arr.sort((a, b) => commissionRatePct(b) - commissionRatePct(a));
-    else if (sortMode === "rating") arr.sort((a, b) => (findUser(b.ownerId)?.rating ?? 0) - (findUser(a.ownerId)?.rating ?? 0));
+    else if (sortMode === "rating") arr.sort((a, b) => (ownerOf(b.ownerId)?.rating ?? 0) - (ownerOf(a.ownerId)?.rating ?? 0));
     else if (sortMode === "new") arr.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
     else if (sortMode === "mostViewed") arr.sort((a, b) => b.viewCount - a.viewCount);
     return arr;
-  }, [activeListings, sortMode, findUser]);
+  }, [activeListings, sortMode, ownerOf, useSrv]);
 
   // İLAN BAŞINA TEK KART. Eskiden her ilan HER GÖRSELİ için ayrı karta açılıyordu
   // (flatMap) → 5 fotoğraflı ürün gridde 5 kez tekrar ediyor, "{n} içerik" sayacı da
@@ -604,6 +651,15 @@ function ExploreScreenLegacy() {
     const rates = activeListings.map(commissionRatePct).filter((r) => r > 0);
     return rates.length ? Math.round(rates.reduce((s, r) => s + r, 0) / rates.length) : 0;
   }, [activeListings]);
+  // Sunucu toplamı "gerçek toplam"dır; yalnız yerelde kalan üç ölçütten biri (tam şehir, Trend
+  // eşiği, aynı alanda çoklu facet) etkinse yüklü adet (+) gösterilir.
+  const srvExact = !city && filter !== "hot" && srv.local.attrKeys.length === 0;
+  const countLabel = useSrv ? catalogueCountLabel(srv, srvExact, activeListings.length) : String(activeListings.length);
+  const srvMoreBusy = useSrv && srv.loadingMore && productVisible >= activeListings.length;
+  const srvNotice = useSrv && srv.failed ? <RetryNotice message="Diğer ilanlar yüklenemedi. Mevcut sonuçlar korunuyor." onRetry={srv.retry} busy={srv.loadingMore} /> : null;
+  // Görünür adet (masaüstü "daha fazla göster" / mobil sonsuz kaydırma) yüklü ilanı aşınca ya da
+  // yerel ek süzme sayfayı seyreltince sonraki sunucu sayfası çekilir.
+  useCatalogueFill(srv, activeListings.length, isWideWeb ? productVisible : visibleCount);
 
   useEffect(() => {
     setVisibleCount(INITIAL_EXPLORE_ITEMS);
@@ -653,6 +709,9 @@ function ExploreScreenLegacy() {
     if (distanceToBottom < 520 && exploreLoadArmed.current) {
       exploreLoadArmed.current = false;
       setVisibleCount((current) => {
+        // Sunucu yolu: üst sınır yüklü adet DEĞİL; istenen adet artar, useCatalogueFill sonraki
+        // sunucu sayfasını çeker ve gelen ilanlar hemen görünür.
+        if (useSrv) return srv.hasMore ? current + EXPLORE_PAGE_SIZE : Math.min(mediaItems.length, current + EXPLORE_PAGE_SIZE);
         const next = Math.min(mediaItems.length, current + EXPLORE_PAGE_SIZE);
         // Yüklü medya bitmeye yakınsa sonraki sayfayı çek (arama -> sunucu araması,
         // aksi halde katalog sayfasi).
@@ -942,7 +1001,7 @@ function ExploreScreenLegacy() {
                 <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 22, fontWeight: "900" }}>{queryText ? (language === "en" ? `Results for “${queryText}”` : `“${queryText}” için sonuçlar`) : translateCopy("Öne çıkan ilanlar", language)}</Text>
                 <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{queryText ? (language === "en" ? "Commissioned listings matching your search" : "Aramanla eşleşen komisyonlu ilanlar") : translateCopy("Sizin için seçilmiş en iyi ortaklık fırsatları", language)}</Text>
               </View>
-              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{productListings.length} {translateCopy("ilan bulundu", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{countLabel} {translateCopy("ilan bulundu", language)}</Text>
             </View>
 
             {/* Kayıtlı aramalar + arama kaydet */}
@@ -974,10 +1033,10 @@ function ExploreScreenLegacy() {
             ) : null}
 
             {searchNotice}
-            {visibleProducts.length === 0 && serverFailure ? null : visibleProducts.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
+            {visibleProducts.length === 0 && serverFailure ? null : visibleProducts.length === 0 && !useSrv && marketplaceLoadFailed && listings.length === 0 ? (
               // Katalog hiç yüklenemedi (ağ/sunucu) → "sonuç yok" yerine yeniden-dene.
               <MarketplaceRetry onRetry={retryMarketplace} />
-            ) : visibleProducts.length === 0 && (serverLoading || (marketplaceInitialLoading && listings.length === 0)) ? (
+            ) : visibleProducts.length === 0 && (serverLoading || srvBusy || (marketplaceInitialLoading && listings.length === 0)) ? (
               // GERÇEK YÜKLEME İSKELETİ. Eskiden arama yapılırken hiçbir yükleme
               // göstergesi yoktu (bayat sonuçlar duruyordu) ve hidrasyon iskeleti
               // sabit 200×230 kutulardı — gerçek kart boyutuyla uyuşmuyordu.
@@ -1035,7 +1094,14 @@ function ExploreScreenLegacy() {
               </View>
             )}
 
-            {visibleProducts.length < productListings.length ? (
+            {srvNotice}
+            {useSrv ? (
+              visibleProducts.length < productListings.length || srv.hasMore ? (
+                <Pressable onPress={() => setProductVisible((c) => c + 20)} disabled={srvMoreBusy} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, opacity: srvMoreBusy ? 0.6 : 1, paddingHorizontal: 28, paddingVertical: 12 }}>
+                  <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{srvMoreBusy ? translateCopy("Yükleniyor…", language) : translateCopy("Daha fazla göster", language)}</Text>
+                </Pressable>
+              ) : null
+            ) : visibleProducts.length < productListings.length ? (
               <Pressable onPress={() => { setProductVisible((c) => c + 20); if (productVisible + 20 >= productListings.length) { if (queryText && serverHasMore) loadMoreServer(); else if (!queryText && marketplaceHasMore) loadMoreMarketplace(); } }} style={{ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, paddingHorizontal: 28, paddingVertical: 12 }}>
                 <Text style={{ color: colors.primaryDark, fontSize: 14, fontWeight: "900" }}>{translateCopy("Daha fazla göster", language)}</Text>
               </Pressable>
@@ -1231,7 +1297,7 @@ function ExploreScreenLegacy() {
               </ScrollView>
               <View style={{ borderTopColor: colors.line, borderTopWidth: 1, flexDirection: "row", gap: 10, paddingBottom: insets.bottom + 12, paddingHorizontal: 14, paddingTop: 12 }}>
                 <Pressable onPress={() => setShowMobileFilters(false)} style={{ alignItems: "center", backgroundColor: colors.primary, borderRadius: 12, flex: 1, justifyContent: "center", paddingVertical: 14 }}>
-                  <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{productListings.length} {translateCopy("sonucu göster", language)}</Text>
+                  <Text style={{ color: "#FFFFFF", fontSize: 15, fontWeight: "900" }}>{countLabel} {translateCopy("sonucu göster", language)}</Text>
                 </Pressable>
               </View>
             </View>
@@ -1281,7 +1347,7 @@ function ExploreScreenLegacy() {
               görünen ürün sayısıyla uyuşmuyordu). */}
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, minWidth: 74, paddingHorizontal: 10, paddingVertical: 6 }}>
             <Text selectable numberOfLines={1} style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "900" }}>
-              {mediaItems.length} {translateCopy("ilan", language)}
+              {countLabel} {translateCopy("ilan", language)}
             </Text>
           </View>
         </View>
@@ -1439,7 +1505,7 @@ function ExploreScreenLegacy() {
       {(catFilterOpen || catPath.length > 0) && renderCatFilter()}
 
       {searchNotice}
-      {mediaItems.length === 0 && serverFailure ? null : mediaItems.length === 0 && serverLoading ? <Text accessibilityRole="progressbar" style={{ color: colors.muted, padding: 20 }}>{translateCopy("İlanlar aranıyor…", language)}</Text> : mediaItems.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
+      {mediaItems.length === 0 && serverFailure ? null : mediaItems.length === 0 && (serverLoading || srvBusy) ? <Text accessibilityRole="progressbar" style={{ color: colors.muted, padding: 20 }}>{translateCopy("İlanlar aranıyor…", language)}</Text> : mediaItems.length === 0 && !useSrv && marketplaceLoadFailed && listings.length === 0 ? (
         <MarketplaceRetry onRetry={retryMarketplace} />
       ) : mediaItems.length === 0 ? (
         <View style={{ alignItems: "center", gap: 10, padding: 28 }}>
@@ -1480,9 +1546,10 @@ function ExploreScreenLegacy() {
           <ExploreMosaic listings={mosaicListings} width={contentW} onOpen={openListing} />
           {visibleMediaItems.length < mediaItems.length ? (
             <Text selectable style={{ color: colors.muted, fontSize: 12, fontWeight: "800", paddingVertical: 8, textAlign: "center" }}>
-              {visibleMediaItems.length} / {mediaItems.length} {translateCopy("ilan", language)}
+              {visibleMediaItems.length} / {countLabel} {translateCopy("ilan", language)}
             </Text>
           ) : null}
+          {srvNotice}
         </>
       )}
       </View>

@@ -1,4 +1,4 @@
-import { CompactFilterPanel, CompactFilterSection } from "@/components/compact-filter-panel";
+import { CompactFilterPanel, CompactFilterSection, FilterGroup, FilterOptionGrid, FilterSegments, FilterToggleRow } from "@/components/compact-filter-panel";
 import { listingInCategoryNode, listingRootNode } from "@/lib/category-match";
 import { displayListingTitle } from "@/lib/listing-title";
 import { isMobileApp } from "@/lib/mobile-app";
@@ -32,7 +32,7 @@ import { searchKey } from "@/lib/locale";
 import { parseTrPrice } from "@/lib/validation";
 import type { Listing, User } from "@/lib/types";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
-import { matchesLocationFilter } from "@/lib/locations";
+import { getDistrict, getProvince, matchesLocationFilter } from "@/lib/locations";
 import { useStore } from "@/lib/use-store";
 
 type SortMode = "featured" | "commission" | "commissionRate" | "newest" | "priceAsc" | "priceDesc" | "rating";
@@ -341,93 +341,87 @@ function DesktopHomeScreen() {
                 accessibilityLabel={translateCopy("Gelişmiş filtre", language)}
                 accessibilityState={{ expanded: advancedOpen }}
                 onPress={() => setAdvancedOpen((v) => !v)}
-                style={{ alignItems: "center", backgroundColor: advancedOpen || hasAdvanced ? colors.primary : colors.surface, borderColor: hasAdvanced ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, paddingHorizontal: 13, paddingVertical: 7 }}
+                style={{ alignItems: "center", backgroundColor: advancedOpen || hasAdvanced ? colors.primary : colors.surface, borderColor: hasAdvanced ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 40, paddingHorizontal: 14 }}
               >
-                <MaterialCommunityIcons name="tune-variant" size={15} color={advancedOpen || hasAdvanced ? "#FFFFFF" : colors.primaryDark} />
-                <Text style={{ color: advancedOpen || hasAdvanced ? "#FFFFFF" : colors.primaryDark, fontSize: 12.5, fontWeight: "900" }}>{translateCopy("Filtrele", language)}</Text>
-                {hasAdvanced ? <View style={{ backgroundColor: advancedOpen ? "#FFFFFF" : colors.accent, borderRadius: 999, height: 7, width: 7 }} /> : null}
+                <MaterialCommunityIcons name="tune-variant" size={16} color={advancedOpen || hasAdvanced ? colors.surface : colors.ink} />
+                <Text style={{ color: advancedOpen || hasAdvanced ? colors.surface : colors.ink, fontSize: 13, fontWeight: "700" }}>{translateCopy("Filtrele", language)}</Text>
+                {hasAdvanced ? <View style={{ alignItems: "center", backgroundColor: colors.surface, borderRadius: 999, height: 18, justifyContent: "center", minWidth: 18, paddingHorizontal: 5 }}><Text style={{ color: colors.primary, fontSize: 11, fontWeight: "700" }}>{advancedCount}</Text></View> : null}
               </Pressable>
             </View>
           </View>
 
           {advancedOpen ? (
-            <CompactFilterPanel onClear={clearAdvanced} onClose={() => setAdvancedOpen(false)} resultLabel={`${filteredListings.length} ${translateCopy("sonucu göster", language)}`}>
- <CompactFilterSection id="price" label="Fiyat"><View style={{ gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Fiyat aralığı (TL)", language)}</Text>
-                <View style={{ alignItems: "center", flexDirection: "row", gap: 8 }}>
-                  <TextInput value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, minHeight: 44, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }} />
-                  <Text style={{ color: colors.subtle, fontSize: 14, fontWeight: "800" }}>—</Text>
-                  <TextInput value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={{ backgroundColor: colors.surfaceAlt, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, minHeight: 44, minWidth: 0, paddingHorizontal: 12, paddingVertical: 10 }} />
-                </View>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  {([["0", "1000"], ["1000", "5000"], ["5000", "25000"], ["25000", ""]] as Array<[string, string]>).map(([lo, hi]) => {
-                    const on = priceMin === (lo === "0" ? "" : lo) && priceMax === hi;
-                    const label = hi ? `${money(Number(lo))}–${money(Number(hi))}` : `${money(Number(lo))}+`;
-                    return <FilterPill key={lo + hi} active={on} label={label} onPress={() => { setPriceMin(lo === "0" ? "" : lo); setPriceMax(hi); }} />;
-                  })}
-                </View>
-              </View></CompactFilterSection>
- <CompactFilterSection id="location" label="Konum"><View style={{ gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Konum (İl / İlçe)", language)}</Text>
-                <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
-              </View></CompactFilterSection>
- <CompactFilterSection id="category" label="Kategori">{rootCatOptions.length > 0 ? (
-                <View style={{ gap: 7 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Kategori", language)}</Text>
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 8 }}>
-                    <FilterPill active={!catFilter} label={translateCopy("Tümü", language)} onPress={() => setCatFilter(null)} />
-                    {rootCatOptions.map((c) => (
-                      <FilterPill key={c.key} active={catFilter === c.key} icon={getCategoryIcon(c.label)} label={`${translateCopy(getCategoryShortLabel(c.label), language)}${c.n > 0 ? ` (${c.n})` : ""}`} onPress={() => setCatFilter((prev) => (prev === c.key ? null : c.key))} />
-                    ))}
-                  </ScrollView>
-                </View>
-              ) : null}</CompactFilterSection>
- <CompactFilterSection id="commission" label="Komisyon"><View style={{gap:12}}><View style={{ gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En az komisyon oranı (%)", language)}</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  {[0, 10, 15, 20, 25].map((r) => (
-                    <FilterPill key={r} active={minRate === r} label={r === 0 ? translateCopy("Tümü", language) : `%${r}+`} onPress={() => setMinRate(r)} />
-                  ))}
-                </View>
-              </View><View style={{ gap: 7 }}>
-                <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("En az komisyon (₺)", language)}</Text>
-                <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                  {[0, 250, 500, 1000].map((amt) => (
-                    <FilterPill key={amt} active={minComm === amt} label={amt === 0 ? translateCopy("Tümü", language) : `${money(amt)}+`} onPress={() => setMinComm(amt)} />
-                  ))}
-                </View>
-              </View><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 18 }}>
-                <View style={{ gap: 7 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Komisyon tipi", language)}</Text>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    <FilterPill active={commTypeFilter === "all"} label={translateCopy("Tümü", language)} onPress={() => setCommTypeFilter("all")} />
-                    <FilterPill active={commTypeFilter === "rate"} label={translateCopy("Oran %", language)} onPress={() => setCommTypeFilter("rate")} />
-                    <FilterPill active={commTypeFilter === "fixed"} label={translateCopy("Sabit ₺", language)} onPress={() => setCommTypeFilter("fixed")} />
+            <CompactFilterPanel activeCount={advancedCount} onClear={clearAdvanced} onClose={() => setAdvancedOpen(false)} resultLabel={`${filteredListings.length} ${translateCopy("sonucu göster", language)}`}>
+              <CompactFilterSection id="price" label="Fiyat" badge={priceMin || priceMax ? 1 : 0}>
+                <FilterGroup title={translateCopy("Fiyat aralığı (TL)", language)}>
+                  <View style={{ alignItems: "center", flexDirection: "row", gap: 8, minWidth: 0 }}>
+                    <TextInput accessibilityLabel={translateCopy("En az", language)} value={priceMin} onChangeText={setPriceMin} keyboardType="numeric" inputMode="numeric" placeholder={translateCopy("En az", language)} placeholderTextColor={colors.subtle} style={priceInputStyle} />
+                    <View style={{ backgroundColor: colors.line, height: 1, width: 8 }} />
+                    <TextInput accessibilityLabel={translateCopy("En çok", language)} value={priceMax} onChangeText={setPriceMax} keyboardType="numeric" inputMode="numeric" placeholder={translateCopy("En çok", language)} placeholderTextColor={colors.subtle} style={priceInputStyle} />
                   </View>
+                  <FilterOptionGrid options={([["0", "1000"], ["1000", "5000"], ["5000", "25000"], ["25000", ""]] as Array<[string, string]>).map(([lo, hi]) => ({
+                    key: `${lo}-${hi}`,
+                    label: hi ? `${money(Number(lo))} – ${money(Number(hi))}` : `${money(Number(lo))}+`,
+                    active: priceMin === (lo === "0" ? "" : lo) && priceMax === hi,
+                    onPress: () => { setPriceMin(lo === "0" ? "" : lo); setPriceMax(hi); }
+                  }))} />
+                </FilterGroup>
+              </CompactFilterSection>
+              <CompactFilterSection id="location" label="Konum" badge={loc.provinceId != null ? 1 : 0}>
+                <FilterGroup title={translateCopy("Konum (İl / İlçe)", language)}>
+                  <LocationSelector mode="filter" showNeighborhood={false} value={loc} onChange={setLoc} />
+                </FilterGroup>
+              </CompactFilterSection>
+              <CompactFilterSection id="category" label="Kategori" badge={catFilter ? 1 : 0}>
+                {rootCatOptions.length > 0 ? (
+                  <FilterGroup title={translateCopy("Kategori", language)}>
+                    <FilterOptionGrid options={[
+                      { key: "__all", label: translateCopy("Tümü", language), active: !catFilter, onPress: () => setCatFilter(null) },
+                      ...rootCatOptions.map((c) => ({
+                        key: c.key,
+                        label: `${translateCopy(getCategoryShortLabel(c.label), language)}${c.n > 0 ? ` (${c.n})` : ""}`,
+                        icon: getCategoryIcon(c.label),
+                        active: catFilter === c.key,
+                        onPress: () => setCatFilter((prev) => (prev === c.key ? null : c.key))
+                      }))
+                    ]} />
+                  </FilterGroup>
+                ) : null}
+              </CompactFilterSection>
+              <CompactFilterSection id="commission" label="Komisyon" badge={(minRate > 0 ? 1 : 0) + (minComm > 0 ? 1 : 0) + (commTypeFilter !== "all" ? 1 : 0)}>
+                <FilterGroup title={translateCopy("En az komisyon oranı (%)", language)}>
+                  <FilterSegments options={[0, 10, 15, 20, 25].map((r) => ({ key: String(r), label: r === 0 ? translateCopy("Tümü", language) : `%${r}+`, active: minRate === r, onPress: () => setMinRate(r) }))} />
+                </FilterGroup>
+                <FilterGroup divided title={translateCopy("En az komisyon (₺)", language)}>
+                  <FilterSegments options={[0, 250, 500, 1000].map((amt) => ({ key: String(amt), label: amt === 0 ? translateCopy("Tümü", language) : `${money(amt)}+`, active: minComm === amt, onPress: () => setMinComm(amt) }))} />
+                </FilterGroup>
+                <FilterGroup divided title={translateCopy("Komisyon tipi", language)}>
+                  <FilterSegments options={[
+                    { key: "all", label: translateCopy("Tümü", language), active: commTypeFilter === "all", onPress: () => setCommTypeFilter("all") },
+                    { key: "rate", label: translateCopy("Oran %", language), active: commTypeFilter === "rate", onPress: () => setCommTypeFilter("rate") },
+                    { key: "fixed", label: translateCopy("Sabit ₺", language), active: commTypeFilter === "fixed", onPress: () => setCommTypeFilter("fixed") }
+                  ]} />
+                </FilterGroup>
+              </CompactFilterSection>
+              <CompactFilterSection id="other" label="Diğer" badge={(minRating > 0 ? 1 : 0) + (onlyOpenPartner ? 1 : 0) + (onlyInStock ? 1 : 0) + (onlyFeatured ? 1 : 0) + (onlyVerified ? 1 : 0)}>
+                <FilterGroup title={translateCopy("Satıcı puanı", language)}>
+                  <FilterSegments options={[0, 4, 4.5].map((r) => ({ key: String(r), label: r === 0 ? translateCopy("Tümü", language) : `${r}+`, icon: r > 0 ? ("star" as const) : undefined, active: minRating === r, onPress: () => setMinRating(r) }))} />
+                </FilterGroup>
+                <View style={{ borderTopColor: colors.line, borderTopWidth: 1, minWidth: 0, paddingTop: 4 }}>
+                  <FilterToggleRow active={onlyOpenPartner} icon="flash-outline" label={translateCopy("Anında ortaklık", language)} onPress={() => setOnlyOpenPartner((v) => !v)} />
+                  <FilterToggleRow divided active={onlyInStock} icon="package-variant-closed" label={translateCopy("Stokta olanlar", language)} onPress={() => setOnlyInStock((v) => !v)} />
+                  <FilterToggleRow divided active={onlyFeatured} icon="star-outline" label={translateCopy("Öne çıkanlar", language)} onPress={() => setOnlyFeatured((v) => !v)} />
+                  <FilterToggleRow divided active={onlyVerified} icon="shield-check-outline" label={translateCopy("Doğrulanmış satıcı", language)} onPress={() => setOnlyVerified((v) => !v)} />
                 </View>
-                <View style={{ gap: 7 }}>
-                  <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "800" }}>{translateCopy("Satıcı puanı", language)}</Text>
-                  <View style={{ flexDirection: "row", gap: 8 }}>
-                    {[0, 4, 4.5].map((r) => (
-                      <FilterPill key={r} active={minRating === r} icon={r > 0 ? "star" : undefined} label={r === 0 ? translateCopy("Tümü", language) : `${r}+`} onPress={() => setMinRating(r)} />
-                    ))}
-                  </View>
-                </View>
-              </View></View></CompactFilterSection>
- <CompactFilterSection id="other" label="Diğer"><View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-                <FilterPill active={onlyOpenPartner} icon={onlyOpenPartner ? "check-circle" : "flash-outline"} label={translateCopy("Anında ortaklık", language)} onPress={() => setOnlyOpenPartner((v) => !v)} />
-                <FilterPill active={onlyInStock} icon={onlyInStock ? "check-circle" : "package-variant-closed"} label={translateCopy("Stokta olanlar", language)} onPress={() => setOnlyInStock((v) => !v)} />
-                <FilterPill active={onlyFeatured} icon={onlyFeatured ? "check-circle" : "star-outline"} label={translateCopy("Öne çıkanlar", language)} onPress={() => setOnlyFeatured((v) => !v)} />
-                <FilterPill active={onlyVerified} icon={onlyVerified ? "check-circle" : "shield-check-outline"} label={translateCopy("Doğrulanmış satıcı", language)} onPress={() => setOnlyVerified((v) => !v)} />
-              </View></CompactFilterSection>
- </CompactFilterPanel>
+              </CompactFilterSection>
+            </CompactFilterPanel>
           ) : null}
 
           {/* Uygulanan filtre özeti — kaldırılabilir çipler */}
           {hasAdvanced ? (
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingRight: 12 }}>
+            <ScrollView testID="applied-filter-chips" horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }} contentContainerStyle={{ alignItems: "center", gap: 8, paddingRight: 12 }}>
               {catFilter ? <ActiveChip label={translateCopy(getCategoryShortLabel(rootCatOptions.find((c) => c.key === catFilter)?.label ?? ""), language)} onRemove={() => setCatFilter(null)} /> : null}
-              {loc.provinceId != null ? <ActiveChip label={translateCopy("Konum", language)} onRemove={() => setLoc({})} /> : null}
+              {loc.provinceId != null ? <ActiveChip label={[getDistrict(loc.districtId)?.name, getProvince(loc.provinceId)?.name].filter(Boolean).join(", ") || translateCopy("Konum", language)} onRemove={() => setLoc({})} /> : null}
               {(priceMin || priceMax) ? <ActiveChip label={`${priceMin ? money(parseTrPrice(priceMin)) : "0"}–${priceMax ? money(parseTrPrice(priceMax)) : "∞"}`} onRemove={() => { setPriceMin(""); setPriceMax(""); }} /> : null}
               {minRate > 0 ? <ActiveChip label={`%${minRate}+`} onRemove={() => setMinRate(0)} /> : null}
               {minComm > 0 ? <ActiveChip label={`${money(minComm)}+`} onRemove={() => setMinComm(0)} /> : null}
@@ -437,6 +431,11 @@ function DesktopHomeScreen() {
               {onlyInStock ? <ActiveChip label={translateCopy("Stokta", language)} onRemove={() => setOnlyInStock(false)} /> : null}
               {onlyFeatured ? <ActiveChip label={translateCopy("Öne çıkanlar", language)} onRemove={() => setOnlyFeatured(false)} /> : null}
               {onlyVerified ? <ActiveChip label={translateCopy("Doğrulanmış", language)} onRemove={() => setOnlyVerified(false)} /> : null}
+              {advancedCount > 1 ? (
+                <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Filtreleri temizle", language)} onPress={clearAdvanced} style={({ pressed }) => ({ justifyContent: "center", minHeight: 40, opacity: pressed ? 0.7 : 1, paddingHorizontal: 8 })}>
+                  <Text style={{ color: colors.primary, fontSize: 13, fontWeight: "700" }}>{translateCopy("Temizle", language)}</Text>
+                </Pressable>
+              ) : null}
             </ScrollView>
           ) : null}
 
@@ -795,26 +794,15 @@ function CategoryShowcase({ categoryTree, listings, isWideWeb }: { categoryTree:
 // Uygulanan filtre özeti çipi (dokununca kaldırır).
 function ActiveChip({ label, onRemove }: { label: string; onRemove: () => void }) {
   return (
-    <Pressable accessibilityRole="button" onPress={onRemove} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 999, flexDirection: "row", gap: 4, opacity: pressed ? 0.7 : 1, paddingHorizontal: 11, paddingVertical: 6 })}>
-      <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{label}</Text>
-      <MaterialCommunityIcons name="close" size={13} color={colors.primaryDark} />
+    <Pressable accessibilityRole="button" accessibilityLabel={label} hitSlop={4} onPress={onRemove} style={({ pressed }) => ({ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 6, minHeight: 36, opacity: pressed ? 0.7 : 1, paddingLeft: 12, paddingRight: 8 })}>
+      <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 13, fontWeight: "600", maxWidth: 180 }}>{label}</Text>
+      <MaterialCommunityIcons name="close" size={15} color={colors.primary} />
     </Pressable>
   );
 }
 
-// Gelişmiş filtre paneli için birörnek seçim/anahtar pill'i.
-function FilterPill({ active, label, icon, onPress }: { active?: boolean; label: string; icon?: IconName; onPress: () => void }) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      onPress={onPress}
-      style={({ pressed }) => ({ alignItems: "center", backgroundColor: active ? colors.primary : colors.surfaceAlt, borderColor: active ? colors.primary : colors.line, borderRadius: 999, borderWidth: 1, flexDirection: "row", gap: 5, opacity: pressed ? 0.75 : 1, paddingHorizontal: 13, paddingVertical: 8 })}
-    >
-      {icon ? <MaterialCommunityIcons name={icon} size={14} color={active ? "#FFFFFF" : colors.muted} /> : null}
-      <Text style={{ color: active ? "#FFFFFF" : colors.ink, fontSize: 12.5, fontWeight: "800" }}>{label}</Text>
-    </Pressable>
-  );
-}
+// Fiyat aralığı girişleri — fontSize 16 (iOS web odak-zoom'unu engeller), minWidth 0 (320px taşma yok).
+const priceInputStyle = { backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 10, borderWidth: 1, color: colors.ink, flex: 1, fontSize: 16, minHeight: 44, minWidth: 0, paddingHorizontal: 12, paddingVertical: 8 } as const;
 
 function SortChip({ active, label, onPress }: { active?: boolean; label: string; onPress: () => void }) {
   return (

@@ -1,9 +1,10 @@
 import { MaterialCommunityIcons } from "@/components/icons";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Pressable, ScrollView, Text, TextInput, View } from "react-native";
 
 import { colors } from "@/components/colors";
-import { suggestCategories, type CategoryNode } from "@/lib/category-tree";
+import { searchCategoryTree } from "@/lib/category-path";
+import { type CategoryNode } from "@/lib/category-tree";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { getRecentCategories, pushRecentCategory, subscribeRecentCategories, type RecentCategory } from "@/lib/recent-categories";
@@ -31,7 +32,9 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
     return value ?? [];
   });
   const [query, setQuery] = useState("");
-  const suggestions = query.trim().length >= 2 ? suggestCategories(query, 7) : [];
+  // Ağacın TAMAMINDA ara: suggestCategories aynı etiket + aynı formu tek öneriye indiriyordu →
+  // eş-etiketli dallar (ör. "Arazi, SUV › Audi › A4") aramayla hiç seçilemiyordu.
+  const suggestions = useMemo(() => searchCategoryTree(categoryTree, query, 10), [categoryTree, query]);
 
   const top = trail[0];
   const current = trail[trail.length - 1];
@@ -41,7 +44,10 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
   // fazla genel kategoriye düşmesi filtre/SEO kalitesini düşürür; kullanıcı bir alt
   // detaya iner, bulamazsa her dalda bulunan "Diğer" yaprağını seçer.
   const hasChildren = !!(current?.children && current.children.length);
-  const canFinalizeHere = trail.length >= 2 && !hasChildren;
+  // Yaprak = çocuğu olmayan düğüm. Eskiden `trail.length >= 2` da isteniyordu → alt kategorisi
+  // OLMAYAN bir kök (yönetici-eklentisi kategori) seçilince "ile devam et" düğmesi hiçbir şey
+  // yapmıyordu (çıkmaz). Dal düğümünde ise asla kesinleşmez.
+  const canFinalizeHere = trail.length >= 1 && !hasChildren;
 
   // SON KULLANILAN KATEGORİLER: aynı satıcı çoğunlukla aynı kategoride tekrar ilan
   // veriyor; 4594 yapraklı ağacı her seferinde gezmesin diye çip olarak sunulur.
@@ -79,8 +85,15 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
     if (n.children && n.children.length) setTrail(next);
     else finalize(next); // leaf → finalize
   };
-  const selectCurrent = () => { if (trail.length >= 2) finalize(trail); };
-  const goTo = (idx: number) => setTrail(trail.slice(0, idx + 1));
+  const selectCurrent = () => { if (canFinalizeHere) finalize(trail); };
+  // Kırıntı: seçim kesinleşmişken de o seviyeye dönülebilir (eskiden kesinleşince kırıntılar
+  // ölüydü; tek yol "Değiştir" idi ve o da yaprağın KENDİSİNDE açılıp kardeşleri göstermiyordu).
+  const goTo = (idx: number) => {
+    if (finalized) { setTrail(value.slice(0, idx + 1)); onChange([]); }
+    else setTrail(trail.slice(0, idx + 1));
+  };
+  /** "Değiştir": seçili yaprağın bir üst seviyesini aç → kardeş kategoriler hemen görünür. */
+  const reopen = () => { setTrail(value.slice(0, -1)); onChange([]); };
 
   const previewPath = finalized ? value : trail;
 
@@ -95,22 +108,35 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
             onChangeText={setQuery}
             placeholder={translateCopy("Ne satıyorsun? iPhone, koltuk, araba, arsa…", language)}
             placeholderTextColor={colors.subtle}
-            style={{ color: colors.ink, flex: 1, fontSize: 14.5, minHeight: 46, paddingVertical: 9 }}
+            autoCorrect={false}
+            accessibilityLabel={translateCopy("Kategori ara", language)}
+            // 16px: iOS Safari 16px altındaki alana odaklanınca sayfayı yakınlaştırıyordu (14.5 idi).
+            style={{ color: colors.ink, flex: 1, fontSize: 16, minHeight: 46, minWidth: 0, paddingVertical: 9 }}
           />
-          {query ? <Pressable onPress={() => setQuery("")} hitSlop={8}><MaterialCommunityIcons name="close-circle" size={17} color={colors.muted} /></Pressable> : null}
+          {query ? <Pressable accessibilityRole="button" accessibilityLabel={translateCopy("Aramayı temizle", language)} onPress={() => setQuery("")} hitSlop={10}><MaterialCommunityIcons name="close-circle" size={18} color={colors.muted} /></Pressable> : null}
         </View>
-        {suggestions.length ? (
+        {query.trim().length >= 2 ? (
           <View style={{ backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 11, borderWidth: 1, overflow: "hidden" }}>
-            {suggestions.map((s) => (
-              <Pressable key={s.labels.join(">")} onPress={() => {
-                const last = s.path[s.path.length - 1];
-                if (last?.children && last.children.length) setTrail(s.path); else finalize(s.path);
-                setQuery("");
-              }} style={({ pressed }) => ({ backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderBottomColor: colors.line, borderBottomWidth: 1, minHeight: 48, paddingHorizontal: 13, paddingVertical: 10 })}>
-                <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy(s.labels[s.labels.length - 1], language)}</Text>
-                <Text numberOfLines={1} style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600" }}>{s.labels.map((l) => translateCopy(l, language)).join(" › ")}</Text>
-              </Pressable>
-            ))}
+            {suggestions.length === 0 ? (
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 13 }}>{translateCopy("Bu aramada kategori bulunamadı. Aşağıdan seviye seviye seçebilirsin.", language)}</Text>
+            ) : suggestions.map((path, i) => {
+              const last = path[path.length - 1];
+              const branch = !!(last.children && last.children.length);
+              return (
+                <Pressable key={path.map((n) => n.key).join("/")} accessibilityRole="button" onPress={() => {
+                  // Dal → o seviyeyi aç (kullanıcı yaprağa iner); yaprak → kesinleştir.
+                  if (branch) { setTrail(path); if (finalized) onChange([]); } else finalize(path);
+                  setQuery("");
+                }} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, flexDirection: "row", gap: 8, minHeight: 48, paddingHorizontal: 13, paddingVertical: 10 })}>
+                  <View style={{ flex: 1, minWidth: 0 }}>
+                    <Text style={{ color: colors.ink, fontSize: 13.5, fontWeight: "800" }}>{translateCopy(last.label, language)}</Text>
+                    {/* Tam yol KIRPILMAZ: aynı etiket birçok dalda var; hangi dal olduğu burada okunur. */}
+                    {path.length > 1 ? <Text style={{ color: colors.subtle, fontSize: 11.5, fontWeight: "600", lineHeight: 16 }}>{path.slice(0, -1).map((n) => translateCopy(n.label, language)).join(" › ")}</Text> : null}
+                  </View>
+                  {branch ? <MaterialCommunityIcons name="chevron-right" size={18} color={colors.subtle} /> : null}
+                </Pressable>
+              );
+            })}
           </View>
         ) : null}
       </View>
@@ -119,15 +145,15 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
       {previewPath.length ? (
         <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 3 }}>
           {previewPath.map((p, i) => (
-            <View key={p.key} style={{ alignItems: "center", flexDirection: "row", gap: 3 }}>
+            <View key={p.key} style={{ alignItems: "center", flexDirection: "row", gap: 3, maxWidth: "100%" }}>
               {i > 0 ? <Text style={{ color: colors.subtle, fontSize: 12 }}>›</Text> : null}
-              <Pressable onPress={() => !finalized && goTo(i)}>
-                <Text style={{ color: i === previewPath.length - 1 ? colors.primaryDark : colors.muted, fontSize: 12.5, fontWeight: i === previewPath.length - 1 ? "900" : "700" }}>{translateCopy(p.label, language)}</Text>
+              <Pressable accessibilityRole="button" disabled={finalized && i === previewPath.length - 1} onPress={() => goTo(i)} hitSlop={6} style={{ flexShrink: 1 }}>
+                <Text style={{ color: i === previewPath.length - 1 ? colors.primaryDark : colors.primary, fontSize: 12.5, fontWeight: i === previewPath.length - 1 ? "900" : "700" }}>{translateCopy(p.label, language)}</Text>
               </Pressable>
             </View>
           ))}
           {finalized ? (
-            <Pressable onPress={() => onChange([])} hitSlop={6} style={{ marginLeft: 8 }}>
+            <Pressable accessibilityRole="button" onPress={reopen} hitSlop={6} style={{ marginLeft: 8 }}>
               <Text style={{ color: colors.primaryDark, fontSize: 12, fontWeight: "800" }}>{translateCopy("Değiştir", language)}</Text>
             </Pressable>
           ) : null}
@@ -139,7 +165,8 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
         <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
           {recents.slice(0, 6).map((rc) => (
             <Pressable key={rc.slugs.join(">")} onPress={() => pickRecent(rc)} style={({ pressed }) => ({ backgroundColor: pressed ? colors.primarySoft : colors.surfaceAlt, borderColor: colors.line, borderRadius: 999, borderWidth: 1, minHeight: 44, justifyContent: "center", paddingHorizontal: 14 })}>
-              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700", maxWidth: 200 }}>{rc.labels[rc.labels.length - 1]}</Text>
+              {/* Üst + yaprak: yalnız yaprak ("Diğer", "Satılık") hangi dal olduğunu söylemiyordu. */}
+              <Text numberOfLines={1} style={{ color: colors.ink, fontSize: 12, fontWeight: "700", maxWidth: 260 }}>{rc.labels.slice(-2).map((l) => translateCopy(l, language)).join(" › ")}</Text>
             </Pressable>
           ))}
         </View>
@@ -155,7 +182,7 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
                   const on = top?.key === n.key;
                   return (
                     <Pressable key={n.key} onPress={() => pickTop(n)} style={{ alignItems: "center", backgroundColor: on ? colors.primarySoft : "transparent", borderTopColor: colors.line, borderTopWidth: i === 0 ? 0 : 1, flexDirection: "row", gap: 8, minHeight: 48, paddingHorizontal: 14, paddingVertical: 13 }}>
-                      <Text numberOfLines={1} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 14, fontWeight: on ? "900" : "600" }}>{translateCopy(n.label, language)}</Text>
+                      <Text numberOfLines={2} style={{ color: on ? colors.primaryDark : colors.ink, flex: 1, fontSize: 14, fontWeight: on ? "900" : "600", minWidth: 0 }}>{translateCopy(n.label, language)}</Text>
                       <MaterialCommunityIcons name="chevron-right" size={18} color={on ? colors.primary : colors.subtle} />
                     </Pressable>
                   );
@@ -193,7 +220,7 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
                 ) : (
                   midItems.map((n, i) => (
                     <Pressable key={n.key} onPress={() => pickChild(n)} style={({ pressed }) => ({ alignItems: "center", backgroundColor: pressed ? colors.surfaceAlt : "transparent", borderTopColor: colors.line, borderTopWidth: (i === 0 && !canFinalizeHere) ? 0 : 1, flexDirection: "row", gap: 8, minHeight: 48, paddingHorizontal: 14, paddingVertical: 13 })}>
-                      <Text numberOfLines={1} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600" }}>{translateCopy(n.label, language)}</Text>
+                      <Text numberOfLines={2} style={{ color: colors.ink, flex: 1, fontSize: 14, fontWeight: "600", minWidth: 0 }}>{translateCopy(n.label, language)}</Text>
                       {n.children && n.children.length ? <MaterialCommunityIcons name="chevron-right" size={18} color={colors.subtle} /> : null}
                     </Pressable>
                   ))
@@ -207,8 +234,8 @@ export function CategoryPicker({ value, onChange, presetRootFormKey }: { value: 
           )}
         </View>
       ) : (
-        <View style={{ alignItems: "center", backgroundColor: colors.successSoft, borderColor: colors.success, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, padding: 13 }}>
-          <MaterialCommunityIcons name="check-circle" size={20} color={colors.success} />
+        <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderColor: colors.primary, borderRadius: 12, borderWidth: 1, flexDirection: "row", gap: 10, padding: 13 }}>
+          <MaterialCommunityIcons name="check-circle" size={20} color={colors.primary} />
           <Text style={{ color: colors.ink, flex: 1, fontSize: 13.5, fontWeight: "800" }}>{translateCopy("Kategori seçildi. Form aşağıda hazır.", language)}</Text>
         </View>
       )}

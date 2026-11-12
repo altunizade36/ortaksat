@@ -21,7 +21,10 @@ import { type LocationValue } from "@/components/location-selector";
 import { SafeRemoteImage } from "@/components/safe-remote-image";
 import { Card, EmptyState, PrimaryButton, SectionTitle, StatusPill } from "@/components/ui";
 import { CategoryPicker as TreeCategoryPicker } from "@/components/category-picker";
-import { getFormSchema, resolveFormKey, type CategoryNode } from "@/lib/category-tree";
+import { listingCategoryPath } from "@/lib/category-match";
+import { categoryPathAttributes, isLeafCategoryPath, savedCategoryPath } from "@/lib/category-path";
+import { deriveFieldsFromPath, getFormSchema, resolveFormKey, type CategoryNode } from "@/lib/category-tree";
+import { listingCategoryTrail } from "@/lib/mobile-catalog";
 import { type CurrencyCode } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { uploadListingImage } from "@/lib/live-service";
@@ -57,7 +60,7 @@ export default function ListingEditRoute() {
 function ListingEditForm({ listing }: { listing: Listing }) {
   const { language } = useLanguage();
   const router = useRouter();
-  const { authError, backendMode, currentUser, updateListing, removeListing, partnerships, leads, sales } = useStore();
+  const { authError, backendMode, currentUser, updateListing, removeListing, partnerships, leads, sales, categoryTree } = useStore();
   const isLiveAccount = backendMode === "supabase" && currentUser.id.includes("-");
   const [title, setTitle] = useState(listing.title);
   const [description, setDescription] = useState(listing.description);
@@ -65,8 +68,20 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [commissionType, setCommissionType] = useState<CommissionType>(listing.commissionType);
   const [commissionValue, setCommissionValue] = useState(listingNumberInput(listing.commissionValue));
   const [partnershipMode, setPartnershipMode] = useState<PartnershipMode>(listing.partnershipMode);
-  const [category, setCategory] = useState(listing.category);
-  const [catPath, setCatPath] = useState<CategoryNode[]>([]);
+  // KAYITLI KATEGORİ YOLU: önce benzersiz `_path`, yoksa keşfet/kategori sayfalarıyla AYNI çözücü
+  // (listingCategoryPath), o da bulamazsa (yönetici-eklentisi kategori) etiket araması.
+  const [savedPath] = useState<CategoryNode[]>(() => {
+    const exact = savedCategoryPath(categoryTree, listing);
+    if (exact) return exact;
+    const resolved = listingCategoryPath(listing);
+    return resolved.length ? resolved : listingCategoryTrail(categoryTree, listing);
+  });
+  // Seçici kayıtlı yolla ÖN-SEÇİLİ açılır (eskiden boş açılıyor, yalnız yaprak adı gösteriliyordu).
+  const [catPath, setCatPath] = useState<CategoryNode[]>(savedPath);
+  // Kullanıcı kategoriye DOKUNMADIYSA _root/_leaf/_formKey/_path aynen korunur (tahmin yazılmaz).
+  const [catChanged, setCatChanged] = useState(false);
+  const newPath = catChanged && isLeafCategoryPath(catPath) ? catPath : null;
+  const category = newPath ? newPath[newPath.length - 1].label : listing.category;
   const [currency, setCurrency] = useState<CurrencyCode>((listing.currency as CurrencyCode) ?? "TRY");
   const [bonusAmount, setBonusAmount] = useState(listing.bonusAmount ? String(listing.bonusAmount) : "");
   const [bonusQuota, setBonusQuota] = useState(listing.bonusQuota ? String(listing.bonusQuota) : "");
@@ -92,16 +107,48 @@ function ListingEditForm({ listing }: { listing: Listing }) {
   const [contactMethod, setContactMethod] = useState<ContactMethod>(listing.contactMethod);
   const [saving, setSaving] = useState(false);
   // Yapısal kategori özellikleri (emlak: m²/oda/imar…) düzenlenebilir.
-  const [attrValues, setAttrValues] = useState<Record<string, string | boolean | string[]>>(() => {
+  const savedAttrValues = () => {
     const a = listing.attributes ?? {};
     const out: Record<string, string | boolean | string[]> = {};
     for (const [k, v] of Object.entries(a)) { if (!k.startsWith("_")) out[k] = typeof v === "number" ? String(v) : v; }
     return out;
-  });
+  };
+  const [attrValues, setAttrValues] = useState<Record<string, string | boolean | string[]>>(savedAttrValues);
   // Form şeması: kategori yeniden seçildiyse ondan, değilse ilanın kayıtlı _formKey'inden.
-  const formKey = catPath.length ? resolveFormKey(catPath) : ((listing.attributes?._formKey as string) || "");
+  const savedFormKey = (listing.attributes?._formKey as string) || "";
+  const formKey = newPath ? resolveFormKey(newPath) : savedFormKey;
   const attrSchema = formKey ? getFormSchema(formKey) : null;
   const setAttr = (k: string, v: string | boolean | string[]) => setAttrValues((s) => ({ ...s, [k]: v }));
+
+  /** Seçiciden gelen yol: [] = kullanıcı geziniyor (henüz seçim yok), yaprak = yeni kategori. */
+  function changeCategory(next: CategoryNode[]) {
+    setCatPath(next);
+    if (!isLeafCategoryPath(next)) {
+      // Yeni seçimden geri dönüldü → kayıt KAYITLI kategoriyle yapılacak; form da ona dönmeli
+      // (yoksa yeni şemanın değerleri eski şemayla kaydedilip kayıtlı özellikleri silerdi).
+      if (catChanged) { if (formKey !== savedFormKey) setAttrValues(savedAttrValues()); setCatChanged(false); }
+      return;
+    }
+    const prevPath = newPath ?? savedPath;
+    const nextKey = resolveFormKey(next);
+    // Eski kategoriden türeyen marka/model/ilan-tipi yeni kategoride bayat kalmasın; şema
+    // DEĞİŞTİYSE önceki şemanın tüm özellikleri temizlenir (eskiden aynı adlı alanlar — ör.
+    // otomobilin "brand"i — telefon ilanına taşınıyordu).
+    const oldSeed: Record<string, string> = prevPath.length ? deriveFieldsFromPath(prevPath, getFormSchema(formKey || resolveFormKey(prevPath))) : {};
+    const seed = deriveFieldsFromPath(next, getFormSchema(nextKey));
+    delete seed.title;
+    setAttrValues((old) => ({
+      ...(nextKey === formKey ? Object.fromEntries(Object.entries(old).filter(([k, v]) => !(k in oldSeed) || v !== oldSeed[k])) : {}),
+      ...seed
+    }));
+    setCatChanged(true);
+  }
+  /** Kategori değişikliğinden vazgeç → kayıtlı kategori ve (şema değiştiyse) kayıtlı özellikler. */
+  function keepSavedCategory() {
+    if (formKey !== savedFormKey) setAttrValues(savedAttrValues());
+    setCatPath(savedPath);
+    setCatChanged(false);
+  }
 
   async function pickImage() {
     const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -174,9 +221,11 @@ function ListingEditForm({ listing }: { listing: Listing }) {
       for (const [k, v] of Object.entries(attrValues)) if (v !== "" && !(Array.isArray(v) && !v.length)) builtAttrs[k] = v;
     }
     const meta = listing.attributes ?? {};
-    if (meta._leaf) builtAttrs._leaf = meta._leaf as string;
-    if (meta._root) builtAttrs._root = meta._root as string;
-    if (formKey) builtAttrs._formKey = formKey;
+    // KATEGORİ META: yeni kategori seçildiyse dördü de (_root/_leaf/_formKey/_path) SEÇİLEN YOLDAN
+    // yazılır. Eskiden yalnız `category` + `_formKey` güncelleniyor, `_leaf`/`_root` ESKİ kalıyordu
+    // → ilan kategori değiştirildikten sonra da eski kategoride listeleniyordu. Dokunulmadıysa
+    // aşağıdaki döngü kayıtlı meta'yı aynen taşır.
+    if (newPath) Object.assign(builtAttrs, categoryPathAttributes(newPath));
     // Form'un YÖNETMEDİĞİ meta anahtarlarını (_ ile başlayan) koru. Eskiden yalnız _leaf/_root/
     // _formKey geri ekleniyordu → düzenleme (ör. fiyat) _urgentUntil (Acil rozeti) + _partnerRegion
     // + _maxPartners + _commissionCondition'ı KALICI SİLİYORDU. attrValues zaten _-anahtarlarını
@@ -349,12 +398,24 @@ function ListingEditForm({ listing }: { listing: Listing }) {
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Kategori", language)}</Text>
             <View style={{ alignItems: "center", flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
-              <View style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}>
-                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800" }}>Şu anki: {category || "—"}</Text>
+              {/* TAM YOL: yalnız yaprak adı ("Satılık", "Diğer") hangi dal olduğunu söylemiyordu. */}
+              <View style={{ backgroundColor: colors.primarySoft, borderRadius: 12, maxWidth: "100%", paddingHorizontal: 12, paddingVertical: 6 }}>
+                <Text style={{ color: colors.primaryDark, fontSize: 12.5, fontWeight: "800", lineHeight: 18 }}>{translateCopy("Kayıtlı kategori", language)}: {savedPath.length ? savedPath.map((n) => translateCopy(n.label, language)).join(" › ") : (listing.category || "—")}</Text>
               </View>
-              <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600" }}>{translateCopy("Değiştirmek istersen aşağıdan yeni kategori seç (opsiyonel).", language)}</Text>
+              {catChanged || catPath.length !== savedPath.length ? (
+                <Pressable accessibilityRole="button" onPress={keepSavedCategory} hitSlop={6} style={{ justifyContent: "center", minHeight: 32 }}>
+                  <Text style={{ color: colors.primary, fontSize: 12.5, fontWeight: "800", textDecorationLine: "underline" }}>{translateCopy("Kayıtlı kategoriyi koru", language)}</Text>
+                </Pressable>
+              ) : null}
             </View>
-            <TreeCategoryPicker value={catPath} onChange={(p) => { setCatPath(p); if (p.length) setCategory(p[p.length - 1].label); }} />
+            <Text style={{ color: colors.muted, fontSize: 12, fontWeight: "600", lineHeight: 17 }}>
+              {newPath
+                ? `${translateCopy("Yeni kategori", language)}: ${newPath.map((n) => translateCopy(n.label, language)).join(" › ")}. ${translateCopy("Kaydedince ilan bu kategoride görünür.", language)}`
+                : catPath.length
+                  ? translateCopy("Değiştirmek için \"Değiştir\"e bas ve yeni kategoriyi seç (opsiyonel).", language)
+                  : translateCopy("Yeni bir alt kategori seçmezsen kayıtlı kategori korunur.", language)}
+            </Text>
+            <TreeCategoryPicker value={catPath} onChange={changeCategory} />
           </View>
           <View style={{ gap: 8 }}>
             <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "800" }}>{translateCopy("Konum", language)}</Text>

@@ -19,6 +19,8 @@ export function MobileCategorySelect({ visible, initial, onClose, onSelect, leaf
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(60);
   const initialKey = initial.map(n => n.key).join("/");
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const selectedKeys = useMemo(() => new Set(initial.map(n => n.key)), [initialKey]);
   useEffect(() => {
     if (!visible) return;
     setTrail(initialTrail());
@@ -37,9 +39,14 @@ export function MobileCategorySelect({ visible, initial, onClose, onSelect, leaf
       <View style={{ paddingHorizontal: 16, gap: 10, flex: 1, width: "100%", maxWidth: tablet ? 760 : undefined, alignSelf: "center" }}>
         <Text style={ms.muted}>{trail.map((n) => n.label).join(" / ") || "Tüm kategoriler"}</Text>
         <TextInput accessibilityLabel="Kategorilerde ara" value={query} onChangeText={v => { setQuery(v); setLimit(60); }} placeholder="Tüm alt kategorilerde ara..." style={ms.input} />
-        <ScrollView keyboardShouldPersistTaps="handled">{(query.trim() ? matches.slice(0, limit) : nodes.map(n => [...trail, n])).map(path => {
+        {/* Modal ebeveynin klavye kaçınmasını MİRAS ALMAZ: iOS'ta son arama sonuçları klavyenin altında kalıyordu. */}
+        <ScrollView keyboardShouldPersistTaps="handled" keyboardDismissMode="on-drag" automaticallyAdjustKeyboardInsets>{(query.trim() ? matches.slice(0, limit) : nodes.map(n => [...trail, n])).map(path => {
           const node = path[path.length - 1];
-          return <Pressable key={path.map(n => n.key).join("/")} accessibilityRole="button" accessibilityLabel={path.map(n => n.label).join(" / ")} onPress={() => { if (node.children?.length) { setTrail(path); setQuery(""); } else select(path); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", minHeight: 53, borderBottomWidth: 1, borderColor: mobile.line, padding: 8 }}><View style={{ flex: 1 }}><Text style={{ fontSize: 14, color: mobile.ink }}>{node.label}</Text>{query.trim() && path.length > 1 ? <Text style={[ms.muted, { fontSize: 10 }]}>{path.slice(0, -1).map(n => n.label).join(" / ")}</Text> : null}</View><Icon name="chevron-right" size={20} color={mobile.muted} /></Pressable>;
+          const branch = !!node.children?.length;
+          // Mevcut seçimin yolu vurgulanır; ok YALNIZ alt kategorisi olan dallarda (eskiden yapraklarda da
+          // ok vardı → dokununca seçilip kapanacağı mı yoksa alt seviye mi açılacağı anlaşılmıyordu).
+          const picked = selectedKeys.has(node.key);
+          return <Pressable key={path.map(n => n.key).join("/")} accessibilityRole="button" accessibilityState={{ selected: picked }} accessibilityLabel={path.map(n => n.label).join(" / ")} onPress={() => { if (branch) { setTrail(path); setQuery(""); } else select(path); }} style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 8, minHeight: 53, borderBottomWidth: 1, borderColor: mobile.line, padding: 8 }}><View style={{ flex: 1, minWidth: 0 }}><Text style={{ fontSize: 14, color: picked ? mobile.teal : mobile.ink, fontWeight: picked ? "700" : "400" }}>{node.label}</Text>{query.trim() && path.length > 1 ? <Text style={[ms.muted, { fontSize: 11, lineHeight: 15 }]}>{path.slice(0, -1).map(n => n.label).join(" / ")}</Text> : null}</View>{branch ? <Icon name="chevron-right" size={20} color={mobile.muted} /> : picked ? <Icon name="check-circle" size={20} color={mobile.teal} /> : null}</Pressable>;
         })}{query.trim() && matches.length > limit ? <MobileButton secondary onPress={() => setLimit(v => v + 60)}>Diğer kategorileri göster</MobileButton> : null}{query.trim() && !matches.length ? <Text style={[ms.muted, { padding: 20 }]}>Bu aramada kategori bulunamadı.</Text> : null}</ScrollView>
         {!leafOnly && <MobileButton onPress={() => select(trail)}>{trail.length ? "Bu kategoriyi seç" : "Tüm ilanları göster"}</MobileButton>}
       </View>

@@ -20,7 +20,7 @@ import { getFormSchema, resolveFormKey, type CategoryNode, type FieldDef } from 
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { NUM_RANGE_FILTERS } from "@/lib/filter-fields";
 import { matchesLocationFilter } from "@/lib/locations";
-import { commissionAmount, commissionRatePct, moneyIn } from "@/lib/format";
+import { commissionAmount, commissionRatePct, groupThousands, moneyIn } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
 import { Skeleton } from "@/components/skeleton";
@@ -29,6 +29,8 @@ import { loadPartnerDirectory, type PartnerDirectoryEntry } from "@/lib/supabase
 import { displayText } from "@/lib/text";
 import type { Listing } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { catalogueCountLabel, catalogueRanges, useCatalogueFill, useServerCatalogue, type WebCatalogueSort } from "@/lib/web-catalogue";
+import { RetryNotice } from "@/components/retry-notice";
 
 
 // Bir kategori düğümünün tüm alt etiketleri (hiyerarşik filtre için).
@@ -110,30 +112,67 @@ export function HomeDesktop() {
   useEffect(() => { setAttrFilters({}); setNumRange({}); }, [selectedNode?.key]);
   const matchesCat = (l: Listing) => !selectedNode || listingInCategoryNode(l, selectedNode);
 
+  // ÖLÇEK: herhangi bir filtre/kategori/varsayılan-dışı sıralama etkinken sonuç ve GERÇEK toplam
+  // SUNUCUDAN gelir (mobile_catalogue_page; bellek penceresiyle sınırlı değil). Hiçbir şey etkin
+  // değilken eski davranış (store akışı). RPC yoksa/hata verirse yerel süzme sürer (srv.ready=false).
+  const criteriaActive = Boolean(selectedNode) || pMin > 0 || pMax > 0 || loc.provinceId != null || onlyOpen || onlyFeatured || minCommission > 0 || minRate > 0
+    || commTypeFilter !== "all" || minRating > 0 || onlyVerified || inStock || onlyNew || Object.keys(attrFilters).length > 0
+    || Object.keys(catalogueRanges(catNums, numRange)).length > 0 || sortMode !== "featured";
+  const srvTrail = useMemo<CategoryNode[]>(() => {
+    if (!selectedNode) return [];
+    for (const root of categoryTree) {
+      if (root.key === selectedNode.key) return [root];
+      const child = (root.children ?? []).find((ch) => ch === selectedNode);
+      if (child) return [root, child];
+    }
+    return [selectedNode];
+  }, [categoryTree, selectedNode]);
+  const srvRanges = catalogueRanges(catNums, numRange);
+  const srvSort: WebCatalogueSort = sortMode === "featured" ? "recommended" : sortMode;
+  const srv = useServerCatalogue({
+    enabled: criteriaActive,
+    criteria: { trail: srvTrail, priceMin: pMin, priceMax: pMax, provinceId: loc.provinceId, districtId: loc.districtId, attrs: attrFilters, ranges: srvRanges, instant: onlyOpen, onlyFeatured, sort: srvSort,
+      minCommission, minRate, minRating, verified: onlyVerified, commissionType: commTypeFilter === "all" ? null : commTypeFilter, stock: inStock ? "in" : null, newerThanDays: onlyNew ? 7 : undefined },
+    pageSize: 36
+  });
+  const useSrv = criteriaActive && srv.ready;
+  // Sunucu sonucu geçerli ölçütlere aitse eşlenen süzmeler yerelde tekrar uygulanmaz; bayat
+  // sonuçta (yeni ölçüt yüklenirken) hepsi yerelde uygulanır → anında geri bildirim.
+  const srvFiltered = useSrv && srv.settled;
+  const srvOwners = srv.owners;
+  const ownerOf = (id: string) => srvOwners[id] ?? findUser(id);
+  const source = useSrv ? srv.listings : active;
+
   const filtered = useMemo(() => {
-    return active.filter((l) => {
-      if (!matchesCat(l)) return false;
-      if (pMin && l.price < pMin) return false;
-      if (pMax && l.price > pMax) return false;
-      if (!matchesLocationFilter(l, loc.provinceId, loc.districtId)) return false;
-      if (onlyOpen && l.partnershipMode !== "open") return false;
-      if (onlyFeatured && !l.featured) return false;
-      if (minCommission && commissionAmount(l) < minCommission) return false;
-      if (minRate && commissionRatePct(l) < minRate) return false;
-      if (commTypeFilter !== "all" && l.commissionType !== commTypeFilter) return false;
-      if (minRating > 0 && (findUser(l.ownerId)?.rating ?? 0) < minRating) return false;
-      if (onlyVerified) { const o = findUser(l.ownerId); if (!o || !(o.verifiedIdentity || o.verifiedPhone)) return false; }
-      if (inStock && l.stockCount <= 0) return false;
-      if (onlyNew && !(Date.parse(l.createdAt ?? "") > Date.now() - 7 * 86400000)) return false;
+    return source.filter((l) => {
+      if (!srvFiltered) {
+        if (!matchesCat(l)) return false;
+        if (pMin && l.price < pMin) return false;
+        if (pMax && l.price > pMax) return false;
+        if (!matchesLocationFilter(l, loc.provinceId, loc.districtId)) return false;
+        // Aşağıdakiler de sunucu yolunda sunucuda (instant/featured/minCommission/minRate/
+        // commissionType/minRating/verified/stock/createdAfter).
+        if (onlyOpen && l.partnershipMode !== "open") return false;
+        if (onlyFeatured && !l.featured) return false;
+        if (minCommission && commissionAmount(l) < minCommission) return false;
+        if (minRate && commissionRatePct(l) < minRate) return false;
+        if (commTypeFilter !== "all" && l.commissionType !== commTypeFilter) return false;
+        if (minRating > 0 && (ownerOf(l.ownerId)?.rating ?? 0) < minRating) return false;
+        if (onlyVerified) { const o = ownerOf(l.ownerId); if (!o || !(o.verifiedIdentity || o.verifiedPhone)) return false; }
+        if (inStock && l.stockCount <= 0) return false;
+        if (onlyNew && !(Date.parse(l.createdAt ?? "") > Date.now() - 7 * 86400000)) return false;
+      }
       // Kategori-özel facet eşleşmesi (Yakıt=Dizel…): ilan attribute'u seçili değerlerden biriyse geçer.
+      // Sunucu yolunda tek-değerli facet sunucuda; aynı alanda çoklu (VEYA) seçim yerelde kalır.
       for (const key of Object.keys(attrFilters)) {
         const want = attrFilters[key];
+        if (srvFiltered && want.length <= 1) continue;
         const have = l.attributes?.[key];
         const ok = Array.isArray(have) ? have.some((v) => want.includes(String(v))) : want.includes(String(have ?? ""));
         if (!ok) return false;
       }
       // Sayısal aralık (m²/km/yıl…): değer yoksa eler; değer=0 geçerlidir ("yok" ≠ "0").
-      for (const nf of catNums) {
+      for (const nf of srvFiltered ? [] : catNums) {
         const r = numRange[nf.key];
         const mn = r?.min?.trim() ? Number(r.min) : null;
         const mx = r?.max?.trim() ? Number(r.max) : null;
@@ -148,22 +187,31 @@ export function HomeDesktop() {
       return true;
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [active, catLabelSet, pMin, pMax, loc.provinceId, loc.districtId, onlyOpen, onlyFeatured, minCommission, minRate, commTypeFilter, minRating, onlyVerified, inStock, onlyNew, attrFilters, numRange, catNums]);
+  }, [source, srvFiltered, srvOwners, catLabelSet, pMin, pMax, loc.provinceId, loc.districtId, onlyOpen, onlyFeatured, minCommission, minRate, commTypeFilter, minRating, onlyVerified, inStock, onlyNew, attrFilters, numRange, catNums]);
 
   const sorted = useMemo(() => {
+    // Sunucu yolunda sıra sunucudan gelir (tüm sıralamalar destekli) → yerelde yeniden sıralama yok.
+    if (useSrv) return filtered;
     const arr = [...filtered];
     if (sortMode === "priceAsc") arr.sort((a, b) => a.price - b.price);
     else if (sortMode === "priceDesc") arr.sort((a, b) => b.price - a.price);
     else if (sortMode === "newest") arr.sort((a, b) => (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
     else if (sortMode === "commission") arr.sort((a, b) => commissionAmount(b) - commissionAmount(a));
     else if (sortMode === "commissionRate") arr.sort((a, b) => commissionRatePct(b) - commissionRatePct(a));
-    else if (sortMode === "rating") arr.sort((a, b) => (findUser(b.ownerId)?.rating ?? 0) - (findUser(a.ownerId)?.rating ?? 0));
+    else if (sortMode === "rating") arr.sort((a, b) => (ownerOf(b.ownerId)?.rating ?? 0) - (ownerOf(a.ownerId)?.rating ?? 0));
     else arr.sort((a, b) => Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || (b.createdAt ?? "").localeCompare(a.createdAt ?? ""));
     return arr;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filtered, sortMode]);
+  }, [filtered, sortMode, srvOwners, useSrv]);
 
   const grid = sorted.slice(0, visibleCount);
+  // Sunucu toplamı "gerçek toplam"dır; yalnız aynı alanda çoklu (VEYA) facet yerelde kalır → (+).
+  const srvExact = srv.local.attrKeys.length === 0;
+  const countLabel = useSrv ? catalogueCountLabel(srv, srvExact, filtered.length) : String(filtered.length);
+  const canShowMore = visibleCount < filtered.length || (useSrv && srv.hasMore);
+  const moreBusy = useSrv && (srv.loadingMore || srv.loading) && visibleCount >= filtered.length;
+  // "Daha fazla göster" visibleCount'u artırır; yüklü ilan yetmiyorsa sonraki sunucu sayfası çekilir.
+  useCatalogueFill(srv, filtered.length, visibleCount);
 
   // Filtre/sıralama değişince baştan göster.
   useEffect(() => { setVisibleCount(18); }, [selectedNode, pMin, pMax, loc.provinceId, loc.districtId, onlyOpen, onlyFeatured, minCommission, minRate, commTypeFilter, minRating, onlyVerified, inStock, onlyNew, sortMode, attrFilters, numRange]);
@@ -366,7 +414,7 @@ export function HomeDesktop() {
           ) : null}
 
           <View style={{ alignItems: "center", backgroundColor: colors.primarySoft, borderRadius: 10, paddingVertical: 11 }}>
-            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{filtered.length} {translateCopy("sonuç bulundu", language)}</Text>
+            <Text style={{ color: colors.primaryDark, fontSize: 13, fontWeight: "900" }}>{countLabel} {translateCopy("sonuç bulundu", language)}</Text>
           </View>
         </View>
       </View>
@@ -520,7 +568,7 @@ export function HomeDesktop() {
           <View style={{ alignItems: "flex-end", flexDirection: "row", gap: 10 }}>
             <View style={{ flex: 1, gap: 2 }}>
               <Text style={{ color: colors.ink, fontSize: 20, fontWeight: "900" }}>{selectedNode ? translateCopy(selectedNode.label, language) : translateCopy("Öne Çıkan İlanlar", language)}</Text>
-              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{filtered.length} {translateCopy("ilan listeleniyor", language)}</Text>
+              <Text style={{ color: colors.muted, fontSize: 13, fontWeight: "600" }}>{countLabel} {translateCopy("ilan listeleniyor", language)}</Text>
             </View>
             <Link href="/explore" asChild>
               <Pressable><Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Tümünü Gör →", language)}</Text></Pressable>
@@ -561,7 +609,8 @@ export function HomeDesktop() {
           ) : null}
         </View>
 
-        {grid.length === 0 && marketplaceInitialLoading ? (
+        {useSrv && srv.failed ? <RetryNotice message="Diğer ilanlar yüklenemedi. Mevcut sonuçlar korunuyor." onRetry={srv.retry} busy={srv.loadingMore} /> : null}
+        {grid.length === 0 && (marketplaceInitialLoading || (criteriaActive && !srv.fallback && (srv.loading || srv.loadingMore))) ? (
           // HomeCard ile birebir aynı flex düzeni — skeleton→içerik geçişinde
           // kart genişliği/satır sayısı değişmez, "pop"/layout-shift olmaz.
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 14 }}>
@@ -576,10 +625,10 @@ export function HomeDesktop() {
               </View>
             ))}
           </View>
-        ) : grid.length === 0 && active.length === 0 && marketplaceLoadFailed ? (
+        ) : grid.length === 0 && !useSrv && active.length === 0 && marketplaceLoadFailed ? (
           // Yükleme başarısız → "Henüz ilan yok" YERİNE yeniden-dene (yanıltıcı olmasın).
           <MarketplaceRetry onRetry={retryMarketplace} />
-        ) : grid.length === 0 && active.length === 0 ? (
+        ) : grid.length === 0 && !useSrv && active.length === 0 ? (
           // Katalogda hiç ilan yok → ilk-ilan çağrısı (mobil ile tutarlı).
           <View style={{ alignItems: "center", backgroundColor: colors.surface, borderColor: colors.line, borderRadius: 16, borderWidth: 1, gap: 10, padding: 44 }}>
             <MaterialCommunityIcons name="storefront-outline" size={34} color={colors.primary} />
@@ -605,16 +654,16 @@ export function HomeDesktop() {
           <>
             <View testID="home-listings-grid" onLayout={(event) => { const next = event.nativeEvent.layout.width;setGridWidth((previous) => Math.abs(previous - next) > 1 ? next : previous); }} style={{ flexDirection: "row", flexWrap: "wrap", gap: 14, alignItems: "flex-start" }}>
               {grid.map((l) => (
-                <ListingCard key={l.id} listing={l} owner={findUser(l.ownerId)} width={cardGrid.cardWidth} />
+                <ListingCard key={l.id} listing={l} owner={ownerOf(l.ownerId)} width={cardGrid.cardWidth} />
               ))}
             </View>
-            {visibleCount < filtered.length ? (
-              <Pressable onPress={() => setVisibleCount((c) => c + 18)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, opacity: pressed ? 0.85 : 1, paddingHorizontal: 26, paddingVertical: 13 })}>
+            {canShowMore ? (
+              <Pressable disabled={moreBusy} onPress={() => setVisibleCount((c) => c + 18)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, opacity: pressed || moreBusy ? 0.85 : 1, paddingHorizontal: 26, paddingVertical: 13 })}>
                 <MaterialCommunityIcons name="chevron-down" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{translateCopy("Daha fazla göster", language)} ({filtered.length - visibleCount})</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{moreBusy ? translateCopy("Yükleniyor…", language) : `${translateCopy("Daha fazla göster", language)}${!useSrv ? ` (${filtered.length - visibleCount})` : srvExact ? ` (${groupThousands(Math.max(0, srv.total - visibleCount))})` : filtered.length > visibleCount ? ` (${filtered.length - visibleCount}${srv.hasMore ? "+" : ""})` : ""}`}</Text>
               </Pressable>
             ) : (
-              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{translateCopy("Tüm ilanları gördün", language)} · {filtered.length} {translateCopy("ilan", language)}</Text>
+              <Text style={{ color: colors.subtle, fontSize: 12, fontWeight: "700", textAlign: "center" }}>{translateCopy("Tüm ilanları gördün", language)} · {countLabel} {translateCopy("ilan", language)}</Text>
             )}
             {/* AZ-İLAN (cold-start) arz CTA'sı: içerik sütunu filtre rayından kısa kalınca
                 sağda büyük boş alan oluyordu. Boşluğu ANLAMLI dolduruyor + arz tarafını

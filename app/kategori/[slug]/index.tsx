@@ -14,13 +14,14 @@ import { JsonLd } from "@/components/json-ld";
 import { ListingCard } from "@/components/listing-card";
 import { LocationSelector, type LocationValue } from "@/components/location-selector";
 import { MarketplaceRetry } from "@/components/marketplace-retry";
+import { RetryNotice } from "@/components/retry-notice";
 import { EmptyState } from "@/components/ui";
 import { WebContainer } from "@/components/web-container";
 import { WebFooter } from "@/components/web-landing";
 import { categoryTree as CATEGORY_TREE, getFormSchema, resolveFormKey, AMBIGUOUS_LABELS, type CategoryNode } from "@/lib/category-tree";
 import { getCategoryIcon } from "@/lib/categories";
 import { CITY_CATEGORY_SLUGS, SEO_CITY_SLUGS, findProvince } from "@/lib/cities";
-import { commissionAmount } from "@/lib/format";
+import { commissionAmount, groupThousands } from "@/lib/format";
 import { translateCopy, useLanguage } from "@/lib/i18n";
 import { useIsWideWeb } from "@/lib/layout";
 import { getDistrict, getProvince, matchesLocationFilter } from "@/lib/locations";
@@ -28,6 +29,7 @@ import { fetchListingsByCategory, mapListing, type PublicListingCardRow } from "
 import LISTING_SEED_ROWS from "@/lib/listing-seed.json";
 import type { Listing, User } from "@/lib/types";
 import { useStore } from "@/lib/use-store";
+import { catalogueCountLabel, useCatalogueFill, useServerCatalogue } from "@/lib/web-catalogue";
 
 function descendantLabels(node: CategoryNode): string[] {
   const out = [node.label];
@@ -106,15 +108,6 @@ function CategoryLandingScreenLegacy() {
   // (hepsi yüklü) HİÇ tetiklenmez = sıfır davranış değişimi. SSG/hydration render'ı bellekten
   // (değişmez); mount sonrası server-ilanlar EKLENİR (sonsuz-kaydırma gibi, #418 güvenli).
   const [serverCat, setServerCat] = useState<{ listings: Listing[]; users: User[] }>({ listings: [], users: [] });
-  useEffect(() => {
-    let alive = true;
-    setServerCat({ listings: [], users: [] });
-    if (!mountedGate || !marketplaceHasMore || !node || !slug) return;
-    void fetchListingsByCategory(descendantLabels(node)).then((r) => {
-      if (alive && r) setServerCat(r);
-    });
-    return () => { alive = false; };
-  }, [mountedGate, marketplaceHasMore, slug]);
   const [visible, setVisible] = useState(PAGE);
   const [sortMode, setSortMode] = useState<"featured" | "newest" | "priceAsc" | "priceDesc" | "commission">("featured");
   const [band, setBand] = useState<[number, number] | null>(null);
@@ -130,7 +123,7 @@ function CategoryLandingScreenLegacy() {
 
   // Server-kategori ilanlarının sahipleri bellekte olmayabilir → merge çözücü.
   const serverUserById = useMemo(() => { const m = new Map<string, User>(); for (const u of serverCat.users) m.set(u.id, u); return m; }, [serverCat.users]);
-  const resolveOwner = (ownerId: string) => findUser(ownerId) ?? serverUserById.get(ownerId);
+  const resolveOwner = (ownerId: string) => srv.owners[ownerId] ?? findUser(ownerId) ?? serverUserById.get(ownerId);
 
   // SSG + client-İLK-render: store BOŞ iken build-zamanı seed'i kullan → kategori ilanları
   // SSG'de BASILIR (masaüstü CLS'i giderir + crawler ilanları statik HTML'de görür = SEO).
@@ -174,6 +167,39 @@ function CategoryLandingScreenLegacy() {
   const numActiveCount = numFields.filter((f) => (numRange[f.key]?.min ?? "").trim() || (numRange[f.key]?.max ?? "").trim()).length;
   const setNum = (key: string, side: "min" | "max", v: string) => setNumRange((s) => ({ ...s, [key]: { min: s[key]?.min ?? "", max: s[key]?.max ?? "", [side]: v } }));
 
+  // ÖLÇEK: kategori + filtre + sıralama SUNUCUDA (mobile_catalogue_page) → sonuç ve GERÇEK toplam
+  // tüm katalogdan gelir (bellek penceresiyle sınırlı değil). Mount SONRASI başlar → SSG/ilk
+  // istemci render'ı aynı (seed/bellek); RPC yoksa/hata verirse aşağıdaki yerel süzme sürer.
+  const srvRanges: Record<string, { min: string; max: string }> = {};
+  for (const nf of numFields) {
+    const r = numRange[nf.key];
+    if (r && ((r.min ?? "").trim() || (r.max ?? "").trim())) srvRanges[nf.key] = r;
+  }
+  const srv = useServerCatalogue({
+    enabled: mountedGate && Boolean(node),
+    criteria: {
+      trail: trail ?? [], priceMin: band?.[0], priceMax: band?.[1], provinceId: loc.provinceId, districtId: loc.districtId,
+      attrs: attrFilters, ranges: srvRanges, instant: onlyOpen, sort: sortMode === "featured" ? "recommended" : sortMode
+    },
+    pageSize: PAGE
+  });
+  const useSrv = srv.ready;
+  // Sunucu sonucu geçerli ölçütlere aitse eşlenen süzmeler yerelde TEKRAR uygulanmaz; bayat
+  // sonuçta (yeni ölçüt yüklenirken) hepsi yerelde uygulanır → anında geri bildirim.
+  const srvFiltered = useSrv && srv.settled;
+  const srvFallback = srv.fallback;
+  // Yerel yol için ek (yalnız sunucu kataloğu kullanılamıyorsa): bellek penceresi dışındaki ilanlar.
+  useEffect(() => {
+    let alive = true;
+    setServerCat({ listings: [], users: [] });
+    if (!mountedGate || !marketplaceHasMore || !node || !slug || !srvFallback) return;
+    void fetchListingsByCategory(descendantLabels(node)).then((r) => {
+      if (alive && r) setServerCat(r);
+    });
+    return () => { alive = false; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [mountedGate, marketplaceHasMore, slug, srvFallback]);
+
   function toggleAttr(key: string, val: string) {
     setAttrFilters((s) => {
       const cur = s[key] ?? [];
@@ -199,19 +225,27 @@ function CategoryLandingScreenLegacy() {
       const segs = nc.split(/\s*[-/>·|]\s*/).map((s) => s.trim()).filter((s) => s.length > 2);
       return segs.length > 1 && segs.some((s) => nlabels.has(s));
     };
-    const activeAttrKeys = Object.keys(attrFilters);
+    // Sunucu yolunda: tek-değerli facet sunucuda; aynı alanda çoklu (VEYA) seçim yerelde kalır.
+    const activeAttrKeys = Object.keys(attrFilters).filter((key) => !srvFiltered || attrFilters[key].length > 1);
     // Bellek + sunucu-kategori ilanları (append-only, id ile tekilleştir). Bellek önce (öncelik).
     const seen = new Set<string>();
-    const source: Listing[] = [];
-    // Store yüklenene kadar (SSG + client-ilk) seed'ten bas → SSG'de ilan var, grid 0'dan büyümez.
-    const memListings = listings.length ? listings : seedListings;
-    for (const l of memListings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
-    for (const l of serverCat.listings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
+    let source: Listing[] = [];
+    if (useSrv) source = srv.listings;
+    else {
+      // Store yüklenene kadar (SSG + client-ilk) seed'ten bas → SSG'de ilan var, grid 0'dan büyümez.
+      const memListings = listings.length ? listings : seedListings;
+      for (const l of memListings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
+      for (const l of serverCat.listings) if (!seen.has(l.id)) { seen.add(l.id); source.push(l); }
+    }
     const out = source.filter((l) => {
-      if (l.status !== "active" || !listingInCategoryNode(l, node)) return false;
-      if (!matchesLocationFilter(l, loc.provinceId, loc.districtId)) return false;
-      if (band && (l.price < band[0] || l.price > band[1])) return false;
-      if (onlyOpen && l.partnershipMode !== "open") return false;
+      if (l.status !== "active") return false;
+      if (!srvFiltered) {
+        if (!listingInCategoryNode(l, node)) return false;
+        if (!matchesLocationFilter(l, loc.provinceId, loc.districtId)) return false;
+        if (band && (l.price < band[0] || l.price > band[1])) return false;
+        // "Anında ortak": sunucu yolunda sunucuda (instant).
+        if (onlyOpen && l.partnershipMode !== "open") return false;
+      }
       // Özellik filtreleri: her aktif alan için ilanın attribute değeri seçilenlerden
       // birini içermeli (dizi ise kesişim, tekil ise eşitlik). Değeri olmayan eler.
       for (const key of activeAttrKeys) {
@@ -221,7 +255,7 @@ function CategoryLandingScreenLegacy() {
         if (!ok) return false;
       }
       // Sayısal aralık(lar): m² / km / yıl — ilanın değeri min-max içinde olmalı.
-      for (const nf of numFields) {
+      for (const nf of srvFiltered ? [] : numFields) {
         const r = numRange[nf.key];
         const mn = r?.min?.trim() ? Number(r.min) : null;
         const mx = r?.max?.trim() ? Number(r.max) : null;
@@ -236,7 +270,8 @@ function CategoryLandingScreenLegacy() {
       }
       return true;
     });
-    out.sort((a, b) => {
+    // Sunucu sırası yetkilidir (sayfalar eklenirken sıra bozulmasın).
+    if (!useSrv) out.sort((a, b) => {
       if (sortMode === "newest") return b.createdAt.localeCompare(a.createdAt);
       if (sortMode === "priceAsc") return a.price - b.price;
       if (sortMode === "priceDesc") return b.price - a.price;
@@ -244,7 +279,12 @@ function CategoryLandingScreenLegacy() {
       return Number(Boolean(b.featured)) - Number(Boolean(a.featured)) || commissionAmount(b) - commissionAmount(a);
     });
     return out;
-  }, [listings, seedListings, serverCat.listings, node, band, onlyOpen, sortMode, attrFilters, numRange, numFields, loc.provinceId, loc.districtId]);
+  }, [listings, seedListings, serverCat.listings, node, band, onlyOpen, sortMode, attrFilters, numRange, numFields, loc.provinceId, loc.districtId, useSrv, srvFiltered, srv.listings]);
+  // Sunucu toplamı "gerçek toplam"dır; yalnız aynı alanda çoklu (VEYA) facet yerelde kalır → (+).
+  const srvExact = srv.local.attrKeys.length === 0;
+  const countLabel = useSrv ? catalogueCountLabel(srv, srvExact, items.length) : String(items.length);
+  // "Daha fazla göster" visible'ı artırır; yüklü ilan yetmiyorsa sonraki sunucu sayfası çekilir.
+  useCatalogueFill(srv, items.length, visible);
 
   useEffect(() => { setVisible(PAGE); }, [band, onlyOpen, sortMode, slug, attrFilters, numRange, loc.provinceId, loc.districtId]);
   useEffect(() => { setAttrFilters({}); setNumRange({}); }, [slug]);
@@ -390,7 +430,7 @@ function CategoryLandingScreenLegacy() {
           </View>
           <View style={{ flex: 1, gap: 3, minWidth: 0 }}>
             <Text accessibilityRole="header" {...({ role: "heading", "aria-level": 1 } as Record<string, unknown>)} style={{ color: colors.ink, fontSize: isWideWeb ? 24 : 20, lineHeight: isWideWeb ? 32 : 26, fontWeight: "800" }}>{intentPrefix}{needsCtx ? (modifierFirst ? `${translateCopy(node.label, language)} ${translateCopy(parentLabel, language)}` : `${translateCopy(parentLabel, language)} ${translateCopy(node.label, language)}`) : translateCopy(node.label, language)} ilanları</Text>
-            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{items.length} ortak satış ilanı · komisyonlu ürünleri keşfet</Text>
+            <Text style={{ color: colors.muted, fontSize: 13.5, fontWeight: "600" }}>{countLabel} ortak satış ilanı · komisyonlu ürünleri keşfet</Text>
           </View>
         </View>
 
@@ -525,9 +565,13 @@ function CategoryLandingScreenLegacy() {
           ) : null}
         </View>
 
-        {items.length === 0 && marketplaceLoadFailed && listings.length === 0 ? (
+        {useSrv && srv.failed ? <RetryNotice message="Diğer ilanlar yüklenemedi. Mevcut sonuçlar korunuyor." onRetry={srv.retry} busy={srv.loadingMore} /> : null}
+        {items.length === 0 && !useSrv && marketplaceLoadFailed && listings.length === 0 ? (
           // Katalog hiç yüklenemedi → "kategoride ilan yok" yerine yeniden-dene.
           <MarketplaceRetry onRetry={retryMarketplace} />
+        ) : items.length === 0 && mountedGate && (srv.loading || srv.loadingMore) ? (
+          // Sunucu sonucu yolda → erken "ilan yok" gösterme (mount sonrası; SSG çıktısı değişmez).
+          <Text accessibilityRole="progressbar" style={{ color: colors.muted, fontSize: 13, fontWeight: "600", padding: 12 }}>{translateCopy("İlanlar yükleniyor…", language)}</Text>
         ) : items.length === 0 ? (
           band || onlyOpen || loc.provinceId != null || Object.keys(attrFilters).length || numActiveCount ? (
             <EmptyState title={translateCopy("Filtreye uyan ilan yok", language)} body={translateCopy("Filtreleri gevşetmeyi dene ya da farklı bir kategoriye göz at.", language)} mascot="thinking" />
@@ -561,10 +605,10 @@ function CategoryLandingScreenLegacy() {
                 <ListingCard key={l.id} listing={l} owner={resolveOwner(l.ownerId)} eager={index < 4} />
               ))}
             </View>
-            {visible < items.length ? (
-              <Pressable onPress={() => setVisible((v) => v + PAGE)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, opacity: pressed ? 0.85 : 1, paddingHorizontal: 26, paddingVertical: 13 })}>
+            {visible < items.length || (useSrv && srv.hasMore) ? (
+              <Pressable disabled={useSrv && srv.loadingMore && visible >= items.length} onPress={() => setVisible((v) => v + PAGE)} style={({ pressed }) => ({ alignItems: "center", alignSelf: "center", backgroundColor: colors.surface, borderColor: colors.primary, borderRadius: 12, borderWidth: 1.5, flexDirection: "row", gap: 8, opacity: pressed ? 0.85 : 1, paddingHorizontal: 26, paddingVertical: 13 })}>
                 <MaterialCommunityIcons name="chevron-down" size={18} color={colors.primaryDark} />
-                <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>Daha fazla göster ({items.length - visible})</Text>
+                <Text style={{ color: colors.primaryDark, fontSize: 13.5, fontWeight: "900" }}>{useSrv && srv.loadingMore && visible >= items.length ? translateCopy("Yükleniyor…", language) : `Daha fazla göster${!useSrv ? ` (${items.length - visible})` : srvExact ? ` (${groupThousands(Math.max(0, srv.total - visible))})` : items.length > visible ? ` (${items.length - visible}${srv.hasMore ? "+" : ""})` : ""}`}</Text>
               </Pressable>
             ) : null}
           </>
